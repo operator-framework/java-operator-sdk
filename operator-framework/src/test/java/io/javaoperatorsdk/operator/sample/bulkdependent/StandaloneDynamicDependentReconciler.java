@@ -10,23 +10,23 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
-public class StandaloneBulkDependentReconciler
-    implements Reconciler<BulkDependentTestCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<BulkDependentTestCustomResource>, KubernetesClientAware {
+public class StandaloneDynamicDependentReconciler
+    implements Reconciler<DynamicDependentTestCustomResource>, TestExecutionInfoProvider,
+    EventSourceInitializer<DynamicDependentTestCustomResource>, KubernetesClientAware {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private ConfigMapDeleterBulkDependentResource dependent;
+  private final ConfigMapDeleterDynamicallyCreatedDependentResource dependent;
   private KubernetesClient kubernetesClient;
 
-  public StandaloneBulkDependentReconciler() {
-    dependent = new CRUDConfigMapBulkDependentResource();
+  public StandaloneDynamicDependentReconciler() {
+    dependent = new CRUDConfigMapDynamicallyCreatedDependentResource();
   }
 
   @Override
-  public UpdateControl<BulkDependentTestCustomResource> reconcile(
-      BulkDependentTestCustomResource resource,
-      Context<BulkDependentTestCustomResource> context) {
+  public UpdateControl<DynamicDependentTestCustomResource> reconcile(
+      DynamicDependentTestCustomResource resource,
+      Context<DynamicDependentTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
     dependent.reconcile(resource, context);
@@ -40,7 +40,7 @@ public class StandaloneBulkDependentReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(
-      EventSourceContext<BulkDependentTestCustomResource> context) {
+      EventSourceContext<DynamicDependentTestCustomResource> context) {
     return EventSourceInitializer
         .nameEventSources(dependent.initEventSource(context));
   }

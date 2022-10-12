@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
  * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
  * implement additionally also {@link Updater}.
  */
-public interface BulkDependentResource<R, P extends HasMetadata>
+public interface DynamicallyCreatedDependentResource<R, P extends HasMetadata>
     extends Creator<R, P>, Deleter<P> {
 
   /**

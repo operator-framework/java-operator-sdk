@@ -4,22 +4,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkUpdater;
+import io.javaoperatorsdk.operator.processing.dependent.DynamicallyCreatedDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.DynamicallyCreatedUpdater;
 import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
+import io.javaoperatorsdk.operator.sample.bulkdependent.DynamicDependentTestCustomResource;
 
-public class ExternalBulkDependentResource
-    extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource>
-    implements BulkDependentResource<ExternalResource, BulkDependentTestCustomResource>,
-    BulkUpdater<ExternalResource, BulkDependentTestCustomResource> {
+public class ExternalDynamicallyCreatedDependentResource
+    extends PollingDependentResource<ExternalResource, DynamicDependentTestCustomResource>
+    implements
+    DynamicallyCreatedDependentResource<ExternalResource, DynamicDependentTestCustomResource>,
+    DynamicallyCreatedUpdater<ExternalResource, DynamicDependentTestCustomResource> {
 
   public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
 
   private final ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
 
-  public ExternalBulkDependentResource() {
+  public ExternalDynamicallyCreatedDependentResource() {
     super(ExternalResource.class, ExternalResource::getId);
   }
 
@@ -36,18 +37,20 @@ public class ExternalBulkDependentResource
   }
 
   @Override
-  public ExternalResource create(ExternalResource desired, BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
+  public ExternalResource create(ExternalResource desired,
+      DynamicDependentTestCustomResource primary,
+      Context<DynamicDependentTestCustomResource> context) {
     return externalServiceMock.create(desired);
   }
 
   @Override
   public ExternalResource update(ExternalResource actual, ExternalResource desired,
-      BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
+      DynamicDependentTestCustomResource primary,
+      Context<DynamicDependentTestCustomResource> context) {
     return externalServiceMock.update(desired);
   }
 
-  private static String toExternalResourceId(BulkDependentTestCustomResource primary, String i) {
+  private static String toExternalResourceId(DynamicDependentTestCustomResource primary, String i) {
     return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
         primary.getMetadata().getNamespace() +
         EXTERNAL_RESOURCE_NAME_DELIMITER + i;
@@ -59,8 +62,8 @@ public class ExternalBulkDependentResource
   }
 
   @Override
-  public Map<String, ExternalResource> desiredResources(BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
+  public Map<String, ExternalResource> desiredResources(DynamicDependentTestCustomResource primary,
+      Context<DynamicDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
     Map<String, ExternalResource> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
@@ -73,8 +76,8 @@ public class ExternalBulkDependentResource
 
   @Override
   public Map<String, ExternalResource> getSecondaryResources(
-      BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
+      DynamicDependentTestCustomResource primary,
+      Context<DynamicDependentTestCustomResource> context) {
     return context.getSecondaryResources(resourceType()).stream()
         .filter(r -> r.getId()
             .startsWith(primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
@@ -86,9 +89,9 @@ public class ExternalBulkDependentResource
   }
 
   @Override
-  public void deleteTargetResource(BulkDependentTestCustomResource primary,
+  public void deleteTargetResource(DynamicDependentTestCustomResource primary,
       ExternalResource resource,
-      Context<BulkDependentTestCustomResource> context) {
+      Context<DynamicDependentTestCustomResource> context) {
     externalServiceMock.delete(resource.getId());
   }
 }

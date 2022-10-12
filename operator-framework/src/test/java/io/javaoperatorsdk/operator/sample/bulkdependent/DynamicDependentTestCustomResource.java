@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("sbd")
-public class BulkDependentTestCustomResource
+public class DynamicDependentTestCustomResource
     extends CustomResource<BulkDependentTestSpec, Void>
     implements Namespaced {
 }

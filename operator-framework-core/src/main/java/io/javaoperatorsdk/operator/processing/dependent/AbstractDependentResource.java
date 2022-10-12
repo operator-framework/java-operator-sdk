@@ -32,8 +32,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
 
-    dependentResourceReconciler = this instanceof BulkDependentResource
-        ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
+    dependentResourceReconciler = this instanceof DynamicallyCreatedDependentResource
+        ? new DynamicallyCreatedDependentResourceReconciler<>(
+            (DynamicallyCreatedDependentResource<R, P>) this)
         : new SingleDependentResourceReconciler<>(this);
   }
 

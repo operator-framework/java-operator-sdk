@@ -6,16 +6,16 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestSpec;
-import io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource;
+import io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterDynamicallyCreatedDependentResource;
+import io.javaoperatorsdk.operator.sample.bulkdependent.DynamicDependentTestCustomResource;
 
-import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_KEY;
-import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_VALUE;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterDynamicallyCreatedDependentResource.LABEL_KEY;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterDynamicallyCreatedDependentResource.LABEL_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public abstract class BulkDependentTestBase {
+public abstract class DynamicallyCreatedDependentTestBase {
 
   public static final String TEST_RESOURCE_NAME = "test";
   public static final int INITIAL_NUMBER_OF_CONFIG_MAPS = 3;
@@ -68,15 +68,14 @@ public abstract class BulkDependentTestBase {
               extension().getKubernetesClient().configMaps().inNamespace(extension().getNamespace())
                   .withLabel(LABEL_KEY, LABEL_VALUE)
                   .list().getItems();
-          cms.forEach(cm -> {
-            assertThat(cm.getData().get(ConfigMapDeleterBulkDependentResource.ADDITIONAL_DATA_KEY))
-                .isEqualTo(expectedValue);
-          });
+          cms.forEach(cm -> assertThat(cm.getData()
+              .get(ConfigMapDeleterDynamicallyCreatedDependentResource.ADDITIONAL_DATA_KEY))
+              .isEqualTo(expectedValue));
         });
   }
 
-  public static BulkDependentTestCustomResource testResource() {
-    BulkDependentTestCustomResource cr = new BulkDependentTestCustomResource();
+  public static DynamicDependentTestCustomResource testResource() {
+    DynamicDependentTestCustomResource cr = new DynamicDependentTestCustomResource();
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName(TEST_RESOURCE_NAME);
     cr.setSpec(new BulkDependentTestSpec());

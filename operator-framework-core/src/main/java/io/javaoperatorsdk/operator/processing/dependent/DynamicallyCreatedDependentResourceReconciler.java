@@ -13,29 +13,29 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-class BulkDependentResourceReconciler<R, P extends HasMetadata>
+class DynamicallyCreatedDependentResourceReconciler<R, P extends HasMetadata>
     implements DependentResourceReconciler<R, P> {
 
-  private final BulkDependentResource<R, P> bulkDependentResource;
+  private final DynamicallyCreatedDependentResource<R, P> delegate;
 
-  BulkDependentResourceReconciler(BulkDependentResource<R, P> bulkDependentResource) {
-    this.bulkDependentResource = bulkDependentResource;
+  DynamicallyCreatedDependentResourceReconciler(
+      DynamicallyCreatedDependentResource<R, P> delegate) {
+    this.delegate = delegate;
   }
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    final var desiredResources = bulkDependentResource.desiredResources(primary, context);
-    Map<String, R> actualResources = bulkDependentResource.getSecondaryResources(primary, context);
+    final var desiredResources = delegate.desiredResources(primary, context);
+    Map<String, R> actualResources = delegate.getSecondaryResources(primary, context);
 
     // remove existing resources that are not needed anymore according to the primary state
     deleteBulkResourcesIfRequired(desiredResources.keySet(), actualResources, primary, context);
 
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
-    final var updatable = bulkDependentResource instanceof Updater;
+    final var updatable = delegate instanceof Updater;
     desiredResources.forEach((key, value) -> {
-      final var instance =
-          updatable ? new UpdatableBulkDependentResourceInstance<>(bulkDependentResource, value)
-              : new BulkDependentResourceInstance<>(bulkDependentResource, value);
+      final var instance = updatable ? new UpdatableDynamicDependentInstance<>(delegate, value)
+          : new DynamicDependentInstance<>(delegate, value);
       results.add(instance.reconcile(primary, actualResources.get(key), context));
     });
 
@@ -44,7 +44,8 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
   @Override
   public void delete(P primary, Context<P> context) {
-    var actualResources = bulkDependentResource.getSecondaryResources(primary, context);
+    var actualResources =
+        delegate.getSecondaryResources(primary, context);
     deleteBulkResourcesIfRequired(Collections.emptySet(), actualResources, primary, context);
   }
 
@@ -52,7 +53,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
       Map<String, R> actualResources, P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!expectedKeys.contains(key)) {
-        bulkDependentResource.deleteTargetResource(primary, value, context);
+        delegate.deleteTargetResource(primary, value, context);
       }
     });
   }
@@ -64,21 +65,21 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
    * @param <R>
    * @param <P>
    */
-  private static class BulkDependentResourceInstance<R, P extends HasMetadata>
+  private static class DynamicDependentInstance<R, P extends HasMetadata>
       extends AbstractDependentResource<R, P>
       implements Creator<R, P>, Deleter<P> {
-    private final BulkDependentResource<R, P> bulkDependentResource;
+    private final DynamicallyCreatedDependentResource<R, P> delegate;
     private final R desired;
 
-    private BulkDependentResourceInstance(BulkDependentResource<R, P> bulkDependentResource,
+    private DynamicDependentInstance(DynamicallyCreatedDependentResource<R, P> delegate,
         R desired) {
-      this.bulkDependentResource = bulkDependentResource;
+      this.delegate = delegate;
       this.desired = desired;
     }
 
     @SuppressWarnings("unchecked")
     private AbstractDependentResource<R, P> asAbstractDependentResource() {
-      return (AbstractDependentResource<R, P>) bulkDependentResource;
+      return (AbstractDependentResource<R, P>) delegate;
     }
 
     @Override
@@ -88,12 +89,13 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
     @SuppressWarnings("unchecked")
     public R update(R actual, R desired, P primary, Context<P> context) {
-      return ((Updater<R, P>) bulkDependentResource).update(actual, desired, primary, context);
+      return ((Updater<R, P>) delegate).update(actual, desired, primary,
+          context);
     }
 
     @Override
     public Result<R> match(R resource, P primary, Context<P> context) {
-      return bulkDependentResource.match(resource, desired, primary, context);
+      return delegate.match(resource, desired, primary, context);
     }
 
     @Override
@@ -113,7 +115,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
     @Override
     public R create(R desired, P primary, Context<P> context) {
-      return bulkDependentResource.create(desired, primary, context);
+      return delegate.create(desired, primary, context);
     }
   }
 
@@ -123,13 +125,12 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
    * @param <R>
    * @param <P>
    */
-  private static class UpdatableBulkDependentResourceInstance<R, P extends HasMetadata>
-      extends BulkDependentResourceInstance<R, P> implements Updater<R, P> {
+  private static class UpdatableDynamicDependentInstance<R, P extends HasMetadata>
+      extends DynamicDependentInstance<R, P> implements Updater<R, P> {
 
-    private UpdatableBulkDependentResourceInstance(
-        BulkDependentResource<R, P> bulkDependentResource,
+    private UpdatableDynamicDependentInstance(DynamicallyCreatedDependentResource<R, P> delegate,
         R desired) {
-      super(bulkDependentResource, desired);
+      super(delegate, desired);
     }
   }
 }

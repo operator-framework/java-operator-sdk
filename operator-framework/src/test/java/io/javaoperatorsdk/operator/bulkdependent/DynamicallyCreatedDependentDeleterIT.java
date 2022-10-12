@@ -3,15 +3,14 @@ package io.javaoperatorsdk.operator.bulkdependent;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.bulkdependent.ManagedBulkDependentReconciler;
+import io.javaoperatorsdk.operator.sample.bulkdependent.ManagedDeleterBulkReconciler;
 
-class ManagedBulkDependentIT extends BulkDependentTestBase {
+public class DynamicallyCreatedDependentDeleterIT extends DynamicallyCreatedDependentTestBase {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new ManagedBulkDependentReconciler())
+      LocallyRunOperatorExtension.builder().withReconciler(new ManagedDeleterBulkReconciler())
           .build();
-
 
   @Override
   LocallyRunOperatorExtension extension() {

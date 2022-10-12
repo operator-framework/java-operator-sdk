@@ -4,18 +4,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.bulkdependent.external.ExternalBulkResourceReconciler;
+import io.javaoperatorsdk.operator.sample.bulkdependent.external.ExternalDynamicResourceReconciler;
 import io.javaoperatorsdk.operator.sample.bulkdependent.external.ExternalServiceMock;
 
-import static io.javaoperatorsdk.operator.bulkdependent.BulkDependentTestBase.*;
+import static io.javaoperatorsdk.operator.bulkdependent.DynamicallyCreatedDependentTestBase.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class BulkExternalDependentIT {
+class DynamicExternalDependentIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new ExternalBulkResourceReconciler())
+      LocallyRunOperatorExtension.builder().withReconciler(new ExternalDynamicResourceReconciler())
           .build();
 
   ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();

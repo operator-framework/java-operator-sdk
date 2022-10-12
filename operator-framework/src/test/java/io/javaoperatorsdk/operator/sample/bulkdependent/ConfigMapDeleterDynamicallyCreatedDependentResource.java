@@ -6,34 +6,34 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.DynamicallyCreatedDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 /**
  * Not using CRUDKubernetesDependentResource so the delete functionality can be tested.
  */
-public class ConfigMapDeleterBulkDependentResource
+public class ConfigMapDeleterDynamicallyCreatedDependentResource
     extends
-    KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
-    implements Creator<ConfigMap, BulkDependentTestCustomResource>,
-    Updater<ConfigMap, BulkDependentTestCustomResource>,
-    Deleter<BulkDependentTestCustomResource>,
-    BulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
+    KubernetesDependentResource<ConfigMap, DynamicDependentTestCustomResource>
+    implements Creator<ConfigMap, DynamicDependentTestCustomResource>,
+    Updater<ConfigMap, DynamicDependentTestCustomResource>,
+    Deleter<DynamicDependentTestCustomResource>,
+    DynamicallyCreatedDependentResource<ConfigMap, DynamicDependentTestCustomResource> {
 
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
   public static final String ADDITIONAL_DATA_KEY = "additionalData";
   public static final String INDEX_DELIMITER = "-";
 
-  public ConfigMapDeleterBulkDependentResource() {
+  public ConfigMapDeleterDynamicallyCreatedDependentResource() {
     super(ConfigMap.class);
   }
 
   @Override
-  public Map<String, ConfigMap> desiredResources(BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
+  public Map<String, ConfigMap> desiredResources(DynamicDependentTestCustomResource primary,
+      Context<DynamicDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
     Map<String, ConfigMap> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
@@ -43,8 +43,8 @@ public class ConfigMapDeleterBulkDependentResource
     return res;
   }
 
-  public ConfigMap desired(BulkDependentTestCustomResource primary, String key,
-      Context<BulkDependentTestCustomResource> context) {
+  public ConfigMap desired(DynamicDependentTestCustomResource primary, String key,
+      Context<DynamicDependentTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName() + INDEX_DELIMITER + key)
@@ -57,8 +57,8 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
-  public Map<String, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
+  public Map<String, ConfigMap> getSecondaryResources(DynamicDependentTestCustomResource primary,
+      Context<DynamicDependentTestCustomResource> context) {
     var configMaps = context.getSecondaryResources(ConfigMap.class);
     Map<String, ConfigMap> result = new HashMap<>(configMaps.size());
     configMaps.forEach(cm -> {
