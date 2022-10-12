@@ -110,10 +110,9 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(primary);
     R created = creator.create(desired, primary, context);
     throwIfNull(created, primary, "Created resource");
-    onCreated(resourceID, created);
+    onCreated(primary, created, context);
     return created;
   }
 
@@ -121,27 +120,28 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * Allows subclasses to perform additional processing (e.g. caching) on the created resource if
    * needed.
    *
-   * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the
-   *        newly created resource
+   * @param primary the {@link ResourceID} of the primary resource associated with the newly created
+   *        resource
    * @param created the newly created resource
+   * @param context
    */
-  protected abstract void onCreated(ResourceID primaryResourceId, R created);
+  protected abstract void onCreated(P primary, R created, Context<P> context);
 
   /**
    * Allows subclasses to perform additional processing on the updated resource if needed.
    *
-   * @param primaryResourceId the {@link ResourceID} of the primary resource associated with the
-   *        newly updated resource
+   * @param primary the {@link ResourceID} of the primary resource associated with the newly updated
+   *        resource
    * @param updated the updated resource
    * @param actual the resource as it was before the update
+   * @param context
    */
-  protected abstract void onUpdated(ResourceID primaryResourceId, R updated, R actual);
+  protected abstract void onUpdated(P primary, R updated, R actual, Context<P> context);
 
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(primary);
     R updated = updater.update(actual, desired, primary, context);
     throwIfNull(updated, primary, "Updated resource");
-    onUpdated(resourceID, updated, actual);
+    onUpdated(primary, updated, actual, context);
     return updated;
   }
 
