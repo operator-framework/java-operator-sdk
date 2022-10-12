@@ -29,7 +29,7 @@ class DynamicallyCreatedDependentResourceReconciler<R, P extends HasMetadata>
     Map<String, R> actualResources = delegate.getSecondaryResources(primary, context);
 
     // remove existing resources that are not needed anymore according to the primary state
-    deleteBulkResourcesIfRequired(desiredResources.keySet(), actualResources, primary, context);
+    deleteUnexpectedDynamicResources(desiredResources.keySet(), actualResources, primary, context);
 
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
     final var updatable = delegate instanceof Updater;
@@ -46,10 +46,10 @@ class DynamicallyCreatedDependentResourceReconciler<R, P extends HasMetadata>
   public void delete(P primary, Context<P> context) {
     var actualResources =
         delegate.getSecondaryResources(primary, context);
-    deleteBulkResourcesIfRequired(Collections.emptySet(), actualResources, primary, context);
+    deleteUnexpectedDynamicResources(Collections.emptySet(), actualResources, primary, context);
   }
 
-  private void deleteBulkResourcesIfRequired(Set<String> expectedKeys,
+  private void deleteUnexpectedDynamicResources(Set<String> expectedKeys,
       Map<String, R> actualResources, P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!expectedKeys.contains(key)) {
@@ -59,8 +59,8 @@ class DynamicallyCreatedDependentResourceReconciler<R, P extends HasMetadata>
   }
 
   /**
-   * Exposes a dynamically-created instance of the bulk dependent resource precursor as an
-   * AbstractDependentResource so that we can reuse its reconciliation logic.
+   * Exposes a dynamically-created instance of the dynamically-created dependent resource precursor
+   * as an AbstractDependentResource so that we can reuse its reconciliation logic.
    *
    * @param <R>
    * @param <P>

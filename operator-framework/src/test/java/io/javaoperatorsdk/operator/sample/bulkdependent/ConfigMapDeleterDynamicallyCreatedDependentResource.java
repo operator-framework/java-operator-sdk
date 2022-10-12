@@ -22,7 +22,7 @@ public class ConfigMapDeleterDynamicallyCreatedDependentResource
     Deleter<DynamicDependentTestCustomResource>,
     DynamicallyCreatedDependentResource<ConfigMap, DynamicDependentTestCustomResource> {
 
-  public static final String LABEL_KEY = "bulk";
+  public static final String LABEL_KEY = "dynamic";
   public static final String LABEL_VALUE = "true";
   public static final String ADDITIONAL_DATA_KEY = "additionalData";
   public static final String INDEX_DELIMITER = "-";

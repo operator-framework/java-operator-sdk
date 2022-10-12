@@ -8,10 +8,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 
 /**
- * Manages dynamic number of resources created for a primary resource. Since the point of a bulk
- * dependent resource is to manage the number of secondary resources dynamically it implement
- * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
- * implement additionally also {@link Updater}.
+ * Manages dynamic number of resources created for a primary resource. Since the point of a
+ * dynamically-created dependent resource is to manage secondary resources dynamically depending on
+ * the state of the primary resource, it implements {@link Creator} and {@link Deleter} interfaces
+ * out of the box. A concrete dynamically-created dependent resource could also additionally
+ * implement {@link Updater}.
  */
 public interface DynamicallyCreatedDependentResource<R, P extends HasMetadata>
     extends Creator<R, P>, Deleter<P> {
@@ -52,9 +53,8 @@ public interface DynamicallyCreatedDependentResource<R, P extends HasMetadata>
   void deleteTargetResource(P primary, R resource, Context<P> context);
 
   /**
-   * Determines whether the specified secondary resource matches the desired state with target index
-   * of a bulk resource as defined from the specified primary resource, given the specified
-   * {@link Context}.
+   * Determines whether the specified secondary resource matches the desired state as defined from
+   * the specified primary resource, given the specified {@link Context}.
    *
    * @param actualResource the resource we want to determine whether it's matching the desired state
    * @param desired the resource's desired state

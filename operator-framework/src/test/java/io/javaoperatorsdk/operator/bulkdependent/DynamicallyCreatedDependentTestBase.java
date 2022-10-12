@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestSpec;
 import io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterDynamicallyCreatedDependentResource;
 import io.javaoperatorsdk.operator.sample.bulkdependent.DynamicDependentTestCustomResource;
+import io.javaoperatorsdk.operator.sample.bulkdependent.DynamicDependentTestSpec;
 
 import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterDynamicallyCreatedDependentResource.LABEL_KEY;
 import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterDynamicallyCreatedDependentResource.LABEL_VALUE;
@@ -78,7 +78,7 @@ public abstract class DynamicallyCreatedDependentTestBase {
     DynamicDependentTestCustomResource cr = new DynamicDependentTestCustomResource();
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName(TEST_RESOURCE_NAME);
-    cr.setSpec(new BulkDependentTestSpec());
+    cr.setSpec(new DynamicDependentTestSpec());
     cr.getSpec().setNumberOfResources(INITIAL_NUMBER_OF_CONFIG_MAPS);
     cr.getSpec().setAdditionalData(INITIAL_ADDITIONAL_DATA);
     return cr;

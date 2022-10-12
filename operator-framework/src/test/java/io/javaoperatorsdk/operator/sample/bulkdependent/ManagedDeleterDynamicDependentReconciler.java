@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 @ControllerConfiguration(
     dependents = @Dependent(type = ConfigMapDeleterDynamicallyCreatedDependentResource.class))
-public class ManagedDeleterBulkReconciler
+public class ManagedDeleterDynamicDependentReconciler
     implements Reconciler<DynamicDependentTestCustomResource> {
   @Override
   public UpdateControl<DynamicDependentTestCustomResource> reconcile(

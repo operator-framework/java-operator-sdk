@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent;
 
-public class BulkDependentTestSpec {
+public class DynamicDependentTestSpec {
 
   private Integer numberOfResources;
   private String additionalData;
@@ -9,12 +9,12 @@ public class BulkDependentTestSpec {
     return numberOfResources;
   }
 
-  public BulkDependentTestSpec setNumberOfResources(Integer numberOfResources) {
+  public DynamicDependentTestSpec setNumberOfResources(Integer numberOfResources) {
     this.numberOfResources = numberOfResources;
     return this;
   }
 
-  public BulkDependentTestSpec setAdditionalData(String additionalData) {
+  public DynamicDependentTestSpec setAdditionalData(String additionalData) {
     this.additionalData = additionalData;
     return this;
   }

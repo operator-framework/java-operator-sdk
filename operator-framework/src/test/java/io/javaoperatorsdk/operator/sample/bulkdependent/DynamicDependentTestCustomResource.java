@@ -10,6 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("sbd")
 public class DynamicDependentTestCustomResource
-    extends CustomResource<BulkDependentTestSpec, Void>
+    extends CustomResource<DynamicDependentTestSpec, Void>
     implements Namespaced {
 }
