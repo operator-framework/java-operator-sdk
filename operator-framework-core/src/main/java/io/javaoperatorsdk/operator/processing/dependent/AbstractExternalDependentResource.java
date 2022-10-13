@@ -20,23 +20,18 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
       handleExplicitIDStoring(primary, created, context);
     }
   }
+  // todo delete
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   protected void handleExplicitIDStoring(P primary, R created, Context<P> context) {
     ExplicitIDHandler<R, P, ?> handler = (ExplicitIDHandler) this;
     HasMetadata resource = handler.stateResource(primary, created);
     var stateResource = handler.getKubernetesClient().resource(resource).create();
-
-    String name = handler.eventSourceName().orElse(null);
-    ResourceEventSource<R, P> eventSource;
-    if (name == null) {
-      eventSource =
-          context.eventSourceRetriever()
-              .getResourceEventSourceFor((Class<R>) resource.getClass());
-    } else {
-      eventSource = context.eventSourceRetriever()
-          .getResourceEventSourceFor((Class<R>) resource.getClass(), name);
-    }
+    var eventSource = handler.eventSourceName()
+        .map(n -> context.eventSourceRetriever()
+            .getResourceEventSourceFor((Class<R>) resource.getClass(), n))
+        .orElseGet(() -> context.eventSourceRetriever()
+            .getResourceEventSourceFor((Class<R>) resource.getClass()));
     if (eventSource instanceof RecentOperationCacheFiller) {
       ((RecentOperationCacheFiller) eventSource)
           .handleRecentResourceCreate(ResourceID.fromResource(primary), stateResource);
