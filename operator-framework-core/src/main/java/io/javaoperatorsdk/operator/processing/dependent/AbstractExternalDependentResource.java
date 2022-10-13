@@ -6,6 +6,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCache
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
+import java.util.Optional;
+
 public abstract class AbstractExternalDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
     extends AbstractEventSourceHolderDependentResource<R, P, T> {
 
@@ -20,7 +22,26 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
       handleExplicitIDStoring(primary, created, context);
     }
   }
-  // todo delete
+
+  @Override
+  public void delete(P primary, Context<P> context) {
+    if (this instanceof ExplicitIDHandler) {
+      var secondary = getSecondaryResource(primary,context);
+      super.delete(primary, context);
+      // deletes the state after the resource is deleted
+      handleExplicitIDDelete(primary,secondary.orElse(null),context);
+    } else {
+      super.delete(primary, context);
+    }
+
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private void handleExplicitIDDelete(P primary, R secondary, Context<P> context) {
+    ExplicitIDHandler<R, P, ?> handler = (ExplicitIDHandler) this;
+    var res = handler.stateResource(primary,secondary);
+    handler.getKubernetesClient().resource(res).delete();
+  }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   protected void handleExplicitIDStoring(P primary, R created, Context<P> context) {
