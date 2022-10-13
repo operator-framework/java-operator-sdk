@@ -38,14 +38,16 @@ class InformerWrapper<T extends HasMetadata>
     try {
       informer.run();
     } catch (Exception e) {
-      final var apiTypeClass = informer.getApiTypeClass();
-      final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
-      final var version = HasMetadata.getVersion(apiTypeClass);
-      log.error("Couldn't start informer for " + fullResourceName + "/" + version + " resources",
-          e);
-      ReconcilerUtils.handleKubernetesClientException(e, fullResourceName);
+      log.error("Couldn't start informer for " + versionedFullResourceName() + " resources", e);
+      ReconcilerUtils.handleKubernetesClientException(e,
+          HasMetadata.getFullResourceName(informer.getApiTypeClass()));
       throw e;
     }
+  }
+
+  private String versionedFullResourceName() {
+    final var apiTypeClass = informer.getApiTypeClass();
+    return ReconcilerUtils.getResourceTypeNameWithVersion(apiTypeClass);
   }
 
   @Override
@@ -91,5 +93,10 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public List<T> byIndex(String indexName, String indexKey) {
     return informer.getIndexer().byIndex(indexName, indexKey);
+  }
+
+  @Override
+  public String toString() {
+    return "InformerWrapper [" + versionedFullResourceName() + "] (" + informer + ')';
   }
 }
