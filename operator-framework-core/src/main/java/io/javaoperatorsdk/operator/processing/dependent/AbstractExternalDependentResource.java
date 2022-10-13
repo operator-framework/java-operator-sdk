@@ -32,15 +32,15 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
     if (name == null) {
       eventSource =
           context.eventSourceRetriever()
-              .<R>getResourceEventSourceFor((Class<R>) resource.getClass());
+              .getResourceEventSourceFor((Class<R>) resource.getClass());
     } else {
       eventSource = context.eventSourceRetriever()
-          .<R>getResourceEventSourceFor((Class<R>) resource.getClass(), name);
+          .getResourceEventSourceFor((Class<R>) resource.getClass(), name);
     }
     if (eventSource instanceof RecentOperationCacheFiller) {
       ((RecentOperationCacheFiller) eventSource)
           .handleRecentResourceCreate(ResourceID.fromResource(primary), stateResource);
     }
   }
-  
+
 }
