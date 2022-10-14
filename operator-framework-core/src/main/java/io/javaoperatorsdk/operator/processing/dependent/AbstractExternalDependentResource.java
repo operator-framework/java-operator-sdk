@@ -3,16 +3,27 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-
-import java.util.Optional;
 
 public abstract class AbstractExternalDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
     extends AbstractEventSourceHolderDependentResource<R, P, T> {
 
+  private EventSource externalStateEventSource;
+  private boolean isExplicitIDHandler;
+  private ExplicitIDHandler<R, P, ?> explicitIDHandler;
+
+
   protected AbstractExternalDependentResource(Class<R> resourceType) {
     super(resourceType);
+  }
+
+  @Override
+  public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
+    super.resolveEventSource(eventSourceRetriever);
+    // TODO
   }
 
   @Override
@@ -26,20 +37,19 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   @Override
   public void delete(P primary, Context<P> context) {
     if (this instanceof ExplicitIDHandler) {
-      var secondary = getSecondaryResource(primary,context);
+      var secondary = getSecondaryResource(primary, context);
       super.delete(primary, context);
       // deletes the state after the resource is deleted
-      handleExplicitIDDelete(primary,secondary.orElse(null),context);
+      handleExplicitIDDelete(primary, secondary.orElse(null), context);
     } else {
       super.delete(primary, context);
     }
-
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private void handleExplicitIDDelete(P primary, R secondary, Context<P> context) {
     ExplicitIDHandler<R, P, ?> handler = (ExplicitIDHandler) this;
-    var res = handler.stateResource(primary,secondary);
+    var res = handler.stateResource(primary, secondary);
     handler.getKubernetesClient().resource(res).delete();
   }
 

@@ -15,7 +15,7 @@ public interface ExplicitIDHandler<R, P extends HasMetadata, S extends HasMetada
 
   S stateResource(P primary, R resource);
 
-  // todo for the two phase resource create
+  // TODO for the two phase resource create
   // void postIDStored(P primary, R resource, S stateResource);
 
 }
