@@ -8,8 +8,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachi
 
 @Ignore
 public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
-    extends
-    AbstractExternalDependentResource<R, P, ExternalResourceCachingEventSource<R, P>>
+    extends AbstractExternalDependentResource<R, P, ExternalResourceCachingEventSource<R, P>>
     implements CacheKeyMapper<R> {
 
   public static final int DEFAULT_POLLING_PERIOD = 5000;

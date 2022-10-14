@@ -1,29 +1,43 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 public abstract class AbstractExternalDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
     extends AbstractEventSourceHolderDependentResource<R, P, T> {
 
-  private EventSource externalStateEventSource;
-  private boolean isExplicitIDHandler;
+
+  private final boolean isExplicitIDHandler = this instanceof ExplicitIDHandler;
   private ExplicitIDHandler<R, P, ?> explicitIDHandler;
+  private InformerEventSource<?, P> externalStateEventSource;
+  private KubernetesClient kubernetesClient;
 
-
+  @SuppressWarnings("unchecked")
   protected AbstractExternalDependentResource(Class<R> resourceType) {
     super(resourceType);
+    if (isExplicitIDHandler) {
+      explicitIDHandler = (ExplicitIDHandler<R, P, ?>) this;
+    }
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
     super.resolveEventSource(eventSourceRetriever);
-    // TODO
+    if (isExplicitIDHandler) {
+      externalStateEventSource = (InformerEventSource<?, P>) explicitIDHandler.eventSourceName()
+          .map(n -> eventSourceRetriever
+              .getResourceEventSourceFor((Class<R>) explicitIDHandler.stateResourceClass(), n))
+          .orElseGet(() -> eventSourceRetriever
+              .getResourceEventSourceFor((Class<R>) explicitIDHandler.stateResourceClass()));
+    }
+
   }
 
   @Override
@@ -36,7 +50,7 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
 
   @Override
   public void delete(P primary, Context<P> context) {
-    if (this instanceof ExplicitIDHandler) {
+    if (isExplicitIDHandler) {
       var secondary = getSecondaryResource(primary, context);
       super.delete(primary, context);
       // deletes the state after the resource is deleted
@@ -46,27 +60,31 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
     }
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
   private void handleExplicitIDDelete(P primary, R secondary, Context<P> context) {
-    ExplicitIDHandler<R, P, ?> handler = (ExplicitIDHandler) this;
-    var res = handler.stateResource(primary, secondary);
-    handler.getKubernetesClient().resource(res).delete();
+    var res = explicitIDHandler.stateResource(primary, secondary);
+    explicitIDHandler.getKubernetesClient().resource(res).delete();
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   protected void handleExplicitIDStoring(P primary, R created, Context<P> context) {
-    ExplicitIDHandler<R, P, ?> handler = (ExplicitIDHandler) this;
-    HasMetadata resource = handler.stateResource(primary, created);
-    var stateResource = handler.getKubernetesClient().resource(resource).create();
-    var eventSource = handler.eventSourceName()
-        .map(n -> context.eventSourceRetriever()
-            .getResourceEventSourceFor((Class<R>) resource.getClass(), n))
-        .orElseGet(() -> context.eventSourceRetriever()
-            .getResourceEventSourceFor((Class<R>) resource.getClass()));
-    if (eventSource instanceof RecentOperationCacheFiller) {
-      ((RecentOperationCacheFiller) eventSource)
+    HasMetadata resource = explicitIDHandler.stateResource(primary, created);
+    var stateResource = explicitIDHandler.getKubernetesClient().resource(resource).create();
+    if (externalStateEventSource instanceof RecentOperationCacheFiller) {
+      ((RecentOperationCacheFiller) externalStateEventSource)
           .handleRecentResourceCreate(ResourceID.fromResource(primary), stateResource);
     }
   }
 
+  protected InformerEventSource getExternalStateEventSource() {
+    return externalStateEventSource;
+  }
+
+  // TODO what with this?
+  public KubernetesClient getKubernetesClient() {
+    return kubernetesClient;
+  }
+
+  public void setKubernetesClient(KubernetesClient kubernetesClient) {
+    this.kubernetesClient = kubernetesClient;
+  }
 }

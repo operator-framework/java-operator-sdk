@@ -13,6 +13,8 @@ public interface ExplicitIDHandler<R, P extends HasMetadata, S extends HasMetada
     return Optional.empty();
   }
 
+  Class<S> stateResourceClass();
+
   S stateResource(P primary, R resource);
 
   // TODO for the two phase resource create
