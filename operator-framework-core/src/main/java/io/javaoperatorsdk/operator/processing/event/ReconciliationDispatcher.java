@@ -173,7 +173,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
           @Override
           public boolean isLastAttempt() {
-            return controller.getConfiguration().getRetry() == null;
+            // on first try, we can only rely on the configured behavior
+            // if enabled, will at least produce one RetryExecution
+            return !controller.getConfiguration().getRetry().enabled();
           }
         });
         ((DefaultContext<P>) context).setRetryInfo(retryInfo);

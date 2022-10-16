@@ -5,4 +5,8 @@ public interface Retry {
 
   RetryExecution initExecution();
 
+  default boolean enabled() {
+    return false;
+  }
+
 }
