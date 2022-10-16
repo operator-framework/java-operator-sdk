@@ -14,9 +14,9 @@ import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerT
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class ErrorStatusHandlerIT {
+class ErrorStatusHandlerLastAttemptIT {
 
-  public static final int MAX_RETRY_ATTEMPTS = 3;
+  public static final int MAX_RETRY_ATTEMPTS = 0;
   ErrorStatusHandlerTestReconciler reconciler = new ErrorStatusHandlerTestReconciler();
 
   @RegisterExtension
@@ -29,7 +29,7 @@ class ErrorStatusHandlerIT {
   @Test
   void testErrorMessageSetEventually() {
     ErrorStatusHandlerTestCustomResource resource =
-        operator.create(createCustomResource());
+        operator.create(ErrorStatusHandlerTestCustomResource.class, createCustomResource());
 
     await()
         .atMost(10, TimeUnit.SECONDS)
@@ -40,11 +40,8 @@ class ErrorStatusHandlerIT {
                   operator.get(ErrorStatusHandlerTestCustomResource.class,
                       resource.getMetadata().getName());
               assertThat(res.getStatus()).isNotNull();
-              for (int i = 0; i < MAX_RETRY_ATTEMPTS + 1; i++) {
-                assertThat(res.getStatus().getMessages())
-                    .contains(ErrorStatusHandlerTestReconciler.ERROR_STATUS_MESSAGE + i
-                        + (i == MAX_RETRY_ATTEMPTS));
-              }
+              assertThat(res.getStatus().getMessages())
+                  .contains(ErrorStatusHandlerTestReconciler.ERROR_STATUS_MESSAGE + 0 + true);
             });
   }
 

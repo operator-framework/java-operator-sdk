@@ -50,7 +50,8 @@ public class ErrorStatusHandlerTestReconciler
     log.info("Setting status.");
     ensureStatusExists(resource);
     resource.getStatus().getMessages()
-        .add(ERROR_STATUS_MESSAGE + context.getRetryInfo().orElseThrow().getAttemptCount());
+        .add(ERROR_STATUS_MESSAGE + context.getRetryInfo().orElseThrow().getAttemptCount()
+            + context.getRetryInfo().get().isLastAttempt());
     return ErrorStatusUpdateControl.updateStatus(resource);
   }
 }
