@@ -26,7 +26,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final String crdName;
   private final String finalizer;
   private final boolean generationAware;
-  private final Retry retry;
+  private final Optional<Retry> retry;
   private final ResourceEventFilter<R> resourceEventFilter;
   private final List<DependentResourceSpec> dependents;
   private final Duration reconciliationMaxInterval;
@@ -40,7 +40,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       String finalizer,
       boolean generationAware,
       Set<String> namespaces,
-      Retry retry,
+      Optional<Retry> retry,
       String labelSelector,
       ResourceEventFilter<R> resourceEventFilter,
       Class<R> resourceClass,
@@ -93,7 +93,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Retry getRetry() {
+  public Optional<Retry> getRetry() {
     return retry;
   }
 

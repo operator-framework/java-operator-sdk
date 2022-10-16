@@ -73,13 +73,13 @@ class EventProcessorTest {
     when(eventSourceManagerMock.getControllerResourceEventSource())
         .thenReturn(controllerResourceEventSourceMock);
     eventProcessor =
-        spy(new EventProcessor(controllerConfiguration(null, rateLimiterMock),
+        spy(new EventProcessor(controllerConfiguration(Optional.empty(), rateLimiterMock),
             reconciliationDispatcherMock,
             eventSourceManagerMock, null));
     eventProcessor.start();
     eventProcessorWithRetry =
         spy(new EventProcessor(
-            controllerConfiguration(GenericRetry.defaultLimitedExponentialRetry(),
+            controllerConfiguration(Optional.of(GenericRetry.defaultLimitedExponentialRetry()),
                 rateLimiterMock),
             reconciliationDispatcherMock, eventSourceManagerMock, null));
     eventProcessorWithRetry.start();
@@ -129,6 +129,20 @@ class EventProcessorTest {
     verify(retryTimerEventSourceMock, times(1))
         .scheduleOnce(eq(ResourceID.fromResource(customResource)),
             eq(RetryConfiguration.DEFAULT_INITIAL_INTERVAL));
+  }
+
+  @Test
+  void doNotSchedulesAnEventRetryOnExceptionIfNoRetry() {
+    TestCustomResource customResource = testCustomResource();
+
+    ExecutionScope executionScope = new ExecutionScope(customResource, null);
+    PostExecutionControl postExecutionControl =
+        PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
+
+    eventProcessor.eventProcessingFinished(executionScope, postExecutionControl);
+
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce(eq(ResourceID.fromResource(customResource)), eq(1000L));
   }
 
   @Test
@@ -264,7 +278,7 @@ class EventProcessorTest {
   void startProcessedMarkedEventReceivedBefore() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     eventProcessor =
-        spy(new EventProcessor(controllerConfiguration(null,
+        spy(new EventProcessor(controllerConfiguration(Optional.empty(),
             LinearRateLimiter.deactivatedRateLimiter()), reconciliationDispatcherMock,
             eventSourceManagerMock,
             metricsMock));
@@ -393,7 +407,7 @@ class EventProcessorTest {
     Retry retry = mock(Retry.class);
     when(retry.initExecution()).thenReturn(mockRetryExecution);
     eventProcessorWithRetry =
-        spy(new EventProcessor(controllerConfiguration(retry,
+        spy(new EventProcessor(controllerConfiguration(Optional.of(retry),
             LinearRateLimiter.deactivatedRateLimiter()), reconciliationDispatcherMock,
             eventSourceManagerMock,
             metricsMock));
@@ -448,7 +462,7 @@ class EventProcessorTest {
     applyTo.getMetadata().setNamespace(id.getNamespace().orElse(null));
   }
 
-  ControllerConfiguration controllerConfiguration(Retry retry, RateLimiter rateLimiter) {
+  ControllerConfiguration controllerConfiguration(Optional<Retry> retry, RateLimiter rateLimiter) {
     ControllerConfiguration res = mock(ControllerConfiguration.class);
     when(res.getName()).thenReturn("Test");
     when(res.getRetry()).thenReturn(retry);

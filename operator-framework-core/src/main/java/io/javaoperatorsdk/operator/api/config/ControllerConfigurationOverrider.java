@@ -29,7 +29,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String finalizer;
   private boolean generationAware;
   private Set<String> namespaces;
-  private Retry retry;
+  private Optional<Retry> retry;
   private String labelSelector;
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
@@ -113,12 +113,17 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
    */
   @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
-    this.retry = GenericRetry.fromConfiguration(retry);
+    this.retry = Optional.of(GenericRetry.fromConfiguration(retry));
     return this;
   }
 
   public ControllerConfigurationOverrider<R> withRetry(Retry retry) {
-    this.retry = retry;
+    this.retry = Optional.of(retry);
+    return this;
+  }
+
+  public ControllerConfigurationOverrider<R> withoutRetry() {
+    this.retry = Optional.empty();
     return this;
   }
 

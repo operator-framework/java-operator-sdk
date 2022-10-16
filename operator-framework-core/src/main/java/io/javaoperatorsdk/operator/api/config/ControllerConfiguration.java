@@ -36,11 +36,11 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
 
   String getAssociatedReconcilerClassName();
 
-  default Retry getRetry() {
+  default Optional<Retry> getRetry() {
     final var configuration = getRetryConfiguration();
-    return !RetryConfiguration.DEFAULT.equals(configuration)
+    return Optional.of(!RetryConfiguration.DEFAULT.equals(configuration)
         ? GenericRetry.fromConfiguration(configuration)
-        : GenericRetry.DEFAULT; // NOSONAR
+        : GenericRetry.DEFAULT); // NOSONAR
   }
 
   /**

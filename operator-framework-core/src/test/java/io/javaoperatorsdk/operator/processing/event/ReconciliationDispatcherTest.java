@@ -110,7 +110,7 @@ class ReconciliationDispatcherTest {
     when(configuration.getFinalizerName()).thenReturn(DEFAULT_FINALIZER);
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn(resourceClass);
-    when(configuration.getRetry()).thenReturn(new GenericRetry());
+    when(configuration.getRetry()).thenReturn(Optional.of(new GenericRetry()));
     when(configuration.maxReconciliationInterval())
         .thenReturn(Optional.of(Duration.ofHours(RECONCILIATION_MAX_INTERVAL)));
 

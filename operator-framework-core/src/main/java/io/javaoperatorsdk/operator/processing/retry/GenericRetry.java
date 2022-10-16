@@ -15,6 +15,11 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
     return (GenericRetry) DEFAULT;
   }
 
+  /**
+   * @deprecated Use the {@link NoRetry} annotation instead or override configuration with
+   *             withoutRetry.
+   */
+  @Deprecated(forRemoval = true)
   public static GenericRetry noRetry() {
     return new GenericRetry().setMaxAttempts(0);
   }
@@ -94,6 +99,11 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
 
   @Override
   public void initFrom(GradualRetry configuration) {
+    if (configuration.maxAttempts() == 0) {
+      throw new IllegalArgumentException(
+          "maxAttempts must be non-zero. Use NoRetry to disable retry.");
+    }
+
     this.initialInterval = configuration.initialInterval();
     this.maxAttempts = configuration.maxAttempts();
     this.intervalMultiplier = configuration.intervalMultiplier();

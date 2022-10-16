@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -7,7 +8,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerTestCustomResource;
 import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerTestReconciler;
 
@@ -22,14 +22,13 @@ class ErrorStatusHandlerLastAttemptIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(reconciler,
-              new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
+          .withReconciler(reconciler, Optional.empty())
           .build();
 
   @Test
   void testErrorMessageSetEventually() {
     ErrorStatusHandlerTestCustomResource resource =
-        operator.create(ErrorStatusHandlerTestCustomResource.class, createCustomResource());
+        operator.create(createCustomResource());
 
     await()
         .atMost(10, TimeUnit.SECONDS)

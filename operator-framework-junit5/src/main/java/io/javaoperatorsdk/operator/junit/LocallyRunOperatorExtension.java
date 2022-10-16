@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -136,7 +137,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       }
 
       if (ref.retry != null) {
-        oconfig.withRetry(ref.retry);
+        ref.retry.ifPresentOrElse(r -> oconfig.withRetry(r), () -> oconfig.withoutRetry());
       }
       if (ref.controllerConfigurationOverrider != null) {
         ref.controllerConfigurationOverrider.accept(oconfig);
@@ -197,7 +198,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     localPortForwards.clear();
   }
 
-  @SuppressWarnings("rawtypes")
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<ReconcilerSpec> reconcilers;
     private final List<PortForwardSpec> portForwards;
@@ -213,30 +213,37 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     public Builder withReconciler(
         Reconciler value, Consumer<ControllerConfigurationOverrider> configurationOverrider) {
-      return withReconciler(value, null, configurationOverrider);
+      return withReconciler(value, (Retry) null, configurationOverrider);
     }
 
     public Builder withReconciler(
         Reconciler value,
         Retry retry,
         Consumer<ControllerConfigurationOverrider> configurationOverrider) {
+      return withReconciler(value, Optional.ofNullable(null), configurationOverrider);
+    }
+
+    public Builder withReconciler(
+        Reconciler value,
+        Optional<Retry> retry,
+        Consumer<ControllerConfigurationOverrider> configurationOverrider) {
       reconcilers.add(new ReconcilerSpec(value, retry, configurationOverrider));
       return this;
     }
 
-    @SuppressWarnings("rawtypes")
     public Builder withReconciler(Reconciler value) {
-      reconcilers.add(new ReconcilerSpec(value, null));
-      return this;
+      return withReconciler(value, (Retry) null);
     }
 
-    @SuppressWarnings("rawtypes")
     public Builder withReconciler(Reconciler value, Retry retry) {
+      return withReconciler(value, Optional.ofNullable(retry));
+    }
+
+    public Builder withReconciler(Reconciler value, Optional<Retry> retry) {
       reconcilers.add(new ReconcilerSpec(value, retry));
       return this;
     }
 
-    @SuppressWarnings("rawtypes")
     public Builder withReconciler(Class<? extends Reconciler> value) {
       try {
         reconcilers.add(new ReconcilerSpec(value.getConstructor().newInstance(), null));
@@ -318,16 +325,16 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   @SuppressWarnings("rawtypes")
   private static class ReconcilerSpec {
     final Reconciler reconciler;
-    final Retry retry;
+    final Optional<Retry> retry;
     final Consumer<ControllerConfigurationOverrider> controllerConfigurationOverrider;
 
-    public ReconcilerSpec(Reconciler reconciler, Retry retry) {
+    public ReconcilerSpec(Reconciler reconciler, Optional<Retry> retry) {
       this(reconciler, retry, null);
     }
 
     public ReconcilerSpec(
         Reconciler reconciler,
-        Retry retry,
+        Optional<Retry> retry,
         Consumer<ControllerConfigurationOverrider> controllerConfigurationOverrider) {
       this.reconciler = reconciler;
       this.retry = retry;

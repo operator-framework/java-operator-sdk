@@ -40,7 +40,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
   private volatile boolean running;
   private final ControllerConfiguration<?> controllerConfiguration;
   private final ReconciliationDispatcher<R> reconciliationDispatcher;
-  private final Retry retry;
+  private final Optional<Retry> retry;
   private final ExecutorService executor;
   private final Metrics metrics;
   private final Cache<R> cache;
@@ -346,7 +346,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
     final var state = resourceStateManager.getOrCreate(executionScope.getResourceID());
     RetryExecution retryExecution = state.getRetry();
     if (retryExecution == null) {
-      retryExecution = retry.initExecution();
+      retryExecution = retry.map(r -> r.initExecution()).orElseThrow();
       state.setRetry(retryExecution);
     }
     return state;
@@ -367,7 +367,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
   }
 
   private boolean isRetryConfigured() {
-    return retry != null;
+    return retry.isPresent();
   }
 
   @Override

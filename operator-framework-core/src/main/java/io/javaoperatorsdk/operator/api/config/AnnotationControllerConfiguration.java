@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.retry.NoRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -150,10 +151,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public Retry getRetry() {
+  public Optional<Retry> getRetry() {
     final Class<? extends Retry> retryClass = annotation.retry();
-    return Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
-        Utils.contextFor(this, null, null), this::configureFromAnnotatedReconciler);
+    if (NoRetry.class.equals(retryClass)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
+        Utils.contextFor(this, null, null), this::configureFromAnnotatedReconciler));
   }
 
 

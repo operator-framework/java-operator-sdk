@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
+import io.javaoperatorsdk.operator.processing.retry.NoRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
@@ -141,7 +142,7 @@ class AnnotationControllerConfigurationTest {
   @Test
   void checkDefaultRateAndRetryConfigurations() {
     var config = new AnnotationControllerConfiguration<>(new NoDepReconciler());
-    final var retry = assertInstanceOf(GenericRetry.class, config.getRetry());
+    final var retry = assertInstanceOf(GenericRetry.class, config.getRetry().get());
     assertEquals(GradualRetry.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
     assertEquals(GradualRetry.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
     assertEquals(GradualRetry.DEFAULT_INITIAL_INTERVAL, retry.getInitialInterval());
@@ -155,7 +156,7 @@ class AnnotationControllerConfigurationTest {
   void configuringRateAndRetryViaAnnotationsShouldWork() {
     var config =
         new AnnotationControllerConfiguration<>(new ConfigurableRateLimitAndRetryReconciler());
-    final var retry = config.getRetry();
+    final var retry = config.getRetry().get();
     final var testRetry = assertInstanceOf(TestRetry.class, retry);
     assertEquals(12, testRetry.getValue());
 
@@ -167,7 +168,7 @@ class AnnotationControllerConfigurationTest {
   @Test
   void checkingRetryingGraduallyWorks() {
     var config = new AnnotationControllerConfiguration<>(new CheckRetryingGraduallyConfiguration());
-    final var retry = config.getRetry();
+    final var retry = config.getRetry().get();
     final var genericRetry = assertInstanceOf(GenericRetry.class, retry);
     assertEquals(CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
         genericRetry.getInitialInterval());
@@ -175,6 +176,13 @@ class AnnotationControllerConfigurationTest {
     assertEquals(CheckRetryingGraduallyConfiguration.INTERVAL_MULTIPLIER,
         genericRetry.getIntervalMultiplier());
     assertEquals(CheckRetryingGraduallyConfiguration.MAX_INTERVAL, genericRetry.getMaxInterval());
+  }
+
+  @Test
+  void checkingNoRetryWorks() {
+    var config = new AnnotationControllerConfiguration<>(new CheckNoRetryConfiguration());
+    final var retry = config.getRetry();
+    assertTrue(retry.isEmpty());
   }
 
   @Test
@@ -334,6 +342,16 @@ class AnnotationControllerConfigurationTest {
     public static final int INITIAL_INTERVAL = 1000;
     public static final int INTERVAL_MULTIPLIER = 2;
     public static final int MAX_INTERVAL = 60000;
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return UpdateControl.noUpdate();
+    }
+  }
+
+  @ControllerConfiguration(retry = NoRetry.class)
+  private static class CheckNoRetryConfiguration implements Reconciler<ConfigMap> {
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
