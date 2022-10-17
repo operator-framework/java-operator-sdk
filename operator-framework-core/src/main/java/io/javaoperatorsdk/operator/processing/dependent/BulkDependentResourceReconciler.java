@@ -28,7 +28,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     Map<String, R> actualResources = bulkDependentResource.getSecondaryResources(primary, context);
 
     // remove existing resources that are not needed anymore according to the primary state
-    deleteBulkResourcesIfRequired(desiredResources.keySet(), actualResources, primary, context);
+    deleteExtraResources(desiredResources.keySet(), actualResources, primary, context);
 
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
     final var updatable = bulkDependentResource instanceof Updater;
@@ -45,14 +45,14 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
   @Override
   public void delete(P primary, Context<P> context) {
     var actualResources = bulkDependentResource.getSecondaryResources(primary, context);
-    deleteBulkResourcesIfRequired(Collections.emptySet(), actualResources, primary, context);
+    deleteExtraResources(Collections.emptySet(), actualResources, primary, context);
   }
 
-  private void deleteBulkResourcesIfRequired(Set<String> expectedKeys,
+  private void deleteExtraResources(Set<String> expectedKeys,
       Map<String, R> actualResources, P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!expectedKeys.contains(key)) {
-        bulkDependentResource.deleteBulkResource(primary, value, key, context);
+        bulkDependentResource.deleteTargetResource(primary, value, key, context);
       }
     });
   }
