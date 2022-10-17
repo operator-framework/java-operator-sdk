@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
@@ -59,7 +60,9 @@ class EventSourceManagerTest {
   @Test
   public void startCascadesToEventSources() {
     EventSource eventSource = mock(EventSource.class);
+    when(eventSource.priority()).thenReturn(EventSourceStartPriority.DEFAULT);
     EventSource eventSource2 = mock(TimerEventSource.class);
+    when(eventSource2.priority()).thenReturn(EventSourceStartPriority.DEFAULT);
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
 
