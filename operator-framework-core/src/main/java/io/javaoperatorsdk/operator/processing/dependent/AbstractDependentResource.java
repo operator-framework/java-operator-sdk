@@ -154,7 +154,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     dependentResourceReconciler.delete(primary, context);
   }
 
-  protected void handleDelete(P primary, Context<P> context) {
+  protected void handleDelete(P primary, R secondary, Context<P> context) {
     throw new IllegalStateException("delete method be implemented if Deleter trait is supported");
   }
 

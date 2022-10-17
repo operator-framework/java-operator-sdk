@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -35,12 +37,12 @@ class ExternalStateDependentIT {
     var resource = operator.create(testResource());
     assertResourcesCreated(resource, INITIAL_TEST_DATA);
 
-    // resource.getSpec().setData(UPDATED_DATA);
-    // operator.replace(resource);
-    // assertResourcesCreated(resource, UPDATED_DATA);
-    //
-    // operator.delete(resource);
-    // assertResourcesDeleted(resource);
+    resource.getSpec().setData(UPDATED_DATA);
+    operator.replace(resource);
+    assertResourcesCreated(resource, UPDATED_DATA);
+
+    operator.delete(resource);
+    assertResourcesDeleted(resource);
   }
 
   private void assertResourcesDeleted(ExternalStateDependentCustomResource resource) {
@@ -54,7 +56,7 @@ class ExternalStateDependentIT {
 
   private void assertResourcesCreated(ExternalStateDependentCustomResource resource,
       String initialTestData) {
-    await().untilAsserted(() -> {
+    await().pollInterval(Duration.ofMillis(700)).untilAsserted(() -> {
       var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
       var resources = externalService.listResources();
       assertThat(resources).hasSize(1);

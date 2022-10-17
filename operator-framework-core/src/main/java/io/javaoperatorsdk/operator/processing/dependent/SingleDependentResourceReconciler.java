@@ -21,6 +21,7 @@ class SingleDependentResourceReconciler<R, P extends HasMetadata>
 
   @Override
   public void delete(P primary, Context<P> context) {
-    instance.handleDelete(primary, context);
+    var secondary = instance.getSecondaryResource(primary, context);
+    instance.handleDelete(primary, secondary.orElse(null), context);
   }
 }

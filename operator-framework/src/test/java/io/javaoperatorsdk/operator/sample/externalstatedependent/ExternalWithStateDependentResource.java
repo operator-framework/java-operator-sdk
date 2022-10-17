@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.ExplicitIDHandler;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
@@ -19,12 +20,13 @@ import static io.javaoperatorsdk.operator.sample.externalstatedependent.External
 public class ExternalWithStateDependentResource extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateDependentCustomResource>
     implements
-    ExplicitIDHandler<ExternalResource, ExternalStateDependentCustomResource, ConfigMap> {
+    ExplicitIDHandler<ExternalResource, ExternalStateDependentCustomResource, ConfigMap>,
+    Updater<ExternalResource, ExternalStateDependentCustomResource> {
 
-  ExternalIDGenServiceMock externalService = new ExternalIDGenServiceMock();
+  ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   public ExternalWithStateDependentResource() {
-    super(ExternalResource.class, 300);
+    super(ExternalResource.class, 3333300);
   }
 
   @Override
@@ -41,7 +43,8 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  protected ExternalResource desired(ExternalStateDependentCustomResource primary, Context<ExternalStateDependentCustomResource> context) {
+  protected ExternalResource desired(ExternalStateDependentCustomResource primary,
+      Context<ExternalStateDependentCustomResource> context) {
     return new ExternalResource(primary.getSpec().getData());
   }
 
@@ -72,8 +75,23 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  public Matcher.Result<ExternalResource> match(ExternalResource resource, ExternalStateDependentCustomResource primary,
-                                                Context<ExternalStateDependentCustomResource> context) {
+  public ExternalResource update(ExternalResource actual,
+      ExternalResource desired, ExternalStateDependentCustomResource primary,
+      Context<ExternalStateDependentCustomResource> context) {
+    return externalService.update(new ExternalResource(actual.getId(), desired.getData()));
+  }
+
+  @Override
+  public Matcher.Result<ExternalResource> match(ExternalResource resource,
+      ExternalStateDependentCustomResource primary,
+      Context<ExternalStateDependentCustomResource> context) {
     return Matcher.Result.nonComputed(resource.getData().equals(primary.getSpec().getData()));
+  }
+
+  @Override
+  protected void handleDelete(ExternalStateDependentCustomResource primary,
+      ExternalResource secondary,
+      Context<ExternalStateDependentCustomResource> context) {
+    externalService.delete(secondary.getId());
   }
 }
