@@ -20,5 +20,7 @@ public interface EventSource extends LifecycleAware {
    */
   void setEventHandler(EventHandler handler);
 
-
+  default EventSourceStartPriority priority() {
+    return EventSourceStartPriority.DEFAULT;
+  }
 }
