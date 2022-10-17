@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
@@ -63,7 +64,12 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
-    eventSources.additionalNamedEventSources().parallel().forEach(this::startEventSource);
+    eventSources.additionalNamedEventSources()
+        .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
+        .parallel().forEach(this::startEventSource);
+    eventSources.additionalNamedEventSources()
+        .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
+        .parallel().forEach(this::startEventSource);
   }
 
   @Override
