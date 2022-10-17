@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
 
 class NamedEventSource implements EventSource {
 
@@ -56,5 +57,10 @@ class NamedEventSource implements EventSource {
   @Override
   public int hashCode() {
     return Objects.hash(original, name);
+  }
+
+  @Override
+  public EventSourceStartPriority priority() {
+    return original.priority();
   }
 }
