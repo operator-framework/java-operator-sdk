@@ -4,8 +4,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 /**
- * Helper for the Bulk Dependent Resources to make it more explicit that bulk needs to only
- * implement the index aware match method.
+ * Helper for the buld Dependent Resources to make it more explicit that such dependents only to
+ * implement {@link BulkDependentResource#match(Object,Object,HasMetadata,Context)}
  *
  * @param <R> secondary resource type
  * @param <P> primary resource type
