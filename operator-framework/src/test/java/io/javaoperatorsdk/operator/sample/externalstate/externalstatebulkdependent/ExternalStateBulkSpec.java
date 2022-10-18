@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.externalstatebulkdependent;
+package io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent;
 
 public class ExternalStateBulkSpec {
 

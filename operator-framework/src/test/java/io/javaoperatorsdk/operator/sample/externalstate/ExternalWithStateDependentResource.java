@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.externalstatedependent;
+package io.javaoperatorsdk.operator.sample.externalstate;
 
 import java.util.Collections;
 import java.util.Map;
@@ -16,13 +16,13 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePoll
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 
-import static io.javaoperatorsdk.operator.sample.externalstatedependent.ExternalStateDependentReconciler.ID_KEY;
+import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
 
 public class ExternalWithStateDependentResource extends
-    PerResourcePollingDependentResource<ExternalResource, ExternalStateDependentCustomResource>
+    PerResourcePollingDependentResource<ExternalResource, ExternalStateCustomResource>
     implements
-    ExplicitIDHandler<ExternalResource, ExternalStateDependentCustomResource, ConfigMap>,
-    Updater<ExternalResource, ExternalStateDependentCustomResource> {
+    ExplicitIDHandler<ExternalResource, ExternalStateCustomResource, ConfigMap>,
+    Updater<ExternalResource, ExternalStateCustomResource> {
 
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
@@ -33,7 +33,7 @@ public class ExternalWithStateDependentResource extends
   @Override
   @SuppressWarnings("unchecked")
   public Set<ExternalResource> fetchResources(
-      ExternalStateDependentCustomResource primaryResource) {
+      ExternalStateCustomResource primaryResource) {
     Optional<ConfigMap> configMapOptional =
         getExternalStateEventSource().getSecondaryResource(primaryResource);
 
@@ -45,8 +45,8 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  protected ExternalResource desired(ExternalStateDependentCustomResource primary,
-      Context<ExternalStateDependentCustomResource> context) {
+  protected ExternalResource desired(ExternalStateCustomResource primary,
+      Context<ExternalStateCustomResource> context) {
     return new ExternalResource(primary.getSpec().getData());
   }
 
@@ -56,7 +56,7 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  public ConfigMap stateResource(ExternalStateDependentCustomResource primary,
+  public ConfigMap stateResource(ExternalStateCustomResource primary,
       ExternalResource resource) {
     ConfigMap configMap = new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
@@ -71,29 +71,29 @@ public class ExternalWithStateDependentResource extends
 
   @Override
   public ExternalResource create(ExternalResource desired,
-      ExternalStateDependentCustomResource primary,
-      Context<ExternalStateDependentCustomResource> context) {
+      ExternalStateCustomResource primary,
+      Context<ExternalStateCustomResource> context) {
     return externalService.create(desired);
   }
 
   @Override
   public ExternalResource update(ExternalResource actual,
-      ExternalResource desired, ExternalStateDependentCustomResource primary,
-      Context<ExternalStateDependentCustomResource> context) {
+      ExternalResource desired, ExternalStateCustomResource primary,
+      Context<ExternalStateCustomResource> context) {
     return externalService.update(new ExternalResource(actual.getId(), desired.getData()));
   }
 
   @Override
   public Matcher.Result<ExternalResource> match(ExternalResource resource,
-      ExternalStateDependentCustomResource primary,
-      Context<ExternalStateDependentCustomResource> context) {
+      ExternalStateCustomResource primary,
+      Context<ExternalStateCustomResource> context) {
     return Matcher.Result.nonComputed(resource.getData().equals(primary.getSpec().getData()));
   }
 
   @Override
-  protected void handleDelete(ExternalStateDependentCustomResource primary,
+  protected void handleDelete(ExternalStateCustomResource primary,
       ExternalResource secondary,
-      Context<ExternalStateDependentCustomResource> context) {
+      Context<ExternalStateCustomResource> context) {
     externalService.delete(secondary.getId());
   }
 }

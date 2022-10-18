@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.externalstatebulkdependent;
+package io.javaoperatorsdk.operator.sample.externalstate;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -11,20 +11,19 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(
-    dependents = @Dependent(type = ExternalWithStateBulkDependentResource.class))
-public class ExternalStateBulkDependentReconciler
-    implements Reconciler<ExternalStateBulkDependentCustomResource>,
-    EventSourceInitializer<ExternalStateBulkDependentCustomResource>,
+@ControllerConfiguration(dependents = @Dependent(type = ExternalWithStateDependentResource.class))
+public class ExternalStateDependentReconciler
+    implements Reconciler<ExternalStateCustomResource>,
+    EventSourceInitializer<ExternalStateCustomResource>,
     TestExecutionInfoProvider {
 
   public static final String ID_KEY = "id";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<ExternalStateBulkDependentCustomResource> reconcile(
-      ExternalStateBulkDependentCustomResource resource,
-      Context<ExternalStateBulkDependentCustomResource> context) {
+  public UpdateControl<ExternalStateCustomResource> reconcile(
+      ExternalStateCustomResource resource,
+      Context<ExternalStateCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
     return UpdateControl.noUpdate();
@@ -36,7 +35,7 @@ public class ExternalStateBulkDependentReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(
-      EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
+      EventSourceContext<ExternalStateCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
         InformerConfiguration.from(ConfigMap.class, context).build(), context);
     return EventSourceInitializer.nameEventSources(configMapEventSource);

@@ -7,9 +7,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.externalstatebulkdependent.ExternalStateBulkDependentCustomResource;
-import io.javaoperatorsdk.operator.sample.externalstatebulkdependent.ExternalStateBulkDependentReconciler;
-import io.javaoperatorsdk.operator.sample.externalstatebulkdependent.ExternalStateBulkSpec;
+import io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent.ExternalStateBulkDependentCustomResource;
+import io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent.ExternalStateBulkDependentReconciler;
+import io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent.ExternalStateBulkSpec;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 
 import static org.assertj.core.api.Assertions.assertThat;

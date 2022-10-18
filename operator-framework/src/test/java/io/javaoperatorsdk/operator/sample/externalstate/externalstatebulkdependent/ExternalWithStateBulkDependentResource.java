@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.externalstatebulkdependent;
+package io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePoll
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 
-import static io.javaoperatorsdk.operator.sample.externalstatedependent.ExternalStateDependentReconciler.ID_KEY;
+import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
 
 public class ExternalWithStateBulkDependentResource extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>
