@@ -59,7 +59,7 @@ public class BulkDependentResourceExternalWithState extends
             .build())
         .withData(Map.of(ID_KEY, resource.getId()))
         .build();
-        configMap.addOwnerReference(primary);
+    configMap.addOwnerReference(primary);
     return configMap;
   }
 
