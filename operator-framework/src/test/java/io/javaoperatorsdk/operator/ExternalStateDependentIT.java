@@ -35,11 +35,11 @@ class ExternalStateDependentIT {
   @Test
   void reconcilesResourceWithPersistentState() {
     var resource = operator.create(testResource());
-    assertResourcesCreated(resource, INITIAL_TEST_DATA);
+    assertResources(resource, INITIAL_TEST_DATA);
 
     resource.getSpec().setData(UPDATED_DATA);
     operator.replace(resource);
-    assertResourcesCreated(resource, UPDATED_DATA);
+    assertResources(resource, UPDATED_DATA);
 
     operator.delete(resource);
     assertResourcesDeleted(resource);
@@ -54,7 +54,7 @@ class ExternalStateDependentIT {
     });
   }
 
-  private void assertResourcesCreated(ExternalStateDependentCustomResource resource,
+  private void assertResources(ExternalStateDependentCustomResource resource,
       String initialTestData) {
     await().pollInterval(Duration.ofMillis(700)).untilAsserted(() -> {
       var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());

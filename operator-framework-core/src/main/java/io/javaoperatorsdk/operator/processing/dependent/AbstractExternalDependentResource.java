@@ -14,6 +14,7 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
 
 
   private final boolean isExplicitIDHandler = this instanceof ExplicitIDHandler;
+  private final boolean isBulkDependentResource = this instanceof BulkDependentResource;
   private ExplicitIDHandler<R, P, ?> explicitIDHandler;
   private InformerEventSource<?, P> externalStateEventSource;
   private KubernetesClient kubernetesClient;
@@ -50,7 +51,7 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
 
   @Override
   public void delete(P primary, Context<P> context) {
-    if (isExplicitIDHandler) {
+    if (isExplicitIDHandler && !isBulkDependentResource) {
       var secondary = getSecondaryResource(primary, context);
       super.delete(primary, context);
       // deletes the state after the resource is deleted
