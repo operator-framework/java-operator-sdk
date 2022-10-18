@@ -12,7 +12,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
-    dependents = @Dependent(type = ExternalWithStateBulkDependentResource.class))
+    dependents = @Dependent(
+        type = BulkDependentResourceExternalWithState.class))
 public class ExternalStateBulkDependentReconciler
     implements Reconciler<ExternalStateBulkDependentCustomResource>,
     EventSourceInitializer<ExternalStateBulkDependentCustomResource>,

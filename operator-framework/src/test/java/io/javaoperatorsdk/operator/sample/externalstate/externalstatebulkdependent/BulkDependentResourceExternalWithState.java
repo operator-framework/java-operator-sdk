@@ -14,17 +14,17 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 
 import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
 
-public class ExternalWithStateBulkDependentResource extends
+public class BulkDependentResourceExternalWithState extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>
     implements
     BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
-    ExplicitStateHandler<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap>,
+    DependentResourceWithExplicitState<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap>,
     BulkUpdater<ExternalResource, ExternalStateBulkDependentCustomResource> {
 
   public static final String DELIMITER = "-";
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
-  public ExternalWithStateBulkDependentResource() {
+  public BulkDependentResourceExternalWithState() {
     super(ExternalResource.class, 300);
   }
 
@@ -113,7 +113,7 @@ public class ExternalWithStateBulkDependentResource extends
   }
 
   @Override
-  public void handleDeleteBulkResource(ExternalStateBulkDependentCustomResource primary,
+  public void handleDeleteTargetResource(ExternalStateBulkDependentCustomResource primary,
       ExternalResource resource, String key,
       Context<ExternalStateBulkDependentCustomResource> context) {
     externalService.delete(resource.getId());

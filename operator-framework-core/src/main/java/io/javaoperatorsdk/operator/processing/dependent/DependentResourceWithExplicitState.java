@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesCl
  * based only on primary resources. In order to manage such dependent resource use this interface
  * for a resource that extends {@link AbstractExternalDependentResource}.
  */
-public interface ExplicitStateHandler<R, P extends HasMetadata, S extends HasMetadata>
+public interface DependentResourceWithExplicitState<R, P extends HasMetadata, S extends HasMetadata>
     extends Creator<R, P>, Deleter<P>, KubernetesClientAware {
 
   /**
