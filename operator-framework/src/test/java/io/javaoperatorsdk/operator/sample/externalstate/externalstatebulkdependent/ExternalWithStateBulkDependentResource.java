@@ -18,7 +18,7 @@ public class ExternalWithStateBulkDependentResource extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>
     implements
     BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
-    ExplicitIDHandler<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap>,
+    ExplicitStateHandler<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap>,
     BulkUpdater<ExternalResource, ExternalStateBulkDependentCustomResource> {
 
   public static final String DELIMITER = "-";
@@ -59,7 +59,6 @@ public class ExternalWithStateBulkDependentResource extends
             .build())
         .withData(Map.of(ID_KEY, resource.getId()))
         .build();
-    configMap.addOwnerReference(primary);
     return configMap;
   }
 
@@ -113,13 +112,10 @@ public class ExternalWithStateBulkDependentResource extends
     return resources.stream().collect(Collectors.toMap(this::externalResourceIndex, r -> r));
   }
 
-  // todo prepare this upfront? maybe just a helper function?
   @Override
-  public void deleteBulkResource(ExternalStateBulkDependentCustomResource primary,
+  public void handleDeleteBulkResource(ExternalStateBulkDependentCustomResource primary,
       ExternalResource resource, String key,
       Context<ExternalStateBulkDependentCustomResource> context) {
-    getKubernetesClient().configMaps().inNamespace(primary.getMetadata().getNamespace())
-        .withName(configMapName(primary, resource)).delete();
     externalService.delete(resource.getId());
   }
 

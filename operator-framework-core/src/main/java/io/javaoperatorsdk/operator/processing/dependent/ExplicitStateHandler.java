@@ -6,9 +6,15 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 
-public interface ExplicitIDHandler<R, P extends HasMetadata, S extends HasMetadata>
+public interface ExplicitStateHandler<R, P extends HasMetadata, S extends HasMetadata>
     extends Creator<R, P>, Deleter<P>, KubernetesClientAware {
 
+  /**
+   * Only needs to be implemented if multiple event sources are present for the target resource
+   * class.
+   *
+   * @return name of the event source to access the state resources.
+   */
   default Optional<String> eventSourceName() {
     return Optional.empty();
   }
@@ -16,8 +22,5 @@ public interface ExplicitIDHandler<R, P extends HasMetadata, S extends HasMetada
   Class<S> stateResourceClass();
 
   S stateResource(P primary, R resource);
-
-  // TODO for the two phase resource create
-  // void postIDStored(P primary, R resource, S stateResource);
 
 }

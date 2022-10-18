@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.ExplicitIDHandler;
+import io.javaoperatorsdk.operator.processing.dependent.ExplicitStateHandler;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
@@ -21,7 +21,7 @@ import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDepe
 public class ExternalWithStateDependentResource extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateCustomResource>
     implements
-    ExplicitIDHandler<ExternalResource, ExternalStateCustomResource, ConfigMap>,
+    ExplicitStateHandler<ExternalResource, ExternalStateCustomResource, ConfigMap>,
     Updater<ExternalResource, ExternalStateCustomResource> {
 
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
