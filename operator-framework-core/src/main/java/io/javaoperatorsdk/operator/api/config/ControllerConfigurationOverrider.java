@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -190,22 +189,20 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     final var newDependentSpecs = namedDependentResourceSpecs.values().stream()
         .map(spec -> {
           // if the dependent resource has a config and it's a KubernetesDependentResourceConfig,
-          // update
-          // the namespaces if needed, otherwise, do nothing
-          DependentResource dependent = spec.getDependentResource();
+          // update the namespaces if needed, otherwise, do nothing
           Optional<DependentResourceSpec> updated = Optional.empty();
-          if (hasModifiedNamespaces && dependent instanceof DependentResourceConfigurator) {
-            DependentResourceConfigurator configurator = (DependentResourceConfigurator) dependent;
-            final Optional<?> config = configurator.configuration();
-            updated = config.filter(KubernetesDependentResourceConfig.class::isInstance)
+          if (hasModifiedNamespaces) {
+            final Optional<?> maybeConfig = spec.getDependentResourceConfiguration();
+            updated = maybeConfig
+                .filter(KubernetesDependentResourceConfig.class::isInstance)
                 .map(KubernetesDependentResourceConfig.class::cast)
                 .filter(Predicate.not(KubernetesDependentResourceConfig::wereNamespacesConfigured))
                 .map(c -> {
                   // update the namespaces of the config, configure the dependent with it and update
                   // the spec
                   c.setNamespaces(namespaces);
-                  configurator.configureWith(c);
-                  return new DependentResourceSpec(dependent, spec.getName(), spec.getDependsOn(),
+                  return new DependentResourceSpec(spec.getDependentResource(), spec.getName(),
+                      spec.getDependsOn(),
                       spec.getReadyCondition(), spec.getReconcileCondition(),
                       spec.getDeletePostCondition(),
                       (String) spec.getUseEventSourceWithName().orElse(null));
