@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample.externalstatedependent;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -26,20 +27,21 @@ public class ExternalWithStateDependentResource extends
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   public ExternalWithStateDependentResource() {
-    super(ExternalResource.class, 3333300);
+    super(ExternalResource.class, 300);
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Set<ExternalResource> fetchResources(
       ExternalStateDependentCustomResource primaryResource) {
-    var configMap = (ConfigMap) getExternalStateEventSource().getSecondaryResource(primaryResource)
-        .orElse(null);
-    if (configMap == null) {
-      return Collections.emptySet();
-    }
-    var id = configMap.getData().get(ID_KEY);
-    var externalResource = externalService.read(id);
-    return externalResource.map(er -> Set.of(er)).orElse(Collections.emptySet());
+    Optional<ConfigMap> configMapOptional =
+        getExternalStateEventSource().getSecondaryResource(primaryResource);
+
+    return configMapOptional.map(configMap -> {
+      var id = configMap.getData().get(ID_KEY);
+      var externalResource = externalService.read(id);
+      return externalResource.map(er -> Set.of(er)).orElse(Collections.emptySet());
+    }).orElse(Collections.emptySet());
   }
 
   @Override
@@ -63,7 +65,7 @@ public class ExternalWithStateDependentResource extends
             .build())
         .withData(Map.of(ID_KEY, resource.getId()))
         .build();
-    primary.addOwnerReference(primary);
+    configMap.addOwnerReference(primary);
     return configMap;
   }
 
