@@ -71,8 +71,7 @@ class ExternalStateBulkIT {
     await().pollInterval(Duration.ofMillis(700)).untilAsserted(() -> {
       var resources = externalService.listResources();
       assertThat(resources).hasSize(size);
-      var extRes = externalService.listResources();
-      assertThat(extRes).allMatch(r -> r.getData().startsWith(initialTestData));
+      assertThat(resources).allMatch(r -> r.getData().startsWith(initialTestData));
 
       var configMaps =
           operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
