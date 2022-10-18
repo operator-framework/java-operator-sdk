@@ -262,8 +262,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     GenericFilter<? extends HasMetadata> genericFilter = null;
     ResourceDiscriminator<?, ?> resourceDiscriminator = null;
     if (kubeDependent != null) {
-      if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES,
-          kubeDependent.namespaces())) {
+      if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, kubeDependent.namespaces())) {
         namespaces = Set.of(kubeDependent.namespaces());
         configuredNS = true;
       }
@@ -282,8 +281,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           Utils.instantiate(kubeDependent.genericFilter(), GenericFilter.class, context);
 
       resourceDiscriminator =
-          Utils.instantiate(kubeDependent.resourceDiscriminator(),
-              ResourceDiscriminator.class, context);
+          Utils.instantiate(kubeDependent.resourceDiscriminator(), ResourceDiscriminator.class,
+              context);
     }
 
     return new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,

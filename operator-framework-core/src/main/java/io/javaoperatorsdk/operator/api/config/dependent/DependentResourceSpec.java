@@ -38,6 +38,16 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
     this.useEventSourceWithName = useEventSourceWithName;
   }
 
+  public DependentResourceSpec(DependentResourceSpec<R, P, C> other) {
+    this.dependentResource = other.dependentResource;
+    this.name = other.name;
+    this.dependsOn = other.dependsOn;
+    this.readyCondition = other.readyCondition;
+    this.reconcileCondition = other.reconcileCondition;
+    this.deletePostCondition = other.deletePostCondition;
+    this.useEventSourceWithName = other.useEventSourceWithName;
+  }
+
   @SuppressWarnings("unchecked")
   public Class<DependentResource<R, P>> getDependentResourceClass() {
     return (Class<DependentResource<R, P>>) dependentResource.getClass();

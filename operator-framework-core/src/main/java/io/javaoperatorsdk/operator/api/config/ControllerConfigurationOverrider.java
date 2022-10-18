@@ -6,13 +6,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -178,38 +176,20 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public ControllerConfiguration<R> build() {
-    // todo: this should be abstracted by introducing an interface to deal with listening to
-    // namespace changes as possibly other things than the informers might be interested in reacting
-    // to such changes
-    // propagate namespaces if needed
-
     final var hasModifiedNamespaces = !original.getNamespaces().equals(namespaces);
     final var newDependentSpecs = namedDependentResourceSpecs.values().stream()
-        .map(spec -> {
-          // if the dependent resource has a config and it's a KubernetesDependentResourceConfig,
+        .peek(spec -> {
+          // if the dependent resource has a NamespaceChangeable config
           // update the namespaces if needed, otherwise, do nothing
-          Optional<DependentResourceSpec> updated = Optional.empty();
           if (hasModifiedNamespaces) {
             final Optional<?> maybeConfig = spec.getDependentResourceConfiguration();
-            updated = maybeConfig
-                .filter(KubernetesDependentResourceConfig.class::isInstance)
-                .map(KubernetesDependentResourceConfig.class::cast)
-                .filter(Predicate.not(KubernetesDependentResourceConfig::wereNamespacesConfigured))
-                .map(c -> {
-                  // update the namespaces of the config, configure the dependent with it and update
-                  // the spec
-                  c.setNamespaces(namespaces);
-                  return new DependentResourceSpec(spec.getDependentResource(), spec.getName(),
-                      spec.getDependsOn(),
-                      spec.getReadyCondition(), spec.getReconcileCondition(),
-                      spec.getDeletePostCondition(),
-                      (String) spec.getUseEventSourceWithName().orElse(null));
-                });
+            maybeConfig
+                .filter(NamespaceChangeable.class::isInstance)
+                .map(NamespaceChangeable.class::cast)
+                .filter(NamespaceChangeable::allowsNamespaceChanges)
+                .ifPresent(nc -> nc.changeNamespaces(namespaces));
           }
-
-          return updated.orElse(spec);
         }).collect(Collectors.toList());
 
     return new DefaultControllerConfiguration<>(
