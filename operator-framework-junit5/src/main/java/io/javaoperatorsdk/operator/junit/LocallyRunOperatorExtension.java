@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.LocalPortForward;
@@ -128,7 +129,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
-      final var oconfig = override(config).settingNamespace(namespace);
+      final var oconfig = override(config);
+
+      if (Namespaced.class.isAssignableFrom(config.getResourceClass())) {
+        oconfig.settingNamespace(namespace);
+      }
 
       if (ref.retry != null) {
         oconfig.withRetry(ref.retry);
