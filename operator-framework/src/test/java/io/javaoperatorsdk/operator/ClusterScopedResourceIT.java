@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.clusterscopedresource.ClusterScopedCustomResource;
@@ -31,13 +31,13 @@ class ClusterScopedResourceIT {
           .getNumberOfExecutions()).isGreaterThan(0);
       assertThat(res.getStatus()).isNotNull();
       assertThat(res.getStatus().getCreated()).isTrue();
-      var cm = operator.get(ConfigMap.class,TEST_NAME);
+      var cm = operator.get(ConfigMap.class, TEST_NAME);
       assertThat(cm).isNotNull();
     });
 
     operator.delete(resource);
 
-    await().untilAsserted(()-> assertThat(operator.get(ConfigMap.class,TEST_NAME)).isNull());
+    await().untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
   }
 
 
