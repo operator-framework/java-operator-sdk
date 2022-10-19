@@ -16,6 +16,8 @@ import static org.awaitility.Awaitility.await;
 class ClusterScopedResourceIT {
 
   public static final String TEST_NAME = "test1";
+  public static final String INITIAL_DATA = "initialData";
+  public static final String UPDATED_DATA = "updatedData";
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
@@ -27,16 +29,24 @@ class ClusterScopedResourceIT {
 
     await().untilAsserted(() -> {
       var res = operator.get(ClusterScopedCustomResource.class, TEST_NAME);
-      assertThat(operator.getReconcilerOfType(ClusterScopedCustomResourceReconciler.class)
-          .getNumberOfExecutions()).isGreaterThan(0);
       assertThat(res.getStatus()).isNotNull();
       assertThat(res.getStatus().getCreated()).isTrue();
       var cm = operator.get(ConfigMap.class, TEST_NAME);
       assertThat(cm).isNotNull();
+      assertThat(cm.getData().get(ClusterScopedCustomResourceReconciler.DATA_KEY))
+          .isEqualTo(INITIAL_DATA);
+    });
+
+    resource.getSpec().setData(UPDATED_DATA);
+    operator.replace(resource);
+    await().untilAsserted(() -> {
+      var cm = operator.get(ConfigMap.class, TEST_NAME);
+      assertThat(cm).isNotNull();
+      assertThat(cm.getData().get(ClusterScopedCustomResourceReconciler.DATA_KEY))
+          .isEqualTo(UPDATED_DATA);
     });
 
     operator.delete(resource);
-
     await().untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
   }
 
@@ -48,6 +58,7 @@ class ClusterScopedResourceIT {
         .build());
     res.setSpec(new ClusterScopedCustomResourceSpec());
     res.getSpec().setTargetNamespace(operator.getNamespace());
+    res.getSpec().setData(INITIAL_DATA);
 
     return res;
   }
