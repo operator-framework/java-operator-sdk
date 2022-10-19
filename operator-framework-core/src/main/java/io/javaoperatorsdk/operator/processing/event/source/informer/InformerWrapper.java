@@ -7,6 +7,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
@@ -19,6 +22,8 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 class InformerWrapper<T extends HasMetadata>
     implements LifecycleAware, IndexerResourceCache<T> {
+
+  private static final Logger log = LoggerFactory.getLogger(InformerWrapper.class);
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
@@ -33,10 +38,16 @@ class InformerWrapper<T extends HasMetadata>
     try {
       informer.run();
     } catch (Exception e) {
+      log.error("Couldn't start informer for " + versionedFullResourceName() + " resources", e);
       ReconcilerUtils.handleKubernetesClientException(e,
           HasMetadata.getFullResourceName(informer.getApiTypeClass()));
       throw e;
     }
+  }
+
+  private String versionedFullResourceName() {
+    final var apiTypeClass = informer.getApiTypeClass();
+    return ReconcilerUtils.getResourceTypeNameWithVersion(apiTypeClass);
   }
 
   @Override
@@ -82,5 +93,10 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public List<T> byIndex(String indexName, String indexKey) {
     return informer.getIndexer().byIndex(indexName, indexKey);
+  }
+
+  @Override
+  public String toString() {
+    return "InformerWrapper [" + versionedFullResourceName() + "] (" + informer + ')';
   }
 }

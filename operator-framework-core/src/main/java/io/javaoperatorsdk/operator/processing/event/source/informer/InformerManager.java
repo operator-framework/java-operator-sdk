@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
@@ -104,14 +105,15 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void stop() {
-    for (InformerWrapper<T> source : sources.values()) {
+    log.info("Stopping {}", this);
+    sources.forEach((ns, source) -> {
       try {
-        log.info("Stopping informer {} -> {}", this, source);
+        log.debug("Stopping informer for namespace: {} -> {}", ns, source);
         source.stop();
       } catch (Exception e) {
-        log.warn("Error stopping informer {} -> {}", this, source, e);
+        log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
       }
-    }
+    });
   }
 
   @Override
@@ -127,11 +129,11 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     if (isWatchingAllNamespaces()) {
       return getSource(ALL_NAMESPACES_MAP_KEY)
           .map(source -> source.list(namespace, predicate))
-          .orElse(Stream.empty());
+          .orElseGet(Stream::empty);
     } else {
       return getSource(namespace)
           .map(source -> source.list(predicate))
-          .orElse(Stream.empty());
+          .orElseGet(Stream::empty);
     }
   }
 
@@ -166,5 +168,15 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   public List<T> byIndex(String indexName, String indexKey) {
     return sources.values().stream().map(s -> s.byIndex(indexName, indexKey))
         .flatMap(List::stream).collect(Collectors.toList());
+  }
+
+  @Override
+  public String toString() {
+    final var selector = configuration.getLabelSelector();
+    return "InformerManager ["
+        + ReconcilerUtils.getResourceTypeNameWithVersion(configuration.getResourceClass())
+        + "] watching: "
+        + configuration.getEffectiveNamespaces()
+        + (selector != null ? " selector: " + selector : "");
   }
 }

@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 class BulkDependentResourceReconciler<R, P extends HasMetadata>
     implements DependentResourceReconciler<R, P> {
@@ -96,13 +97,13 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     }
 
     @Override
-    protected void onCreated(P primary, R created, Context<P> context) {
-      asAbstractDependentResource().onCreated(primary, created, context);
+    protected void onCreated(ResourceID primaryResourceId, R created) {
+      asAbstractDependentResource().onCreated(primaryResourceId, created);
     }
 
     @Override
-    protected void onUpdated(P primary, R updated, R actual, Context<P> context) {
-      asAbstractDependentResource().onUpdated(primary, updated, actual, context);
+    protected void onUpdated(ResourceID primaryResourceId, R updated, R actual) {
+      asAbstractDependentResource().onUpdated(primaryResourceId, updated, actual);
     }
 
     @Override

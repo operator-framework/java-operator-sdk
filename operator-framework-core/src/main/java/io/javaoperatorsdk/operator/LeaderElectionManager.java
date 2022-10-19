@@ -64,9 +64,7 @@ public class LeaderElectionManager {
     return new LeaderCallbacks(
         this::startLeading,
         this::stopLeading,
-        leader -> {
-          log.info("New leader with identity: {}", leader);
-        });
+        leader -> log.info("New leader with identity: {}", leader));
   }
 
   private void startLeading() {
@@ -82,7 +80,7 @@ public class LeaderElectionManager {
   }
 
   private String identity(LeaderElectionConfiguration config) {
-    var id = config.getIdentity().orElse(System.getenv("HOSTNAME"));
+    var id = config.getIdentity().orElseGet(() -> System.getenv("HOSTNAME"));
     if (id == null || id.isBlank()) {
       id = UUID.randomUUID().toString();
     }
