@@ -199,7 +199,11 @@ public class WebPageStatus extends ObservedGenerationAwareStatus {
 }
 ```
 
-Initializing status on custom resource:
+Initializing status automatically on custom resource could be done by overriding the `initStatus` method
+of `CustomResource`. However, this is NOT advised, since breaks the status patching if you use:
+`UpdateControl.patchStatus`. See
+also [javadocs](https://github.com/java-operator-sdk/java-operator-sdk/blob/3994f5ffc1fb000af81aa198abf72a5f75fd3e97/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java#L41-L42)
+.
 
 ```java 
 @Group("sample.javaoperatorsdk")
@@ -641,8 +645,8 @@ public static void main(String[]args)throws IOException{
         KubernetesClient client=new DefaultKubernetesClient();
         Operator operator=new Operator(client);
         RegisteredController registeredController=operator.register(new WebPageReconciler(client));
-    operator.installShutdownHook();
-    operator.start();
+        operator.installShutdownHook();
+        operator.start();
 
         // call registeredController further while operator is running
         }
