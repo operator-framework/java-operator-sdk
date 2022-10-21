@@ -43,7 +43,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <junit.version>5.9.1</junit.version>
-        <fabric8-client.version>6.1.1</fabric8-client.version>
+        <fabric8-client.version>6.2.0</fabric8-client.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.19.0</log4j.version>
         <mokito.version>4.8.0</mokito.version>
