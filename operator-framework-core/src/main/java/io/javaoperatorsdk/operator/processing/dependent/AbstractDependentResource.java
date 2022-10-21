@@ -155,7 +155,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected void handleDelete(P primary, R secondary, Context<P> context) {
-    throw new IllegalStateException("handleDelete method must be implemented if Deleter trait is supported");
+    throw new IllegalStateException(
+        "handleDelete method must be implemented if Deleter trait is supported");
   }
 
   public void setResourceDiscriminator(
