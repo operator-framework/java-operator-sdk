@@ -9,9 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperationsImpl;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -170,7 +172,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       Exception e) throws Exception {
     if (isErrorStatusHandlerPresent()) {
       try {
-        RetryInfo retryInfo = context.getRetryInfo().orElse(new RetryInfo() {
+        RetryInfo retryInfo = context.getRetryInfo().orElseGet(() -> new RetryInfo() {
           @Override
           public int getAttemptCount() {
             return 0;
@@ -362,28 +364,28 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     public R getResource(String namespace, String name) {
-      return resourceOperation.inNamespace(namespace).withName(name).get();
+      if (namespace != null) {
+        return resourceOperation.inNamespace(namespace).withName(name).get();
+      } else {
+        return resourceOperation.withName(name).get();
+      }
     }
 
     public R updateResource(R resource) {
-      log.debug(
-          "Trying to replace resource {}, version: {}",
-          getName(resource),
-          resource.getMetadata().getResourceVersion());
-      return resourceOperation
-          .inNamespace(resource.getMetadata().getNamespace())
-          .withName(getName(resource))
-          .lockResourceVersion(resource.getMetadata().getResourceVersion())
-          .replace(resource);
+      final var resourceVersion = resource.getMetadata().getResourceVersion();
+      log.debug("Trying to replace resource {}, version: {}", getName(resource), resourceVersion);
+
+      return resource(resource).withName(resource.getMetadata().getName())
+          .lockResourceVersion(resourceVersion).replace(resource);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
-      HasMetadataOperationsImpl hasMetadataOperation = (HasMetadataOperationsImpl) resourceOperation
-          .inNamespace(resource.getMetadata().getNamespace())
-          .withName(getName(resource))
-          .lockResourceVersion(resource.getMetadata().getResourceVersion());
+      HasMetadataOperationsImpl hasMetadataOperation =
+          (HasMetadataOperationsImpl) resource(resource)
+              .withName(getName(resource))
+              .lockResourceVersion(resource.getMetadata().getResourceVersion());
       return (R) hasMetadataOperation.replaceStatus(resource);
     }
 
@@ -395,8 +397,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       resource.getMetadata().setResourceVersion(null);
       try (var bis = new ByteArrayInputStream(
           Serialization.asJson(originalResource).getBytes(StandardCharsets.UTF_8))) {
-        return resourceOperation
-            .inNamespace(resource.getMetadata().getNamespace())
+        return resource(originalResource)
             // will be simplified in fabric8 v6
             .load(bis)
             .editStatus(r -> resource);
@@ -407,6 +408,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         originalResource.getMetadata().setResourceVersion(resourceVersion);
         resource.getMetadata().setResourceVersion(resourceVersion);
       }
+    }
+
+    private NonNamespaceOperation<R, KubernetesResourceList<R>, Resource<R>> resource(R resource) {
+      return resource instanceof Namespaced
+          ? resourceOperation.inNamespace(resource.getMetadata().getNamespace())
+          : resourceOperation;
     }
   }
 }
