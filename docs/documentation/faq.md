@@ -47,14 +47,14 @@ way.
 
 ### Q: How can I run an operator without cluster scope rights?
 
-By default, JOSDK require access to CR at cluster scope. You may not be granted such
+By default, JOSDK requires access to CRs at cluster scope. You may not be granted such
 rights and you will see some error at startup that looks like:
 
 ```plain
 io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: GET at: https://kubernetes.local.svc/apis/mygroup/v1alpha1/mycr. Message: Forbidden! Configured service account doesn't have access. Service account may have been revoked. mycrs.mygroup is forbidden: User "system:serviceaccount:ns:sa" cannot list resource "mycrs" in API group "mygroup" at the cluster scope.
 ```
 
-To restrict the operator to a set of namesapce, you may override the namespaces watched by a reconciler
+To restrict the operator to a set of namespaces, you may override which namespaces are watched by a reconciler
 at [Reconciler-level configuration](./configuration.md#reconciler-level-configuration):
 
 ```java
@@ -64,6 +64,7 @@ Reconciler reconciler;
 operator.register(reconciler, configOverrider ->
         configOverrider.settingNamespace("mynamespace"));
 ```
+Note that configuring the watched namespaces can also be done using the `@ControllerConfiguration` annotation.
 
 Furthermore, you may not be able to list CRDs at startup which is required when `checkingCRDAndValidateLocalModel`
 is `true` (`false` by default). To disable, set it to `false` at [Operator-level configuration](./configuration.md#operator-level-configuration):
