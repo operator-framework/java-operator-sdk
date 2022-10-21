@@ -51,31 +51,6 @@ class MultiVersionCRDIT {
             });
   }
 
-  @Test
-  void invalidEventsDoesNotBreakEventHandling() {
-    var v2res = createTestResourceV2WithLabel();
-    v2res.getMetadata().getLabels().clear();
-    operator.create(v2res);
-    var v1res = createTestResourceV1WithoutLabel();
-    operator.create(v1res);
-
-    await()
-        .atMost(Duration.ofSeconds(2))
-        .pollInterval(Duration.ofMillis(50))
-        .untilAsserted(() -> {
-          var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
-          assertThat(crV1Now.getStatus()).isNotNull();
-          assertThat(crV1Now.getStatus().getReconciledBy())
-              .containsExactly(MultiVersionCRDTestReconciler1.class.getSimpleName());
-        });
-    assertThat(
-        operator
-            .get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
-            .getStatus())
-        .isNull();
-  }
-
-
   MultiVersionCRDTestCustomResource1 createTestResourceV1WithoutLabel() {
     MultiVersionCRDTestCustomResource1 cr = new MultiVersionCRDTestCustomResource1();
     cr.setMetadata(new ObjectMeta());
