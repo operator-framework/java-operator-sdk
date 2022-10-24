@@ -45,11 +45,3 @@ jobs:
     with:
       version_branch: ${{needs.prepare-release.outputs.version_branch}}
       project_dir: '.'
-
-  release-bom:
-    needs: [ prepare-release, release-sdk ] # needs prepare-release to be able to get the proper version branch name
-    uses: ./.github/workflows/release-project-in-dir.yml
-    secrets: inherit
-    with:
-      version_branch: ${{needs.prepare-release.outputs.version_branch}}
-      project_dir: './operator-framework-bom'
