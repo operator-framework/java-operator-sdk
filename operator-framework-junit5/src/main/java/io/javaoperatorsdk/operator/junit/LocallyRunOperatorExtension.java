@@ -22,7 +22,7 @@ import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.RegisteredController;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -42,7 +42,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final Map<Reconciler, RegisteredController> registeredControllers;
 
   private LocallyRunOperatorExtension(
-      ConfigurationService configurationService,
       List<ReconcilerSpec> reconcilers,
       List<HasMetadata> infrastructure,
       List<PortForwardSpec> portForwards,
@@ -53,7 +52,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient) {
     super(
-        configurationService,
         infrastructure,
         infrastructureTimeout,
         oneNamespacePerClass,
@@ -64,7 +62,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
-    this.operator = new Operator(getKubernetesClient(), this.configurationService);
+    this.operator = new Operator(getKubernetesClient());
     this.registeredControllers = new HashMap<>();
   }
 
@@ -127,6 +125,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     additionalCustomResourceDefinitions
         .forEach(cr -> applyCrd(ReconcilerUtils.getResourceTypeName(cr)));
 
+    final var configurationService = ConfigurationServiceProvider.instance();
     for (var ref : reconcilers) {
       final var config = configurationService.getConfigurationFor(ref.reconciler);
       final var oconfig = override(config);
@@ -265,7 +264,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     public LocallyRunOperatorExtension build() {
       return new LocallyRunOperatorExtension(
-          configurationService,
           reconcilers,
           infrastructure,
           portForwards,

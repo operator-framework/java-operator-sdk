@@ -112,6 +112,8 @@ class ConfigurationServiceOverriderTest {
         .withTerminationTimeoutSeconds(100)
         .withMetrics(new Metrics() {})
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("newLease", "newLeaseNS"))
+        .withInformerStoppedHandler((informer, ex) -> {
+        })
         .build();
 
     assertNotEquals(config.closeClientOnStop(), overridden.closeClientOnStop());
@@ -127,6 +129,8 @@ class ConfigurationServiceOverriderTest {
     assertNotEquals(config.getMetrics(), overridden.getMetrics());
     assertNotEquals(config.getObjectMapper(), overridden.getObjectMapper());
     assertNotEquals(config.getLeaderElectionConfiguration(),
+        overridden.getLeaderElectionConfiguration());
+    assertNotEquals(config.getInformerStoppedHandler(),
         overridden.getLeaderElectionConfiguration());
   }
 }
