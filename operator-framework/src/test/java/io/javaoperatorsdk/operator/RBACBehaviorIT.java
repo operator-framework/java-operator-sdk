@@ -25,6 +25,7 @@ import static org.awaitility.Awaitility.await;
 class RBACBehaviorIT {
 
   // https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/TestInstancePostProcessor.html
+  // minikube start --extra-config=apiserver.min-request-timeout=3
 
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   RBACBehaviorTestReconciler reconciler;
@@ -66,7 +67,7 @@ class RBACBehaviorIT {
     startOperator();
     noCustomResourceAccess();
 
-    Thread.sleep(3000);
+    Thread.sleep(5000);
     adminClient.resource(testCustomResource()).createOrReplace();
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
