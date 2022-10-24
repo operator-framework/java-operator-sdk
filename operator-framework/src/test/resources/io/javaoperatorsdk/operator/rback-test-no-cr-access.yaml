@@ -1,0 +1,10 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: rbac-behavior
+rules:
+  - apiGroups: [""]
+    resources: [ "configmaps" ]
+    verbs: [ "get", "watch", "list","post", "delete","create" ]
+
