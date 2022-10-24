@@ -68,7 +68,7 @@ will only consider the `ConfigMap` deleted until that post-condition becomes `tr
         deletePostcondition = ConfigMapDeletePostCondition.class,
         dependsOn = DEPLOYMENT_NAME)
 })
-public class SampleWorkflowReconciler implements Reconciler<TestCustomResource>,
+public class SampleWorkflowReconciler implements Reconciler<WorkflowAllFeatureCustomResource>,
     Cleaner<WorkflowAllFeatureCustomResource> {
 
   public static final String DEPLOYMENT_NAME = "deployment";
