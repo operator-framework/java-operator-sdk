@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 class BulkDependentResourceReconciler<R, P extends HasMetadata>
     implements DependentResourceReconciler<R, P> {
