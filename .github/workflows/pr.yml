@@ -35,8 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 11, 17 ]
-        kubernetes: [ 'v1.22.15', 'v1.23.12', 'v1.24.6', 'v1.25.2' ]
+        java: [ 11, 17, 19 ]
+        kubernetes: [ 'v1.22.15', 'v1.23.13', 'v1.24.7', 'v1.25.3' ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Java and Maven
