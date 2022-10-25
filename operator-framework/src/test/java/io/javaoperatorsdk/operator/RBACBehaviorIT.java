@@ -17,12 +17,14 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.rbacbehavior.RBACBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.rbacbehavior.RBACBehaviorTestReconciler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RBACBehaviorIT {
 
@@ -53,12 +55,20 @@ class RBACBehaviorIT {
   }
 
   @Test
+  void notStartsUpWithoutPermissionIfInstructed() {
+    adminClient.resource(testCustomResource()).createOrReplace();
+    setNoCustomResourceAccess();
+
+    assertThrows(OperatorException.class, () -> startOperator(true));
+    assertNotReconciled();
+  }
+
+  @Test
   void startsUpWhenNoPermissionToCustomResource() {
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoCustomResourceAccess();
 
     startOperator(false);
-
     assertNotReconciled();
 
     setFullResourcesAccess();
@@ -68,7 +78,15 @@ class RBACBehaviorIT {
 
   @Test
   void startsUpWhenNoPermissionToSecondaryResource() {
+    adminClient.resource(testCustomResource()).createOrReplace();
+    setNoConfigMapAccess();
 
+    startOperator(false);
+    assertNotReconciled();
+
+    setFullResourcesAccess();
+    waitForWatchReconnect();
+    assertReconciled();
   }
 
   @Test
@@ -121,11 +139,6 @@ class RBACBehaviorIT {
     });
   }
 
-  @Test
-  void notStartsUpWithoutPermissionIfInstructed() {
-
-  }
-
   RBACBehaviorTestCustomResource testCustomResource() {
     RBACBehaviorTestCustomResource testCustomResource = new RBACBehaviorTestCustomResource();
     testCustomResource.setMetadata(new ObjectMetaBuilder()
@@ -156,6 +169,7 @@ class RBACBehaviorIT {
   }
 
   Operator startOperator(boolean stopOnInformerErrorDuringStartup) {
+    ConfigurationServiceProvider.reset();
     reconciler = new RBACBehaviorTestReconciler();
 
     Operator operator = new Operator(clientUsingServiceAccount(),

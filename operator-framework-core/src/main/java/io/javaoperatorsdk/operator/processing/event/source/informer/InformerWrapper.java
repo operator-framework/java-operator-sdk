@@ -3,6 +3,9 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -11,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.ExceptionHandler;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
@@ -38,14 +42,6 @@ class InformerWrapper<T extends HasMetadata>
   public void start() throws OperatorException {
     try {
       var configService = ConfigurationServiceProvider.instance();
-      if (configService.stopOnInformerErrorDuringStartup()) {
-        informer.run();
-      } else {
-        informer.start().exceptionally((e) -> {
-          log.error("Error", e);
-          return null;
-        });
-      }
       // register stopped handler if we have one defined
       configService.getInformerStoppedHandler()
           .ifPresent(ish -> {
@@ -65,6 +61,23 @@ class InformerWrapper<T extends HasMetadata>
                       + fullResourceName + "/" + version);
             }
           });
+
+      if (!configService.stopOnInformerErrorDuringStartup()) {
+        informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
+      }
+      try {
+        var start = informer.start();
+        // todo configurable timeout, also timeout for run?
+        start.toCompletableFuture().get(5000, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException | ExecutionException e) {
+        log.warn("Informer startup error. Informer: {}", informer, e);
+        if (configService.stopOnInformerErrorDuringStartup()) {
+          throw new OperatorException(e);
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(e);
+      }
 
     } catch (Exception e) {
       log.error("Couldn't start informer for " + versionedFullResourceName() + " resources", e);

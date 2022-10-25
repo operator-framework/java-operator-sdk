@@ -243,7 +243,8 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
-  @Test
+  // todo add integration test
+  // @Test
   void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
     try {
       final var exception = new RuntimeException("Informer stopped exceptionally!");

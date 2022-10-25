@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,19 +43,10 @@ public class MockKubernetesClient {
     when(resources.inAnyNamespace()).thenReturn(inAnyNamespace);
     when(inAnyNamespace.withLabelSelector(nullable(String.class))).thenReturn(filterable);
     SharedIndexInformer<T> informer = mock(SharedIndexInformer.class);
-    CompletableFuture<Void> stopped = new CompletableFuture<>();
-    when(informer.stopped()).thenReturn(stopped);
-    if (informerRunBehavior != null) {
-      doAnswer(invocation -> {
-        try {
-          informerRunBehavior.accept(null);
-        } catch (Exception e) {
-          stopped.completeExceptionally(e);
-        }
-        return null;
-      }).when(informer).run();
-    }
-    doAnswer(invocation -> null).when(informer).stop();
+    CompletableFuture<Void> informerStartRes = new CompletableFuture<>();
+    informerStartRes.complete(null);
+    when(informer.start()).thenReturn(informerStartRes);
+
     Indexer mockIndexer = mock(Indexer.class);
     when(informer.getIndexer()).thenReturn(mockIndexer);
     when(filterable.runnableInformer(anyLong())).thenReturn(informer);
