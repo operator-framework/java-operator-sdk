@@ -111,6 +111,11 @@ public class Utils {
 
   public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz,
       Class<?> expectedImplementedInterface) {
+    return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, 0);
+  }
+
+  public static Class<?> getTypeArgumentFromInterfaceByIndex(Class<?> clazz,
+      Class<?> expectedImplementedInterface, int index) {
     if (expectedImplementedInterface.isAssignableFrom(clazz)) {
       final var genericInterfaces = clazz.getGenericInterfaces();
       Optional<? extends Class<?>> target = Optional.empty();
@@ -122,7 +127,7 @@ public class Utils {
             .map(ParameterizedType.class::cast)
             .findFirst()
             .map(t -> {
-              final Type argument = t.getActualTypeArguments()[0];
+              final Type argument = t.getActualTypeArguments()[index];
               if (argument instanceof Class) {
                 return (Class<?>) argument;
               }
@@ -148,7 +153,7 @@ public class Utils {
       // try the parent
       var parent = clazz.getSuperclass();
       if (!Object.class.equals(parent)) {
-        return getFirstTypeArgumentFromInterface(parent, expectedImplementedInterface);
+        return getTypeArgumentFromInterfaceByIndex(parent, expectedImplementedInterface, index);
       }
     }
     throw new IllegalArgumentException("Couldn't retrieve generic parameter type from "

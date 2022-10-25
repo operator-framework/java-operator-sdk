@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -97,8 +97,8 @@ class UtilsTest {
         () -> Utils.getFirstTypeArgumentFromInterface(TestKubernetesDependentResource.class,
             DependentResource.class));
 
-    assertThat(Utils.getFirstTypeArgumentFromInterface(TestKubernetesDependentResource.class,
-        DependentResourceConfigurator.class))
+    assertThat(Utils.getTypeArgumentFromInterfaceByIndex(TestKubernetesDependentResource.class,
+        AnnotationDependentResourceConfigurator.class, 1))
         .isEqualTo(KubernetesDependentResourceConfig.class);
   }
 
