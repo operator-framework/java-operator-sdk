@@ -16,9 +16,9 @@ public interface NamespaceChangeable {
    */
   void changeNamespaces(Set<String> namespaces);
 
+  @SuppressWarnings("unused")
   default void changeNamespaces(String... namespaces) {
-    changeNamespaces(
-        namespaces != null ? Set.of(namespaces) : DEFAULT_NAMESPACES_SET);
+    changeNamespaces(namespaces != null ? Set.of(namespaces) : DEFAULT_NAMESPACES_SET);
   }
 
   default boolean allowsNamespaceChanges() {
