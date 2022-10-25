@@ -53,8 +53,8 @@ class RBACBehaviorIT {
   void startsUpWhenNoPermissionToCustomResource() {
 
     adminClient.resource(testCustomResource()).createOrReplace();
-    // todo it should not throw exception
-    setFullResourcesAccess();
+    setNoCustomResourceAccess();
+    // setFullResourcesAccess();
 
     startOperator();
 
@@ -114,7 +114,7 @@ class RBACBehaviorIT {
   void notStartsUpWithoutPermissionIfInstructed() {
 
   }
-  
+
   RBACBehaviorTestCustomResource testCustomResource() {
     RBACBehaviorTestCustomResource testCustomResource = new RBACBehaviorTestCustomResource();
     testCustomResource.setMetadata(new ObjectMetaBuilder()
