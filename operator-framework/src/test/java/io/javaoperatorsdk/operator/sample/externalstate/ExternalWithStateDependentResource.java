@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 
 import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
 
-public class ExternalWithStateDependentResourceDependentResourceWith extends
+public class ExternalWithStateDependentResource extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateCustomResource>
     implements
     DependentResourceWithExplicitState<ExternalResource, ExternalStateCustomResource, ConfigMap>,
@@ -26,7 +26,7 @@ public class ExternalWithStateDependentResourceDependentResourceWith extends
 
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
-  public ExternalWithStateDependentResourceDependentResourceWith() {
+  public ExternalWithStateDependentResource() {
     super(ExternalResource.class, 300);
   }
 
