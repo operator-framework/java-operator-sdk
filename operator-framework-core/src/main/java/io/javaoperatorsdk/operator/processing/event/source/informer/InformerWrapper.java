@@ -37,10 +37,17 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public void start() throws OperatorException {
     try {
-      informer.run();
-
+      var configService = ConfigurationServiceProvider.instance();
+      if (configService.stopOnInformerErrorDuringStartup()) {
+        informer.run();
+      } else {
+        informer.start().exceptionally((e) -> {
+          log.error("Error", e);
+          return null;
+        });
+      }
       // register stopped handler if we have one defined
-      ConfigurationServiceProvider.instance().getInformerStoppedHandler()
+      configService.getInformerStoppedHandler()
           .ifPresent(ish -> {
             final var stopped = informer.stopped();
             if (stopped != null) {

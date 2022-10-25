@@ -27,6 +27,7 @@ public class ConfigurationServiceOverrider {
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private InformerStoppedHandler informerStoppedHandler;
+  private Boolean stopOnInformerErrorDuringStartup;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -96,6 +97,12 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withInformerStoppedHandler(InformerStoppedHandler handler) {
     this.informerStoppedHandler = handler;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withStopOnInformerErrorDuringStartup(
+      Boolean stopOnInformerErrorDuringStartup) {
+    this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
     return this;
   }
 
@@ -170,6 +177,12 @@ public class ConfigurationServiceOverrider {
       public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
         return informerStoppedHandler != null ? Optional.of(informerStoppedHandler)
             : original.getInformerStoppedHandler();
+      }
+
+      @Override
+      public boolean stopOnInformerErrorDuringStartup() {
+        return stopOnInformerErrorDuringStartup != null ? stopOnInformerErrorDuringStartup
+            : super.stopOnInformerErrorDuringStartup();
       }
     };
   }

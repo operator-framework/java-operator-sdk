@@ -7,8 +7,8 @@ rules:
   - apiGroups: [ "sample.javaoperatorsdk" ]
     resources: [ "rbacbehaviortestcustomresources" ]
     verbs: [ "get", "watch", "list","post", "delete" ]
-  - apiGroups: [""]
+  - apiGroups: [ "" ]
     resources: [ "configmaps" ]
-    verbs: [ "get", "watch", "list","post", "delete","create" ]
+    verbs: [ "get", "watch", "list","post", "delete", "create" ]
 
 

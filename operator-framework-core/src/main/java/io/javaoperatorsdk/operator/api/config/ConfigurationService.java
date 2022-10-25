@@ -152,6 +152,10 @@ public interface ConfigurationService {
     return Optional.empty();
   }
 
+  default boolean stopOnInformerErrorDuringStartup() {
+    return true;
+  }
+
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
     return Optional.of((informer, ex) -> {
       if (ex != null) {

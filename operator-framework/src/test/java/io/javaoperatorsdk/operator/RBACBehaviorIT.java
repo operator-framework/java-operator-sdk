@@ -6,6 +6,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -23,6 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class RBACBehaviorIT {
+
+  private final static Logger log = LoggerFactory.getLogger(RBACBehaviorIT.class);
+
   public static final String TEST_RESOURCE_NAME = "test1";
 
   // https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/TestInstancePostProcessor.html
@@ -39,8 +44,6 @@ class RBACBehaviorIT {
       actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
       adminClient.resource(namespace()).createOrReplace();
     });
-
-
   }
 
   @AfterEach
@@ -51,13 +54,15 @@ class RBACBehaviorIT {
 
   @Test
   void startsUpWhenNoPermissionToCustomResource() {
-
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoCustomResourceAccess();
-    // setFullResourcesAccess();
 
-    startOperator();
+    startOperator(false);
 
+    assertNotReconciled();
+
+    setFullResourcesAccess();
+    waitForWatchReconnect();
     assertReconciled();
   }
 
@@ -69,24 +74,23 @@ class RBACBehaviorIT {
   @Test
   void resilientForLoosingPermissionForCustomResource() throws InterruptedException {
     setFullResourcesAccess();
-    startOperator();
+    startOperator(true);
     setNoCustomResourceAccess();
 
     waitForWatchReconnect();
     adminClient.resource(testCustomResource()).createOrReplace();
 
-    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
-    });
+    assertNotReconciled();
 
     setFullResourcesAccess();
     assertReconciled();
   }
 
+
   @Test
   void resilientForLoosingPermissionForSecondaryResource() {
     setFullResourcesAccess();
-    startOperator();
+    startOperator(true);
     setNoConfigMapAccess();
 
     waitForWatchReconnect();
@@ -108,6 +112,13 @@ class RBACBehaviorIT {
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+
+  private void assertNotReconciled() {
+    await().pollDelay(Duration.ofMillis(2000)).untilAsserted(() -> {
+      assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
+    });
   }
 
   @Test
@@ -144,9 +155,17 @@ class RBACBehaviorIT {
     return client;
   }
 
-  Operator startOperator() {
+  Operator startOperator(boolean stopOnInformerErrorDuringStartup) {
     reconciler = new RBACBehaviorTestReconciler();
-    Operator operator = new Operator(clientUsingServiceAccount());
+
+    Operator operator = new Operator(clientUsingServiceAccount(),
+        co -> {
+          co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
+          co.withInformerStoppedHandler((informer, ex) -> {
+            informer.start();
+            log.error("Stop handler: {}", informer, ex);
+          });
+        });
     operator.register(reconciler);
     operator.installShutdownHook();
     operator.start();
