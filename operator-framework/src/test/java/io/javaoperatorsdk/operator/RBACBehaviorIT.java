@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class RBACBehaviorIT {
+  public static final String TEST_RESOURCE_NAME = "test1";
 
   // https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/TestInstancePostProcessor.html
   // minikube start --extra-config=apiserver.min-request-timeout=3
@@ -33,6 +34,7 @@ class RBACBehaviorIT {
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
+    LocallyRunOperatorExtension.applyCrd(RBACBehaviorTestCustomResource.class, adminClient);
     testInfo.getTestMethod().ifPresent(method -> {
       actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
       adminClient.resource(namespace()).createOrReplace();
@@ -48,37 +50,64 @@ class RBACBehaviorIT {
   }
 
   @Test
-  void startsUpWhenNoPermission() {
-    LocallyRunOperatorExtension.applyCrd(RBACBehaviorTestCustomResource.class, adminClient);
+  void startsUpWhenNoPermissionToCustomResource() {
+
     adminClient.resource(testCustomResource()).createOrReplace();
     // todo it should not throw exception
-    fullResourcesAccess();
+    setFullResourcesAccess();
 
     startOperator();
 
     assertReconciled();
   }
 
+  @Test
+  void startsUpWhenNoPermissionToSecondaryResource() {
+
+  }
 
   @Test
   void resilientForLoosingPermissionForCustomResource() throws InterruptedException {
-    LocallyRunOperatorExtension.applyCrd(RBACBehaviorTestCustomResource.class, adminClient);
-    fullResourcesAccess();
+    setFullResourcesAccess();
     startOperator();
-    noCustomResourceAccess();
+    setNoCustomResourceAccess();
 
-    Thread.sleep(5000);
+    waitForWatchReconnect();
     adminClient.resource(testCustomResource()).createOrReplace();
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
     });
 
+    setFullResourcesAccess();
+    assertReconciled();
   }
 
   @Test
   void resilientForLoosingPermissionForSecondaryResource() {
+    setFullResourcesAccess();
+    startOperator();
+    setNoConfigMapAccess();
 
+    waitForWatchReconnect();
+    adminClient.resource(testCustomResource()).createOrReplace();
+
+    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
+      var cm =
+          adminClient.configMaps().inNamespace(actualNamespace).withName(TEST_RESOURCE_NAME).get();
+      assertThat(cm).isNull();
+    });
+
+    setFullResourcesAccess();
+    assertReconciled();
+  }
+
+  private static void waitForWatchReconnect() {
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Test
@@ -91,7 +120,7 @@ class RBACBehaviorIT {
     RBACBehaviorTestCustomResource testCustomResource = new RBACBehaviorTestCustomResource();
     testCustomResource.setMetadata(new ObjectMetaBuilder()
         .withNamespace(actualNamespace)
-        .withName("test1")
+        .withName(TEST_RESOURCE_NAME)
         .build());
     return testCustomResource;
   }
@@ -100,6 +129,9 @@ class RBACBehaviorIT {
   private void assertReconciled() {
     await().untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions()).isGreaterThan(0);
+      var cm =
+          adminClient.configMaps().inNamespace(actualNamespace).withName(TEST_RESOURCE_NAME).get();
+      assertThat(cm).isNotNull();
     });
   }
 
@@ -122,12 +154,17 @@ class RBACBehaviorIT {
     return operator;
   }
 
-  private void noCustomResourceAccess() {
+  private void setNoConfigMapAccess() {
+    applyClusterRole("rback-test-no-configmap-access.yaml");
+    applyClusterRoleBinding();
+  }
+
+  private void setNoCustomResourceAccess() {
     applyClusterRole("rback-test-no-cr-access.yaml");
     applyClusterRoleBinding();
   }
 
-  private void fullResourcesAccess() {
+  private void setFullResourcesAccess() {
     applyClusterRole("rback-test-full-access-role.yaml");
     applyClusterRoleBinding();
   }
