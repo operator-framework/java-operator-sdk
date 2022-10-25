@@ -5,7 +5,7 @@
 
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>4.0.4-SNAPSHOT</version>
     <name>Operator SDK for Java</name>
     <description>Java SDK for implementing Kubernetes operators</description>
     <packaging>pom</packaging>
@@ -46,7 +46,7 @@
         <fabric8-client.version>6.2.0</fabric8-client.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.19.0</log4j.version>
-        <mokito.version>4.8.0</mokito.version>
+        <mokito.version>4.8.1</mokito.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <compile-testing.version>0.19</compile-testing.version>
         <javapoet.version>1.13.0</javapoet.version>
@@ -195,6 +195,17 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <distributionManagement>
         <snapshotRepository>

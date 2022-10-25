@@ -6,7 +6,12 @@ import java.util.HashMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.WatcherException;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResource1;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResource2;
@@ -14,6 +19,8 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCus
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResourceSpec2;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler1;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler2;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -28,7 +35,72 @@ class MultiVersionCRDIT {
       LocallyRunOperatorExtension.builder()
           .withReconciler(MultiVersionCRDTestReconciler1.class)
           .withReconciler(MultiVersionCRDTestReconciler2.class)
+          .withConfigurationService(
+              overrider -> overrider.withInformerStoppedHandler(informerStoppedHandler))
           .build();
+
+  private static class TestInformerStoppedHandler implements InformerStoppedHandler {
+    private String resourceClassName;
+    private String resourceCreateAsVersion;
+
+    private String failedResourceVersion;
+    private String errorMessage;
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public void onStop(SharedIndexInformer informer, Throwable ex) {
+      if (ex instanceof WatcherException) {
+        WatcherException watcherEx = (WatcherException) ex;
+        watcherEx.getRawWatchMessage().ifPresent(raw -> {
+          try {
+            // extract the resource at which the version is attempted to be created (i.e. the stored
+            // version)
+            final var unmarshal = Serialization.jsonMapper().readTree(raw);
+            final var object = unmarshal.get("object");
+            resourceCreateAsVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(resourceCreateAsVersion,
+                object.get("apiVersion").asText());
+            // extract the asked resource version
+            failedResourceVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(failedResourceVersion,
+                object.get("metadata").get("managedFields").get(0).get("apiVersion").asText());
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+          }
+        });
+
+        // extract error message
+        errorMessage =
+            acceptOnlyIfUnsetOrEqualToAlreadySet(errorMessage, watcherEx.getCause().getMessage());
+      }
+      final var apiTypeClass = informer.getApiTypeClass();
+      resourceClassName =
+          acceptOnlyIfUnsetOrEqualToAlreadySet(resourceClassName, apiTypeClass.getName());
+      System.out.println("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
+          + " stopped due to: " + ex.getMessage());
+    }
+
+    public String getResourceClassName() {
+      return resourceClassName;
+    }
+
+    public String getResourceCreateAsVersion() {
+      return resourceCreateAsVersion;
+    }
+
+    public String getErrorMessage() {
+      return errorMessage;
+    }
+
+    public String getFailedResourceVersion() {
+      return failedResourceVersion;
+    }
+
+    private String acceptOnlyIfUnsetOrEqualToAlreadySet(String existing, String newValue) {
+      return (existing == null || existing.equals(newValue)) ? newValue : null;
+    }
+  }
+
+  private final static TestInformerStoppedHandler informerStoppedHandler =
+      new TestInformerStoppedHandler();
 
   @Test
   void multipleCRDVersions() {
@@ -50,6 +122,40 @@ class MultiVersionCRDIT {
                   .containsExactly(MultiVersionCRDTestReconciler2.class.getSimpleName());
             });
   }
+
+  @Test
+  void invalidEventsShouldStopInformerAndCallInformerStoppedHandler() {
+    var v2res = createTestResourceV2WithLabel();
+    v2res.getMetadata().getLabels().clear();
+    operator.create(v2res);
+    var v1res = createTestResourceV1WithoutLabel();
+    operator.create(v1res);
+
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .pollInterval(Duration.ofMillis(50))
+        .untilAsserted(() -> {
+          // v1 is the stored version so trying to create a v2 version should fail because we cannot
+          // convert a String (as defined by the spec of the v2 CRD) to an int (which is what the
+          // spec of the v1 CRD defines)
+          assertThat(informerStoppedHandler.getResourceCreateAsVersion())
+              .isEqualTo(HasMetadata.getApiVersion(
+                  MultiVersionCRDTestCustomResource1.class));
+          assertThat(informerStoppedHandler.getResourceClassName())
+              .isEqualTo(MultiVersionCRDTestCustomResource1.class.getName());
+          assertThat(informerStoppedHandler.getFailedResourceVersion())
+              .isEqualTo(HasMetadata.getApiVersion(
+                  MultiVersionCRDTestCustomResource2.class));
+          assertThat(informerStoppedHandler.getErrorMessage()).contains(
+              "Cannot deserialize value of type `int` from String \"string value\": not a valid `int` value");
+        });
+    assertThat(
+        operator
+            .get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
+            .getStatus())
+        .isNull();
+  }
+
 
   MultiVersionCRDTestCustomResource1 createTestResourceV1WithoutLabel() {
     MultiVersionCRDTestCustomResource1 cr = new MultiVersionCRDTestCustomResource1();
