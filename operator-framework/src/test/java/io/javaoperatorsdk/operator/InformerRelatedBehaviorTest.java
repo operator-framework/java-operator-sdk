@@ -30,9 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * just checked when established a watch request. So minimal request timeout is set to make sure
  * that with periodical watch reconnect the permission is tested again.
  * </p>
+ * <p>
+ * The test does not end with "IT" since that did not work with tags.
+ * </p>
  */
 @Tag("WatchPermissionAwareTest")
-class InformerRelatedBehaviorIT {
+class InformerRelatedBehaviorTest {
 
   public static final String TEST_RESOURCE_NAME = "test1";
 
