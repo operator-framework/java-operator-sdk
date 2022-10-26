@@ -307,6 +307,7 @@
                         <exclude>**/*IT.java</exclude>
                         <exclude>**/*E2E.java</exclude>
                     </excludes>
+                    <excludedGroups>WatchPermissionAwareTest</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
