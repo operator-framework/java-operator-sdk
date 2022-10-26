@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
@@ -94,15 +95,17 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     return Optional.ofNullable(eventSource);
   }
 
-  protected void onCreated(ResourceID primaryResourceId, R created) {
+  protected void onCreated(P primary, R created, Context<P> context) {
     if (isCacheFillerEventSource) {
-      recentOperationCacheFiller().handleRecentResourceCreate(primaryResourceId, created);
+      recentOperationCacheFiller().handleRecentResourceCreate(ResourceID.fromResource(primary),
+          created);
     }
   }
 
-  protected void onUpdated(ResourceID primaryResourceId, R updated, R actual) {
+  protected void onUpdated(P primary, R updated, R actual, Context<P> context) {
     if (isCacheFillerEventSource) {
-      recentOperationCacheFiller().handleRecentResourceUpdate(primaryResourceId, updated, actual);
+      recentOperationCacheFiller().handleRecentResourceUpdate(ResourceID.fromResource(primary),
+          updated, actual);
     }
   }
 
