@@ -5,6 +5,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -150,6 +153,12 @@ public interface ConfigurationService {
   }
 
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
-    return Optional.empty();
+    return Optional.of((informer, ex) -> {
+      if (ex != null) {
+        Logger log = LoggerFactory.getLogger(ConfigurationService.class);
+        log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
+        System.exit(1);
+      }
+    });
   }
 }
