@@ -60,5 +60,5 @@ jobs:
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
           start args: '--extra-config=apiserver.min-request-timeout=3'
-      - name: Run WatchPermissionAwareTest Category
+      - name: Run Special Integration Test
         run: ./mvnw ${MAVEN_ARGS} -B package -P minimal-watch-timeout-dependent-it --file pom.xml
