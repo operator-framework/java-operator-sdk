@@ -22,8 +22,8 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * The test relies on a special minikube configuration: "min-request-timeout" to have a very low value, see:
- * "minikube start --extra-config=apiserver.min-request-timeout=3"
+ * The test relies on a special minikube configuration: "min-request-timeout" to have a very low
+ * value, see: "minikube start --extra-config=apiserver.min-request-timeout=3"
  *
  * <p>
  * This is important when tests are affected by permission changes, since the watch permissions are
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class InformerRelatedBehaviorIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
-  
+
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
