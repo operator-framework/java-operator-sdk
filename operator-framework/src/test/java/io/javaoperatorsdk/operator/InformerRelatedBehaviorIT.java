@@ -2,12 +2,7 @@ package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.*;
 
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -26,14 +21,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * The test relies on a special minikube configuration: "min-request-timeout" to have a very low value, see:
+ * "minikube start --extra-config=apiserver.min-request-timeout=3"
+ *
+ * <p>
+ * This is important when tests are affected by permission changes, since the watch permissions are
+ * just checked when established a watch request. So minimal request timeout is set to make sure
+ * that with periodical watch reconnect the permission is tested again.
+ * </p>
+ */
+@Tag("WatchPermissionAwareTest")
 class InformerRelatedBehaviorIT {
 
-  private final static Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorIT.class);
-
   public static final String TEST_RESOURCE_NAME = "test1";
-
-  // minikube start --extra-config=apiserver.min-request-timeout=3
-
+  
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
