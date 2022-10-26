@@ -154,9 +154,11 @@ public interface ConfigurationService {
 
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
     return Optional.of((informer, ex) -> {
-      Logger log = LoggerFactory.getLogger(ConfigurationService.class);
-      log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
-      System.exit(1);
+      if (ex != null) {
+        Logger log = LoggerFactory.getLogger(ConfigurationService.class);
+        log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
+        System.exit(1);
+      }
     });
   }
 }
