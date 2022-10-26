@@ -153,9 +153,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return GenericKubernetesResourceMatcher.match(desired, actualResource, false);
   }
 
-  protected void handleDelete(P primary, Context<P> context) {
-    var resource = getSecondaryResource(primary, context);
-    resource.ifPresent(r -> client.resource(r).delete());
+  protected void handleDelete(P primary, R secondary, Context<P> context) {
+    if (secondary != null) {
+      client.resource(secondary).delete();
+    }
   }
 
   @SuppressWarnings("unused")
