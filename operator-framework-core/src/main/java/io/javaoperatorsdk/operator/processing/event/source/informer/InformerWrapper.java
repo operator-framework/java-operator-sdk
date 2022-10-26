@@ -66,6 +66,9 @@ class InformerWrapper<T extends HasMetadata>
       }
       try {
         var start = informer.start();
+        // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
+        // false, and there is a rbac issue the get never returns; therefore operator never really
+        // starts
         start.toCompletableFuture().get(configService.cacheSyncTimeout(), TimeUnit.MILLISECONDS);
       } catch (TimeoutException | ExecutionException e) {
         log.warn("Informer startup error. Informer: {}", informer, e);

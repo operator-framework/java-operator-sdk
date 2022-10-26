@@ -31,11 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * that with periodical watch reconnect the permission is tested again.
  * </p>
  * <p>
- * The test does not end with "IT" since that did not work with tags.
+ * The test ends with "ITS" (Special) since it needs to run separately from other ITs
  * </p>
  */
-@Tag("WatchPermissionAwareTest")
-class InformerRelatedBehaviorTest {
+class InformerRelatedBehaviorITS {
 
   public static final String TEST_RESOURCE_NAME = "test1";
 
