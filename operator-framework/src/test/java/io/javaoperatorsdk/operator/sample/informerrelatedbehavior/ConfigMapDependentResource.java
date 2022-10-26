@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.rbacbehavior;
+package io.javaoperatorsdk.operator.sample.informerrelatedbehavior;
 
 import java.util.Map;
 
@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 @KubernetesDependent(labelSelector = "app=rbac-test")
 public class ConfigMapDependentResource
-    extends CRUDKubernetesDependentResource<ConfigMap, RBACBehaviorTestCustomResource> {
+    extends CRUDKubernetesDependentResource<ConfigMap, InformerRelatedBehaviorTestCustomResource> {
 
   public static final String DATA_KEY = "key";
 
@@ -20,8 +20,8 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(RBACBehaviorTestCustomResource primary,
-      Context<RBACBehaviorTestCustomResource> context) {
+  protected ConfigMap desired(InformerRelatedBehaviorTestCustomResource primary,
+      Context<InformerRelatedBehaviorTestCustomResource> context) {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withLabels(Map.of("app", "rbac-test"))

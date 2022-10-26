@@ -156,6 +156,14 @@ public interface ConfigurationService {
     return true;
   }
 
+  /**
+   * Timeout for cache sync in milliseconds. In other words source start timeout. Note that is
+   * "stopOnInformerErrorDuringStartup" is true, this will be resulted in an operator stop.
+   */
+  default int cacheSyncTimeout() {
+    return 2 * 60 * 1000;
+  }
+
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
     return Optional.of((informer, ex) -> {
       if (ex != null) {

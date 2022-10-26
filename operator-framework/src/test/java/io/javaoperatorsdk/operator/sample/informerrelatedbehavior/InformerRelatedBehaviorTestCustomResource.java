@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.rbacbehavior;
+package io.javaoperatorsdk.operator.sample.informerrelatedbehavior;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("rbt")
-public class RBACBehaviorTestCustomResource
+public class InformerRelatedBehaviorTestCustomResource
     extends CustomResource<Void, Void>
     implements Namespaced {
 }

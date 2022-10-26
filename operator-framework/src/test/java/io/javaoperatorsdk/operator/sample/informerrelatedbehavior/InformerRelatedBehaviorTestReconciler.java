@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.rbacbehavior;
+package io.javaoperatorsdk.operator.sample.informerrelatedbehavior;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -11,17 +11,17 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(dependents = @Dependent(type = ConfigMapDependentResource.class))
-public class RBACBehaviorTestReconciler
-    implements Reconciler<RBACBehaviorTestCustomResource>, TestExecutionInfoProvider {
+public class InformerRelatedBehaviorTestReconciler
+    implements Reconciler<InformerRelatedBehaviorTestCustomResource>, TestExecutionInfoProvider {
 
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private KubernetesClient client;
 
   @Override
-  public UpdateControl<RBACBehaviorTestCustomResource> reconcile(
-      RBACBehaviorTestCustomResource resource,
-      Context<RBACBehaviorTestCustomResource> context) {
+  public UpdateControl<InformerRelatedBehaviorTestCustomResource> reconcile(
+      InformerRelatedBehaviorTestCustomResource resource,
+      Context<InformerRelatedBehaviorTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }

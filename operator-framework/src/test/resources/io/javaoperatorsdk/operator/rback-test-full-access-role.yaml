@@ -5,7 +5,7 @@ metadata:
   name: rbac-behavior
 rules:
   - apiGroups: [ "sample.javaoperatorsdk" ]
-    resources: [ "rbacbehaviortestcustomresources" ]
+    resources: [ "informerrelatedbehaviortestcustomresources" ]
     verbs: [ "get", "watch", "list","post", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "configmaps" ]

@@ -17,8 +17,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
 
 public class MockKubernetesClient {
 
@@ -46,7 +46,20 @@ public class MockKubernetesClient {
     CompletableFuture<Void> informerStartRes = new CompletableFuture<>();
     informerStartRes.complete(null);
     when(informer.start()).thenReturn(informerStartRes);
-
+    CompletableFuture<Void> stopped = new CompletableFuture<>();
+    when(informer.stopped()).thenReturn(stopped);
+    when(informer.getApiTypeClass()).thenReturn(clazz);
+    if (informerRunBehavior != null) {
+      doAnswer(invocation -> {
+        try {
+          informerRunBehavior.accept(null);
+        } catch (Exception e) {
+          stopped.completeExceptionally(e);
+        }
+        return stopped;
+      }).when(informer).start();
+    }
+    doAnswer(invocation -> null).when(informer).stop();
     Indexer mockIndexer = mock(Indexer.class);
     when(informer.getIndexer()).thenReturn(mockIndexer);
     when(filterable.runnableInformer(anyLong())).thenReturn(informer);

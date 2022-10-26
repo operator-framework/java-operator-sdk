@@ -28,6 +28,7 @@ public class ConfigurationServiceOverrider {
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
+  private Integer cacheSyncTimeout;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -101,8 +102,13 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationServiceOverrider withStopOnInformerErrorDuringStartup(
-      Boolean stopOnInformerErrorDuringStartup) {
+      boolean stopOnInformerErrorDuringStartup) {
     this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withCacheSyncTimeout(int cacheSyncTimeout) {
+    this.cacheSyncTimeout = cacheSyncTimeout;
     return this;
   }
 
@@ -183,6 +189,11 @@ public class ConfigurationServiceOverrider {
       public boolean stopOnInformerErrorDuringStartup() {
         return stopOnInformerErrorDuringStartup != null ? stopOnInformerErrorDuringStartup
             : super.stopOnInformerErrorDuringStartup();
+      }
+
+      @Override
+      public int cacheSyncTimeout() {
+        return cacheSyncTimeout != null ? cacheSyncTimeout : super.cacheSyncTimeout();
       }
     };
   }

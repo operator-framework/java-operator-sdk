@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -243,8 +244,7 @@ class InformerEventSourceTest {
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
-  // todo add integration test
-  // @Test
+  @Test
   void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
     try {
       final var exception = new RuntimeException("Informer stopped exceptionally!");
@@ -256,7 +256,8 @@ class InformerEventSourceTest {
           MockKubernetesClient.client(Deployment.class, unused -> {
             throw exception;
           }));
-      informerEventSource.start();
+
+      assertThrows(RuntimeException.class, () -> informerEventSource.start());
       verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
     } finally {
       ConfigurationServiceProvider.reset();

@@ -61,14 +61,12 @@ class InformerWrapper<T extends HasMetadata>
                       + fullResourceName + "/" + version);
             }
           });
-
       if (!configService.stopOnInformerErrorDuringStartup()) {
         informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
       }
       try {
         var start = informer.start();
-        // todo configurable timeout, also timeout for run?
-        start.toCompletableFuture().get(5000, TimeUnit.MILLISECONDS);
+        start.toCompletableFuture().get(configService.cacheSyncTimeout(), TimeUnit.MILLISECONDS);
       } catch (TimeoutException | ExecutionException e) {
         log.warn("Informer startup error. Informer: {}", informer, e);
         if (configService.stopOnInformerErrorDuringStartup()) {

@@ -19,29 +19,30 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.rbacbehavior.RBACBehaviorTestCustomResource;
-import io.javaoperatorsdk.operator.sample.rbacbehavior.RBACBehaviorTestReconciler;
+import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
+import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class RBACBehaviorIT {
+class InformerRelatedBehaviorIT {
 
-  private final static Logger log = LoggerFactory.getLogger(RBACBehaviorIT.class);
+  private final static Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorIT.class);
 
   public static final String TEST_RESOURCE_NAME = "test1";
 
-  // https://junit.org/junit5/docs/5.1.1/api/org/junit/jupiter/api/extension/TestInstancePostProcessor.html
   // minikube start --extra-config=apiserver.min-request-timeout=3
 
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
-  RBACBehaviorTestReconciler reconciler;
+  InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
+  volatile boolean stopHandlerCalled = false;
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
-    LocallyRunOperatorExtension.applyCrd(RBACBehaviorTestCustomResource.class, adminClient);
+    LocallyRunOperatorExtension.applyCrd(InformerRelatedBehaviorTestCustomResource.class,
+        adminClient);
     testInfo.getTestMethod().ifPresent(method -> {
       actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
       adminClient.resource(namespace()).createOrReplace();
@@ -124,6 +125,16 @@ class RBACBehaviorIT {
     assertReconciled();
   }
 
+  @Test
+  void callsStopHandlerOnStartupFail() {
+    setNoCustomResourceAccess();
+    adminClient.resource(testCustomResource()).createOrReplace();
+
+    assertThrows(OperatorException.class, () -> startOperator(true));
+
+    await().untilAsserted(() -> assertThat(stopHandlerCalled).isTrue());
+  }
+
   private static void waitForWatchReconnect() {
     try {
       Thread.sleep(6000);
@@ -132,22 +143,21 @@ class RBACBehaviorIT {
     }
   }
 
-
   private void assertNotReconciled() {
     await().pollDelay(Duration.ofMillis(2000)).untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
     });
   }
 
-  RBACBehaviorTestCustomResource testCustomResource() {
-    RBACBehaviorTestCustomResource testCustomResource = new RBACBehaviorTestCustomResource();
+  InformerRelatedBehaviorTestCustomResource testCustomResource() {
+    InformerRelatedBehaviorTestCustomResource testCustomResource =
+        new InformerRelatedBehaviorTestCustomResource();
     testCustomResource.setMetadata(new ObjectMetaBuilder()
         .withNamespace(actualNamespace)
         .withName(TEST_RESOURCE_NAME)
         .build());
     return testCustomResource;
   }
-
 
   private void assertReconciled() {
     await().untilAsserted(() -> {
@@ -170,14 +180,14 @@ class RBACBehaviorIT {
 
   Operator startOperator(boolean stopOnInformerErrorDuringStartup) {
     ConfigurationServiceProvider.reset();
-    reconciler = new RBACBehaviorTestReconciler();
+    reconciler = new InformerRelatedBehaviorTestReconciler();
 
     Operator operator = new Operator(clientUsingServiceAccount(),
         co -> {
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
+          co.withCacheSyncTimeout(3000);
           co.withInformerStoppedHandler((informer, ex) -> {
-            informer.start();
-            log.error("Stop handler: {}", informer, ex);
+            stopHandlerCalled = true;
           });
         });
     operator.register(reconciler);
