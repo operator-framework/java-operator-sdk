@@ -53,7 +53,7 @@ jobs:
           driver: 'docker'
       - name: Run integration tests
         run: ./mvnw ${MAVEN_ARGS} -B package -P no-unit-tests --file pom.xml
-      - name: Adjusting Minikube Settings
+      - name: Adjust Minikube Min Request Timeout Setting
         uses: manusa/actions-setup-minikube@v2.7.0
         with:
           minikube version: 'v1.26.0'
