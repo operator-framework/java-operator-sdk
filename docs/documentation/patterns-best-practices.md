@@ -94,7 +94,7 @@ Thanks to the declarative nature of Kubernetes resources, operators that deal on
 Kubernetes resources can operator in a stateless fashion, i.e. they do not need to maintain
 information about the state of these resources, as it should be possible to completely rebuild
 the resource state from its representation (that's what declarative means, after all).
-However, this usually doesn't hold true anymore when dealing with external resources and it
+However, this usually doesn't hold true anymore when dealing with external resources, and it
 might be necessary for the operator to keep track of this external state so that it is available
 when another reconciliation occurs. While such state could be put in the primary resource's
 status sub-resource, this could become quickly difficult to manage if a lot of state needs to be
@@ -105,9 +105,19 @@ advised to put such state into a separate resource meant for this purpose such a
 Kubernetes Secret or ConfigMap or even a dedicated Custom Resource, which structure can be more
 easily validated.
 
-## Stopping (or not) Operator in case of Informer Errors During Startup
+## Stopping (or not) Operator in case of Informer Errors
 
 It can
 be [configured](https://github.com/java-operator-sdk/java-operator-sdk/blob/2cb616c4c4fd0094ee6e3a0ef2a0ea82173372bf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L168-L168)
-on Operator level, if it should stop in case of informer errors on startup.
+if the operator should stop in case of any informer error happens on startup. By default, if there ia an error on
+startup and the informer for example has no permissions list the target resources (both the primary resource or
+secondary resources) the operator will stop instantly. This behavior can be altered by setting the mentioned flag
+to `false`, so operator will start even some informers are not started. In this case - same as in case when an informer
+is started at first but experienced problems later - will continuously retry the connection indefinitely with an
+exponential backoff. The operator will just stop if there is a fatal
+error, [currently](https://github.com/java-operator-sdk/java-operator-sdk/blob/0e55c640bf8be418bc004e51a6ae2dcf7134c688/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerWrapper.java#L64-L66)
+that is when a resource cannot be deserialized. The typical use case for changing this flag is when a list of namespaces
+is watched by a controller. In is better to start up the operator, so it can handle other namespaces while there
+might be a permission issue for some resources in another namespace.
+
 
