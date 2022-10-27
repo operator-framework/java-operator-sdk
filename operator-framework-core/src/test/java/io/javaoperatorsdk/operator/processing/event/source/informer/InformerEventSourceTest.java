@@ -257,6 +257,8 @@ class InformerEventSourceTest {
             throw exception;
           }));
 
+      // by default informer fails to start if there is an exception in the client on start.
+      // Throws the exception further.
       assertThrows(RuntimeException.class, () -> informerEventSource.start());
       verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
     } finally {
