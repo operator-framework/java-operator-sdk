@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -39,7 +38,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
   private ResourceEventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
-  protected ControllerConfiguration<?> controllerConfiguration;
 
   @Override
   public void start() throws OperatorException {
@@ -47,13 +45,11 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      C configuration, ControllerConfiguration<?> controllerConfiguration,
-      ResourceEventHandler<T> eventHandler) {
+      C configuration, ResourceEventHandler<T> eventHandler) {
     cloner = ConfigurationServiceProvider.instance().getResourceCloner();
     this.configuration = configuration;
     this.client = client;
     this.eventHandler = eventHandler;
-    this.controllerConfiguration = controllerConfiguration;
 
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     final var labelSelector = configuration.getLabelSelector();
