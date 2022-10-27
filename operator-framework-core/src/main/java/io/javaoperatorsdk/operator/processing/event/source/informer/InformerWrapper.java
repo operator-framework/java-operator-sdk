@@ -3,6 +3,9 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -11,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.ExceptionHandler;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
@@ -37,10 +41,9 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public void start() throws OperatorException {
     try {
-      informer.run();
-
+      var configService = ConfigurationServiceProvider.instance();
       // register stopped handler if we have one defined
-      ConfigurationServiceProvider.instance().getInformerStoppedHandler()
+      configService.getInformerStoppedHandler()
           .ifPresent(ish -> {
             final var stopped = informer.stopped();
             if (stopped != null) {
@@ -58,6 +61,27 @@ class InformerWrapper<T extends HasMetadata>
                       + fullResourceName + "/" + version);
             }
           });
+      if (!configService.stopOnInformerErrorDuringStartup()) {
+        informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
+      }
+      try {
+        var start = informer.start();
+        // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
+        // false, and there is a rbac issue the get never returns; therefore operator never really
+        // starts
+        start.toCompletableFuture().get(configService.cacheSyncTimeout().toMillis(),
+            TimeUnit.MILLISECONDS);
+      } catch (TimeoutException | ExecutionException e) {
+        if (configService.stopOnInformerErrorDuringStartup()) {
+          log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
+          throw new OperatorException(e);
+        } else {
+          log.warn("Informer startup error. Will periodically retry. Informer: {}", informer, e);
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(e);
+      }
 
     } catch (Exception e) {
       log.error("Couldn't start informer for " + versionedFullResourceName() + " resources", e);

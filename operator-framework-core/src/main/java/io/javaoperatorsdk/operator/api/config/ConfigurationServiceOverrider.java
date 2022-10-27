@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +28,8 @@ public class ConfigurationServiceOverrider {
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private InformerStoppedHandler informerStoppedHandler;
+  private Boolean stopOnInformerErrorDuringStartup;
+  private Duration cacheSyncTimeout;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -96,6 +99,17 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withInformerStoppedHandler(InformerStoppedHandler handler) {
     this.informerStoppedHandler = handler;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withStopOnInformerErrorDuringStartup(
+      boolean stopOnInformerErrorDuringStartup) {
+    this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withCacheSyncTimeout(Duration cacheSyncTimeout) {
+    this.cacheSyncTimeout = cacheSyncTimeout;
     return this;
   }
 
@@ -170,6 +184,17 @@ public class ConfigurationServiceOverrider {
       public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
         return informerStoppedHandler != null ? Optional.of(informerStoppedHandler)
             : original.getInformerStoppedHandler();
+      }
+
+      @Override
+      public boolean stopOnInformerErrorDuringStartup() {
+        return stopOnInformerErrorDuringStartup != null ? stopOnInformerErrorDuringStartup
+            : super.stopOnInformerErrorDuringStartup();
+      }
+
+      @Override
+      public Duration cacheSyncTimeout() {
+        return cacheSyncTimeout != null ? cacheSyncTimeout : super.cacheSyncTimeout();
       }
     };
   }
