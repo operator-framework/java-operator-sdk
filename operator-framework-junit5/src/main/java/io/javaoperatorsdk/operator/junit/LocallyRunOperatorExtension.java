@@ -101,6 +101,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     return registeredControllers.get(getReconcilerOfType(type));
   }
 
+  public Operator getOperator() {
+    return operator;
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   protected void before(ExtensionContext context) {
@@ -159,12 +163,20 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   private void applyCrd(String resourceTypeName) {
+    applyCrd(resourceTypeName, getKubernetesClient());
+  }
+
+  public static void applyCrd(Class<? extends HasMetadata> resourceClass, KubernetesClient client) {
+    applyCrd(ReconcilerUtils.getResourceTypeName(resourceClass), client);
+  }
+
+  public static void applyCrd(String resourceTypeName, KubernetesClient client) {
     String path = "/META-INF/fabric8/" + resourceTypeName + "-v1.yml";
-    try (InputStream is = getClass().getResourceAsStream(path)) {
+    try (InputStream is = LocallyRunOperatorExtension.class.getResourceAsStream(path)) {
       if (is == null) {
         throw new IllegalStateException("Cannot find CRD at " + path);
       }
-      final var crd = getKubernetesClient().load(is);
+      final var crd = client.load(is);
       crd.createOrReplace();
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
       LOGGER.debug("Applied CRD with path: {}", path);

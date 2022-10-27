@@ -307,6 +307,7 @@
                         <exclude>**/*IT.java</exclude>
                         <exclude>**/*E2E.java</exclude>
                     </excludes>
+                    <excludedGroups>WatchPermissionAwareTest</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
@@ -377,6 +378,28 @@
                 </plugins>
             </build>
         </profile>
+        <!--     Special category of tests. See usage in source code.   -->
+        <profile>
+            <id>minimal-watch-timeout-dependent-it</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/*ITS.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*Test.java</exclude>
+                                <exclude>**/*E2E.java</exclude>
+                                <exclude>**/*IT.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>end-to-end-tests</id>
             <build>
@@ -401,7 +424,6 @@
             <id>release</id>
             <build>
                 <plugins>
-
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
@@ -409,6 +431,7 @@
                             <excludes>
                                 <exclude>**/*IT.java</exclude>
                                 <exclude>**/*E2E.java</exclude>
+                                <exclude>**/InformerRelatedBehaviorTest.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
