@@ -41,7 +41,7 @@ class InformerRelatedBehaviorITS {
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
-  volatile boolean stopHandlerCalledReplacement = false;
+  volatile boolean replacementStopHandlerCalled = false;
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
@@ -136,7 +136,7 @@ class InformerRelatedBehaviorITS {
 
     assertThrows(OperatorException.class, () -> startOperator(true));
 
-    await().untilAsserted(() -> assertThat(stopHandlerCalledReplacement).isTrue());
+    await().untilAsserted(() -> assertThat(replacementStopHandlerCalled).isTrue());
   }
 
   @Test
@@ -148,7 +148,7 @@ class InformerRelatedBehaviorITS {
 
     // note that we just basically check here that the default handler does not call system exit.
     // Thus, the test does not terminate before to assert.
-    await().untilAsserted(() -> assertThat(stopHandlerCalledReplacement).isFalse());
+    await().untilAsserted(() -> assertThat(replacementStopHandlerCalled).isFalse());
   }
 
   private static void waitForWatchReconnect() {
@@ -207,7 +207,7 @@ class InformerRelatedBehaviorITS {
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
           co.withCacheSyncTimeout(Duration.ofMillis(3000));
           if (addStopHandler) {
-            co.withInformerStoppedHandler((informer, ex) -> stopHandlerCalledReplacement = true);
+            co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
           }
         });
     operator.register(reconciler);
