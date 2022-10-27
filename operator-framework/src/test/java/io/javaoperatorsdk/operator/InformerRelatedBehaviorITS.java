@@ -189,7 +189,7 @@ class InformerRelatedBehaviorITS {
     Operator operator = new Operator(clientUsingServiceAccount(),
         co -> {
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
-          co.withCacheSyncTimeout(3000);
+          co.withCacheSyncTimeout(Duration.ofMillis(3000));
           co.withInformerStoppedHandler((informer, ex) -> {
             stopHandlerCalled = true;
           });

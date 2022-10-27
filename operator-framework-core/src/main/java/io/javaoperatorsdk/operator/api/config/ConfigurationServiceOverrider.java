@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -28,7 +29,7 @@ public class ConfigurationServiceOverrider {
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
-  private Integer cacheSyncTimeout;
+  private Duration cacheSyncTimeout;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -107,7 +108,7 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withCacheSyncTimeout(int cacheSyncTimeout) {
+  public ConfigurationServiceOverrider withCacheSyncTimeout(Duration cacheSyncTimeout) {
     this.cacheSyncTimeout = cacheSyncTimeout;
     return this;
   }
@@ -192,7 +193,7 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public int cacheSyncTimeout() {
+      public Duration cacheSyncTimeout() {
         return cacheSyncTimeout != null ? cacheSyncTimeout : super.cacheSyncTimeout();
       }
     };
