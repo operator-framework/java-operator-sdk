@@ -72,9 +72,11 @@ class InformerWrapper<T extends HasMetadata>
         start.toCompletableFuture().get(configService.cacheSyncTimeout().toMillis(),
             TimeUnit.MILLISECONDS);
       } catch (TimeoutException | ExecutionException e) {
-        log.warn("Informer startup error. Informer: {}", informer, e);
         if (configService.stopOnInformerErrorDuringStartup()) {
+          log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
           throw new OperatorException(e);
+        } else {
+          log.warn("Informer startup error. Will periodically retry. Informer: {}", informer, e);
         }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
