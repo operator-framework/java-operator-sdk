@@ -41,7 +41,7 @@ class InformerRelatedBehaviorITS {
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
-  volatile boolean stopHandlerCalled = false;
+  volatile boolean replacementStopHandlerCalled = false;
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
@@ -136,7 +136,19 @@ class InformerRelatedBehaviorITS {
 
     assertThrows(OperatorException.class, () -> startOperator(true));
 
-    await().untilAsserted(() -> assertThat(stopHandlerCalled).isTrue());
+    await().untilAsserted(() -> assertThat(replacementStopHandlerCalled).isTrue());
+  }
+
+  @Test
+  void notExitingWithDefaultStopHandlerIfErrorHappensOnStartup() {
+    setNoCustomResourceAccess();
+    adminClient.resource(testCustomResource()).createOrReplace();
+
+    assertThrows(OperatorException.class, () -> startOperator(true, false));
+
+    // note that we just basically check here that the default handler does not call system exit.
+    // Thus, the test does not terminate before to assert.
+    await().untilAsserted(() -> assertThat(replacementStopHandlerCalled).isFalse());
   }
 
   private static void waitForWatchReconnect() {
@@ -183,6 +195,10 @@ class InformerRelatedBehaviorITS {
   }
 
   Operator startOperator(boolean stopOnInformerErrorDuringStartup) {
+    return startOperator(stopOnInformerErrorDuringStartup, true);
+  }
+
+  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler) {
     ConfigurationServiceProvider.reset();
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
@@ -190,9 +206,9 @@ class InformerRelatedBehaviorITS {
         co -> {
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
           co.withCacheSyncTimeout(Duration.ofMillis(3000));
-          co.withInformerStoppedHandler((informer, ex) -> {
-            stopHandlerCalled = true;
-          });
+          if (addStopHandler) {
+            co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
+          }
         });
     operator.register(reconciler);
     operator.installShutdownHook();
