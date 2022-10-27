@@ -135,8 +135,4 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     return cache.list(predicate);
   }
 
-  public void setControllerConfiguration(ControllerConfiguration<P> controllerConfiguration) {
-    this.controllerConfiguration = controllerConfiguration;
-  }
-
 }
