@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -152,6 +153,35 @@ public interface ConfigurationService {
     return Optional.empty();
   }
 
+  /**
+   * <p>
+   * if true, operator stops if there are some issues with informers
+   * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} or
+   * {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
+   * on startup. Other event sources may also respect this flag.
+   * </p>
+   * <p>
+   * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
+   * will try to reconnect periodically in the background.
+   * </p>
+   */
+  default boolean stopOnInformerErrorDuringStartup() {
+    return true;
+  }
+
+  /**
+   * Timeout for cache sync in milliseconds. In other words source start timeout. Note that is
+   * "stopOnInformerErrorDuringStartup" is true the operator will stop on timeout. Default is 2
+   * minutes.
+   */
+  default Duration cacheSyncTimeout() {
+    return Duration.ofMinutes(2);
+  }
+
+  /**
+   * Handler for an informer stop. Informer stops if there is a non-recoverable error. Like received
+   * a resource that cannot be deserialized.
+   */
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
     return Optional.of((informer, ex) -> {
       if (ex != null) {

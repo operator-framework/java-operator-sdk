@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -255,7 +256,10 @@ class InformerEventSourceTest {
           MockKubernetesClient.client(Deployment.class, unused -> {
             throw exception;
           }));
-      informerEventSource.start();
+
+      // by default informer fails to start if there is an exception in the client on start.
+      // Throws the exception further.
+      assertThrows(RuntimeException.class, () -> informerEventSource.start());
       verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
     } finally {
       ConfigurationServiceProvider.reset();
