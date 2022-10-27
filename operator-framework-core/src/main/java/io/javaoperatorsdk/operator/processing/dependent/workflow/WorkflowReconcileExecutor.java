@@ -169,9 +169,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
         boolean ready = dependentResourceNode.getReadyPostcondition()
             .map(rc -> rc.isMet(primary,
-                context
-                    .getSecondaryResource(
-                        dependentResourceNode.getDependentResource().resourceType())
+                dependentResourceNode.getDependentResource().getSecondaryResource(primary, context)
                     .orElse(null),
                 context))
             .orElse(true);
@@ -212,8 +210,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
         }
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
-                context.getSecondaryResource(
-                    dependentResourceNode.getDependentResource().resourceType()).orElse(null),
+                dependentResourceNode.getDependentResource().getSecondaryResource(primary, context)
+                    .orElse(null),
                 context)).orElse(true);
         if (deletePostConditionMet) {
           alreadyVisited.add(dependentResourceNode);
