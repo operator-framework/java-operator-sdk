@@ -184,7 +184,9 @@ public interface ConfigurationService {
    */
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
     return Optional.of((informer, ex) -> {
-      if (ex != null) {
+      // hasSynced is checked to verify that informer already started. If not started, in case
+      // of a fatal error the operator will stop, no need for explicit exit.
+      if (ex != null && informer.hasSynced()) {
         Logger log = LoggerFactory.getLogger(ConfigurationService.class);
         log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
         System.exit(1);
