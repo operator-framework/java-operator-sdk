@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
@@ -32,11 +33,12 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   protected TemporaryResourceCache<R> temporaryResourceCache = new TemporaryResourceCache<>(this);
   protected InformerManager<R, C> cache = new InformerManager<>();
+  protected ControllerConfiguration<P> controllerConfiguration;
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
     super(configuration.getResourceClass());
-    manager().initSources(client, configuration, this);
+    manager().initSources(client, configuration, controllerConfiguration, this);
   }
 
   @Override
@@ -131,6 +133,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   @Override
   public Stream<R> list(Predicate<R> predicate) {
     return cache.list(predicate);
+  }
+
+  public void setControllerConfiguration(ControllerConfiguration<P> controllerConfiguration) {
+    this.controllerConfiguration = controllerConfiguration;
   }
 
 }
