@@ -84,7 +84,7 @@ possible to completely deactivate the feature, though we advise against it. The 
 configure automatic retries for your `Reconciler` is due to the fact that errors occur quite
 often due to the distributed nature of Kubernetes: transient network errors can be easily dealt
 with by automatic retries. Similarly, resources can be modified by different actors at the same
-time so it's not unheard of to get conflicts when working with Kubernetes resources. Such
+time, so it's not unheard of to get conflicts when working with Kubernetes resources. Such
 conflicts can usually be quite naturally resolved by reconciling the resource again. If it's
 done automatically, the whole process can be completely transparent.
 
@@ -104,4 +104,10 @@ striclty represent the resource's actual state is therefore discouraged. Instead
 advised to put such state into a separate resource meant for this purpose such as a
 Kubernetes Secret or ConfigMap or even a dedicated Custom Resource, which structure can be more
 easily validated.
+
+## Stopping (or not) Operator in case of Informer Errors During Startup
+
+It can
+be [configured](https://github.com/java-operator-sdk/java-operator-sdk/blob/2cb616c4c4fd0094ee6e3a0ef2a0ea82173372bf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L168-L168)
+on Operator level, if it should stop in case of informer errors on startup.
 
