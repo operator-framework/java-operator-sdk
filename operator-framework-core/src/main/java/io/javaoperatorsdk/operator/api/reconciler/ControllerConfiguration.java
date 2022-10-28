@@ -118,4 +118,7 @@ public @interface ControllerConfiguration {
    *         accessible no-arg constructor.
    */
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
+
+  CacheSyncTimeout cacheSyncTimeout() default @CacheSyncTimeout(
+      timeout = CacheSyncTimeout.DEFAULT_TIMEOUT);
 }

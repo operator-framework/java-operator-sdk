@@ -97,7 +97,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private InformerWrapper<T> createEventSource(
       FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,
       ResourceEventHandler<T> eventHandler, String key) {
-    var source = new InformerWrapper<>(filteredBySelectorClient.runnableInformer(0));
+    var source = new InformerWrapper<>(filteredBySelectorClient.runnableInformer(0),
+        configuration);
     source.addEventHandler(eventHandler);
     sources.put(key, source);
     return source;
