@@ -7,8 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -24,7 +25,8 @@ import static org.mockito.Mockito.*;
 class ControllerResourceEventSourceTest extends
     AbstractEventSourceTestBase<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
 
-  public static final String FINALIZER = "finalizer";
+  public static final String FINALIZER =
+      ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
 
   private final TestController testController = new TestController(true);
 
@@ -171,24 +173,24 @@ class ControllerResourceEventSourceTest extends
   }
 
   private static class TestConfiguration extends
-      DefaultControllerConfiguration<TestCustomResource> {
+      ResolvedControllerConfiguration<TestCustomResource> {
 
     public TestConfiguration(boolean generationAware, OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
         GenericFilter<TestCustomResource> genericFilter) {
       super(
+          TestCustomResource.class,
           null,
-          null,
-          null,
-          FINALIZER,
           generationAware,
           null,
           null,
           null,
           null,
-          TestCustomResource.class,
+          onAddFilter,
+          onUpdateFilter,
+          genericFilter,
           null,
-          onAddFilter, onUpdateFilter, genericFilter, null, null);
+          FINALIZER, null);
     }
   }
 }

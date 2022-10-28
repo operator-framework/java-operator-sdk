@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
+public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
@@ -70,8 +70,12 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
    * </p>
    *
    * @return filter
+   * @deprecated use {@link ResourceConfiguration#onAddFilter()},
+   *             {@link ResourceConfiguration#onUpdateFilter()} or
+   *             {@link ResourceConfiguration#genericFilter()} instead
    */
-  default ResourceEventFilter<R> getEventFilter() {
+  @Deprecated(forRemoval = true)
+  default ResourceEventFilter<P> getEventFilter() {
     return ResourceEventFilters.passthrough();
   }
 
@@ -91,8 +95,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
 
   @SuppressWarnings("unchecked")
   @Override
-  default Class<R> getResourceClass() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
+  default Class<P> getResourceClass() {
+    return (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
         ControllerConfiguration.class);
   }
 }

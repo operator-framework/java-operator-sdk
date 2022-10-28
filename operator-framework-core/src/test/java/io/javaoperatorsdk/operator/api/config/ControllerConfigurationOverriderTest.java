@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ControllerConfigurationOverriderTest {
+  private final BaseConfigurationService configurationService = new BaseConfigurationService();
 
   @Test
   void overridingNSShouldPreserveUntouchedDependents() {
@@ -113,7 +114,7 @@ class ControllerConfigurationOverriderTest {
 
   private io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> createConfiguration(
       Reconciler<?> reconciler) {
-    return new AnnotationControllerConfiguration<>(reconciler);
+    return configurationService.configFor(reconciler);
   }
 
   @ControllerConfiguration(namespaces = "foo")

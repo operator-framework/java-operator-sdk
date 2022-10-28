@@ -3,11 +3,14 @@ package io.javaoperatorsdk.operator;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.sample.simple.*;
+import io.javaoperatorsdk.operator.sample.simple.DuplicateCRController;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomReconcilerOtherV1;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceOtherV1;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,29 +49,23 @@ public class ControllerManagerTest {
     });
     final var msg = exception.getMessage();
     assertTrue(
-        msg.contains("Cannot register controller '" + duplicated.getControllerName() + "'")
-            && msg.contains(registered.getControllerName())
+        msg.contains("Cannot register controller '" + duplicated.getName() + "'")
+            && msg.contains(registered.getName())
             && msg.contains(registered.getResourceTypeName()));
   }
 
   private static class TestControllerConfiguration<R extends HasMetadata>
-      extends DefaultControllerConfiguration<R> {
+      extends ResolvedControllerConfiguration<R> {
     private final Reconciler<R> controller;
 
     public TestControllerConfiguration(Reconciler<R> controller, Class<R> crClass) {
-      super(null, getControllerName(controller),
-          CustomResource.getCRDName(crClass), null, false, null, null, null, null, crClass,
-          null, null, null, null, null, null);
+      super(crClass, getControllerName(controller), controller.getClass());
       this.controller = controller;
     }
 
     static <R extends HasMetadata> String getControllerName(
         Reconciler<R> controller) {
       return controller.getClass().getSimpleName() + "Controller";
-    }
-
-    private String getControllerName() {
-      return getControllerName(controller);
     }
   }
 }
