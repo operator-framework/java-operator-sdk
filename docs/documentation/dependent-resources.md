@@ -342,6 +342,75 @@ See sample in one of the integration
 tests [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/primaryindexer/DependentPrimaryIndexerTestReconciler.java#L25-L25)
 .
 
+## Multiple Dependent Resources of Same Type 
+
+In case there are multiple dependent resource of same type, the dependent resource implementation needs to know which
+resource is it related to, since there will be multiple instances also in caches. 
+For that it should have a [resource discriminator](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
+. Where resource discriminator uniquely identifies the target resource of a dependent resource. For managed 
+Kubernetes dependent resource the annotation can be used to set a discriminator:
+
+```
+@KubernetesDependent(resourceDiscriminator = ConfigMap1Discriminator.class)
+public class MultipleManagedDependentResourceConfigMap1 {
+//...
+}
+```
+
+Dependent resources has the capability to provide event sources. In case there are multiple dependent of the same type
+either the provided event sources should track different resources (in other words the tracked resources by different
+event sources should be distinct) or should share a common dependent resource.
+
+To use a dedicated event source defined in a `EventSourceInitializer` use its name to set it for a dependent resource 
+to be used: 
+```
+ @Dependent(type = MultipleManagedDependentResourceConfigMap1.class,
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+```
+
+A sample is provided as an integration test both for [managed](/home/csviri/Workspace/java-operator-sdk/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentSameTypeIT.java)
+and for [standalone mode](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
+
+## Bulk Dependent Resources
+
+There are cases when the number of certain resource type changes dynamically for example based on spec of 
+the custom resource. These cases are covered by bulk custom resources. To have a resource in "bulk mode" it should
+extend the same base classes as other resources, thus `AbstractDependentResource` and it's subclasses and in addition
+to that implement the [`BulkDependetResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/BulkDependentResource.java)
+interface.
+
+Various examples are provided as [integration tests](https://github.com/java-operator-sdk/java-operator-sdk/tree/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/bulkdependent)
+.
+
+## Dependent Resources with Explicit State
+
+For cases when an external (non-Kubernetes) resource generates an ID during creation and from that point
+this resource is addressed using this ID special support is provided. A typical example would a GitHub Pull request, 
+when created, a new ID is generated for it, and from that time in the URL that ID is used to access the PR.
+For these cases those IDs are usually stored in a ConfigMap, Secret or a dedicated CustomResource, and accessed
+either during reconciliation or by the event source.
+
+To create a dependent resource that covers such case the [`AbstractExternalDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java)
+needs to be extended and the [`DependentResourceWithExplicitState`](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/DependentResourceWithExplicitState.java)
+interface implemented. Note that most of the out-of-the-box dependent resources for external resources, like the 
+`PollingDependentResource` or the `PerResourcePollingDependentResource` already extends 
+`AbstractExternalDependentResource`.
+
+See [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/ExternalStateDependentIT.java#L8-L8)
+as a sample.
+
+For a better understanding it might be worth to study a [sample implementation](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/externalstate/ExternalStateReconciler.java)
+without dependent resources.
+
+## Combining Bulk and Explicit State Dependent Resources
+
+The bulk and the and explicit state dependent resource features can be combined. In that case for each external resource
+that is created a separate resource with the state will be created too. For example if there are three external resources created
+there will be three related config maps (assuming config maps are used), one for each external resource.
+
+See [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/ExternalStateBulkIT.java)
+as a sample.
+
 ## Other Dependent Resource Features
 
 ### Caching and Event Handling in [KubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
