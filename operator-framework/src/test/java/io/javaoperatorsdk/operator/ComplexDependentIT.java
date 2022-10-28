@@ -39,7 +39,7 @@ class ComplexDependentIT {
   void successfullyReconciles() {
     operator.create(testResource());
 
-    await().atMost(Duration.ofSeconds(60))
+    await().atMost(Duration.ofSeconds(90))
         .untilAsserted(() -> {
           var res = operator.get(ComplexDependentCustomResource.class, TEST_RESOURCE_NAME);
           assertThat(res.getStatus()).isNotNull();
