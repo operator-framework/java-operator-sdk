@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -134,6 +135,10 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       timeUnit = reconciliationInterval.timeUnit();
     }
 
+    final var cacheSyncTimeoutFromAnn = annotation.cacheSyncTimeout();
+    final var cacheSyncTimeout = Duration.of(
+        cacheSyncTimeoutFromAnn.timeout(), cacheSyncTimeoutFromAnn.timeUnit().toChronoUnit());
+
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
@@ -144,6 +149,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             Utils.contextFor(name, null, null)),
         Utils.instantiate(annotation.genericFilter(), GenericFilter.class,
             Utils.contextFor(name, null, null)),
+        cacheSyncTimeout,
         Set.of(valueOrDefault(annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::namespaces,
             DEFAULT_NAMESPACES_SET.toArray(String[]::new))),
@@ -251,6 +257,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     }
   }
 
+  @SuppressWarnings("rawtypes")
   private static String getName(String name, Class<? extends DependentResource> dependentType) {
     if (name.isBlank()) {
       name = DependentResource.defaultNameFor(dependentType);
@@ -258,6 +265,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     return name;
   }
 
+  @SuppressWarnings("unused")
   private static <T> Configurator<T> configuratorFor(Class<T> instanceType,
       Reconciler<?> reconciler) {
     return instance -> configureFromAnnotatedReconciler(instance, reconciler);

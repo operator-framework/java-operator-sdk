@@ -40,7 +40,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.getAssociatedReconcilerClassName(), other.getRetry(), other.getRateLimiter(),
         other.maxReconciliationInterval().orElse(null),
         other.onAddFilter().orElse(null), other.onUpdateFilter().orElse(null),
-        other.genericFilter().orElse(null), other.getDependentResources(), other.getNamespaces(),
+        other.genericFilter().orElse(null), other.cacheSyncTimeout(), other.getDependentResources(),
+        other.getNamespaces(),
         other.getFinalizerName(), other.getLabelSelector());
   }
 
@@ -65,10 +66,12 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       boolean generationAware, String associatedReconcilerClassName, Retry retry,
       RateLimiter rateLimiter, Duration maxReconciliationInterval,
       OnAddFilter<P> onAddFilter, OnUpdateFilter<P> onUpdateFilter,
-      GenericFilter<P> genericFilter, List<DependentResourceSpec> dependentResources,
+      GenericFilter<P> genericFilter, Duration cacheSyncTimeout,
+      List<DependentResourceSpec> dependentResources,
       Set<String> namespaces, String finalizer, String labelSelector) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
+        cacheSyncTimeout,
         namespaces, finalizer, labelSelector);
     setDependentResources(dependentResources);
   }
@@ -77,8 +80,9 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       boolean generationAware, String associatedReconcilerClassName, Retry retry,
       RateLimiter rateLimiter, Duration maxReconciliationInterval,
       OnAddFilter<P> onAddFilter, OnUpdateFilter<P> onUpdateFilter, GenericFilter<P> genericFilter,
+      Duration cacheSyncTimeout,
       Set<String> namespaces, String finalizer, String labelSelector) {
-    super(resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
+    super(resourceClass, onAddFilter, onUpdateFilter, genericFilter, cacheSyncTimeout, namespaces);
     this.name = name;
     this.generationAware = generationAware;
     this.associatedReconcilerClassName = associatedReconcilerClassName;
@@ -93,7 +97,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
       Class<? extends Reconciler> reconcilerClas) {
     this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
-        null, null, null, null,
+        null, null, null, null, null,
         null, null, null);
   }
 

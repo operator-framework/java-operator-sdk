@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -38,8 +39,9 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnAddFilter<R> onAddFilter,
         OnUpdateFilter<R> onUpdateFilter,
         OnDeleteFilter<R> onDeleteFilter,
-        GenericFilter<R> genericFilter) {
-      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
+        GenericFilter<R> genericFilter, Duration cacheSyncTimeout) {
+      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter,
+          cacheSyncTimeout, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -63,6 +65,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       return Optional.ofNullable(onDeleteFilter);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
       return (PrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;
@@ -102,6 +105,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private OnDeleteFilter<R> onDeleteFilter;
     private GenericFilter<R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
+    private Duration cacheSyncTimeout;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -202,12 +206,17 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public InformerConfigurationBuilder<R> withCacheSyncTimeout(Duration cacheSyncTimeout) {
+      this.cacheSyncTimeout = cacheSyncTimeout;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
-          onDeleteFilter, genericFilter);
+          onDeleteFilter, genericFilter, cacheSyncTimeout);
     }
   }
 

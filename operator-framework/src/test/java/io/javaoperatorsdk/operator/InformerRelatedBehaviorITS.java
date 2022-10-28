@@ -95,7 +95,7 @@ class InformerRelatedBehaviorITS {
   }
 
   @Test
-  void resilientForLoosingPermissionForCustomResource() throws InterruptedException {
+  void resilientForLoosingPermissionForCustomResource() {
     setFullResourcesAccess();
     startOperator(true);
     setNoCustomResourceAccess();
@@ -160,9 +160,8 @@ class InformerRelatedBehaviorITS {
   }
 
   private void assertNotReconciled() {
-    await().pollDelay(Duration.ofMillis(2000)).untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
-    });
+    await().pollDelay(Duration.ofMillis(2000))
+        .untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0));
   }
 
   InformerRelatedBehaviorTestCustomResource testCustomResource() {
@@ -185,13 +184,12 @@ class InformerRelatedBehaviorITS {
   }
 
   KubernetesClient clientUsingServiceAccount() {
-    KubernetesClient client = new KubernetesClientBuilder()
+    return new KubernetesClientBuilder()
         .withConfig(new ConfigBuilder()
             .withImpersonateUsername("rbac-test-user")
             .withNamespace(actualNamespace)
             .build())
         .build();
-    return client;
   }
 
   Operator startOperator(boolean stopOnInformerErrorDuringStartup) {

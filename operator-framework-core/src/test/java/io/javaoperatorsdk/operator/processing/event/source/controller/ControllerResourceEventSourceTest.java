@@ -190,6 +190,7 @@ class ControllerResourceEventSourceTest extends
           onUpdateFilter,
           genericFilter,
           null,
+          null,
           FINALIZER, null);
     }
   }
