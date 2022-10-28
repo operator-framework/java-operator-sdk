@@ -5,52 +5,41 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
-
 public class DefaultResourceConfiguration<R extends HasMetadata>
     implements ResourceConfiguration<R> {
 
-  private final String labelSelector;
-  private final Set<String> namespaces;
   private final Class<R> resourceClass;
+  private final String resourceTypeName;
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
   private final GenericFilter<R> genericFilter;
+  private final String labelSelector;
+  private final Set<String> namespaces;
   private final UnaryOperator<R> cachePruneFunction;
 
-  public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
-      OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, String... namespaces) {
-    this(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter,
-        namespaces == null || namespaces.length == 0 ? DEFAULT_NAMESPACES_SET
-            : Set.of(namespaces),
-        null);
-  }
-
-  public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
-      OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter,
-      GenericFilter<R> genericFilter,
-      Set<String> namespaces,
+  protected DefaultResourceConfiguration(Class<R> resourceClass,
+      Set<String> namespaces, String labelSelector, OnAddFilter<R> onAddFilter,
+      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
       UnaryOperator<R> cachePruneFunction) {
-    this.labelSelector = labelSelector;
     this.resourceClass = resourceClass;
+    this.resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
     this.genericFilter = genericFilter;
-    this.namespaces =
-        namespaces == null || namespaces.isEmpty() ? DEFAULT_NAMESPACES_SET
-            : namespaces;
+
+    this.namespaces = ResourceConfiguration.ensureValidNamespaces(namespaces);
+    this.labelSelector = ResourceConfiguration.ensureValidLabelSelector(labelSelector);
     this.cachePruneFunction = cachePruneFunction;
   }
 
   @Override
   public String getResourceTypeName() {
-    return ResourceConfiguration.super.getResourceTypeName();
+    return resourceTypeName;
   }
 
   @Override

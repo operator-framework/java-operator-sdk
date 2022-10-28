@@ -179,25 +179,14 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfiguration<R> build() {
-    return new DefaultControllerConfiguration<>(
-        original.getAssociatedReconcilerClassName(),
-        original.getName(),
-        original.getResourceTypeName(),
-        finalizer,
-        generationAware,
-        namespaces,
-        retry,
-        labelSelector,
-        customResourcePredicate,
-        original.getResourceClass(),
-        reconciliationMaxInterval,
-        onAddFilter,
-        onUpdateFilter,
-        genericFilter,
-        rateLimiter,
+    final var overridden = new ResolvedControllerConfiguration<>(
+        original.getResourceClass(), original.getName(),
+        generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
+        reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter, cachePruneFunction,
         original.getDependentResources(),
-        cachePruneFunction,
-        configurations);
+        namespaces, finalizer, labelSelector);
+    overridden.setEventFilter(customResourcePredicate);
+    return overridden;
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

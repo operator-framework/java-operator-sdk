@@ -8,9 +8,10 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -25,7 +26,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class ResourceEventFilterTest {
-  public static final String FINALIZER = "finalizer";
+  public static final String FINALIZER =
+      ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
 
   private EventHandler eventHandler;
 
@@ -129,23 +131,21 @@ class ResourceEventFilterTest {
   }
 
   private static class ControllerConfig<T extends HasMetadata> extends
-      DefaultControllerConfiguration<T> {
+      ResolvedControllerConfiguration<T> {
 
     public ControllerConfig(String finalizer, boolean generationAware,
         ResourceEventFilter<T> eventFilter, Class<T> customResourceClass) {
-      super(
-          null,
-          "testController",
-          null,
-          finalizer,
+      super(customResourceClass,
+          "test",
           generationAware,
           null,
           null,
           null,
-          eventFilter,
-          customResourceClass,
           null,
-          null, null, null, null, null, null);
+          null,
+          null,
+          null, null, null, finalizer, null);
+      setEventFilter(eventFilter);
     }
   }
 

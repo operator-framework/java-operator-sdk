@@ -7,8 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -19,12 +20,17 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class ControllerResourceEventSourceTest extends
     AbstractEventSourceTestBase<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
 
-  public static final String FINALIZER = "finalizer";
+  public static final String FINALIZER =
+      ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
 
   private final TestController testController = new TestController(true);
 
@@ -171,24 +177,27 @@ class ControllerResourceEventSourceTest extends
   }
 
   private static class TestConfiguration extends
-      DefaultControllerConfiguration<TestCustomResource> {
+      ResolvedControllerConfiguration<TestCustomResource> {
 
     public TestConfiguration(boolean generationAware, OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
         GenericFilter<TestCustomResource> genericFilter) {
       super(
-          null,
-          "testController",
-          null,
-          FINALIZER,
+          TestCustomResource.class,
+          "test",
           generationAware,
           null,
           null,
           null,
           null,
-          TestCustomResource.class,
+          onAddFilter,
+          onUpdateFilter,
+          genericFilter,
           null,
-          onAddFilter, onUpdateFilter, genericFilter, null, null, null);
+          null,
+          null,
+          FINALIZER,
+          null);
     }
   }
 }

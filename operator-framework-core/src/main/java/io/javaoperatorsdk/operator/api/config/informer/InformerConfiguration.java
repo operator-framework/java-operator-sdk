@@ -30,7 +30,6 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
     private final OnDeleteFilter<R> onDeleteFilter;
-    private final UnaryOperator<R> cachePruneFunction;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
@@ -42,7 +41,7 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnDeleteFilter<R> onDeleteFilter,
         GenericFilter<R> genericFilter,
         UnaryOperator<R> cachePruneFunction) {
-      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces,
+      super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
           cachePruneFunction);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
@@ -51,7 +50,6 @@ public interface InformerConfiguration<R extends HasMetadata>
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
       this.onDeleteFilter = onDeleteFilter;
-      this.cachePruneFunction = cachePruneFunction;
     }
 
     @Override
@@ -69,13 +67,9 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
       return (PrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;
-    }
-
-    @Override
-    public Optional<UnaryOperator<R>> cachePruneFunction() {
-      return Optional.ofNullable(this.cachePruneFunction);
     }
   }
 
