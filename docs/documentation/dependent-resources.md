@@ -402,6 +402,8 @@ as a sample.
 For a better understanding it might be worth to study a [sample implementation](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/externalstate/ExternalStateReconciler.java)
 without dependent resources.
 
+See also [docs for managing](/docs/patterns-best-practices#managing-state) state in general.
+
 ## Combining Bulk and Explicit State Dependent Resources
 
 The bulk and the and explicit state dependent resource features can be combined. In that case for each external resource
