@@ -205,12 +205,15 @@ class InformerRelatedBehaviorITS {
     Operator operator = new Operator(clientUsingServiceAccount(),
         co -> {
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
-          co.withCacheSyncTimeout(Duration.ofMillis(3000));
           if (addStopHandler) {
-            co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
+            co.withInformerStoppedHandler((informer, ex) -> {
+              replacementStopHandlerCalled = true;
+            });
           }
         });
-    operator.register(reconciler);
+    operator.register(reconciler, co -> {
+      co.withCacheSyncTimeout(Duration.ofMillis(3000));
+    });
     operator.installShutdownHook();
     operator.start();
     return operator;

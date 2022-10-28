@@ -48,6 +48,7 @@ public class EventSourceManager<P extends HasMetadata>
 
   public void postProcessDefaultEventSourcesAfterProcessorInitializer() {
     eventSources.controllerResourceEventSource().setEventHandler(controller.getEventProcessor());
+
     eventSources.retryEventSource().setEventHandler(controller.getEventProcessor());
   }
 
@@ -119,6 +120,7 @@ public class EventSourceManager<P extends HasMetadata>
     registerEventSource(null, eventSource);
   }
 
+  @SuppressWarnings("unchecked")
   public final synchronized void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
