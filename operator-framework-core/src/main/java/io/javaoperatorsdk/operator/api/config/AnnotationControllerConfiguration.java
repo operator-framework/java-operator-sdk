@@ -252,12 +252,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     return specs;
   }
 
-  @Override
-  public Duration cacheSyncTimeout() {
-    var cacheSyncTimeout = annotation.cacheSyncTimeout();
-    return Duration.of(cacheSyncTimeout.timeout(), cacheSyncTimeout.timeUnit().toChronoUnit());
-  }
-
   private String getName(Dependent dependent, Class<? extends DependentResource> dependentType) {
     var name = dependent.name();
     if (name.isBlank()) {

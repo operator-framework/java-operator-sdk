@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -8,7 +7,6 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.CacheSyncTimeout;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -109,14 +107,5 @@ public interface ResourceConfiguration<R extends HasMetadata> {
       targetNamespaces = Collections.singleton(namespace);
     }
     return targetNamespaces;
-  }
-
-  /**
-   * Timeout for cache sync. In other words event source start timeout. Note that is
-   * "stopOnInformerErrorDuringStartup" is true the operator will stop on timeout. Default is 2
-   * minutes.
-   */
-  default Duration cacheSyncTimeout() {
-    return Duration.ofMinutes(CacheSyncTimeout.DEFAULT_TIMEOUT);
   }
 }

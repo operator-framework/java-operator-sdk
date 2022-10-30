@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -166,6 +167,15 @@ public interface ConfigurationService {
    */
   default boolean stopOnInformerErrorDuringStartup() {
     return true;
+  }
+
+  /**
+   * Timeout for cache sync in milliseconds. In other words source start timeout. Note that is
+   * "stopOnInformerErrorDuringStartup" is true the operator will stop on timeout. Default is 2
+   * minutes.
+   */
+  default Duration cacheSyncTimeout() {
+    return Duration.ofMinutes(2);
   }
 
   /**
