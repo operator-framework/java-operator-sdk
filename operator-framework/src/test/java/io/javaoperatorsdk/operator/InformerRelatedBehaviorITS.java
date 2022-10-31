@@ -22,8 +22,8 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * The test relies on a special minikube configuration: "min-request-timeout" to have a very low
- * value, see: "minikube start --extra-config=apiserver.min-request-timeout=3"
+ * The test relies on a special api server configuration: "min-request-timeout" to have a very low
+ * value, use: "minikube start --extra-config=apiserver.min-request-timeout=3"
  *
  * <p>
  * This is important when tests are affected by permission changes, since the watch permissions are
