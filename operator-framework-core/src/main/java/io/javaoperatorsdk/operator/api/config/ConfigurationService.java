@@ -170,7 +170,7 @@ public interface ConfigurationService {
   }
 
   /**
-   * Timeout for cache sync in milliseconds. In other words source start timeout. Note that is
+   * Timeout for cache sync. In other words source start timeout. Note that is
    * "stopOnInformerErrorDuringStartup" is true the operator will stop on timeout. Default is 2
    * minutes.
    */
