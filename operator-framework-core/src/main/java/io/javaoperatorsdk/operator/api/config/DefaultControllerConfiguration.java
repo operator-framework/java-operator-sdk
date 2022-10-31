@@ -31,7 +31,6 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final List<DependentResourceSpec> dependents;
   private final Duration reconciliationMaxInterval;
   private final RateLimiter rateLimiter;
-  private final Duration cacheSyncTimeout;
 
   // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
@@ -50,7 +49,6 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       OnUpdateFilter<R> onUpdateFilter,
       GenericFilter<R> genericFilter,
       RateLimiter rateLimiter,
-      Duration cacheSyncTimeout,
       List<DependentResourceSpec> dependents) {
     super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
@@ -67,7 +65,6 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.rateLimiter =
         rateLimiter != null ? rateLimiter : LinearRateLimiter.deactivatedRateLimiter();
     this.dependents = dependents != null ? dependents : Collections.emptyList();
-    this.cacheSyncTimeout = cacheSyncTimeout;
   }
 
   @Override
@@ -118,9 +115,5 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   @Override
   public RateLimiter getRateLimiter() {
     return rateLimiter;
-  }
-
-  public Duration cacheSyncTimeout() {
-    return cacheSyncTimeout;
   }
 }

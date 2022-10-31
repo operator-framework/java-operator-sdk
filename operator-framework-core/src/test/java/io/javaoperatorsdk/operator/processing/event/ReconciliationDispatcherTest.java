@@ -25,7 +25,14 @@ import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.CustomResourceFacade;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -99,8 +106,7 @@ class ReconciliationDispatcherTest {
     final Class<R> resourceClass = (Class<R>) customResource.getClass();
     configuration = configuration == null ? MockControllerConfiguration.forResource(resourceClass)
         : configuration;
-    when(configuration.cacheSyncTimeout())
-        .thenReturn(Duration.ofMinutes(CacheSyncTimeout.DEFAULT_TIMEOUT));
+
     when(configuration.getFinalizerName()).thenReturn(DEFAULT_FINALIZER);
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn(resourceClass);

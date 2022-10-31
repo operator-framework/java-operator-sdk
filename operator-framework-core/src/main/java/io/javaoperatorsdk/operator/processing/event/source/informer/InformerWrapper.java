@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
@@ -33,13 +32,10 @@ class InformerWrapper<T extends HasMetadata>
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
-  private final ResourceConfiguration<?> resourceConfiguration;
 
-  public InformerWrapper(SharedIndexInformer<T> informer,
-      ResourceConfiguration<?> resourceConfiguration) {
+  public InformerWrapper(SharedIndexInformer<T> informer) {
     this.informer = informer;
     this.cache = (Cache<T>) informer.getStore();
-    this.resourceConfiguration = resourceConfiguration;
   }
 
   @Override
@@ -73,7 +69,7 @@ class InformerWrapper<T extends HasMetadata>
         // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
         // false, and there is a rbac issue the get never returns; therefore operator never really
         // starts
-        start.toCompletableFuture().get(resourceConfiguration.cacheSyncTimeout().toMillis(),
+        start.toCompletableFuture().get(configService.cacheSyncTimeout().toMillis(),
             TimeUnit.MILLISECONDS);
       } catch (TimeoutException | ExecutionException e) {
         if (configService.stopOnInformerErrorDuringStartup()) {

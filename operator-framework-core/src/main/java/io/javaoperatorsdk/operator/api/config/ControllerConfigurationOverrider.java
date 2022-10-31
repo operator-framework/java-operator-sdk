@@ -38,7 +38,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private OnUpdateFilter<R> onUpdateFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
-  private Duration cacheSyncTimeout;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -57,7 +56,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
-    this.cacheSyncTimeout = original.cacheSyncTimeout();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -178,11 +176,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withCacheSyncTimeout(Duration cacheSyncTimeout) {
-    this.cacheSyncTimeout = cacheSyncTimeout;
-    return this;
-  }
-
   public ControllerConfiguration<R> build() {
     final var hasModifiedNamespaces = !original.getNamespaces().equals(namespaces);
     final var newDependentSpecs = namedDependentResourceSpecs.values().stream()
@@ -215,7 +208,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         onUpdateFilter,
         genericFilter,
         rateLimiter,
-        cacheSyncTimeout,
         newDependentSpecs);
   }
 

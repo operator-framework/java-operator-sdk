@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.DefaultControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.CacheSyncTimeout;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -190,9 +188,7 @@ class ControllerResourceEventSourceTest extends
           null,
           TestCustomResource.class,
           null,
-          onAddFilter, onUpdateFilter, genericFilter, null,
-          Duration.ofMinutes(CacheSyncTimeout.DEFAULT_TIMEOUT),
-          null);
+          onAddFilter, onUpdateFilter, genericFilter, null, null);
     }
   }
 }
