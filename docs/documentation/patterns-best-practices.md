@@ -105,7 +105,7 @@ advised to put such state into a separate resource meant for this purpose such a
 Kubernetes Secret or ConfigMap or even a dedicated Custom Resource, which structure can be more
 easily validated.
 
-## Stopping (or not) Operator in case of Informer Errors
+## Stopping (or not) Operator in case of Informer Errors and Cache Sync Timeouts
 
 It can
 be [configured](https://github.com/java-operator-sdk/java-operator-sdk/blob/2cb616c4c4fd0094ee6e3a0ef2a0ea82173372bf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L168-L168)
@@ -120,4 +120,6 @@ that is when a resource cannot be deserialized. The typical use case for changin
 is watched by a controller. In is better to start up the operator, so it can handle other namespaces while there
 might be a permission issue for some resources in another namespace.
 
-
+The `stopOnInformerErrorDuringStartup` has implication on [cache sync timeout](https://github.com/java-operator-sdk/java-operator-sdk/blob/114c4312c32b34688811df8dd7cea275878c9e73/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L177-L179)
+behavior. If true operator will stop on cache sync timeout. if `false`, after the timeout the controller will start
+reconcile resources even if one or more event source caches did not sync yet.  
