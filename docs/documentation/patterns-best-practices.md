@@ -100,7 +100,7 @@ when another reconciliation occurs. While such state could be put in the primary
 status sub-resource, this could become quickly difficult to manage if a lot of state needs to be
 tracked. It also goes against the best practice that a resource's status should represent the
 actual resource state, when its spec represents the desired state. Putting state that doesn't
-striclty represent the resource's actual state is therefore discouraged. Instead, it's
+strictly represent the resource's actual state is therefore discouraged. Instead, it's
 advised to put such state into a separate resource meant for this purpose such as a
 Kubernetes Secret or ConfigMap or even a dedicated Custom Resource, which structure can be more
 easily validated.
