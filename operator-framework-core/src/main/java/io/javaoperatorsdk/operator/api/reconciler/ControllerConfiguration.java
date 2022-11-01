@@ -80,6 +80,10 @@ public @interface ControllerConfiguration {
   /** Filter of onUpdate events of resources. */
   Class<? extends OnUpdateFilter> onUpdateFilter() default OnUpdateFilter.class;
 
+
+  /** Or filter of onUpdate events of resources. Used to include non-generation change events */
+  Class<? extends OnUpdateFilter> onUpdateIncludeFilter() default OnUpdateFilter.class;
+
   /**
    * Filter applied to all operations (add, update, delete). Used to ignore some resources.
    **/

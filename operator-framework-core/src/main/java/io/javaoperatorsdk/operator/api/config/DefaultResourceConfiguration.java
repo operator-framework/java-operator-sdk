@@ -18,23 +18,32 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final Class<R> resourceClass;
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
+  private final OnUpdateFilter<R> onUpdateIncludeFilter;
   private final GenericFilter<R> genericFilter;
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, String... namespaces) {
-    this(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter,
+      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
+      OnUpdateFilter<R> onUpdateIncludeFilter, OnUpdateFilter<R> onUpdateIncludeFilter1,
+      String... namespaces) {
+    this(labelSelector, resourceClass, onAddFilter, onUpdateFilter, onUpdateIncludeFilter,
+        genericFilter,
         namespaces == null || namespaces.length == 0 ? DEFAULT_NAMESPACES_SET
             : Set.of(namespaces));
   }
 
-  public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
+  public DefaultResourceConfiguration(String labelSelector,
+      Class<R> resourceClass,
       OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, Set<String> namespaces) {
+      OnUpdateFilter<R> onUpdateFilter,
+      OnUpdateFilter<R> onUpdateIncludeFilter,
+      GenericFilter<R> genericFilter,
+      Set<String> namespaces) {
     this.labelSelector = labelSelector;
     this.resourceClass = resourceClass;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
+    this.onUpdateIncludeFilter = onUpdateIncludeFilter;
     this.genericFilter = genericFilter;
     this.namespaces =
         namespaces == null || namespaces.isEmpty() ? DEFAULT_NAMESPACES_SET
@@ -69,6 +78,11 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   @Override
   public Optional<OnUpdateFilter<R>> onUpdateFilter() {
     return Optional.ofNullable(onUpdateFilter);
+  }
+
+  @Override
+  public Optional<OnUpdateFilter<R>> onUpdateIncludeFilter() {
+    return Optional.ofNullable(onUpdateIncludeFilter);
   }
 
   public Optional<GenericFilter<R>> genericFilter() {

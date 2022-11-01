@@ -202,6 +202,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   @Override
+  public Optional<OnUpdateFilter<P>> onUpdateIncludeFilter() {
+    return Optional.ofNullable(
+        Utils.instantiate(annotation.onUpdateIncludeFilter(), OnUpdateFilter.class,
+            Utils.contextFor(this, null, null)));
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
   public Optional<GenericFilter<P>> genericFilter() {
     return Optional.ofNullable(
         Utils.instantiate(annotation.genericFilter(), GenericFilter.class,

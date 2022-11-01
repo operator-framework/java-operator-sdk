@@ -47,10 +47,12 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       Duration reconciliationMaxInterval,
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
+      OnUpdateFilter<R> onUpdateIncludeFilter,
       GenericFilter<R> genericFilter,
       RateLimiter rateLimiter,
       List<DependentResourceSpec> dependents) {
-    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
+    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, onUpdateIncludeFilter,
+        genericFilter, namespaces);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;

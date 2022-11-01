@@ -117,7 +117,7 @@ class ControllerResourceEventSourceTest extends
     OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
     source =
         new ControllerResourceEventSource<>(
-            new TestController(onAddFilter, onUpdatePredicate, null));
+            new TestController(onAddFilter, onUpdatePredicate, null, null));
     setUpSource(source);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
@@ -127,11 +127,59 @@ class ControllerResourceEventSourceTest extends
   }
 
   @Test
+  void onUpdateIncludeFilterIncludeEventsOnUpdateFilterSkips() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+
+    OnUpdateFilter<TestCustomResource> onUpdateIncludeFilter = (res, res2) -> true;
+    OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
+    source =
+        new ControllerResourceEventSource<>(
+            new TestController(null, onUpdatePredicate, onUpdateIncludeFilter, null));
+    setUpSource(source);
+
+    source.eventReceived(ResourceAction.UPDATED, cr, cr);
+
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void onUpdateIncludeFilterExcludesEventsOnUpdateFilterSkips() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+
+    OnUpdateFilter<TestCustomResource> onUpdateIncludeFilter = (res, res2) -> false;
+    OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
+    source =
+        new ControllerResourceEventSource<>(
+            new TestController(null, onUpdatePredicate, onUpdateIncludeFilter, null));
+    setUpSource(source);
+
+    source.eventReceived(ResourceAction.UPDATED, cr, cr);
+
+    verify(eventHandler, never()).handleEvent(any());
+  }
+
+  @Test
+  void onUpdateFilterIncludesEventsOnUpdateIncludeFilterSkips() {
+    TestCustomResource cr = TestUtils.testCustomResource();
+
+    OnUpdateFilter<TestCustomResource> onUpdateIncludeFilter = (res, res2) -> false;
+    OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> true;
+    source =
+        new ControllerResourceEventSource<>(
+            new TestController(null, onUpdatePredicate, onUpdateIncludeFilter, null));
+    setUpSource(source);
+
+    source.eventReceived(ResourceAction.UPDATED, cr, cr);
+
+    verify(eventHandler, times(1)).handleEvent(any());
+  }
+
+  @Test
   void genericFilterFiltersOutAddUpdateAndDeleteEvents() {
     TestCustomResource cr = TestUtils.testCustomResource();
 
     source =
-        new ControllerResourceEventSource<>(new TestController(null, null, res -> false));
+        new ControllerResourceEventSource<>(new TestController(null, null, null, res -> false));
     setUpSource(source);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
@@ -149,13 +197,16 @@ class ControllerResourceEventSourceTest extends
 
     public TestController(OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
+        OnUpdateFilter<TestCustomResource> onUpdateIncludeFilter,
         GenericFilter<TestCustomResource> genericFilter) {
-      super(null, new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
+      super(null,
+          new TestConfiguration(true, onAddFilter, onUpdateFilter, onUpdateIncludeFilter,
+              genericFilter),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
     public TestController(boolean generationAware) {
-      super(null, new TestConfiguration(generationAware, null, null, null),
+      super(null, new TestConfiguration(generationAware, null, null, null, null),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
@@ -175,6 +226,7 @@ class ControllerResourceEventSourceTest extends
 
     public TestConfiguration(boolean generationAware, OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
+        OnUpdateFilter<TestCustomResource> onUpdateIncludeFilter,
         GenericFilter<TestCustomResource> genericFilter) {
       super(
           null,
@@ -188,7 +240,7 @@ class ControllerResourceEventSourceTest extends
           null,
           TestCustomResource.class,
           null,
-          onAddFilter, onUpdateFilter, genericFilter, null, null);
+          onAddFilter, onUpdateFilter, onUpdateIncludeFilter, genericFilter, null, null);
     }
   }
 }

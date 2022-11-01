@@ -29,6 +29,10 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return Optional.empty();
   }
 
+  default Optional<OnUpdateFilter<R>> onUpdateIncludeFilter() {
+    return Optional.empty();
+  }
+
   default Optional<GenericFilter<R>> genericFilter() {
     return Optional.empty();
   }

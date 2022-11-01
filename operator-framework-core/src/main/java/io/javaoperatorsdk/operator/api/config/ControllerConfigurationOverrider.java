@@ -36,6 +36,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
   private OnAddFilter<R> onAddFilter;
   private OnUpdateFilter<R> onUpdateFilter;
+  private OnUpdateFilter<R> onUpdateIncludeFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
 
@@ -153,6 +154,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withOnUpdateIncludeFilter(
+      OnUpdateFilter<R> onUpdateIncludeFilter) {
+    this.onUpdateIncludeFilter = onUpdateIncludeFilter;
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> withGenericFilter(GenericFilter<R> genericFilter) {
     this.genericFilter = genericFilter;
     return this;
@@ -206,6 +213,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         reconciliationMaxInterval,
         onAddFilter,
         onUpdateFilter,
+        onUpdateIncludeFilter,
         genericFilter,
         rateLimiter,
         newDependentSpecs);

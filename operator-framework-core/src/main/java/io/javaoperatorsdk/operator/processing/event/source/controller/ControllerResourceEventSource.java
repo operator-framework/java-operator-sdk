@@ -39,18 +39,26 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
-    OnUpdateFilter<T> internalOnUpdateFilter =
+    OnUpdateFilter<T> baseOnUpdateFilter =
         (OnUpdateFilter<T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
             controller.getConfiguration().getFinalizerName())
             .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
             .or(onUpdateMarkedForDeletion());
 
+
     legacyFilters = controller.getConfiguration().getEventFilter();
+
+    OnUpdateFilter<T> internalOnUpdateFilter = controller.getConfiguration().onUpdateFilter()
+        .map(filter -> filter.and(baseOnUpdateFilter))
+        .orElse(baseOnUpdateFilter);
 
     // by default the on add should be processed in all cases regarding internal filters
     controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
-    controller.getConfiguration().onUpdateFilter()
-        .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
+
+
+
+    controller.getConfiguration().onUpdateIncludeFilter()
+        .ifPresentOrElse(filter -> setOnUpdateFilter(filter.or(internalOnUpdateFilter)),
             () -> setOnUpdateFilter(internalOnUpdateFilter));
     controller.getConfiguration().genericFilter().ifPresent(this::setGenericFilter);
   }
