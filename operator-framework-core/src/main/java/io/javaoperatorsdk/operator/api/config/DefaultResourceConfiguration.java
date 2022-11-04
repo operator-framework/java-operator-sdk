@@ -1,14 +1,11 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.CacheSyncTimeout;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -24,38 +21,33 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final Optional<OnAddFilter<R>> onAddFilter;
   private final Optional<OnUpdateFilter<R>> onUpdateFilter;
   private final Optional<GenericFilter<R>> genericFilter;
-  private final Duration cacheSyncTimeout;
 
   private String labelSelector;
   private Set<String> namespaces;
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
-      Duration cacheSyncTimeout,
       String... namespaces) {
-    this(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, cacheSyncTimeout,
+    this(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter,
         namespaces == null || namespaces.length == 0 ? DEFAULT_NAMESPACES_SET
             : Set.of(namespaces));
   }
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
-      Duration cacheSyncTimeout,
       Set<String> namespaces) {
-    this(resourceClass, onAddFilter, onUpdateFilter, genericFilter, cacheSyncTimeout, namespaces);
+    this(resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
     setLabelSelector(labelSelector);
   }
 
   protected DefaultResourceConfiguration(Class<R> resourceClass,
       OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
-      Duration cacheSyncTimeout,
       Set<String> namespaces) {
     this.resourceClass = resourceClass;
     this.resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = Optional.ofNullable(onAddFilter);
     this.onUpdateFilter = Optional.ofNullable(onUpdateFilter);
     this.genericFilter = Optional.ofNullable(genericFilter);
-    this.cacheSyncTimeout = ensureCacheSyncTimeout(cacheSyncTimeout);
 
     setNamespaces(namespaces);
   }
@@ -104,15 +96,5 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
 
   public Optional<GenericFilter<R>> genericFilter() {
     return genericFilter;
-  }
-
-  @Override
-  public Duration cacheSyncTimeout() {
-    return cacheSyncTimeout;
-  }
-
-  protected Duration ensureCacheSyncTimeout(Duration given) {
-    return given == null ? Duration.of(CacheSyncTimeout.DEFAULT_TIMEOUT,
-        TimeUnit.MINUTES.toChronoUnit()) : given;
   }
 }
