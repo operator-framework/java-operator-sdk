@@ -208,9 +208,9 @@ public class Operator implements LifecycleAware {
     return controllerManager.size();
   }
 
-   public RuntimeInfo getRuntimeInfo() {
-      return new RuntimeInfo(new ArrayList<>(controllerManager.controllers()));
-   }
+  public RuntimeInfo getRuntimeInfo() {
+    return new RuntimeInfo(new ArrayList<>(controllerManager.controllers()));
+  }
 
   public boolean isStarted() {
     return started;

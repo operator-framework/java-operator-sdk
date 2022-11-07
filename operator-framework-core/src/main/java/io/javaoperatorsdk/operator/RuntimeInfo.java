@@ -1,47 +1,46 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.RegisteredController;
-import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
-import io.javaoperatorsdk.operator.health.InformerEventSourceHealthIndicator;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
+import io.javaoperatorsdk.operator.health.InformerEventSourceHealthIndicator;
+
 @SuppressWarnings("rawtypes")
 public class RuntimeInfo {
 
-    private final List<RegisteredController> registeredControllers;
+  private final List<RegisteredController> registeredControllers;
 
-    public RuntimeInfo(List<RegisteredController> registeredControllers) {
-        this.registeredControllers = registeredControllers;
-    }
+  public RuntimeInfo(List<RegisteredController> registeredControllers) {
+    this.registeredControllers = registeredControllers;
+  }
 
-    public List<RegisteredController> getRegisteredControllers() {
-        return registeredControllers;
-    }
+  public List<RegisteredController> getRegisteredControllers() {
+    return registeredControllers;
+  }
 
-    public boolean allEventSourcesAreHealthy() {
-        return registeredControllers.stream()
-                .filter(rc->!rc.getControllerHealthInfo().unhealthyEventSources().isEmpty())
-                .findFirst().isEmpty();
-    }
+  public boolean allEventSourcesAreHealthy() {
+    return registeredControllers.stream()
+        .filter(rc -> !rc.getControllerHealthInfo().unhealthyEventSources().isEmpty())
+        .findFirst().isEmpty();
+  }
 
-    public Map<String,Map<String, EventSourceHealthIndicator>> unhealthyEventSources() {
-        Map<String,Map<String,EventSourceHealthIndicator>> res = new HashMap<>();
-        for (var rc : registeredControllers) {
-            res.put(rc.getConfiguration().getName(),rc.getControllerHealthInfo().unhealthyEventSources());
-        }
-        return res;
+  public Map<String, Map<String, EventSourceHealthIndicator>> unhealthyEventSources() {
+    Map<String, Map<String, EventSourceHealthIndicator>> res = new HashMap<>();
+    for (var rc : registeredControllers) {
+      res.put(rc.getConfiguration().getName(),
+          rc.getControllerHealthInfo().unhealthyEventSources());
     }
+    return res;
+  }
 
-    public Map<String,Map<String, InformerEventSourceHealthIndicator>> unhealthyInformerEventSources() {
-        Map<String,Map<String,InformerEventSourceHealthIndicator>> res = new HashMap<>();
-        for (var rc : registeredControllers) {
-            res.put(rc.getConfiguration().getName(),rc.getControllerHealthInfo()
-                    .unhealthyInformerEventSourceHealthIndicators());
-        }
-        return res;
+  public Map<String, Map<String, InformerEventSourceHealthIndicator>> unhealthyInformerEventSources() {
+    Map<String, Map<String, InformerEventSourceHealthIndicator>> res = new HashMap<>();
+    for (var rc : registeredControllers) {
+      res.put(rc.getConfiguration().getName(), rc.getControllerHealthInfo()
+          .unhealthyInformerEventSourceHealthIndicators());
     }
+    return res;
+  }
 }

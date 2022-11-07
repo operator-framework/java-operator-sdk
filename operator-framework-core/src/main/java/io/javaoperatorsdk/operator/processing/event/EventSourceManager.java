@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,9 +171,9 @@ public class EventSourceManager<P extends HasMetadata>
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
-  public Map<String,EventSource> allEventSources() {
+  public Map<String, EventSource> allEventSources() {
     return eventSources.allNamedEventSources().collect(Collectors.toMap(NamedEventSource::name,
-            NamedEventSource::original));
+        NamedEventSource::original));
   }
 
   public ControllerResourceEventSource<P> getControllerResourceEventSource() {
