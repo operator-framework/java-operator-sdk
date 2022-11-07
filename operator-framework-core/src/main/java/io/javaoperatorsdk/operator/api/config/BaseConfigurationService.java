@@ -1,13 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,24 +9,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
-import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 public class BaseConfigurationService extends AbstractConfigurationService {
 
@@ -94,7 +72,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     return config;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   protected <P extends HasMetadata> ControllerConfiguration<P> configFor(Reconciler<P> reconciler) {
     final var annotation = reconciler.getClass().getAnnotation(
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class);
@@ -110,125 +88,11 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     final var resourceClass = (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
         reconciler.getClass(), Reconciler.class);
     final var name = ReconcilerUtils.getNameFor(reconciler);
-    final var generationAware = valueOrDefault(
-        annotation,
-        io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::generationAwareEventProcessing,
-        true);
     final var associatedReconcilerClass =
         ResolvedControllerConfiguration.getAssociatedReconcilerClassName(reconciler.getClass());
 
-    final Class<? extends Retry> retryClass = annotation.retry();
-    final var retry = Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
-        Utils.contextFor(name, null, null), configuratorFor(Retry.class, reconciler));
-
-    final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
-    final var rateLimiter = Utils.instantiateAndConfigureIfNeeded(rateLimiterClass,
-        RateLimiter.class,
-        Utils.contextFor(name, null, null), configuratorFor(RateLimiter.class, reconciler));
-
-    final var reconciliationInterval = annotation.maxReconciliationInterval();
-    long interval = -1;
-    TimeUnit timeUnit = null;
-    if (reconciliationInterval != null && reconciliationInterval.interval() > 0) {
-      interval = reconciliationInterval.interval();
-      timeUnit = reconciliationInterval.timeUnit();
-    }
-
-    final var config = new ResolvedControllerConfiguration<P>(
-        resourceClass, name, generationAware,
-        associatedReconcilerClass, retry, rateLimiter,
-        ResolvedControllerConfiguration.getMaxReconciliationInterval(interval, timeUnit),
-        Utils.instantiate(annotation.onAddFilter(), OnAddFilter.class,
-            Utils.contextFor(name, null, null)),
-        Utils.instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class,
-            Utils.contextFor(name, null, null)),
-        Utils.instantiate(annotation.genericFilter(), GenericFilter.class,
-            Utils.contextFor(name, null, null)),
-        Set.of(valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::namespaces,
-            DEFAULT_NAMESPACES_SET.toArray(String[]::new))),
-        valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::finalizerName,
-            Constants.NO_VALUE_SET),
-        valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
-            Constants.NO_VALUE_SET));
-
-    ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
-    config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());
-
-    List<DependentResourceSpec> specs = dependentResources(annotation, config);
-    config.setDependentResources(specs);
-
-    return config;
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <P extends HasMetadata> ResourceEventFilter<P> deprecatedEventFilter(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation) {
-    ResourceEventFilter<P> answer = null;
-
-    Class<ResourceEventFilter<P>>[] filterTypes =
-        (Class<ResourceEventFilter<P>>[]) valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::eventFilters,
-            new Object[] {});
-    for (var filterType : filterTypes) {
-      try {
-        ResourceEventFilter<P> filter = filterType.getConstructor().newInstance();
-
-        if (answer == null) {
-          answer = filter;
-        } else {
-          answer = answer.and(filter);
-        }
-      } catch (Exception e) {
-        throw new IllegalArgumentException(e);
-      }
-    }
-    return answer;
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<DependentResourceSpec> dependentResources(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation,
-      ControllerConfiguration<?> parent) {
-    final var dependents =
-        valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::dependents,
-            new Dependent[] {});
-    if (dependents.length == 0) {
-      return Collections.emptyList();
-    }
-
-    final var specsMap = new LinkedHashMap<String, DependentResourceSpec>(dependents.length);
-    for (Dependent dependent : dependents) {
-      final Class<? extends DependentResource> dependentType = dependent.type();
-
-      final var dependentName = getName(dependent.name(), dependentType);
-      var spec = specsMap.get(dependentName);
-      if (spec != null) {
-        throw new IllegalArgumentException(
-            "A DependentResource named '" + dependentName + "' already exists: " + spec);
-      }
-
-      final var name = parent.getName();
-      final var dependentResource = Utils.instantiateAndConfigureIfNeeded(dependentType,
-          DependentResource.class,
-          Utils.contextFor(name, dependentType, Dependent.class),
-          instance -> configureFromCustomAnnotation(instance, parent));
-
-      var eventSourceName = dependent.useEventSourceWithName();
-      eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
-      final var context = Utils.contextFor(name, dependentType, null);
-      spec = new DependentResourceSpec(dependentResource, dependentName,
-          Set.of(dependent.dependsOn()),
-          Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
-          Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
-          Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
-          eventSourceName);
-      specsMap.put(dependentName, spec);
-    }
-    return specsMap.values().stream().collect(Collectors.toUnmodifiableList());
+    return new BaseControllerConfigurationBuilder(reconciler)
+        .createConfiguration(annotation, resourceClass, name, associatedReconcilerClass);
   }
 
   protected boolean createIfNeeded() {
@@ -240,59 +104,31 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     return Utils.shouldCheckCRDAndValidateLocalModel();
   }
 
-  private static <T> T valueOrDefault(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration controllerConfiguration,
-      Function<io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration, T> mapper,
-      T defaultValue) {
-    if (controllerConfiguration == null) {
-      return defaultValue;
-    } else {
-      return mapper.apply(controllerConfiguration);
-    }
-  }
-
   @SuppressWarnings("rawtypes")
-  private static String getName(String name, Class<? extends DependentResource> dependentType) {
-    if (name.isBlank()) {
-      name = DependentResource.defaultNameFor(dependentType);
+  private static class BaseControllerConfigurationBuilder extends ControllerConfigurationBuilder {
+
+    private final Reconciler reconciler;
+
+    private BaseControllerConfigurationBuilder(Reconciler reconciler) {
+      this.reconciler = reconciler;
     }
-    return name;
-  }
 
-  @SuppressWarnings("unused")
-  private static <T> Configurator<T> configuratorFor(Class<T> instanceType,
-      Reconciler<?> reconciler) {
-    return instance -> configureFromAnnotatedReconciler(instance, reconciler);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static void configureFromAnnotatedReconciler(Object instance, Reconciler<?> reconciler) {
-    if (instance instanceof AnnotationConfigurable) {
-      AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
-      final Class<? extends Annotation> configurationClass =
-          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
-              instance.getClass(), AnnotationConfigurable.class);
-      final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
-      if (configAnnotation != null) {
-        configurable.initFrom(configAnnotation);
-      }
-    }
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static <P extends HasMetadata> void configureFromCustomAnnotation(Object instance,
-      ControllerConfiguration<P> parent) {
-    if (instance instanceof AnnotationDependentResourceConfigurator) {
-      AnnotationDependentResourceConfigurator configurator =
-          (AnnotationDependentResourceConfigurator) instance;
-      final Class<? extends Annotation> configurationClass =
-          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromInterface(
-              instance.getClass(), AnnotationDependentResourceConfigurator.class);
-      final var configAnnotation = instance.getClass().getAnnotation(configurationClass);
-      // always called even if the annotation is null so that implementations can provide default
-      // values
-      final var config = configurator.configFrom(configAnnotation, parent);
-      configurator.configureWith(config);
+    @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    protected <T> Configurator<T> configuratorFor(Class<T> typeOfObjectToConfigure) {
+      return instance -> {
+        if (instance instanceof AnnotationConfigurable
+            && typeOfObjectToConfigure.isInstance(instance)) {
+          AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
+          final Class<? extends Annotation> configurationClass =
+              (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
+                  instance.getClass(), AnnotationConfigurable.class);
+          final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
+          if (configAnnotation != null) {
+            configurable.initFrom(configAnnotation);
+          }
+        }
+      };
     }
   }
 }
