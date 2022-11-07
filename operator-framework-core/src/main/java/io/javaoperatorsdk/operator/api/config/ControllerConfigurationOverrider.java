@@ -192,10 +192,13 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
           }
         }).collect(Collectors.toList());
 
-    return new ResolvedControllerConfiguration<>(original.getResourceClass(), original.getName(),
+    final var overridden = new ResolvedControllerConfiguration<>(
+        original.getResourceClass(), original.getName(),
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter, newDependentSpecs,
         namespaces, finalizer, labelSelector);
+    overridden.setEventFilter(customResourcePredicate);
+    return overridden;
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
