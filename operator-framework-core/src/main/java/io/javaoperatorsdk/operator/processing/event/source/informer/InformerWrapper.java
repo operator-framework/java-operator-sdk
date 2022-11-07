@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 class InformerWrapper<T extends HasMetadata>
-    implements LifecycleAware, IndexerResourceCache<T> {
+    implements LifecycleAware, IndexerResourceCache<T>, InformerHealthIndicator {
 
   private static final Logger log = LoggerFactory.getLogger(InformerWrapper.class);
 
@@ -144,5 +145,20 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public String toString() {
     return "InformerWrapper [" + versionedFullResourceName() + "] (" + informer + ')';
+  }
+
+  @Override
+  public boolean hasSynced() {
+    return informer.hasSynced();
+  }
+
+  @Override
+  public boolean isWatching() {
+    return informer.isWatching();
+  }
+
+  @Override
+  public boolean isRunning() {
+    return informer.isRunning();
   }
 }

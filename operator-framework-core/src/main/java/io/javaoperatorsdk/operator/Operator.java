@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -207,4 +208,11 @@ public class Operator implements LifecycleAware {
     return controllerManager.size();
   }
 
+   public RuntimeInfo getRuntimeInfo() {
+      return new RuntimeInfo(new ArrayList<>(controllerManager.controllers()));
+   }
+
+  public boolean isStarted() {
+    return started;
+  }
 }

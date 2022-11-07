@@ -46,6 +46,13 @@ class EventSources<R extends HasMetadata> {
         flatMappedSources());
   }
 
+  public Stream<NamedEventSource> allNamedEventSources() {
+    return Stream.concat(Stream.of(namedControllerResourceEventSource(),
+                    new NamedEventSource(retryAndRescheduleTimerEventSource,
+                            RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME)),
+            flatMappedSources());
+  }
+
   Stream<EventSource> additionalEventSources() {
     return Stream.concat(
         Stream.of(retryEventSource()).filter(Objects::nonNull),

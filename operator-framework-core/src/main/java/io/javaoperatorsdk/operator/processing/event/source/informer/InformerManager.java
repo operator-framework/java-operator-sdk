@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,5 +179,9 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
         + "] watching: "
         + configuration.getEffectiveNamespaces()
         + (selector != null ? " selector: " + selector : "");
+  }
+
+  public Map<String, InformerHealthIndicator> informerHealthIndicators() {
+    return Collections.unmodifiableMap(sources);
   }
 }

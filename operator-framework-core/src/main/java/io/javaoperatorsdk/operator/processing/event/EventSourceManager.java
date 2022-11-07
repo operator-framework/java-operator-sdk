@@ -1,10 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,6 +170,11 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.flatMappedSources()
         .map(NamedEventSource::original)
         .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
+
+  public Map<String,EventSource> allEventSources() {
+    return eventSources.allNamedEventSources().collect(Collectors.toMap(NamedEventSource::name,
+            NamedEventSource::original));
   }
 
   public ControllerResourceEventSource<P> getControllerResourceEventSource() {

@@ -8,6 +8,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.javaoperatorsdk.operator.health.InformerEventSourceHealthIndicator;
+import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
+import io.javaoperatorsdk.operator.health.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.source.*;
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends AbstractResourceEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
-    RecentOperationCacheFiller<R>,
-    NamespaceChangeable {
+    RecentOperationCacheFiller<R>, NamespaceChangeable, InformerEventSourceHealthIndicator {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
@@ -133,4 +135,13 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     return cache.list(predicate);
   }
 
+  @Override
+  public Map<String, InformerHealthIndicator> informerHealthIndicators() {
+    return cache.informerHealthIndicators();
+  }
+
+  @Override
+  public Status getStatus() {
+    return InformerEventSourceHealthIndicator.super.getStatus();
+  }
 }

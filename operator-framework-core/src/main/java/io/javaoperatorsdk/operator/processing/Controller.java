@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +68,7 @@ public class Controller<P extends HasMetadata>
 
   private final GroupVersionKind associatedGVK;
   private final EventProcessor<P> eventProcessor;
+  private final ControllerHealthInfo controllerHealthInfo;
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -86,6 +88,7 @@ public class Controller<P extends HasMetadata>
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
+    controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
   }
 
   @Override
@@ -283,6 +286,11 @@ public class Controller<P extends HasMetadata>
 
   public ControllerConfiguration<P> getConfiguration() {
     return configuration;
+  }
+
+  @Override
+  public ControllerHealthInfo getControllerHealthInfo() {
+    return controllerHealthInfo;
   }
 
   public KubernetesClient getClient() {
