@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.builder.Builder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -103,7 +104,9 @@ public class ReconcilerUtils {
 
   public static Object setSpec(HasMetadata resource, Object spec) {
     try {
-      Method setSpecMethod = resource.getClass().getMethod("setSpec", spec.getClass());
+      Class<? extends HasMetadata> resourceClass = resource.getClass();
+      Method setSpecMethod =
+          resource.getClass().getMethod("setSpec", getSpecClass(resourceClass, spec));
       return setSpecMethod.invoke(resource, spec);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
       throw new IllegalStateException("No spec found on resource", e);
@@ -165,6 +168,15 @@ public class ReconcilerUtils {
       }
     }
     return false;
+  }
+
+  // CustomResouce has a parameterized parameter type
+  private static Class getSpecClass(Class<? extends HasMetadata> resourceClass, Object spec) {
+    if (CustomResource.class.isAssignableFrom(resourceClass)) {
+      return Object.class;
+    } else {
+      return spec.getClass();
+    }
   }
 
 }

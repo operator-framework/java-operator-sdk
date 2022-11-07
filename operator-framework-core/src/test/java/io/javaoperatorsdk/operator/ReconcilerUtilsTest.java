@@ -99,6 +99,19 @@ class ReconcilerUtilsTest {
   }
 
   @Test
+  void setsSpecCustomResourceWithReflection() {
+    Tomcat tomcat = new Tomcat();
+    tomcat.setSpec(new TomcatSpec());
+    tomcat.getSpec().setReplicas(5);
+    TomcatSpec newSpec = new TomcatSpec();
+    newSpec.setReplicas(1);
+
+    ReconcilerUtils.setSpec(tomcat, newSpec);
+
+    assertThat(tomcat.getSpec().getReplicas()).isEqualTo(1);
+  }
+
+  @Test
   void loadYamlAsBuilder() {
     DeploymentBuilder builder =
         ReconcilerUtils.loadYaml(DeploymentBuilder.class, getClass(), "deployment.yaml");
@@ -134,7 +147,19 @@ class ReconcilerUtilsTest {
   @Group("tomcatoperator.io")
   @Version("v1")
   @ShortNames("tc")
-  private static class Tomcat extends CustomResource<Void, Void> implements Namespaced {
+  private static class Tomcat extends CustomResource<TomcatSpec, Void> implements Namespaced {
 
+  }
+
+  private class TomcatSpec {
+    private Integer replicas;
+
+    public Integer getReplicas() {
+      return replicas;
+    }
+
+    public void setReplicas(Integer replicas) {
+      this.replicas = replicas;
+    }
   }
 }
