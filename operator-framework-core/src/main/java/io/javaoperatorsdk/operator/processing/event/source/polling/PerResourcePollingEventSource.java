@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
@@ -40,7 +39,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final Predicate<P> registerPredicate;
   private final long period;
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
-  private volatile boolean healthy = true;
+
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
@@ -66,16 +65,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   private Set<R> getAndCacheResource(P primary, boolean fromGetter) {
-    try {
-      var values = resourceFetcher.fetchResources(primary);
-      handleResources(ResourceID.fromResource(primary), values, !fromGetter);
-      fetchedForPrimaries.add(ResourceID.fromResource(primary));
-      healthy = true;
-      return values;
-    } catch (RuntimeException e) {
-      healthy = false;
-      throw e;
-    }
+    var values = resourceFetcher.fetchResources(primary);
+    handleResources(ResourceID.fromResource(primary), values, !fromGetter);
+    fetchedForPrimaries.add(ResourceID.fromResource(primary));
+    return values;
   }
 
   @Override
@@ -161,9 +154,4 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     timer.cancel();
   }
 
-  @Override
-  public Status getStatus() {
-    // todo unit test
-    return healthy ? Status.HEALTHY : Status.UNHEALTHY;
-  }
 }
