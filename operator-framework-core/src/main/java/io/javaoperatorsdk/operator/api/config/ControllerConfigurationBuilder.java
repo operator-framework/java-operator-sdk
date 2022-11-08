@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
+import io.javaoperatorsdk.operator.api.config.Utils.Instantiator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
@@ -29,6 +30,16 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMES
 
 public abstract class ControllerConfigurationBuilder {
 
+  private final Instantiator instantiator;
+
+  public ControllerConfigurationBuilder() {
+    this(Instantiator.DEFAULT);
+  }
+
+  protected ControllerConfigurationBuilder(Instantiator instantiator) {
+    this.instantiator = instantiator;
+  }
+
   @SuppressWarnings({"rawtypes", "unchecked"})
   public <P extends HasMetadata> ResolvedControllerConfiguration<P> createConfiguration(
       io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation,
@@ -40,12 +51,14 @@ public abstract class ControllerConfigurationBuilder {
 
     final Class<? extends Retry> retryClass = annotation.retry();
     final var retry = Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
-        Utils.contextFor(name, null, null), configuratorFor(Retry.class));
+        Utils.contextFor(name, null, null),
+        configuratorFor(Retry.class), instantiator);
 
     final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
     final var rateLimiter = Utils.instantiateAndConfigureIfNeeded(rateLimiterClass,
         RateLimiter.class,
-        Utils.contextFor(name, null, null), configuratorFor(RateLimiter.class));
+        Utils.contextFor(name, null, null),
+        configuratorFor(RateLimiter.class), instantiator);
 
     final var reconciliationInterval = annotation.maxReconciliationInterval();
     long interval = -1;
@@ -87,7 +100,7 @@ public abstract class ControllerConfigurationBuilder {
   protected abstract <T> Configurator<T> configuratorFor(Class<T> typeOfObjectToConfigure);
 
   @SuppressWarnings("unchecked")
-  private static <P extends HasMetadata> ResourceEventFilter<P> deprecatedEventFilter(
+  private <P extends HasMetadata> ResourceEventFilter<P> deprecatedEventFilter(
       io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation,
       String reconcilerName) {
     ResourceEventFilter<P> answer = null;
@@ -101,7 +114,7 @@ public abstract class ControllerConfigurationBuilder {
         ResourceEventFilter<P> filter = Utils.instantiateAndConfigureIfNeeded(filterType,
             ResourceEventFilter.class,
             Utils.contextFor(reconcilerName, null, null),
-            null);
+            null, instantiator);
 
         if (answer == null) {
           answer = filter;
@@ -116,7 +129,7 @@ public abstract class ControllerConfigurationBuilder {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<DependentResourceSpec> dependentResources(
+  protected List<DependentResourceSpec> dependentResources(
       io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation,
       ControllerConfiguration<?> parent) {
     final var dependents =
@@ -142,7 +155,8 @@ public abstract class ControllerConfigurationBuilder {
       final var dependentResource = Utils.instantiateAndConfigureIfNeeded(dependentType,
           DependentResource.class,
           Utils.contextFor(name, dependentType, Dependent.class),
-          instance -> configureFromCustomAnnotation(instance, parent));
+          instance -> configureFromCustomAnnotation(instance, parent),
+          instantiator);
 
       var eventSourceName = dependent.useEventSourceWithName();
       eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;

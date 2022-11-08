@@ -189,6 +189,13 @@ public class Utils {
 
   public static <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
       Class<T> expectedType, String context, Configurator<T> configurator) {
+    return instantiateAndConfigureIfNeeded(targetClass, expectedType, context, configurator,
+        Instantiator.DEFAULT);
+  }
+
+  public static <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
+      Class<T> expectedType, String context, Configurator<T> configurator,
+      Instantiator instantiator) {
     // if class to instantiate equals the expected interface, we cannot instantiate it so just
     // return null as it means we passed on void-type default value
     if (expectedType.equals(targetClass)) {
@@ -196,20 +203,18 @@ public class Utils {
     }
 
     try {
-      final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
-      constructor.setAccessible(true);
-      final var instance = constructor.newInstance();
+      final var instance = instantiator.instantiate(targetClass);
 
       if (configurator != null) {
         configurator.configure(instance);
       }
 
       return instance;
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-        | NoSuchMethodException e) {
+    } catch (Exception e) {
       throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
           + targetClass.getName() + "': you need to provide an accessible no-arg constructor."
-          + (context != null ? " Context: " + context : ""), e);
+          + (context != null ? " Context: " + context : ""),
+          e.getCause() != null ? e.getCause() : e);
     }
   }
 
@@ -246,5 +251,23 @@ public class Utils {
 
 
     return context;
+  }
+
+  public interface Instantiator {
+    Instantiator DEFAULT = new Instantiator() {
+      @Override
+      public <T> T instantiate(Class<T> toInstantiate) {
+        try {
+          final Constructor<? extends T> constructor = toInstantiate.getDeclaredConstructor();
+          constructor.setAccessible(true);
+          return constructor.newInstance();
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
+            | InvocationTargetException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+
+    <T> T instantiate(Class<T> toInstantiate);
   }
 }
