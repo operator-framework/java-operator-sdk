@@ -8,6 +8,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
@@ -63,6 +64,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
    * @param <R>
    * @param <P>
    */
+  @Ignore
   private static class BulkDependentResourceInstance<R, P extends HasMetadata>
       extends AbstractDependentResource<R, P>
       implements Creator<R, P>, Deleter<P> {
@@ -122,6 +124,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
    * @param <R>
    * @param <P>
    */
+  @Ignore
   private static class UpdatableBulkDependentResourceInstance<R, P extends HasMetadata>
       extends BulkDependentResourceInstance<R, P> implements Updater<R, P> {
 
