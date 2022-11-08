@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
-import io.javaoperatorsdk.operator.health.InformerEventSourceHealthIndicator;
+import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 
 @SuppressWarnings("rawtypes")
 public class RuntimeInfo {
@@ -35,8 +35,8 @@ public class RuntimeInfo {
     return res;
   }
 
-  public Map<String, Map<String, InformerEventSourceHealthIndicator>> unhealthyInformerEventSources() {
-    Map<String, Map<String, InformerEventSourceHealthIndicator>> res = new HashMap<>();
+  public Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> unhealthyInformerWrappingEventSourceHealthIndicator() {
+    Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> res = new HashMap<>();
     for (var rc : registeredControllers) {
       res.put(rc.getConfiguration().getName(), rc.getControllerHealthInfo()
           .unhealthyInformerEventSourceHealthIndicators());

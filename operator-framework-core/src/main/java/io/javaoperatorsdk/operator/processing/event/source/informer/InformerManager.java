@@ -27,10 +27,11 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES;
+
 public class InformerManager<T extends HasMetadata, C extends ResourceConfiguration<T>>
     implements LifecycleAware, IndexerResourceCache<T> {
 
-  private static final String ALL_NAMESPACES_MAP_KEY = "allNamespaces";
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);
 
   private final Map<String, InformerWrapper<T>> sources = new ConcurrentHashMap<>();
@@ -59,7 +60,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
       final var filteredBySelectorClient =
           client.inAnyNamespace().withLabelSelector(labelSelector);
       final var source =
-          createEventSource(filteredBySelectorClient, eventHandler, ALL_NAMESPACES_MAP_KEY);
+          createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
       log.debug("Registered {} -> {} for any namespace", this, source);
     } else {
       targetNamespaces.forEach(
@@ -97,10 +98,11 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   private InformerWrapper<T> createEventSource(
       FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,
-      ResourceEventHandler<T> eventHandler, String key) {
-    var source = new InformerWrapper<>(filteredBySelectorClient.runnableInformer(0));
+      ResourceEventHandler<T> eventHandler, String namespaceIdentifier) {
+    var source =
+        new InformerWrapper<>(filteredBySelectorClient.runnableInformer(0), namespaceIdentifier);
     source.addEventHandler(eventHandler);
-    sources.put(key, source);
+    sources.put(namespaceIdentifier, source);
     return source;
   }
 
@@ -128,7 +130,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
     if (isWatchingAllNamespaces()) {
-      return getSource(ALL_NAMESPACES_MAP_KEY)
+      return getSource(WATCH_ALL_NAMESPACES)
           .map(source -> source.list(namespace, predicate))
           .orElseGet(Stream::empty);
     } else {
@@ -140,7 +142,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public Optional<T> get(ResourceID resourceID) {
-    return getSource(resourceID.getNamespace().orElse(ALL_NAMESPACES_MAP_KEY))
+    return getSource(resourceID.getNamespace().orElse(WATCH_ALL_NAMESPACES))
         .flatMap(source -> source.get(resourceID))
         .map(cloner::clone);
   }
@@ -151,11 +153,11 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   private boolean isWatchingAllNamespaces() {
-    return sources.containsKey(ALL_NAMESPACES_MAP_KEY);
+    return sources.containsKey(WATCH_ALL_NAMESPACES);
   }
 
   private Optional<InformerWrapper<T>> getSource(String namespace) {
-    namespace = isWatchingAllNamespaces() || namespace == null ? ALL_NAMESPACES_MAP_KEY : namespace;
+    namespace = isWatchingAllNamespaces() || namespace == null ? WATCH_ALL_NAMESPACES : namespace;
     return Optional.ofNullable(sources.get(namespace));
   }
 

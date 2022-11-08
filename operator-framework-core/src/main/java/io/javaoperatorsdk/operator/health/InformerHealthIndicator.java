@@ -12,4 +12,6 @@ public interface InformerHealthIndicator extends EventSourceHealthIndicator {
   default Status getStatus() {
     return isRunning() && hasSynced() && isWatching() ? Status.HEALTHY : Status.UNHEALTHY;
   }
+
+  String getTargetNamespace();
 }

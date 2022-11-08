@@ -33,10 +33,13 @@ class InformerWrapper<T extends HasMetadata>
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
+  private final String namespaceIdentifier;
 
-  public InformerWrapper(SharedIndexInformer<T> informer) {
+  public InformerWrapper(SharedIndexInformer<T> informer, String namespaceIdentifier) {
     this.informer = informer;
+    this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
+
   }
 
   @Override
@@ -160,5 +163,10 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public boolean isRunning() {
     return informer.isRunning();
+  }
+
+  @Override
+  public String getTargetNamespace() {
+    return namespaceIdentifier;
   }
 }

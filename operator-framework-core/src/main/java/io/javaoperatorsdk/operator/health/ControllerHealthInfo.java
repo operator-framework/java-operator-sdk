@@ -25,20 +25,20 @@ public class ControllerHealthInfo {
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-  public Map<String, InformerEventSourceHealthIndicator> informerEventSourceHealthIndicators() {
+  public Map<String, InformerWrappingEventSourceHealthIndicator> informerEventSourceHealthIndicators() {
     return eventSourceManager.allEventSources().entrySet().stream()
-        .filter(e -> e.getValue() instanceof InformerEventSourceHealthIndicator)
+        .filter(e -> e.getValue() instanceof InformerWrappingEventSourceHealthIndicator)
         .collect(Collectors.toMap(Map.Entry::getKey,
-            e -> (InformerEventSourceHealthIndicator) e.getValue()));
+            e -> (InformerWrappingEventSourceHealthIndicator) e.getValue()));
 
   }
 
-  public Map<String, InformerEventSourceHealthIndicator> unhealthyInformerEventSourceHealthIndicators() {
+  public Map<String, InformerWrappingEventSourceHealthIndicator> unhealthyInformerEventSourceHealthIndicators() {
     return eventSourceManager.allEventSources().entrySet().stream()
         .filter(e -> e.getValue().getStatus() == Status.UNHEALTHY)
-        .filter(e -> e.getValue() instanceof InformerEventSourceHealthIndicator)
+        .filter(e -> e.getValue() instanceof InformerWrappingEventSourceHealthIndicator)
         .collect(Collectors.toMap(Map.Entry::getKey,
-            e -> (InformerEventSourceHealthIndicator) e.getValue()));
+            e -> (InformerWrappingEventSourceHealthIndicator) e.getValue()));
   }
 
 }

@@ -19,8 +19,8 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
-import io.javaoperatorsdk.operator.health.InformerEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
+import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
@@ -28,17 +28,20 @@ import io.javaoperatorsdk.operator.processing.event.source.*;
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends AbstractResourceEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
-    RecentOperationCacheFiller<R>, NamespaceChangeable, InformerEventSourceHealthIndicator {
+    RecentOperationCacheFiller<R>, NamespaceChangeable,
+    InformerWrappingEventSourceHealthIndicator<R> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
   protected TemporaryResourceCache<R> temporaryResourceCache = new TemporaryResourceCache<>(this);
   protected InformerManager<R, C> cache = new InformerManager<>();
+  protected C configuration;
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
     super(configuration.getResourceClass());
     manager().initSources(client, configuration, this);
+    this.configuration = configuration;
   }
 
   @Override
@@ -142,6 +145,11 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public Status getStatus() {
-    return InformerEventSourceHealthIndicator.super.getStatus();
+    return InformerWrappingEventSourceHealthIndicator.super.getStatus();
+  }
+
+  @Override
+  public ResourceConfiguration<R> getInformerConfiguration() {
+    return configuration;
   }
 }

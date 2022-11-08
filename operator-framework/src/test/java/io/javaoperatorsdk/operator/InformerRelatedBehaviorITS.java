@@ -14,9 +14,12 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
 
+import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE;
+import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,21 +76,25 @@ class InformerRelatedBehaviorITS {
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoCustomResourceAccess();
 
-    startOperator(false);
+    var operator = startOperator(false);
     assertNotReconciled();
+    assertRuntimeInfoNoCRPermission(operator);
 
     setFullResourcesAccess();
     waitForWatchReconnect();
     assertReconciled();
+    assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isTrue();
   }
+
 
   @Test
   void startsUpWhenNoPermissionToSecondaryResource() {
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoConfigMapAccess();
 
-    startOperator(false);
+    var operator = startOperator(false);
     assertNotReconciled();
+    assertRuntimeInfoForSecondaryPermission(operator);
 
     setFullResourcesAccess();
     waitForWatchReconnect();
@@ -182,6 +189,40 @@ class InformerRelatedBehaviorITS {
           adminClient.configMaps().inNamespace(actualNamespace).withName(TEST_RESOURCE_NAME).get();
       assertThat(cm).isNotNull();
     });
+  }
+
+
+  private void assertRuntimeInfoNoCRPermission(Operator operator) {
+    assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
+    var unhealthyEventSources =
+        operator.getRuntimeInfo().unhealthyEventSources()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    assertThat(unhealthyEventSources).isNotEmpty();
+    assertThat(unhealthyEventSources.get(ControllerResourceEventSource.class.getSimpleName()))
+        .isNotNull();
+    var informerHealthIndicators = operator.getRuntimeInfo()
+        .unhealthyInformerWrappingEventSourceHealthIndicator()
+        .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    assertThat(informerHealthIndicators).isNotEmpty();
+    assertThat(informerHealthIndicators.get(ControllerResourceEventSource.class.getSimpleName())
+        .informerHealthIndicators())
+        .hasSize(1);
+  }
+
+  private void assertRuntimeInfoForSecondaryPermission(Operator operator) {
+    assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
+    var unhealthyEventSources =
+        operator.getRuntimeInfo().unhealthyEventSources()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    assertThat(unhealthyEventSources).isNotEmpty();
+    assertThat(unhealthyEventSources.get(CONFIG_MAP_DEPENDENT_RESOURCE)).isNotNull();
+    var informerHealthIndicators = operator.getRuntimeInfo()
+        .unhealthyInformerWrappingEventSourceHealthIndicator()
+        .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    assertThat(informerHealthIndicators).isNotEmpty();
+    assertThat(
+        informerHealthIndicators.get(CONFIG_MAP_DEPENDENT_RESOURCE).informerHealthIndicators())
+        .hasSize(1);
   }
 
   KubernetesClient clientUsingServiceAccount() {
