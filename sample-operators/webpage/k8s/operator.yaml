@@ -25,17 +25,18 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 80
-        readinessProbe:
+        startupProbe:
           httpGet:
-            path: /health
+            path: /startup
             port: 8080
-          initialDelaySeconds: 1
-          timeoutSeconds: 1
+          initialDelaySeconds: 3
+          timeoutSeconds: 3
+          failureThreshold: 10
         livenessProbe:
           httpGet:
-            path: /health
+            path: /healthz
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 5
           timeoutSeconds: 1
 
 ---

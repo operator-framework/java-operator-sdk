@@ -80,12 +80,11 @@ public class Operator implements LifecycleAware {
    * where there is no obvious entrypoint to the application which can trigger the injection process
    * and start the cluster monitoring processes.
    */
-  public void start() {
+  public synchronized void start() {
     try {
       if (started) {
         return;
       }
-      started = true;
       controllerManager.shouldStart();
       final var version = ConfigurationServiceProvider.instance().getVersion();
       log.info(
@@ -101,6 +100,7 @@ public class Operator implements LifecycleAware {
       // the leader election would start subsequently the processor if on
       controllerManager.start(!leaderElectionManager.isLeaderElectionEnabled());
       leaderElectionManager.start();
+      started = true;
     } catch (Exception e) {
       log.error("Error starting operator", e);
       stop();
