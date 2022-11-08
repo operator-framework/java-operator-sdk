@@ -254,20 +254,17 @@ public class Utils {
   }
 
   public interface Instantiator {
-    Instantiator DEFAULT = new Instantiator() {
-      @Override
-      public <T> T instantiate(Class<T> toInstantiate) {
-        try {
-          final Constructor<? extends T> constructor = toInstantiate.getDeclaredConstructor();
-          constructor.setAccessible(true);
-          return constructor.newInstance();
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
-            | InvocationTargetException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    };
+    Instantiator DEFAULT = new Instantiator() {};
 
-    <T> T instantiate(Class<T> toInstantiate);
+    default <T> T instantiate(Class<T> toInstantiate) {
+      try {
+        final Constructor<? extends T> constructor = toInstantiate.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
+      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
+          | InvocationTargetException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 }
