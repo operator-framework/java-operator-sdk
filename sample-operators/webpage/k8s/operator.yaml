@@ -29,8 +29,9 @@ spec:
           httpGet:
             path: /startup
             port: 8080
-          initialDelaySeconds: 3
-          timeoutSeconds: 3
+          initialDelaySeconds: 1
+          periodSeconds: 2
+          timeoutSeconds: 1
           failureThreshold: 10
         livenessProbe:
           httpGet:
@@ -38,6 +39,8 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 1
+          periodSeconds: 2
+          failureThreshold: 3
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
