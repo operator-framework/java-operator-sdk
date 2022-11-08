@@ -68,7 +68,7 @@
         <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
         <maven-install-plugin.version>3.0.1</maven-install-plugin.version>
         <git-commit-id-maven-plugin.version>5.0.0</git-commit-id-maven-plugin.version>
-        <formatter-maven-plugin.version>2.20.0</formatter-maven-plugin.version>
+        <formatter-maven-plugin.version>2.21.0</formatter-maven-plugin.version>
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.7.0</impsort-maven-plugin.version>
         <okhttp.version>4.10.0</okhttp.version>
