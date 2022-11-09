@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import org.mockito.stubbing.Answer;
 
@@ -110,7 +111,10 @@ class ReconciliationDispatcherTest {
     when(configuration.getFinalizerName()).thenReturn(DEFAULT_FINALIZER);
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn(resourceClass);
-    when(configuration.getRetry()).thenReturn(new GenericRetry());
+    // needed so the retry can be predefined
+    if (configuration.getRetry() == null) {
+      when(configuration.getRetry()).thenReturn(new GenericRetry());
+    }
     when(configuration.maxReconciliationInterval())
         .thenReturn(Optional.of(Duration.ofHours(RECONCILIATION_MAX_INTERVAL)));
 
@@ -598,6 +602,34 @@ class ReconciliationDispatcherTest {
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
+  }
+
+  @Test
+  void ifRetryLimitedToZeroMaxAttemptsErrorHandlerGetsCorrectLastAttempt() {
+    var configuration =
+        MockControllerConfiguration
+            .forResource((Class<TestCustomResource>) testCustomResource.getClass());
+    when(configuration.getRetry()).thenReturn(new GenericRetry().setMaxAttempts(0));
+    reconciliationDispatcher =
+        init(testCustomResource, reconciler, configuration, customResourceFacade, false);
+
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+    var mockErrorHandler = mock(ErrorStatusHandler.class);
+    when(mockErrorHandler.updateErrorStatus(any(), any(), any()))
+        .thenReturn(ErrorStatusUpdateControl.noStatusUpdate());
+    reconciler.errorHandler = mockErrorHandler;
+
+    reconciliationDispatcher.handleExecution(
+        new ExecutionScope(
+            testCustomResource, null));
+
+    verify(mockErrorHandler, times(1)).updateErrorStatus(any(),
+        ArgumentMatchers.argThat((ArgumentMatcher<Context<TestCustomResource>>) context -> {
+          var retryInfo = context.getRetryInfo().orElseThrow();
+          return retryInfo.isLastAttempt();
+        }), any());
   }
 
   @Test
