@@ -33,6 +33,12 @@ public class ControllerHealthInfo {
 
   }
 
+  /**
+   * @return Map with event sources that wraps an informer. Thus, either a
+   *         {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
+   *         or an
+   *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
+   */
   public Map<String, InformerWrappingEventSourceHealthIndicator> unhealthyInformerEventSourceHealthIndicators() {
     return eventSourceManager.allEventSources().entrySet().stream()
         .filter(e -> e.getValue().getStatus() == Status.UNHEALTHY)

@@ -18,7 +18,7 @@ public class StartupHandler implements HttpHandler {
 
   @Override
   public void handle(HttpExchange httpExchange) throws IOException {
-    if (operator.isStarted()) {
+    if (operator.getRuntimeInfo().isStarted()) {
       sendMessage(httpExchange, 200, "started");
     } else {
       sendMessage(httpExchange, 400, "not started yet");
