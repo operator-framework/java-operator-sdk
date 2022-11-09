@@ -74,7 +74,7 @@ ConfigurationServiceProvider.overrideCurrent(o -> o.checkingCRDAndValidateLocalM
 ```
 
 
-### Q: How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Docker Desktop and k3d
+### Q: How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
 
 It's a common issue when using k3d and the fabric8 client tries to connect to the cluster an exception is thrown:
 
