@@ -161,8 +161,8 @@ public abstract class ControllerConfigurationBuilder {
       var eventSourceName = dependent.useEventSourceWithName();
       eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
       final var context = Utils.contextFor(name, dependentType, null);
-      spec = new DependentResourceSpec(dependentResource, dependentName,
-          Set.of(dependent.dependsOn()),
+
+      spec = newDependentSpec(dependentResource, dependentName, Set.of(dependent.dependsOn()),
           Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
           Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
           Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
@@ -170,6 +170,18 @@ public abstract class ControllerConfigurationBuilder {
       specsMap.put(dependentName, spec);
     }
     return specsMap.values().stream().collect(Collectors.toUnmodifiableList());
+  }
+
+  protected DependentResourceSpec newDependentSpec(DependentResource dependentResource,
+      String dependentName,
+      Set<String> dependsOn, Condition readyPostCondition, Condition reconcilePreCondition,
+      Condition deletePostCondition, String eventSourceName) {
+    return new DependentResourceSpec(dependentResource, dependentName,
+        dependsOn,
+        readyPostCondition,
+        reconcilePreCondition,
+        deletePostCondition,
+        eventSourceName);
   }
 
   private static <T> T valueOrDefault(
@@ -192,7 +204,7 @@ public abstract class ControllerConfigurationBuilder {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static <P extends HasMetadata> void configureFromCustomAnnotation(Object instance,
+  protected <P extends HasMetadata> void configureFromCustomAnnotation(Object instance,
       ControllerConfiguration<P> parent) {
     if (instance instanceof AnnotationDependentResourceConfigurator) {
       AnnotationDependentResourceConfigurator configurator =
@@ -203,7 +215,7 @@ public abstract class ControllerConfigurationBuilder {
       final var configAnnotation = instance.getClass().getAnnotation(configurationClass);
       // always called even if the annotation is null so that implementations can provide default
       // values
-      final var config = configurator.configFrom(configAnnotation, parent);
+      final var config = configurator.configFrom(configAnnotation, parent, instantiator);
       configurator.configureWith(config);
     }
   }

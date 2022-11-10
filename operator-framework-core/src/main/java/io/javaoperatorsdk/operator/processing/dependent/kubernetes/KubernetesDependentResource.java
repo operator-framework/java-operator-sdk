@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
+import io.javaoperatorsdk.operator.api.config.Utils.Instantiator;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -253,7 +254,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   @SuppressWarnings("unchecked")
   public KubernetesDependentResourceConfig configFrom(KubernetesDependent kubeDependent,
-      ControllerConfiguration<?> parentConfiguration) {
+      ControllerConfiguration<?> parentConfiguration, Instantiator instantiator) {
     var namespaces = parentConfiguration.getNamespaces();
     var configuredNS = false;
     String labelSelector = null;
@@ -286,12 +287,27 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
               context);
     }
 
-    return new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
+    final var config = instantiator.instantiate(KubernetesDependentResourceConfig.class);
+    config.initWith(namespaces, labelSelector, configuredNS,
         resourceDiscriminator, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
+    return config;
   }
 
   @Override
   public Optional<KubernetesDependentResourceConfig<R>> configuration() {
     return Optional.ofNullable(kubernetesDependentResourceConfig);
+  }
+
+  protected KubernetesDependentResource() {
+    throw new UnsupportedOperationException(
+        "This method shouldn't be called directly but rather overridden by subclasses if needed");
+  }
+
+  protected void setKubernetesDependentResourceConfig(KubernetesDependentResourceConfig<R> config) {
+    this.kubernetesDependentResourceConfig = config;
+  }
+
+  protected KubernetesDependentResourceConfig<R> getKubernetesDependentResourceConfig() {
+    return kubernetesDependentResourceConfig;
   }
 }

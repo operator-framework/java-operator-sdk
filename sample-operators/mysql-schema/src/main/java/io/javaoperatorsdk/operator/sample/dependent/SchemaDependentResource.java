@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.Utils.Instantiator;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
@@ -58,14 +59,16 @@ public class SchemaDependentResource
 
   @Override
   public ResourcePollerConfig configFrom(SchemaConfig annotation,
-      ControllerConfiguration<?> parentConfiguration) {
+      ControllerConfiguration<?> parentConfiguration, Instantiator instantiator) {
+    final var config = instantiator.instantiate(ResourcePollerConfig.class);
     if (annotation != null) {
-      return new ResourcePollerConfig(annotation.pollPeriod(),
+      config.initWith(annotation.pollPeriod(),
           new MySQLDbConfig(annotation.host(), "" + annotation.port(),
               annotation.user(), annotation.password()));
+    } else {
+      config.initWith(SchemaConfig.DEFAULT_POLL_PERIOD, MySQLDbConfig.loadFromEnvironmentVars());
     }
-    return new ResourcePollerConfig(SchemaConfig.DEFAULT_POLL_PERIOD,
-        MySQLDbConfig.loadFromEnvironmentVars());
+    return config;
   }
 
   @Override

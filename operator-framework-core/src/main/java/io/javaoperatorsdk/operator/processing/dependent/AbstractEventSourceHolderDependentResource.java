@@ -22,7 +22,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     extends AbstractDependentResource<R, P> implements EventSourceReferencer<P> {
 
   private T eventSource;
-  private final Class<R> resourceType;
+  private Class<R> resourceType;
   private boolean isCacheFillerEventSource;
   protected OnAddFilter<R> onAddFilter;
   protected OnUpdateFilter<R> onUpdateFilter;
@@ -124,5 +124,18 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   public void setOnDeleteFilter(OnDeleteFilter<R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
+  }
+
+  protected AbstractEventSourceHolderDependentResource() {
+    throw new UnsupportedOperationException(
+        "This method shouldn't be called directly but rather overridden by subclasses if needed");
+  }
+
+  protected void setResourceType(Class<R> resourceType) {
+    this.resourceType = resourceType;
+  }
+
+  protected Class<R> getResourceType() {
+    return resourceType;
   }
 }

@@ -34,6 +34,14 @@ public class KubernetesDependentResourceConfig<R> implements NamespaceChangeable
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
       OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter) {
+    initWith(namespaces, labelSelector, configuredNS, resourceDiscriminator, onAddFilter,
+        onUpdateFilter, onDeleteFilter, genericFilter);
+  }
+
+  protected void initWith(Set<String> namespaces, String labelSelector, boolean configuredNS,
+      ResourceDiscriminator<R, ?> resourceDiscriminator, OnAddFilter<R> onAddFilter,
+      OnUpdateFilter<R> onUpdateFilter, OnDeleteFilter<R> onDeleteFilter,
+      GenericFilter<R> genericFilter) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.namespacesWereConfigured = configuredNS;
