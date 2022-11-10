@@ -38,7 +38,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   private final Controller<P> controller;
   private final CustomResourceFacade<P> customResourceFacade;
-  // this is tp handle corner case, when there is a retry, but it is actually limited to 0.
+  // this is to handle corner case, when there is a retry, but it is actually limited to 0.
   // Usually for testing purposes.
   private final boolean retryConfigurationHasZeroAttempts;
 
