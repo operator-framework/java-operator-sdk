@@ -179,8 +179,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
           @Override
           public boolean isLastAttempt() {
-            return controller.getConfiguration().getRetry() == null ||
-                retryConfigurationHasZeroAttempts; // check also if the retry is limited to 0
+            return retryConfigurationHasZeroAttempts ||
+                controller.getConfiguration().getRetry() == null; // check also if the retry is
+                                                                  // limited to 0
           }
         });
         ((DefaultContext<P>) context).setRetryInfo(retryInfo);
