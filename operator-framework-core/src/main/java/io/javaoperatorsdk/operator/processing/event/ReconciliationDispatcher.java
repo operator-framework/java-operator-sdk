@@ -38,11 +38,17 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   private final Controller<P> controller;
   private final CustomResourceFacade<P> customResourceFacade;
+  // this is to handle corner case, when there is a retry, but it is actually limited to 0.
+  // Usually for testing purposes.
+  private final boolean retryConfigurationHasZeroAttempts;
 
   ReconciliationDispatcher(Controller<P> controller,
       CustomResourceFacade<P> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
+
+    var retry = controller.getConfiguration().getRetry();
+    retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
   }
 
   public ReconciliationDispatcher(Controller<P> controller) {
@@ -173,7 +179,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
           @Override
           public boolean isLastAttempt() {
-            return controller.getConfiguration().getRetry() == null;
+            // check also if the retry is limited to 0
+            return retryConfigurationHasZeroAttempts ||
+                controller.getConfiguration().getRetry() == null;
           }
         });
         ((DefaultContext<P>) context).setRetryInfo(retryInfo);
