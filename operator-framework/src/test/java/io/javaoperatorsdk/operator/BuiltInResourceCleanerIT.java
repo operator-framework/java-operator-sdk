@@ -31,6 +31,7 @@ class BuiltInResourceCleanerIT {
       assertThat(actualPod.getMetadata().getFinalizers()).isNotEmpty();
     });
 
+    pod.getMetadata().setResourceVersion(null);
     operator.delete(pod);
 
     await().untilAsserted(() -> {
