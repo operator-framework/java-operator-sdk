@@ -42,7 +42,7 @@ class BuiltInResourceCleanerIT {
       assertThat(operator.getReconcilerOfType(ObservedGenerationTestReconciler.class)
           .getCleanCount()).isPositive();
     });
-    log.info("everything ok");
+    log.info("everything ok, actual pod: {}", operator.get(Pod.class, pod.getMetadata().getName()));
   }
 
   Pod testPod() {
