@@ -8,11 +8,15 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.builtinresourcecleaner.ObservedGenerationTestReconciler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class BuiltInResourceCleanerIT {
+
+  private static final Logger log = LoggerFactory.getLogger(BuiltInResourceCleanerIT.class);
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
@@ -30,8 +34,8 @@ class BuiltInResourceCleanerIT {
       var actualPod = operator.get(Pod.class, pod.getMetadata().getName());
       assertThat(actualPod.getMetadata().getFinalizers()).isNotEmpty();
     });
-
-    pod.getMetadata().setResourceVersion(null);
+    
+    log.info("Deleting pod");
     operator.delete(pod);
 
     await().untilAsserted(() -> {
