@@ -4,12 +4,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.builtinresourcecleaner.ObservedGenerationTestReconciler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -34,7 +34,7 @@ class BuiltInResourceCleanerIT {
       var actualPod = operator.get(Pod.class, pod.getMetadata().getName());
       assertThat(actualPod.getMetadata().getFinalizers()).isNotEmpty();
     });
-    
+
     log.info("Deleting pod");
     operator.delete(pod);
 
@@ -42,6 +42,7 @@ class BuiltInResourceCleanerIT {
       assertThat(operator.getReconcilerOfType(ObservedGenerationTestReconciler.class)
           .getCleanCount()).isPositive();
     });
+    log.info("everything ok");
   }
 
   Pod testPod() {
