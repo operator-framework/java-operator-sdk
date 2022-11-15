@@ -18,6 +18,11 @@ public class InternalEventFilters {
       if (!generationAware) {
         return true;
       }
+      // for example pods don't have generation
+      if (oldResource.getMetadata().getGeneration() == null) {
+        return true;
+      }
+
       return oldResource.getMetadata().getGeneration() < newResource
           .getMetadata().getGeneration();
     };
