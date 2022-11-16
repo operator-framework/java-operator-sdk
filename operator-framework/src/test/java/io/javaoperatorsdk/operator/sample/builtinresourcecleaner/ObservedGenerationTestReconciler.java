@@ -5,12 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 
 @ControllerConfiguration(labelSelector = "builtintest=true")
 public class ObservedGenerationTestReconciler
-    implements Reconciler<Pod>, Cleaner<Pod> {
+    implements Reconciler<Service>, Cleaner<Service> {
 
   private static final Logger log = LoggerFactory.getLogger(ObservedGenerationTestReconciler.class);
 
@@ -18,15 +18,15 @@ public class ObservedGenerationTestReconciler
   private AtomicInteger cleaned = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<Pod> reconcile(
-      Pod resource,
-      Context<Pod> context) {
+  public UpdateControl<Service> reconcile(
+      Service resource,
+      Context<Service> context) {
     reconciled.addAndGet(1);
     return UpdateControl.noUpdate();
   }
 
   @Override
-  public DeleteControl cleanup(Pod resource, Context<Pod> context) {
+  public DeleteControl cleanup(Service resource, Context<Service> context) {
     cleaned.addAndGet(1);
     return DeleteControl.defaultDelete();
   }

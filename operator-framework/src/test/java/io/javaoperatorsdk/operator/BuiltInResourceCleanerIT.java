@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.builtinresourcecleaner.ObservedGenerationTestReconciler;
 
@@ -22,35 +22,36 @@ class BuiltInResourceCleanerIT {
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new ObservedGenerationTestReconciler())
-          .withNamespaceDeleteTimeout(180)
           .build();
 
+  /**
+   * Issue is with generation, some built in resources like Pod, Service does not seem to use
+   * generation.
+   */
   @Test
   void cleanerIsCalledOnBuiltInResource() {
-    var pod = operator.create(testPod());
+    var service = operator.create(testService());
 
     await().untilAsserted(() -> {
       assertThat(operator.getReconcilerOfType(ObservedGenerationTestReconciler.class)
           .getReconcileCount()).isPositive();
-      var actualPod = operator.get(Pod.class, pod.getMetadata().getName());
-      assertThat(actualPod.getMetadata().getFinalizers()).isNotEmpty();
+      var actualService = operator.get(Service.class, service.getMetadata().getName());
+      assertThat(actualService.getMetadata().getFinalizers()).isNotEmpty();
     });
 
-    log.info("Deleting pod");
-    operator.delete(pod);
+    operator.delete(service);
 
     await().untilAsserted(() -> {
       assertThat(operator.getReconcilerOfType(ObservedGenerationTestReconciler.class)
           .getCleanCount()).isPositive();
     });
-    log.info("everything ok, actual pod: {}", operator.get(Pod.class, pod.getMetadata().getName()));
   }
 
-  Pod testPod() {
-    Pod pod = ReconcilerUtils.loadYaml(Pod.class, StandaloneDependentResourceIT.class,
-        "pod-template.yaml");
-    pod.getMetadata().setLabels(Map.of("builtintest", "true"));
-    return pod;
+  Service testService() {
+    Service service = ReconcilerUtils.loadYaml(Service.class, StandaloneDependentResourceIT.class,
+        "service-template.yaml");
+    service.getMetadata().setLabels(Map.of("builtintest", "true"));
+    return service;
   }
 
 }
