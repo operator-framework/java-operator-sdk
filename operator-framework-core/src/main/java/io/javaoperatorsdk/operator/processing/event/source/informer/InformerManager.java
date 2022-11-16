@@ -24,6 +24,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -45,7 +46,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void start() throws OperatorException {
-    sources.values().parallelStream().forEach(LifecycleAware::start);
+    ExecutorServiceManager
+        .executeInParallel(() -> sources.values().parallelStream().forEach(LifecycleAware::start));
   }
 
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
@@ -86,18 +88,19 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     log.debug("Stopped informer {} for namespaces: {}", this, sourcesToRemove);
     sourcesToRemove.forEach(k -> sources.remove(k).stop());
 
-    namespaces.forEach(ns -> {
-      if (!sources.containsKey(ns)) {
-        final var source =
-            createEventSource(
-                client.inNamespace(ns).withLabelSelector(configuration.getLabelSelector()),
-                eventHandler, ns);
-        source.addIndexers(this.indexers);
-        source.start();
-        log.debug("Registered new {} -> {} for namespace: {}", this, source,
-            ns);
-      }
-    });
+    ExecutorServiceManager.executeInParallel(
+        () -> namespaces.forEach(ns -> {
+          if (!sources.containsKey(ns)) {
+            final var source =
+                createEventSource(
+                    client.inNamespace(ns).withLabelSelector(configuration.getLabelSelector()),
+                    eventHandler, ns);
+            source.addIndexers(this.indexers);
+            source.start();
+            log.debug("Registered new {} -> {} for namespace: {}", this, source,
+                ns);
+          }
+        }));
   }
 
 
@@ -113,15 +116,18 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void stop() {
-    log.info("Stopping {}", this);
-    sources.forEach((ns, source) -> {
-      try {
-        log.debug("Stopping informer for namespace: {} -> {}", ns, source);
-        source.stop();
-      } catch (Exception e) {
-        log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
-      }
-    });
+    ExecutorServiceManager.executeInParallel(
+        () -> {
+          log.info("Stopping {}", this);
+          sources.forEach((ns, source) -> {
+            try {
+              log.debug("Stopping informer for namespace: {} -> {}", ns, source);
+              source.stop();
+            } catch (Exception e) {
+              log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
+            }
+          });
+        });
   }
 
   @Override

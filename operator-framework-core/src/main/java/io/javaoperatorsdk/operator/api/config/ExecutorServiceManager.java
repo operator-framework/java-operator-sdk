@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -17,6 +18,9 @@ public class ExecutorServiceManager {
   private static ExecutorServiceManager instance;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
+
+  private static final ForkJoinPool threadPool = new ForkJoinPool(
+      Runtime.getRuntime().availableProcessors());
   private final int terminationTimeoutSeconds;
 
   private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
@@ -68,6 +72,21 @@ public class ExecutorServiceManager {
     return workflowExecutor;
   }
 
+  public static void executeInParallel(Runnable callable) {
+    executeInParallel(() -> {
+      callable.run();
+      return null;
+    });
+  }
+
+  public static <T> T executeInParallel(Callable<T> callable) {
+    try {
+      return threadPool.submit(callable).get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private void doStop() {
     try {
       log.debug("Closing executor");
@@ -80,6 +99,7 @@ public class ExecutorServiceManager {
         executor.shutdownNow(); // if we timed out, waiting, cancel everything
       }
 
+      threadPool.shutdown();
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
     }

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -65,20 +66,24 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
-    eventSources.additionalNamedEventSources()
+
+    // starting event sources on the workflow executor which shouldn't be used at this point
+    ExecutorServiceManager.executeInParallel(() -> eventSources.additionalNamedEventSources()
         .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
-        .parallel().forEach(this::startEventSource);
-    eventSources.additionalNamedEventSources()
+        .parallel()
+        .forEach(this::startEventSource));
+
+    ExecutorServiceManager.executeInParallel(() -> eventSources.additionalNamedEventSources()
         .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
-        .parallel().forEach(this::startEventSource);
+        .parallel().forEach(this::startEventSource));
   }
 
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    eventSources.additionalNamedEventSources().parallel().forEach(this::stopEventSource);
+    ExecutorServiceManager.executeInParallel(
+        () -> eventSources.additionalNamedEventSources().parallel().forEach(this::stopEventSource));
     eventSources.clear();
-
   }
 
   @SuppressWarnings("rawtypes")
