@@ -22,6 +22,7 @@ class BuiltInResourceCleanerIT {
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new ObservedGenerationTestReconciler())
+          .withNamespaceDeleteTimeout(180)
           .build();
 
   @Test
