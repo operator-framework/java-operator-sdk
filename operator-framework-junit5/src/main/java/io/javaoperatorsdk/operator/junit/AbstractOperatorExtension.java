@@ -34,6 +34,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractOperatorExtension.class);
   public static final int CRD_READY_WAIT = 2000;
+  public static final int DEFAULT_NAMESPACE_DELETE_TIMEOUT = 90;
 
   private final KubernetesClient kubernetesClient;
   protected final List<HasMetadata> infrastructure;
@@ -41,6 +42,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   protected final boolean oneNamespacePerClass;
   protected final boolean preserveNamespaceOnError;
   protected final boolean waitForNamespaceDeletion;
+  protected final int namespaceDeleteTimeout = DEFAULT_NAMESPACE_DELETE_TIMEOUT;
 
   protected String namespace;
 
@@ -198,7 +200,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
           LOGGER.info("Waiting for namespace {} to be deleted", namespace);
           Awaitility.await("namespace deleted")
               .pollInterval(50, TimeUnit.MILLISECONDS)
-              .atMost(90, TimeUnit.SECONDS)
+              .atMost(namespaceDeleteTimeout, TimeUnit.SECONDS)
               .until(() -> kubernetesClient.namespaces().withName(namespace).get() == null);
         }
       }
@@ -216,6 +218,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean preserveNamespaceOnError;
     protected boolean waitForNamespaceDeletion;
     protected boolean oneNamespacePerClass;
+    protected int namespaceDeleteTimeout;
 
     protected AbstractBuilder() {
       this.infrastructure = new ArrayList<>();
@@ -232,6 +235,10 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       this.oneNamespacePerClass = Utils.getSystemPropertyOrEnvVar(
           "josdk.it.oneNamespacePerClass",
           false);
+
+      this.namespaceDeleteTimeout = Utils.getSystemPropertyOrEnvVar(
+          "josdk.it.namespaceDeleteTimeout",
+          DEFAULT_NAMESPACE_DELETE_TIMEOUT);
     }
 
     public T preserveNamespaceOnError(boolean value) {
@@ -269,5 +276,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       return (T) this;
     }
 
+    public T withNamespaceDeleteTimeout(int timeout) {
+      this.namespaceDeleteTimeout = timeout;
+      return (T) this;
+    }
   }
 }

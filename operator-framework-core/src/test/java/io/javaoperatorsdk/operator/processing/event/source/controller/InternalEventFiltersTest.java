@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.TestUtils;
 
 import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
@@ -32,6 +34,12 @@ class InternalEventFiltersTest {
   }
 
   @Test
+  void acceptsEventIfNoGenerationOnResource() {
+    assertThat(InternalEventFilters.onUpdateGenerationAware(true)
+        .accept(testService(), testService())).isTrue();
+  }
+
+  @Test
   void finalizerCheckedIfConfigured() {
     assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
         .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isTrue();
@@ -56,5 +64,11 @@ class InternalEventFiltersTest {
   void dontAcceptIfFinalizerNotUsed() {
     assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(false, FINALIZER)
         .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isFalse();
+  }
+
+  Service testService() {
+    var service = new Service();
+    service.setMetadata(new ObjectMetaBuilder().withName("test").withNamespace("default").build());
+    return service;
   }
 }
