@@ -18,9 +18,8 @@ public class ExecutorServiceManager {
   private static ExecutorServiceManager instance;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
-
-  private static final ForkJoinPool threadPool = new ForkJoinPool(
-      Runtime.getRuntime().availableProcessors());
+  private final ForkJoinPool threadPool =
+      new ForkJoinPool(Runtime.getRuntime().availableProcessors());
   private final int terminationTimeoutSeconds;
 
   private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
@@ -73,13 +72,13 @@ public class ExecutorServiceManager {
   }
 
   public static void executeInParallel(Runnable callable) {
-    executeInParallel(() -> {
+    instance().executeInParallel(() -> {
       callable.run();
       return null;
     });
   }
 
-  public static <T> T executeInParallel(Callable<T> callable) {
+  public <T> T executeInParallel(Callable<T> callable) {
     try {
       return threadPool.submit(callable).get();
     } catch (InterruptedException | ExecutionException e) {
@@ -90,6 +89,7 @@ public class ExecutorServiceManager {
   private void doStop() {
     try {
       log.debug("Closing executor");
+      threadPool.shutdown();
       executor.shutdown();
       workflowExecutor.shutdown();
       if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
@@ -98,8 +98,6 @@ public class ExecutorServiceManager {
       if (!executor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
         executor.shutdownNow(); // if we timed out, waiting, cancel everything
       }
-
-      threadPool.shutdown();
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
     }
