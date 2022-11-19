@@ -311,7 +311,7 @@ public class Controller<P extends HasMetadata>
     final var crdName = configuration.getResourceTypeName();
     final var specVersion = "v1";
     log.info("Starting '{}' controller for reconciler: {}, resource: {}", controllerName,
-        reconciler.getClass().getCanonicalName(), resClass.getCanonicalName());
+        configuration.getAssociatedReconcilerClassName(), resClass.getCanonicalName());
 
     // fail early if we're missing the current namespace information
     failOnMissingCurrentNS();
