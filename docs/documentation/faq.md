@@ -72,3 +72,25 @@ is `true` (`false` by default). To disable, set it to `false` at [Operator-level
 ```java
 ConfigurationServiceProvider.overrideCurrent(o -> o.checkingCRDAndValidateLocalModel(false));
 ```
+
+
+### Q: How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
+
+It's a common issue when using k3d and the fabric8 client tries to connect to the cluster an exception is thrown:
+
+```
+Caused by: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:131)
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:352)
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:295)
+```
+
+The cause is that fabric8 kubernetes client does not handle elliptical curve encryption by default. To fix this, add
+the following dependency on the classpath:
+
+```xml
+<dependency>
+  <groupId>org.bouncycastle</groupId>
+  <artifactId>bcpkix-jdk15on</artifactId>
+</dependency>
+```
