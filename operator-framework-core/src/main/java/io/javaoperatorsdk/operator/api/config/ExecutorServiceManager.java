@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -13,13 +12,13 @@ import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javaoperatorsdk.operator.OperatorException;
+
 public class ExecutorServiceManager {
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
   private static ExecutorServiceManager instance;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
-  private final ForkJoinPool threadPool =
-      new ForkJoinPool(Runtime.getRuntime().availableProcessors());
   private final int terminationTimeoutSeconds;
 
   private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
@@ -71,25 +70,18 @@ public class ExecutorServiceManager {
     return workflowExecutor;
   }
 
-  public static void executeInParallel(Runnable callable) {
-    instance().executeInParallel(() -> {
-      callable.run();
-      return null;
-    });
-  }
-
-  public <T> T executeInParallel(Callable<T> callable) {
+  public static void executeAndWaitForCompletion(Runnable task) {
     try {
-      return threadPool.submit(callable).get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
+      instance().workflowExecutorService().submit(task)
+          .get(instance().terminationTimeoutSeconds, TimeUnit.SECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new OperatorException("Couldn't execute task", e);
     }
   }
 
   private void doStop() {
     try {
       log.debug("Closing executor");
-      threadPool.shutdown();
       executor.shutdown();
       workflowExecutor.shutdown();
       if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
