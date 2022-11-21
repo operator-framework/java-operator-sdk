@@ -70,10 +70,26 @@ public class ExecutorServiceManager {
     return workflowExecutor;
   }
 
+  /**
+   * Runs the specified I/O-bound task and waits for its completion using the ExecutorService
+   * provided by {@link #workflowExecutorService()}
+   * 
+   * @param task task to run concurrently
+   */
   public static void executeAndWaitForCompletion(Runnable task) {
+    executeAndWaitForCompletion(task, instance().workflowExecutorService());
+  }
+
+  /**
+   * Executes the specified I/O-bound task using the specified ExecutorService and waits for its
+   * completion for at most {@link #terminationTimeoutSeconds} seconds.
+   * 
+   * @param task task to run concurrently
+   * @param executor ExecutorService used to run the task
+   */
+  public static void executeAndWaitForCompletion(Runnable task, ExecutorService executor) {
     try {
-      instance().workflowExecutorService().submit(task)
-          .get(instance().terminationTimeoutSeconds, TimeUnit.SECONDS);
+      executor.submit(task).get(instance().terminationTimeoutSeconds, TimeUnit.SECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new OperatorException("Couldn't execute task", e);
     }
