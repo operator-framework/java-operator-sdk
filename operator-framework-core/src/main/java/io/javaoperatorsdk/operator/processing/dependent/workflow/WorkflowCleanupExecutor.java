@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -176,17 +177,14 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   private WorkflowCleanupResult createCleanupResult() {
-    var result = new WorkflowCleanupResult();
-    result.setErroredDependents(exceptionsDuringExecution
-        .entrySet().stream()
-        .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)));
-
-    result.setPostConditionNotMetDependents(
-        postDeleteConditionNotMet.stream().map(DependentResourceNode::getDependentResource)
-            .collect(Collectors.toList()));
-    result.setDeleteCalledOnDependents(
-        deleteCalled.stream().map(DependentResourceNode::getDependentResource)
-            .collect(Collectors.toList()));
-    return result;
+    final var erroredDependents = exceptionsDuringExecution.entrySet().stream()
+        .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Entry::getValue));
+    final var postConditionNotMet = postDeleteConditionNotMet.stream()
+        .map(DependentResourceNode::getDependentResource)
+        .collect(Collectors.toList());
+    final var deleteCalled =
+        this.deleteCalled.stream().map(DependentResourceNode::getDependentResource)
+            .collect(Collectors.toList());
+    return new WorkflowCleanupResult(erroredDependents, postConditionNotMet, deleteCalled);
   }
 }
