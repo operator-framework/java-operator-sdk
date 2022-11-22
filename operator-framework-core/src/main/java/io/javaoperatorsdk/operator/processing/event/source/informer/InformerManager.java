@@ -110,7 +110,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
       try {
         log.debug("Stopping informer for namespace: {} -> {}", ns, source);
         source.stop();
-        log.debug("Informer stopped: {} -> {}", ns, source);
       } catch (Exception e) {
         log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
       }

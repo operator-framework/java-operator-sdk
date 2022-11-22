@@ -9,9 +9,9 @@ import org.takes.facets.fork.TkFork;
 import org.takes.http.Exit;
 import org.takes.http.FtBasic;
 
-import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
 public class WebPageOperator {
   public static final String WEBPAGE_RECONCILER_ENV = "WEBPAGE_RECONCILER";
