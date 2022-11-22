@@ -43,6 +43,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.EventSourceMetadata.AssociatedDependentMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
@@ -83,9 +84,14 @@ public class Controller<P extends HasMetadata>
     isCleaner = reconciler instanceof Cleaner;
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
+
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
+
+    final var context = new EventSourceContext<>(
+        eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+    initAndRegisterEventSources(context);
   }
 
   @Override
@@ -224,13 +230,14 @@ public class Controller<P extends HasMetadata>
     final var size = dependentResourcesByName.size();
     if (size > 0) {
       dependentResourcesByName.forEach((key, value) -> {
+        final var dependent = new AssociatedDependentMetadata(key, value.getClass().getName());
         if (value instanceof EventSourceProvider) {
           final var provider = (EventSourceProvider) value;
           final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(key, source);
+          eventSourceManager.registerEventSource(key, source, dependent);
         } else {
           Optional<ResourceEventSource> eventSource = value.eventSource(context);
-          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es));
+          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es, dependent));
         }
       });
 
@@ -241,8 +248,7 @@ public class Controller<P extends HasMetadata>
           .map(EventSourceReferencer.class::cast)
           .forEach(dr -> {
             try {
-              ((EventSourceReferencer<P>) dr)
-                  .resolveEventSource(eventSourceManager);
+              ((EventSourceReferencer<P>) dr).resolveEventSource(eventSourceManager);
             } catch (EventSourceNotFoundException e) {
               unresolvable.computeIfAbsent(e.getEventSourceName(), s -> new ArrayList<>()).add(dr);
             }
@@ -318,10 +324,6 @@ public class Controller<P extends HasMetadata>
     try {
       // check that the custom resource is known by the cluster if configured that way
       validateCRDWithLocalModelIfRequired(resClass, controllerName, crdName, specVersion);
-      final var context = new EventSourceContext<>(
-          eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
-
-      initAndRegisterEventSources(context);
       eventSourceManager.start();
       if (startEventProcessor) {
         eventProcessor.start();
