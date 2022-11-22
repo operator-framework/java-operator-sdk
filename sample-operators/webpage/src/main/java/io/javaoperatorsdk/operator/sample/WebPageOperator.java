@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
 
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.takes.facets.fork.FkRegex;
@@ -24,7 +25,7 @@ public class WebPageOperator {
     log.info("WebServer Operator starting!");
 
     KubernetesClient client = new KubernetesClientBuilder().build();
-    Operator operator = new Operator(client);
+    Operator operator = new Operator(client,o->o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("nameaa")));
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler(client));
