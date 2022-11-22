@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.processing.event.EventSources.RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -23,8 +23,8 @@ class EventSourcesTest {
   @Test
   void cannotAddTwoEventSourcesWithSameName() {
     assertThrows(IllegalArgumentException.class, () -> {
-      eventSources.add("name", mock(EventSource.class));
-      eventSources.add("name", mock(EventSource.class));
+      eventSources.add(new NamedEventSource(mock(EventSource.class), "name"));
+      eventSources.add(new NamedEventSource(mock(EventSource.class), "name"));
     });
   }
 
@@ -33,12 +33,13 @@ class EventSourcesTest {
   void eventSourcesStreamShouldNotReturnControllerEventSource() {
     initControllerEventSource();
     final var source = mock(EventSource.class);
-    eventSources.add(EVENT_SOURCE_NAME, source);
+    final var namedEventSource = new NamedEventSource(source, EVENT_SOURCE_NAME);
+    eventSources.add(namedEventSource);
 
     assertThat(eventSources.additionalNamedEventSources()).containsExactly(
         new NamedEventSource(eventSources.retryEventSource(),
             RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME),
-        new NamedEventSource(source, EVENT_SOURCE_NAME));
+        namedEventSource);
   }
 
   private void initControllerEventSource() {

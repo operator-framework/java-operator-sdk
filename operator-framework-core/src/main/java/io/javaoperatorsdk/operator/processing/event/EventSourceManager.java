@@ -121,13 +121,20 @@ public class EventSourceManager<P extends HasMetadata>
 
   public final synchronized void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
+    registerEventSource(name, eventSource, null);
+  }
+
+  public final synchronized void registerEventSource(String name, EventSource eventSource,
+      EventSourceMetadata.AssociatedDependentMetadata dependentMetadata)
+      throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
       if (name == null || name.isBlank()) {
         name = EventSourceInitializer.generateNameFor(eventSource);
       }
-      eventSources.add(name, eventSource);
-      eventSource.setEventHandler(controller.getEventProcessor());
+      final var named = new NamedEventSource(eventSource, name, dependentMetadata);
+      eventSources.add(named);
+      named.setEventHandler(controller.getEventProcessor());
     } catch (IllegalStateException | MissingCRDException e) {
       throw e; // leave untouched
     } catch (Exception e) {
@@ -172,6 +179,11 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.flatMappedSources()
         .map(NamedEventSource::original)
         .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
+
+  @SuppressWarnings("unused")
+  public Set<EventSourceMetadata> getRegisteredEventSourcesMetadata() {
+    return eventSources.flatMappedSources().collect(Collectors.toUnmodifiableSet());
   }
 
   public ControllerResourceEventSource<P> getControllerResourceEventSource() {

@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
@@ -20,15 +23,14 @@ class EventSources<R extends HasMetadata> {
   public static final String RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME =
       "RetryAndRescheduleTimerEventSource";
 
-  private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
+  private final ConcurrentNavigableMap<String, Map<String, NamedEventSource>> sources =
       new ConcurrentSkipListMap<>();
   private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
   private ControllerResourceEventSource<R> controllerResourceEventSource;
 
 
-  ControllerResourceEventSource<R> initControllerEventSource(Controller<R> controller) {
+  void initControllerEventSource(Controller<R> controller) {
     controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
-    return controllerResourceEventSource;
   }
 
   ControllerResourceEventSource<R> controllerResourceEventSource() {
@@ -49,7 +51,7 @@ class EventSources<R extends HasMetadata> {
   Stream<EventSource> additionalEventSources() {
     return Stream.concat(
         Stream.of(retryEventSource()).filter(Objects::nonNull),
-        sources.values().stream().flatMap(c -> c.values().stream()));
+        flatMappedSources().map(NamedEventSource::original));
   }
 
   NamedEventSource namedControllerResourceEventSource() {
@@ -58,8 +60,7 @@ class EventSources<R extends HasMetadata> {
   }
 
   Stream<NamedEventSource> flatMappedSources() {
-    return sources.values().stream().flatMap(c -> c.entrySet().stream()
-        .map(esEntry -> new NamedEventSource(esEntry.getValue(), esEntry.getKey())));
+    return sources.values().stream().flatMap(c -> c.values().stream());
   }
 
   public void clear() {
@@ -67,6 +68,10 @@ class EventSources<R extends HasMetadata> {
   }
 
   public boolean contains(String name, EventSource source) {
+    if (source instanceof NamedEventSource) {
+      source = ((NamedEventSource) source).original();
+    }
+
     final var eventSources = sources.get(keyFor(source));
     if (eventSources == null || eventSources.isEmpty()) {
       return false;
@@ -74,13 +79,15 @@ class EventSources<R extends HasMetadata> {
     return eventSources.containsKey(name);
   }
 
-  public void add(String name, EventSource eventSource) {
-    if (contains(name, eventSource)) {
+  public void add(NamedEventSource eventSource) {
+    final var name = eventSource.name();
+    final var original = eventSource.original();
+    if (contains(name, original)) {
       throw new IllegalArgumentException("An event source is already registered for the "
-          + keyAsString(getResourceType(eventSource), name)
+          + keyAsString(getResourceType(original), name)
           + " class/name combination");
     }
-    sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
+    sources.computeIfAbsent(keyFor(original), k -> new HashMap<>()).put(name, eventSource);
   }
 
   @SuppressWarnings("rawtypes")
@@ -107,7 +114,7 @@ class EventSources<R extends HasMetadata> {
     }
 
     final var size = sourcesForType.size();
-    final EventSource source;
+    NamedEventSource source;
     if (size == 1 && name == null) {
       source = sourcesForType.values().stream().findFirst().orElse(null);
     } else {
@@ -125,15 +132,16 @@ class EventSources<R extends HasMetadata> {
       }
     }
 
-    if (!(source instanceof ResourceEventSource)) {
+    EventSource original = source.original();
+    if (!(original instanceof ResourceEventSource)) {
       throw new IllegalArgumentException(source + " associated with "
           + keyAsString(dependentType, name) + " is not a "
           + ResourceEventSource.class.getSimpleName());
     }
-    final var res = (ResourceEventSource<S, R>) source;
+    final var res = (ResourceEventSource<S, R>) original;
     final var resourceClass = res.resourceType();
     if (!resourceClass.isAssignableFrom(dependentType)) {
-      throw new IllegalArgumentException(source + " associated with "
+      throw new IllegalArgumentException(original + " associated with "
           + keyAsString(dependentType, name)
           + " is handling " + resourceClass.getName() + " resources but asked for "
           + dependentType.getName());
