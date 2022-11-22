@@ -34,7 +34,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
-    return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
+    return controller.getEventSourceManager().getResourceEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
         .flatMap(Set::stream)
         .collect(Collectors.toSet());
