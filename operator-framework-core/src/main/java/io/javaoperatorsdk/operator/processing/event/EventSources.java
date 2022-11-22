@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,23 +68,21 @@ class EventSources<R extends HasMetadata> {
     sources.clear();
   }
 
-  public boolean contains(String name, EventSource source) {
-    if (source instanceof NamedEventSource) {
-      source = ((NamedEventSource) source).original();
-    }
-
+  private NamedEventSource existing(String name, EventSource source) {
     final var eventSources = sources.get(keyFor(source));
     if (eventSources == null || eventSources.isEmpty()) {
-      return false;
+      return null;
     }
-    return eventSources.containsKey(name);
+    return eventSources.get(name);
   }
 
   public void add(NamedEventSource eventSource) {
     final var name = eventSource.name();
     final var original = eventSource.original();
-    if (contains(name, original)) {
-      throw new IllegalArgumentException("An event source is already registered for the "
+    final var existing = existing(name, original);
+    if (existing != null && !eventSource.equals(existing)) {
+      throw new IllegalArgumentException("Event source " + existing.original()
+          + " is already registered for the "
           + keyAsString(getResourceType(original), name)
           + " class/name combination");
     }
@@ -98,6 +97,10 @@ class EventSources<R extends HasMetadata> {
   }
 
   private String keyFor(EventSource source) {
+    if (source instanceof NamedEventSource) {
+      source = ((NamedEventSource) source).original();
+    }
+
     return keyFor(getResourceType(source));
   }
 
@@ -107,6 +110,10 @@ class EventSources<R extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   public <S> ResourceEventSource<S, R> get(Class<S> dependentType, String name) {
+    if (dependentType == null) {
+      throw new IllegalArgumentException("Must pass a dependent type to retrieve event sources");
+    }
+
     final var sourcesForType = sources.get(keyFor(dependentType));
     if (sourcesForType == null || sourcesForType.isEmpty()) {
       throw new IllegalArgumentException(
@@ -159,7 +166,12 @@ class EventSources<R extends HasMetadata> {
   @SuppressWarnings("unchecked")
   public <S> List<ResourceEventSource<S, R>> getEventSources(Class<S> dependentType) {
     final var sourcesForType = sources.get(keyFor(dependentType));
+    if (sourcesForType == null) {
+      return Collections.emptyList();
+    }
+
     return sourcesForType.values().stream()
+        .map(NamedEventSource::original)
         .filter(ResourceEventSource.class::isInstance)
         .map(es -> (ResourceEventSource<S, R>) es)
         .collect(Collectors.toList());

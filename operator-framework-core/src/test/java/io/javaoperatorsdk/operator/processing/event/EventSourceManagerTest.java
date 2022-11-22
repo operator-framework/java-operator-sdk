@@ -24,7 +24,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class EventSourceManagerTest {
@@ -109,7 +115,7 @@ class EventSourceManagerTest {
     final var cause = exception.getCause();
     assertTrue(cause instanceof IllegalArgumentException);
     assertThat(cause.getMessage()).contains(
-        "An event source is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, "
+        "is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, "
             + name + ") class/name combination");
   }
 

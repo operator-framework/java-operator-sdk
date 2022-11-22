@@ -145,22 +145,24 @@ public class EventSourceManager<P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   public void broadcastOnResourceEvent(ResourceAction action, P resource, P oldResource) {
-    eventSources.additionalNamedEventSources().forEach(eventSource -> {
-      if (eventSource.original() instanceof ResourceEventAware) {
-        var lifecycleAwareES = ((ResourceEventAware<P>) eventSource.original());
-        switch (action) {
-          case ADDED:
-            lifecycleAwareES.onResourceCreated(resource);
-            break;
-          case UPDATED:
-            lifecycleAwareES.onResourceUpdated(resource, oldResource);
-            break;
-          case DELETED:
-            lifecycleAwareES.onResourceDeleted(resource);
-            break;
-        }
-      }
-    });
+    eventSources.additionalNamedEventSources()
+        .map(NamedEventSource::original)
+        .forEach(source -> {
+          if (source instanceof ResourceEventAware) {
+            var lifecycleAwareES = ((ResourceEventAware<P>) source);
+            switch (action) {
+              case ADDED:
+                lifecycleAwareES.onResourceCreated(resource);
+                break;
+              case UPDATED:
+                lifecycleAwareES.onResourceUpdated(resource, oldResource);
+                break;
+              case DELETED:
+                lifecycleAwareES.onResourceDeleted(resource);
+                break;
+            }
+          }
+        });
   }
 
   public void changeNamespaces(Set<String> namespaces) {
