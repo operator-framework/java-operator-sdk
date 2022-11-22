@@ -86,6 +86,10 @@ public class Controller<P extends HasMetadata>
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
+
+    final var context = new EventSourceContext<>(
+        eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+    initAndRegisterEventSources(context);
   }
 
   @Override
@@ -318,10 +322,7 @@ public class Controller<P extends HasMetadata>
     try {
       // check that the custom resource is known by the cluster if configured that way
       validateCRDWithLocalModelIfRequired(resClass, controllerName, crdName, specVersion);
-      final var context = new EventSourceContext<>(
-          eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
 
-      initAndRegisterEventSources(context);
       eventSourceManager.start();
       if (startEventProcessor) {
         eventProcessor.start();
