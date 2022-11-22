@@ -27,7 +27,6 @@ public class LeaderElectionTestOperator {
         new Operator(client, c -> c.withLeaderElectionConfiguration(leaderElectionConfiguration));
 
     operator.register(new LeaderElectionTestReconciler(identity));
-    operator.installShutdownHook();
     operator.start();
   }
 }

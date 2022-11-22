@@ -66,6 +66,7 @@ public class Operator implements LifecycleAware {
   }
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
+  @Deprecated(forRemoval = true)
   public void installShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
   }

@@ -33,7 +33,6 @@ public class WebPageOperator {
     } else {
       operator.register(new WebPageStandaloneDependentsReconciler(client));
     }
-    operator.installShutdownHook();
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);
