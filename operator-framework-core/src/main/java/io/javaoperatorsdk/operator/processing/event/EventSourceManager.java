@@ -72,12 +72,12 @@ public class EventSourceManager<P extends HasMetadata>
         .executeAndWaitForCompletion(() -> eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
             .parallel()
-            .forEach(this::startEventSource));
+            .forEach(this::startEventSource), "LowLevelEventSourceStart");
 
     ExecutorServiceManager
         .executeAndWaitForCompletion(() -> eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
-            .parallel().forEach(this::startEventSource));
+            .parallel().forEach(this::startEventSource), "DefaultEventSourceStart");
   }
 
   @Override
@@ -85,7 +85,7 @@ public class EventSourceManager<P extends HasMetadata>
     stopEventSource(eventSources.namedControllerResourceEventSource());
     ExecutorServiceManager
         .executeAndWaitForCompletion(() -> eventSources.additionalNamedEventSources().parallel()
-            .forEach(this::stopEventSource));
+            .forEach(this::stopEventSource), "EventSourceStop");
     eventSources.clear();
   }
 

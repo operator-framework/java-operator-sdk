@@ -48,7 +48,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   public void start() throws OperatorException {
     // make sure informers are all started before proceeding further
     ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> sources.values().parallelStream().forEach(LifecycleAware::start));
+        () -> sources.values().parallelStream().forEach(LifecycleAware::start), "InformerStart");
   }
 
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
@@ -101,7 +101,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
             log.debug("Registered new {} -> {} for namespace: {}", this, source,
                 ns);
           }
-        }));
+        }), "InformerStart");
   }
 
 

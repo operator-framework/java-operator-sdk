@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -19,12 +20,15 @@ public class ExecutorServiceManager {
   private static ExecutorServiceManager instance;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
+  private final ExecutorService ioBoundExecutor;
   private final int terminationTimeoutSeconds;
 
   private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
       int terminationTimeoutSeconds) {
     this.executor = new InstrumentedExecutorService(executor);
     this.workflowExecutor = new InstrumentedExecutorService(workflowExecutor);
+    this.ioBoundExecutor = new InstrumentedExecutorService(
+        Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
   }
 
@@ -76,8 +80,8 @@ public class ExecutorServiceManager {
    *
    * @param task task to run concurrently
    */
-  public static void executeAndWaitForCompletion(Runnable task) {
-    executeAndWaitForCompletion(task, instance().workflowExecutorService());
+  public static void executeAndWaitForCompletion(Runnable task, String threadNamePrefix) {
+    executeAndWaitForCompletion(task, instance().ioBoundExecutor, threadNamePrefix);
   }
 
   /**
@@ -87,27 +91,37 @@ public class ExecutorServiceManager {
    * @param task task to run concurrently
    * @param executor ExecutorService used to run the task
    */
-  public static void executeAndWaitForCompletion(Runnable task, ExecutorService executor) {
+  public static void executeAndWaitForCompletion(Runnable task, ExecutorService executor,
+      String threadNamePrefix) {
+    // change thread name for easier debugging
+    final var thread = Thread.currentThread();
+    final var name = thread.getName();
     try {
+      thread.setName(threadNamePrefix + "-" + thread.getId());
       executor.submit(task).get(instance().terminationTimeoutSeconds, TimeUnit.SECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new OperatorException("Couldn't execute task", e);
+    } finally {
+      // restore original name
+      thread.setName(name);
     }
   }
 
   private void doStop() {
     try {
       log.debug("Closing executor");
-      executor.shutdown();
-      workflowExecutor.shutdown();
-      if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
-        workflowExecutor.shutdownNow(); // if we timed out, waiting, cancel everything
-      }
-      if (!executor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
-        executor.shutdownNow(); // if we timed out, waiting, cancel everything
-      }
+      shutdown(executor);
+      shutdown(workflowExecutor);
+      shutdown(ioBoundExecutor);
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
+    }
+  }
+
+  private void shutdown(ExecutorService executorService) throws InterruptedException {
+    executorService.shutdown();
+    if (!executorService.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
+      executorService.shutdownNow(); // if we timed out, waiting, cancel everything
     }
   }
 
