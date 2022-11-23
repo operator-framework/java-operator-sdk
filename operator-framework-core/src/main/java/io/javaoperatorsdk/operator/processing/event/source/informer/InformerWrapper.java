@@ -180,4 +180,24 @@ class InformerWrapper<T extends HasMetadata>
   public String getTargetNamespace() {
     return namespaceIdentifier;
   }
+
+  @Override
+  public boolean hasSynced() {
+    return informer.hasSynced();
+  }
+
+  @Override
+  public boolean isWatching() {
+    return informer.isWatching();
+  }
+
+  @Override
+  public boolean isRunning() {
+    return informer.isRunning();
+  }
+
+  @Override
+  public String getTargetNamespace() {
+    return namespaceIdentifier;
+  }
 }
