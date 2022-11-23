@@ -86,7 +86,9 @@ public class ExecutorServiceManager {
     final var name = thread.getName();
     try {
       thread.setName(threadNamePrefix + "-" + thread.getId());
-      instrumented.submit(task).get(instance().terminationTimeoutSeconds, TimeUnit.SECONDS);
+      instrumented.submit(task)
+          .get(ConfigurationServiceProvider.instance().cacheSyncTimeout().toSeconds(),
+              TimeUnit.SECONDS);
       shutdown(instrumented);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new OperatorException("Couldn't execute task", e);
