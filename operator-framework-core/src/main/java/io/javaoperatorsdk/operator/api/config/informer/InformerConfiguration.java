@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -29,6 +30,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
     private final OnDeleteFilter<R> onDeleteFilter;
+    private final ItemStore<R> itemStore;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
@@ -38,7 +40,8 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnAddFilter<R> onAddFilter,
         OnUpdateFilter<R> onUpdateFilter,
         OnDeleteFilter<R> onDeleteFilter,
-        GenericFilter<R> genericFilter) {
+        GenericFilter<R> genericFilter,
+        ItemStore<R> itemStore) {
       super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
@@ -47,6 +50,7 @@ public interface InformerConfiguration<R extends HasMetadata>
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
       this.onDeleteFilter = onDeleteFilter;
+      this.itemStore = itemStore;
     }
 
     @Override
@@ -66,6 +70,11 @@ public interface InformerConfiguration<R extends HasMetadata>
     @Override
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
       return (PrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;
+    }
+
+    @Override
+    public ItemStore<R> itemStore() {
+      return this.itemStore;
     }
   }
 
@@ -89,6 +98,8 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
+  ItemStore<R> itemStore();
+
   @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata> {
 
@@ -102,6 +113,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private OnDeleteFilter<R> onDeleteFilter;
     private GenericFilter<R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
+    private ItemStore<R> itemStore;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -202,12 +214,17 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public InformerConfigurationBuilder<R> withOnDeleteFilter(ItemStore<R> itemStore) {
+      this.itemStore = itemStore;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
-          onDeleteFilter, genericFilter);
+          onDeleteFilter, genericFilter, itemStore);
     }
   }
 
