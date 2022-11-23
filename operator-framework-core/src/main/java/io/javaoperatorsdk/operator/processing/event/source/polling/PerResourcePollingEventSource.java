@@ -40,6 +40,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final long period;
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
 
+
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
     this(resourceFetcher, resourceCache, period, null, resourceClass,
@@ -152,4 +153,5 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     super.stop();
     timer.cancel();
   }
+
 }
