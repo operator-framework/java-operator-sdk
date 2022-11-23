@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -8,12 +9,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 
 import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.*;
 
 class PollingEventSourceTest
@@ -21,11 +25,12 @@ class PollingEventSourceTest
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   public static final int DEFAULT_WAIT_PERIOD = 100;
+  public static final long POLL_PERIOD = 30L;
 
   private PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
-      new PollingEventSource<>(resourceFetcher, 30L, SampleExternalResource.class,
+      new PollingEventSource<>(resourceFetcher, POLL_PERIOD, SampleExternalResource.class,
           (SampleExternalResource er) -> er.getName() + "#" + er.getValue());
 
   @BeforeEach
@@ -71,6 +76,26 @@ class PollingEventSourceTest
     Thread.sleep(DEFAULT_WAIT_PERIOD);
 
     verify(eventHandler, times(2)).handleEvent(any());
+  }
+
+  @Test
+  void updatesHealthIndicatorBasedOnExceptionsInFetcher() throws InterruptedException {
+    when(resourceFetcher.fetchResources())
+        .thenReturn(testResponseWithOneValue());
+    pollingEventSource.start();
+    assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY);
+
+    when(resourceFetcher.fetchResources())
+        // 2x - to make sure to catch the health indicator change
+        .thenThrow(new RuntimeException("test exception"))
+        .thenThrow(new RuntimeException("test exception"))
+        .thenReturn(testResponseWithOneValue());
+
+    await().pollInterval(Duration.ofMillis(POLL_PERIOD)).untilAsserted(
+        () -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.UNHEALTHY));
+
+    await()
+        .untilAsserted(() -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY));
   }
 
   private Map<ResourceID, Set<SampleExternalResource>> testResponseWithTwoValueForSameId() {

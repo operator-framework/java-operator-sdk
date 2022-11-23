@@ -25,18 +25,22 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 80
-        readinessProbe:
+        startupProbe:
           httpGet:
-            path: /health
+            path: /startup
             port: 8080
           initialDelaySeconds: 1
+          periodSeconds: 2
           timeoutSeconds: 1
+          failureThreshold: 10
         livenessProbe:
           httpGet:
-            path: /health
+            path: /healthz
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 5
           timeoutSeconds: 1
+          periodSeconds: 2
+          failureThreshold: 3
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

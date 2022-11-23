@@ -21,21 +21,25 @@ import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 class InformerWrapper<T extends HasMetadata>
-    implements LifecycleAware, IndexerResourceCache<T> {
+    implements LifecycleAware, IndexerResourceCache<T>, InformerHealthIndicator {
 
   private static final Logger log = LoggerFactory.getLogger(InformerWrapper.class);
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
+  private final String namespaceIdentifier;
 
-  public InformerWrapper(SharedIndexInformer<T> informer) {
+  public InformerWrapper(SharedIndexInformer<T> informer, String namespaceIdentifier) {
     this.informer = informer;
+    this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
+
   }
 
   @Override
@@ -155,5 +159,25 @@ class InformerWrapper<T extends HasMetadata>
 
   private String informerInfo() {
     return "InformerWrapper [" + versionedFullResourceName() + "]";
+  }
+
+  @Override
+  public boolean hasSynced() {
+    return informer.hasSynced();
+  }
+
+  @Override
+  public boolean isWatching() {
+    return informer.isWatching();
+  }
+
+  @Override
+  public boolean isRunning() {
+    return informer.isRunning();
+  }
+
+  @Override
+  public String getTargetNamespace() {
+    return namespaceIdentifier;
   }
 }
