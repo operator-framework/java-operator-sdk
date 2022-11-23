@@ -34,7 +34,6 @@ public class MySQLSchemaOperator {
         configOverrider -> configOverrider.replacingNamedDependentResourceConfig(
             SchemaDependentResource.NAME,
             new ResourcePollerConfig(300, MySQLDbConfig.loadFromEnvironmentVars())));
-    operator.installShutdownHook();
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);
