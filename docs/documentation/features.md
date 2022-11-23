@@ -702,8 +702,9 @@ See sample configuration in the [E2E test](https://github.com/java-operator-sdk/
 ## Runtime Info
 
 [RuntimeInfo](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RuntimeInfo.java#L16-L16) 
-is accessed. You can access mainly health information of event sources. Based on that liveness probes can be registered
-and a custom logic implemented, when the operator is considered live. Note that this can be used with combination of
+is used mainly to check the actual health of event sources. Based on this information it is easy to implement custom 
+liveness probes.
+
 [stopOnInformerErrorDuringStartup](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L168-L168)
 setting, where this flag usually needs to be set to false, in order to control the exact liveness properties.
 
