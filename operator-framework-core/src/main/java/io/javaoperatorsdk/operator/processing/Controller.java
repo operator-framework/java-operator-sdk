@@ -39,6 +39,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundE
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
@@ -67,6 +68,7 @@ public class Controller<P extends HasMetadata>
 
   private final GroupVersionKind associatedGVK;
   private final EventProcessor<P> eventProcessor;
+  private final ControllerHealthInfo controllerHealthInfo;
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -87,6 +89,7 @@ public class Controller<P extends HasMetadata>
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
+    controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
 
     final var context = new EventSourceContext<>(
         eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
@@ -287,6 +290,11 @@ public class Controller<P extends HasMetadata>
 
   public ControllerConfiguration<P> getConfiguration() {
     return configuration;
+  }
+
+  @Override
+  public ControllerHealthInfo getControllerHealthInfo() {
+    return controllerHealthInfo;
   }
 
   public KubernetesClient getClient() {
