@@ -107,6 +107,19 @@ public class ExecutorServiceManager {
     }
   }
 
+  public static void executeIOBoundTask(Runnable task, String threadNamePrefix) {
+    // change thread name for easier debugging
+    final var thread = Thread.currentThread();
+    final var name = thread.getName();
+    try {
+      thread.setName(threadNamePrefix + "-" + thread.getId());
+      instance().ioBoundExecutor.execute(task);
+    } finally {
+      // restore original name
+      thread.setName(name);
+    }
+  }
+
   private void doStop() {
     try {
       log.debug("Closing executor");

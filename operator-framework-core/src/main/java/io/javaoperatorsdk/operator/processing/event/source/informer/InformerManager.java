@@ -47,8 +47,9 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public void start() throws OperatorException {
     // make sure informers are all started before proceeding further
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> sources.values().parallelStream().forEach(LifecycleAware::start), "InformerStart");
+    ExecutorServiceManager.executeIOBoundTask(
+        () -> sources.values().parallelStream().forEach(LifecycleAware::start),
+        "InformerStart");
   }
 
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
@@ -117,7 +118,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void stop() {
-    ExecutorServiceManager.instance().workflowExecutorService().execute(
+    ExecutorServiceManager.executeAndWaitForCompletion(
         () -> {
           log.info("Stopping {}", this);
           sources.forEach((ns, source) -> {
@@ -128,7 +129,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
               log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
             }
           });
-        });
+        },
+        "StopInformer");
   }
 
   @Override

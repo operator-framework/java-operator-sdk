@@ -68,24 +68,27 @@ public class EventSourceManager<P extends HasMetadata>
     startEventSource(eventSources.namedControllerResourceEventSource());
 
     // starting event sources on the workflow executor which shouldn't be used at this point
-    ExecutorServiceManager
-        .executeAndWaitForCompletion(() -> eventSources.additionalNamedEventSources()
+    ExecutorServiceManager.executeAndWaitForCompletion(
+        () -> eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
             .parallel()
-            .forEach(this::startEventSource), "LowLevelEventSourceStart");
+            .forEach(this::startEventSource),
+        "LowLevelEventSourceStart");
 
-    ExecutorServiceManager
-        .executeAndWaitForCompletion(() -> eventSources.additionalNamedEventSources()
+    ExecutorServiceManager.executeAndWaitForCompletion(
+        () -> eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
-            .parallel().forEach(this::startEventSource), "DefaultEventSourceStart");
+            .parallel().forEach(this::startEventSource),
+        "DefaultEventSourceStart");
   }
 
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    ExecutorServiceManager
-        .executeAndWaitForCompletion(() -> eventSources.additionalNamedEventSources().parallel()
-            .forEach(this::stopEventSource), "EventSourceStop");
+    ExecutorServiceManager.executeIOBoundTask(
+        () -> eventSources.additionalNamedEventSources().parallel()
+            .forEach(this::stopEventSource),
+        "EventSourceStop");
     eventSources.clear();
   }
 
