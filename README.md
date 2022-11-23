@@ -46,6 +46,8 @@ Quarkus Extension: https://github.com/quarkiverse/quarkus-operator-sdk
 
 Spring Boot Starter: https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
 
+Framework to implement Admission Controllers and Conversion Hooks: https://github.com/java-operator-sdk/kubernetes-webooks-framework
+
 ## Projects using JOSDK
 
 While we know of multiple projects using JOSDK in production, we don't want to presume these 
