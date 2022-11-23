@@ -211,7 +211,6 @@ class InformerRelatedBehaviorITS {
           }
         });
     operator.register(reconciler);
-    operator.installShutdownHook();
     operator.start();
     return operator;
   }
