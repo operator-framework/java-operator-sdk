@@ -43,7 +43,6 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
-import io.javaoperatorsdk.operator.processing.event.EventSourceMetadata.AssociatedDependentMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
@@ -230,14 +229,13 @@ public class Controller<P extends HasMetadata>
     final var size = dependentResourcesByName.size();
     if (size > 0) {
       dependentResourcesByName.forEach((key, value) -> {
-        final var dependent = new AssociatedDependentMetadata(key, value.getClass().getName());
         if (value instanceof EventSourceProvider) {
           final var provider = (EventSourceProvider) value;
           final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(key, source, dependent);
+          eventSourceManager.registerEventSource(key, source);
         } else {
           Optional<ResourceEventSource> eventSource = value.eventSource(context);
-          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es, dependent));
+          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es));
         }
       });
 

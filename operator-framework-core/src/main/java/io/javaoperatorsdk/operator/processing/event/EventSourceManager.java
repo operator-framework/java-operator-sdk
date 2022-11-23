@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,18 +122,12 @@ public class EventSourceManager<P extends HasMetadata>
 
   public final synchronized void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
-    registerEventSource(name, eventSource, null);
-  }
-
-  public final synchronized void registerEventSource(String name, EventSource eventSource,
-      EventSourceMetadata.AssociatedDependentMetadata dependentMetadata)
-      throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
       if (name == null || name.isBlank()) {
         name = EventSourceInitializer.generateNameFor(eventSource);
       }
-      final var named = new NamedEventSource(eventSource, name, dependentMetadata);
+      final var named = new NamedEventSource(eventSource, name);
       eventSources.add(named);
       named.setEventHandler(controller.getEventProcessor());
     } catch (IllegalStateException | MissingCRDException e) {
@@ -184,8 +179,8 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @SuppressWarnings("unused")
-  public Set<EventSourceMetadata> getRegisteredEventSourcesMetadata() {
-    return eventSources.flatMappedSources().collect(Collectors.toUnmodifiableSet());
+  public Stream<? extends EventSourceMetadata> getNamedEventSourcesStream() {
+    return eventSources.flatMappedSources();
   }
 
   public ControllerResourceEventSource<P> getControllerResourceEventSource() {

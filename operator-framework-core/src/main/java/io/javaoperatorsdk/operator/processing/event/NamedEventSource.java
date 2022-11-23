@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.Objects;
-import java.util.Optional;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -11,17 +10,10 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
 
   private final EventSource original;
   private final String name;
-  private final AssociatedDependentMetadata dependentMetadata;
 
   NamedEventSource(EventSource original, String name) {
-    this(original, name, null);
-  }
-
-  NamedEventSource(EventSource original, String name,
-      AssociatedDependentMetadata dependentMetadata) {
     this.original = original;
     this.name = name;
-    this.dependentMetadata = dependentMetadata;
   }
 
   @Override
@@ -43,14 +35,8 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
     return name;
   }
 
-  @Override
   public EventSource eventSource() {
     return original;
-  }
-
-  @Override
-  public Optional<AssociatedDependentMetadata> associatedDependentClassNameIfExists() {
-    return Optional.ofNullable(dependentMetadata);
   }
 
   @Override
