@@ -1,12 +1,14 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
@@ -45,6 +47,7 @@ public class PollingEventSource<R, P extends HasMetadata>
   private final Timer timer = new Timer();
   private final GenericResourceFetcher<R> genericResourceFetcher;
   private final long period;
+  private final AtomicBoolean healthy = new AtomicBoolean(true);
 
   public PollingEventSource(
       GenericResourceFetcher<R> supplier,
@@ -73,11 +76,17 @@ public class PollingEventSource<R, P extends HasMetadata>
         new TimerTask() {
           @Override
           public void run() {
-            if (!isRunning()) {
-              log.debug("Event source not yet started. Will not run.");
-              return;
+            try {
+              if (!isRunning()) {
+                log.debug("Event source not yet started. Will not run.");
+                return;
+              }
+              getStateAndFillCache();
+              healthy.set(true);
+            } catch (RuntimeException e) {
+              healthy.set(false);
+              log.error("Error during polling.", e);
             }
-            getStateAndFillCache();
           }
         },
         period,
@@ -89,7 +98,6 @@ public class PollingEventSource<R, P extends HasMetadata>
     handleResources(values);
   }
 
-
   public interface GenericResourceFetcher<R> {
     Map<ResourceID, Set<R>> fetchResources();
   }
@@ -98,5 +106,10 @@ public class PollingEventSource<R, P extends HasMetadata>
   public void stop() throws OperatorException {
     super.stop();
     timer.cancel();
+  }
+
+  @Override
+  public Status getStatus() {
+    return healthy.get() ? Status.HEALTHY : Status.UNHEALTHY;
   }
 }

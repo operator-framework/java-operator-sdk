@@ -1,17 +1,16 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.takes.facets.fork.FkRegex;
-import org.takes.facets.fork.TkFork;
-import org.takes.http.Exit;
-import org.takes.http.FtBasic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
+
+import com.sun.net.httpserver.HttpServer;
 
 public class WebPageOperator {
   public static final String WEBPAGE_RECONCILER_ENV = "WEBPAGE_RECONCILER";
@@ -24,7 +23,7 @@ public class WebPageOperator {
     log.info("WebServer Operator starting!");
 
     KubernetesClient client = new KubernetesClientBuilder().build();
-    Operator operator = new Operator(client);
+    Operator operator = new Operator(client, o -> o.withStopOnInformerErrorDuringStartup(false));
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler(client));
@@ -36,6 +35,11 @@ public class WebPageOperator {
     }
     operator.start();
 
-    new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);
+    HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+    server.createContext("/startup", new StartupHandler(operator));
+    // we want to restart the operator if something goes wrong with (maybe just some) event sources
+    server.createContext("/healthz", new LivenessHandler(operator));
+    server.setExecutor(null);
+    server.start();
   }
 }
