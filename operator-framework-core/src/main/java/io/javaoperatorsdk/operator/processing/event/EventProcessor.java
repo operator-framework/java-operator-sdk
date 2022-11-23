@@ -276,8 +276,7 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
         .getReScheduleDelay()
         .ifPresentOrElse(delay -> {
           var resourceID = ResourceID.fromResource(customResource);
-          log.debug("ReScheduling event for resource: {} with delay: {}",
-              resourceID, delay);
+          log.debug("Rescheduling event for resource: {} with delay: {}", resourceID, delay);
           retryEventSource().scheduleOnce(resourceID, delay);
         }, () -> scheduleExecutionForMaxReconciliationInterval(customResource));
   }
@@ -288,8 +287,8 @@ public class EventProcessor<R extends HasMetadata> implements EventHandler, Life
         .ifPresent(m -> {
           var resourceID = ResourceID.fromResource(customResource);
           var delay = m.toMillis();
-          log.debug("ReScheduling event for resource because for max reconciliation interval: " +
-              "{} with delay: {}",
+          log.debug("Rescheduling event for max reconciliation interval for resource: {} : " +
+              "with delay: {}",
               resourceID, delay);
           retryEventSource().scheduleOnce(resourceID, delay);
         });
