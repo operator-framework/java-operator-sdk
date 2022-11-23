@@ -20,15 +20,12 @@ public class ExecutorServiceManager {
   private static ExecutorServiceManager instance;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
-  private final ExecutorService ioBoundExecutor;
   private final int terminationTimeoutSeconds;
 
   private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
       int terminationTimeoutSeconds) {
     this.executor = new InstrumentedExecutorService(executor);
     this.workflowExecutor = new InstrumentedExecutorService(workflowExecutor);
-    this.ioBoundExecutor = new InstrumentedExecutorService(
-        Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
   }
 
@@ -75,45 +72,24 @@ public class ExecutorServiceManager {
   }
 
   /**
-   * Runs the specified I/O-bound task and waits for its completion using the ExecutorService
-   * provided by {@link #workflowExecutorService()}
+   * Runs the specified I/O-bound task and waits for its completion using the new ExecutorService
    *
    * @param task task to run concurrently
+   * @param threadNamePrefix the prefix with which to prefix thread names when tasks are run this
+   *        way
    */
   public static void executeAndWaitForCompletion(Runnable task, String threadNamePrefix) {
-    executeAndWaitForCompletion(task, instance().ioBoundExecutor, threadNamePrefix);
-  }
-
-  /**
-   * Executes the specified I/O-bound task using the specified ExecutorService and waits for its
-   * completion for at most {@link #terminationTimeoutSeconds} seconds.
-   *
-   * @param task task to run concurrently
-   * @param executor ExecutorService used to run the task
-   */
-  public static void executeAndWaitForCompletion(Runnable task, ExecutorService executor,
-      String threadNamePrefix) {
+    final var executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    ExecutorService instrumented = new InstrumentedExecutorService(executor);
     // change thread name for easier debugging
     final var thread = Thread.currentThread();
     final var name = thread.getName();
     try {
       thread.setName(threadNamePrefix + "-" + thread.getId());
-      executor.submit(task).get(instance().terminationTimeoutSeconds, TimeUnit.SECONDS);
+      instrumented.submit(task).get(instance().terminationTimeoutSeconds, TimeUnit.SECONDS);
+      shutdown(instrumented);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new OperatorException("Couldn't execute task", e);
-    } finally {
-      // restore original name
-      thread.setName(name);
-    }
-  }
-
-  public static void executeIOBoundTask(Runnable task, String threadNamePrefix) {
-    // change thread name for easier debugging
-    final var thread = Thread.currentThread();
-    final var name = thread.getName();
-    try {
-      thread.setName(threadNamePrefix + "-" + thread.getId());
-      instance().ioBoundExecutor.execute(task);
     } finally {
       // restore original name
       thread.setName(name);
@@ -125,15 +101,14 @@ public class ExecutorServiceManager {
       log.debug("Closing executor");
       shutdown(executor);
       shutdown(workflowExecutor);
-      shutdown(ioBoundExecutor);
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
     }
   }
 
-  private void shutdown(ExecutorService executorService) throws InterruptedException {
+  private static void shutdown(ExecutorService executorService) throws InterruptedException {
     executorService.shutdown();
-    if (!executorService.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
+    if (!executorService.awaitTermination(instance().terminationTimeoutSeconds, TimeUnit.SECONDS)) {
       executorService.shutdownNow(); // if we timed out, waiting, cancel everything
     }
   }

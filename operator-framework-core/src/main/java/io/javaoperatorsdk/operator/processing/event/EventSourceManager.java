@@ -85,7 +85,7 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    ExecutorServiceManager.executeIOBoundTask(
+    ExecutorServiceManager.executeAndWaitForCompletion(
         () -> eventSources.additionalNamedEventSources().parallel()
             .forEach(this::stopEventSource),
         "EventSourceStop");

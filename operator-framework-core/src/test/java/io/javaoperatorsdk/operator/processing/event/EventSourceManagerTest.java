@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -171,9 +172,9 @@ class EventSourceManagerTest {
   }
 
   private EventSourceManager initManager() {
-    final var configuration = MockControllerConfiguration.forResource(HasMetadata.class);
+    final var configuration = MockControllerConfiguration.forResource(ConfigMap.class);
     final Controller controller = new Controller(mock(Reconciler.class), configuration,
-        MockKubernetesClient.client(HasMetadata.class));
+        MockKubernetesClient.client(ConfigMap.class));
     return new EventSourceManager(controller);
   }
 }

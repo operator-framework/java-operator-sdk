@@ -47,8 +47,21 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public void start() throws OperatorException {
     // make sure informers are all started before proceeding further
-    ExecutorServiceManager.executeIOBoundTask(
-        () -> sources.values().parallelStream().forEach(LifecycleAware::start),
+    ExecutorServiceManager.executeAndWaitForCompletion(
+        () -> sources.values().parallelStream().forEach(source -> {
+          // change thread name for easier debugging
+          final var thread = Thread.currentThread();
+          final var name = thread.getName();
+          try {
+            thread.setName(source.informerInfo() + " " + thread.getId());
+            source.start();
+          } catch (Exception e) {
+            throw new OperatorException("Couldn't start informer: " + source, e);
+          } finally {
+            // restore original name
+            thread.setName(name);
+          }
+        }),
         "InformerStart");
   }
 

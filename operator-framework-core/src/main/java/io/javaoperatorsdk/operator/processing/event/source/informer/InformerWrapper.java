@@ -143,6 +143,10 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public String toString() {
-    return "InformerWrapper [" + versionedFullResourceName() + "] (" + informer + ')';
+    return informerInfo() + " (" + informer + ')';
+  }
+
+  String informerInfo() {
+    return "InformerWrapper [" + versionedFullResourceName() + "]";
   }
 }

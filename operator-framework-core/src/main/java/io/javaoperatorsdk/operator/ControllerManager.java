@@ -33,7 +33,7 @@ class ControllerManager {
   }
 
   public synchronized void start(boolean startEventProcessor) {
-    ExecutorServiceManager.executeIOBoundTask(
+    ExecutorServiceManager.executeAndWaitForCompletion(
         () -> controllers().parallelStream().forEach(c -> c.start(startEventProcessor)),
         "ControllerStart");
     started = true;
@@ -49,7 +49,7 @@ class ControllerManager {
   }
 
   public synchronized void startEventProcessing() {
-    ExecutorServiceManager.executeIOBoundTask(
+    ExecutorServiceManager.executeAndWaitForCompletion(
         () -> controllers().parallelStream().forEach(Controller::startEventProcessing),
         "ControllerEventProcessing");
   }
