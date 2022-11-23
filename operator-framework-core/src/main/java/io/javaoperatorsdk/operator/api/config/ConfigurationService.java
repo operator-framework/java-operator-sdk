@@ -164,9 +164,12 @@ public interface ConfigurationService {
    * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
    * will try to reconnect periodically in the background.
    * </p>
+   * <p>
+   * NOTE: this setting is ignored if an informer stop handler is set
+   * </p>
    */
   default boolean stopOnInformerErrorDuringStartup() {
-    return true;
+    return getInformerStoppedHandler().isEmpty();
   }
 
   /**
