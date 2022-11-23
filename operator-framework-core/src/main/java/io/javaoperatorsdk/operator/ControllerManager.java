@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 /**
@@ -33,25 +32,20 @@ class ControllerManager {
   }
 
   public synchronized void start(boolean startEventProcessor) {
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> controllers().parallelStream().forEach(c -> c.start(startEventProcessor)),
-        "ControllerStart");
+    controllers().parallelStream().forEach(c -> c.start(startEventProcessor));
     started = true;
   }
 
   public synchronized void stop() {
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> controllers().parallelStream().forEach(closeable -> {
-          log.debug("closing {}", closeable);
-          closeable.stop();
-        }), "ControllerStop");
+    controllers().parallelStream().forEach(closeable -> {
+      log.debug("closing {}", closeable);
+      closeable.stop();
+    });
     started = false;
   }
 
   public synchronized void startEventProcessing() {
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> controllers().parallelStream().forEach(Controller::startEventProcessing),
-        "ControllerEventProcessing");
+    controllers().parallelStream().forEach(Controller::startEventProcessing);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
