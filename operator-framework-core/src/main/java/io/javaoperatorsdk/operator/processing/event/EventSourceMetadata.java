@@ -1,9 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import java.util.Optional;
 
 public interface EventSourceMetadata {
   String name();
 
-  EventSource eventSource();
+  Class<?> type();
+
+  Optional<Class<?>> resourceType();
+
+  Optional<?> configuration();
 }

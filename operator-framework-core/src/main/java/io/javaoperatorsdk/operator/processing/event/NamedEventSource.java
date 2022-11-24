@@ -1,10 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.processing.event.source.Configurable;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 class NamedEventSource implements EventSource, EventSourceMetadata {
 
@@ -33,6 +36,31 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
 
   public String name() {
     return name;
+  }
+
+  @Override
+  public Class<?> type() {
+    return original.getClass();
+  }
+
+  @Override
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public Optional<Class<?>> resourceType() {
+    if (original instanceof ResourceEventSource) {
+      ResourceEventSource resourceEventSource = (ResourceEventSource) original;
+      return Optional.of(resourceEventSource.resourceType());
+    }
+    return Optional.empty();
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes")
+  public Optional<?> configuration() {
+    if (original instanceof Configurable) {
+      Configurable configurable = (Configurable) original;
+      return Optional.ofNullable(configurable.configuration());
+    }
+    return Optional.empty();
   }
 
   public EventSource eventSource() {
