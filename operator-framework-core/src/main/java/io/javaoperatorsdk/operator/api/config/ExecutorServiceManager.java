@@ -90,7 +90,10 @@ public class ExecutorServiceManager {
           .get(ConfigurationServiceProvider.instance().cacheSyncTimeout().toSeconds(),
               TimeUnit.SECONDS);
       shutdown(instrumented);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (InterruptedException e) {
+      thread.interrupt();
+      throw new OperatorException("Couldn't execute task", e);
+    } catch (ExecutionException | TimeoutException e) {
       throw new OperatorException("Couldn't execute task", e);
     } finally {
       // restore original name
@@ -105,6 +108,7 @@ public class ExecutorServiceManager {
       shutdown(workflowExecutor);
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
+      Thread.currentThread().interrupt();
     }
   }
 
