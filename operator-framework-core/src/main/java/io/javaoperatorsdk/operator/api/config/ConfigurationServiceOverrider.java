@@ -188,9 +188,7 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public boolean stopOnInformerErrorDuringStartup() {
-        // only stop on informer error if we didn't set a stop handler for the informers
-        return stopOnInformerErrorDuringStartup != null && informerStoppedHandler == null
-            ? stopOnInformerErrorDuringStartup
+        return stopOnInformerErrorDuringStartup != null ? stopOnInformerErrorDuringStartup
             : super.stopOnInformerErrorDuringStartup();
       }
 
