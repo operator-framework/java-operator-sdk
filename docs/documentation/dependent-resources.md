@@ -368,7 +368,7 @@ to be used:
         useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
 ```
 
-A sample is provided as an integration test both for [managed](/home/csviri/Workspace/java-operator-sdk/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentSameTypeIT.java)
+A sample is provided as an integration test both for [managed](https://github.com/java-operator-sdk/java-operator-sdk/blob/a7a77b013ec296a0d29f66a2d7dae72197f6f056/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentSameTypeIT.java)
 and for [standalone mode](https://github.com/java-operator-sdk/java-operator-sdk/blob/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
 
 ## Bulk Dependent Resources
