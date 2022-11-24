@@ -65,4 +65,6 @@ project, as shown below:
   JOSDK, but new components like the Access operator is using the framework.
 - [EureKubeOperator](https://medium.com/@heesuk.dev/implementing-kubernetes-operator-for-eureka-service-discovery-integration-by-java-operator-sdk-d21d8087c38e): integrates service discovery of Eureka and Kubernetes using the framework - developed by 11street. It is not released as an open source yet but is very interesting to read about this problem and how it is solved by an operator written with JOSDK.
 - [Locust k8s operator](https://github.com/AbdelrhmanHamouda/locust-k8s-operator): Cloud native solution to run performance tests on any Kubernetes cluster.
+- [Strimzi Schema Registry Operator](https://github.com/shangyuantech/strimzi-registry-ksql-operator): A Schema Registry Operator based on JOSDK for running the Confluent Schema Registry with a Strimzi-based Kafka cluster.
+- [Airflow Dag Operator](https://github.com/cdmikechen/airflow-dag-operator): Use JOSDK(Quarkus Extension) to replace Airflow Git Sync strategy. The main idea of the project is to start a synchronization container on each airflow pod to synchronize the DAG/files into the DAG folder.
 
