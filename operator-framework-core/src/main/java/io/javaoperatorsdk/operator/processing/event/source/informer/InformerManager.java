@@ -114,7 +114,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void stop() {
-    log.info("Stopping {}", this);
     sources.forEach((ns, source) -> {
       try {
         log.debug("Stopping informer for namespace: {} -> {}", ns, source);

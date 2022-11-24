@@ -9,11 +9,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.javaoperatorsdk.operator.OperatorException;
 
 public class ExecutorServiceManager {
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
@@ -63,42 +64,37 @@ public class ExecutorServiceManager {
     return instance;
   }
 
+  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
+      Function<T, Void> task, Function<T, String> threadNamer) {
+    final var instrumented = new InstrumentedExecutorService(
+        Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+
+    try {
+      instrumented.invokeAll(stream.parallel().map(item -> (Callable<Void>) () -> {
+        // change thread name for easier debugging
+        final var thread = Thread.currentThread();
+        final var name = thread.getName();
+        thread.setName(threadNamer.apply(item));
+        try {
+          task.apply(item);
+          return null;
+        } finally {
+          // restore original name
+          thread.setName(name);
+        }
+      }).collect(Collectors.toList()));
+      shutdown(instrumented);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
   public ExecutorService executorService() {
     return executor;
   }
 
   public ExecutorService workflowExecutorService() {
     return workflowExecutor;
-  }
-
-  /**
-   * Runs the specified I/O-bound task and waits for its completion using the new ExecutorService
-   *
-   * @param task task to run concurrently
-   * @param threadNamePrefix the prefix with which to prefix thread names when tasks are run this
-   *        way
-   */
-  public static void executeAndWaitForCompletion(Runnable task, String threadNamePrefix) {
-    final var executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-    ExecutorService instrumented = new InstrumentedExecutorService(executor);
-    // change thread name for easier debugging
-    final var thread = Thread.currentThread();
-    final var name = thread.getName();
-    try {
-      thread.setName(threadNamePrefix + "-" + thread.getId());
-      instrumented.submit(task)
-          .get(ConfigurationServiceProvider.instance().cacheSyncTimeout().toSeconds(),
-              TimeUnit.SECONDS);
-      shutdown(instrumented);
-    } catch (InterruptedException e) {
-      thread.interrupt();
-      throw new OperatorException("Couldn't execute task", e);
-    } catch (ExecutionException | TimeoutException e) {
-      throw new OperatorException("Couldn't execute task", e);
-    } finally {
-      // restore original name
-      thread.setName(name);
-    }
   }
 
   private void doStop() {

@@ -4,6 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,28 +68,34 @@ public class EventSourceManager<P extends HasMetadata>
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
 
-    // starting event sources on the workflow executor which shouldn't be used at this point
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> eventSources.additionalNamedEventSources()
-            .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
-            .parallel()
-            .forEach(this::startEventSource),
-        "LowLevelEventSourceStart");
+    ExecutorServiceManager.executeAndWaitForAllToComplete(
+        eventSources.additionalNamedEventSources()
+            .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER)),
+        this::startEventSource,
+        getThreadNamer("start"));
 
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> eventSources.additionalNamedEventSources()
-            .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
-            .parallel().forEach(this::startEventSource),
-        "DefaultEventSourceStart");
+    ExecutorServiceManager.executeAndWaitForAllToComplete(
+        eventSources.additionalNamedEventSources()
+            .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT)),
+        this::startEventSource,
+        getThreadNamer("start"));
+  }
+
+  private static Function<NamedEventSource, String> getThreadNamer(String stage) {
+    return es -> {
+      final var name = es.name();
+      return es.priority() + " " + stage + " -> "
+          + (es.isNameSet() ? name + " " + es.original().getClass().getSimpleName() : name);
+    };
   }
 
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> eventSources.additionalNamedEventSources().parallel()
-            .forEach(this::stopEventSource),
-        "EventSourceStop");
+    ExecutorServiceManager.executeAndWaitForAllToComplete(
+        eventSources.additionalNamedEventSources(),
+        this::stopEventSource,
+        getThreadNamer("stop"));
     eventSources.clear();
   }
 
@@ -105,7 +112,7 @@ public class EventSourceManager<P extends HasMetadata>
     }
   }
 
-  private void startEventSource(NamedEventSource eventSource) {
+  private Void startEventSource(NamedEventSource eventSource) {
     try {
       logEventSourceEvent(eventSource, "Starting");
       eventSource.start();
@@ -115,9 +122,10 @@ public class EventSourceManager<P extends HasMetadata>
     } catch (Exception e) {
       throw new OperatorException("Couldn't start source " + eventSource.name(), e);
     }
+    return null;
   }
 
-  private void stopEventSource(NamedEventSource eventSource) {
+  private Void stopEventSource(NamedEventSource eventSource) {
     try {
       logEventSourceEvent(eventSource, "Stopping");
       eventSource.stop();
@@ -125,6 +133,7 @@ public class EventSourceManager<P extends HasMetadata>
     } catch (Exception e) {
       log.warn("Error closing {} -> {}", eventSource.name(), e);
     }
+    return null;
   }
 
   public final void registerEventSource(EventSource eventSource) throws OperatorException {
