@@ -67,7 +67,11 @@ public class Operator implements LifecycleAware {
 
   /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
   public void installShutdownHook() {
-    Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+    if (!leaderElectionManager.isLeaderElectionEnabled()) {
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+    } else {
+      log.warn("Leader election is on, shutdown hook will not be installed.");
+    }
   }
 
   public KubernetesClient getKubernetesClient() {
@@ -112,7 +116,6 @@ public class Operator implements LifecycleAware {
     final var configurationService = ConfigurationServiceProvider.instance();
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
-
     controllerManager.stop();
     ExecutorServiceManager.stop();
     leaderElectionManager.stop();
