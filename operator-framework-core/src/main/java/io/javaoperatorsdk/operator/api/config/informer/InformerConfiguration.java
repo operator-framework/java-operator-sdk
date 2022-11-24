@@ -42,7 +42,8 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnDeleteFilter<R> onDeleteFilter,
         GenericFilter<R> genericFilter,
         ItemStore<R> itemStore) {
-      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
+      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces,
+          itemStore);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -73,8 +74,8 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
 
     @Override
-    public ItemStore<R> itemStore() {
-      return this.itemStore;
+    public Optional<ItemStore<R>> itemStore() {
+      return Optional.ofNullable(this.itemStore);
     }
   }
 
@@ -97,8 +98,6 @@ public interface InformerConfiguration<R extends HasMetadata>
   Optional<GenericFilter<R>> genericFilter();
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
-
-  ItemStore<R> itemStore();
 
   @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata> {

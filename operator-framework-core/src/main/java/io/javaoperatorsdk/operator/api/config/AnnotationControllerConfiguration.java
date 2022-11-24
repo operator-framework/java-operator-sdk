@@ -11,6 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -81,6 +82,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public Set<String> getNamespaces() {
     return Set.of(valueOrDefault(annotation, ControllerConfiguration::namespaces,
         DEFAULT_NAMESPACES_SET.toArray(String[]::new)));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Optional<ItemStore<P>> itemStore() {
+    return Optional.ofNullable(
+        Utils.instantiate(annotation.itemStore(), ItemStore.class,
+            Utils.contextFor(this, null, null)));
   }
 
   @Override

@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -49,8 +50,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       OnUpdateFilter<R> onUpdateFilter,
       GenericFilter<R> genericFilter,
       RateLimiter rateLimiter,
-      List<DependentResourceSpec> dependents) {
-    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
+      List<DependentResourceSpec> dependents,
+      ItemStore<R> itemStore) {
+    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces,
+        itemStore);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
@@ -116,4 +119,5 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   public RateLimiter getRateLimiter() {
     return rateLimiter;
   }
+
 }

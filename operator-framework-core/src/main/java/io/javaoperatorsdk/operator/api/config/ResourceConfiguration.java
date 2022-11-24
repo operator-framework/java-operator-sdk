@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -107,5 +108,9 @@ public interface ResourceConfiguration<R extends HasMetadata> {
       targetNamespaces = Collections.singleton(namespace);
     }
     return targetNamespaces;
+  }
+
+  default Optional<ItemStore<R>> itemStore() {
+    return Optional.empty();
   }
 }

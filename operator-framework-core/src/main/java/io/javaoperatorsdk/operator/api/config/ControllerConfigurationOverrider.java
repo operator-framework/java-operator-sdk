@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -38,6 +39,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private OnUpdateFilter<R> onUpdateFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
+  private ItemStore<R> itemStore;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -56,6 +58,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
+    this.itemStore = original.itemStore().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -158,6 +161,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withItemStore(ItemStore<R> itemStore) {
+    this.itemStore = itemStore;
+    return this;
+  }
+
   @SuppressWarnings("unchecked")
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
@@ -208,7 +216,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         onUpdateFilter,
         genericFilter,
         rateLimiter,
-        newDependentSpecs);
+        newDependentSpecs, itemStore);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
