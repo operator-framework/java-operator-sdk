@@ -24,7 +24,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -47,22 +46,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public void start() throws OperatorException {
     // make sure informers are all started before proceeding further
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> sources.values().parallelStream().forEach(source -> {
-          // change thread name for easier debugging
-          final var thread = Thread.currentThread();
-          final var name = thread.getName();
-          try {
-            thread.setName(source.informerInfo() + " " + thread.getId());
-            source.start();
-          } catch (Exception e) {
-            throw new OperatorException("Couldn't start informer: " + source, e);
-          } finally {
-            // restore original name
-            thread.setName(name);
-          }
-        }),
-        "InformerStart");
+    sources.values().parallelStream().forEach(InformerWrapper::start);
   }
 
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
@@ -103,19 +87,18 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     log.debug("Stopped informer {} for namespaces: {}", this, sourcesToRemove);
     sourcesToRemove.forEach(k -> sources.remove(k).stop());
 
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> namespaces.forEach(ns -> {
-          if (!sources.containsKey(ns)) {
-            final var source =
-                createEventSource(
-                    client.inNamespace(ns).withLabelSelector(configuration.getLabelSelector()),
-                    eventHandler, ns);
-            source.addIndexers(this.indexers);
-            source.start();
-            log.debug("Registered new {} -> {} for namespace: {}", this, source,
-                ns);
-          }
-        }), "InformerStart");
+    namespaces.forEach(ns -> {
+      if (!sources.containsKey(ns)) {
+        final var source =
+            createEventSource(
+                client.inNamespace(ns).withLabelSelector(configuration.getLabelSelector()),
+                eventHandler, ns);
+        source.addIndexers(this.indexers);
+        source.start();
+        log.debug("Registered new {} -> {} for namespace: {}", this, source,
+            ns);
+      }
+    });
   }
 
 
@@ -131,19 +114,15 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void stop() {
-    ExecutorServiceManager.executeAndWaitForCompletion(
-        () -> {
-          log.info("Stopping {}", this);
-          sources.forEach((ns, source) -> {
-            try {
-              log.debug("Stopping informer for namespace: {} -> {}", ns, source);
-              source.stop();
-            } catch (Exception e) {
-              log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
-            }
-          });
-        },
-        "StopInformer");
+    log.info("Stopping {}", this);
+    sources.forEach((ns, source) -> {
+      try {
+        log.debug("Stopping informer for namespace: {} -> {}", ns, source);
+        source.stop();
+      } catch (Exception e) {
+        log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
+      }
+    });
   }
 
   @Override
