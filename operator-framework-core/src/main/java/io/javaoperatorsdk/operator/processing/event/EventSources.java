@@ -123,7 +123,7 @@ class EventSources<R extends HasMetadata> {
     final var size = sourcesForType.size();
     NamedEventSource source;
     if (size == 1 && name == null) {
-      source = sourcesForType.values().stream().findFirst().orElse(null);
+      source = sourcesForType.values().stream().findFirst().orElseThrow();
     } else {
       if (name == null || name.isBlank()) {
         throw new IllegalArgumentException("There are multiple EventSources registered for type "
