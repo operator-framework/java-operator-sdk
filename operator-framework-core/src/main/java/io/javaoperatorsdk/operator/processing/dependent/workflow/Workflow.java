@@ -27,7 +27,7 @@ public class Workflow<P extends HasMetadata> {
 
   private final boolean throwExceptionAutomatically;
   // it's "global" executor service shared between multiple reconciliations running parallel
-  private ExecutorService executorService;
+  private final ExecutorService executorService;
 
   public Workflow(Set<DefaultDependentResourceNode> dependentResourceNodes) {
     this.executorService = ExecutorServiceManager.instance().workflowExecutorService();
@@ -81,14 +81,6 @@ public class Workflow<P extends HasMetadata> {
         }
       }
     }
-  }
-
-  public boolean isThrowExceptionAutomatically() {
-    return throwExceptionAutomatically;
-  }
-
-  public void setExecutorService(ExecutorService executorService) {
-    this.executorService = executorService;
   }
 
   Set<DefaultDependentResourceNode> getTopLevelDependentResources() {
