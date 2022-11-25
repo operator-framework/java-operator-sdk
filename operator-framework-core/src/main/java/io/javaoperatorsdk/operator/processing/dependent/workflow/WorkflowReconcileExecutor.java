@@ -286,13 +286,13 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   private boolean allParentsReconciledAndReady(DependentResourceNode<?, ?> dependentResourceNode) {
     return dependentResourceNode.getDependsOn().isEmpty()
         || dependentResourceNode.getDependsOn().stream()
-        .allMatch(d -> alreadyVisited(d) && !notReady.contains(d));
+            .allMatch(d -> alreadyVisited(d) && !notReady.contains(d));
   }
 
   private boolean hasErroredParent(DependentResourceNode<?, ?> dependentResourceNode) {
     return !dependentResourceNode.getDependsOn().isEmpty()
         && dependentResourceNode.getDependsOn().stream()
-        .anyMatch(exceptionsDuringExecution::containsKey);
+            .anyMatch(exceptionsDuringExecution::containsKey);
   }
 
   private WorkflowReconcileResult createReconcileResult() {

@@ -167,7 +167,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     List<DependentResourceNode> parents = dependentResourceNode.getParents();
     return parents.isEmpty()
         || parents.stream()
-        .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet.contains(d));
+            .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet.contains(d));
   }
 
   @SuppressWarnings("unchecked")
