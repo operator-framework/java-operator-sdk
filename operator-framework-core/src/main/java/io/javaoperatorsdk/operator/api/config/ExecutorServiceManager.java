@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +64,31 @@ public class ExecutorServiceManager {
     return instance;
   }
 
+  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
+      Function<T, Void> task, Function<T, String> threadNamer) {
+    final var instrumented = new InstrumentedExecutorService(
+        Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+
+    try {
+      instrumented.invokeAll(stream.parallel().map(item -> (Callable<Void>) () -> {
+        // change thread name for easier debugging
+        final var thread = Thread.currentThread();
+        final var name = thread.getName();
+        thread.setName(threadNamer.apply(item));
+        try {
+          task.apply(item);
+          return null;
+        } finally {
+          // restore original name
+          thread.setName(name);
+        }
+      }).collect(Collectors.toList()));
+      shutdown(instrumented);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
   public ExecutorService executorService() {
     return executor;
   }
@@ -71,17 +100,18 @@ public class ExecutorServiceManager {
   private void doStop() {
     try {
       log.debug("Closing executor");
-      executor.shutdown();
-      workflowExecutor.shutdown();
-      if (!workflowExecutor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
-        workflowExecutor.shutdownNow(); // if we timed out, waiting, cancel everything
-      }
-      if (!executor.awaitTermination(terminationTimeoutSeconds, TimeUnit.SECONDS)) {
-        executor.shutdownNow(); // if we timed out, waiting, cancel everything
-      }
-
+      shutdown(executor);
+      shutdown(workflowExecutor);
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  private static void shutdown(ExecutorService executorService) throws InterruptedException {
+    executorService.shutdown();
+    if (!executorService.awaitTermination(instance().terminationTimeoutSeconds, TimeUnit.SECONDS)) {
+      executorService.shutdownNow(); // if we timed out, waiting, cancel everything
     }
   }
 

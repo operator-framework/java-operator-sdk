@@ -360,8 +360,8 @@ public class Controller<P extends HasMetadata>
   }
 
   public synchronized void startEventProcessing() {
-    log.info("Started event processing for controller: {}", configuration.getName());
     eventProcessor.start();
+    log.info("Started event processing for controller: {}", configuration.getName());
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {

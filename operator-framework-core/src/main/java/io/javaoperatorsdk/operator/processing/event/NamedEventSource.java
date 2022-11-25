@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.event.source.Configurable;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
@@ -13,10 +14,12 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
 
   private final EventSource original;
   private final String name;
+  private final boolean nameSet;
 
   NamedEventSource(EventSource original, String name) {
     this.original = original;
     this.name = name;
+    nameSet = !name.equals(EventSourceInitializer.generateNameFor(original));
   }
 
   @Override
@@ -94,5 +97,9 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
   @Override
   public EventSourceStartPriority priority() {
     return original.priority();
+  }
+
+  public boolean isNameSet() {
+    return nameSet;
   }
 }

@@ -4,6 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -65,20 +67,36 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
-    eventSources.additionalNamedEventSources()
-        .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER))
-        .parallel().forEach(this::startEventSource);
-    eventSources.additionalNamedEventSources()
-        .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT))
-        .parallel().forEach(this::startEventSource);
+
+    ExecutorServiceManager.executeAndWaitForAllToComplete(
+        eventSources.additionalNamedEventSources()
+            .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER)),
+        this::startEventSource,
+        getThreadNamer("start"));
+
+    ExecutorServiceManager.executeAndWaitForAllToComplete(
+        eventSources.additionalNamedEventSources()
+            .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT)),
+        this::startEventSource,
+        getThreadNamer("start"));
+  }
+
+  private static Function<NamedEventSource, String> getThreadNamer(String stage) {
+    return es -> {
+      final var name = es.name();
+      return es.priority() + " " + stage + " -> "
+          + (es.isNameSet() ? name + " " + es.original().getClass().getSimpleName() : name);
+    };
   }
 
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    eventSources.additionalNamedEventSources().parallel().forEach(this::stopEventSource);
+    ExecutorServiceManager.executeAndWaitForAllToComplete(
+        eventSources.additionalNamedEventSources(),
+        this::stopEventSource,
+        getThreadNamer("stop"));
     eventSources.clear();
-
   }
 
   @SuppressWarnings("rawtypes")
@@ -94,7 +112,7 @@ public class EventSourceManager<P extends HasMetadata>
     }
   }
 
-  private void startEventSource(NamedEventSource eventSource) {
+  private Void startEventSource(NamedEventSource eventSource) {
     try {
       logEventSourceEvent(eventSource, "Starting");
       eventSource.start();
@@ -104,9 +122,10 @@ public class EventSourceManager<P extends HasMetadata>
     } catch (Exception e) {
       throw new OperatorException("Couldn't start source " + eventSource.name(), e);
     }
+    return null;
   }
 
-  private void stopEventSource(NamedEventSource eventSource) {
+  private Void stopEventSource(NamedEventSource eventSource) {
     try {
       logEventSourceEvent(eventSource, "Stopping");
       eventSource.stop();
@@ -114,6 +133,7 @@ public class EventSourceManager<P extends HasMetadata>
     } catch (Exception e) {
       log.warn("Error closing {} -> {}", eventSource.name(), e);
     }
+    return null;
   }
 
   public final void registerEventSource(EventSource eventSource) throws OperatorException {

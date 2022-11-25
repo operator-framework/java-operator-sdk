@@ -64,7 +64,11 @@ class InformerWrapper<T extends HasMetadata>
       if (!configService.stopOnInformerErrorDuringStartup()) {
         informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
       }
+      // change thread name for easier debugging
+      final var thread = Thread.currentThread();
+      final var name = thread.getName();
       try {
+        thread.setName(informerInfo() + " " + thread.getId());
         var start = informer.start();
         // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
         // false, and there is a rbac issue the get never returns; therefore operator never really
@@ -81,6 +85,9 @@ class InformerWrapper<T extends HasMetadata>
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new IllegalStateException(e);
+      } finally {
+        // restore original name
+        thread.setName(name);
       }
 
     } catch (Exception e) {
@@ -143,6 +150,10 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public String toString() {
-    return "InformerWrapper [" + versionedFullResourceName() + "] (" + informer + ')';
+    return informerInfo() + " (" + informer + ')';
+  }
+
+  private String informerInfo() {
+    return "InformerWrapper [" + versionedFullResourceName() + "]";
   }
 }

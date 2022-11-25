@@ -45,7 +45,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void start() throws OperatorException {
-    sources.values().parallelStream().forEach(LifecycleAware::start);
+    // make sure informers are all started before proceeding further
+    sources.values().parallelStream().forEach(InformerWrapper::start);
   }
 
   void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
@@ -113,7 +114,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   @Override
   public void stop() {
-    log.info("Stopping {}", this);
     sources.forEach((ns, source) -> {
       try {
         log.debug("Stopping informer for namespace: {} -> {}", ns, source);
