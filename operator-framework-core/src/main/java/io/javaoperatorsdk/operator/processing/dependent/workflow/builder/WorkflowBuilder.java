@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.DefaultDependentResourceNode;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
@@ -17,13 +17,13 @@ import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private final Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
+  private final Set<DefaultDependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
-  private DependentResourceNode currentNode;
+  private DefaultDependentResourceNode currentNode;
 
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
-    currentNode = new DependentResourceNode<>(dependentResource);
+    currentNode = new DefaultDependentResourceNode<>(dependentResource);
     dependentResourceNodes.add(currentNode);
     return this;
   }
@@ -58,7 +58,8 @@ public class WorkflowBuilder<P extends HasMetadata> {
     return this;
   }
 
-  DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
+  DefaultDependentResourceNode getNodeByDependentResource(
+      DependentResource<?, ?> dependentResource) {
     return dependentResourceNodes.stream()
         .filter(dr -> dr.getDependentResource() == dependentResource)
         .findFirst()

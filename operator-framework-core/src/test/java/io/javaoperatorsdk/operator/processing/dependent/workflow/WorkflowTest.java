@@ -29,7 +29,7 @@ class WorkflowTest {
 
     Set<DependentResource> topResources =
         workflow.getTopLevelDependentResources().stream()
-            .map(DependentResourceNode::getDependentResource)
+            .map(DefaultDependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());
 
     assertThat(topResources).containsExactlyInAnyOrder(dr1, independentDR);
@@ -49,7 +49,7 @@ class WorkflowTest {
 
     Set<DependentResource> bottomResources =
         workflow.getBottomLevelResource().stream()
-            .map(DependentResourceNode::getDependentResource)
+            .map(DefaultDependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());
 
     assertThat(bottomResources).containsExactlyInAnyOrder(dr2, independentDR);

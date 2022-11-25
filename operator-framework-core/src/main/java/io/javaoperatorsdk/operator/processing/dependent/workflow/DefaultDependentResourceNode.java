@@ -9,25 +9,25 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public class DependentResourceNode<R, P extends HasMetadata> {
+public class DefaultDependentResourceNode<R, P extends HasMetadata> {
 
   private final DependentResource<R, P> dependentResource;
   private Condition<R, P> reconcilePrecondition;
   private Condition<R, P> deletePostcondition;
   private Condition<R, P> readyPostcondition;
-  private final List<DependentResourceNode> dependsOn = new LinkedList<>();
-  private final List<DependentResourceNode> parents = new LinkedList<>();
+  private final List<DefaultDependentResourceNode> dependsOn = new LinkedList<>();
+  private final List<DefaultDependentResourceNode> parents = new LinkedList<>();
 
-  public DependentResourceNode(DependentResource<R, P> dependentResource) {
+  public DefaultDependentResourceNode(DependentResource<R, P> dependentResource) {
     this(dependentResource, null, null);
   }
 
-  public DependentResourceNode(DependentResource<R, P> dependentResource,
+  public DefaultDependentResourceNode(DependentResource<R, P> dependentResource,
       Condition<R, P> reconcilePrecondition) {
     this(dependentResource, reconcilePrecondition, null);
   }
 
-  public DependentResourceNode(DependentResource<R, P> dependentResource,
+  public DefaultDependentResourceNode(DependentResource<R, P> dependentResource,
       Condition<R, P> reconcilePrecondition, Condition<R, P> deletePostcondition) {
     this.dependentResource = dependentResource;
     this.reconcilePrecondition = reconcilePrecondition;
@@ -46,12 +46,12 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(deletePostcondition);
   }
 
-  public List<DependentResourceNode> getDependsOn() {
+  public List<DefaultDependentResourceNode> getDependsOn() {
     return dependsOn;
   }
 
   @SuppressWarnings("unchecked")
-  public void addDependsOnRelation(DependentResourceNode node) {
+  public void addDependsOnRelation(DefaultDependentResourceNode node) {
     node.parents.add(this);
     dependsOn.add(node);
   }
@@ -63,13 +63,14 @@ public class DependentResourceNode<R, P extends HasMetadata> {
         '}';
   }
 
-  public DependentResourceNode<R, P> setReconcilePrecondition(
+  public DefaultDependentResourceNode<R, P> setReconcilePrecondition(
       Condition<R, P> reconcilePrecondition) {
     this.reconcilePrecondition = reconcilePrecondition;
     return this;
   }
 
-  public DependentResourceNode<R, P> setDeletePostcondition(Condition<R, P> cleanupCondition) {
+  public DefaultDependentResourceNode<R, P> setDeletePostcondition(
+      Condition<R, P> cleanupCondition) {
     this.deletePostcondition = cleanupCondition;
     return this;
   }
@@ -78,12 +79,13 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(readyPostcondition);
   }
 
-  public DependentResourceNode<R, P> setReadyPostcondition(Condition<R, P> readyPostcondition) {
+  public DefaultDependentResourceNode<R, P> setReadyPostcondition(
+      Condition<R, P> readyPostcondition) {
     this.readyPostcondition = readyPostcondition;
     return this;
   }
 
-  public List<DependentResourceNode> getParents() {
+  public List<DefaultDependentResourceNode> getParents() {
     return parents;
   }
 

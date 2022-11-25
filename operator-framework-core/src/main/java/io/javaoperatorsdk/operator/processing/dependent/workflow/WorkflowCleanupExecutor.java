@@ -22,14 +22,14 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(WorkflowCleanupExecutor.class);
 
-  private final Map<DependentResourceNode, Future<?>> actualExecutions =
+  private final Map<DefaultDependentResourceNode, Future<?>> actualExecutions =
       new ConcurrentHashMap<>();
-  private final Map<DependentResourceNode, Exception> exceptionsDuringExecution =
+  private final Map<DefaultDependentResourceNode, Exception> exceptionsDuringExecution =
       new ConcurrentHashMap<>();
-  private final Set<DependentResourceNode> alreadyVisited = ConcurrentHashMap.newKeySet();
-  private final Set<DependentResourceNode> postDeleteConditionNotMet =
+  private final Set<DefaultDependentResourceNode> alreadyVisited = ConcurrentHashMap.newKeySet();
+  private final Set<DefaultDependentResourceNode> postDeleteConditionNotMet =
       ConcurrentHashMap.newKeySet();
-  private final Set<DependentResourceNode> deleteCalled = ConcurrentHashMap.newKeySet();
+  private final Set<DefaultDependentResourceNode> deleteCalled = ConcurrentHashMap.newKeySet();
 
   private final Workflow<P> workflow;
   private final P primary;
@@ -42,7 +42,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   public synchronized WorkflowCleanupResult cleanup() {
-    for (DependentResourceNode dependentResourceNode : workflow
+    for (DefaultDependentResourceNode dependentResourceNode : workflow
         .getBottomLevelResource()) {
       handleCleanup(dependentResourceNode);
     }
@@ -67,7 +67,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private synchronized void handleCleanup(DependentResourceNode dependentResourceNode) {
+  private synchronized void handleCleanup(DefaultDependentResourceNode dependentResourceNode) {
     log.debug("Submitting for cleanup: {}", dependentResourceNode);
 
     if (alreadyVisited(dependentResourceNode)
@@ -86,9 +86,9 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
   private class NodeExecutor<R> implements Runnable {
 
-    private final DependentResourceNode<R, P> dependentResourceNode;
+    private final DefaultDependentResourceNode<R, P> dependentResourceNode;
 
-    private NodeExecutor(DependentResourceNode<R, P> dependentResourceNode) {
+    private NodeExecutor(DefaultDependentResourceNode<R, P> dependentResourceNode) {
       this.dependentResourceNode = dependentResourceNode;
     }
 
@@ -128,7 +128,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
 
   private synchronized void handleDependentCleaned(
-      DependentResourceNode<?, P> dependentResourceNode) {
+      DefaultDependentResourceNode<?, P> dependentResourceNode) {
     var dependOns = dependentResourceNode.getDependsOn();
     if (dependOns != null) {
       dependOns.forEach(d -> {
@@ -139,13 +139,13 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
   }
 
   private synchronized void handleExceptionInExecutor(
-      DependentResourceNode<?, P> dependentResourceNode,
+      DefaultDependentResourceNode<?, P> dependentResourceNode,
       RuntimeException e) {
     exceptionsDuringExecution.put(dependentResourceNode, e);
   }
 
   private synchronized void handleNodeExecutionFinish(
-      DependentResourceNode<?, P> dependentResourceNode) {
+      DefaultDependentResourceNode<?, P> dependentResourceNode) {
     log.debug("Finished execution for: {}", dependentResourceNode);
     actualExecutions.remove(dependentResourceNode);
     if (actualExecutions.isEmpty()) {
@@ -153,25 +153,25 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     }
   }
 
-  private boolean isCleaningNow(DependentResourceNode<?, ?> dependentResourceNode) {
+  private boolean isCleaningNow(DefaultDependentResourceNode<?, ?> dependentResourceNode) {
     return actualExecutions.containsKey(dependentResourceNode);
   }
 
-  private boolean alreadyVisited(DependentResourceNode dependentResourceNode) {
+  private boolean alreadyVisited(DefaultDependentResourceNode dependentResourceNode) {
     return alreadyVisited.contains(dependentResourceNode);
   }
 
   @SuppressWarnings("unchecked")
-  private boolean allDependentsCleaned(DependentResourceNode dependentResourceNode) {
-    List<DependentResourceNode> parents = dependentResourceNode.getParents();
+  private boolean allDependentsCleaned(DefaultDependentResourceNode dependentResourceNode) {
+    List<DefaultDependentResourceNode> parents = dependentResourceNode.getParents();
     return parents.isEmpty()
         || parents.stream()
-            .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet.contains(d));
+        .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet.contains(d));
   }
 
   @SuppressWarnings("unchecked")
-  private boolean hasErroredDependent(DependentResourceNode dependentResourceNode) {
-    List<DependentResourceNode> parents = dependentResourceNode.getParents();
+  private boolean hasErroredDependent(DefaultDependentResourceNode dependentResourceNode) {
+    List<DefaultDependentResourceNode> parents = dependentResourceNode.getParents();
     return !parents.isEmpty()
         && parents.stream().anyMatch(exceptionsDuringExecution::containsKey);
   }
@@ -180,10 +180,10 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     final var erroredDependents = exceptionsDuringExecution.entrySet().stream()
         .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Entry::getValue));
     final var postConditionNotMet = postDeleteConditionNotMet.stream()
-        .map(DependentResourceNode::getDependentResource)
+        .map(DefaultDependentResourceNode::getDependentResource)
         .collect(Collectors.toList());
     final var deleteCalled =
-        this.deleteCalled.stream().map(DependentResourceNode::getDependentResource)
+        this.deleteCalled.stream().map(DefaultDependentResourceNode::getDependentResource)
             .collect(Collectors.toList());
     return new WorkflowCleanupResult(erroredDependents, postConditionNotMet, deleteCalled);
   }

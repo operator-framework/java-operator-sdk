@@ -151,8 +151,10 @@ class ManagedWorkflowSupportTest {
     assertThat(workflow.getDependentResources()).containsExactlyInAnyOrder(drByName.values()
         .toArray(new DependentResource[0]));
     assertThat(workflow.getTopLevelDependentResources())
-        .map(DependentResourceNode::getDependentResource).containsExactly(drByName.get(NAME_1));
-    assertThat(workflow.getBottomLevelResource()).map(DependentResourceNode::getDependentResource)
+        .map(DefaultDependentResourceNode::getDependentResource)
+        .containsExactly(drByName.get(NAME_1));
+    assertThat(workflow.getBottomLevelResource())
+        .map(DefaultDependentResourceNode::getDependentResource)
         .containsExactly(drByName.get(NAME_4));
   }
 
