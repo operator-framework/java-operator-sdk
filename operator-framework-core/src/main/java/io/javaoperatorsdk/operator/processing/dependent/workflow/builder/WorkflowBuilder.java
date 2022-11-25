@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
@@ -18,7 +19,7 @@ import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private final Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
+  private final Set<DefaultDependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
   private DefaultDependentResourceNode currentNode;
@@ -76,13 +77,11 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   public Workflow<P> build() {
-    return new Workflow(
-        dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
-        throwExceptionAutomatically);
+    return build(ExecutorServiceManager.instance().workflowExecutorService());
   }
 
   public Workflow<P> build(int parallelism) {
-    return new Workflow(dependentResourceNodes, parallelism);
+    return build(Executors.newFixedThreadPool(parallelism));
   }
 
   public Workflow<P> build(ExecutorService executorService) {

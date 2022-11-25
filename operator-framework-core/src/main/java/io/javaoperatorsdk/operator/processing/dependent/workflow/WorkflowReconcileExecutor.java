@@ -85,8 +85,10 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
       return;
     }
 
+    final var dr =
+        (DependentResource<R, P>) workflow.getDependentResourceFor(dependentResourceNode);
     boolean reconcileConditionMet = dependentResourceNode.getReconcilePrecondition()
-        .map(rc -> rc.isMet(primary, dependentResourceNode.getSecondaryResource(primary, context),
+        .map(rc -> rc.isMet(primary, dr.getSecondaryResource(primary, context).orElse(null),
             context))
         .orElse(true);
 
@@ -160,7 +162,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        DependentResource dependentResource = dependentResourceNode.getDependentResource();
+        final var dependentResource =
+            (DependentResource<R, P>) workflow.getDependentResourceFor(dependentResourceNode);
         if (log.isDebugEnabled()) {
           log.debug(
               "Reconciling {} for primary: {}",
@@ -173,8 +176,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
 
         boolean ready = dependentResourceNode.getReadyPostcondition()
             .map(rc -> rc.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary, context)
-                    .orElse(null),
+                dependentResource.getSecondaryResource(primary, context).orElse(null),
                 context))
             .orElse(true);
 
@@ -205,17 +207,17 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        DependentResource dependentResource = dependentResourceNode.getDependentResource();
+        final var dependentResource =
+            (DependentResource<R, P>) workflow.getDependentResourceFor(dependentResourceNode);
         var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
-          ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
+          ((Deleter<P>) dependentResource).delete(primary, context);
         }
         boolean deletePostConditionMet =
             deletePostCondition.map(c -> c.isMet(primary,
-                dependentResourceNode.getDependentResource().getSecondaryResource(primary, context)
-                    .orElse(null),
+                dependentResource.getSecondaryResource(primary, context).orElse(null),
                 context)).orElse(true);
         if (deletePostConditionMet) {
           alreadyVisited.add(dependentResourceNode);
@@ -296,14 +298,15 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> {
   private WorkflowReconcileResult createReconcileResult() {
     return new WorkflowReconcileResult(
         reconciled.stream()
-            .map(DependentResourceNode::getDependentResource)
+            .map(workflow::getDependentResourceFor)
             .collect(Collectors.toList()),
         notReady.stream()
-            .map(DependentResourceNode::getDependentResource)
+            .map(workflow::getDependentResourceFor)
             .collect(Collectors.toList()),
         exceptionsDuringExecution
             .entrySet().stream()
-            .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Map.Entry::getValue)),
+            .collect(Collectors.toMap(e -> workflow.getDependentResourceFor(e.getKey()),
+                Map.Entry::getValue)),
         reconcileResults);
   }
 

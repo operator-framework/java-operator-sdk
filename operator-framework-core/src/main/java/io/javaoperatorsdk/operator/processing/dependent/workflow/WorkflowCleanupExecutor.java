@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -15,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 
 @SuppressWarnings("rawtypes")
@@ -96,17 +96,18 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
     @SuppressWarnings("unchecked")
     public void run() {
       try {
-        var dependentResource = dependentResourceNode.getDependentResource();
-        Optional<Condition<R, P>> deletePostCondition =
-            dependentResourceNode.getDeletePostcondition();
+        var dependentResource = (DependentResource<R, P>) workflow.getDependentResourceFor(
+            dependentResourceNode);
+        var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
         if (dependentResource instanceof Deleter
             && !(dependentResource instanceof GarbageCollected)) {
-          ((Deleter<P>) dependentResourceNode.getDependentResource()).delete(primary, context);
+          ((Deleter<P>) dependentResource).delete(primary, context);
           deleteCalled.add(dependentResourceNode);
         }
         boolean deletePostConditionMet = deletePostCondition
-            .map(c -> c.isMet(primary, dependentResourceNode.getSecondaryResource(primary, context),
+            .map(c -> c.isMet(primary,
+                dependentResource.getSecondaryResource(primary, context).orElse(null),
                 context))
             .orElse(true);
         if (deletePostConditionMet) {
@@ -178,13 +179,14 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> {
 
   private WorkflowCleanupResult createCleanupResult() {
     final var erroredDependents = exceptionsDuringExecution.entrySet().stream()
-        .collect(Collectors.toMap(e -> e.getKey().getDependentResource(), Entry::getValue));
+        .collect(
+            Collectors.toMap(e -> workflow.getDependentResourceFor(e.getKey()), Entry::getValue));
     final var postConditionNotMet = postDeleteConditionNotMet.stream()
-        .map(DependentResourceNode::getDependentResource)
+        .map(workflow::getDependentResourceFor)
         .collect(Collectors.toList());
-    final var deleteCalled =
-        this.deleteCalled.stream().map(DependentResourceNode::getDependentResource)
-            .collect(Collectors.toList());
+    final var deleteCalled = this.deleteCalled.stream()
+        .map(workflow::getDependentResourceFor)
+        .collect(Collectors.toList());
     return new WorkflowCleanupResult(erroredDependents, postConditionNotMet, deleteCalled);
   }
 }

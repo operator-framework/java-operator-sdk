@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -16,42 +16,32 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {
 
   private final Workflow<P> workflow;
-  private final boolean isCleaner;
+  private boolean isCleaner;
   private final boolean isEmptyWorkflow;
   private final Map<String, DependentResource> dependentResourcesByName;
+  private boolean resolved;
+  private final ManagedWorkflowSupport managedWorkflowSupport;
 
-  DefaultManagedWorkflow(KubernetesClient client,
-      List<DependentResourceSpec> dependentResourceSpecs,
+  DefaultManagedWorkflow(List<DependentResourceSpec> dependentResourceSpecs, Workflow<P> workflow,
       ManagedWorkflowSupport managedWorkflowSupport) {
-    managedWorkflowSupport.checkForNameDuplication(dependentResourceSpecs);
-    dependentResourcesByName = dependentResourceSpecs
-        .stream().collect(Collectors.toMap(DependentResourceSpec::getName,
-            spec -> managedWorkflowSupport.createAndConfigureFrom(spec, client)));
-
+    dependentResourcesByName = new HashMap<>(dependentResourceSpecs.size());
     isEmptyWorkflow = dependentResourceSpecs.isEmpty();
-    workflow =
-        managedWorkflowSupport.createWorkflow(dependentResourceSpecs, dependentResourcesByName);
-    isCleaner = checkIfCleaner();
+    this.workflow = workflow;
+    this.managedWorkflowSupport = managedWorkflowSupport;
   }
 
   public WorkflowReconcileResult reconcile(P primary, Context<P> context) {
+    checkIfResolved();
     return workflow.reconcile(primary, context);
   }
 
   public WorkflowCleanupResult cleanup(P primary, Context<P> context) {
+    checkIfResolved();
     return workflow.cleanup(primary, context);
   }
 
-  private boolean checkIfCleaner() {
-    for (var dr : workflow.getDependentResources()) {
-      if (dr instanceof Deleter && !(dr instanceof GarbageCollected)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public boolean isCleaner() {
+    checkIfResolved();
     return isCleaner;
   }
 
@@ -60,6 +50,30 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   }
 
   public Map<String, DependentResource> getDependentResourcesByName() {
+    checkIfResolved();
     return dependentResourcesByName;
+  }
+
+  @Override
+  public ManagedWorkflow<P> resolve(KubernetesClient client, List<DependentResourceSpec> specs) {
+    final boolean[] cleanerHolder = {false};
+    specs.forEach(spec -> {
+      final var dr = managedWorkflowSupport.createAndConfigureFrom(spec, client);
+      dependentResourcesByName.put(spec.getName(), dr);
+      if (dr instanceof Deleter && !(dr instanceof GarbageCollected)) {
+        cleanerHolder[0] = true;
+      }
+    });
+
+    workflow.resolve(client, specs);
+    isCleaner = cleanerHolder[0];
+    resolved = true;
+    return this;
+  }
+
+  private void checkIfResolved() {
+    if (!resolved) {
+      throw new IllegalStateException("resolve should be called before");
+    }
   }
 }

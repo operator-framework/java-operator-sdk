@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
@@ -35,7 +34,6 @@ public class DefaultDependentResourceNode<R, P extends HasMetadata> implements
     this.deletePostcondition = deletePostcondition;
   }
 
-  @Override
   public DependentResource<R, P> getDependentResource() {
     return dependentResource;
   }
@@ -94,7 +92,8 @@ public class DefaultDependentResourceNode<R, P extends HasMetadata> implements
   }
 
   @Override
-  public R getSecondaryResource(P primary, Context<P> context) {
-    return getDependentResource().getSecondaryResource(primary, context).orElse(null);
+  public String getName() {
+    return DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
+        + dependentResource.hashCode();
   }
 }

@@ -1,13 +1,16 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
@@ -21,7 +24,7 @@ public class Workflow<P extends HasMetadata> {
 
   public static final boolean THROW_EXCEPTION_AUTOMATICALLY_DEFAULT = true;
 
-  private final Set<DependentResourceNode> dependentResourceNodes;
+  private final Map<String, ResolvedNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources = new HashSet<>();
   private final Set<DependentResourceNode> bottomLevelResource = new HashSet<>();
 
@@ -30,22 +33,21 @@ public class Workflow<P extends HasMetadata> {
   private final ExecutorService executorService;
 
   public Workflow(Set<DependentResourceNode> dependentResourceNodes) {
-    this.executorService = ExecutorServiceManager.instance().workflowExecutorService();
-    this.dependentResourceNodes = dependentResourceNodes;
-    this.throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
-    preprocessForReconcile();
+    this(dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
+        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT);
   }
 
   public Workflow(Set<DependentResourceNode> dependentResourceNodes,
       ExecutorService executorService, boolean throwExceptionAutomatically) {
     this.executorService = executorService;
-    this.dependentResourceNodes = dependentResourceNodes;
+    this.dependentResourceNodes = dependentResourceNodes.stream()
+        .collect(Collectors.toMap(DependentResourceNode::getName, ResolvedNode::new));
     this.throwExceptionAutomatically = throwExceptionAutomatically;
     preprocessForReconcile();
   }
 
-  public Workflow(Set<DependentResourceNode> dependentResourceNodes, int globalParallelism) {
-    this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism), true);
+  public DependentResource getDependentResourceFor(DependentResourceNode node) {
+    return dependentResourceNodes.get(node.getName()).dependentResource();
   }
 
   public WorkflowReconcileResult reconcile(P primary, Context<P> context) {
@@ -71,8 +73,10 @@ public class Workflow<P extends HasMetadata> {
   // add cycle detection?
   @SuppressWarnings("unchecked")
   private void preprocessForReconcile() {
-    bottomLevelResource.addAll(dependentResourceNodes);
-    for (DependentResourceNode<?, P> node : dependentResourceNodes) {
+    final var nodes = dependentResourceNodes.values().stream()
+        .map(ResolvedNode::node).collect(Collectors.toList());
+    bottomLevelResource.addAll(nodes);
+    for (DependentResourceNode<?, P> node : nodes) {
       if (node.getDependsOn().isEmpty()) {
         topLevelResources.add(node);
       } else {
@@ -95,8 +99,44 @@ public class Workflow<P extends HasMetadata> {
     return executorService;
   }
 
-  public Set<DependentResource> getDependentResources() {
-    return dependentResourceNodes.stream().map(DependentResourceNode::getDependentResource)
+  Set<DependentResourceNode> nodes() {
+    return dependentResourceNodes.values().stream().map(ResolvedNode::node)
         .collect(Collectors.toSet());
+  }
+
+  public void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {
+    dependentResourceNodes.values().forEach(drn -> drn.resolve(client, dependentResources));
+  }
+
+  private static class ResolvedNode {
+
+    private final DependentResourceNode node;
+    private DependentResource dependentResource;
+
+    private ResolvedNode(DependentResourceNode node) {
+      this.node = node;
+      if (node instanceof DefaultDependentResourceNode) {
+        this.dependentResource = ((DefaultDependentResourceNode) node).getDependentResource();
+      }
+    }
+
+    public void setDependentResource(DependentResource dependentResource) {
+      this.dependentResource = dependentResource;
+    }
+
+    public DependentResource dependentResource() {
+      return dependentResource;
+    }
+
+    public DependentResourceNode node() {
+      return node;
+    }
+
+    public void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {
+      final var spec = dependentResources.stream()
+          .filter(drs -> drs.getName().equals(node.getName()))
+          .findFirst().orElseThrow();
+      dependentResource = ManagedWorkflowSupport.instance().createAndConfigureFrom(spec, client);
+    }
   }
 }

@@ -81,8 +81,8 @@ public class Controller<P extends HasMetadata>
     this.metrics = Optional.ofNullable(configurationService.getMetrics()).orElse(Metrics.NOOP);
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
-    managedWorkflow = configurationService.getWorkflowFactory()
-        .workflowFor(kubernetesClient, configuration.getDependentResources());
+    managedWorkflow = configurationService.getWorkflowFactory().workflowFor(configuration);
+    managedWorkflow.resolve(kubernetesClient, configuration.getDependentResources());
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);

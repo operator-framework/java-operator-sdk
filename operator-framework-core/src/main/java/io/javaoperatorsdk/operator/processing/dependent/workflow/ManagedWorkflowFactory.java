@@ -1,25 +1,27 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.List;
-
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow.noOpWorkflow;
 
 public interface ManagedWorkflowFactory {
 
-  ManagedWorkflowFactory DEFAULT = (client, dependentResourceSpecs) -> {
+  ManagedWorkflowFactory DEFAULT = (configuration, managedWorkflowSupport) -> {
+    final var dependentResourceSpecs = configuration.getDependentResources();
     if (dependentResourceSpecs == null || dependentResourceSpecs.isEmpty()) {
       return noOpWorkflow;
     }
-    return new DefaultManagedWorkflow(client, dependentResourceSpecs,
-        ManagedWorkflowSupport.instance());
+    return new DefaultManagedWorkflow(dependentResourceSpecs,
+        managedWorkflowSupport.createWorkflow(dependentResourceSpecs), managedWorkflowSupport);
   };
 
+  @SuppressWarnings("rawtypes")
+  default ManagedWorkflow workflowFor(ControllerConfiguration configuration) {
+    return workflowFor(configuration, ManagedWorkflowSupport.instance());
+  }
 
   @SuppressWarnings("rawtypes")
-  ManagedWorkflow workflowFor(KubernetesClient client,
-      List<DependentResourceSpec> dependentResourceSpecs);
+  ManagedWorkflow workflowFor(ControllerConfiguration configuration,
+      ManagedWorkflowSupport managedWorkflowSupport);
 }
 

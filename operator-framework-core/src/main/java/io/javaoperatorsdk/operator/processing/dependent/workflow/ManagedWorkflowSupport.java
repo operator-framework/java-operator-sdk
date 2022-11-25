@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class ManagedWorkflowSupport {
@@ -51,24 +50,27 @@ class ManagedWorkflowSupport {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public <P extends HasMetadata> Workflow<P> createWorkflow(
-      List<DependentResourceSpec> dependentResourceSpecs,
-      Map<String, DependentResource> dependentResourceByName) {
+      List<DependentResourceSpec> dependentResourceSpecs) {
     var orderedResourceSpecs = orderAndDetectCycles(dependentResourceSpecs);
-    var workflowBuilder = new WorkflowBuilder<P>().withThrowExceptionFurther(false);
-    orderedResourceSpecs.forEach(spec -> {
-      final var dependentResource = dependentResourceByName.get(spec.getName());
-      final var dependsOn = (Set<DependentResource>) spec.getDependsOn()
-          .stream().map(dependentResourceByName::get).collect(Collectors.toSet());
-      workflowBuilder
-          .addDependentResource(dependentResource)
-          .dependsOn(dependsOn)
-          .withDeletePostcondition(spec.getDeletePostCondition())
-          .withReconcilePrecondition(spec.getReconcileCondition())
-          .withReadyPostcondition(spec.getReadyCondition());
+    final var alreadyCreated = new ArrayList<DependentResourceNode>(orderedResourceSpecs.size());
+    final var nodes = orderedResourceSpecs.stream()
+        .map(spec -> createFrom(spec, alreadyCreated))
+        .collect(Collectors.toSet());
+    return new Workflow<>(nodes);
+  }
+
+  private DependentResourceNode createFrom(DependentResourceSpec spec,
+      List<DependentResourceNode> alreadyCreated) {
+    final var node = new SpecDependentResourceNode<>(spec);
+    alreadyCreated.add(node);
+    spec.getDependsOn().forEach(depend -> {
+      final DependentResourceNode dependsOn = alreadyCreated.stream()
+          .filter(drn -> depend.equals(drn.getName())).findFirst()
+          .orElseThrow();
+      node.addDependsOnRelation(dependsOn);
     });
-    return workflowBuilder.build();
+    return node;
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -96,11 +98,9 @@ class ManagedWorkflowSupport {
   }
 
   /**
-   *
    * @param dependentResourceSpecs list of specs
    * @return top-bottom ordered resources that can be added safely to workflow
    * @throws OperatorException if there is a cycle in the dependencies
-   *
    */
   public List<DependentResourceSpec> orderAndDetectCycles(
       List<DependentResourceSpec> dependentResourceSpecs) {
@@ -137,6 +137,7 @@ class ManagedWorkflowSupport {
   }
 
   private static class DRInfo {
+
     private final DependentResourceSpec spec;
     private final List<DependentResourceSpec> waitingForCompletion;
 
@@ -157,8 +158,9 @@ class ManagedWorkflowSupport {
   private boolean isReadyForVisit(DependentResourceSpec dr, Set<String> alreadyVisited,
       String alreadyPresentName) {
     for (var name : dr.getDependsOn()) {
-      if (name.equals(alreadyPresentName))
+      if (name.equals(alreadyPresentName)) {
         continue;
+      }
       if (!alreadyVisited.contains(name)) {
         return false;
       }

@@ -1,9 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
@@ -35,6 +38,11 @@ public interface ManagedWorkflow<P extends HasMetadata> {
     public Map<String, DependentResource> getDependentResourcesByName() {
       return Collections.emptyMap();
     }
+
+    @Override
+    public ManagedWorkflow resolve(KubernetesClient client, List dependentResources) {
+      return this;
+    }
   };
 
   WorkflowReconcileResult reconcile(P primary, Context<P> context);
@@ -46,4 +54,7 @@ public interface ManagedWorkflow<P extends HasMetadata> {
   boolean isEmptyWorkflow();
 
   Map<String, DependentResource> getDependentResourcesByName();
+
+  ManagedWorkflow<P> resolve(KubernetesClient client,
+      List<DependentResourceSpec> dependentResources);
 }
