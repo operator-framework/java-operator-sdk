@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -293,7 +295,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = removeFinalizer(resource, originalResource, finalizerName);
+        P customResource = conflictRetryingPatch(resource, originalResource,
+            r -> r.removeFinalizer(finalizerName));
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -312,9 +315,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
         getVersion(originalResource));
-    resourceForExecution.addFinalizer(configuration().getFinalizerName());
-    // todo try repeatedly locally on error
-    return customResourceFacade.patchLockResource(resourceForExecution, originalResource);
+
+    return conflictRetryingPatch(resourceForExecution, originalResource,
+        r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
   private P updateCustomResource(P resource) {
@@ -327,20 +330,21 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return controller.getConfiguration();
   }
 
-  public P removeFinalizer(P resource, P originalResource, String finalizer) {
+  public P conflictRetryingPatch(P resource, P originalResource,
+      Function<P, Boolean> modificationFunction) {
     if (log.isDebugEnabled()) {
       log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
     }
     int retryIndex = 0;
     while (true) {
       try {
-        var removed = resource.removeFinalizer(finalizer);
-        if (!removed) {
+        var modified = modificationFunction.apply(resource);
+        if (Boolean.FALSE.equals(modified)) {
           return resource;
         }
         return customResourceFacade.patchLockResource(originalResource, resource);
       } catch (KubernetesClientException e) {
-        log.trace("Exception during finalizer removal for resource: {}", resource);
+        log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
         // only retry on conflict (HTTP 409), otherwise fail
         if (e.getCode() != 409) {
@@ -349,7 +353,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (retryIndex >= MAX_FINALIZER_REMOVAL_RETRY) {
           throw new OperatorException(
               "Exceeded maximum (" + MAX_FINALIZER_REMOVAL_RETRY
-                  + ") retry attempts to remove finalizer '" + finalizer + "' for resource "
+                  + ") retry attempts to patch resource: "
                   + ResourceID.fromResource(resource));
         }
         resource = customResourceFacade.getResource(resource.getMetadata().getNamespace(),
