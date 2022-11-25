@@ -646,6 +646,24 @@ class ReconciliationDispatcherTest {
     assertThat(control.getReScheduleDelay()).isNotPresent();
   }
 
+  @Test
+  void retriesAddingFinalizer() {
+    removeFinalizers(testCustomResource);
+    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    when(customResourceFacade.patchLockResource(any(), any()))
+        .thenThrow(new KubernetesClientException(null, 409, null))
+        .thenReturn(testCustomResource);
+    when(customResourceFacade.getResource(any(), any()))
+        .then((Answer<TestCustomResource>) invocationOnMock -> {
+          testCustomResource.getFinalizers().clear();
+          return testCustomResource;
+        });
+
+    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    verify(customResourceFacade, times(2)).patchLockResource(any(), any());
+  }
+
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();
     observedGenCustomResource.setMetadata(new ObjectMeta());
