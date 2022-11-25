@@ -313,6 +313,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
         getVersion(originalResource));
     resourceForExecution.addFinalizer(configuration().getFinalizerName());
+    // todo try repeatedly locally on error
     return customResourceFacade.patchLockResource(resourceForExecution, originalResource);
   }
 
@@ -376,7 +377,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     public R patchLockResource(R resource, R originalResource) {
-      return resource(resource).patch(PatchContext.of(PatchType.JSON), originalResource);
+      return resource(originalResource).patch(PatchContext.of(PatchType.JSON_MERGE), resource);
     }
 
     public R updateResource(R resource) {

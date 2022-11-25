@@ -2,19 +2,10 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.dsl.base.PatchContext;
-import io.fabric8.kubernetes.client.dsl.base.PatchType;
-import io.javaoperatorsdk.operator.api.config.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +22,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -142,8 +134,9 @@ class ReconciliationDispatcherTest {
     verify(reconciler, never())
         .reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
-        .updateResource(
-            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)));
+        .patchLockResource(
+            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)),
+            any());
     assertThat(testCustomResource.hasFinalizer(DEFAULT_FINALIZER)).isTrue();
   }
 
@@ -223,7 +216,8 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(1)).updateResource(testCustomResource);
+    verify(customResourceFacade, times(1)).patchLockResource(testCustomResource,
+        testCustomResource);
   }
 
   @Test
@@ -232,7 +226,7 @@ class ReconciliationDispatcherTest {
     markForDeletion(testCustomResource);
     var resourceWithFinalizer = TestUtils.testCustomResource();
     resourceWithFinalizer.addFinalizer(DEFAULT_FINALIZER);
-    when(customResourceFacade.updateResource(testCustomResource))
+    when(customResourceFacade.patchLockResource(testCustomResource, testCustomResource))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any())).thenReturn(resourceWithFinalizer);
@@ -241,7 +235,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(2)).updateResource(any());
+    verify(customResourceFacade, times(2)).patchLockResource(any(), any());
     verify(customResourceFacade, times(1)).getResource(any(), any());
   }
 
@@ -249,7 +243,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalRetryExceeded() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.updateResource(any()))
+    when(customResourceFacade.patchLockResource(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null));
     when(customResourceFacade.getResource(any(), any()))
         .thenAnswer((Answer<TestCustomResource>) invocationOnMock -> createResourceWithFinalizer());
@@ -261,7 +255,8 @@ class ReconciliationDispatcherTest {
     assertThat(postExecControl.getRuntimeException()).isPresent();
     assertThat(postExecControl.getRuntimeException().get())
         .isInstanceOf(OperatorException.class);
-    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).updateResource(any());
+    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).patchLockResource(any(),
+        any());
     verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY - 1)).getResource(any(),
         any());
   }
@@ -270,7 +265,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalClientExceptionIsNotConflict() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.updateResource(any()))
+    when(customResourceFacade.patchLockResource(any(), any()))
         .thenThrow(new KubernetesClientException(null, 400, null));
 
     var res =
@@ -278,7 +273,7 @@ class ReconciliationDispatcherTest {
 
     assertThat(res.getRuntimeException()).isPresent();
     assertThat(res.getRuntimeException().get()).isInstanceOf(KubernetesClientException.class);
-    verify(customResourceFacade, times(1)).updateResource(any());
+    verify(customResourceFacade, times(1)).patchLockResource(any(), any());
     verify(customResourceFacade, never()).getResource(any(), any());
   }
 
@@ -342,13 +337,13 @@ class ReconciliationDispatcherTest {
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.updateResource(any())).thenReturn(testCustomResource);
+    when(customResourceFacade.patchLockResource(any(), any())).thenReturn(testCustomResource);
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, times(1)).updateResource(any());
+    verify(customResourceFacade, times(1)).patchLockResource(any(), any());
     assertThat(postExecControl.updateIsStatusPatch()).isFalse();
     assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }
