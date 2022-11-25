@@ -9,14 +9,15 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public class DefaultDependentResourceNode<R, P extends HasMetadata> {
+public class DefaultDependentResourceNode<R, P extends HasMetadata> implements
+    DependentResourceNode<R, P> {
 
   private final DependentResource<R, P> dependentResource;
   private Condition<R, P> reconcilePrecondition;
   private Condition<R, P> deletePostcondition;
   private Condition<R, P> readyPostcondition;
-  private final List<DefaultDependentResourceNode> dependsOn = new LinkedList<>();
-  private final List<DefaultDependentResourceNode> parents = new LinkedList<>();
+  private final List<DependentResourceNode> dependsOn = new LinkedList<>();
+  private final List<DependentResourceNode> parents = new LinkedList<>();
 
   public DefaultDependentResourceNode(DependentResource<R, P> dependentResource) {
     this(dependentResource, null, null);
@@ -34,62 +35,66 @@ public class DefaultDependentResourceNode<R, P extends HasMetadata> {
     this.deletePostcondition = deletePostcondition;
   }
 
+  @Override
   public DependentResource<R, P> getDependentResource() {
     return dependentResource;
   }
 
+  @Override
   public Optional<Condition<R, P>> getReconcilePrecondition() {
     return Optional.ofNullable(reconcilePrecondition);
   }
 
+  @Override
   public Optional<Condition<R, P>> getDeletePostcondition() {
     return Optional.ofNullable(deletePostcondition);
   }
 
-  public List<DefaultDependentResourceNode> getDependsOn() {
+  @Override
+  public List<? extends DependentResourceNode> getDependsOn() {
     return dependsOn;
   }
 
-  @SuppressWarnings("unchecked")
-  public void addDependsOnRelation(DefaultDependentResourceNode node) {
-    node.parents.add(this);
+  @Override
+  public void addParent(DependentResourceNode parent) {
+    parents.add(parent);
+  }
+
+  @Override
+  public void addDependsOnRelation(DependentResourceNode node) {
+    node.addParent(this);
     dependsOn.add(node);
   }
 
   @Override
   public String toString() {
-    return "DependentResourceNode{" +
-        "dependentResource=" + dependentResource +
-        '}';
+    return "DependentResourceNode{" + dependentResource + '}';
   }
 
-  public DefaultDependentResourceNode<R, P> setReconcilePrecondition(
-      Condition<R, P> reconcilePrecondition) {
+  public void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
     this.reconcilePrecondition = reconcilePrecondition;
-    return this;
   }
 
-  public DefaultDependentResourceNode<R, P> setDeletePostcondition(
-      Condition<R, P> cleanupCondition) {
+  public void setDeletePostcondition(Condition<R, P> cleanupCondition) {
     this.deletePostcondition = cleanupCondition;
-    return this;
   }
 
+  @Override
   public Optional<Condition<R, P>> getReadyPostcondition() {
     return Optional.ofNullable(readyPostcondition);
   }
 
-  public DefaultDependentResourceNode<R, P> setReadyPostcondition(
-      Condition<R, P> readyPostcondition) {
+  public void setReadyPostcondition(Condition<R, P> readyPostcondition) {
     this.readyPostcondition = readyPostcondition;
-    return this;
   }
 
-  public List<DefaultDependentResourceNode> getParents() {
+  @Override
+  public List<DependentResourceNode> getParents() {
     return parents;
   }
 
-  protected R getSecondaryResource(P primary, Context<P> context) {
+  @Override
+  public R getSecondaryResource(P primary, Context<P> context) {
     return getDependentResource().getSecondaryResource(primary, context).orElse(null);
   }
 }

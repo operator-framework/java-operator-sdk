@@ -21,22 +21,22 @@ public class Workflow<P extends HasMetadata> {
 
   public static final boolean THROW_EXCEPTION_AUTOMATICALLY_DEFAULT = true;
 
-  private final Set<DefaultDependentResourceNode> dependentResourceNodes;
-  private final Set<DefaultDependentResourceNode> topLevelResources = new HashSet<>();
-  private final Set<DefaultDependentResourceNode> bottomLevelResource = new HashSet<>();
+  private final Set<DependentResourceNode> dependentResourceNodes;
+  private final Set<DependentResourceNode> topLevelResources = new HashSet<>();
+  private final Set<DependentResourceNode> bottomLevelResource = new HashSet<>();
 
   private final boolean throwExceptionAutomatically;
   // it's "global" executor service shared between multiple reconciliations running parallel
   private final ExecutorService executorService;
 
-  public Workflow(Set<DefaultDependentResourceNode> dependentResourceNodes) {
+  public Workflow(Set<DependentResourceNode> dependentResourceNodes) {
     this.executorService = ExecutorServiceManager.instance().workflowExecutorService();
     this.dependentResourceNodes = dependentResourceNodes;
     this.throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
     preprocessForReconcile();
   }
 
-  public Workflow(Set<DefaultDependentResourceNode> dependentResourceNodes,
+  public Workflow(Set<DependentResourceNode> dependentResourceNodes,
       ExecutorService executorService, boolean throwExceptionAutomatically) {
     this.executorService = executorService;
     this.dependentResourceNodes = dependentResourceNodes;
@@ -44,7 +44,7 @@ public class Workflow<P extends HasMetadata> {
     preprocessForReconcile();
   }
 
-  public Workflow(Set<DefaultDependentResourceNode> dependentResourceNodes, int globalParallelism) {
+  public Workflow(Set<DependentResourceNode> dependentResourceNodes, int globalParallelism) {
     this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism), true);
   }
 
@@ -72,22 +72,22 @@ public class Workflow<P extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private void preprocessForReconcile() {
     bottomLevelResource.addAll(dependentResourceNodes);
-    for (DefaultDependentResourceNode<?, P> node : dependentResourceNodes) {
+    for (DependentResourceNode<?, P> node : dependentResourceNodes) {
       if (node.getDependsOn().isEmpty()) {
         topLevelResources.add(node);
       } else {
-        for (DefaultDependentResourceNode dependsOn : node.getDependsOn()) {
+        for (DependentResourceNode dependsOn : node.getDependsOn()) {
           bottomLevelResource.remove(dependsOn);
         }
       }
     }
   }
 
-  Set<DefaultDependentResourceNode> getTopLevelDependentResources() {
+  Set<DependentResourceNode> getTopLevelDependentResources() {
     return topLevelResources;
   }
 
-  Set<DefaultDependentResourceNode> getBottomLevelResource() {
+  Set<DependentResourceNode> getBottomLevelResource() {
     return bottomLevelResource;
   }
 
@@ -96,7 +96,7 @@ public class Workflow<P extends HasMetadata> {
   }
 
   public Set<DependentResource> getDependentResources() {
-    return dependentResourceNodes.stream().map(DefaultDependentResourceNode::getDependentResource)
+    return dependentResourceNodes.stream().map(DependentResourceNode::getDependentResource)
         .collect(Collectors.toSet());
   }
 }
