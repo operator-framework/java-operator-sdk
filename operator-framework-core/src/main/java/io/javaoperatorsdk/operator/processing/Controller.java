@@ -83,9 +83,14 @@ public class Controller<P extends HasMetadata>
     isCleaner = reconciler instanceof Cleaner;
     managedWorkflow =
         ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
+
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
+
+    final var context = new EventSourceContext<>(
+        eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+    initAndRegisterEventSources(context);
   }
 
   @Override
@@ -241,8 +246,7 @@ public class Controller<P extends HasMetadata>
           .map(EventSourceReferencer.class::cast)
           .forEach(dr -> {
             try {
-              ((EventSourceReferencer<P>) dr)
-                  .resolveEventSource(eventSourceManager);
+              ((EventSourceReferencer<P>) dr).resolveEventSource(eventSourceManager);
             } catch (EventSourceNotFoundException e) {
               unresolvable.computeIfAbsent(e.getEventSourceName(), s -> new ArrayList<>()).add(dr);
             }
@@ -318,10 +322,6 @@ public class Controller<P extends HasMetadata>
     try {
       // check that the custom resource is known by the cluster if configured that way
       validateCRDWithLocalModelIfRequired(resClass, controllerName, crdName, specVersion);
-      final var context = new EventSourceContext<>(
-          eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
-
-      initAndRegisterEventSources(context);
       eventSourceManager.start();
       if (startEventProcessor) {
         eventProcessor.start();

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,8 +127,9 @@ public class EventSourceManager<P extends HasMetadata>
       if (name == null || name.isBlank()) {
         name = EventSourceInitializer.generateNameFor(eventSource);
       }
-      eventSources.add(name, eventSource);
-      eventSource.setEventHandler(controller.getEventProcessor());
+      final var named = new NamedEventSource(eventSource, name);
+      eventSources.add(named);
+      named.setEventHandler(controller.getEventProcessor());
     } catch (IllegalStateException | MissingCRDException e) {
       throw e; // leave untouched
     } catch (Exception e) {
@@ -138,22 +140,24 @@ public class EventSourceManager<P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   public void broadcastOnResourceEvent(ResourceAction action, P resource, P oldResource) {
-    eventSources.additionalNamedEventSources().forEach(eventSource -> {
-      if (eventSource.original() instanceof ResourceEventAware) {
-        var lifecycleAwareES = ((ResourceEventAware<P>) eventSource.original());
-        switch (action) {
-          case ADDED:
-            lifecycleAwareES.onResourceCreated(resource);
-            break;
-          case UPDATED:
-            lifecycleAwareES.onResourceUpdated(resource, oldResource);
-            break;
-          case DELETED:
-            lifecycleAwareES.onResourceDeleted(resource);
-            break;
-        }
-      }
-    });
+    eventSources.additionalNamedEventSources()
+        .map(NamedEventSource::original)
+        .forEach(source -> {
+          if (source instanceof ResourceEventAware) {
+            var lifecycleAwareES = ((ResourceEventAware<P>) source);
+            switch (action) {
+              case ADDED:
+                lifecycleAwareES.onResourceCreated(resource);
+                break;
+              case UPDATED:
+                lifecycleAwareES.onResourceUpdated(resource, oldResource);
+                break;
+              case DELETED:
+                lifecycleAwareES.onResourceDeleted(resource);
+                break;
+            }
+          }
+        });
   }
 
   public void changeNamespaces(Set<String> namespaces) {
@@ -174,6 +178,11 @@ public class EventSourceManager<P extends HasMetadata>
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
+  @SuppressWarnings("unused")
+  public Stream<? extends EventSourceMetadata> getNamedEventSourcesStream() {
+    return eventSources.flatMappedSources();
+  }
+
   public ControllerResourceEventSource<P> getControllerResourceEventSource() {
     return eventSources.controllerResourceEventSource();
   }
@@ -187,9 +196,12 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.getEventSources(dependentType);
   }
 
+  /**
+   * @deprecated Use {@link #getResourceEventSourceFor(Class)} instead
+   */
   @Deprecated
   public <R> List<ResourceEventSource<R, P>> getEventSourcesFor(Class<R> dependentType) {
-    return eventSources.getEventSources(dependentType);
+    return getResourceEventSourcesFor(dependentType);
   }
 
   @Override
