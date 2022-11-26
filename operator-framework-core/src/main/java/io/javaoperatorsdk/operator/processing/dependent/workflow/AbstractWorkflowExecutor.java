@@ -107,8 +107,8 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected <R> boolean isConditionMet(Optional<Condition<R, P>> condition,
       DependentResource<R, P> dependentResource) {
     return condition.map(c -> c.isMet(primary,
-            dependentResource.getSecondaryResource(primary, context).orElse(null),
-            context))
+        dependentResource.getSecondaryResource(primary, context).orElse(null),
+        context))
         .orElse(true);
   }
 }
