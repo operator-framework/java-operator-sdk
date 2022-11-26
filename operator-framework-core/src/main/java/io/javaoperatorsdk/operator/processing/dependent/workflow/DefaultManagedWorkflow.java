@@ -8,9 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {
@@ -60,7 +58,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     specs.forEach(spec -> {
       final var dr = managedWorkflowSupport.createAndConfigureFrom(spec, client);
       dependentResourcesByName.put(spec.getName(), dr);
-      if (dr instanceof Deleter && !(dr instanceof GarbageCollected)) {
+      if (DependentResource.canDeleteIfAble(dr)) {
         cleanerHolder[0] = true;
       }
     });

@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExecutor<P> {
@@ -72,8 +71,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
         DependentResource<R, P> dependentResource) {
       var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
-      if (dependentResource instanceof Deleter
-          && !(dependentResource instanceof GarbageCollected)) {
+      if (DependentResource.canDeleteIfAble(dependentResource)) {
         ((Deleter<P>) dependentResource).delete(primary, context);
         deleteCalled.add(dependentResourceNode);
       }

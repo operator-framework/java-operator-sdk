@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -149,8 +148,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
         DependentResource<R, P> dependentResource) {
       var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
-      if (dependentResource instanceof Deleter
-          && !(dependentResource instanceof GarbageCollected)) {
+      if (DependentResource.canDeleteIfAble(dependentResource)) {
         ((Deleter<P>) dependentResource).delete(primary, context);
       }
       boolean deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
@@ -210,7 +208,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   private boolean hasErroredParent(DependentResourceNode<?, ?> dependentResourceNode) {
     return !dependentResourceNode.getDependsOn().isEmpty()
         && dependentResourceNode.getDependsOn().stream()
-        .anyMatch(this::isInError);
+            .anyMatch(this::isInError);
   }
 
   private WorkflowReconcileResult createReconcileResult() {

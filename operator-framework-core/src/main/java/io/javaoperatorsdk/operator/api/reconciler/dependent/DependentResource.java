@@ -64,4 +64,8 @@ public interface DependentResource<R, P extends HasMetadata> {
   static String defaultNameFor(Class<? extends DependentResource> dependentResourceClass) {
     return dependentResourceClass.getName();
   }
+
+  static boolean canDeleteIfAble(DependentResource<?, ?> dependentResource) {
+    return dependentResource instanceof Deleter && !(dependentResource instanceof GarbageCollected);
+  }
 }
