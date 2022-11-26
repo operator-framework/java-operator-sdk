@@ -53,51 +53,39 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
       return;
     }
 
-    Future<?> nodeFuture =
-        workflow.getExecutorService().submit(new NodeExecutor(dependentResourceNode));
+    Future<?> nodeFuture = workflow.getExecutorService()
+        .submit(new CleanupExecutor<>(dependentResourceNode));
     markAsExecuting(dependentResourceNode, nodeFuture);
     log.debug("Submitted for cleanup: {}", dependentResourceNode);
   }
 
-  private class NodeExecutor<R> implements Runnable {
 
-    private final DependentResourceNode<R, P> dependentResourceNode;
+  private class CleanupExecutor<R> extends NodeExecutor<R, P> {
 
-    private NodeExecutor(DependentResourceNode<R, P> dependentResourceNode) {
-      this.dependentResourceNode = dependentResourceNode;
+    private CleanupExecutor(DependentResourceNode<R, P> drn) {
+      super(drn, WorkflowCleanupExecutor.this);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void run() {
-      try {
-        var dependentResource = (DependentResource<R, P>) workflow.getDependentResourceFor(
-            dependentResourceNode);
-        var deletePostCondition = dependentResourceNode.getDeletePostcondition();
+    protected void doRun(DependentResourceNode<R, P> dependentResourceNode,
+        DependentResource<R, P> dependentResource) {
+      var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
-        if (dependentResource instanceof Deleter
-            && !(dependentResource instanceof GarbageCollected)) {
-          ((Deleter<P>) dependentResource).delete(primary, context);
-          deleteCalled.add(dependentResourceNode);
-        }
-        boolean deletePostConditionMet = deletePostCondition
-            .map(c -> c.isMet(primary,
-                dependentResource.getSecondaryResource(primary, context).orElse(null),
-                context))
-            .orElse(true);
-        if (deletePostConditionMet) {
-          markAsVisited(dependentResourceNode);
-          handleDependentCleaned(dependentResourceNode);
-        } else {
-          // updating alreadyVisited needs to be the last operation otherwise could lead to a race
-          // condition in handleCleanup condition checks
-          postDeleteConditionNotMet.add(dependentResourceNode);
-          markAsVisited(dependentResourceNode);
-        }
-      } catch (RuntimeException e) {
-        handleExceptionInExecutor(dependentResourceNode, e);
-      } finally {
-        handleNodeExecutionFinish(dependentResourceNode);
+      if (dependentResource instanceof Deleter
+          && !(dependentResource instanceof GarbageCollected)) {
+        ((Deleter<P>) dependentResource).delete(primary, context);
+        deleteCalled.add(dependentResourceNode);
+      }
+      boolean deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
+      if (deletePostConditionMet) {
+        markAsVisited(dependentResourceNode);
+        handleDependentCleaned(dependentResourceNode);
+      } else {
+        // updating alreadyVisited needs to be the last operation otherwise could lead to a race
+        // condition in handleCleanup condition checks
+        postDeleteConditionNotMet.add(dependentResourceNode);
+        markAsVisited(dependentResourceNode);
       }
     }
   }

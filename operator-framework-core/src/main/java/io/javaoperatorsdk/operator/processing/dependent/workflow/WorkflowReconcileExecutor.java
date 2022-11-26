@@ -63,13 +63,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       return;
     }
 
-    final var dr =
-        (DependentResource<R, P>) workflow.getDependentResourceFor(dependentResourceNode);
-    boolean reconcileConditionMet = dependentResourceNode.getReconcilePrecondition()
-        .map(rc -> rc.isMet(primary, dr.getSecondaryResource(primary, context).orElse(null),
-            context))
-        .orElse(true);
-
+    boolean reconcileConditionMet = isConditionMet(dependentResourceNode.getReconcilePrecondition(),
+        getDependentResourceFor(dependentResourceNode));
     if (!reconcileConditionMet) {
       handleReconcileConditionNotMet(dependentResourceNode);
     } else {
@@ -111,88 +106,62 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     notReady.add(dependentResourceNode);
   }
 
-  private class NodeReconcileExecutor<R> implements Runnable {
+  private class NodeReconcileExecutor<R> extends NodeExecutor<R, P> {
 
-    private final DependentResourceNode<R, P> dependentResourceNode;
-
-    private NodeReconcileExecutor(DependentResourceNode dependentResourceNode) {
-      this.dependentResourceNode = dependentResourceNode;
+    private NodeReconcileExecutor(DependentResourceNode<R, P> dependentResourceNode) {
+      super(dependentResourceNode, WorkflowReconcileExecutor.this);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void run() {
-      try {
-        final var dependentResource =
-            (DependentResource<R, P>) workflow.getDependentResourceFor(dependentResourceNode);
-        if (log.isDebugEnabled()) {
-          log.debug(
-              "Reconciling {} for primary: {}",
-              dependentResourceNode,
-              ResourceID.fromResource(primary));
-        }
-        ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
-        reconcileResults.put(dependentResource, reconcileResult);
-        reconciled.add(dependentResourceNode);
+    protected void doRun(DependentResourceNode<R, P> dependentResourceNode,
+        DependentResource<R, P> dependentResource) {
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Reconciling {} for primary: {}",
+            dependentResourceNode,
+            ResourceID.fromResource(primary));
+      }
+      ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
+      reconcileResults.put(dependentResource, reconcileResult);
+      reconciled.add(dependentResourceNode);
 
-        boolean ready = dependentResourceNode.getReadyPostcondition()
-            .map(rc -> rc.isMet(primary,
-                dependentResource.getSecondaryResource(primary, context).orElse(null),
-                context))
-            .orElse(true);
-
-        if (ready) {
-          log.debug("Setting already reconciled for: {}", dependentResourceNode);
-          markAsVisited(dependentResourceNode);
-          handleDependentsReconcile(dependentResourceNode);
-        } else {
-          setAlreadyReconciledButNotReady(dependentResourceNode);
-        }
-      } catch (RuntimeException e) {
-        handleExceptionInExecutor(dependentResourceNode, e);
-      } finally {
-        handleNodeExecutionFinish(dependentResourceNode);
+      boolean ready = isConditionMet(dependentResourceNode.getReadyPostcondition(),
+          dependentResource);
+      if (ready) {
+        log.debug("Setting already reconciled for: {}", dependentResourceNode);
+        markAsVisited(dependentResourceNode);
+        handleDependentsReconcile(dependentResourceNode);
+      } else {
+        setAlreadyReconciledButNotReady(dependentResourceNode);
       }
     }
   }
 
-  private class NodeDeleteExecutor<R> implements Runnable {
-
-    private final DependentResourceNode<R, P> dependentResourceNode;
+  private class NodeDeleteExecutor<R> extends NodeExecutor<R, P> {
 
     private NodeDeleteExecutor(DependentResourceNode<R, P> dependentResourceNode) {
-      this.dependentResourceNode = dependentResourceNode;
+      super(dependentResourceNode, WorkflowReconcileExecutor.this);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void run() {
-      try {
-        final var dependentResource =
-            (DependentResource<R, P>) workflow.getDependentResourceFor(dependentResourceNode);
-        var deletePostCondition = dependentResourceNode.getDeletePostcondition();
+    protected void doRun(DependentResourceNode<R, P> dependentResourceNode,
+        DependentResource<R, P> dependentResource) {
+      var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
-        if (dependentResource instanceof Deleter
-            && !(dependentResource instanceof GarbageCollected)) {
-          ((Deleter<P>) dependentResource).delete(primary, context);
-        }
-        boolean deletePostConditionMet =
-            deletePostCondition.map(c -> c.isMet(primary,
-                dependentResource.getSecondaryResource(primary, context).orElse(null),
-                context)).orElse(true);
-        if (deletePostConditionMet) {
-          markAsVisited(dependentResourceNode);
-          handleDependentDeleted(dependentResourceNode);
-        } else {
-          // updating alreadyVisited needs to be the last operation otherwise could lead to a race
-          // condition in handleDelete condition checks
-          deletePostConditionNotMet.add(dependentResourceNode);
-          markAsVisited(dependentResourceNode);
-        }
-      } catch (RuntimeException e) {
-        handleExceptionInExecutor(dependentResourceNode, e);
-      } finally {
-        handleNodeExecutionFinish(dependentResourceNode);
+      if (dependentResource instanceof Deleter
+          && !(dependentResource instanceof GarbageCollected)) {
+        ((Deleter<P>) dependentResource).delete(primary, context);
+      }
+      boolean deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
+      if (deletePostConditionMet) {
+        markAsVisited(dependentResourceNode);
+        handleDependentDeleted(dependentResourceNode);
+      } else {
+        // updating alreadyVisited needs to be the last operation otherwise could lead to a race
+        // condition in handleDelete condition checks
+        deletePostConditionNotMet.add(dependentResourceNode);
+        markAsVisited(dependentResourceNode);
       }
     }
   }

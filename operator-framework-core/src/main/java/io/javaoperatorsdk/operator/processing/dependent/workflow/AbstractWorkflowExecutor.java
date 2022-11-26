@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -96,5 +97,18 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     if (noMoreExecutionsScheduled()) {
       this.notifyAll();
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  protected <R> DependentResource<R, P> getDependentResourceFor(DependentResourceNode<R, P> drn) {
+    return (DependentResource<R, P>) workflow.getDependentResourceFor(drn);
+  }
+
+  protected <R> boolean isConditionMet(Optional<Condition<R, P>> condition,
+      DependentResource<R, P> dependentResource) {
+    return condition.map(c -> c.isMet(primary,
+            dependentResource.getSecondaryResource(primary, context).orElse(null),
+            context))
+        .orElse(true);
   }
 }
