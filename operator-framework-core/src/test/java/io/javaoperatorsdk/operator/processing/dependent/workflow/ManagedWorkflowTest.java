@@ -34,9 +34,8 @@ class ManagedWorkflowTest {
     when(managedWorkflowSupportMock.createWorkflow(any())).thenReturn(mockWorkflow);
     when(managedWorkflowSupportMock.createAndConfigureFrom(any(), any()))
         .thenReturn(mock(DependentResource.class));
-    assertThat(managedWorkflow().isEmptyWorkflow()).isTrue();
 
-    // when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class)));
+    assertThat(managedWorkflow().isEmptyWorkflow()).isTrue();
     assertThat(managedWorkflow(createDRS(NAME)).isEmptyWorkflow()).isFalse();
   }
 
