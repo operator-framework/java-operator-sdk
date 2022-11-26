@@ -37,7 +37,7 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
   protected abstract Logger logger();
 
-  protected void waitForScheduledExecutionsToRun() {
+  protected synchronized void waitForScheduledExecutionsToRun() {
     while (true) {
       try {
         this.wait();
