@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 public abstract class AbstractDependentResourceNode<R, P extends HasMetadata>
@@ -16,6 +17,7 @@ public abstract class AbstractDependentResourceNode<R, P extends HasMetadata>
   private Condition<R, P> reconcilePrecondition;
   private Condition<R, P> deletePostcondition;
   private Condition<R, P> readyPostcondition;
+  private DependentResource<R, P> dependentResource;
 
   protected AbstractDependentResourceNode(String name) {
     this.name = name;
@@ -72,6 +74,14 @@ public abstract class AbstractDependentResourceNode<R, P extends HasMetadata>
 
   public void setReadyPostcondition(Condition<R, P> readyPostcondition) {
     this.readyPostcondition = readyPostcondition;
+  }
+
+  public DependentResource<R, P> getDependentResource() {
+    return dependentResource;
+  }
+
+  public void setDependentResource(DependentResource<R, P> dependentResource) {
+    this.dependentResource = dependentResource;
   }
 
   @Override

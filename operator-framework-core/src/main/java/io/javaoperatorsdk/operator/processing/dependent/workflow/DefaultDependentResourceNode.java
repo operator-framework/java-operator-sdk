@@ -6,8 +6,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 public class DefaultDependentResourceNode<R, P extends HasMetadata>
     extends AbstractDependentResourceNode<R, P> {
 
-  private final DependentResource<R, P> dependentResource;
-
   public DefaultDependentResourceNode(DependentResource<R, P> dependentResource) {
     this(dependentResource, null, null);
   }
@@ -21,17 +19,13 @@ public class DefaultDependentResourceNode<R, P extends HasMetadata>
       Condition<R, P> reconcilePrecondition, Condition<R, P> deletePostcondition) {
     super(DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
         + dependentResource.hashCode());
-    this.dependentResource = dependentResource;
+    setDependentResource(dependentResource);
     setReconcilePrecondition(reconcilePrecondition);
     setDeletePostcondition(deletePostcondition);
   }
 
-  public DependentResource<R, P> getDependentResource() {
-    return dependentResource;
-  }
-
   @Override
   public String toString() {
-    return "DependentResourceNode{" + dependentResource + '}';
+    return "DependentResourceNode{" + getDependentResource() + '}';
   }
 }

@@ -85,6 +85,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   public Workflow<P> build(ExecutorService executorService) {
-    return new Workflow(dependentResourceNodes, executorService, throwExceptionAutomatically);
+    // workflow has been built from dependent resources so it is already resolved
+    return new Workflow(dependentResourceNodes, executorService, throwExceptionAutomatically, true);
   }
 }

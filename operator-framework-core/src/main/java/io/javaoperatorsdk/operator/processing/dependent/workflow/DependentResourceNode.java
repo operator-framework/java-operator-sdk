@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
 @SuppressWarnings("rawtypes")
 public interface DependentResourceNode<R, P extends HasMetadata> {
@@ -23,4 +25,6 @@ public interface DependentResourceNode<R, P extends HasMetadata> {
   void addParent(DependentResourceNode parent);
 
   String getName();
+
+  default void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {}
 }
