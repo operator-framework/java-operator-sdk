@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.dependent.workflow.builder;
+package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -9,10 +9,6 @@ import java.util.concurrent.Executors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.DefaultDependentResourceNode;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 

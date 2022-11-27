@@ -35,12 +35,12 @@ public class Workflow<P extends HasMetadata> {
   private final ExecutorService executorService;
   private boolean resolved;
 
-  public Workflow(Set<DependentResourceNode> dependentResourceNodes) {
+  Workflow(Set<DependentResourceNode> dependentResourceNodes) {
     this(dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
         THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false);
   }
 
-  public Workflow(Set<DependentResourceNode> dependentResourceNodes,
+  Workflow(Set<DependentResourceNode> dependentResourceNodes,
       ExecutorService executorService, boolean throwExceptionAutomatically, boolean resolved) {
     this.executorService = executorService;
     this.dependentResourceNodes = dependentResourceNodes.stream()

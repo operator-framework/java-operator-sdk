@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
-public class SpecDependentResourceNode<R, P extends HasMetadata>
+class SpecDependentResourceNode<R, P extends HasMetadata>
     extends AbstractDependentResourceNode<R, P> {
   @SuppressWarnings("unchecked")
   public SpecDependentResourceNode(DependentResourceSpec<R, P, ?> spec) {

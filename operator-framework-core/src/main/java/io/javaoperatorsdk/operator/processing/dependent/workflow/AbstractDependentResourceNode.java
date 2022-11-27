@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public abstract class AbstractDependentResourceNode<R, P extends HasMetadata>
+abstract class AbstractDependentResourceNode<R, P extends HasMetadata>
     implements DependentResourceNode<R, P> {
 
   private final List<DependentResourceNode> dependsOn = new LinkedList<>();
