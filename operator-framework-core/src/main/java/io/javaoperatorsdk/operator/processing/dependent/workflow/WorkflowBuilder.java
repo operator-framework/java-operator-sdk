@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,7 +17,8 @@ import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private final Set<DefaultDependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
+  private final Map<String, DefaultDependentResourceNode<?, P>> dependentResourceNodes =
+      new HashMap<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
   private DefaultDependentResourceNode currentNode;
   private boolean isCleaner = false;
@@ -23,7 +26,8 @@ public class WorkflowBuilder<P extends HasMetadata> {
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
     currentNode = new DefaultDependentResourceNode<>(dependentResource);
     isCleaner = DependentResource.canDeleteIfAble(dependentResource);
-    dependentResourceNodes.add(currentNode);
+    final var name = currentNode.getName();
+    dependentResourceNodes.put(name, currentNode);
     return this;
   }
 
@@ -58,10 +62,17 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
-    return dependentResourceNodes.stream()
-        .filter(dr -> dr.getDependentResource() == dependentResource)
-        .findFirst()
-        .orElseThrow();
+    // first check by name
+    final var node =
+        dependentResourceNodes.get(DefaultDependentResourceNode.getNameFor(dependentResource));
+    if (node != null) {
+      return node;
+    } else {
+      return dependentResourceNodes.values().stream()
+          .filter(dr -> dr.getDependentResource() == dependentResource)
+          .findFirst()
+          .orElseThrow();
+    }
   }
 
   public boolean isThrowExceptionAutomatically() {
@@ -83,7 +94,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   public Workflow<P> build(ExecutorService executorService) {
     // workflow has been built from dependent resources so it is already resolved
-    return new Workflow(dependentResourceNodes, executorService,
+    return new Workflow(new HashSet<>(dependentResourceNodes.values()), executorService,
         throwExceptionAutomatically, true, isCleaner);
   }
 }

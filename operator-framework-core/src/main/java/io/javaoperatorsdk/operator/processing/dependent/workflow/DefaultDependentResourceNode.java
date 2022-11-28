@@ -12,11 +12,16 @@ class DefaultDependentResourceNode<R, P extends HasMetadata>
 
   public DefaultDependentResourceNode(DependentResource<R, P> dependentResource,
       Condition<R, P> reconcilePrecondition, Condition<R, P> deletePostcondition) {
-    super(DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
-        + dependentResource.hashCode());
+    super(getNameFor(dependentResource));
     setDependentResource(dependentResource);
     setReconcilePrecondition(reconcilePrecondition);
     setDeletePostcondition(deletePostcondition);
+  }
+
+  @SuppressWarnings("rawtypes")
+  static String getNameFor(DependentResource dependentResource) {
+    return DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
+        + dependentResource.hashCode();
   }
 
   @Override
