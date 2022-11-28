@@ -381,7 +381,10 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     public R serverSideApplyLockResource(R resource, R originalResource) {
-      return resource(originalResource).patch(PatchContext.of(PatchType.SERVER_SIDE_APPLY),
+      var patchContext = PatchContext.of(PatchType.SERVER_SIDE_APPLY);
+      // todo verify
+      patchContext.setForce(true);
+      return resource(originalResource).patch(patchContext,
           resource);
     }
 

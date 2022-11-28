@@ -213,7 +213,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withOnDeleteFilter(ItemStore<R> itemStore) {
+    public InformerConfigurationBuilder<R> withItemStore(ItemStore<R> itemStore) {
       this.itemStore = itemStore;
       return this;
     }
