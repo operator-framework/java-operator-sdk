@@ -32,7 +32,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     extends AbstractResourceEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
     RecentOperationCacheFiller<R>,
-    NamespaceChangeable,  InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
+    NamespaceChangeable, InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
@@ -155,6 +155,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   public ResourceConfiguration<R> getInformerConfiguration() {
     return configuration;
   }
+
   @Override
   public C configuration() {
     return manager().configuration();
