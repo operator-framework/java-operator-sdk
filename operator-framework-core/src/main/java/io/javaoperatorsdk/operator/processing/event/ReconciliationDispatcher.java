@@ -342,7 +342,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (Boolean.FALSE.equals(modified)) {
           return resource;
         }
-        return customResourceFacade.patchLockResource(originalResource, resource);
+        return customResourceFacade.serverSideApplyLockResource(resource, originalResource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -380,8 +380,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-    public R patchLockResource(R resource, R originalResource) {
-      return resource(originalResource).patch(PatchContext.of(PatchType.JSON_MERGE), resource);
+    public R serverSideApplyLockResource(R resource, R originalResource) {
+      return resource(originalResource).patch(PatchContext.of(PatchType.SERVER_SIDE_APPLY),
+          resource);
     }
 
     public R updateResource(R resource) {

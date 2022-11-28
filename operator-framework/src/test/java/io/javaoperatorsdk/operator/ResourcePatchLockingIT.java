@@ -17,6 +17,8 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 // todo delete
 class ResourcePatchLockingIT {
 
@@ -33,10 +35,19 @@ class ResourcePatchLockingIT {
     var created = client.configMaps().resource(cm).createOrReplace();
 
     var modified = clone(created);
-    modified.getMetadata().setResourceVersion("1234567");
-    modified.setData(Map.of("key2", "val2"));
-    var patched = client.configMaps().resource(created).patch(PatchContext.of(PatchType.JSON_MERGE),
-        modified);
+    // modified.getMetadata().setResourceVersion("1234567");
+    modified.addFinalizer("finalizer.com/finalizer");
+    var patched =
+        client.configMaps().resource(created).patch(PatchContext.of(PatchType.SERVER_SIDE_APPLY),
+            modified);
+
+    var noFin = clone(patched);
+    noFin.removeFinalizer("finalizer.com/finalizer");
+    patched =
+        client.configMaps().resource(patched).patch(PatchContext.of(PatchType.SERVER_SIDE_APPLY),
+            noFin);
+
+    assertThat(patched.getMetadata().getFinalizers()).isEmpty();
     System.out.println(patched);
   }
 

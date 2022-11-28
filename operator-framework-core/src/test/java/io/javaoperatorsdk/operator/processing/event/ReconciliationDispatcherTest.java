@@ -134,7 +134,7 @@ class ReconciliationDispatcherTest {
     verify(reconciler, never())
         .reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
-        .patchLockResource(
+        .serverSideApplyLockResource(
             argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)),
             any());
     assertThat(testCustomResource.hasFinalizer(DEFAULT_FINALIZER)).isTrue();
@@ -216,7 +216,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(1)).patchLockResource(testCustomResource,
+    verify(customResourceFacade, times(1)).serverSideApplyLockResource(testCustomResource,
         testCustomResource);
   }
 
@@ -226,7 +226,7 @@ class ReconciliationDispatcherTest {
     markForDeletion(testCustomResource);
     var resourceWithFinalizer = TestUtils.testCustomResource();
     resourceWithFinalizer.addFinalizer(DEFAULT_FINALIZER);
-    when(customResourceFacade.patchLockResource(testCustomResource, testCustomResource))
+    when(customResourceFacade.serverSideApplyLockResource(testCustomResource, testCustomResource))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any())).thenReturn(resourceWithFinalizer);
@@ -235,7 +235,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(2)).patchLockResource(any(), any());
+    verify(customResourceFacade, times(2)).serverSideApplyLockResource(any(), any());
     verify(customResourceFacade, times(1)).getResource(any(), any());
   }
 
@@ -243,7 +243,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalRetryExceeded() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.patchLockResource(any(), any()))
+    when(customResourceFacade.serverSideApplyLockResource(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null));
     when(customResourceFacade.getResource(any(), any()))
         .thenAnswer((Answer<TestCustomResource>) invocationOnMock -> createResourceWithFinalizer());
@@ -255,7 +255,8 @@ class ReconciliationDispatcherTest {
     assertThat(postExecControl.getRuntimeException()).isPresent();
     assertThat(postExecControl.getRuntimeException().get())
         .isInstanceOf(OperatorException.class);
-    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).patchLockResource(any(),
+    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).serverSideApplyLockResource(
+        any(),
         any());
     verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY - 1)).getResource(any(),
         any());
@@ -265,7 +266,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalClientExceptionIsNotConflict() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.patchLockResource(any(), any()))
+    when(customResourceFacade.serverSideApplyLockResource(any(), any()))
         .thenThrow(new KubernetesClientException(null, 400, null));
 
     var res =
@@ -273,7 +274,7 @@ class ReconciliationDispatcherTest {
 
     assertThat(res.getRuntimeException()).isPresent();
     assertThat(res.getRuntimeException().get()).isInstanceOf(KubernetesClientException.class);
-    verify(customResourceFacade, times(1)).patchLockResource(any(), any());
+    verify(customResourceFacade, times(1)).serverSideApplyLockResource(any(), any());
     verify(customResourceFacade, never()).getResource(any(), any());
   }
 
@@ -337,13 +338,14 @@ class ReconciliationDispatcherTest {
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.patchLockResource(any(), any())).thenReturn(testCustomResource);
+    when(customResourceFacade.serverSideApplyLockResource(any(), any()))
+        .thenReturn(testCustomResource);
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, times(1)).patchLockResource(any(), any());
+    verify(customResourceFacade, times(1)).serverSideApplyLockResource(any(), any());
     assertThat(postExecControl.updateIsStatusPatch()).isFalse();
     assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }
@@ -650,7 +652,7 @@ class ReconciliationDispatcherTest {
   void retriesAddingFinalizer() {
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.patchLockResource(any(), any()))
+    when(customResourceFacade.serverSideApplyLockResource(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any()))
@@ -661,7 +663,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(2)).patchLockResource(any(), any());
+    verify(customResourceFacade, times(2)).serverSideApplyLockResource(any(), any());
   }
 
   private ObservedGenCustomResource createObservedGenCustomResource() {
