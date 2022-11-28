@@ -14,18 +14,12 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {
 
   private final Workflow<P> workflow;
-  private boolean isCleaner;
   private final boolean isEmptyWorkflow;
-  private final Map<String, DependentResource> dependentResourcesByName;
   private boolean resolved;
-  private final ManagedWorkflowSupport managedWorkflowSupport;
 
-  DefaultManagedWorkflow(List<DependentResourceSpec> dependentResourceSpecs, Workflow<P> workflow,
-      ManagedWorkflowSupport managedWorkflowSupport) {
-    dependentResourcesByName = new HashMap<>(dependentResourceSpecs.size());
+  DefaultManagedWorkflow(List<DependentResourceSpec> dependentResourceSpecs, Workflow<P> workflow) {
     isEmptyWorkflow = dependentResourceSpecs.isEmpty();
     this.workflow = workflow;
-    this.managedWorkflowSupport = managedWorkflowSupport;
   }
 
   public WorkflowReconcileResult reconcile(P primary, Context<P> context) {
@@ -39,8 +33,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   }
 
   public boolean isCleaner() {
-    checkIfResolved();
-    return isCleaner;
+    return workflow.hasCleaner();
   }
 
   public boolean isEmptyWorkflow() {
@@ -49,23 +42,18 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
 
   public Map<String, DependentResource> getDependentResourcesByName() {
     checkIfResolved();
-    return dependentResourcesByName;
+    final var nodes = workflow.nodes();
+    final var result = new HashMap<String, DependentResource>(nodes.size());
+    nodes.forEach((key, drn) -> result.put(key, workflow.getDependentResourceFor(drn)));
+    return result;
   }
 
   @Override
   public ManagedWorkflow<P> resolve(KubernetesClient client, List<DependentResourceSpec> specs) {
-    final boolean[] cleanerHolder = {false};
-    specs.forEach(spec -> {
-      final var dr = managedWorkflowSupport.createAndConfigureFrom(spec, client);
-      dependentResourcesByName.put(spec.getName(), dr);
-      if (DependentResource.canDeleteIfAble(dr)) {
-        cleanerHolder[0] = true;
-      }
-    });
-
-    workflow.resolve(client, specs);
-    isCleaner = cleanerHolder[0];
-    resolved = true;
+    if (!resolved) {
+      workflow.resolve(client, specs);
+      resolved = true;
+    }
     return this;
   }
 

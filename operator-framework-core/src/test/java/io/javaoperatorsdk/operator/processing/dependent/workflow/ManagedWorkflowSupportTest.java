@@ -144,7 +144,7 @@ class ManagedWorkflowSupportTest {
     var workflow = managedWorkflowSupport.createWorkflow(specs);
     workflow.resolve(client, specs);
 
-    assertThat(workflow.nodes()).map(DependentResourceNode::getName)
+    assertThat(workflow.nodes().values()).map(DependentResourceNode::getName)
         .containsExactlyInAnyOrder(NAME_1, NAME_2, NAME_3, NAME_4);
     assertThat(workflow.getTopLevelDependentResources())
         .map(DependentResourceNode::getName)

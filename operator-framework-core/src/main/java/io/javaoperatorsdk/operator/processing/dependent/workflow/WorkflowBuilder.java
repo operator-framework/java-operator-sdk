@@ -17,11 +17,12 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   private final Set<DefaultDependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
-
   private DefaultDependentResourceNode currentNode;
+  private boolean isCleaner = false;
 
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
     currentNode = new DefaultDependentResourceNode<>(dependentResource);
+    isCleaner = DependentResource.canDeleteIfAble(dependentResource);
     dependentResourceNodes.add(currentNode);
     return this;
   }
@@ -82,6 +83,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   public Workflow<P> build(ExecutorService executorService) {
     // workflow has been built from dependent resources so it is already resolved
-    return new Workflow(dependentResourceNodes, executorService, throwExceptionAutomatically, true);
+    return new Workflow(dependentResourceNodes, executorService,
+        throwExceptionAutomatically, true, isCleaner);
   }
 }

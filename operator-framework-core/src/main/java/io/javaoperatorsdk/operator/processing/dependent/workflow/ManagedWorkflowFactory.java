@@ -6,22 +6,17 @@ import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedW
 
 public interface ManagedWorkflowFactory {
 
-  ManagedWorkflowFactory DEFAULT = (configuration, managedWorkflowSupport) -> {
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  ManagedWorkflowFactory DEFAULT = (configuration) -> {
     final var dependentResourceSpecs = configuration.getDependentResources();
     if (dependentResourceSpecs == null || dependentResourceSpecs.isEmpty()) {
       return noOpWorkflow;
     }
     return new DefaultManagedWorkflow(dependentResourceSpecs,
-        managedWorkflowSupport.createWorkflow(dependentResourceSpecs), managedWorkflowSupport);
+        ManagedWorkflowSupport.instance().createWorkflow(dependentResourceSpecs));
   };
 
   @SuppressWarnings("rawtypes")
-  default ManagedWorkflow workflowFor(ControllerConfiguration configuration) {
-    return workflowFor(configuration, ManagedWorkflowSupport.instance());
-  }
-
-  @SuppressWarnings("rawtypes")
-  ManagedWorkflow workflowFor(ControllerConfiguration configuration,
-      ManagedWorkflowSupport managedWorkflowSupport);
+  ManagedWorkflow workflowFor(ControllerConfiguration configuration);
 }
 

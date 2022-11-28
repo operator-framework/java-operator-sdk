@@ -34,24 +34,31 @@ public class Workflow<P extends HasMetadata> {
   // it's "global" executor service shared between multiple reconciliations running parallel
   private final ExecutorService executorService;
   private boolean resolved;
+  private boolean hasCleaner;
 
   Workflow(Set<DependentResourceNode> dependentResourceNodes) {
     this(dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
-        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false);
+        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false, false);
   }
 
   Workflow(Set<DependentResourceNode> dependentResourceNodes,
-      ExecutorService executorService, boolean throwExceptionAutomatically, boolean resolved) {
+      ExecutorService executorService, boolean throwExceptionAutomatically, boolean resolved,
+      boolean hasCleaner) {
     this.executorService = executorService;
     this.dependentResourceNodes = dependentResourceNodes.stream()
         .collect(Collectors.toMap(DependentResourceNode::getName, Function.identity()));
     this.throwExceptionAutomatically = throwExceptionAutomatically;
     this.resolved = resolved;
+    this.hasCleaner = hasCleaner;
     preprocessForReconcile();
   }
 
   public DependentResource getDependentResourceFor(DependentResourceNode node) {
     throwIfUnresolved();
+    return dependentResource(node);
+  }
+
+  private DependentResource dependentResource(DependentResourceNode node) {
     return ((AbstractDependentResourceNode) dependentResourceNodes.get(node.getName()))
         .getDependentResource();
   }
@@ -113,15 +120,29 @@ public class Workflow<P extends HasMetadata> {
     return executorService;
   }
 
-  Set<DependentResourceNode> nodes() {
-    return new HashSet<>(dependentResourceNodes.values());
+  Map<String, DependentResourceNode> nodes() {
+    return dependentResourceNodes;
   }
 
   @SuppressWarnings("unchecked")
-  public void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {
+  void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {
     if (!resolved) {
-      dependentResourceNodes.values().forEach(drn -> drn.resolve(client, dependentResources));
+      final boolean[] cleanerHolder = {false};
+      dependentResourceNodes.values()
+          .forEach(drn -> {
+            drn.resolve(client, dependentResources);
+            final var dr = dependentResource(drn);
+            if (DependentResource.canDeleteIfAble(dr)) {
+              cleanerHolder[0] = true;
+            }
+          });
       resolved = true;
+      hasCleaner = cleanerHolder[0];
     }
+  }
+
+  boolean hasCleaner() {
+    throwIfUnresolved();
+    return hasCleaner;
   }
 }
