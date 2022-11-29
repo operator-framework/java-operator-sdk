@@ -10,6 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("cpr")
 public class CachePruneCustomResource
-    extends CustomResource<Void, CachePruneStatus>
+    extends CustomResource<CachePruneSpec, CachePruneStatus>
     implements Namespaced {
 }

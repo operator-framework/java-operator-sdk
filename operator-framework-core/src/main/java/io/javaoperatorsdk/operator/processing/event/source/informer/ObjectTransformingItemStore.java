@@ -31,9 +31,14 @@ public class ObjectTransformingItemStore<R extends HasMetadata> implements ItemS
 
   @Override
   public R put(String key, R obj) {
+    var originalName = obj.getMetadata().getName();
+    var originalNamespace = obj.getMetadata().getNamespace();
     var originalResourceVersion = obj.getMetadata().getResourceVersion();
+
     var transformed = transformationFunction.apply(obj);
-    // resourceVersion must be always stored.
+
+    transformed.getMetadata().setName(originalName);
+    transformed.getMetadata().setNamespace(originalNamespace);
     transformed.getMetadata().setResourceVersion(originalResourceVersion);
     return store.put(key, transformed);
   }
