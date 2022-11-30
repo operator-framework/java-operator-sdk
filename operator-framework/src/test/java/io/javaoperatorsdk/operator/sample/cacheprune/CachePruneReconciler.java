@@ -2,16 +2,12 @@ package io.javaoperatorsdk.operator.sample.cacheprune;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.assertj.core.util.Lists;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.FieldsV1Builder;
-import io.fabric8.kubernetes.api.model.ManagedFieldsEntryBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -28,23 +24,26 @@ public class CachePruneReconciler
   public static final String DATA_KEY = "data";
   public static final String FIELD_MANAGER = "controller";
   public static final String SECONDARY_CREATE_FIELD_MANAGER = "creator";
-  private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private KubernetesClient client;
 
   @Override
   public UpdateControl<CachePruneCustomResource> reconcile(
       CachePruneCustomResource resource,
       Context<CachePruneCustomResource> context) {
-    numberOfExecutions.addAndGet(1);
-
     var configMap = context.getSecondaryResource(ConfigMap.class);
     configMap.ifPresentOrElse(cm -> {
+      if (cm.getMetadata().getLabels() != null) {
+        throw new AssertionError("Labels should be null");
+      }
       if (!cm.getData().get(DATA_KEY)
           .equals(resource.getSpec().getData())) {
         var cloned = ConfigurationServiceProvider.instance().getResourceCloner().clone(cm);
         cloned.getData().put(DATA_KEY, resource.getSpec().getData());
         var patchContext = patchContextWithFieldManager(FIELD_MANAGER);
-        // setting new field manager since we don't control label anymore
+        // setting new field manager since we don't control label anymore:
+        // since not the whole object is present in cache SSA would remove labels if the controller
+        // is not the manager.
+        // Note that JSON Merge Patch (or others would also work here, without this "hack".
         patchContext.setForce(true);
         patchContext.setFieldManager(FIELD_MANAGER);
         client.configMaps().resource(cm)
@@ -58,13 +57,10 @@ public class CachePruneReconciler
     return UpdateControl.patchStatus(resource);
   }
 
-
-  public int getNumberOfExecutions() {
-    return numberOfExecutions.get();
-  }
-
   private PatchContext patchContextWithFieldManager(String fieldManager) {
     PatchContext patchContext = new PatchContext();
+    // using server side apply
+    patchContext.setPatchType(PatchType.SERVER_SIDE_APPLY);
     patchContext.setFieldManager(fieldManager);
     return patchContext;
   }
@@ -85,16 +81,6 @@ public class CachePruneReconciler
     configMap.setMetadata(new ObjectMeta());
     configMap.getMetadata().setName(resource.getMetadata().getName());
     configMap.getMetadata().setNamespace(resource.getMetadata().getNamespace());
-    configMap.getMetadata().setManagedFields(Lists.list(new ManagedFieldsEntryBuilder()
-        .withApiVersion("v1")
-        .withFieldsType("FieldsV1")
-        .withManager("fabric8")
-        .withOperation("Apply")
-        .withTime("2022-11-30T09:27:00.000Z")
-        .withFieldsV1(new FieldsV1Builder()
-            .withAdditionalProperties(Map.of("f:data", Map.of("f:data", Map.of())))
-            .build())
-        .build()));
     configMap.setData(Map.of(DATA_KEY, resource.getSpec().getData()));
     HashMap<String, String> labels = new HashMap<>();
     labels.put("mylabel", "val");

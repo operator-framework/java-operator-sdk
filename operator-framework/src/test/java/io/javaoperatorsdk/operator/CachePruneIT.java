@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class CachePruneIT {
-  // todo temp cache item store?
 
   public static final String DEFAULT_DATA = "default_data";
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String UPDATED_DATA = "updated_data";
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
@@ -31,27 +31,14 @@ class CachePruneIT {
   void pruningRelatedBehavior() {
     var res = operator.create(testResource());
     await().untilAsserted(() -> {
-      var actual = operator.get(CachePruneCustomResource.class, TEST_RESOURCE_NAME);
-      assertThat(actual.getMetadata()).isNotNull();
-      assertThat(actual.getMetadata().getFinalizers()).isNotEmpty();
-      assertThat(actual.getStatus().getCreated()).isTrue();
-      assertThat(actual.getMetadata().getLabels()).isNotEmpty();
-      var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(configMap.getData()).containsEntry(DATA_KEY, DEFAULT_DATA);
-      assertThat(configMap.getMetadata().getLabels()).isNotEmpty();
+      assertState(DEFAULT_DATA);
     });
 
     res.getSpec().setData(UPDATED_DATA);
     var updated = operator.replace(res);
 
     await().untilAsserted(() -> {
-      var actual = operator.get(CachePruneCustomResource.class, TEST_RESOURCE_NAME);
-      var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(actual.getStatus().getCreated()).isTrue();
-      assertThat(actual.getMetadata().getLabels()).isNotEmpty();
-      assertThat(actual.getMetadata().getFinalizers()).isNotEmpty();
-      assertThat(configMap.getData()).containsEntry(DATA_KEY, UPDATED_DATA);
-      assertThat(configMap.getMetadata().getLabels()).isNotEmpty();
+      assertState(UPDATED_DATA);
     });
 
     operator.delete(updated);
@@ -62,6 +49,17 @@ class CachePruneIT {
       assertThat(configMap).isNull();
       assertThat(actual).isNull();
     });
+  }
+
+  void assertState(String expectedData) {
+    var actual = operator.get(CachePruneCustomResource.class, TEST_RESOURCE_NAME);
+    assertThat(actual.getMetadata()).isNotNull();
+    assertThat(actual.getMetadata().getFinalizers()).isNotEmpty();
+    assertThat(actual.getStatus().getCreated()).isTrue();
+    assertThat(actual.getMetadata().getLabels()).isNotEmpty();
+    var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
+    assertThat(configMap.getData()).containsEntry(DATA_KEY, expectedData);
+    assertThat(configMap.getMetadata().getLabels()).isNotEmpty();
   }
 
   CachePruneCustomResource testResource() {
