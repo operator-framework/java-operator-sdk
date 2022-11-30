@@ -49,8 +49,18 @@ class CachePruneIT {
       var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(actual.getStatus().getCreated()).isTrue();
       assertThat(actual.getMetadata().getLabels()).isNotEmpty();
+      assertThat(actual.getMetadata().getFinalizers()).isNotEmpty();
       assertThat(configMap.getData()).containsEntry(DATA_KEY, UPDATED_DATA);
       assertThat(configMap.getMetadata().getLabels()).isNotEmpty();
+    });
+
+    operator.delete(updated);
+
+    await().untilAsserted(() -> {
+      var actual = operator.get(CachePruneCustomResource.class, TEST_RESOURCE_NAME);
+      var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
+      assertThat(configMap).isNull();
+      assertThat(actual).isNull();
     });
   }
 
