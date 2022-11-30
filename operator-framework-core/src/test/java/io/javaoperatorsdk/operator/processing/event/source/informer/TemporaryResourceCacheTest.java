@@ -3,11 +3,10 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.Map;
 import java.util.Optional;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,7 +83,10 @@ class TemporaryResourceCacheTest {
   @Test
   void objectIsTransformedBeforePutIntoCache() {
     temporaryResourceCache =
-            new TemporaryResourceCache<>(informerEventSource, r->{r.getMetadata().setLabels(null);return r;});
+        new TemporaryResourceCache<>(informerEventSource, r -> {
+          r.getMetadata().setLabels(null);
+          return r;
+        });
 
     temporaryResourceCache.putAddedResource(testResource());
     assertLabelsIsEmpty(temporaryResourceCache);
@@ -98,7 +100,7 @@ class TemporaryResourceCacheTest {
 
   private void assertLabelsIsEmpty(TemporaryResourceCache<ConfigMap> temporaryResourceCache) {
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource()))
-            .orElseThrow().getMetadata().getLabels()).isNull();
+        .orElseThrow().getMetadata().getLabels()).isNull();
   }
 
   private ConfigMap propagateTestResourceToCache() {
@@ -113,8 +115,8 @@ class TemporaryResourceCacheTest {
   ConfigMap testResource() {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
-                    .withLabels(Map.of("k","v"))
-            .build());
+        .withLabels(Map.of("k", "v"))
+        .build());
     configMap.getMetadata().setName("test");
     configMap.getMetadata().setNamespace("default");
     configMap.getMetadata().setResourceVersion(RESOURCE_VERSION);
