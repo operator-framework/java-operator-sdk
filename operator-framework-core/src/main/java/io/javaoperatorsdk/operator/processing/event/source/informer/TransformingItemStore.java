@@ -2,24 +2,25 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 
-public class ObjectTransformingItemStore<R extends HasMetadata> implements ItemStore<R> {
+public class TransformingItemStore<R extends HasMetadata> implements ItemStore<R> {
 
   private Function<R, String> keyFunction;
-  private Function<R, R> transformationFunction;
+  private UnaryOperator<R> transformationFunction;
   private ConcurrentHashMap<String, R> store = new ConcurrentHashMap<>();
 
-  public ObjectTransformingItemStore(Function<R, R> transformationFunction) {
+  public TransformingItemStore(UnaryOperator<R> transformationFunction) {
     this(Cache::metaNamespaceKeyFunc, transformationFunction);
   }
 
-  public ObjectTransformingItemStore(Function<R, String> keyFunction,
-      Function<R, R> transformationFunction) {
+  public TransformingItemStore(Function<R, String> keyFunction,
+      UnaryOperator<R> transformationFunction) {
     this.keyFunction = keyFunction;
     this.transformationFunction = transformationFunction;
   }

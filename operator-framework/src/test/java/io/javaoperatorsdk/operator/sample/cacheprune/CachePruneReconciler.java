@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(itemStore = LabelRemovingItemStore.class)
+@ControllerConfiguration(cachePruneFunction = LabelRemovingPruneFunction.class)
 public class CachePruneReconciler
     implements Reconciler<CachePruneCustomResource>,
     EventSourceInitializer<CachePruneCustomResource>,
@@ -74,7 +74,7 @@ public class CachePruneReconciler
       EventSourceContext<CachePruneCustomResource> context) {
     InformerEventSource<ConfigMap, CachePruneCustomResource> configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-            .withItemStore(new LabelRemovingItemStore<>())
+            .withCachePruneFunction(new LabelRemovingPruneFunction<>())
             .build(),
             context);
     return EventSourceInitializer.nameEventSources(configMapEventSource);

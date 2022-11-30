@@ -6,10 +6,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -39,7 +39,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private OnUpdateFilter<R> onUpdateFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
-  private ItemStore<R> itemStore;
+  private UnaryOperator<R> cachePruneFunction;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -58,7 +58,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
-    this.itemStore = original.itemStore().orElse(null);
+    this.cachePruneFunction = original.cachePruneFunction().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -161,8 +161,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withItemStore(ItemStore<R> itemStore) {
-    this.itemStore = itemStore;
+  public ControllerConfigurationOverrider<R> withItemStore(UnaryOperator<R> cachePruneFunction) {
+    this.cachePruneFunction = cachePruneFunction;
     return this;
   }
 
@@ -216,7 +216,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         onUpdateFilter,
         genericFilter,
         rateLimiter,
-        newDependentSpecs, itemStore);
+        newDependentSpecs, cachePruneFunction);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

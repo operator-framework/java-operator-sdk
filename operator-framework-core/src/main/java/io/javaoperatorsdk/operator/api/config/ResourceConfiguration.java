@@ -3,9 +3,9 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -110,7 +110,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return targetNamespaces;
   }
 
-  default Optional<ItemStore<R>> itemStore() {
+  default Optional<UnaryOperator<R>> cachePruneFunction() {
     return Optional.empty();
   }
 }

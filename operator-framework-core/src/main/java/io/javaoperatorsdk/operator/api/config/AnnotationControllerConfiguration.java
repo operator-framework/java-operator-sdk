@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -86,9 +86,9 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
 
   @Override
   @SuppressWarnings("unchecked")
-  public Optional<ItemStore<P>> itemStore() {
+  public Optional<UnaryOperator<P>> cachePruneFunction() {
     return Optional.ofNullable(
-        Utils.instantiate(annotation.itemStore(), ItemStore.class,
+        Utils.instantiate(annotation.cachePruneFunction(), UnaryOperator.class,
             Utils.contextFor(this, null, null)));
   }
 

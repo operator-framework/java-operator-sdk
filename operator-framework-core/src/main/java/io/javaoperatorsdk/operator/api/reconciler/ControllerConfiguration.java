@@ -5,8 +5,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.function.UnaryOperator;
 
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -120,5 +120,5 @@ public @interface ControllerConfiguration {
    */
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
 
-  Class<? extends ItemStore> itemStore() default ItemStore.class;
+  Class<? extends UnaryOperator> cachePruneFunction() default UnaryOperator.class;
 }
