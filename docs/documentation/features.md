@@ -725,6 +725,8 @@ To see how to use, and how to handle related caveats regarding patches what util
 [server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) check the provided
 [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/c688524e64205690ba15587e7ed96a64dc231430/operator-framework/src/test/java/io/javaoperatorsdk/operator/CachePruneIT.java) and reconciler.
 
+Dependent Resources does not work with pruned caches for now.
+
 ## Automatic Generation of CRDs
 
 Note that this feature is provided by the
