@@ -358,9 +358,12 @@ public class Controller<P extends HasMetadata>
   }
 
   public void changeNamespaces(Set<String> namespaces) {
-    if (namespaces.contains(Constants.WATCH_ALL_NAMESPACES)
-        || namespaces.contains(WATCH_CURRENT_NAMESPACE)) {
+    if (namespaces.contains(WATCH_CURRENT_NAMESPACE)) {
       throw new OperatorException("Unexpected value in target namespaces: " + namespaces);
+    }
+    if (namespaces.contains(Constants.WATCH_ALL_NAMESPACES) && namespaces.size() > 1) {
+      throw new OperatorException(
+          "Watching all namespaces, but additional specific namespace is present");
     }
     eventProcessor.stop();
     eventSourceManager.changeNamespaces(namespaces);

@@ -58,17 +58,12 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     final var labelSelector = configuration.getLabelSelector();
 
     if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
-      final var filteredBySelectorClient =
-          client.inAnyNamespace().withLabelSelector(labelSelector);
-      final var source =
-          createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
+      var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
       log.debug("Registered {} -> {} for any namespace", this, source);
     } else {
       targetNamespaces.forEach(
           ns -> {
-            final var source =
-                createEventSource(client.inNamespace(ns).withLabelSelector(labelSelector),
-                    eventHandler, ns);
+            final var source = createEventSourceForNamespace(ns);
             log.debug("Registered {} -> {} for namespace: {}", this, source,
                 ns);
           });
@@ -87,10 +82,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
     namespaces.forEach(ns -> {
       if (!sources.containsKey(ns)) {
-        final var source =
-            createEventSource(
-                client.inNamespace(ns).withLabelSelector(configuration.getLabelSelector()),
-                eventHandler, ns);
+        final InformerWrapper<T> source = createEventSourceForNamespace(ns);
         source.addIndexers(this.indexers);
         source.start();
         log.debug("Registered new {} -> {} for namespace: {}", this, source,
@@ -100,6 +92,19 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
 
+  private InformerWrapper<T> createEventSourceForNamespace(String namespace) {
+    final InformerWrapper<T> source;
+    if (namespace.equals(WATCH_ALL_NAMESPACES)) {
+      final var filteredBySelectorClient =
+          client.inAnyNamespace().withLabelSelector(configuration.getLabelSelector());
+      source = createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
+    } else {
+      source = createEventSource(
+          client.inNamespace(namespace).withLabelSelector(configuration.getLabelSelector()),
+          eventHandler, namespace);
+    }
+    return source;
+  }
 
   private InformerWrapper<T> createEventSource(
       FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,

@@ -25,6 +25,7 @@ class ChangeNamespaceIT {
   public static final String TEST_RESOURCE_NAME_2 = "test2";
   public static final String TEST_RESOURCE_NAME_3 = "test3";
   public static final String ADDITIONAL_TEST_NAMESPACE = "additional-test-namespace";
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(new ChangeNamespaceTestReconciler())
