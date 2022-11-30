@@ -31,12 +31,19 @@ class TransformingItemStoreTest {
   void preservesSelectedAttributes() {
     TransformingItemStore<ConfigMap> transformingItemStore = new TransformingItemStore<>(r -> {
       r.getMetadata().setName(null);
+      r.getMetadata().setNamespace(null);
+      r.getMetadata().setResourceVersion(null);
       return r;
     });
     var cm = configMap();
     transformingItemStore.put(metaNamespaceKeyFunc(cm), cm);
 
     assertThat(transformingItemStore.get(metaNamespaceKeyFunc(cm)).getMetadata().getName())
+        .isNotNull();
+    assertThat(transformingItemStore.get(metaNamespaceKeyFunc(cm)).getMetadata().getNamespace())
+        .isNotNull();
+    assertThat(
+        transformingItemStore.get(metaNamespaceKeyFunc(cm)).getMetadata().getResourceVersion())
         .isNotNull();
   }
 

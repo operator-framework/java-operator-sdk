@@ -711,7 +711,7 @@ setting, where this flag usually needs to be set to false, in order to control t
 See also an example implementation in the 
 [WebPage sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/3e2e7c4c834ef1c409d636156b988125744ca911/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageOperator.java#L38-L43)
 
-## Monitoring with Micrometer
+## Optimization of Caches
 
 ## Automatic Generation of CRDs
 

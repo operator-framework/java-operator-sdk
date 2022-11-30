@@ -32,7 +32,7 @@ public class CachePruneReconciler
       Context<CachePruneCustomResource> context) {
     var configMap = context.getSecondaryResource(ConfigMap.class);
     configMap.ifPresentOrElse(cm -> {
-      if (cm.getMetadata().getLabels() != null) {
+      if (!cm.getMetadata().getLabels().isEmpty()) {
         throw new AssertionError("Labels should be null");
       }
       if (!cm.getData().get(DATA_KEY)

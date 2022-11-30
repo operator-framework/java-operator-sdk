@@ -120,5 +120,13 @@ public @interface ControllerConfiguration {
    */
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
 
+  /**
+   * In order to optimize cache, thus set null on some attributes, this function can be set. Note
+   * that this has subtle implications how updates on the resources should be handled. Notably only
+   * patching of the resource can be used from that point, since update would remove not cached
+   * parts of the resource.
+   *
+   * @return function to remove parts of the resource.
+   */
   Class<? extends UnaryOperator> cachePruneFunction() default UnaryOperator.class;
 }
