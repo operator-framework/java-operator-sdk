@@ -713,7 +713,17 @@ See also an example implementation in the
 
 ## Optimization of Caches
 
-In case of large clusters with huge amount of resources the memory consumption of an operator
+In case of large clusters with huge amount of resources the memory consumption of an operator.
+In order to reduce the memory consumption both primary and secondary resources in cache can be pruned, thus only
+partial objects will remain in memory. 
+
+This has some implications regarding how those objects needs to be managed within a reconciler. Since from this point
+reconciler will work only from partial object, all the updates on the pruned resources needs to be done by a PATCH
+operations, thus just to send only the required changes. 
+
+To see how to use, and how to handle related caveats regarding patches what utilizes 
+[server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) check the provided
+[integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/c688524e64205690ba15587e7ed96a64dc231430/operator-framework/src/test/java/io/javaoperatorsdk/operator/CachePruneIT.java) and reconciler.
 
 ## Automatic Generation of CRDs
 
