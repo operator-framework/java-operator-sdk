@@ -81,6 +81,17 @@ class ChangeNamespaceIT {
     }
   }
 
+  // todo
+  @Test
+  void changeToWatchAllNamespaces() {
+
+  }
+
+  @Test
+  void changeFromWatchAllNamespaces() {
+
+  }
+
   private ChangeNamespaceTestCustomResource createResourceInTestNamespace() {
     var res = customResource(TEST_RESOURCE_NAME_2);
     return client().resources(ChangeNamespaceTestCustomResource.class)
