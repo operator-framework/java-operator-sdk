@@ -39,7 +39,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
-  // todo prune
   public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
       UnaryOperator<T> cachePruneFunction) {
     this.managedInformerEventSource = managedInformerEventSource;
@@ -51,14 +50,14 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public synchronized void unconditionallyCacheResource(T newResource) {
-    cache.put(ResourceID.fromResource(newResource), newResource);
+    putToCache(newResource, null);
   }
 
   public synchronized void putAddedResource(T newResource) {
     ResourceID resourceID = ResourceID.fromResource(newResource);
     if (managedInformerEventSource.get(resourceID).isEmpty()) {
       log.debug("Putting resource to cache with ID: {}", resourceID);
-      cache.put(resourceID, newResource);
+      putToCache(newResource, resourceID);
     } else {
       log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
     }
@@ -75,7 +74,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (informerCacheResource.get().getMetadata().getResourceVersion()
         .equals(previousResourceVersion)) {
       log.debug("Putting resource to temporal cache with id: {}", resourceId);
-      cache.put(resourceId, newResource);
+      putToCache(newResource, resourceId);
     } else {
       // if something is in cache it's surely obsolete now
       log.debug("Trying to remove an obsolete resource from cache for id: {}", resourceId);
@@ -83,7 +82,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
-
+  private void putToCache(T resource, ResourceID resourceID) {
+    if (cachePruneFunction != null) {
+      resource = cachePruneFunction.apply(resource);
+    }
+    cache.put(resourceID == null ? ResourceID.fromResource(resource) : resourceID, resource);
+  }
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
