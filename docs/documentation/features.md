@@ -713,6 +713,8 @@ See also an example implementation in the
 
 ## Optimization of Caches
 
+In case of large clusters with huge amount of resources the memory consumption of an operator
+
 ## Automatic Generation of CRDs
 
 Note that this feature is provided by the

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ class CachePruneIT {
 
     operator.delete(updated);
 
-    await().untilAsserted(() -> {
+    await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
       var actual = operator.get(CachePruneCustomResource.class, TEST_RESOURCE_NAME);
       var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(configMap).isNull();

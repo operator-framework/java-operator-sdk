@@ -125,6 +125,9 @@ public @interface ControllerConfiguration {
    * that this has subtle implications how updates on the resources should be handled. Notably only
    * patching of the resource can be used from that point, since update would remove not cached
    * parts of the resource.
+   * <p>
+   * Note that this feature does not work with Dependent Resources.
+   * </p>
    *
    * @return function to remove parts of the resource.
    */
