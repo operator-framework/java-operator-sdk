@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
+import io.javaoperatorsdk.operator.api.config.ConfigurationConverter;
+import io.javaoperatorsdk.operator.api.config.Configured;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -24,6 +26,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -181,6 +185,19 @@ class AnnotationControllerConfigurationTest {
   void controllerConfigurationOnSuperClassShouldWork() {
     var config = new AnnotationControllerConfiguration<>(new ControllerConfigurationOnSuperClass());
     assertNotNull(config.getName());
+  }
+
+  @Test
+  @SuppressWarnings("rawtypes")
+  void configuringFromCustomAnnotationsShouldWork() {
+    var config = new AnnotationControllerConfiguration<>(new CustomAnnotationReconciler());
+    final var dependents = config.getDependentResources();
+    final var dep1 = ((DependentResourceConfigurator) dependents.get(0).getDependentResource());
+    assertEquals(CustomAnnotatedDep.PROVIDED_VALUE,
+        ((CustomConfig) dep1.configuration().orElseThrow()).getValue());
+    final var dep2 = ((DependentResourceConfigurator) dependents.get(1).getDependentResource());
+    assertEquals(CustomConfigConverter.CONVERTER_PROVIDED_DEFAULT,
+        ((CustomConfig) dep2.configuration().orElseThrow()).getValue());
   }
 
   @ControllerConfiguration(
@@ -351,6 +368,86 @@ class AnnotationControllerConfigurationTest {
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
+    }
+  }
+
+  @ControllerConfiguration(dependents = {
+      @Dependent(type = CustomAnnotatedDep.class),
+      @Dependent(type = ChildCustomAnnotatedDep.class)
+  })
+  private static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return null;
+    }
+  }
+
+  @CustomAnnotation(value = CustomAnnotatedDep.PROVIDED_VALUE)
+  @Configured(by = CustomAnnotation.class, with = CustomConfig.class,
+      converter = CustomConfigConverter.class)
+  private static class CustomAnnotatedDep implements DependentResource<ConfigMap, ConfigMap>,
+      DependentResourceConfigurator<CustomConfig> {
+
+    public static final int PROVIDED_VALUE = 42;
+    private CustomConfig config;
+
+    @Override
+    public ReconcileResult<ConfigMap> reconcile(ConfigMap primary, Context<ConfigMap> context) {
+      return null;
+    }
+
+    @Override
+    public Class<ConfigMap> resourceType() {
+      return ConfigMap.class;
+    }
+
+    @Override
+    public void configureWith(CustomConfig config) {
+      this.config = config;
+    }
+
+    @Override
+    public Optional<CustomConfig> configuration() {
+      return Optional.ofNullable(config);
+    }
+  }
+
+  private static class ChildCustomAnnotatedDep extends CustomAnnotatedDep {
+
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  private @interface CustomAnnotation {
+    int value();
+  }
+
+  private static class CustomConfig {
+    private final int value;
+
+    private CustomConfig(int value) {
+      this.value = value;
+    }
+
+    public int getValue() {
+      return value;
+    }
+  }
+
+  private static class CustomConfigConverter
+      implements ConfigurationConverter<CustomAnnotation, CustomConfig, CustomAnnotatedDep> {
+    static final int CONVERTER_PROVIDED_DEFAULT = 7;
+
+    @Override
+    public CustomConfig configFrom(CustomAnnotation configAnnotation,
+        io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> parentConfiguration,
+        Class<CustomAnnotatedDep> originatingClass) {
+      if (configAnnotation == null) {
+        return new CustomConfig(CONVERTER_PROVIDED_DEFAULT);
+      } else {
+        return new CustomConfig(configAnnotation.value());
+      }
     }
   }
 }

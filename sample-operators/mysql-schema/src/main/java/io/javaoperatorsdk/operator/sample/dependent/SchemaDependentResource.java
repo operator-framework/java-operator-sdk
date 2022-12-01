@@ -12,14 +12,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.operator.api.config.ConfigurationConverter;
+import io.javaoperatorsdk.operator.api.config.Configured;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
 import io.javaoperatorsdk.operator.sample.MySQLSchema;
+import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource.ResourcePollerConfigConverter;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
 
@@ -30,9 +33,11 @@ import static java.lang.String.format;
 @SchemaConfig(pollPeriod = 700, host = "127.0.0.1",
     port = SchemaDependentResource.LOCAL_PORT,
     user = "root", password = "password") // NOSONAR: password is only used locally, example only
+@Configured(by = SchemaConfig.class, with = ResourcePollerConfig.class,
+    converter = ResourcePollerConfigConverter.class)
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
-    implements AnnotationDependentResourceConfigurator<SchemaConfig, ResourcePollerConfig>,
+    implements DependentResourceConfigurator<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
 
   public static final String NAME = "schema";
@@ -54,18 +59,6 @@ public class SchemaDependentResource
   public void configureWith(ResourcePollerConfig config) {
     this.dbConfig = config.getMySQLDbConfig();
     setPollingPeriod(config.getPollPeriod());
-  }
-
-  @Override
-  public ResourcePollerConfig configFrom(SchemaConfig annotation,
-      ControllerConfiguration<?> parentConfiguration) {
-    if (annotation != null) {
-      return new ResourcePollerConfig(annotation.pollPeriod(),
-          new MySQLDbConfig(annotation.host(), "" + annotation.port(),
-              annotation.user(), annotation.password()));
-    }
-    return new ResourcePollerConfig(SchemaConfig.DEFAULT_POLL_PERIOD,
-        MySQLDbConfig.loadFromEnvironmentVars());
   }
 
   @Override
@@ -118,6 +111,23 @@ public class SchemaDependentResource
           .map(Set::of).orElse(Collections.emptySet());
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying read Schema", e);
+    }
+  }
+
+  static class ResourcePollerConfigConverter implements
+      ConfigurationConverter<SchemaConfig, ResourcePollerConfig, SchemaDependentResource> {
+
+    @Override
+    public ResourcePollerConfig configFrom(SchemaConfig configAnnotation,
+        ControllerConfiguration<?> parentConfiguration,
+        Class<SchemaDependentResource> originatingClass) {
+      if (configAnnotation != null) {
+        return new ResourcePollerConfig(configAnnotation.pollPeriod(),
+            new MySQLDbConfig(configAnnotation.host(), "" + configAnnotation.port(),
+                configAnnotation.user(), configAnnotation.password()));
+      }
+      return new ResourcePollerConfig(SchemaConfig.DEFAULT_POLL_PERIOD,
+          MySQLDbConfig.loadFromEnvironmentVars());
     }
   }
 }
