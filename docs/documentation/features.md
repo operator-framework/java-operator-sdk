@@ -713,19 +713,25 @@ See also an example implementation in the
 
 ## Optimization of Caches
 
-In case of large clusters with huge amount of resources the memory consumption of an operator.
-In order to reduce the memory consumption both primary and secondary resources in cache can be pruned, thus only
-partial objects will remain in memory. 
+Operators using informers will initially cache the data for all known resources when starting up 
+so that access to resources can be performed quickly. Consequently, the memory required for the 
+operator to run and startup time will both increase quite dramatically when dealing with large
+clusters with numerous resources. 
 
-This has some implications regarding how those objects needs to be managed within a reconciler. Since from this point
-reconciler will work only from partial object, all the updates on the pruned resources needs to be done by a PATCH
-operations, thus just to send only the required changes. 
+It is thus possible to configure the operator to cache only pruned versions of the resources to 
+alleviate the memory usage of the primary and secondary caches. This setup, however, has 
+implications on how reconcilers deal with resources since they will only work with partial 
+objects. As a consequence, resources need to be updated using PATCH operations only, sending 
+only required changes. 
 
-To see how to use, and how to handle related caveats regarding patches what utilizes 
-[server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) check the provided
-[integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/c688524e64205690ba15587e7ed96a64dc231430/operator-framework/src/test/java/io/javaoperatorsdk/operator/CachePruneIT.java) and reconciler.
+To see how to use, and how to handle related caveats regarding how to deal with pruned objects 
+that leverage  
+[server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) patches, 
+please check the provided
+[integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/c688524e64205690ba15587e7ed96a64dc231430/operator-framework/src/test/java/io/javaoperatorsdk/operator/CachePruneIT.java) 
+and associates reconciler.
 
-Dependent Resources does not work with pruned caches for now.
+Pruned caches are currently not supported with the Dependent Resources feature.
 
 ## Automatic Generation of CRDs
 
