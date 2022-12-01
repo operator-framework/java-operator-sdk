@@ -7,16 +7,8 @@ permalink: /docs/using-samples
 
 # Sample Operators we Provide
 
-We have few simple Operators under
-the [smoke-test-samples](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/smoke-test-samples) directory.
-These are used mainly to showcase some minimal operators, but also to do some sanity checks during development:
-
-* *pure-java*: Minimal Operator implementation which only parses the Custom Resource and prints to stdout. Implemented
-  with and without Spring Boot support. The two samples share the common module.
-* *spring-boot-plain*: Sample showing integration with Spring Boot.
-
-In addition to that, there are examples under [sample-operators](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/sample-operators)
-directory which are intended to show usage of different components in different scenarios, but mainly are more real world
+We have examples under [sample-operators](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/sample-operators)
+directory which are intended to demonstrate the usage of different components in different scenarios, but mainly are more real world
 examples:
 
 * *webpage*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code.
