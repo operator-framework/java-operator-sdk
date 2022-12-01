@@ -150,12 +150,11 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           return;
         }
         state.setUnderProcessing(true);
-        final var latest = maybeLatest.get();
-        ExecutionScope<P> executionScope = new ExecutionScope<>(latest, state.getRetry());
+        ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
         state.unMarkEventReceived();
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
-        executor.execute(new ReconcilerExecutor(executionScope));
+        executor.execute(new ReconcilerExecutor(resourceID, executionScope));
       } else {
         log.debug(
             "Skipping executing controller for resource id: {}. Controller in execution: {}. Latest Resource present: {}",
@@ -388,9 +387,11 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   private class ReconcilerExecutor implements Runnable {
     private final ExecutionScope<P> executionScope;
+    private final ResourceID resourceID;
 
-    private ReconcilerExecutor(ExecutionScope<P> executionScope) {
+    private ReconcilerExecutor(ResourceID resourceID, ExecutionScope<P> executionScope) {
       this.executionScope = executionScope;
+      this.resourceID = resourceID;
     }
 
     @Override
@@ -399,6 +400,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       final var thread = Thread.currentThread();
       final var name = thread.getName();
       try {
+        var actualResource = cache.get(resourceID);
+        if (actualResource.isEmpty()) {
+          log.debug("Skipping execution; primary resource missing from cache: {}",
+              resourceID);
+          return;
+        }
+        actualResource.ifPresent(executionScope::setResource);
         MDCUtils.addResourceInfo(executionScope.getResource());
         thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
         PostExecutionControl<P> postExecutionControl =
