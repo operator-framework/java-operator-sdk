@@ -161,7 +161,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withItemStore(UnaryOperator<R> cachePruneFunction) {
+  public ControllerConfigurationOverrider<R> withCachePruneFunction(
+      UnaryOperator<R> cachePruneFunction) {
     this.cachePruneFunction = cachePruneFunction;
     return this;
   }

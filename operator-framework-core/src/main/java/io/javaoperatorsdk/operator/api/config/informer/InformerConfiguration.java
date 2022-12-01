@@ -213,8 +213,9 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withCachePruneFunction(UnaryOperator<R> itemStore) {
-      this.cachePruneFunction = itemStore;
+    public InformerConfigurationBuilder<R> withCachePruneFunction(
+        UnaryOperator<R> cachePruneFunction) {
+      this.cachePruneFunction = cachePruneFunction;
       return this;
     }
 
