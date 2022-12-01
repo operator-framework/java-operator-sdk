@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Version;
@@ -20,6 +21,7 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 @SuppressWarnings("rawtypes")
 public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
+  private static final int DEFAULT_MAX_CONCURRENT_REQUEST = 512;
   private final KubernetesClient kubernetesClient;
   private final ControllerManager controllerManager = new ControllerManager();
   private final LeaderElectionManager leaderElectionManager =
@@ -59,7 +61,11 @@ public class Operator implements LifecycleAware {
    */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
     this.kubernetesClient =
-        kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
+        kubernetesClient != null ? kubernetesClient
+            : new KubernetesClientBuilder()
+                .withConfig(new ConfigBuilder()
+                    .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST).build())
+                .build();
     ConfigurationServiceProvider.set(configurationService);
     configurationService.getLeaderElectionConfiguration()
         .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
