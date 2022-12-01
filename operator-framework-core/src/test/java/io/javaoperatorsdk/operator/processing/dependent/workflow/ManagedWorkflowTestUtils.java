@@ -9,6 +9,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,13 +32,12 @@ public class ManagedWorkflowTestUtils {
     Class<? extends DependentResource> toMock = DependentResource.class;
     final var garbageCollected = dependentResourceTraits != null &&
         Arrays.asList(dependentResourceTraits).contains(GarbageCollected.class);
+    if (garbageCollected) {
+      toMock = KubernetesDependentResource.class;
+    }
 
     final var dr = mock(toMock, withSettings().extraInterfaces(dependentResourceTraits));
-    // it would be better to call the real method here but it doesn't work because
-    // KubernetesDependentResource checks for GarbageCollected trait when instantiated which doesn't
-    // happen when using mocks
-    when(dr.isDeletable()).thenReturn(!garbageCollected);
-    when(spy.getDependentResource()).thenReturn(dr);
+    when(spy.getDependentResourceClass()).thenReturn(dr.getClass());
     return spy;
   }
 

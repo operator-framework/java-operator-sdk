@@ -82,7 +82,7 @@ public class Controller<P extends HasMetadata>
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
     managedWorkflow = configurationService.getWorkflowFactory().workflowFor(configuration);
-    managedWorkflow.resolve(kubernetesClient, configuration.getDependentResources());
+    managedWorkflow.resolve(kubernetesClient, configuration);
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);

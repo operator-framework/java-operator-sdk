@@ -50,16 +50,19 @@ class ManagedWorkflowSupport {
       List<DependentResourceSpec> dependentResourceSpecs) {
     var orderedResourceSpecs = orderAndDetectCycles(dependentResourceSpecs);
     final var alreadyCreated = new ArrayList<DependentResourceNode>(orderedResourceSpecs.size());
+    final boolean[] cleanerHolder = {false};
     final var nodes = orderedResourceSpecs.stream()
-        .map(spec -> createFrom(spec, alreadyCreated))
+        .map(spec -> createFrom(spec, alreadyCreated, cleanerHolder))
         .collect(Collectors.toSet());
-    return new Workflow<>(nodes);
+    return new Workflow<>(nodes, cleanerHolder[0]);
   }
 
   private DependentResourceNode createFrom(DependentResourceSpec spec,
-      List<DependentResourceNode> alreadyCreated) {
+      List<DependentResourceNode> alreadyCreated, boolean[] cleanerHolder) {
     final var node = new SpecDependentResourceNode<>(spec);
     alreadyCreated.add(node);
+    // if any previously checked dependent was a cleaner, no need to check further
+    cleanerHolder[0] = cleanerHolder[0] || Workflow.isDeletable(spec.getDependentResourceClass());
     spec.getDependsOn().forEach(depend -> {
       final DependentResourceNode dependsOn = alreadyCreated.stream()
           .filter(drn -> depend.equals(drn.getName())).findFirst()

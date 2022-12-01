@@ -6,6 +6,7 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -49,9 +50,10 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   }
 
   @Override
-  public ManagedWorkflow<P> resolve(KubernetesClient client, List<DependentResourceSpec> specs) {
+  public ManagedWorkflow<P> resolve(KubernetesClient client,
+      ControllerConfiguration<P> configuration) {
     if (!resolved) {
-      workflow.resolve(client, specs);
+      workflow.resolve(client, configuration);
       resolved = true;
     }
     return this;

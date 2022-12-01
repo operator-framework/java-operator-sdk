@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.List;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
@@ -21,8 +20,8 @@ class SpecDependentResourceNode<R, P extends HasMetadata>
 
   @Override
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {
-    final var spec = dependentResources.stream()
+  public void resolve(KubernetesClient client, ControllerConfiguration<P> configuration) {
+    final var spec = configuration.getDependentResources().stream()
         .filter(drs -> drs.getName().equals(getName()))
         .findFirst().orElseThrow();
 
