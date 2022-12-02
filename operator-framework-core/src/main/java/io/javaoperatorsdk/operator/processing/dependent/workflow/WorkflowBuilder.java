@@ -25,7 +25,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
     currentNode = new DefaultDependentResourceNode<>(dependentResource);
-    isCleaner = DependentResource.canDeleteIfAble(dependentResource);
+    isCleaner = DependentResource.isDeletable(dependentResource);
     final var name = currentNode.getName();
     dependentResourceNodes.put(name, currentNode);
     return this;
