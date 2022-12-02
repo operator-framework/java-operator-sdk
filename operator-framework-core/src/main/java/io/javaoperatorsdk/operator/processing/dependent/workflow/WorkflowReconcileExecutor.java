@@ -148,7 +148,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
         DependentResource<R, P> dependentResource) {
       var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
-      if (DependentResource.isDeletable(dependentResource)) {
+      if (dependentResource.isDeletable()) {
         ((Deleter<P>) dependentResource).delete(primary, context);
       }
       boolean deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);

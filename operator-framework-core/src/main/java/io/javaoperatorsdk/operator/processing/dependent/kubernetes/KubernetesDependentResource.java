@@ -294,4 +294,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public Optional<KubernetesDependentResourceConfig<R>> configuration() {
     return Optional.ofNullable(kubernetesDependentResourceConfig);
   }
+
+  @Override
+  public boolean isDeletable() {
+    return super.isDeletable() && !garbageCollected;
+  }
 }

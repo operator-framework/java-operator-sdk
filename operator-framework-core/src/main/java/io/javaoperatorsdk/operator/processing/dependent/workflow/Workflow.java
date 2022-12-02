@@ -132,7 +132,7 @@ public class Workflow<P extends HasMetadata> {
           .forEach(drn -> {
             drn.resolve(client, dependentResources);
             final var dr = dependentResource(drn);
-            if (DependentResource.isDeletable(dr)) {
+            if (dr.isDeletable()) {
               cleanerHolder[0] = true;
             }
           });
