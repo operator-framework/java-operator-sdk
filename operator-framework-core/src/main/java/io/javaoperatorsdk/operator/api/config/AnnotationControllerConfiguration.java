@@ -3,8 +3,10 @@ package io.javaoperatorsdk.operator.api.config;
 import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -166,12 +168,16 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     }
   }
 
+  private final Map<Class, ConfigurationConverter> converters = new HashMap<>();
+
   @SuppressWarnings("unchecked")
   private void configureFromCustomAnnotation(DependentResource instance) {
     if (instance instanceof DependentResourceConfigurator) {
       final var configurator = (DependentResourceConfigurator) instance;
+
       // find Configured-annotated class if it exists
-      Class<?> currentClass = instance.getClass();
+      final Class<? extends DependentResource> drClass = instance.getClass();
+      Class<?> currentClass = drClass;
       Configured configured = null;
       while (!Object.class.equals(currentClass)) {
         configured = currentClass.getAnnotation(Configured.class);
@@ -185,11 +191,19 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
         return;
       }
 
-      final var configAnnotation = instance.getClass().getAnnotation(configured.by());
-      final var converter = Utils.instantiate(configured.converter(),
-          ConfigurationConverter.class,
-          Utils.contextFor(this, instance.getClass(), Configured.class));
-      final var config = converter.configFrom(configAnnotation, this, instance.getClass());
+      // find the associated configuration annotation
+      final var configAnnotation = drClass.getAnnotation(configured.by());
+      // and associated converter
+      var converter = converters.get(drClass);
+      if (converter == null) {
+        converter = Utils.instantiate(configured.converter(),
+            ConfigurationConverter.class,
+            Utils.contextFor(this, drClass, Configured.class));
+        converters.put(drClass, converter);
+      }
+      // always call the converter even if the annotation is not present so that default values can
+      // be provided
+      final var config = converter.configFrom(configAnnotation, this, drClass);
       configurator.configureWith(config);
     }
   }
