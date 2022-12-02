@@ -34,7 +34,7 @@ class ManagedWorkflowTest {
   }
 
   @Test
-  void isNotCleanerIfNoGarbageCollected() {
+  void isNotCleanerIfGarbageCollected() {
     assertThat(managedWorkflow(createDRSWithTraits(NAME, GarbageCollected.class))
         .isCleaner()).isFalse();
   }
@@ -43,12 +43,6 @@ class ManagedWorkflowTest {
   void isCleanerIfHasDeleter() {
     var spec = createDRSWithTraits(NAME, Deleter.class);
     assertThat(managedWorkflow(spec).isCleaner()).isTrue();
-  }
-
-  @Test
-  void isNotCleanerIfDeleterIsGarbageCollected() {
-    var spec = createDRSWithTraits(NAME, Deleter.class, GarbageCollected.class);
-    assertThat(managedWorkflow(spec).isCleaner()).isFalse();
   }
 
   ManagedWorkflow managedWorkflow(DependentResourceSpec... specs) {

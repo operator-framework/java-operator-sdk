@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 public class AbstractWorkflowExecutorTest {
@@ -28,24 +31,21 @@ public class AbstractWorkflowExecutorTest {
   protected List<ReconcileRecord> executionHistory =
       Collections.synchronizedList(new ArrayList<>());
 
-  public class TestDependent implements DependentResource<String, TestCustomResource> {
+  public class TestDependent extends KubernetesDependentResource<ConfigMap, TestCustomResource> {
 
     private final String name;
 
     public TestDependent(String name) {
+      super(ConfigMap.class);
       this.name = name;
     }
 
     @Override
-    public ReconcileResult<String> reconcile(TestCustomResource primary,
+    public ReconcileResult<ConfigMap> reconcile(TestCustomResource primary,
         Context<TestCustomResource> context) {
       executionHistory.add(new ReconcileRecord(this));
-      return ReconcileResult.resourceCreated(VALUE);
-    }
-
-    @Override
-    public Class<String> resourceType() {
-      return String.class;
+      return ReconcileResult
+          .resourceCreated(new ConfigMapBuilder().addToBinaryData("key", VALUE).build());
     }
 
     @Override
