@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
@@ -31,6 +31,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
  */
 @ControllerConfiguration(
     labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
+@SuppressWarnings("unused")
 public class WebPageDependentsWorkflowReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 
@@ -79,7 +80,7 @@ public class WebPageDependentsWorkflowReconciler
     return handleError(resource, e);
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private void initDependentResources(KubernetesClient client) {
     this.configMapDR = new ConfigMapDependentResource();
     this.deploymentDR = new DeploymentDependentResource();

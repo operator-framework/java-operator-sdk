@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
@@ -23,6 +22,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   private final Condition<String, TestCustomResource> notMetReadyCondition =
       (primary, secondary, context) -> false;
 
+  @SuppressWarnings("unchecked")
   Context<TestCustomResource> mockContext = mock(Context.class);
 
   @Test

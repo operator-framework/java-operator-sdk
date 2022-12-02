@@ -1,13 +1,18 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
@@ -21,34 +26,52 @@ public class Workflow<P extends HasMetadata> {
 
   public static final boolean THROW_EXCEPTION_AUTOMATICALLY_DEFAULT = true;
 
-  private final Set<DependentResourceNode> dependentResourceNodes;
+  private final Map<String, DependentResourceNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources = new HashSet<>();
   private final Set<DependentResourceNode> bottomLevelResource = new HashSet<>();
 
   private final boolean throwExceptionAutomatically;
   // it's "global" executor service shared between multiple reconciliations running parallel
-  private ExecutorService executorService;
+  private final ExecutorService executorService;
+  private boolean resolved;
+  private boolean hasCleaner;
 
-  public Workflow(Set<DependentResourceNode> dependentResourceNodes) {
-    this.executorService = ExecutorServiceManager.instance().workflowExecutorService();
-    this.dependentResourceNodes = dependentResourceNodes;
-    this.throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
-    preprocessForReconcile();
+  Workflow(Set<DependentResourceNode> dependentResourceNodes) {
+    this(dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
+        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false, false);
   }
 
-  public Workflow(Set<DependentResourceNode> dependentResourceNodes,
-      ExecutorService executorService, boolean throwExceptionAutomatically) {
+  Workflow(Set<DependentResourceNode> dependentResourceNodes,
+      ExecutorService executorService, boolean throwExceptionAutomatically, boolean resolved,
+      boolean hasCleaner) {
     this.executorService = executorService;
-    this.dependentResourceNodes = dependentResourceNodes;
+    this.dependentResourceNodes = dependentResourceNodes.stream()
+        .collect(Collectors.toMap(DependentResourceNode::getName, Function.identity()));
     this.throwExceptionAutomatically = throwExceptionAutomatically;
+    this.resolved = resolved;
+    this.hasCleaner = hasCleaner;
     preprocessForReconcile();
   }
 
-  public Workflow(Set<DependentResourceNode> dependentResourceNodes, int globalParallelism) {
-    this(dependentResourceNodes, Executors.newFixedThreadPool(globalParallelism), true);
+  public DependentResource getDependentResourceFor(DependentResourceNode node) {
+    throwIfUnresolved();
+    return dependentResource(node);
+  }
+
+  private DependentResource dependentResource(DependentResourceNode node) {
+    return ((AbstractDependentResourceNode) dependentResourceNodes.get(node.getName()))
+        .getDependentResource();
+  }
+
+  private void throwIfUnresolved() {
+    if (!resolved) {
+      throw new IllegalStateException(
+          "Should call resolved before trying to access DependentResources");
+    }
   }
 
   public WorkflowReconcileResult reconcile(P primary, Context<P> context) {
+    throwIfUnresolved();
     WorkflowReconcileExecutor<P> workflowReconcileExecutor =
         new WorkflowReconcileExecutor<>(this, primary, context);
     var result = workflowReconcileExecutor.reconcile();
@@ -59,6 +82,7 @@ public class Workflow<P extends HasMetadata> {
   }
 
   public WorkflowCleanupResult cleanup(P primary, Context<P> context) {
+    throwIfUnresolved();
     WorkflowCleanupExecutor<P> workflowCleanupExecutor =
         new WorkflowCleanupExecutor<>(this, primary, context);
     var result = workflowCleanupExecutor.cleanup();
@@ -69,9 +93,11 @@ public class Workflow<P extends HasMetadata> {
   }
 
   // add cycle detection?
+  @SuppressWarnings("unchecked")
   private void preprocessForReconcile() {
-    bottomLevelResource.addAll(dependentResourceNodes);
-    for (DependentResourceNode<?, P> node : dependentResourceNodes) {
+    final var nodes = new ArrayList<>(dependentResourceNodes.values());
+    bottomLevelResource.addAll(nodes);
+    for (DependentResourceNode<?, P> node : nodes) {
       if (node.getDependsOn().isEmpty()) {
         topLevelResources.add(node);
       } else {
@@ -80,14 +106,6 @@ public class Workflow<P extends HasMetadata> {
         }
       }
     }
-  }
-
-  public boolean isThrowExceptionAutomatically() {
-    return throwExceptionAutomatically;
-  }
-
-  public void setExecutorService(ExecutorService executorService) {
-    this.executorService = executorService;
   }
 
   Set<DependentResourceNode> getTopLevelDependentResources() {
@@ -102,8 +120,29 @@ public class Workflow<P extends HasMetadata> {
     return executorService;
   }
 
-  public Set<DependentResource> getDependentResources() {
-    return dependentResourceNodes.stream().map(DependentResourceNode::getDependentResource)
-        .collect(Collectors.toSet());
+  Map<String, DependentResourceNode> nodes() {
+    return dependentResourceNodes;
+  }
+
+  @SuppressWarnings("unchecked")
+  void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {
+    if (!resolved) {
+      final boolean[] cleanerHolder = {false};
+      dependentResourceNodes.values()
+          .forEach(drn -> {
+            drn.resolve(client, dependentResources);
+            final var dr = dependentResource(drn);
+            if (dr.isDeletable()) {
+              cleanerHolder[0] = true;
+            }
+          });
+      resolved = true;
+      hasCleaner = cleanerHolder[0];
+    }
+  }
+
+  boolean hasCleaner() {
+    throwIfUnresolved();
+    return hasCleaner;
   }
 }

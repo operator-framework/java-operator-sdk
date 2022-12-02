@@ -38,17 +38,12 @@ public interface ManagedWorkflow<P extends HasMetadata> {
     public Map<String, DependentResource> getDependentResourcesByName() {
       return Collections.emptyMap();
     }
-  };
 
-  @SuppressWarnings("unchecked")
-  static ManagedWorkflow workflowFor(KubernetesClient client,
-      List<DependentResourceSpec> dependentResourceSpecs) {
-    if (dependentResourceSpecs == null || dependentResourceSpecs.isEmpty()) {
-      return noOpWorkflow;
+    @Override
+    public ManagedWorkflow resolve(KubernetesClient client, List dependentResources) {
+      return this;
     }
-    return new DefaultManagedWorkflow(client, dependentResourceSpecs,
-        ManagedWorkflowSupport.instance());
-  }
+  };
 
   WorkflowReconcileResult reconcile(P primary, Context<P> context);
 
@@ -59,4 +54,7 @@ public interface ManagedWorkflow<P extends HasMetadata> {
   boolean isEmptyWorkflow();
 
   Map<String, DependentResource> getDependentResourcesByName();
+
+  ManagedWorkflow<P> resolve(KubernetesClient client,
+      List<DependentResourceSpec> dependentResources);
 }

@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.builder.WorkflowBuilder;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +28,7 @@ class WorkflowTest {
 
     Set<DependentResource> topResources =
         workflow.getTopLevelDependentResources().stream()
-            .map(DependentResourceNode::getDependentResource)
+            .map(workflow::getDependentResourceFor)
             .collect(Collectors.toSet());
 
     assertThat(topResources).containsExactlyInAnyOrder(dr1, independentDR);
@@ -49,7 +48,7 @@ class WorkflowTest {
 
     Set<DependentResource> bottomResources =
         workflow.getBottomLevelResource().stream()
-            .map(DependentResourceNode::getDependentResource)
+            .map(workflow::getDependentResourceFor)
             .collect(Collectors.toSet());
 
     assertThat(bottomResources).containsExactlyInAnyOrder(dr2, independentDR);

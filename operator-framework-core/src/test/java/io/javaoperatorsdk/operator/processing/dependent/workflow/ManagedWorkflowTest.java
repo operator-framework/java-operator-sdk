@@ -1,65 +1,60 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowTestUtils.createDRS;
+import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowTestUtils.createDRSWithTraits;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class ManagedWorkflowTest {
 
   public static final String NAME = "name";
 
-  ManagedWorkflowSupport managedWorkflowSupportMock = mock(ManagedWorkflowSupport.class);
-  KubernetesClient kubernetesClientMock = mock(KubernetesClient.class);
-
   @Test
   void checksIfWorkflowEmpty() {
-    var mockWorkflow = mock(Workflow.class);
-    when(managedWorkflowSupportMock.createWorkflow(any(), any())).thenReturn(mockWorkflow);
-    when(managedWorkflowSupportMock.createAndConfigureFrom(any(), any()))
-        .thenReturn(mock(DependentResource.class));
     assertThat(managedWorkflow().isEmptyWorkflow()).isTrue();
-
-    when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class)));
     assertThat(managedWorkflow(createDRS(NAME)).isEmptyWorkflow()).isFalse();
   }
 
   @Test
-  void isCleanerIfAtLeastOneDRIsDeleterAndNoGC() {
-    var mockWorkflow = mock(Workflow.class);
-    when(managedWorkflowSupportMock.createWorkflow(any(), any())).thenReturn(mockWorkflow);
-    when(managedWorkflowSupportMock.createAndConfigureFrom(any(), any()))
-        .thenReturn(mock(DependentResource.class));
-    when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class)));
-
-    assertThat(managedWorkflow(createDRS(NAME)).isCleaner()).isFalse();
-
-    when(mockWorkflow.getDependentResources()).thenReturn(
-        Set.of(mock(DependentResource.class, withSettings().extraInterfaces(Deleter.class))));
-    assertThat(managedWorkflow(createDRS(NAME)).isCleaner()).isTrue();
-
-    when(mockWorkflow.getDependentResources()).thenReturn(Set.of(mock(DependentResource.class,
-        withSettings().extraInterfaces(Deleter.class, GarbageCollected.class))));
+  void isNotCleanerIfNoDeleter() {
     assertThat(managedWorkflow(createDRS(NAME)).isCleaner()).isFalse();
   }
 
+  @Test
+  void isNotCleanerIfGarbageCollected() {
+    assertThat(managedWorkflow(createDRSWithTraits(NAME, GarbageCollected.class))
+        .isCleaner()).isFalse();
+  }
+
+  @Test
+  void isCleanerIfHasDeleter() {
+    var spec = createDRSWithTraits(NAME, Deleter.class);
+    assertThat(managedWorkflow(spec).isCleaner()).isTrue();
+  }
+
   ManagedWorkflow managedWorkflow(DependentResourceSpec... specs) {
-    return new DefaultManagedWorkflow(kubernetesClientMock, List.of(specs),
-        managedWorkflowSupportMock);
+    final var configuration = mock(ControllerConfiguration.class);
+    final var specList = List.of(specs);
+
+    KubernetesClient kubernetesClientMock = mock(KubernetesClient.class);
+
+    when(configuration.getDependentResources()).thenReturn(specList);
+    return ConfigurationServiceProvider.instance().getWorkflowFactory()
+        .workflowFor(configuration)
+        .resolve(kubernetesClientMock, specList);
   }
 
 }

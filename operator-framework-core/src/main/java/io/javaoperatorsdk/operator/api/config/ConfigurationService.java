@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -192,5 +193,9 @@ public interface ConfigurationService {
         System.exit(1);
       }
     });
+  }
+
+  default ManagedWorkflowFactory getWorkflowFactory() {
+    return ManagedWorkflowFactory.DEFAULT;
   }
 }

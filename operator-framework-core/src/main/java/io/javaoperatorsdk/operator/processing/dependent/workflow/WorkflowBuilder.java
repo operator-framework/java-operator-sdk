@@ -1,30 +1,33 @@
-package io.javaoperatorsdk.operator.processing.dependent.workflow.builder;
+package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private final Set<DependentResourceNode<?, P>> dependentResourceNodes = new HashSet<>();
+  private final Map<String, DefaultDependentResourceNode<?, P>> dependentResourceNodes =
+      new HashMap<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
-
-  private DependentResourceNode currentNode;
+  private DefaultDependentResourceNode currentNode;
+  private boolean isCleaner = false;
 
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
-    currentNode = new DependentResourceNode<>(dependentResource);
-    dependentResourceNodes.add(currentNode);
+    currentNode = new DefaultDependentResourceNode<>(dependentResource);
+    isCleaner = dependentResource.isDeletable();
+    final var name = currentNode.getName();
+    dependentResourceNodes.put(name, currentNode);
     return this;
   }
 
@@ -59,10 +62,17 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
-    return dependentResourceNodes.stream()
-        .filter(dr -> dr.getDependentResource() == dependentResource)
-        .findFirst()
-        .orElseThrow();
+    // first check by name
+    final var node =
+        dependentResourceNodes.get(DefaultDependentResourceNode.getNameFor(dependentResource));
+    if (node != null) {
+      return node;
+    } else {
+      return dependentResourceNodes.values().stream()
+          .filter(dr -> dr.getDependentResource() == dependentResource)
+          .findFirst()
+          .orElseThrow();
+    }
   }
 
   public boolean isThrowExceptionAutomatically() {
@@ -75,16 +85,16 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   public Workflow<P> build() {
-    return new Workflow(
-        dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
-        throwExceptionAutomatically);
+    return build(ExecutorServiceManager.instance().workflowExecutorService());
   }
 
   public Workflow<P> build(int parallelism) {
-    return new Workflow(dependentResourceNodes, parallelism);
+    return build(Executors.newFixedThreadPool(parallelism));
   }
 
   public Workflow<P> build(ExecutorService executorService) {
-    return new Workflow(dependentResourceNodes, executorService, throwExceptionAutomatically);
+    // workflow has been built from dependent resources so it is already resolved
+    return new Workflow(new HashSet<>(dependentResourceNodes.values()), executorService,
+        throwExceptionAutomatically, true, isCleaner);
   }
 }

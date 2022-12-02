@@ -77,12 +77,12 @@ public class Controller<P extends HasMetadata>
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
-    this.metrics = Optional.ofNullable(ConfigurationServiceProvider.instance().getMetrics())
-        .orElse(Metrics.NOOP);
+    final var configurationService = ConfigurationServiceProvider.instance();
+    this.metrics = Optional.ofNullable(configurationService.getMetrics()).orElse(Metrics.NOOP);
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
-    managedWorkflow =
-        ManagedWorkflow.workflowFor(kubernetesClient, configuration.getDependentResources());
+    managedWorkflow = configurationService.getWorkflowFactory().workflowFor(configuration);
+    managedWorkflow.resolve(kubernetesClient, configuration.getDependentResources());
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);

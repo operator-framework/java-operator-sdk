@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowTestUtils.createDRS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -141,19 +140,18 @@ class ManagedWorkflowSupportTest {
         createDRS(NAME_3, NAME_1),
         createDRS(NAME_4, NAME_3, NAME_2));
 
-    var drByName = specs
-        .stream().collect(Collectors.toMap(DependentResourceSpec::getName,
-            spec -> managedWorkflowSupport.createAndConfigureFrom(spec,
-                mock(KubernetesClient.class))));
+    final var client = mock(KubernetesClient.class);
+    var workflow = managedWorkflowSupport.createWorkflow(specs);
+    workflow.resolve(client, specs);
 
-    var workflow = managedWorkflowSupport.createWorkflow(specs, drByName);
-
-    assertThat(workflow.getDependentResources()).containsExactlyInAnyOrder(drByName.values()
-        .toArray(new DependentResource[0]));
+    assertThat(workflow.nodes().values()).map(DependentResourceNode::getName)
+        .containsExactlyInAnyOrder(NAME_1, NAME_2, NAME_3, NAME_4);
     assertThat(workflow.getTopLevelDependentResources())
-        .map(DependentResourceNode::getDependentResource).containsExactly(drByName.get(NAME_1));
-    assertThat(workflow.getBottomLevelResource()).map(DependentResourceNode::getDependentResource)
-        .containsExactly(drByName.get(NAME_4));
+        .map(DependentResourceNode::getName)
+        .containsExactly(NAME_1);
+    assertThat(workflow.getBottomLevelResource())
+        .map(DependentResourceNode::getName)
+        .containsExactly(NAME_4);
   }
 
 }
