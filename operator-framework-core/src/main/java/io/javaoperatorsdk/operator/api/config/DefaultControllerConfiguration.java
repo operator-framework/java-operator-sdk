@@ -3,11 +3,13 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -20,7 +22,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 @SuppressWarnings("rawtypes")
 public class DefaultControllerConfiguration<R extends HasMetadata>
     extends DefaultResourceConfiguration<R>
-    implements ControllerConfiguration<R> {
+    implements ControllerConfiguration<R>, DependentResourceConfigurationProvider {
 
   private final String associatedControllerClassName;
   private final String name;
@@ -32,6 +34,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   private final List<DependentResourceSpec> dependents;
   private final Duration reconciliationMaxInterval;
   private final RateLimiter rateLimiter;
+  private final Map<DependentResourceSpec, Object> configurations;
 
   // NOSONAR constructor is meant to provide all information
   public DefaultControllerConfiguration(
@@ -52,6 +55,31 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       RateLimiter rateLimiter,
       List<DependentResourceSpec> dependents,
       UnaryOperator<R> cachePruneFunction) {
+    this(associatedControllerClassName, name, crdName, finalizer, generationAware, namespaces,
+        retry, labelSelector, resourceEventFilter, resourceClass, reconciliationMaxInterval,
+        onAddFilter, onUpdateFilter, genericFilter, rateLimiter, dependents, cachePruneFunction,
+        null);
+  }
+
+  DefaultControllerConfiguration(
+      String associatedControllerClassName,
+      String name,
+      String crdName,
+      String finalizer,
+      boolean generationAware,
+      Set<String> namespaces,
+      Retry retry,
+      String labelSelector,
+      ResourceEventFilter<R> resourceEventFilter,
+      Class<R> resourceClass,
+      Duration reconciliationMaxInterval,
+      OnAddFilter<R> onAddFilter,
+      OnUpdateFilter<R> onUpdateFilter,
+      GenericFilter<R> genericFilter,
+      RateLimiter rateLimiter,
+      List<DependentResourceSpec> dependents,
+      UnaryOperator<R> cachePruneFunction,
+      Map<DependentResourceSpec, Object> configurations) {
     super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces,
         cachePruneFunction);
     this.associatedControllerClassName = associatedControllerClassName;
@@ -68,6 +96,7 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     this.rateLimiter =
         rateLimiter != null ? rateLimiter : LinearRateLimiter.deactivatedRateLimiter();
     this.dependents = dependents != null ? dependents : Collections.emptyList();
+    this.configurations = configurations != null ? configurations : Collections.emptyMap();
   }
 
   @Override
@@ -120,4 +149,8 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
     return rateLimiter;
   }
 
+  @Override
+  public Object getConfigurationFor(DependentResourceSpec spec) {
+    return configurations.get(spec);
+  }
 }

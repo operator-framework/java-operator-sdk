@@ -6,12 +6,11 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class DependentResourceSpec<R, P extends HasMetadata, C> {
+public class DependentResourceSpec<R, P extends HasMetadata> {
 
-  private final DependentResource<R, P> dependentResource;
+  private final Class<? extends DependentResource<R, P>> dependentResourceClass;
 
   private final String name;
 
@@ -25,11 +24,11 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
 
   private final String useEventSourceWithName;
 
-  public DependentResourceSpec(DependentResource<R, P> dependentResource,
+  public DependentResourceSpec(Class<? extends DependentResource<R, P>> dependentResourceClass,
       String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
       Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition,
       String useEventSourceWithName) {
-    this.dependentResource = dependentResource;
+    this.dependentResourceClass = dependentResourceClass;
     this.name = name;
     this.dependsOn = dependsOn;
     this.readyCondition = readyCondition;
@@ -38,28 +37,8 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
     this.useEventSourceWithName = useEventSourceWithName;
   }
 
-  public DependentResourceSpec(DependentResourceSpec<R, P, C> other) {
-    this.dependentResource = other.dependentResource;
-    this.name = other.name;
-    this.dependsOn = other.dependsOn;
-    this.readyCondition = other.readyCondition;
-    this.reconcileCondition = other.reconcileCondition;
-    this.deletePostCondition = other.deletePostCondition;
-    this.useEventSourceWithName = other.useEventSourceWithName;
-  }
-
-  @SuppressWarnings("unchecked")
-  public Class<DependentResource<R, P>> getDependentResourceClass() {
-    return (Class<DependentResource<R, P>>) dependentResource.getClass();
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public Optional<C> getDependentResourceConfiguration() {
-    if (dependentResource instanceof DependentResourceConfigurator) {
-      var configurator = (DependentResourceConfigurator) dependentResource;
-      return configurator.configuration();
-    }
-    return Optional.empty();
+  public Class<? extends DependentResource<R, P>> getDependentResourceClass() {
+    return dependentResourceClass;
   }
 
   public String getName() {
@@ -80,7 +59,7 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DependentResourceSpec<?, ?, ?> that = (DependentResourceSpec<?, ?, ?>) o;
+    DependentResourceSpec<?, ?> that = (DependentResourceSpec<?, ?>) o;
     return name.equals(that.name);
   }
 
@@ -106,10 +85,6 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
   @SuppressWarnings("rawtypes")
   public Condition getDeletePostCondition() {
     return deletePostCondition;
-  }
-
-  public DependentResource<R, P> getDependentResource() {
-    return dependentResource;
   }
 
   public Optional<String> getUseEventSourceWithName() {

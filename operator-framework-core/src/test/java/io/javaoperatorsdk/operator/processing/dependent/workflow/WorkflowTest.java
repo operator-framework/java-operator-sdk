@@ -34,7 +34,7 @@ class WorkflowTest {
 
     Set<DependentResource> topResources =
         workflow.getTopLevelDependentResources().stream()
-            .map(workflow::getDependentResourceFor)
+            .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());
 
     assertThat(topResources).containsExactlyInAnyOrder(dr1, independentDR);
@@ -54,7 +54,7 @@ class WorkflowTest {
 
     Set<DependentResource> bottomResources =
         workflow.getBottomLevelResource().stream()
-            .map(workflow::getDependentResourceFor)
+            .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());
 
     assertThat(bottomResources).containsExactlyInAnyOrder(dr2, independentDR);
@@ -64,19 +64,19 @@ class WorkflowTest {
   @Test
   void isDeletableShouldWork() {
     var dr = mock(DependentResource.class);
-    assertFalse(Workflow.isDeletable(dr.getClass()));
+    assertFalse(DefaultWorkflow.isDeletable(dr.getClass()));
 
     dr = mock(DependentResource.class, withSettings().extraInterfaces(Deleter.class));
-    assertTrue(Workflow.isDeletable(dr.getClass()));
+    assertTrue(DefaultWorkflow.isDeletable(dr.getClass()));
 
     dr = mock(KubernetesDependentResource.class);
-    assertFalse(Workflow.isDeletable(dr.getClass()));
+    assertFalse(DefaultWorkflow.isDeletable(dr.getClass()));
 
     dr = mock(KubernetesDependentResource.class, withSettings().extraInterfaces(Deleter.class));
-    assertTrue(Workflow.isDeletable(dr.getClass()));
+    assertTrue(DefaultWorkflow.isDeletable(dr.getClass()));
 
     dr = mock(KubernetesDependentResource.class, withSettings().extraInterfaces(Deleter.class,
         GarbageCollected.class));
-    assertFalse(Workflow.isDeletable(dr.getClass()));
+    assertFalse(DefaultWorkflow.isDeletable(dr.getClass()));
   }
 }

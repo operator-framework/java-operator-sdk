@@ -53,7 +53,7 @@ class MySQLSchemaOperatorE2E {
   boolean isLocal() {
     String deployment = System.getProperty("test.deployment");
     boolean remote = (deployment != null && deployment.equals("remote"));
-    log.info("Running the operator " + (remote ? "remote" : "locally"));
+    log.info("Running the operator " + (remote ? "remotely" : "locally"));
     return !remote;
   }
 

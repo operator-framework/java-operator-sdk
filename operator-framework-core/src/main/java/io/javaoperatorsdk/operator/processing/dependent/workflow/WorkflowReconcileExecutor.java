@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -63,11 +64,11 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     }
 
     boolean reconcileConditionMet = isConditionMet(dependentResourceNode.getReconcilePrecondition(),
-        getDependentResourceFor(dependentResourceNode));
+        dependentResourceNode.getDependentResource());
     if (!reconcileConditionMet) {
       handleReconcileConditionNotMet(dependentResourceNode);
     } else {
-      Future<?> nodeFuture = workflow.getExecutorService()
+      Future<?> nodeFuture = ExecutorServiceManager.instance().workflowExecutorService()
           .submit(new NodeReconcileExecutor(dependentResourceNode));
       markAsExecuting(dependentResourceNode, nodeFuture);
       log.debug("Submitted to reconcile: {}", dependentResourceNode);
@@ -85,7 +86,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       return;
     }
 
-    Future<?> nodeFuture = workflow.getExecutorService()
+    Future<?> nodeFuture = ExecutorServiceManager.instance().workflowExecutorService()
         .submit(new NodeDeleteExecutor(dependentResourceNode));
     markAsExecuting(dependentResourceNode, nodeFuture);
     log.debug("Submitted to delete: {}", dependentResourceNode);
@@ -214,10 +215,10 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   private WorkflowReconcileResult createReconcileResult() {
     return new WorkflowReconcileResult(
         reconciled.stream()
-            .map(workflow::getDependentResourceFor)
+            .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toList()),
         notReady.stream()
-            .map(workflow::getDependentResourceFor)
+            .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toList()),
         getErroredDependents(),
         reconcileResults);

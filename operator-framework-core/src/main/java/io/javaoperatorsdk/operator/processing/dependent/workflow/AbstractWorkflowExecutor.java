@@ -87,7 +87,7 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected Map<DependentResource, Exception> getErroredDependents() {
     return exceptionsDuringExecution.entrySet().stream()
         .collect(
-            Collectors.toMap(e -> workflow.getDependentResourceFor(e.getKey()), Entry::getValue));
+            Collectors.toMap(e -> e.getKey().getDependentResource(), Entry::getValue));
   }
 
   protected synchronized void handleNodeExecutionFinish(
@@ -97,11 +97,6 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     if (noMoreExecutionsScheduled()) {
       this.notifyAll();
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  protected <R> DependentResource<R, P> getDependentResourceFor(DependentResourceNode<R, P> drn) {
-    return (DependentResource<R, P>) workflow.getDependentResourceFor(drn);
   }
 
   protected <R> boolean isConditionMet(Optional<Condition<R, P>> condition,

@@ -40,7 +40,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -64,7 +64,7 @@ public class Controller<P extends HasMetadata>
   private final boolean contextInitializer;
   private final boolean isCleaner;
   private final Metrics metrics;
-  private final ManagedWorkflow<P> managedWorkflow;
+  private final Workflow<P> managedWorkflow;
 
   private final GroupVersionKind associatedGVK;
   private final EventProcessor<P> eventProcessor;
@@ -83,8 +83,9 @@ public class Controller<P extends HasMetadata>
     this.metrics = Optional.ofNullable(configurationService.getMetrics()).orElse(Metrics.NOOP);
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
-    managedWorkflow = configurationService.getWorkflowFactory().workflowFor(configuration);
-    managedWorkflow.resolve(kubernetesClient, configuration);
+
+    final var managed = configurationService.getWorkflowFactory().workflowFor(configuration);
+    managedWorkflow = managed.resolve(kubernetesClient, configuration);
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager);
@@ -135,7 +136,7 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            if (!managedWorkflow.isEmptyWorkflow()) {
+            if (!managedWorkflow.isEmpty()) {
               var res = managedWorkflow.reconcile(resource, context);
               ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
                   .setWorkflowExecutionResult(res);
@@ -180,7 +181,7 @@ public class Controller<P extends HasMetadata>
             public DeleteControl execute() {
               initContextIfNeeded(resource, context);
               WorkflowCleanupResult workflowCleanupResult = null;
-              if (managedWorkflow.isCleaner()) {
+              if (managedWorkflow.hasCleaner()) {
                 workflowCleanupResult = managedWorkflow.cleanup(resource, context);
                 ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
                     .setWorkflowCleanupResult(workflowCleanupResult);
@@ -231,13 +232,13 @@ public class Controller<P extends HasMetadata>
     final var dependentResourcesByName = managedWorkflow.getDependentResourcesByName();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
-      dependentResourcesByName.forEach((key, value) -> {
-        if (value instanceof EventSourceProvider) {
-          final var provider = (EventSourceProvider) value;
+      dependentResourcesByName.forEach((key, dependentResource) -> {
+        if (dependentResource instanceof EventSourceProvider) {
+          final var provider = (EventSourceProvider) dependentResource;
           final var source = provider.initEventSource(context);
           eventSourceManager.registerEventSource(key, source);
         } else {
-          Optional<ResourceEventSource> eventSource = value.eventSource(context);
+          Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
           eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es));
         }
       });
@@ -417,7 +418,7 @@ public class Controller<P extends HasMetadata>
   }
 
   public boolean useFinalizer() {
-    return isCleaner || managedWorkflow.isCleaner();
+    return isCleaner || managedWorkflow.hasCleaner();
   }
 
   public GroupVersionKind getAssociatedGroupVersionKind() {
