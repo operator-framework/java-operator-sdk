@@ -21,6 +21,7 @@ public final class Constants {
   public static final String SAME_AS_CONTROLLER = "JOSDK_SAME_AS_CONTROLLER";
 
   public static final String RESOURCE_GVK_KEY = "josdk.resource.gvk";
+  public static final String CONTROLLER_NAME = "controller.name";
 
   private Constants() {}
 }

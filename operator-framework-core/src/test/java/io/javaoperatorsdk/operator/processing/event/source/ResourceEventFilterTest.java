@@ -135,7 +135,7 @@ class ResourceEventFilterTest {
         ResourceEventFilter<T> eventFilter, Class<T> customResourceClass) {
       super(
           null,
-          null,
+          "testController",
           null,
           finalizer,
           generationAware,

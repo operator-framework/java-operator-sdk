@@ -5,26 +5,53 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NAME;
 
 public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";
   private static final String RECONCILIATIONS = "reconciliations.";
+  private static final String RECONCILER_EXECUTING_THREADS = "reconciler.executions.";
+  private static final String CONTROLLER_QUEUE_SIZE = "reconciler.queue.";
   private final MeterRegistry registry;
+  private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
 
   public MicrometerMetrics(MeterRegistry registry) {
     this.registry = registry;
+  }
+
+  @Override
+  public void controllerRegistered(Controller<?> controller) {
+    String executingThreadsName =
+        RECONCILER_EXECUTING_THREADS + controller.getConfiguration().getName();
+    AtomicInteger executingThreads =
+        registry.gauge(executingThreadsName,
+            gvkTags(controller.getConfiguration().getResourceClass()),
+            new AtomicInteger(0));
+    gauges.put(executingThreadsName, executingThreads);
+
+    String controllerQueueName = CONTROLLER_QUEUE_SIZE + controller.getConfiguration().getName();
+    AtomicInteger controllerQueueSize =
+        registry.gauge(controllerQueueName,
+            gvkTags(controller.getConfiguration().getResourceClass()),
+            new AtomicInteger(0));
+    gauges.put(controllerQueueName, controllerQueueSize);
   }
 
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
@@ -94,11 +121,33 @@ public class MicrometerMetrics implements Metrics {
         "" + retryInfo.map(RetryInfo::getAttemptCount).orElse(0),
         RECONCILIATIONS + "retries.last",
         "" + retryInfo.map(RetryInfo::isLastAttempt).orElse(true));
+
+    AtomicInteger controllerQueueSize =
+        gauges.get(CONTROLLER_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+    controllerQueueSize.incrementAndGet();
   }
 
   @Override
   public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
     incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "success", metadata);
+  }
+
+  @Override
+  public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
+    AtomicInteger reconcilerExecutions =
+        gauges.get(RECONCILER_EXECUTING_THREADS + metadata.get(CONTROLLER_NAME));
+    reconcilerExecutions.incrementAndGet();
+  }
+
+  @Override
+  public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
+    AtomicInteger reconcilerExecutions =
+        gauges.get(RECONCILER_EXECUTING_THREADS + metadata.get(CONTROLLER_NAME));
+    reconcilerExecutions.decrementAndGet();
+
+    AtomicInteger controllerQueueSize =
+        gauges.get(CONTROLLER_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+    controllerQueueSize.decrementAndGet();
   }
 
   public void failedReconciliation(HasMetadata resource, Exception exception,
@@ -116,6 +165,12 @@ public class MicrometerMetrics implements Metrics {
 
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
+  }
+
+  private List<Tag> gvkTags(Class<? extends HasMetadata> resourceClass) {
+    final var gvk = GroupVersionKind.gvkFor(resourceClass);
+    return List.of(Tag.of("group", gvk.group), Tag.of("version", gvk.version),
+        Tag.of("kind", gvk.kind));
   }
 
   private void incrementCounter(ResourceID id, String counterName, Map<String, Object> metadata,

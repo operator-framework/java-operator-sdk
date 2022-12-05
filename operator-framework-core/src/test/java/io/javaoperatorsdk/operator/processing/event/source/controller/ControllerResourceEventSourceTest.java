@@ -178,7 +178,7 @@ class ControllerResourceEventSourceTest extends
         GenericFilter<TestCustomResource> genericFilter) {
       super(
           null,
-          null,
+          "testController",
           null,
           FINALIZER,
           generationAware,
