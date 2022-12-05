@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -84,10 +85,10 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfoNullable,
+  public void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfoNullable,
       Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-    incrementCounter(resourceID, RECONCILIATIONS + "started",
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "started",
         metadata,
         RECONCILIATIONS + "retries.number",
         "" + retryInfo.map(RetryInfo::getAttemptCount).orElse(0),
@@ -96,11 +97,11 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {
-    incrementCounter(resourceID, RECONCILIATIONS + "success", metadata);
+  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "success", metadata);
   }
 
-  public void failedReconciliation(ResourceID resourceID, Exception exception,
+  public void failedReconciliation(HasMetadata resource, Exception exception,
       Map<String, Object> metadata) {
     var cause = exception.getCause();
     if (cause == null) {
@@ -108,7 +109,8 @@ public class MicrometerMetrics implements Metrics {
     } else if (cause instanceof RuntimeException) {
       cause = cause.getCause() != null ? cause.getCause() : cause;
     }
-    incrementCounter(resourceID, RECONCILIATIONS + "failed", metadata, "exception",
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "failed", metadata,
+        "exception",
         cause.getClass().getSimpleName());
   }
 
