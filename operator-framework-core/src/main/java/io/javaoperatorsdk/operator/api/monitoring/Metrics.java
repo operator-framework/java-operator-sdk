@@ -29,56 +29,39 @@ public interface Metrics {
    */
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
-  /**
-   *
-   * @deprecated Use (and implement) {@link #receivedEvent(Event, Map)} instead
-   */
-  @Deprecated
-  default void receivedEvent(Event event) {
-    receivedEvent(event, Collections.emptyMap());
-  }
-
-  /**
-   *
-   * @deprecated Use (and implement) {@link #reconcileCustomResource(ResourceID, RetryInfo, Map)}
-   *             instead
-   */
-  @Deprecated
-  default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo) {
-    reconcileCustomResource(resourceID, retryInfo, Collections.emptyMap());
-  }
-
-  /**
-   * Called right before a resource is dispatched to the ExecutorService for reconciliation.
-   *
-   * @param resourceID the {@link ResourceID} associated with the resource
-   * @param retryInfo the current retry state information for the reconciliation request
-   * @param metadata metadata associated with the resource being processed
-   */
+  @Deprecated(forRemoval = true)
   default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo,
       Map<String, Object> metadata) {}
 
   /**
+   * Called right before a resource is dispatched to the ExecutorService for reconciliation.
    *
-   * @deprecated Use (and implement) {@link #failedReconciliation(ResourceID, Exception, Map)}
-   *             instead
+   * @param resource the associated with the resource
+   * @param retryInfo the current retry state information for the reconciliation request
+   * @param metadata metadata associated with the resource being processed
    */
-  @Deprecated
-  default void failedReconciliation(ResourceID resourceID, Exception exception) {
-    failedReconciliation(resourceID, exception, Collections.emptyMap());
+  default void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfo,
+      Map<String, Object> metadata) {
+    reconcileCustomResource(ResourceID.fromResource(resource), retryInfo, metadata);
   }
+
+  @Deprecated(forRemoval = true)
+  default void failedReconciliation(ResourceID resourceID, Exception exception,
+      Map<String, Object> metadata) {}
 
   /**
    * Called when a precedent reconciliation for the resource associated with the specified
    * {@link ResourceID} resulted in the provided exception, resulting in a retry of the
    * reconciliation.
    *
-   * @param resourceID the {@link ResourceID} associated with the resource being processed
+   * @param resource the {@link ResourceID} associated with the resource being processed
    * @param exception the exception that caused the failed reconciliation resulting in a retry
    * @param metadata metadata associated with the resource being processed
    */
-  default void failedReconciliation(ResourceID resourceID, Exception exception,
-      Map<String, Object> metadata) {}
+  default void failedReconciliation(HasMetadata resource, Exception exception,
+      Map<String, Object> metadata) {
+    failedReconciliation(ResourceID.fromResource(resource), exception, metadata);
+  }
 
   /**
    *
@@ -107,16 +90,21 @@ public interface Metrics {
     finishedReconciliation(resourceID, Collections.emptyMap());
   }
 
+  @Deprecated(forRemoval = true)
+  default void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {}
+
   /**
    * Called when the
    * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)}
    * method of the Reconciler associated with the resource associated with the specified
    * {@link ResourceID} has sucessfully finished.
    *
-   * @param resourceID the {@link ResourceID} associated with the resource being processed
+   * @param resource the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
    */
-  default void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {}
+  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+    finishedReconciliation(ResourceID.fromResource(resource), metadata);
+  }
 
   /**
    * Encapsulates the information about a controller execution i.e. a call to either
