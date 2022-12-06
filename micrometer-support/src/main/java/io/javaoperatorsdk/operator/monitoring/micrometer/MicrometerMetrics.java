@@ -28,7 +28,7 @@ public class MicrometerMetrics implements Metrics {
   private static final String PREFIX = "operator.sdk.";
   private static final String RECONCILIATIONS = "reconciliations.";
   private static final String RECONCILIATIONS_EXECUTIONS = RECONCILIATIONS + "executions.";
-  private static final String RECONCILIATIONS_QUEUE_SIZE = RECONCILIATIONS + "queue-size.";
+  private static final String RECONCILIATIONS_QUEUE_SIZE = RECONCILIATIONS + "queue.size.";
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
 
