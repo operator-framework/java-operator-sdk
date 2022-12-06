@@ -27,8 +27,8 @@ public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";
   private static final String RECONCILIATIONS = "reconciliations.";
-  private static final String RECONCILER_EXECUTING_THREADS = "reconciler.executions.";
-  private static final String CONTROLLER_QUEUE_SIZE = "reconciler.queue.";
+  private static final String RECONCILIATIONS_EXECUTIONS = RECONCILIATIONS + "executions.";
+  private static final String RECONCILIATIONS_QUEUE_SIZE = RECONCILIATIONS + "queue-size.";
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
 
@@ -39,14 +39,15 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void controllerRegistered(Controller<?> controller) {
     String executingThreadsName =
-        RECONCILER_EXECUTING_THREADS + controller.getConfiguration().getName();
+        RECONCILIATIONS_EXECUTIONS + controller.getConfiguration().getName();
     AtomicInteger executingThreads =
         registry.gauge(executingThreadsName,
             gvkTags(controller.getConfiguration().getResourceClass()),
             new AtomicInteger(0));
     gauges.put(executingThreadsName, executingThreads);
 
-    String controllerQueueName = CONTROLLER_QUEUE_SIZE + controller.getConfiguration().getName();
+    String controllerQueueName =
+        RECONCILIATIONS_QUEUE_SIZE + controller.getConfiguration().getName();
     AtomicInteger controllerQueueSize =
         registry.gauge(controllerQueueName,
             gvkTags(controller.getConfiguration().getResourceClass()),
@@ -123,7 +124,7 @@ public class MicrometerMetrics implements Metrics {
         "" + retryInfo.map(RetryInfo::isLastAttempt).orElse(true));
 
     AtomicInteger controllerQueueSize =
-        gauges.get(CONTROLLER_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
     controllerQueueSize.incrementAndGet();
   }
 
@@ -135,18 +136,18 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
     AtomicInteger reconcilerExecutions =
-        gauges.get(RECONCILER_EXECUTING_THREADS + metadata.get(CONTROLLER_NAME));
+        gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
     reconcilerExecutions.incrementAndGet();
   }
 
   @Override
   public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
     AtomicInteger reconcilerExecutions =
-        gauges.get(RECONCILER_EXECUTING_THREADS + metadata.get(CONTROLLER_NAME));
+        gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
     reconcilerExecutions.decrementAndGet();
 
     AtomicInteger controllerQueueSize =
-        gauges.get(CONTROLLER_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
     controllerQueueSize.decrementAndGet();
   }
 
