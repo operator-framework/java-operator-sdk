@@ -150,6 +150,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           return;
         }
         state.setUnderProcessing(true);
+        final var latest = maybeLatest.get();
         ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
         state.unMarkEventReceived();
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
