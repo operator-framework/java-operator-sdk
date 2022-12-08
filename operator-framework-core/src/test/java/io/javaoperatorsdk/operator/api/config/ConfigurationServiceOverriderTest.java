@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class ConfigurationServiceOverriderTest {
 
@@ -86,6 +86,7 @@ class ConfigurationServiceOverriderTest {
         .withClientConfiguration(new ConfigBuilder().withNamespace("newNS").build())
         .checkingCRDAndValidateLocalModel(true)
         .withExecutorService(Executors.newSingleThreadExecutor())
+        .withWorkflowExecutorService(Executors.newFixedThreadPool(4))
         .withCloseClientOnStop(false)
         .withObjectMapper(new ObjectMapper())
         .withResourceCloner(new Cloner() {
@@ -111,6 +112,7 @@ class ConfigurationServiceOverriderTest {
         overridden.getTerminationTimeoutSeconds());
     assertNotEquals(config.getClientConfiguration(), overridden.getClientConfiguration());
     assertNotEquals(config.getExecutorService(), overridden.getExecutorService());
+    assertNotEquals(config.getWorkflowExecutorService(), overridden.getWorkflowExecutorService());
     assertNotEquals(config.getMetrics(), overridden.getMetrics());
     assertNotEquals(config.getObjectMapper(), overridden.getObjectMapper());
     assertNotEquals(config.getLeaderElectionConfiguration(),
