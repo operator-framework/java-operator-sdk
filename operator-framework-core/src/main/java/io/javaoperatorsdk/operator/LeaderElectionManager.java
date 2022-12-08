@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
 public class LeaderElectionManager {
@@ -43,7 +44,7 @@ public class LeaderElectionManager {
     // releaseOnCancel is not used in the underlying implementation
     leaderElector =
         new LeaderElectorBuilder(
-            client, ConfigurationServiceProvider.instance().getExecutorService())
+            client, ExecutorServiceManager.instance().executorService())
             .withConfig(
                 new LeaderElectionConfig(
                     lock,
