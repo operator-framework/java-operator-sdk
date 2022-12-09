@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -121,19 +120,17 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
     Class<ResourceEventFilter<P>>[] filterTypes =
         (Class<ResourceEventFilter<P>>[]) valueOrDefault(annotation,
             ControllerConfiguration::eventFilters, new Object[] {});
-    if (filterTypes.length > 0) {
-      for (var filterType : filterTypes) {
-        try {
-          ResourceEventFilter<P> filter = filterType.getConstructor().newInstance();
+    for (var filterType : filterTypes) {
+      try {
+        ResourceEventFilter<P> filter = filterType.getConstructor().newInstance();
 
-          if (answer == null) {
-            answer = filter;
-          } else {
-            answer = answer.and(filter);
-          }
-        } catch (Exception e) {
-          throw new IllegalArgumentException(e);
+        if (answer == null) {
+          answer = filter;
+        } else {
+          answer = answer.and(filter);
         }
+      } catch (Exception e) {
+        throw new IllegalArgumentException(e);
       }
     }
     return answer != null ? answer : ResourceEventFilters.passthrough();
@@ -174,22 +171,6 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
       if (configAnnotation != null) {
         configurable.initFrom(configAnnotation);
       }
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private void configureFromCustomAnnotation(Object instance) {
-    if (instance instanceof AnnotationDependentResourceConfigurator) {
-      AnnotationDependentResourceConfigurator configurator =
-          (AnnotationDependentResourceConfigurator) instance;
-      final Class<? extends Annotation> configurationClass =
-          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromInterface(
-              instance.getClass(), AnnotationDependentResourceConfigurator.class);
-      final var configAnnotation = instance.getClass().getAnnotation(configurationClass);
-      // always called even if the annotation is null so that implementations can provide default
-      // values
-      final var config = configurator.configFrom(configAnnotation, this);
-      configurator.configureWith(config);
     }
   }
 
@@ -239,15 +220,10 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
               "A DependentResource named '" + name + "' already exists: " + spec);
         }
 
-        final var dependentResource = Utils.instantiateAndConfigureIfNeeded(dependentType,
-            DependentResource.class,
-            Utils.contextFor(this, dependentType, Dependent.class),
-            this::configureFromCustomAnnotation);
-
         var eventSourceName = dependent.useEventSourceWithName();
         eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
         final var context = Utils.contextFor(this, dependentType, null);
-        spec = new DependentResourceSpec(dependentResource, name,
+        spec = new DependentResourceSpec(dependentType, name,
             Set.of(dependent.dependsOn()),
             Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
             Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),

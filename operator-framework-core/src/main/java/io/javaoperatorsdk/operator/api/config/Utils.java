@@ -237,7 +237,6 @@ public class Utils {
     }
     context += "reconciler: " + controllerConfiguration.getName();
 
-
     return context;
   }
 }

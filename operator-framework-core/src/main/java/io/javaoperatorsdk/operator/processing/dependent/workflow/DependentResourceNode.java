@@ -1,30 +1,113 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public interface DependentResourceNode<R, P extends HasMetadata> {
+public class DependentResourceNode<R, P extends HasMetadata> {
 
-  Optional<Condition<R, P>> getReconcilePrecondition();
+  private final List<DependentResourceNode> dependsOn = new LinkedList<>();
+  private final List<DependentResourceNode> parents = new LinkedList<>();
+  private final String name;
+  private Condition<R, P> reconcilePrecondition;
+  private Condition<R, P> deletePostcondition;
+  private Condition<R, P> readyPostcondition;
+  private final DependentResource<R, P> dependentResource;
 
-  Optional<Condition<R, P>> getDeletePostcondition();
+  DependentResourceNode(DependentResource<R, P> dependentResource) {
+    this(getNameFor(dependentResource), null, null, null, dependentResource);
+  }
 
-  List<? extends DependentResourceNode> getDependsOn();
+  public DependentResourceNode(String name, Condition<R, P> reconcilePrecondition,
+      Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
+      DependentResource<R, P> dependentResource) {
+    this.name = name;
+    this.reconcilePrecondition = reconcilePrecondition;
+    this.deletePostcondition = deletePostcondition;
+    this.readyPostcondition = readyPostcondition;
+    this.dependentResource = dependentResource;
+  }
 
-  void addDependsOnRelation(DependentResourceNode node);
+  public List<? extends DependentResourceNode> getDependsOn() {
+    return dependsOn;
+  }
 
-  Optional<Condition<R, P>> getReadyPostcondition();
+  void addParent(DependentResourceNode parent) {
+    parents.add(parent);
+  }
 
-  List<? extends DependentResourceNode> getParents();
+  void addDependsOnRelation(DependentResourceNode node) {
+    node.addParent(this);
+    dependsOn.add(node);
+  }
 
-  void addParent(DependentResourceNode parent);
+  public List<DependentResourceNode> getParents() {
+    return parents;
+  }
 
-  String getName();
+  public String getName() {
+    return name;
+  }
 
-  default void resolve(KubernetesClient client, ControllerConfiguration<P> configuration) {}
+
+  public Optional<Condition<R, P>> getReconcilePrecondition() {
+    return Optional.ofNullable(reconcilePrecondition);
+  }
+
+
+  public Optional<Condition<R, P>> getDeletePostcondition() {
+    return Optional.ofNullable(deletePostcondition);
+  }
+
+  void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
+    this.reconcilePrecondition = reconcilePrecondition;
+  }
+
+  void setDeletePostcondition(Condition<R, P> cleanupCondition) {
+    this.deletePostcondition = cleanupCondition;
+  }
+
+  public Optional<Condition<R, P>> getReadyPostcondition() {
+    return Optional.ofNullable(readyPostcondition);
+  }
+
+  void setReadyPostcondition(Condition<R, P> readyPostcondition) {
+    this.readyPostcondition = readyPostcondition;
+  }
+
+  public DependentResource<R, P> getDependentResource() {
+    return dependentResource;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    DependentResourceNode<?, ?> that = (DependentResourceNode<?, ?>) o;
+    return name.equals(that.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return name.hashCode();
+  }
+
+  @SuppressWarnings("rawtypes")
+  static String getNameFor(DependentResource dependentResource) {
+    return DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
+        + dependentResource.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return "DependentResourceNode{" + getDependentResource() + '}';
+  }
 }

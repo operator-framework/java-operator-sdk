@@ -9,10 +9,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,10 +94,6 @@ class UtilsTest {
     assertThatIllegalArgumentException().isThrownBy(
         () -> Utils.getFirstTypeArgumentFromInterface(TestKubernetesDependentResource.class,
             DependentResource.class));
-
-    assertThat(Utils.getTypeArgumentFromInterfaceByIndex(TestKubernetesDependentResource.class,
-        AnnotationDependentResourceConfigurator.class, 1))
-        .isEqualTo(KubernetesDependentResourceConfig.class);
   }
 
   @Test

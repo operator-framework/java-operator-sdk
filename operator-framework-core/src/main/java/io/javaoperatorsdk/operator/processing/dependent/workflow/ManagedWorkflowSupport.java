@@ -46,30 +46,17 @@ class ManagedWorkflowSupport {
     }
   }
 
-  public <P extends HasMetadata> Workflow<P> createWorkflow(
+
+  public <P extends HasMetadata> ManagedWorkflow<P> createWorkflow(
       List<DependentResourceSpec> dependentResourceSpecs) {
-    var orderedResourceSpecs = orderAndDetectCycles(dependentResourceSpecs);
-    final var alreadyCreated = new ArrayList<DependentResourceNode>(orderedResourceSpecs.size());
-    final boolean[] cleanerHolder = {false};
-    final var nodes = orderedResourceSpecs.stream()
-        .map(spec -> createFrom(spec, alreadyCreated, cleanerHolder))
-        .collect(Collectors.toSet());
-    return new Workflow<>(nodes, cleanerHolder[0]);
+    return createAsDefault(dependentResourceSpecs);
   }
 
-  private DependentResourceNode createFrom(DependentResourceSpec spec,
-      List<DependentResourceNode> alreadyCreated, boolean[] cleanerHolder) {
-    final var node = new SpecDependentResourceNode<>(spec);
-    alreadyCreated.add(node);
-    // if any previously checked dependent was a cleaner, no need to check further
-    cleanerHolder[0] = cleanerHolder[0] || Workflow.isDeletable(spec.getDependentResourceClass());
-    spec.getDependsOn().forEach(depend -> {
-      final DependentResourceNode dependsOn = alreadyCreated.stream()
-          .filter(drn -> depend.equals(drn.getName())).findFirst()
-          .orElseThrow();
-      node.addDependsOnRelation(dependsOn);
-    });
-    return node;
+  <P extends HasMetadata> DefaultManagedWorkflow<P> createAsDefault(
+      List<DependentResourceSpec> dependentResourceSpecs) {
+    final boolean[] cleanerHolder = {false};
+    var orderedResourceSpecs = orderAndDetectCycles(dependentResourceSpecs, cleanerHolder);
+    return new DefaultManagedWorkflow<>(orderedResourceSpecs, cleanerHolder[0]);
   }
 
   /**
@@ -77,17 +64,22 @@ class ManagedWorkflowSupport {
    * @return top-bottom ordered resources that can be added safely to workflow
    * @throws OperatorException if there is a cycle in the dependencies
    */
-  public List<DependentResourceSpec> orderAndDetectCycles(
-      List<DependentResourceSpec> dependentResourceSpecs) {
+  private List<DependentResourceSpec<?, ?>> orderAndDetectCycles(
+      List<DependentResourceSpec> dependentResourceSpecs, boolean[] cleanerHolder) {
 
     final var drInfosByName = createDRInfos(dependentResourceSpecs);
-    final var orderedSpecs = new ArrayList<DependentResourceSpec>(dependentResourceSpecs.size());
+    final var orderedSpecs =
+        new ArrayList<DependentResourceSpec<?, ?>>(dependentResourceSpecs.size());
     final var alreadyVisited = new HashSet<String>();
     var toVisit = getTopDependentResources(dependentResourceSpecs);
 
     while (!toVisit.isEmpty()) {
       final var toVisitNext = new HashSet<DependentResourceSpec>();
       toVisit.forEach(dr -> {
+        if (cleanerHolder != null) {
+          cleanerHolder[0] =
+              cleanerHolder[0] || DefaultWorkflow.isDeletable(dr.getDependentResourceClass());
+        }
         final var name = dr.getName();
         var drInfo = drInfosByName.get(name);
         if (drInfo != null) {
@@ -109,6 +101,16 @@ class ManagedWorkflowSupport {
       throw new OperatorException("Cycle(s) between dependent resources.");
     }
     return orderedSpecs;
+  }
+
+  /**
+   * @param dependentResourceSpecs list of specs
+   * @return top-bottom ordered resources that can be added safely to workflow
+   * @throws OperatorException if there is a cycle in the dependencies
+   */
+  public List<DependentResourceSpec<?, ?>> orderAndDetectCycles(
+      List<DependentResourceSpec> dependentResourceSpecs) {
+    return orderAndDetectCycles(dependentResourceSpecs, null);
   }
 
   private static class DRInfo {

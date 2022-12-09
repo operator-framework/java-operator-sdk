@@ -138,16 +138,12 @@ class ManagedWorkflowSupportTest {
         createDRS(NAME_3, NAME_1),
         createDRS(NAME_4, NAME_3, NAME_2));
 
-    var workflow = managedWorkflowSupport.createWorkflow(specs);
+    var workflow = managedWorkflowSupport.createAsDefault(specs);
 
-    assertThat(workflow.nodes().values()).map(DependentResourceNode::getName)
+    assertThat(workflow.nodeNames())
         .containsExactlyInAnyOrder(NAME_1, NAME_2, NAME_3, NAME_4);
-    assertThat(workflow.getTopLevelDependentResources())
-        .map(DependentResourceNode::getName)
-        .containsExactly(NAME_1);
-    assertThat(workflow.getBottomLevelResource())
-        .map(DependentResourceNode::getName)
-        .containsExactly(NAME_4);
+    assertThat(workflow.getTopLevelResources()).containsExactly(NAME_1);
+    assertThat(workflow.getBottomLevelResources()).containsExactly(NAME_4);
   }
 
 }

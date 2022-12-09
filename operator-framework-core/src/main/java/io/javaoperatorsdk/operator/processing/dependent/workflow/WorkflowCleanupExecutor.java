@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -52,7 +53,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
       return;
     }
 
-    Future<?> nodeFuture = workflow.getExecutorService()
+    Future<?> nodeFuture = ExecutorServiceManager.instance().workflowExecutorService()
         .submit(new CleanupExecutor<>(dependentResourceNode));
     markAsExecuting(dependentResourceNode, nodeFuture);
     log.debug("Submitted for cleanup: {}", dependentResourceNode);
@@ -116,10 +117,10 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
   private WorkflowCleanupResult createCleanupResult() {
     final var erroredDependents = getErroredDependents();
     final var postConditionNotMet = postDeleteConditionNotMet.stream()
-        .map(workflow::getDependentResourceFor)
+        .map(DependentResourceNode::getDependentResource)
         .collect(Collectors.toList());
     final var deleteCalled = this.deleteCalled.stream()
-        .map(workflow::getDependentResourceFor)
+        .map(DependentResourceNode::getDependentResource)
         .collect(Collectors.toList());
     return new WorkflowCleanupResult(erroredDependents, postConditionNotMet, deleteCalled);
   }

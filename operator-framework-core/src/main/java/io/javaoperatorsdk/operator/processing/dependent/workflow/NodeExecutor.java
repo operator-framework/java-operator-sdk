@@ -17,7 +17,7 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
   @Override
   public void run() {
     try {
-      var dependentResource = workflowExecutor.getDependentResourceFor(dependentResourceNode);
+      var dependentResource = dependentResourceNode.getDependentResource();
 
       doRun(dependentResourceNode, dependentResource);
 
