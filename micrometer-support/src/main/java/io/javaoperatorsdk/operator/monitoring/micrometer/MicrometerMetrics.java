@@ -168,7 +168,7 @@ public class MicrometerMetrics implements Metrics {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
   }
 
-  private List<Tag> gvkTags(Class<? extends HasMetadata> resourceClass) {
+  public static List<Tag> gvkTags(Class<? extends HasMetadata> resourceClass) {
     final var gvk = GroupVersionKind.gvkFor(resourceClass);
     return List.of(Tag.of("group", gvk.group), Tag.of("version", gvk.version),
         Tag.of("kind", gvk.kind));
