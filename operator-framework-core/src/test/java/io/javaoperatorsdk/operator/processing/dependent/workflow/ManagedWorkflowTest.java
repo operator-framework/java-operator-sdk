@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -17,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({"rawtypes"})
 class ManagedWorkflowTest {
 
   public static final String NAME = "name";
@@ -40,6 +39,19 @@ class ManagedWorkflowTest {
   }
 
   @Test
+  void isCleanerShouldWork() {
+    assertThat(managedWorkflow(
+        createDRSWithTraits(NAME, GarbageCollected.class),
+        createDRSWithTraits("foo", Deleter.class))
+        .isCleaner()).isTrue();
+
+    assertThat(managedWorkflow(
+        createDRSWithTraits("foo", Deleter.class),
+        createDRSWithTraits(NAME, GarbageCollected.class))
+        .isCleaner()).isTrue();
+  }
+
+  @Test
   void isCleanerIfHasDeleter() {
     var spec = createDRSWithTraits(NAME, Deleter.class);
     assertThat(managedWorkflow(spec).isCleaner()).isTrue();
@@ -49,12 +61,9 @@ class ManagedWorkflowTest {
     final var configuration = mock(ControllerConfiguration.class);
     final var specList = List.of(specs);
 
-    KubernetesClient kubernetesClientMock = mock(KubernetesClient.class);
-
     when(configuration.getDependentResources()).thenReturn(specList);
     return ConfigurationServiceProvider.instance().getWorkflowFactory()
-        .workflowFor(configuration)
-        .resolve(kubernetesClientMock, specList);
+        .workflowFor(configuration);
   }
 
 }

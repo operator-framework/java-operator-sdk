@@ -11,10 +11,13 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 /**
  * Dependents definition: so if B depends on A, the B is dependent of A.
@@ -34,23 +37,40 @@ public class Workflow<P extends HasMetadata> {
   // it's "global" executor service shared between multiple reconciliations running parallel
   private final ExecutorService executorService;
   private boolean resolved;
-  private boolean hasCleaner;
+  private final boolean hasCleaner;
 
-  Workflow(Set<DependentResourceNode> dependentResourceNodes) {
+  Workflow(Set<DependentResourceNode> dependentResourceNodes, boolean hasCleaner) {
     this(dependentResourceNodes, ExecutorServiceManager.instance().workflowExecutorService(),
-        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false, false);
+        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false, hasCleaner);
   }
 
   Workflow(Set<DependentResourceNode> dependentResourceNodes,
       ExecutorService executorService, boolean throwExceptionAutomatically, boolean resolved,
       boolean hasCleaner) {
     this.executorService = executorService;
-    this.dependentResourceNodes = dependentResourceNodes.stream()
-        .collect(Collectors.toMap(DependentResourceNode::getName, Function.identity()));
+    this.dependentResourceNodes = toMap(dependentResourceNodes);
     this.throwExceptionAutomatically = throwExceptionAutomatically;
     this.resolved = resolved;
     this.hasCleaner = hasCleaner;
-    preprocessForReconcile();
+  }
+
+  private Map<String, DependentResourceNode> toMap(
+      Set<DependentResourceNode> dependentResourceNodes) {
+    final var nodes = new ArrayList<>(dependentResourceNodes);
+    bottomLevelResource.addAll(nodes);
+    return dependentResourceNodes.stream()
+        .peek(drn -> {
+          // add cycle detection?
+          if (drn.getDependsOn().isEmpty()) {
+            topLevelResources.add(drn);
+          } else {
+            for (DependentResourceNode dependsOn : (List<DependentResourceNode>) drn
+                .getDependsOn()) {
+              bottomLevelResource.remove(dependsOn);
+            }
+          }
+        })
+        .collect(Collectors.toMap(DependentResourceNode::getName, Function.identity()));
   }
 
   public DependentResource getDependentResourceFor(DependentResourceNode node) {
@@ -92,22 +112,6 @@ public class Workflow<P extends HasMetadata> {
     return result;
   }
 
-  // add cycle detection?
-  @SuppressWarnings("unchecked")
-  private void preprocessForReconcile() {
-    final var nodes = new ArrayList<>(dependentResourceNodes.values());
-    bottomLevelResource.addAll(nodes);
-    for (DependentResourceNode<?, P> node : nodes) {
-      if (node.getDependsOn().isEmpty()) {
-        topLevelResources.add(node);
-      } else {
-        for (DependentResourceNode dependsOn : node.getDependsOn()) {
-          bottomLevelResource.remove(dependsOn);
-        }
-      }
-    }
-  }
-
   Set<DependentResourceNode> getTopLevelDependentResources() {
     return topLevelResources;
   }
@@ -125,24 +129,26 @@ public class Workflow<P extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  void resolve(KubernetesClient client, List<DependentResourceSpec> dependentResources) {
+  void resolve(KubernetesClient client, ControllerConfiguration<P> configuration) {
     if (!resolved) {
-      final boolean[] cleanerHolder = {false};
-      dependentResourceNodes.values()
-          .forEach(drn -> {
-            drn.resolve(client, dependentResources);
-            final var dr = dependentResource(drn);
-            if (dr.isDeletable()) {
-              cleanerHolder[0] = true;
-            }
-          });
+      dependentResourceNodes.values().forEach(drn -> drn.resolve(client, configuration));
       resolved = true;
-      hasCleaner = cleanerHolder[0];
     }
   }
 
   boolean hasCleaner() {
-    throwIfUnresolved();
     return hasCleaner;
+  }
+
+  static boolean isDeletable(Class<? extends DependentResource> drClass) {
+    final var isDeleter = Deleter.class.isAssignableFrom(drClass);
+    if (!isDeleter) {
+      return false;
+    }
+
+    if (KubernetesDependentResource.class.isAssignableFrom(drClass)) {
+      return !GarbageCollected.class.isAssignableFrom(drClass);
+    }
+    return true;
   }
 }

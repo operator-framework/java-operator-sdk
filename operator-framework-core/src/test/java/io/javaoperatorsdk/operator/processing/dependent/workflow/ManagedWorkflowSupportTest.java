@@ -8,13 +8,11 @@ import org.assertj.core.data.Index;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowTestUtils.createDRS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 class ManagedWorkflowSupportTest {
 
@@ -140,9 +138,7 @@ class ManagedWorkflowSupportTest {
         createDRS(NAME_3, NAME_1),
         createDRS(NAME_4, NAME_3, NAME_2));
 
-    final var client = mock(KubernetesClient.class);
     var workflow = managedWorkflowSupport.createWorkflow(specs);
-    workflow.resolve(client, specs);
 
     assertThat(workflow.nodes().values()).map(DependentResourceNode::getName)
         .containsExactlyInAnyOrder(NAME_1, NAME_2, NAME_3, NAME_4);
