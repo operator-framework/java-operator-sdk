@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.util.*;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
@@ -21,6 +22,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
+  private final boolean deletable = this instanceof Deleter;
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
@@ -171,5 +173,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @SuppressWarnings("unused")
   protected boolean isUpdatable() {
     return updatable;
+  }
+
+  @Override
+  public boolean isDeletable() {
+    return deletable;
   }
 }
