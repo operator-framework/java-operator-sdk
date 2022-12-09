@@ -713,6 +713,8 @@ See also an example implementation in the
 
 ## Optimization of Caches
 
+** Cache pruning is an experimental feature. Might a subject of change or even removal in the future. **
+
 Operators using informers will initially cache the data for all known resources when starting up 
 so that access to resources can be performed quickly. Consequently, the memory required for the 
 operator to run and startup time will both increase quite dramatically when dealing with large
