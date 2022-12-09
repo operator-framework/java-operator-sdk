@@ -188,7 +188,7 @@ class ControllerResourceEventSourceTest extends
           null,
           TestCustomResource.class,
           null,
-          onAddFilter, onUpdateFilter, genericFilter, null, null);
+          onAddFilter, onUpdateFilter, genericFilter, null, null, null);
     }
   }
 }

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -49,8 +50,10 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
       OnUpdateFilter<R> onUpdateFilter,
       GenericFilter<R> genericFilter,
       RateLimiter rateLimiter,
-      List<DependentResourceSpec> dependents) {
-    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
+      List<DependentResourceSpec> dependents,
+      UnaryOperator<R> cachePruneFunction) {
+    super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces,
+        cachePruneFunction);
     this.associatedControllerClassName = associatedControllerClassName;
     this.name = name;
     this.crdName = crdName;
@@ -116,4 +119,5 @@ public class DefaultControllerConfiguration<R extends HasMetadata>
   public RateLimiter getRateLimiter() {
     return rateLimiter;
   }
+
 }

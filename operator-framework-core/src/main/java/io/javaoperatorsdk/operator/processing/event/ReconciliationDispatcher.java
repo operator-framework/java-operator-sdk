@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +12,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -82,7 +86,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     Context<P> context =
         new DefaultContext<>(executionScope.getRetryInfo(), controller, originalResource);
     if (markedForDeletion) {
-      return handleCleanup(resourceForExecution, context);
+      return handleCleanup(originalResource, resourceForExecution, context);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
     }
@@ -109,7 +113,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
        * finalizer add. This will make sure that the resources are not created before there is a
        * finalizer.
        */
-      var updatedResource = updateCustomResourceWithFinalizer(originalResource);
+      var updatedResource =
+          updateCustomResourceWithFinalizer(resourceForExecution, originalResource);
       return PostExecutionControl.onlyFinalizerAdded(updatedResource);
     } else {
       try {
@@ -276,7 +281,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
 
-  private PostExecutionControl<P> handleCleanup(P resource, Context<P> context) {
+  private PostExecutionControl<P> handleCleanup(P originalResource, P resource,
+      Context<P> context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
         getName(resource),
@@ -289,7 +295,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = removeFinalizer(resource, finalizerName);
+        P customResource = conflictRetryingPatch(resource, originalResource,
+            r -> r.removeFinalizer(finalizerName));
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -304,11 +311,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return postExecutionControl;
   }
 
-  private P updateCustomResourceWithFinalizer(P resource) {
+  private P updateCustomResourceWithFinalizer(P resourceForExecution, P originalResource) {
     log.debug(
-        "Adding finalizer for resource: {} version: {}", getUID(resource), getVersion(resource));
-    resource.addFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.updateResource(resource);
+        "Adding finalizer for resource: {} version: {}", getUID(originalResource),
+        getVersion(originalResource));
+
+    return conflictRetryingPatch(resourceForExecution, originalResource,
+        r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
   private P updateCustomResource(P resource) {
@@ -321,20 +330,21 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return controller.getConfiguration();
   }
 
-  public P removeFinalizer(P resource, String finalizer) {
+  public P conflictRetryingPatch(P resource, P originalResource,
+      Function<P, Boolean> modificationFunction) {
     if (log.isDebugEnabled()) {
       log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
     }
     int retryIndex = 0;
     while (true) {
       try {
-        var removed = resource.removeFinalizer(finalizer);
-        if (!removed) {
+        var modified = modificationFunction.apply(resource);
+        if (Boolean.FALSE.equals(modified)) {
           return resource;
         }
-        return customResourceFacade.updateResource(resource);
+        return customResourceFacade.serverSideApplyLockResource(resource, originalResource);
       } catch (KubernetesClientException e) {
-        log.trace("Exception during finalizer removal for resource: {}", resource);
+        log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
         // only retry on conflict (HTTP 409), otherwise fail
         if (e.getCode() != 409) {
@@ -343,7 +353,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (retryIndex >= MAX_FINALIZER_REMOVAL_RETRY) {
           throw new OperatorException(
               "Exceeded maximum (" + MAX_FINALIZER_REMOVAL_RETRY
-                  + ") retry attempts to remove finalizer '" + finalizer + "' for resource "
+                  + ") retry attempts to patch resource: "
                   + ResourceID.fromResource(resource));
         }
         resource = customResourceFacade.getResource(resource.getMetadata().getNamespace(),
@@ -370,12 +380,18 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
+    public R serverSideApplyLockResource(R resource, R originalResource) {
+      var patchContext = PatchContext.of(PatchType.SERVER_SIDE_APPLY);
+      patchContext.setForce(true);
+      return resource(originalResource).patch(patchContext,
+          resource);
+    }
+
     public R updateResource(R resource) {
       log.debug(
           "Trying to replace resource {}, version: {}",
           getName(resource),
           resource.getMetadata().getResourceVersion());
-
       return resource(resource).lockResourceVersion(resource.getMetadata().getResourceVersion())
           .replace();
     }

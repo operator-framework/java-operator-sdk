@@ -3,11 +3,13 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -107,5 +109,12 @@ public interface ResourceConfiguration<R extends HasMetadata> {
       targetNamespaces = Collections.singleton(namespace);
     }
     return targetNamespaces;
+  }
+
+  /**
+   * See {@link ControllerConfiguration#cachePruneFunction()} for details.
+   */
+  default Optional<UnaryOperator<R>> cachePruneFunction() {
+    return Optional.empty();
   }
 }
