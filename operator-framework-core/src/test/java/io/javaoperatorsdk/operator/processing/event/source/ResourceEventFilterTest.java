@@ -144,7 +144,7 @@ class ResourceEventFilterTest {
           null,
           null,
           null,
-          null, null, null, finalizer, null);
+          null, null, null, finalizer, null, null);
       setEventFilter(eventFilter);
     }
   }

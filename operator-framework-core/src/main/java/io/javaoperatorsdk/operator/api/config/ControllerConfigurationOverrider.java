@@ -184,7 +184,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter, cachePruneFunction,
         original.getDependentResources(),
-        namespaces, finalizer, labelSelector);
+        namespaces, finalizer, labelSelector, configurations);
     overridden.setEventFilter(customResourcePredicate);
     return overridden;
   }

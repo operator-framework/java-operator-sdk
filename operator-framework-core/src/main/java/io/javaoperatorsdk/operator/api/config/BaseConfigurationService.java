@@ -22,7 +22,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -155,7 +154,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             Constants.NO_VALUE_SET),
         valueOrDefault(annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
-            Constants.NO_VALUE_SET));
+            Constants.NO_VALUE_SET),
+        null);
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());
@@ -215,15 +215,11 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       }
 
       final var name = parent.getName();
-      final var dependentResource = Utils.instantiateAndConfigureIfNeeded(dependentType,
-          DependentResource.class,
-          Utils.contextFor(name, dependentType, Dependent.class),
-          instance -> configureFromCustomAnnotation(instance, parent));
 
       var eventSourceName = dependent.useEventSourceWithName();
       eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
       final var context = Utils.contextFor(name, dependentType, null);
-      spec = new DependentResourceSpec(dependentResource, dependentName,
+      spec = new DependentResourceSpec(dependentType, dependentName,
           Set.of(dependent.dependsOn()),
           Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
           Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
@@ -253,6 +249,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       return mapper.apply(controllerConfiguration);
     }
   }
+
   @SuppressWarnings("rawtypes")
   private static String getName(String name, Class<? extends DependentResource> dependentType) {
     if (name.isBlank()) {
@@ -278,23 +275,6 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       if (configAnnotation != null) {
         configurable.initFrom(configAnnotation);
       }
-    }
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static <P extends HasMetadata> void configureFromCustomAnnotation(Object instance,
-      ControllerConfiguration<P> parent) {
-    if (instance instanceof AnnotationDependentResourceConfigurator) {
-      AnnotationDependentResourceConfigurator configurator =
-          (AnnotationDependentResourceConfigurator) instance;
-      final Class<? extends Annotation> configurationClass =
-          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromInterface(
-              instance.getClass(), AnnotationDependentResourceConfigurator.class);
-      final var configAnnotation = instance.getClass().getAnnotation(configurationClass);
-      // always called even if the annotation is null so that implementations can provide default
-      // values
-      final var config = configurator.configFrom(configAnnotation, parent);
-      configurator.configureWith(config);
     }
   }
 }

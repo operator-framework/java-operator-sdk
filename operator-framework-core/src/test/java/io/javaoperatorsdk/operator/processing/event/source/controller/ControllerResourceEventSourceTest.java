@@ -197,7 +197,7 @@ class ControllerResourceEventSourceTest extends
           null,
           null,
           FINALIZER,
-          null);
+          null, null);
     }
   }
 }
