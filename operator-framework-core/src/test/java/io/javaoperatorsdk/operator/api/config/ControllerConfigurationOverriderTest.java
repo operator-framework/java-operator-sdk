@@ -6,8 +6,12 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -19,6 +23,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -107,8 +112,8 @@ class ControllerConfigurationOverriderTest {
 
   private Object extractDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
-    return configuration.getDependentResources().get(index).getDependentResourceConfiguration()
-        .orElseThrow();
+    final var spec = configuration.getDependentResources().get(index);
+    return DependentResourceConfigurationResolver.configurationFor(spec, configuration);
   }
 
   private io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> createConfiguration(
@@ -297,11 +302,12 @@ class ControllerConfigurationOverriderTest {
         .filter(dr -> dr.getName().equals(dependentResourceName))
         .findFirst().orElseThrow();
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
-    var maybeConfig = dependentSpec.getDependentResourceConfiguration();
-    assertTrue(maybeConfig.isPresent());
-    assertTrue(maybeConfig.get() instanceof KubernetesDependentResourceConfig);
+    var maybeConfig =
+        DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
+    assertNotNull(maybeConfig);
+    assertTrue(maybeConfig instanceof KubernetesDependentResourceConfig);
 
-    var config = (KubernetesDependentResourceConfig) maybeConfig.orElseThrow();
+    var config = (KubernetesDependentResourceConfig) maybeConfig;
     // check that the DependentResource inherits the controller's configuration if applicable
     assertEquals(1, config.namespaces().size());
     assertNull(config.labelSelector());
@@ -318,8 +324,8 @@ class ControllerConfigurationOverriderTest {
     dependents = overridden.getDependentResources();
     dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
         .findFirst().orElseThrow();
-    config = (KubernetesDependentResourceConfig) dependentSpec.getDependentResourceConfiguration()
-        .orElseThrow();
+    config = (KubernetesDependentResourceConfig) DependentResourceConfigurationResolver
+        .configurationFor(dependentSpec, overridden);
     assertEquals(1, config.namespaces().size());
     assertEquals(labelSelector, config.labelSelector());
     assertEquals(Set.of(overriddenNS), config.namespaces());

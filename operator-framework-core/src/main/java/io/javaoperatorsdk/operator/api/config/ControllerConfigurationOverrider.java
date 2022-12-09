@@ -1,17 +1,15 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -34,12 +32,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private final LinkedHashMap<String, DependentResourceSpec> namedDependentResourceSpecs;
   private OnAddFilter<R> onAddFilter;
   private OnUpdateFilter<R> onUpdateFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
   private UnaryOperator<R> cachePruneFunction;
+  private Map<DependentResourceSpec, Object> configurations;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -49,13 +47,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     labelSelector = original.getLabelSelector();
     customResourcePredicate = original.getEventFilter();
     reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
-    // make the original specs modifiable
-    final var dependentResources = original.getDependentResources();
-    namedDependentResourceSpecs = new LinkedHashMap<>(dependentResources.size());
     this.onAddFilter = original.onAddFilter().orElse(null);
     this.onUpdateFilter = original.onUpdateFilter().orElse(null);
     this.genericFilter = original.genericFilter().orElse(null);
-    dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
     this.cachePruneFunction = original.cachePruneFunction().orElse(null);
@@ -167,40 +161,24 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
-    var current = namedDependentResourceSpecs.get(name);
-    if (current == null) {
-      throw new IllegalArgumentException("Cannot find a DependentResource named: " + name);
-    }
+    final var specs = original.getDependentResources();
+    final var spec = specs.stream()
+        .filter(drs -> drs.getName().equals(name)).findFirst()
+        .orElseThrow(
+            () -> new IllegalArgumentException("Cannot find a DependentResource named: " + name));
 
-    var dependentResource = current.getDependentResource();
-    if (dependentResource instanceof DependentResourceConfigurator) {
-      var configurator = (DependentResourceConfigurator) dependentResource;
-      configurator.configureWith(dependentResourceConfig);
+    if (configurations == null) {
+      configurations = new HashMap<>(specs.size());
     }
+    configurations.put(spec, dependentResourceConfig);
 
     return this;
   }
 
   public ControllerConfiguration<R> build() {
-    final var hasModifiedNamespaces = !original.getNamespaces().equals(namespaces);
-    final var newDependentSpecs = namedDependentResourceSpecs.values().stream()
-        .peek(spec -> {
-          // if the dependent resource has a NamespaceChangeable config
-          // update the namespaces if needed, otherwise, do nothing
-          if (hasModifiedNamespaces) {
-            final Optional<?> maybeConfig = spec.getDependentResourceConfiguration();
-            maybeConfig
-                .filter(NamespaceChangeable.class::isInstance)
-                .map(NamespaceChangeable.class::cast)
-                .filter(NamespaceChangeable::allowsNamespaceChanges)
-                .ifPresent(nc -> nc.changeNamespaces(namespaces));
-          }
-        }).collect(Collectors.toList());
-
     return new DefaultControllerConfiguration<>(
         original.getAssociatedReconcilerClassName(),
         original.getName(),
@@ -217,7 +195,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         onUpdateFilter,
         genericFilter,
         rateLimiter,
-        newDependentSpecs, cachePruneFunction);
+        original.getDependentResources(),
+        cachePruneFunction,
+        configurations);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
