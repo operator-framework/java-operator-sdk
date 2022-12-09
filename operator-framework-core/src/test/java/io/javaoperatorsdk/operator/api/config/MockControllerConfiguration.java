@@ -14,6 +14,7 @@ public class MockControllerConfiguration {
     when(configuration.getResourceClass()).thenReturn(resourceType);
     when(configuration.getNamespaces()).thenReturn(DEFAULT_NAMESPACES_SET);
     when(configuration.getEffectiveNamespaces()).thenCallRealMethod();
+    when(configuration.getName()).thenReturn(resourceType.getSimpleName());
     return configuration;
   }
 }

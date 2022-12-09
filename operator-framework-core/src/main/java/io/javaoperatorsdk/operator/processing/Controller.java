@@ -90,10 +90,10 @@ public class Controller<P extends HasMetadata>
     eventProcessor = new EventProcessor<>(eventSourceManager);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
-
     final var context = new EventSourceContext<>(
         eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
     initAndRegisterEventSources(context);
+    ConfigurationServiceProvider.instance().getMetrics().controllerRegistered(this);
   }
 
   @Override
