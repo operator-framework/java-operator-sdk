@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -47,6 +48,11 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return null;
   }
 
+  static String ensureValidLabelSelector(String labelSelector) {
+    // might want to implement validation here?
+    return labelSelector;
+  }
+
   @SuppressWarnings("unchecked")
   default Class<R> getResourceClass() {
     return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
@@ -88,6 +94,14 @@ public interface ResourceConfiguration<R extends HasMetadata> {
             + Constants.WATCH_ALL_NAMESPACES
             + "'. To watch only the namespace in which the operator is deployed, use only '"
             + Constants.WATCH_CURRENT_NAMESPACE + "'");
+  }
+
+  static Set<String> ensureValidNamespaces(Collection<String> namespaces) {
+    if (namespaces != null && !namespaces.isEmpty()) {
+      return Set.copyOf(namespaces);
+    } else {
+      return Constants.DEFAULT_NAMESPACES_SET;
+    }
   }
 
   /**

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.config.runtime;
+package io.javaoperatorsdk.operator.config;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,8 +14,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
@@ -48,11 +50,29 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AnnotationControllerConfigurationTest {
+class BaseConfigurationServiceTest {
+
+  // subclass to expose configFor method to this test class
+  private final static class TestConfigurationService extends BaseConfigurationService {
+
+    @Override
+    protected <P extends HasMetadata> io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
+        Reconciler<P> reconciler) {
+      return super.configFor(reconciler);
+    }
+  }
+
+  private final TestConfigurationService configurationService = new TestConfigurationService();
+
+  private <P extends HasMetadata> io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
+      Reconciler<P> reconciler) {
+    // ensure that a new configuration is created each time
+    return configurationService.configFor(reconciler);
+  }
 
   @Test
   void defaultValuesShouldBeConsistent() {
-    final var configuration = new AnnotationControllerConfiguration<>(new SelectorReconciler());
+    final var configuration = configFor(new SelectorReconciler());
     final var annotated = extractDependentKubernetesResourceConfig(configuration, 1);
     final var unannotated = extractDependentKubernetesResourceConfig(configuration, 0);
 
@@ -71,11 +91,11 @@ class AnnotationControllerConfigurationTest {
   @Test
   @SuppressWarnings("rawtypes")
   void getDependentResources() {
-    var configuration = new AnnotationControllerConfiguration<>(new NoDepReconciler());
+    var configuration = configFor(new NoDepReconciler());
     var dependents = configuration.getDependentResources();
     assertTrue(dependents.isEmpty());
 
-    configuration = new AnnotationControllerConfiguration<>(new OneDepReconciler());
+    configuration = configFor(new OneDepReconciler());
     dependents = configuration.getDependentResources();
     assertFalse(dependents.isEmpty());
     assertEquals(1, dependents.size());
@@ -92,7 +112,7 @@ class AnnotationControllerConfigurationTest {
     assertEquals(1, config.namespaces().size());
     assertEquals(Set.of(OneDepReconciler.CONFIGURED_NS), config.namespaces());
 
-    configuration = new AnnotationControllerConfiguration<>(new NamedDepReconciler());
+    configuration = configFor(new NamedDepReconciler());
     dependents = configuration.getDependentResources();
     assertFalse(dependents.isEmpty());
     assertEquals(1, dependents.size());
@@ -107,7 +127,7 @@ class AnnotationControllerConfigurationTest {
   @Test
   void missingAnnotationThrowsException() {
     Assertions.assertThrows(OperatorException.class,
-        () -> new AnnotationControllerConfiguration<>(new MissingAnnotationReconciler()));
+        () -> configFor(new MissingAnnotationReconciler()));
   }
 
   @SuppressWarnings("rawtypes")
@@ -125,13 +145,12 @@ class AnnotationControllerConfigurationTest {
 
   @Test
   void tryingToAddDuplicatedDependentsWithoutNameShouldFail() {
-    var configuration = new AnnotationControllerConfiguration<>(new DuplicatedDepReconciler());
-    assertThrows(IllegalArgumentException.class, configuration::getDependentResources);
+    assertThrows(IllegalArgumentException.class, () -> configFor(new DuplicatedDepReconciler()));
   }
 
   @Test
   void addingDuplicatedDependentsWithNameShouldWork() {
-    var config = new AnnotationControllerConfiguration<>(new NamedDuplicatedDepReconciler());
+    var config = configFor(new NamedDuplicatedDepReconciler());
     var dependents = config.getDependentResources();
     assertEquals(2, dependents.size());
     assertTrue(findByNameOptional(dependents, NamedDuplicatedDepReconciler.NAME).isPresent()
@@ -141,13 +160,13 @@ class AnnotationControllerConfigurationTest {
 
   @Test
   void maxIntervalCanBeConfigured() {
-    var config = new AnnotationControllerConfiguration<>(new MaxIntervalReconciler());
+    var config = configFor(new MaxIntervalReconciler());
     assertEquals(50, config.maxReconciliationInterval().map(Duration::getSeconds).orElseThrow());
   }
 
   @Test
   void checkDefaultRateAndRetryConfigurations() {
-    var config = new AnnotationControllerConfiguration<>(new NoDepReconciler());
+    var config = configFor(new NoDepReconciler());
     final var retry = assertInstanceOf(GenericRetry.class, config.getRetry());
     assertEquals(GradualRetry.DEFAULT_MAX_ATTEMPTS, retry.getMaxAttempts());
     assertEquals(GradualRetry.DEFAULT_MULTIPLIER, retry.getIntervalMultiplier());
@@ -161,7 +180,7 @@ class AnnotationControllerConfigurationTest {
   @Test
   void configuringRateAndRetryViaAnnotationsShouldWork() {
     var config =
-        new AnnotationControllerConfiguration<>(new ConfigurableRateLimitAndRetryReconciler());
+        configFor(new ConfigurableRateLimitAndRetryReconciler());
     final var retry = config.getRetry();
     final var testRetry = assertInstanceOf(TestRetry.class, retry);
     assertEquals(12, testRetry.getValue());
@@ -173,7 +192,7 @@ class AnnotationControllerConfigurationTest {
 
   @Test
   void checkingRetryingGraduallyWorks() {
-    var config = new AnnotationControllerConfiguration<>(new CheckRetryingGraduallyConfiguration());
+    var config = configFor(new CheckRetryingGraduallyConfiguration());
     final var retry = config.getRetry();
     final var genericRetry = assertInstanceOf(GenericRetry.class, retry);
     assertEquals(CheckRetryingGraduallyConfiguration.INITIAL_INTERVAL,
@@ -186,13 +205,13 @@ class AnnotationControllerConfigurationTest {
 
   @Test
   void controllerConfigurationOnSuperClassShouldWork() {
-    var config = new AnnotationControllerConfiguration<>(new ControllerConfigurationOnSuperClass());
+    var config = configFor(new ControllerConfigurationOnSuperClass());
     assertNotNull(config.getName());
   }
 
   @Test
   void configuringFromCustomAnnotationsShouldWork() {
-    var config = new AnnotationControllerConfiguration<>(new CustomAnnotationReconciler());
+    var config = configFor(new CustomAnnotationReconciler());
     assertEquals(CustomAnnotatedDep.PROVIDED_VALUE, getValue(config, 0));
     assertEquals(CustomConfigConverter.CONVERTER_PROVIDED_DEFAULT, getValue(config, 1));
   }

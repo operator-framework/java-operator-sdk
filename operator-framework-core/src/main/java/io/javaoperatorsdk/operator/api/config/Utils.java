@@ -227,6 +227,13 @@ public class Utils {
   public static String contextFor(ControllerConfiguration<?> controllerConfiguration,
       Class<? extends DependentResource> dependentType,
       Class<? extends Annotation> configurationAnnotation) {
+    return contextFor(controllerConfiguration.getName(), dependentType, configurationAnnotation);
+  }
+
+  @SuppressWarnings("rawtypes")
+  public static String contextFor(String reconcilerName,
+      Class<? extends DependentResource> dependentType,
+      Class<? extends Annotation> configurationAnnotation) {
     final var annotationName =
         configurationAnnotation != null ? configurationAnnotation.getSimpleName()
             : io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class
@@ -235,7 +242,7 @@ public class Utils {
     if (dependentType != null) {
       context += "DependentResource: " + dependentType.getName() + ", ";
     }
-    context += "reconciler: " + controllerConfiguration.getName();
+    context += "reconciler: " + reconcilerName;
 
     return context;
   }

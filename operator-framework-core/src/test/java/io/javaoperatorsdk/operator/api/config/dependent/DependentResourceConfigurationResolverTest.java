@@ -8,8 +8,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
-import io.javaoperatorsdk.operator.api.config.AnnotationControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -30,9 +31,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DependentResourceConfigurationResolverTest {
 
+  // subclass to expose configFor method to this test class
+  private final static class TestConfigurationService extends BaseConfigurationService {
+
+    @Override
+    protected <P extends HasMetadata> io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
+        Reconciler<P> reconciler) {
+      return super.configFor(reconciler);
+    }
+  }
+
+  private final TestConfigurationService configurationService = new TestConfigurationService();
+
+  private <P extends HasMetadata> io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
+      Reconciler<P> reconciler) {
+    // ensure that a new configuration is created each time
+    return configurationService.configFor(reconciler);
+  }
+
   @Test
   void controllerConfigurationProvidedShouldBeReturnedIfAvailable() {
-    final var cfg = new AnnotationControllerConfiguration<>(new CustomAnnotationReconciler());
+    final var cfg = configFor(new CustomAnnotationReconciler());
     final var customConfig = DependentResourceConfigurationResolver
         .extractConfigurationFromConfigured(CustomAnnotatedDep.class, cfg);
     assertTrue(customConfig instanceof CustomConfig);
@@ -51,7 +70,7 @@ class DependentResourceConfigurationResolverTest {
 
   @Test
   void getConverterShouldWork() {
-    final var cfg = new AnnotationControllerConfiguration<>(new CustomAnnotationReconciler());
+    final var cfg = configFor(new CustomAnnotationReconciler());
     var converter = DependentResourceConfigurationResolver.getConverter(CustomAnnotatedDep.class);
     assertNull(converter);
     assertNull(DependentResourceConfigurationResolver.getConverter(ChildCustomAnnotatedDep.class));
@@ -77,7 +96,7 @@ class DependentResourceConfigurationResolverTest {
   @SuppressWarnings("rawtypes")
   @Test
   void registerConverterShouldWork() {
-    final var cfg = new AnnotationControllerConfiguration<>(new CustomAnnotationReconciler());
+    final var cfg = configFor(new CustomAnnotationReconciler());
     var converter = DependentResourceConfigurationResolver.getConverter(ConfigMapDep.class);
     assertNull(converter);
     DependentResourceConfigurationResolver.extractConfigurationFromConfigured(ConfigMapDep.class,

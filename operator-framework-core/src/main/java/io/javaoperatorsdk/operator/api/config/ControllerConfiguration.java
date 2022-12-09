@@ -17,17 +17,35 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-public interface ControllerConfiguration<R extends HasMetadata> extends ResourceConfiguration<R> {
+public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
 
   default String getName() {
-    return ReconcilerUtils.getDefaultReconcilerName(getAssociatedReconcilerClassName());
+    return ensureValidName(null, getAssociatedReconcilerClassName());
   }
 
   default String getFinalizerName() {
     return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
+  }
+
+  static String ensureValidName(String name, String reconcilerClassName) {
+    return name != null ? name : ReconcilerUtils.getDefaultReconcilerName(reconcilerClassName);
+  }
+
+  static String ensureValidFinalizerName(String finalizer, String resourceTypeName) {
+    if (finalizer != null && !finalizer.isBlank()) {
+      if (ReconcilerUtils.isFinalizerValid(finalizer)) {
+        return finalizer;
+      } else {
+        throw new IllegalArgumentException(
+            finalizer
+                + " is not a valid finalizer. See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers for details");
+      }
+    } else {
+      return ReconcilerUtils.getDefaultFinalizerName(resourceTypeName);
+    }
   }
 
   default boolean isGenerationAware() {
@@ -70,8 +88,12 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
    * </p>
    *
    * @return filter
+   * @deprecated use {@link ResourceConfiguration#onAddFilter()},
+   *             {@link ResourceConfiguration#onUpdateFilter()} or
+   *             {@link ResourceConfiguration#genericFilter()} instead
    */
-  default ResourceEventFilter<R> getEventFilter() {
+  @Deprecated(forRemoval = true)
+  default ResourceEventFilter<P> getEventFilter() {
     return ResourceEventFilters.passthrough();
   }
 
@@ -91,8 +113,8 @@ public interface ControllerConfiguration<R extends HasMetadata> extends Resource
 
   @SuppressWarnings("unchecked")
   @Override
-  default Class<R> getResourceClass() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
+  default Class<P> getResourceClass() {
+    return (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
         ControllerConfiguration.class);
   }
 }
