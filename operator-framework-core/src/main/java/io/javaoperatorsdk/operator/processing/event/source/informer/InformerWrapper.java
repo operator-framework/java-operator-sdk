@@ -39,7 +39,6 @@ class InformerWrapper<T extends HasMetadata>
     this.informer = informer;
     this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
-
   }
 
   @Override

@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.config.informer;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
@@ -29,6 +30,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
     private final OnDeleteFilter<R> onDeleteFilter;
+    private final UnaryOperator<R> cachePruneFunction;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
@@ -38,8 +40,10 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnAddFilter<R> onAddFilter,
         OnUpdateFilter<R> onUpdateFilter,
         OnDeleteFilter<R> onDeleteFilter,
-        GenericFilter<R> genericFilter) {
-      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces);
+        GenericFilter<R> genericFilter,
+        UnaryOperator<R> cachePruneFunction) {
+      super(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter, namespaces,
+          cachePruneFunction);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -47,6 +51,7 @@ public interface InformerConfiguration<R extends HasMetadata>
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
       this.onDeleteFilter = onDeleteFilter;
+      this.cachePruneFunction = cachePruneFunction;
     }
 
     @Override
@@ -66,6 +71,11 @@ public interface InformerConfiguration<R extends HasMetadata>
     @Override
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
       return (PrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;
+    }
+
+    @Override
+    public Optional<UnaryOperator<R>> cachePruneFunction() {
+      return Optional.ofNullable(this.cachePruneFunction);
     }
   }
 
@@ -102,6 +112,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private OnDeleteFilter<R> onDeleteFilter;
     private GenericFilter<R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
+    private UnaryOperator<R> cachePruneFunction;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -202,12 +213,18 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public InformerConfigurationBuilder<R> withCachePruneFunction(
+        UnaryOperator<R> cachePruneFunction) {
+      this.cachePruneFunction = cachePruneFunction;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
-          onDeleteFilter, genericFilter);
+          onDeleteFilter, genericFilter, cachePruneFunction);
     }
   }
 

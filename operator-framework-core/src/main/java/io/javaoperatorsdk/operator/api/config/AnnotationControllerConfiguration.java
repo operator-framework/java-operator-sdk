@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -81,6 +82,14 @@ public class AnnotationControllerConfiguration<P extends HasMetadata>
   public Set<String> getNamespaces() {
     return Set.of(valueOrDefault(annotation, ControllerConfiguration::namespaces,
         DEFAULT_NAMESPACES_SET.toArray(String[]::new)));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Optional<UnaryOperator<P>> cachePruneFunction() {
+    return Optional.ofNullable(
+        Utils.instantiate(annotation.cachePruneFunction(), UnaryOperator.class,
+            Utils.contextFor(this, null, null)));
   }
 
   @Override

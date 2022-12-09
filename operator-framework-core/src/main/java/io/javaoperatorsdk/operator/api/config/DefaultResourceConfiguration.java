@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -19,18 +20,23 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
   private final GenericFilter<R> genericFilter;
+  private final UnaryOperator<R> cachePruneFunction;
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, String... namespaces) {
     this(labelSelector, resourceClass, onAddFilter, onUpdateFilter, genericFilter,
         namespaces == null || namespaces.length == 0 ? DEFAULT_NAMESPACES_SET
-            : Set.of(namespaces));
+            : Set.of(namespaces),
+        null);
   }
 
   public DefaultResourceConfiguration(String labelSelector, Class<R> resourceClass,
       OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, Set<String> namespaces) {
+      OnUpdateFilter<R> onUpdateFilter,
+      GenericFilter<R> genericFilter,
+      Set<String> namespaces,
+      UnaryOperator<R> cachePruneFunction) {
     this.labelSelector = labelSelector;
     this.resourceClass = resourceClass;
     this.onAddFilter = onAddFilter;
@@ -39,6 +45,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     this.namespaces =
         namespaces == null || namespaces.isEmpty() ? DEFAULT_NAMESPACES_SET
             : namespaces;
+    this.cachePruneFunction = cachePruneFunction;
   }
 
   @Override
@@ -54,6 +61,11 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   @Override
   public Set<String> getNamespaces() {
     return namespaces;
+  }
+
+  @Override
+  public Optional<UnaryOperator<R>> cachePruneFunction() {
+    return Optional.ofNullable(this.cachePruneFunction);
   }
 
   @Override

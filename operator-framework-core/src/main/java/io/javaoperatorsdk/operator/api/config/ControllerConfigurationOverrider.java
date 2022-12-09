@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -38,6 +39,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private OnUpdateFilter<R> onUpdateFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
+  private UnaryOperator<R> cachePruneFunction;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     finalizer = original.getFinalizerName();
@@ -56,6 +58,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     dependentResources.forEach(drs -> namedDependentResourceSpecs.put(drs.getName(), drs));
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
+    this.cachePruneFunction = original.cachePruneFunction().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -158,6 +161,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withCachePruneFunction(
+      UnaryOperator<R> cachePruneFunction) {
+    this.cachePruneFunction = cachePruneFunction;
+    return this;
+  }
+
   @SuppressWarnings("unchecked")
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
@@ -208,7 +217,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         onUpdateFilter,
         genericFilter,
         rateLimiter,
-        newDependentSpecs);
+        newDependentSpecs, cachePruneFunction);
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
