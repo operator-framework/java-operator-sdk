@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.time.Duration;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -18,7 +18,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -98,9 +97,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this.rateLimiter = controllerConfiguration.getRateLimiter();
 
     metricsMetadata = Optional.ofNullable(eventSourceManager.getController())
-        .map(Controller::getAssociatedGroupVersionKind)
-        .map(gvk -> Map.of(Constants.RESOURCE_GVK_KEY, (Object) gvk))
-        .orElse(Collections.emptyMap());
+        .map(c -> Map.of(
+            Constants.RESOURCE_GVK_KEY, c.getAssociatedGroupVersionKind(),
+            Constants.CONTROLLER_NAME, controllerConfiguration.getName()))
+        .orElse(new HashMap<>());
   }
 
   @Override
@@ -409,11 +409,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         }
         actualResource.ifPresent(executionScope::setResource);
         MDCUtils.addResourceInfo(executionScope.getResource());
+        metrics.reconciliationExecutionStarted(executionScope.getResource(), metricsMetadata);
         thread.setName("ReconcilerExecutor-" + controllerName() + "-" + thread.getId());
         PostExecutionControl<P> postExecutionControl =
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
+        metrics.reconciliationExecutionFinished(executionScope.getResource(), metricsMetadata);
         // restore original name
         thread.setName(name);
         MDCUtils.removeResourceInfo();

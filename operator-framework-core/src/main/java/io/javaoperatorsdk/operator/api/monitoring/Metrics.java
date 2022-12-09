@@ -6,6 +6,7 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -19,6 +20,11 @@ public interface Metrics {
    * The default Metrics provider: a no-operation implementation.
    */
   Metrics NOOP = new Metrics() {};
+
+  /**
+   * Do initialization if necessary;
+   */
+  default void controllerRegistered(Controller<?> controller) {}
 
   /**
    * Called when an event has been accepted by the SDK from an event source, which would result in
@@ -62,6 +68,12 @@ public interface Metrics {
       Map<String, Object> metadata) {
     failedReconciliation(ResourceID.fromResource(resource), exception, metadata);
   }
+
+
+  default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
+
+  default void reconciliationExecutionFinished(HasMetadata resource,
+      Map<String, Object> metadata) {}
 
   /**
    *
