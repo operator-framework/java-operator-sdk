@@ -6,12 +6,16 @@ import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 class ExecutionScope<R extends HasMetadata> {
 
   // the latest custom resource from cache
-  private final R resource;
+  private R resource;
   private final RetryInfo retryInfo;
 
-  ExecutionScope(R resource, RetryInfo retryInfo) {
-    this.resource = resource;
+  ExecutionScope(RetryInfo retryInfo) {
     this.retryInfo = retryInfo;
+  }
+
+  public ExecutionScope<R> setResource(R resource) {
+    this.resource = resource;
+    return this;
   }
 
   public R getResource() {
