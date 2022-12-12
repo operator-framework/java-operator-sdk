@@ -9,7 +9,6 @@ import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
@@ -23,10 +22,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.Cloner;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -59,7 +55,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-@Disabled(value = "todo: reactivate when restoring SSA")
 class ReconciliationDispatcherTest {
 
   private static final String DEFAULT_FINALIZER = "javaoperatorsdk.io/finalizer";
