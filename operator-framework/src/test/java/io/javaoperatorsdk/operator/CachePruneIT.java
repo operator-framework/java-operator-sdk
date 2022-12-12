@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator;
 import java.time.Duration;
 import java.util.Map;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -18,7 +17,6 @@ import static io.javaoperatorsdk.operator.sample.cacheprune.CachePruneReconciler
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-@Disabled(value = "todo: reactivate when restoring SSA")
 class CachePruneIT {
 
   public static final String DEFAULT_DATA = "default_data";

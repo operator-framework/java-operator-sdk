@@ -295,10 +295,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = removeFinalizer(resource, finalizerName);
-        // todo: restore SSA
-        // P customResource = conflictRetryingPatch(resource, originalResource,
-        // r -> r.removeFinalizer(finalizerName));
+        P customResource = conflictRetryingPatch(resource, originalResource,
+            r -> r.removeFinalizer(finalizerName));
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -313,49 +311,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return postExecutionControl;
   }
 
-  // todo: remove after restoring SSA
-  public P removeFinalizer(P resource, String finalizer) {
-    if (log.isDebugEnabled()) {
-      log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
-    }
-    int retryIndex = 0;
-    while (true) {
-      try {
-        var removed = resource.removeFinalizer(finalizer);
-        if (!removed) {
-          return resource;
-        }
-        return customResourceFacade.updateResource(resource);
-      } catch (KubernetesClientException e) {
-        log.trace("Exception during finalizer removal for resource: {}", resource);
-        retryIndex++;
-        // only retry on conflict (HTTP 409), otherwise fail
-        if (e.getCode() != 409) {
-          throw e;
-        }
-        if (retryIndex >= MAX_FINALIZER_REMOVAL_RETRY) {
-          throw new OperatorException(
-              "Exceeded maximum (" + MAX_FINALIZER_REMOVAL_RETRY
-                  + ") retry attempts to remove finalizer '" + finalizer + "' for resource "
-                  + ResourceID.fromResource(resource));
-        }
-        resource = customResourceFacade.getResource(resource.getMetadata().getNamespace(),
-            resource.getMetadata().getName());
-      }
-    }
-  }
-
   private P updateCustomResourceWithFinalizer(P resourceForExecution, P originalResource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
         getVersion(originalResource));
 
-    originalResource.addFinalizer(configuration().getFinalizerName());
-    return customResourceFacade.updateResource(originalResource);
-
-    // todo: restore SSA
-    // return conflictRetryingPatch(resourceForExecution, originalResource,
-    // r -> r.addFinalizer(configuration().getFinalizerName()));
+    return conflictRetryingPatch(resourceForExecution, originalResource,
+        r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
   private P updateCustomResource(P resource) {
@@ -434,6 +396,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           .replace();
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       return resource(resource)
