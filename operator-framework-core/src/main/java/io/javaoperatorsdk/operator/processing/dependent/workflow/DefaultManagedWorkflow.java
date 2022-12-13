@@ -22,10 +22,10 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
 
   private final Set<String> topLevelResources;
   private final Set<String> bottomLevelResources;
-  private final List<DependentResourceSpec<?, ?>> orderedSpecs;
+  private final List<DependentResourceSpec> orderedSpecs;
   private final boolean hasCleaner;
 
-  protected DefaultManagedWorkflow(List<DependentResourceSpec<?, ?>> orderedSpecs,
+  protected DefaultManagedWorkflow(List<DependentResourceSpec> orderedSpecs,
       boolean hasCleaner) {
     this.hasCleaner = hasCleaner;
     topLevelResources = new HashSet<>(orderedSpecs.size());
@@ -33,7 +33,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
         .map(DependentResourceSpec::getName)
         .collect(Collectors.toSet());
     this.orderedSpecs = orderedSpecs;
-    orderedSpecs.forEach(spec -> {
+    for (DependentResourceSpec<?, ?> spec : orderedSpecs) {
       // add cycle detection?
       if (spec.getDependsOn().isEmpty()) {
         topLevelResources.add(spec.getName());
@@ -42,12 +42,12 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
           bottomLevelResources.remove(dependsOn);
         }
       }
-    });
+    }
   }
 
   @Override
   @SuppressWarnings("unused")
-  public List<DependentResourceSpec<?, ?>> getOrderedSpecs() {
+  public List<DependentResourceSpec> getOrderedSpecs() {
     return orderedSpecs;
   }
 
