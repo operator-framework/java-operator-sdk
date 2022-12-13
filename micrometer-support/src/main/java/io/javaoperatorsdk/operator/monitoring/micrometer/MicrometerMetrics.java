@@ -55,6 +55,7 @@ public class MicrometerMetrics implements Metrics {
     gauges.put(controllerQueueName, controllerQueueSize);
   }
 
+  @Override
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
     final var execName = PREFIX + "controllers.execution." + execution.name();
@@ -65,7 +66,7 @@ public class MicrometerMetrics implements Metrics {
         "controller", name,
         "resource.name", resourceID.getName(),
         "resource.namespace", resourceID.getNamespace().orElse(""),
-        "resource.scope", resourceID.getNamespace().isPresent() ? "namespace" : "cluster"));
+        "resource.scope", getScope(resourceID)));
     final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
     if (gvk != null) {
       tags.addAll(List.of(
@@ -101,6 +102,11 @@ public class MicrometerMetrics implements Metrics {
     }
   }
 
+  private static String getScope(ResourceID resourceID) {
+    return resourceID.getNamespace().isPresent() ? "namespace" : "cluster";
+  }
+
+  @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
     incrementCounter(event.getRelatedCustomResourceID(), "events.received",
         metadata,
@@ -151,6 +157,7 @@ public class MicrometerMetrics implements Metrics {
     controllerQueueSize.decrementAndGet();
   }
 
+  @Override
   public void failedReconciliation(HasMetadata resource, Exception exception,
       Map<String, Object> metadata) {
     var cause = exception.getCause();
@@ -164,6 +171,7 @@ public class MicrometerMetrics implements Metrics {
         cause.getClass().getSimpleName());
   }
 
+  @Override
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
   }
@@ -183,7 +191,7 @@ public class MicrometerMetrics implements Metrics {
     tags.addAll(List.of(
         "name", id.getName(),
         "namespace", id.getNamespace().orElse(""),
-        "scope", id.getNamespace().isPresent() ? "namespace" : "cluster"));
+        "scope", getScope(id)));
     if (additionalTagsNb > 0) {
       tags.addAll(List.of(additionalTags));
     }

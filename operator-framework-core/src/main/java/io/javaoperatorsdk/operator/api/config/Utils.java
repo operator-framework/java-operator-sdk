@@ -24,6 +24,8 @@ public class Utils {
   private static final Logger log = LoggerFactory.getLogger(Utils.class);
   public static final String CHECK_CRD_ENV_KEY = "JAVA_OPERATOR_SDK_CHECK_CRD";
   public static final String DEBUG_THREAD_POOL_ENV_KEY = "JAVA_OPERATOR_SDK_DEBUG_THREAD_POOL";
+  public static final String GENERIC_PARAMETER_TYPE_ERROR_PREFIX =
+      "Couldn't retrieve generic parameter type from ";
 
   /**
    * Attempts to load version information from a properties file produced at build time, currently
@@ -102,7 +104,7 @@ public class Utils {
       Type type = clazz.getGenericSuperclass();
       return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
     } catch (Exception e) {
-      throw new RuntimeException("Couldn't retrieve generic parameter type from "
+      throw new RuntimeException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
           + clazz.getSimpleName()
           + " because it doesn't extend a class that is parameterized with the type we want to retrieve",
           e);
@@ -118,47 +120,53 @@ public class Utils {
       Class<?> expectedImplementedInterface, int index) {
     if (expectedImplementedInterface.isAssignableFrom(clazz)) {
       final var genericInterfaces = clazz.getGenericInterfaces();
-      Optional<? extends Class<?>> target = Optional.empty();
-      if (genericInterfaces.length > 0) {
-        // try to find the target interface among them
-        target = Arrays.stream(genericInterfaces)
-            .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
-                && type instanceof ParameterizedType)
-            .map(ParameterizedType.class::cast)
-            .findFirst()
-            .map(t -> {
-              final Type argument = t.getActualTypeArguments()[index];
-              if (argument instanceof Class) {
-                return (Class<?>) argument;
-              }
-              // account for the case where the argument itself has parameters, which we will ignore
-              // and just return the raw type
-              if (argument instanceof ParameterizedType) {
-                final var rawType = ((ParameterizedType) argument).getRawType();
-                if (rawType instanceof Class) {
-                  return (Class<?>) rawType;
-                }
-              }
-              throw new IllegalArgumentException(clazz.getSimpleName() + " implements "
-                  + expectedImplementedInterface.getSimpleName()
-                  + " but indirectly. Java type erasure doesn't allow to retrieve the generic type from it. Retrieved type was: "
-                  + argument);
-            });
-      }
 
+      var target = extractType(clazz, expectedImplementedInterface, index, genericInterfaces);
       if (target.isPresent()) {
         return target.get();
       }
 
-      // try the parent
+      // try the parent if we didn't find a parameter type on the current class
       var parent = clazz.getSuperclass();
       if (!Object.class.equals(parent)) {
         return getTypeArgumentFromInterfaceByIndex(parent, expectedImplementedInterface, index);
       }
     }
-    throw new IllegalArgumentException("Couldn't retrieve generic parameter type from "
+    throw new IllegalArgumentException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
         + clazz.getSimpleName() + " because it or its superclasses don't implement "
         + expectedImplementedInterface.getSimpleName());
+  }
+
+  private static Optional<? extends Class<?>> extractType(Class<?> clazz,
+      Class<?> expectedImplementedInterface, int index, Type[] genericInterfaces) {
+    Optional<? extends Class<?>> target = Optional.empty();
+    if (genericInterfaces.length > 0) {
+      // try to find the target interface among them
+      target = Arrays.stream(genericInterfaces)
+          .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
+              && type instanceof ParameterizedType)
+          .map(ParameterizedType.class::cast)
+          .findFirst()
+          .map(t -> {
+            final Type argument = t.getActualTypeArguments()[index];
+            if (argument instanceof Class) {
+              return (Class<?>) argument;
+            }
+            // account for the case where the argument itself has parameters, which we will ignore
+            // and just return the raw type
+            if (argument instanceof ParameterizedType) {
+              final var rawType = ((ParameterizedType) argument).getRawType();
+              if (rawType instanceof Class) {
+                return (Class<?>) rawType;
+              }
+            }
+            throw new IllegalArgumentException(clazz.getSimpleName() + " implements "
+                + expectedImplementedInterface.getSimpleName()
+                + " but indirectly. Java type erasure doesn't allow to retrieve the generic type from it. Retrieved type was: "
+                + argument);
+          });
+    }
+    return target;
   }
 
   public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
@@ -183,7 +191,7 @@ public class Utils {
       return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
     } catch (Exception e) {
       throw new OperatorException(
-          "Couldn't retrieve generic parameter type from " + clazz.getSimpleName(), e);
+          GENERIC_PARAMETER_TYPE_ERROR_PREFIX + clazz.getSimpleName(), e);
     }
   }
 
