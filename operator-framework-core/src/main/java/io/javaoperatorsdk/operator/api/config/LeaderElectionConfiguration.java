@@ -16,6 +16,7 @@ public class LeaderElectionConfiguration {
   private final Duration leaseDuration;
   private final Duration renewDeadline;
   private final Duration retryPeriod;
+  private boolean enabled = true; // enabled by default
 
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace, String identity) {
     this(
@@ -90,5 +91,15 @@ public class LeaderElectionConfiguration {
 
   public Optional<String> getIdentity() {
     return Optional.ofNullable(identity);
+  }
+
+  @SuppressWarnings("unused")
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  @SuppressWarnings("unused")
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
   }
 }
