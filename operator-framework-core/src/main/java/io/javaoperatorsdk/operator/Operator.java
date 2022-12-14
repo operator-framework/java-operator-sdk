@@ -76,7 +76,11 @@ public class Operator implements LifecycleAware {
         .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
   }
 
-  /** Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. */
+  /**
+   * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down.
+   *
+   * @deprecated This feature should not be used anymore
+   */
   @Deprecated(forRemoval = true)
   public void installShutdownHook() {
     if (!leaderElectionManager.isLeaderElectionEnabled()) {
