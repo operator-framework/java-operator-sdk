@@ -78,6 +78,7 @@ public class Operator implements LifecycleAware {
 
   /**
    * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down.
+   *
    * @deprecated This feature should not be used anymore
    */
   @Deprecated(forRemoval = true)

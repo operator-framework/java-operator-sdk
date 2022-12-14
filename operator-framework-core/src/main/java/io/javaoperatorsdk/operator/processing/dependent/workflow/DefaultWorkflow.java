@@ -64,10 +64,10 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
 
   @SuppressWarnings("unchecked")
   private Map<String, DependentResourceNode> toMap(Set<DependentResourceNode> nodes) {
-    if(nodes == null || nodes.isEmpty()) {
+    if (nodes == null || nodes.isEmpty()) {
       return Collections.emptyMap();
     }
-    
+
     final var map = new HashMap<String, DependentResourceNode>(nodes.size());
     for (DependentResourceNode node : nodes) {
       // add cycle detection?
