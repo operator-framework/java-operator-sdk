@@ -30,8 +30,6 @@ public class MySQLSchemaReconciler
 
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
-  public MySQLSchemaReconciler() {}
-
 
   @Override
   public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context<MySQLSchema> context) {

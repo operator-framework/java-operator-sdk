@@ -132,12 +132,11 @@ public class ReconcilerUtils {
 
     if (e instanceof KubernetesClientException) {
       KubernetesClientException ke = (KubernetesClientException) e;
-      if (404 == ke.getCode()) {
-        // only throw MissingCRDException if the 404 error occurs on the target CRD
-        if (resourceTypeName.equals(ke.getFullResourceName())
-            || matchesResourceType(resourceTypeName, ke)) {
-          throw new MissingCRDException(resourceTypeName, ke.getVersion(), e.getMessage(), e);
-        }
+      // only throw MissingCRDException if the 404 error occurs on the target CRD
+      if (404 == ke.getCode() &&
+          (resourceTypeName.equals(ke.getFullResourceName())
+              || matchesResourceType(resourceTypeName, ke))) {
+        throw new MissingCRDException(resourceTypeName, ke.getVersion(), e.getMessage(), e);
       }
     }
   }

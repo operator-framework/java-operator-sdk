@@ -106,6 +106,9 @@ class ResourceState {
         throw new IllegalStateException("Cannot unmark processed marked for deletion.");
       case DELETE_EVENT_PRESENT:
         throw new IllegalStateException("Cannot unmark delete event.");
+      case NO_EVENT_PRESENT:
+        // do nothing
+        break;
     }
   }
 }

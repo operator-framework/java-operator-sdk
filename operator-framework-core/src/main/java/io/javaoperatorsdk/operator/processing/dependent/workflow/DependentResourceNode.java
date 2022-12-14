@@ -32,7 +32,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     this.dependentResource = dependentResource;
   }
 
-  public List<? extends DependentResourceNode> getDependsOn() {
+  public List<DependentResourceNode> getDependsOn() {
     return dependsOn;
   }
 

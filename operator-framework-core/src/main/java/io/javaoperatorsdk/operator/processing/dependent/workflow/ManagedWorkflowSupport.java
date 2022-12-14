@@ -64,12 +64,11 @@ class ManagedWorkflowSupport {
    * @return top-bottom ordered resources that can be added safely to workflow
    * @throws OperatorException if there is a cycle in the dependencies
    */
-  private List<DependentResourceSpec<?, ?>> orderAndDetectCycles(
+  private List<DependentResourceSpec> orderAndDetectCycles(
       List<DependentResourceSpec> dependentResourceSpecs, boolean[] cleanerHolder) {
 
     final var drInfosByName = createDRInfos(dependentResourceSpecs);
-    final var orderedSpecs =
-        new ArrayList<DependentResourceSpec<?, ?>>(dependentResourceSpecs.size());
+    final var orderedSpecs = new ArrayList<DependentResourceSpec>(dependentResourceSpecs.size());
     final var alreadyVisited = new HashSet<String>();
     var toVisit = getTopDependentResources(dependentResourceSpecs);
 
@@ -108,7 +107,7 @@ class ManagedWorkflowSupport {
    * @return top-bottom ordered resources that can be added safely to workflow
    * @throws OperatorException if there is a cycle in the dependencies
    */
-  public List<DependentResourceSpec<?, ?>> orderAndDetectCycles(
+  public List<DependentResourceSpec> orderAndDetectCycles(
       List<DependentResourceSpec> dependentResourceSpecs) {
     return orderAndDetectCycles(dependentResourceSpecs, null);
   }
