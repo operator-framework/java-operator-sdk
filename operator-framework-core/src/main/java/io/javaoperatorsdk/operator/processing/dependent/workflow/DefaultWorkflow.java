@@ -6,8 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -65,21 +63,24 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, DependentResourceNode> toMap(
-      Set<DependentResourceNode> dependentResourceNodes) {
-    return dependentResourceNodes.stream()
-        .peek(drn -> {
-          // add cycle detection?
-          if (drn.getDependsOn().isEmpty()) {
-            topLevelResources.add(drn);
-          } else {
-            for (DependentResourceNode dependsOn : (List<DependentResourceNode>) drn
-                .getDependsOn()) {
-              bottomLevelResource.remove(dependsOn);
-            }
-          }
-        })
-        .collect(Collectors.toMap(DependentResourceNode::getName, Function.identity()));
+  private Map<String, DependentResourceNode> toMap(Set<DependentResourceNode> nodes) {
+    if(nodes == null || nodes.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    
+    final var map = new HashMap<String, DependentResourceNode>(nodes.size());
+    for (DependentResourceNode node : nodes) {
+      // add cycle detection?
+      if (node.getDependsOn().isEmpty()) {
+        topLevelResources.add(node);
+      } else {
+        for (DependentResourceNode dependsOn : (List<DependentResourceNode>) node.getDependsOn()) {
+          bottomLevelResource.remove(dependsOn);
+        }
+      }
+      map.put(node.getName(), node);
+    }
+    return map;
   }
 
   @Override
