@@ -86,7 +86,7 @@ class InformerWrapper<T extends HasMetadata>
           log.warn("Informer startup error. Will periodically retry. Informer: {}", informer, e);
         }
       } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+        thread.interrupt();
         throw new IllegalStateException(e);
       } finally {
         // restore original name

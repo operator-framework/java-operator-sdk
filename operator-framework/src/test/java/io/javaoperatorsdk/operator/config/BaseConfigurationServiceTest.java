@@ -126,8 +126,8 @@ class BaseConfigurationServiceTest {
 
   @Test
   void missingAnnotationThrowsException() {
-    Assertions.assertThrows(OperatorException.class,
-        () -> configFor(new MissingAnnotationReconciler()));
+    final var reconciler = new MissingAnnotationReconciler();
+    Assertions.assertThrows(OperatorException.class, () -> configFor(reconciler));
   }
 
   @SuppressWarnings("rawtypes")
@@ -145,7 +145,8 @@ class BaseConfigurationServiceTest {
 
   @Test
   void tryingToAddDuplicatedDependentsWithoutNameShouldFail() {
-    assertThrows(IllegalArgumentException.class, () -> configFor(new DuplicatedDepReconciler()));
+    final var reconciler = new DuplicatedDepReconciler();
+    assertThrows(IllegalArgumentException.class, () -> configFor(reconciler));
   }
 
   @Test
@@ -179,8 +180,7 @@ class BaseConfigurationServiceTest {
 
   @Test
   void configuringRateAndRetryViaAnnotationsShouldWork() {
-    var config =
-        configFor(new ConfigurableRateLimitAndRetryReconciler());
+    var config = configFor(new ConfigurableRateLimitAndRetryReconciler());
     final var retry = config.getRetry();
     final var testRetry = assertInstanceOf(TestRetry.class, retry);
     assertEquals(12, testRetry.getValue());
