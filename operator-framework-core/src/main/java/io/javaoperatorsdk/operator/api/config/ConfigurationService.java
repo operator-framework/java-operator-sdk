@@ -195,6 +195,7 @@ public interface ConfigurationService {
     });
   }
 
+  @SuppressWarnings("rawtypes")
   default ManagedWorkflowFactory getWorkflowFactory() {
     return ManagedWorkflowFactory.DEFAULT;
   }
