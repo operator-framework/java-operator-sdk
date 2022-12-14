@@ -1,6 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -55,8 +60,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     this.eventHandler = eventHandler;
 
     final var targetNamespaces = configuration.getEffectiveNamespaces();
-    final var labelSelector = configuration.getLabelSelector();
-
     if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
       var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
       log.debug("Registered {} -> {} for any namespace", this, source);
