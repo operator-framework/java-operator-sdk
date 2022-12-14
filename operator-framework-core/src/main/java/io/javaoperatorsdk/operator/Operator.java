@@ -13,7 +13,12 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Version;
-import io.javaoperatorsdk.operator.api.config.*;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -112,9 +117,8 @@ public class Operator implements LifecycleAware {
       leaderElectionManager.start();
       started = true;
     } catch (Exception e) {
-      log.error("Error starting operator", e);
       stop();
-      throw e;
+      throw new OperatorException("Error starting operator", e);
     }
   }
 

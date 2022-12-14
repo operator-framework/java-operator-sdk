@@ -94,10 +94,10 @@ class InformerWrapper<T extends HasMetadata>
       }
 
     } catch (Exception e) {
-      log.error("Couldn't start informer for " + versionedFullResourceName() + " resources", e);
       ReconcilerUtils.handleKubernetesClientException(e,
           HasMetadata.getFullResourceName(informer.getApiTypeClass()));
-      throw e;
+      throw new OperatorException(
+          "Couldn't start informer for " + versionedFullResourceName() + " resources", e);
     }
   }
 

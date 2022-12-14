@@ -94,6 +94,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
         return onAddFilter == null || onAddFilter.accept(resource);
       case UPDATED:
         return onUpdateFilter.accept(resource, oldResource);
+      case DELETED:
+        throw new IllegalStateException("Should not be called with " + action);
     }
     return true;
   }

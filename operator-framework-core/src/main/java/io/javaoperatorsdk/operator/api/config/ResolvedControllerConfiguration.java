@@ -157,6 +157,9 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     return eventFilter;
   }
 
+  /**
+   * @deprecated Use {@link OnAddFilter}, {@link OnUpdateFilter} and {@link GenericFilter} instead
+   */
   @Deprecated(forRemoval = true)
   protected void setEventFilter(ResourceEventFilter<P> eventFilter) {
     this.eventFilter = eventFilter;

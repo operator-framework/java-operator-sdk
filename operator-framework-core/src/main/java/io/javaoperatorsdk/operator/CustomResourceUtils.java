@@ -6,7 +6,9 @@ import io.fabric8.kubernetes.api.model.Cluster;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 
-public abstract class CustomResourceUtils {
+public class CustomResourceUtils {
+
+  private CustomResourceUtils() {}
 
   /**
    * Applies internal validations that may not be handled by the fabric8 client.

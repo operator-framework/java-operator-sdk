@@ -35,6 +35,9 @@ public interface Metrics {
    */
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
+  /**
+   * @deprecated Use {@link #reconcileCustomResource(HasMetadata, RetryInfo, Map)} instead
+   */
   @Deprecated(forRemoval = true)
   default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo,
       Map<String, Object> metadata) {}
@@ -51,6 +54,9 @@ public interface Metrics {
     reconcileCustomResource(ResourceID.fromResource(resource), retryInfo, metadata);
   }
 
+  /**
+   * @deprecated Use {@link #failedReconciliation(HasMetadata, Exception, Map)} instead
+   */
   @Deprecated(forRemoval = true)
   default void failedReconciliation(ResourceID resourceID, Exception exception,
       Map<String, Object> metadata) {}
@@ -102,6 +108,9 @@ public interface Metrics {
     finishedReconciliation(resourceID, Collections.emptyMap());
   }
 
+  /**
+   * @deprecated Use {@link #finishedReconciliation(HasMetadata, Map)} instead
+   */
   @Deprecated(forRemoval = true)
   default void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {}
 

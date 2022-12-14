@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
 public interface ManagedWorkflow<P extends HasMetadata> {
 
-  @SuppressWarnings("unused")
-  default List<DependentResourceSpec<?, ?>> getOrderedSpecs() {
+  @SuppressWarnings({"unused", "rawtypes"})
+  default List<DependentResourceSpec> getOrderedSpecs() {
     return Collections.emptyList();
   }
 
