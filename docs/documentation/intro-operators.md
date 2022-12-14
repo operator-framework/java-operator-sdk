@@ -10,7 +10,7 @@ permalink: /docs/intro-operators
 This page provides a selection of articles that gives an introduction to Kubernetes operators.
 
 ## Operators in General
-
+ - [Implementing Kubernetes Operators in Java talk](https://www.youtube.com/watch?v=CvftaV-xrB4)
  - [Introduction of the concept of Kubernetes Operators](https://blog.container-solutions.com/kubernetes-operators-explained)
  - [Operator pattern explained in Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) 
  - [An explanation why Java Operators makes sense](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators)

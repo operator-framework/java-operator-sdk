@@ -16,6 +16,7 @@ low-level details that the SDK handles automatically.
 
 For an introduction on operators, please see this
 [blog post](https://blog.container-solutions.com/kubernetes-operators-explained).
+or [this talk](https://www.youtube.com/watch?v=CvftaV-xrB4)
 
 You can read about the common problems JOSDK is solving for you
 [here](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk).
