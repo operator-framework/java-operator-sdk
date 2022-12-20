@@ -33,7 +33,7 @@ class ControllerConfigurationOverriderTest {
 
 
   @BeforeEach
-  void clearState() {
+  void clearStaticState() {
     DependentResourceConfigurationResolver.clear();
   }
 
