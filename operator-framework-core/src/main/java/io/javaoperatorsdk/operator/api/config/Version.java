@@ -6,7 +6,10 @@ import java.util.Date;
 /** A class encapsulating the version information associated with this SDK instance. */
 public class Version {
 
-  public static final Version UNKNOWN = new Version("unknown", "unknown", Date.from(Instant.EPOCH));
+  public static final Version UNKNOWN =
+      new Version(Versions.JOSDK, "unknown", Date.from(Instant.EPOCH));
+  public static final Version KUBENETES_CLIENT =
+      new Version(Versions.KUBERNETES_CLIENT, "unknown", Date.from(Instant.EPOCH));
 
   private final String sdk;
   private final String commit;
