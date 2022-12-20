@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Optional;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -29,6 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ControllerConfigurationOverriderTest {
   private final BaseConfigurationService configurationService = new BaseConfigurationService();
+
+
+  @BeforeEach
+  void clearState() {
+    DependentResourceConfigurationResolver.clear();
+  }
 
   @Test
   void overridingNSShouldPreserveUntouchedDependents() {
