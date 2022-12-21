@@ -51,6 +51,7 @@ jobs:
           minikube version: 'v1.26.0'
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
+          github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run integration tests
         run: ./mvnw ${MAVEN_ARGS} -B package -P no-unit-tests --file pom.xml
       - name: Adjust Minikube Min Request Timeout Setting
@@ -60,5 +61,6 @@ jobs:
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
           start args: '--extra-config=apiserver.min-request-timeout=3'
+          github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Special Integration Tests
         run: ./mvnw ${MAVEN_ARGS} -B package -P minimal-watch-timeout-dependent-it --file pom.xml
