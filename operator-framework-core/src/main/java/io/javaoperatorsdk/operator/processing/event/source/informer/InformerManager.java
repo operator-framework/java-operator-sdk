@@ -46,18 +46,24 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private ResourceEventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
 
+  public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
+                         C configuration,
+                         ResourceEventHandler<T> eventHandler) {
+    this.client = client;
+    this.configuration = configuration;
+    this.eventHandler = eventHandler;
+  }
+
   @Override
   public void start() throws OperatorException {
+    initSources();
     // make sure informers are all started before proceeding further
     sources.values().parallelStream().forEach(InformerWrapper::start);
   }
 
-  void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      C configuration, ResourceEventHandler<T> eventHandler) {
+  private void initSources() {
+    sources.clear();
     cloner = ConfigurationServiceProvider.instance().getResourceCloner();
-    this.configuration = configuration;
-    this.client = client;
-    this.eventHandler = eventHandler;
 
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
