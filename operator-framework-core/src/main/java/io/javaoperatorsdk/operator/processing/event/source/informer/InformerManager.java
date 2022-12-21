@@ -62,9 +62,10 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   private void initSources() {
-    sources.clear();
+    if (!sources.isEmpty()) {
+      throw new IllegalStateException("Some sources already initialized.");
+    }
     cloner = ConfigurationServiceProvider.instance().getResourceCloner();
-
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
       var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
@@ -136,6 +137,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
         log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
       }
     });
+    sources.clear();
   }
 
   @Override

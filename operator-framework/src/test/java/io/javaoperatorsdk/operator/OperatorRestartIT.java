@@ -19,7 +19,8 @@ class OperatorRestartIT {
     try (var client = new KubernetesClientBuilder().build()) {
       LocallyRunOperatorExtension.applyCrd(RestartTestCustomResource.class,
               client);
-      Operator operator = new Operator();
+      // todo check if this is good enough for Quarkus dev mode
+      Operator operator = new Operator(o->o.withCloseClientOnStop(false));
       var reconciler = new RestartTestReconciler();
       operator.register(reconciler);
       operator.start();

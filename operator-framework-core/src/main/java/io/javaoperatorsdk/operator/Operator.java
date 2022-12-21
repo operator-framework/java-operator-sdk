@@ -32,6 +32,7 @@ public class Operator implements LifecycleAware {
   private final LeaderElectionManager leaderElectionManager =
       new LeaderElectionManager(controllerManager);
   private volatile boolean started = false;
+  private volatile boolean clientClosed = false;
 
   public Operator() {
     this((KubernetesClient) null);
@@ -137,6 +138,7 @@ public class Operator implements LifecycleAware {
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
     }
+
     started = false;
   }
 
