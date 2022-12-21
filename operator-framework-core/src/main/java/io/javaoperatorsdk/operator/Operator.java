@@ -137,6 +137,7 @@ public class Operator implements LifecycleAware {
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
     }
+    started = false;
   }
 
   /**
