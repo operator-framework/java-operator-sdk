@@ -147,6 +147,12 @@ public class DependentResourceConfigurationResolver {
     knownConverters.put(converterClass, converter);
   }
 
+  /** To support independent unit tests */
+  public static void clear() {
+    converters.clear();
+    knownConverters.clear();
+  }
+
   private static class ConfiguredClassPair {
     private final Configured configured;
     private final Class<? extends DependentResource> annotatedClass;
