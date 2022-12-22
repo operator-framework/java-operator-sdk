@@ -32,7 +32,6 @@ public class Operator implements LifecycleAware {
   private final LeaderElectionManager leaderElectionManager =
       new LeaderElectionManager(controllerManager);
   private volatile boolean started = false;
-  private volatile boolean clientClosed = false;
 
   public Operator() {
     this((KubernetesClient) null);
