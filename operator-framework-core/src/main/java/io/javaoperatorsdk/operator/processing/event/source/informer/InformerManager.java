@@ -93,7 +93,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     namespaces.forEach(ns -> {
       if (!sources.containsKey(ns)) {
         final InformerWrapper<T> source = createEventSourceForNamespace(ns);
-        source.addIndexers(this.indexers);
         source.start();
         log.debug("Registered new {} -> {} for namespace: {}", this, source,
             ns);
@@ -113,6 +112,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
           client.inNamespace(namespace).withLabelSelector(configuration.getLabelSelector()),
           eventHandler, namespace);
     }
+    source.addIndexers(indexers);
     return source;
   }
 
@@ -185,7 +185,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
     this.indexers.putAll(indexers);
-    sources.values().forEach(s -> s.addIndexers(indexers));
   }
 
   @Override
