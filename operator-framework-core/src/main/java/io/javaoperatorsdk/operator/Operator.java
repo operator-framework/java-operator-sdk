@@ -132,8 +132,8 @@ public class Operator implements LifecycleAware {
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
-    // todo
-    // ExecutorServiceManager.stop();
+
+    ExecutorServiceManager.stop();
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();

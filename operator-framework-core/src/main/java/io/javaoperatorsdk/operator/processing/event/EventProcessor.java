@@ -5,14 +5,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
@@ -40,20 +38,19 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private final ControllerConfiguration<?> controllerConfiguration;
   private final ReconciliationDispatcher<P> reconciliationDispatcher;
   private final Retry retry;
-  private final ExecutorService executor;
   private final Metrics metrics;
   private final Cache<P> cache;
   private final EventSourceManager<P> eventSourceManager;
   private final RateLimiter<? extends RateLimitState> rateLimiter;
   private final ResourceStateManager resourceStateManager = new ResourceStateManager();
   private final Map<String, Object> metricsMetadata;
+  private ExecutorService executor;
 
 
   public EventProcessor(EventSourceManager<P> eventSourceManager) {
     this(
         eventSourceManager.getController().getConfiguration(),
         eventSourceManager.getControllerResourceEventSource(),
-        ExecutorServiceManager.instance().executorService(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()),
         ConfigurationServiceProvider.instance().getMetrics(),
         eventSourceManager);
@@ -68,7 +65,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this(
         controllerConfiguration,
         eventSourceManager.getControllerResourceEventSource(),
-        null,
         reconciliationDispatcher,
         metrics,
         eventSourceManager);
@@ -78,17 +74,11 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private EventProcessor(
       ControllerConfiguration controllerConfiguration,
       Cache<P> cache,
-      ExecutorService executor,
       ReconciliationDispatcher<P> reconciliationDispatcher,
       Metrics metrics,
       EventSourceManager<P> eventSourceManager) {
     this.controllerConfiguration = controllerConfiguration;
     this.running = false;
-    this.executor =
-        executor == null
-            ? new ScheduledThreadPoolExecutor(
-                ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER)
-            : executor;
     this.reconciliationDispatcher = reconciliationDispatcher;
     this.retry = controllerConfiguration.getRetry();
     this.cache = cache;
@@ -376,6 +366,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   @Override
   public void start() throws OperatorException {
+    executor = ExecutorServiceManager.instance().executorService();
     this.running = true;
     handleAlreadyMarkedEvents();
   }
