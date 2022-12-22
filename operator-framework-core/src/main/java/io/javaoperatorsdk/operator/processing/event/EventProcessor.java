@@ -424,7 +424,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
     @Override
     public String toString() {
-      return controllerName() + " -> " + executionScope;
+      return controllerName() + " -> "
+          + (executionScope.getResource() != null ? executionScope : resourceID);
     }
   }
 

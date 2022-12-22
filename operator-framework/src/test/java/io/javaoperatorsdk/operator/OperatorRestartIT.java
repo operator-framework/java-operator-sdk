@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.restart.RestartTestCustomResource;
 import io.javaoperatorsdk.operator.sample.restart.RestartTestReconciler;
 
@@ -18,9 +17,9 @@ class OperatorRestartIT {
   void operatorCanBeRestarted() {
     try (var client = new KubernetesClientBuilder().build()) {
       LocallyRunOperatorExtension.applyCrd(RestartTestCustomResource.class,
-              client);
+          client);
       // todo check if this is good enough for Quarkus dev mode
-      Operator operator = new Operator(o->o.withCloseClientOnStop(false));
+      Operator operator = new Operator(o -> o.withCloseClientOnStop(false));
       var reconciler = new RestartTestReconciler();
       operator.register(reconciler);
       operator.start();

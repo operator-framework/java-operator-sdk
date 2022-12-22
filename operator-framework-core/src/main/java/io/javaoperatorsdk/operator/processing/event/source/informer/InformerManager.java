@@ -47,8 +47,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
 
   public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-                         C configuration,
-                         ResourceEventHandler<T> eventHandler) {
+      C configuration,
+      ResourceEventHandler<T> eventHandler) {
     this.client = client;
     this.configuration = configuration;
     this.eventHandler = eventHandler;

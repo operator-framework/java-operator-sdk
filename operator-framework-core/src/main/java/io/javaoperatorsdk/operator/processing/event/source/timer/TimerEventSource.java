@@ -20,7 +20,7 @@ public class TimerEventSource<R extends HasMetadata>
     implements ResourceEventAware<R> {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
-  private final Timer timer = new Timer(true);
+  private Timer timer;
   private final AtomicBoolean running = new AtomicBoolean();
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
@@ -55,6 +55,7 @@ public class TimerEventSource<R extends HasMetadata>
 
   @Override
   public void start() {
+    timer = new Timer(true);
     running.set(true);
   }
 
