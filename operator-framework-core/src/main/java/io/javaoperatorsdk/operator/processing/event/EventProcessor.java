@@ -46,7 +46,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private final Map<String, Object> metricsMetadata;
   private ExecutorService executor;
 
-
   public EventProcessor(EventSourceManager<P> eventSourceManager) {
     this(
         eventSourceManager.getController().getConfiguration(),
@@ -366,6 +365,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   @Override
   public void start() throws OperatorException {
+    // on restart new executor service is created and needs to be set here
     executor = ExecutorServiceManager.instance().executorService();
     this.running = true;
     handleAlreadyMarkedEvents();
