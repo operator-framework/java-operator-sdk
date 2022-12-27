@@ -1,5 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -21,12 +28,6 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.Set;
 
 @Ignore
 @Configured(by = KubernetesDependent.class, with = KubernetesDependentResourceConfig.class,
@@ -163,11 +164,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         actionName,
         desired.getClass(),
         ResourceID.fromResource(desired));
+
     if (addOwnerReference()) {
       desired.addOwnerReference(primary);
     } else if (useDefaultAnnotationsToIdentifyPrimary()) {
       addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
+
     if (desired instanceof Namespaced) {
       return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
     } else {
