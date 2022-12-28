@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -163,12 +164,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         actionName,
         desired.getClass(),
         ResourceID.fromResource(desired));
+
     if (addOwnerReference()) {
       desired.addOwnerReference(primary);
     } else if (useDefaultAnnotationsToIdentifyPrimary()) {
       addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
-    return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
+
+    if (desired instanceof Namespaced) {
+      return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
+    } else {
+      return client.resource(desired);
+    }
   }
 
   @Override
