@@ -9,12 +9,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
 import org.slf4j.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
 
 @SuppressWarnings("rawtypes")
 public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
@@ -102,12 +102,15 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
   protected <R> boolean isConditionMet(Optional<Condition<R, P>> condition,
       DependentResource<R, P> dependentResource) {
-    var resources = dependentResource instanceof BulkDependentResource ? ((BulkDependentResource)
-            dependentResource).getSecondaryResources(primary,context) :
-            dependentResource.getSecondaryResource(primary, context).orElse(null);
+    if (condition.isEmpty()) {
+      return true;
+    }
+    var resources = dependentResource instanceof BulkDependentResource
+        ? ((BulkDependentResource) dependentResource).getSecondaryResources(primary, context)
+        : dependentResource.getSecondaryResource(primary, context).orElse(null);
 
     return condition.map(c -> c.isMet(primary,
-                    (R) resources, context))
+        (R) resources, context))
         .orElse(true);
   }
 }
