@@ -1,12 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
@@ -25,7 +20,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
             reconcilePrecondition = ExposedIngressCondition.class)
     })
 public class WebPageManagedDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, Cleaner<WebPage> {
 
   public static final String SELECTOR = "managed";
 
@@ -44,5 +39,10 @@ public class WebPageManagedDependentsReconciler
         .getMetadata().getName();
     webPage.setStatus(createStatus(name));
     return UpdateControl.patchStatus(webPage);
+  }
+
+  @Override
+  public DeleteControl cleanup(WebPage resource, Context<WebPage> context) {
+    return DeleteControl.defaultDelete();
   }
 }

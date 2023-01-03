@@ -38,7 +38,7 @@ import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomRe
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
-import static io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.MAX_FINALIZER_REMOVAL_RETRY;
+import static io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.MAX_UPDATE_RETRY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -255,10 +255,10 @@ class ReconciliationDispatcherTest {
     assertThat(postExecControl.getRuntimeException()).isPresent();
     assertThat(postExecControl.getRuntimeException().get())
         .isInstanceOf(OperatorException.class);
-    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY)).serverSideApplyLockResource(
+    verify(customResourceFacade, times(MAX_UPDATE_RETRY)).serverSideApplyLockResource(
         any(),
         any());
-    verify(customResourceFacade, times(MAX_FINALIZER_REMOVAL_RETRY - 1)).getResource(any(),
+    verify(customResourceFacade, times(MAX_UPDATE_RETRY - 1)).getResource(any(),
         any());
   }
 
