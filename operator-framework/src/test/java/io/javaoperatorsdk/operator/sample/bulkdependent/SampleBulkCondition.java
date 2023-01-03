@@ -6,14 +6,18 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class SamplePrecondition
+public class SampleBulkCondition
     implements Condition<Map<String, ConfigMap>, BulkDependentTestCustomResource> {
 
-  public static final String SKIP_RESOURCE_DATA = "skipThis";
+  // We use ConfigMaps here just to show how to check some properties of resources managed by a
+  // BulkDependentResource. In real life example this would be rather based on some status of those
+  // resources, like Pods.
 
   @Override
   public boolean isMet(BulkDependentTestCustomResource primary, Map<String, ConfigMap> secondary,
       Context<BulkDependentTestCustomResource> context) {
-    return !SKIP_RESOURCE_DATA.equals(primary.getSpec().getAdditionalData());
+
+    return secondary.values().stream().allMatch(cm -> !cm.getData().isEmpty());
+
   }
 }

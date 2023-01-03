@@ -8,9 +8,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(dependents = @Dependent(reconcilePrecondition = SamplePrecondition.class,
+@ControllerConfiguration(dependents = @Dependent(readyPostcondition = SampleBulkCondition.class,
     type = CRUDConfigMapBulkDependentResource.class))
-public class ManagedBulkDependentWithPreconditionReconciler
+public class ManagedBulkDependentWithReadyConditionReconciler
     implements Reconciler<BulkDependentTestCustomResource> {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -20,7 +20,14 @@ public class ManagedBulkDependentWithPreconditionReconciler
       BulkDependentTestCustomResource resource,
       Context<BulkDependentTestCustomResource> context) throws Exception {
     numberOfExecutions.incrementAndGet();
-    return UpdateControl.noUpdate();
+
+    var ready = context.managedDependentResourceContext().getWorkflowReconcileResult()
+        .map(res -> res.allDependentResourcesReady()).orElseThrow();
+
+    resource.setStatus(new BulkDependentTestStatus());
+    resource.getStatus().setReady(ready);
+
+    return UpdateControl.patchStatus(resource);
   }
 
   public int getNumberOfExecutions() {
