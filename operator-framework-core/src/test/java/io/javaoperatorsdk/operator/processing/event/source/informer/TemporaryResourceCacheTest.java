@@ -19,8 +19,7 @@ class TemporaryResourceCacheTest {
   public static final String RESOURCE_VERSION = "1";
   private InformerEventSource<ConfigMap, ?> informerEventSource = mock(InformerEventSource.class);
   private TemporaryResourceCache<ConfigMap> temporaryResourceCache =
-      new TemporaryResourceCache<>(informerEventSource, null);
-
+      new TemporaryResourceCache<>(informerEventSource);
 
   @Test
   void updateAddsTheResourceIntoCacheIfTheInformerHasThePreviousResourceVersion() {
@@ -78,29 +77,6 @@ class TemporaryResourceCacheTest {
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isNotPresent();
-  }
-
-  @Test
-  void objectIsTransformedBeforePutIntoCache() {
-    temporaryResourceCache =
-        new TemporaryResourceCache<>(informerEventSource, r -> {
-          r.getMetadata().setLabels(null);
-          return r;
-        });
-
-    temporaryResourceCache.putAddedResource(testResource());
-    assertLabelsIsEmpty(temporaryResourceCache);
-
-    temporaryResourceCache.unconditionallyCacheResource(testResource());
-    assertLabelsIsEmpty(temporaryResourceCache);
-
-    temporaryResourceCache.unconditionallyCacheResource(testResource());
-    assertLabelsIsEmpty(temporaryResourceCache);
-  }
-
-  private void assertLabelsIsEmpty(TemporaryResourceCache<ConfigMap> temporaryResourceCache) {
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource()))
-        .orElseThrow().getMetadata().getLabels()).isNull();
   }
 
   private ConfigMap propagateTestResourceToCache() {

@@ -5,7 +5,6 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.function.UnaryOperator;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
@@ -119,25 +118,4 @@ public @interface ControllerConfiguration {
    *         accessible no-arg constructor.
    */
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
-
-  /**
-   * <p>
-   * <b>This is an experimental feature, might be a subject of change and even removal in the
-   * future.</b>
-   * </p>
-   * <p>
-   * In order to optimize cache, thus set null on some attributes, this function can be set. Note
-   * that this has subtle implications how updates on the resources should be handled. Notably only
-   * patching of the resource can be used from that point, since update would remove not cached
-   * parts of the resource.
-   * </p>
-   * <p>
-   * Note that this feature does not work with Dependent Resources.
-   * </p>
-   *
-   *
-   *
-   * @return function to remove parts of the resource.
-   */
-  Class<? extends UnaryOperator> cachePruneFunction() default UnaryOperator.class;
 }

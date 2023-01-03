@@ -10,8 +10,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.PatchContext;
-import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -370,13 +368,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } else {
         return resourceOperation.withName(name).get();
       }
-    }
-
-    public R serverSideApplyLockResource(R resource, R originalResource) {
-      var patchContext = PatchContext.of(PatchType.SERVER_SIDE_APPLY);
-      patchContext.setForce(true);
-      return resource(originalResource).patch(patchContext,
-          resource);
     }
 
     public R updateResource(R resource) {

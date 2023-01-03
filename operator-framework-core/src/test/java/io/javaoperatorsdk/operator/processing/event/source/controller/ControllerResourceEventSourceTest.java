@@ -195,7 +195,6 @@ class ControllerResourceEventSourceTest extends
           genericFilter,
           null,
           null,
-          null,
           FINALIZER,
           null, null);
     }

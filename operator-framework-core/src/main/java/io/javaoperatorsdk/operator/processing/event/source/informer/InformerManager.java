@@ -113,8 +113,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
       FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,
       ResourceEventHandler<T> eventHandler, String namespaceIdentifier) {
     var informer = filteredBySelectorClient.runnableInformer(0);
-    configuration.cachePruneFunction()
-        .ifPresent(f -> informer.itemStore(new TransformingItemStore<>(f)));
     var source =
         new InformerWrapper<>(informer, namespaceIdentifier);
     source.addEventHandler(eventHandler);

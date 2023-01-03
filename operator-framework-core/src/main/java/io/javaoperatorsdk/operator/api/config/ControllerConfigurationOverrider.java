@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -36,7 +35,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private OnUpdateFilter<R> onUpdateFilter;
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
-  private UnaryOperator<R> cachePruneFunction;
   private Map<DependentResourceSpec, Object> configurations;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -52,7 +50,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.genericFilter = original.genericFilter().orElse(null);
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
-    this.cachePruneFunction = original.cachePruneFunction().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -155,12 +152,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withCachePruneFunction(
-      UnaryOperator<R> cachePruneFunction) {
-    this.cachePruneFunction = cachePruneFunction;
-    return this;
-  }
-
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -182,7 +173,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     final var overridden = new ResolvedControllerConfiguration<>(
         original.getResourceClass(), original.getName(),
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
-        reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter, cachePruneFunction,
+        reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
         namespaces, finalizer, labelSelector, configurations);
     overridden.setEventFilter(customResourcePredicate);

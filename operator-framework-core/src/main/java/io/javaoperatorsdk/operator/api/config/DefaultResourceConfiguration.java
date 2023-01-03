@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -20,12 +19,10 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final GenericFilter<R> genericFilter;
   private final String labelSelector;
   private final Set<String> namespaces;
-  private final UnaryOperator<R> cachePruneFunction;
 
   protected DefaultResourceConfiguration(Class<R> resourceClass,
       Set<String> namespaces, String labelSelector, OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
-      UnaryOperator<R> cachePruneFunction) {
+      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter) {
     this.resourceClass = resourceClass;
     this.resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;
@@ -34,7 +31,6 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
 
     this.namespaces = ResourceConfiguration.ensureValidNamespaces(namespaces);
     this.labelSelector = ResourceConfiguration.ensureValidLabelSelector(labelSelector);
-    this.cachePruneFunction = cachePruneFunction;
   }
 
   @Override
@@ -50,11 +46,6 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   @Override
   public Set<String> getNamespaces() {
     return namespaces;
-  }
-
-  @Override
-  public Optional<UnaryOperator<R>> cachePruneFunction() {
-    return Optional.ofNullable(this.cachePruneFunction);
   }
 
   @Override
