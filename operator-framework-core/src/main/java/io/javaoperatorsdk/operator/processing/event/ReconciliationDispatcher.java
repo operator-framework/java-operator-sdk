@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -291,8 +293,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        resource.removeFinalizer(finalizerName);
-        P customResource = conflictRetryingUpdate(resource);
+        P customResource = conflictRetryingUpdate(resource, r -> r.removeFinalizer(finalizerName));
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -311,8 +312,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
         getVersion(originalResource));
-    resourceForExecution.addFinalizer(configuration().getFinalizerName());
-    return conflictRetryingUpdate(resourceForExecution);
+    return conflictRetryingUpdate(resourceForExecution,
+        r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
   private P updateCustomResource(P resource) {
@@ -325,13 +326,17 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return controller.getConfiguration();
   }
 
-  public P conflictRetryingUpdate(P resource) {
+  public P conflictRetryingUpdate(P resource, Function<P, Boolean> modificationFunction) {
     if (log.isDebugEnabled()) {
       log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
     }
     int retryIndex = 0;
     while (true) {
       try {
+        var modified = modificationFunction.apply(resource);
+        if (Boolean.FALSE.equals(modified)) {
+          return resource;
+        }
         return customResourceFacade.updateResource(resource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
