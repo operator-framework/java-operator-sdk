@@ -91,7 +91,7 @@ done automatically, the whole process can be completely transparent.
 ## Managing State
 
 Thanks to the declarative nature of Kubernetes resources, operators that deal only with
-Kubernetes resources can operator in a stateless fashion, i.e. they do not need to maintain
+Kubernetes resources can operate in a stateless fashion, i.e. they do not need to maintain
 information about the state of these resources, as it should be possible to completely rebuild
 the resource state from its representation (that's what declarative means, after all).
 However, this usually doesn't hold true anymore when dealing with external resources, and it
