@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class AggregatedOperatorException extends OperatorException {
@@ -22,7 +25,15 @@ public class AggregatedOperatorException extends OperatorException {
   @Override
   public String getMessage() {
     return super.getMessage() + " " + causes.entrySet().stream()
-        .map(entry -> entry.getKey() + " -> " + entry.getValue())
-        .collect(Collectors.joining("\n - ", "Details:\n", ""));
+        .map(entry -> entry.getKey() + " -> " + exceptionDescription(entry))
+        .collect(Collectors.joining("\n - ", "Details:\n - ", ""));
+  }
+
+  private static String exceptionDescription(Entry<String, Exception> entry) {
+    final var exception = entry.getValue();
+    final var out = new StringWriter(2000);
+    final var stringWriter = new PrintWriter(out);
+    exception.printStackTrace(stringWriter);
+    return out.toString();
   }
 }
