@@ -28,12 +28,15 @@ class ExecutionScope<R extends HasMetadata> {
 
   @Override
   public String toString() {
-    return "ExecutionScope{"
-        + " resource id: "
-        + ResourceID.fromResource(resource)
-        + ", version: "
-        + resource.getMetadata().getResourceVersion()
-        + '}';
+    if (resource == null) {
+      return "ExecutionScope{resource: null}";
+    } else
+      return "ExecutionScope{"
+          + " resource id: "
+          + ResourceID.fromResource(resource)
+          + ", version: "
+          + resource.getMetadata().getResourceVersion()
+          + '}';
   }
 
   public RetryInfo getRetryInfo() {
