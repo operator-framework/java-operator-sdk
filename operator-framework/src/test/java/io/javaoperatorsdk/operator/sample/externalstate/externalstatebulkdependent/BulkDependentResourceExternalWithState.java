@@ -1,13 +1,19 @@
 package io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.*;
+import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.BulkUpdater;
+import io.javaoperatorsdk.operator.processing.dependent.DependentResourceWithExplicitState;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
@@ -36,10 +42,10 @@ public class BulkDependentResourceExternalWithState extends
         getExternalStateEventSource().getSecondaryResources(primaryResource);
     Set<ExternalResource> res = new HashSet<>();
 
-    configMaps.stream().forEach(cm -> {
+    configMaps.forEach(cm -> {
       var id = cm.getData().get(ID_KEY);
       var externalResource = externalService.read(id);
-      externalResource.ifPresent(er -> res.add(er));
+      externalResource.ifPresent(res::add);
     });
     return res;
   }
