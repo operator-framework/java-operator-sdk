@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,15 +20,15 @@ public class TimerEventSource<R extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
   private Timer timer;
-  private final AtomicBoolean running = new AtomicBoolean();
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
+  @SuppressWarnings("unused")
   public void scheduleOnce(R resource, long delay) {
     scheduleOnce(ResourceID.fromResource(resource), delay);
   }
 
   public void scheduleOnce(ResourceID resourceID, long delay) {
-    if (!running.get()) {
+    if (!isRunning()) {
       throw new IllegalStateException("The TimerEventSource is not running");
     }
 
@@ -55,15 +54,19 @@ public class TimerEventSource<R extends HasMetadata>
 
   @Override
   public void start() {
-    timer = new Timer(true);
-    running.set(true);
+    if (!isRunning()) {
+      super.start();
+      timer = new Timer(true);
+    }
   }
 
   @Override
   public void stop() {
-    running.set(false);
-    onceTasks.keySet().forEach(this::cancelOnceSchedule);
-    timer.cancel();
+    if (isRunning()) {
+      onceTasks.keySet().forEach(this::cancelOnceSchedule);
+      timer.cancel();
+      super.stop();
+    }
   }
 
   public class EventProducerTimeTask extends TimerTask {
@@ -76,7 +79,7 @@ public class TimerEventSource<R extends HasMetadata>
 
     @Override
     public void run() {
-      if (running.get()) {
+      if (isRunning()) {
         log.debug("Producing event for custom resource id: {}", customResourceUid);
         getEventHandler().handleEvent(new Event(customResourceUid));
       }

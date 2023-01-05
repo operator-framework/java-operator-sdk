@@ -41,9 +41,9 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   private final Map<String, InformerWrapper<T>> sources = new ConcurrentHashMap<>();
   private Cloner cloner;
-  private C configuration;
-  private MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
-  private ResourceEventHandler<T> eventHandler;
+  private final C configuration;
+  private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
+  private final ResourceEventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
 
   public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
