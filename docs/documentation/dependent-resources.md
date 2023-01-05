@@ -382,6 +382,8 @@ interface.
 Various examples are provided as [integration tests](https://github.com/java-operator-sdk/java-operator-sdk/tree/f5ffcfb6f546d79b4bab04ea503c8bad9d6acce6/operator-framework/src/test/java/io/javaoperatorsdk/operator/bulkdependent)
 .
 
+To see how to add conditions on a bulk dependent resource [see integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/ad8759856cc59380ea4b0973478daa1140ec93e7/operator-framework/src/test/java/io/javaoperatorsdk/operator/bulkdependent/BulkDependentWithConditionIT.java).
+
 ## Dependent Resources with Explicit State
 
 For cases when an external (non-Kubernetes) resource generates an ID during creation and from that point
