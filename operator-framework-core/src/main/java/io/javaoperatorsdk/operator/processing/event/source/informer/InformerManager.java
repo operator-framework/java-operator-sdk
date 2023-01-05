@@ -41,24 +41,31 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   private final Map<String, InformerWrapper<T>> sources = new ConcurrentHashMap<>();
   private Cloner cloner;
-  private C configuration;
-  private MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
-  private ResourceEventHandler<T> eventHandler;
+  private final C configuration;
+  private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
+  private final ResourceEventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
+
+  public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
+      C configuration,
+      ResourceEventHandler<T> eventHandler) {
+    this.client = client;
+    this.configuration = configuration;
+    this.eventHandler = eventHandler;
+  }
 
   @Override
   public void start() throws OperatorException {
+    initSources();
     // make sure informers are all started before proceeding further
     sources.values().parallelStream().forEach(InformerWrapper::start);
   }
 
-  void initSources(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      C configuration, ResourceEventHandler<T> eventHandler) {
+  private void initSources() {
+    if (!sources.isEmpty()) {
+      throw new IllegalStateException("Some sources already initialized.");
+    }
     cloner = ConfigurationServiceProvider.instance().getResourceCloner();
-    this.configuration = configuration;
-    this.client = client;
-    this.eventHandler = eventHandler;
-
     final var targetNamespaces = configuration.getEffectiveNamespaces();
     if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
       var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
@@ -86,7 +93,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     namespaces.forEach(ns -> {
       if (!sources.containsKey(ns)) {
         final InformerWrapper<T> source = createEventSourceForNamespace(ns);
-        source.addIndexers(this.indexers);
         source.start();
         log.debug("Registered new {} -> {} for namespace: {}", this, source,
             ns);
@@ -106,6 +112,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
           client.inNamespace(namespace).withLabelSelector(configuration.getLabelSelector()),
           eventHandler, namespace);
     }
+    source.addIndexers(indexers);
     return source;
   }
 
@@ -130,6 +137,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
         log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
       }
     });
+    sources.clear();
   }
 
   @Override
@@ -177,7 +185,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   @Override
   public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
     this.indexers.putAll(indexers);
-    sources.values().forEach(s -> s.addIndexers(indexers));
   }
 
   @Override

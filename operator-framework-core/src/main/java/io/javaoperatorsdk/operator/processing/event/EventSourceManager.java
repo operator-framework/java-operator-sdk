@@ -97,7 +97,6 @@ public class EventSourceManager<P extends HasMetadata>
         eventSources.additionalNamedEventSources(),
         this::stopEventSource,
         getThreadNamer("stop"));
-    eventSources.clear();
   }
 
   @SuppressWarnings("rawtypes")
