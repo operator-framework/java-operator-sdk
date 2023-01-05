@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -143,8 +142,6 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         Utils.instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class,
             Utils.contextFor(name, null, null)),
         Utils.instantiate(annotation.genericFilter(), GenericFilter.class,
-            Utils.contextFor(name, null, null)),
-        Utils.instantiate(annotation.cachePruneFunction(), UnaryOperator.class,
             Utils.contextFor(name, null, null)),
         Set.of(valueOrDefault(annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::namespaces,

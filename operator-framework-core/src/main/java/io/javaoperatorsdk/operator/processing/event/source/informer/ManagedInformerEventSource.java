@@ -43,8 +43,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
     super(configuration.getResourceClass());
-    temporaryResourceCache = new TemporaryResourceCache<>(this,
-        configuration.cachePruneFunction().orElse(null));
+    temporaryResourceCache = new TemporaryResourceCache<>(this);
     manager().initSources(client, configuration, this);
     this.configuration = configuration;
   }

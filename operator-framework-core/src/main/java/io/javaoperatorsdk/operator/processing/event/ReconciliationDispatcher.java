@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.PatchContext;
-import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
@@ -36,7 +34,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  */
 class ReconciliationDispatcher<P extends HasMetadata> {
 
-  public static final int MAX_FINALIZER_REMOVAL_RETRY = 10;
+  public static final int MAX_UPDATE_RETRY = 10;
 
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
@@ -295,8 +293,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = conflictRetryingPatch(resource, originalResource,
-            r -> r.removeFinalizer(finalizerName));
+        P customResource = conflictRetryingUpdate(resource, r -> r.removeFinalizer(finalizerName));
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -315,8 +312,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
         getVersion(originalResource));
-
-    return conflictRetryingPatch(resourceForExecution, originalResource,
+    return conflictRetryingUpdate(resourceForExecution,
         r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
@@ -330,8 +326,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return controller.getConfiguration();
   }
 
-  public P conflictRetryingPatch(P resource, P originalResource,
-      Function<P, Boolean> modificationFunction) {
+  public P conflictRetryingUpdate(P resource, Function<P, Boolean> modificationFunction) {
     if (log.isDebugEnabled()) {
       log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
     }
@@ -342,7 +337,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (Boolean.FALSE.equals(modified)) {
           return resource;
         }
-        return customResourceFacade.serverSideApplyLockResource(resource, originalResource);
+        return customResourceFacade.updateResource(resource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -350,9 +345,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (e.getCode() != 409) {
           throw e;
         }
-        if (retryIndex >= MAX_FINALIZER_REMOVAL_RETRY) {
+        if (retryIndex >= MAX_UPDATE_RETRY) {
           throw new OperatorException(
-              "Exceeded maximum (" + MAX_FINALIZER_REMOVAL_RETRY
+              "Exceeded maximum (" + MAX_UPDATE_RETRY
                   + ") retry attempts to patch resource: "
                   + ResourceID.fromResource(resource));
         }
@@ -378,13 +373,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } else {
         return resourceOperation.withName(name).get();
       }
-    }
-
-    public R serverSideApplyLockResource(R resource, R originalResource) {
-      var patchContext = PatchContext.of(PatchType.SERVER_SIDE_APPLY);
-      patchContext.setForce(true);
-      return resource(originalResource).patch(patchContext,
-          resource);
     }
 
     public R updateResource(R resource) {

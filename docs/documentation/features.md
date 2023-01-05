@@ -711,30 +711,6 @@ setting, where this flag usually needs to be set to false, in order to control t
 See also an example implementation in the 
 [WebPage sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/3e2e7c4c834ef1c409d636156b988125744ca911/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageOperator.java#L38-L43)
 
-## Optimization of Caches
-
-** Cache pruning is an experimental feature. Might a subject of change or even removal in the future. **
-
-Operators using informers will initially cache the data for all known resources when starting up 
-so that access to resources can be performed quickly. Consequently, the memory required for the 
-operator to run and startup time will both increase quite dramatically when dealing with large
-clusters with numerous resources. 
-
-It is thus possible to configure the operator to cache only pruned versions of the resources to 
-alleviate the memory usage of the primary and secondary caches. This setup, however, has 
-implications on how reconcilers deal with resources since they will only work with partial 
-objects. As a consequence, resources need to be updated using PATCH operations only, sending 
-only required changes. 
-
-To see how to use, and how to handle related caveats regarding how to deal with pruned objects 
-that leverage  
-[server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) patches, 
-please check the provided
-[integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/c688524e64205690ba15587e7ed96a64dc231430/operator-framework/src/test/java/io/javaoperatorsdk/operator/CachePruneIT.java) 
-and associates reconciler.
-
-Pruned caches are currently not supported with the Dependent Resources feature.
-
 ## Automatic Generation of CRDs
 
 Note that this feature is provided by the

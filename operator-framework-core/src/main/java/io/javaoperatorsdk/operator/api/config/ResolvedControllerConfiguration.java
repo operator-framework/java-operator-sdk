@@ -1,13 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.UnaryOperator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
@@ -43,7 +38,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.getAssociatedReconcilerClassName(), other.getRetry(), other.getRateLimiter(),
         other.maxReconciliationInterval().orElse(null),
         other.onAddFilter().orElse(null), other.onUpdateFilter().orElse(null),
-        other.genericFilter().orElse(null), other.cachePruneFunction().orElse(null),
+        other.genericFilter().orElse(null),
         other.getDependentResources(), other.getNamespaces(),
         other.getFinalizerName(), other.getLabelSelector(), Collections.emptyMap());
   }
@@ -69,12 +64,12 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       boolean generationAware, String associatedReconcilerClassName, Retry retry,
       RateLimiter rateLimiter, Duration maxReconciliationInterval,
       OnAddFilter<P> onAddFilter, OnUpdateFilter<P> onUpdateFilter,
-      GenericFilter<P> genericFilter, UnaryOperator<P> cachePruneFunction,
+      GenericFilter<P> genericFilter,
       List<DependentResourceSpec> dependentResources,
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
-        maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter, cachePruneFunction,
+        maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
         namespaces, finalizer, labelSelector, configurations);
     setDependentResources(dependentResources);
   }
@@ -83,11 +78,9 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       boolean generationAware, String associatedReconcilerClassName, Retry retry,
       RateLimiter rateLimiter, Duration maxReconciliationInterval,
       OnAddFilter<P> onAddFilter, OnUpdateFilter<P> onUpdateFilter, GenericFilter<P> genericFilter,
-      UnaryOperator<P> cachePruneFunction,
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations) {
-    super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
-        cachePruneFunction);
+    super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter);
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
     this.generationAware = generationAware;
     this.associatedReconcilerClassName = associatedReconcilerClassName;

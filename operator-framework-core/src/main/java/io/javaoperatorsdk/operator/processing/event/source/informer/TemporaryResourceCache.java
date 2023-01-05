@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +34,11 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
-  private UnaryOperator<T> cachePruneFunction;
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
-  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
-      UnaryOperator<T> cachePruneFunction) {
+  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.managedInformerEventSource = managedInformerEventSource;
-    this.cachePruneFunction = cachePruneFunction;
   }
 
   public synchronized void removeResourceFromCache(T resource) {
@@ -83,9 +79,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   private void putToCache(T resource, ResourceID resourceID) {
-    if (cachePruneFunction != null) {
-      resource = cachePruneFunction.apply(resource);
-    }
     cache.put(resourceID == null ? ResourceID.fromResource(resource) : resourceID, resource);
   }
 
