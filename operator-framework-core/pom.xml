@@ -40,7 +40,7 @@
           <generateGitPropertiesFilename>${project.build.outputDirectory}/version.properties
           </generateGitPropertiesFilename>
           <includeOnlyProperties>
-            <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+            <includeOnlyProperty>^git.build.time$</includeOnlyProperty>
             <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
             <includeOnlyProperty>git.branch</includeOnlyProperty>
           </includeOnlyProperties>
