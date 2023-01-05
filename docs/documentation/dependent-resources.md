@@ -331,11 +331,10 @@ sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/s
 
 ## Telling JOSDK how to find which secondary resources are associated with a given primary resource
 
-**TODO: this needs to be updated**
 [`KubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
 automatically maps secondary resource to a primary by owner reference. This behavior can be
 customized by implementing
-[`PrimaryToSecondaryMapper`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java)
+[`SecondaryToPrimaryMapper`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java)
 by the dependent resource.
 
 See sample in one of the integration
