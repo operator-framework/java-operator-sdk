@@ -33,14 +33,11 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
     super.resolveEventSource(eventSourceRetriever);
     if (isDependentResourceWithExplicitState) {
-      externalStateEventSource = (InformerEventSource<?, P>) dependentResourceWithExplicitState
-          .eventSourceName()
-          .map(n -> eventSourceRetriever
-              .getResourceEventSourceFor(dependentResourceWithExplicitState.stateResourceClass(),
-                  (String) n))
-          .orElseGet(() -> eventSourceRetriever
-              .getResourceEventSourceFor(
-                  (Class<R>) dependentResourceWithExplicitState.stateResourceClass()));
+      final var eventSourceName = (String) dependentResourceWithExplicitState
+          .eventSourceName().orElse(null);
+      externalStateEventSource = (InformerEventSource<?, P>) eventSourceRetriever
+          .getResourceEventSourceFor(dependentResourceWithExplicitState.stateResourceClass(),
+              eventSourceName);
     }
 
   }
@@ -65,13 +62,13 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "unused"})
   private void handleExplicitStateDelete(P primary, R secondary, Context<P> context) {
     var res = dependentResourceWithExplicitState.stateResource(primary, secondary);
     dependentResourceWithExplicitState.getKubernetesClient().resource(res).delete();
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
+  @SuppressWarnings({"rawtypes", "unchecked", "unused"})
   protected void handleExplicitStateCreation(P primary, R created, Context<P> context) {
     var resource = dependentResourceWithExplicitState.stateResource(primary, created);
     var stateResource =

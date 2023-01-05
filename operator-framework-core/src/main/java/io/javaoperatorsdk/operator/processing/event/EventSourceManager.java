@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -211,11 +211,6 @@ public class EventSourceManager<P extends HasMetadata>
 
   public ControllerResourceEventSource<P> getControllerResourceEventSource() {
     return eventSources.controllerResourceEventSource();
-  }
-
-  @Override
-  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(Class<R> dependentType) {
-    return getResourceEventSourceFor(dependentType, null);
   }
 
   public <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType) {

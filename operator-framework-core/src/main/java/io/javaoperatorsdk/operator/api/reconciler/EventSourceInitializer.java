@@ -60,8 +60,7 @@ public interface EventSourceInitializer<P extends HasMetadata> {
   }
 
   /**
-   * This is for the use case when the event sources are not access explicitly by name in the
-   * reconciler.
+   * Used when event sources are not explicitly named when created/registered.
    *
    * @param eventSource EventSource
    * @return generated name
