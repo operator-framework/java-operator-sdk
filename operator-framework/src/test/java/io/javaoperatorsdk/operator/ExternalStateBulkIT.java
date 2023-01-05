@@ -25,7 +25,7 @@ class ExternalStateBulkIT {
   public static final int INCREASED_BULK_SIZE = 4;
   public static final int DECREASED_BULK_SIZE = 2;
 
-  private ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
+  private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =

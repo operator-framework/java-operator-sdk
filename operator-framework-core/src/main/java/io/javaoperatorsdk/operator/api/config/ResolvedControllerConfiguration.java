@@ -26,7 +26,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final String associatedReconcilerClassName;
   private final Retry retry;
   private final RateLimiter rateLimiter;
-  private final Optional<Duration> maxReconciliationInterval;
+  private final Duration maxReconciliationInterval;
   private final String finalizer;
   private final Map<DependentResourceSpec, Object> configurations;
 
@@ -86,7 +86,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.associatedReconcilerClassName = associatedReconcilerClassName;
     this.retry = ensureRetry(retry);
     this.rateLimiter = ensureRateLimiter(rateLimiter);
-    this.maxReconciliationInterval = Optional.ofNullable(maxReconciliationInterval);
+    this.maxReconciliationInterval = maxReconciliationInterval;
     this.configurations = configurations != null ? configurations : Collections.emptyMap();
 
     this.finalizer =
@@ -142,7 +142,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
 
   @Override
   public Optional<Duration> maxReconciliationInterval() {
-    return maxReconciliationInterval;
+    return Optional.ofNullable(maxReconciliationInterval);
   }
 
   @Override

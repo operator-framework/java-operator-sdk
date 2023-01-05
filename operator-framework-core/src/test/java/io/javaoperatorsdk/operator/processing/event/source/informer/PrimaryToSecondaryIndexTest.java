@@ -17,9 +17,10 @@ import static org.mockito.Mockito.when;
 
 class PrimaryToSecondaryIndexTest {
 
-  private SecondaryToPrimaryMapper<ConfigMap> secondaryToPrimaryMapperMock =
+  @SuppressWarnings("unchecked")
+  private final SecondaryToPrimaryMapper<ConfigMap> secondaryToPrimaryMapperMock =
       mock(SecondaryToPrimaryMapper.class);
-  private PrimaryToSecondaryIndex<ConfigMap> primaryToSecondaryIndex =
+  private final PrimaryToSecondaryIndex<ConfigMap> primaryToSecondaryIndex =
       new DefaultPrimaryToSecondaryIndex<>(secondaryToPrimaryMapperMock);
 
   private ResourceID primaryID1 = new ResourceID("id1", "default");

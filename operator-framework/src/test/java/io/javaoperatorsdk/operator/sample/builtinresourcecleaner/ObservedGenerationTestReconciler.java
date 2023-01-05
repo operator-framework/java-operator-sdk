@@ -14,8 +14,8 @@ public class ObservedGenerationTestReconciler
 
   private static final Logger log = LoggerFactory.getLogger(ObservedGenerationTestReconciler.class);
 
-  private AtomicInteger reconciled = new AtomicInteger(0);
-  private AtomicInteger cleaned = new AtomicInteger(0);
+  private final AtomicInteger reconciled = new AtomicInteger(0);
+  private final AtomicInteger cleaned = new AtomicInteger(0);
 
   @Override
   public UpdateControl<Service> reconcile(

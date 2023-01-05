@@ -41,7 +41,8 @@ public class ChangeNamespaceTestReconciler
     var actualConfigMap = context.getSecondaryResource(ConfigMap.class);
     if (actualConfigMap.isEmpty()) {
       client.configMaps().inNamespace(primary.getMetadata().getNamespace())
-          .create(configMap(primary));
+          .resource(configMap(primary))
+          .create();
     }
 
     increaseNumberOfResourceExecutions(primary);

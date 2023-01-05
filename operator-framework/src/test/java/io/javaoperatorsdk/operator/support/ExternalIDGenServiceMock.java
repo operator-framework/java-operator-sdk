@@ -5,9 +5,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ExternalIDGenServiceMock {
 
-  private static ExternalIDGenServiceMock serviceMock = new ExternalIDGenServiceMock();
+  private final static ExternalIDGenServiceMock serviceMock = new ExternalIDGenServiceMock();
 
-  private Map<String, ExternalResource> resourceMap = new ConcurrentHashMap<>();
+  private final Map<String, ExternalResource> resourceMap = new ConcurrentHashMap<>();
 
   public ExternalResource create(ExternalResource externalResource) {
     if (externalResource.getId() != null) {

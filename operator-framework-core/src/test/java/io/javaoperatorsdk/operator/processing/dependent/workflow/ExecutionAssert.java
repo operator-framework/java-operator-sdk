@@ -48,7 +48,7 @@ public class ExecutionAssert
   }
 
   private List<DependentResource> getActualDependentResources() {
-    return actual.stream().map(rr -> rr.getDependentResource()).collect(Collectors.toList());
+    return actual.stream().map(ReconcileRecord::getDependentResource).collect(Collectors.toList());
   }
 
   private Optional<ReconcileRecord> getReconcileRecordFor(DependentResource dependentResource) {

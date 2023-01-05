@@ -52,7 +52,8 @@ public class CreateUpdateEventFilterTestReconciler
             client
                 .configMaps()
                 .inNamespace(resource.getMetadata().getNamespace())
-                .create(configMapToCreate);
+                .resource(configMapToCreate)
+                .create();
         informerEventSource.handleRecentResourceCreate(resourceID, configMap);
       } catch (RuntimeException e) {
         informerEventSource
@@ -71,7 +72,8 @@ public class CreateUpdateEventFilterTestReconciler
               client
                   .configMaps()
                   .inNamespace(resource.getMetadata().getNamespace())
-                  .replace(configMap);
+                  .resource(configMap)
+                  .replace();
           informerEventSource.handleRecentResourceUpdate(resourceID,
               newConfigMap, configMap);
         } catch (RuntimeException e) {

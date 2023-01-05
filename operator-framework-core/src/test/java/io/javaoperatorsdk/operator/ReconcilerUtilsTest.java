@@ -151,7 +151,7 @@ class ReconcilerUtilsTest {
 
   }
 
-  private class TomcatSpec {
+  private static class TomcatSpec {
     private Integer replicas;
 
     public Integer getReplicas() {

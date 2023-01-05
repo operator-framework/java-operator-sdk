@@ -8,9 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ExternalServiceMock {
 
-  private static ExternalServiceMock serviceMock = new ExternalServiceMock();
+  private static final ExternalServiceMock serviceMock = new ExternalServiceMock();
 
-  private Map<String, ExternalResource> resourceMap = new ConcurrentHashMap<>();
+  private final Map<String, ExternalResource> resourceMap = new ConcurrentHashMap<>();
 
   public ExternalResource create(ExternalResource externalResource) {
     resourceMap.put(externalResource.getId(), externalResource);

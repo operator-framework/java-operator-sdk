@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 public class ExternalResourceDiscriminator implements
     ResourceDiscriminator<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> {
 
-  private String suffix;
+  private final String suffix;
 
   public ExternalResourceDiscriminator(String suffix) {
     this.suffix = suffix;

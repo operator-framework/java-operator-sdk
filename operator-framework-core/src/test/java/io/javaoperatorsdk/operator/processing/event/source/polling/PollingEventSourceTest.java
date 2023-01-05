@@ -27,7 +27,8 @@ class PollingEventSourceTest
   public static final int DEFAULT_WAIT_PERIOD = 100;
   public static final long POLL_PERIOD = 30L;
 
-  private PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
+  @SuppressWarnings("unchecked")
+  private final PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
       new PollingEventSource<>(resourceFetcher, POLL_PERIOD, SampleExternalResource.class,

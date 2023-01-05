@@ -100,6 +100,7 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   protected <R> boolean isConditionMet(Optional<Condition<R, P>> condition,
       DependentResource<R, P> dependentResource) {
     if (condition.isEmpty()) {

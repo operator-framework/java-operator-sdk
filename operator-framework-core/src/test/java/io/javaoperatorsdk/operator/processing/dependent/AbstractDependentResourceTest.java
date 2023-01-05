@@ -127,6 +127,7 @@ class AbstractDependentResourceTest {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Matcher.Result<ConfigMap> match(ConfigMap actualResource, TestCustomResource primary,
         Context<TestCustomResource> context) {
       var result = mock(Matcher.Result.class);

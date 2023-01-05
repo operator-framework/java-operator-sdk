@@ -4,7 +4,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public class ReconcileRecord {
 
-  private DependentResource<?, ?> dependentResource;
+  private final DependentResource<?, ?> dependentResource;
   private final boolean deleted;
 
   public ReconcileRecord(DependentResource<?, ?> dependentResource) {

@@ -197,7 +197,7 @@ class ExternalResourceCachingEventSourceTest extends
   public static class TestExternalCachingEventSource
       extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata> {
     public TestExternalCachingEventSource() {
-      super(SampleExternalResource.class, (r) -> r.getName());
+      super(SampleExternalResource.class, SampleExternalResource::getName);
     }
   }
 

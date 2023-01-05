@@ -22,7 +22,6 @@ public class PerResourcePollingEventSourceTestReconciler
   private final Map<String, Integer> numberOfFetchExecutions = new ConcurrentHashMap<>();
 
   private KubernetesClient client;
-  private PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource;
 
   @Override
   public UpdateControl<PerResourceEventSourceCustomResource> reconcile(
@@ -36,7 +35,7 @@ public class PerResourcePollingEventSourceTestReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<PerResourceEventSourceCustomResource> context) {
-    this.eventSource =
+    PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource =
         new PerResourcePollingEventSource<>(resource -> {
           numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
           numberOfFetchExecutions.compute(resource.getMetadata().getName(), (s, v) -> v + 1);

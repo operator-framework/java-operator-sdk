@@ -4,7 +4,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 
 public class EventSourceNotFoundException extends OperatorException {
 
-  private String eventSourceName;
+  private final String eventSourceName;
 
   public EventSourceNotFoundException(String eventSourceName) {
     this.eventSourceName = eventSourceName;

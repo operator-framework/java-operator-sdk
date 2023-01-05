@@ -21,13 +21,12 @@ import static org.mockito.Mockito.mock;
 
 class LeaderElectionManagerTest {
 
-  private ControllerManager controllerManager;
   private KubernetesClient kubernetesClient;
   private LeaderElectionManager leaderElectionManager;
 
   @BeforeEach
   void setUp() {
-    controllerManager = mock(ControllerManager.class);
+    ControllerManager controllerManager = mock(ControllerManager.class);
     kubernetesClient = mock(KubernetesClient.class);
     leaderElectionManager = new LeaderElectionManager(controllerManager);
   }

@@ -13,12 +13,7 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.doAnswer;
 
 public class MockKubernetesClient {
 

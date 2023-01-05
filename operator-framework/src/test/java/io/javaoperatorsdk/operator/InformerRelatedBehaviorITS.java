@@ -191,7 +191,7 @@ class InformerRelatedBehaviorITS {
     });
   }
 
-
+  @SuppressWarnings("unchecked")
   private void assertRuntimeInfoNoCRPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
     var unhealthyEventSources =
@@ -209,6 +209,7 @@ class InformerRelatedBehaviorITS {
         .hasSize(1);
   }
 
+  @SuppressWarnings("unchecked")
   private void assertRuntimeInfoForSecondaryPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
     var unhealthyEventSources =

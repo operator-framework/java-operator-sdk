@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 
@@ -29,7 +29,7 @@ public abstract class WebPageOperatorAbstractTest {
   static final Logger log =
       LoggerFactory.getLogger(WebPageOperatorStandaloneDependentResourcesE2E.class);
 
-  static final KubernetesClient client = new DefaultKubernetesClient();
+  static final KubernetesClient client = new KubernetesClientBuilder().build();
   public static final String TEST_PAGE = "test-page";
   public static final String TITLE1 = "Hello Operator World";
   public static final String TITLE2 = "Hello Operator World Title 2";

@@ -10,7 +10,6 @@ import io.javaoperatorsdk.operator.TestUtils;
 
 import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class InternalEventFiltersTest {
 

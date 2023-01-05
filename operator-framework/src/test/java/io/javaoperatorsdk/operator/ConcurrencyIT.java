@@ -34,7 +34,7 @@ class ConcurrencyIT {
     log.info("Creating {} new resources", NUMBER_OF_RESOURCES_CREATED);
     for (int i = 0; i < NUMBER_OF_RESOURCES_CREATED; i++) {
       TestCustomResource tcr = TestUtils.testCustomResourceWithPrefix(String.valueOf(i));
-      operator.resources(TestCustomResource.class).create(tcr);
+      operator.resources(TestCustomResource.class).resource(tcr).create();
     }
 
     await()
@@ -57,8 +57,8 @@ class ConcurrencyIT {
           operator.get(TestCustomResource.class,
               TestUtils.TEST_CUSTOM_RESOURCE_PREFIX + i);
       tcr.getSpec().setValue(i + UPDATED_SUFFIX);
-      operator.resources(TestCustomResource.class)
-          .createOrReplace(tcr);
+      operator.resources(TestCustomResource.class).resource(tcr)
+          .createOrReplace();
     }
     // sleep for a short time to make variability to the test, so some updates are not
     // executed before delete
@@ -67,7 +67,7 @@ class ConcurrencyIT {
     log.info("Deleting {} resources", NUMBER_OF_RESOURCES_DELETED);
     for (int i = 0; i < NUMBER_OF_RESOURCES_DELETED; i++) {
       TestCustomResource tcr = TestUtils.testCustomResourceWithPrefix(String.valueOf(i));
-      operator.resources(TestCustomResource.class).delete(tcr);
+      operator.resources(TestCustomResource.class).resource(tcr).delete();
     }
 
     await()

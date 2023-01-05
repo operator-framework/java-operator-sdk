@@ -74,11 +74,13 @@ public class WebPageStandaloneDependentsReconciler
     return handleError(resource, e);
   }
 
+  @SuppressWarnings("unchecked")
   private void createDependentResources(KubernetesClient client) {
     this.configMapDR = new ConfigMapDependentResource();
     this.deploymentDR = new DeploymentDependentResource();
     this.serviceDR = new ServiceDependentResource();
     this.ingressDR = new IngressDependentResource();
+
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.setKubernetesClient(client);
