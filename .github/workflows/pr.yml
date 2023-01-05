@@ -46,7 +46,7 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
       - name: Set up Minikube
-        uses: manusa/actions-setup-minikube@v2.7.1
+        uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: 'v1.26.0'
           kubernetes version: ${{ matrix.kubernetes }}
@@ -54,8 +54,22 @@ jobs:
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run integration tests
         run: ./mvnw ${MAVEN_ARGS} -B package -P no-unit-tests --file pom.xml
-      - name: Adjust Minikube Min Request Timeout Setting
-        uses: manusa/actions-setup-minikube@v2.7.1
+  special_integration_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 11, 17 ]
+        kubernetes: [ 'v1.22.15', 'v1.23.12', 'v1.24.6', 'v1.25.2' ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+      - name: Minikube Min Request Timeout Setting
+        uses: manusa/actions-setup-minikube@v2.7.2
         with:
           minikube version: 'v1.26.0'
           kubernetes version: ${{ matrix.kubernetes }}
