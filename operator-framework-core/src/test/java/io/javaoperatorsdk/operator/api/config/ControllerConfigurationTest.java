@@ -16,7 +16,12 @@ class ControllerConfigurationTest {
     assertThrows(RuntimeException.class,
         lambdasCannotBeUsedToExtractGenericParam::getResourceClass);
 
-    final ControllerConfiguration<TestCustomResource> conf = () -> null;
+    final ControllerConfiguration<TestCustomResource> conf = new ControllerConfiguration<>() {
+      @Override
+      public String getAssociatedReconcilerClassName() {
+        return null;
+      }
+    };
     assertEquals(TestCustomResource.class, conf.getResourceClass());
   }
 }
