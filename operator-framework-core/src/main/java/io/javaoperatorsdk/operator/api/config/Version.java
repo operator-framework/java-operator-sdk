@@ -45,7 +45,7 @@ public class Version {
 
   /**
    * Returns the version of the Fabric8 Kubernetes Client being used by this version of the SDK
-   * 
+   *
    * @return the Fabric8 Kubernetes Client version
    */
   @SuppressWarnings("unused")
