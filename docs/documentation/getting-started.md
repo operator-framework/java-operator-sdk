@@ -30,7 +30,7 @@ You can also refer to the
 The easiest way to get started with SDK is to start
 [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) and
 execute one of our [examples](https://github.com/java-operator-sdk/samples/tree/main/mysql-schema).
-There is a dedicated page to describe how to [use the samples](/docs/use-samples).
+There is a dedicated page to describe how to [use the samples](/docs/using-samples).
 
 Here are the main steps to develop the code and deploy the operator to a Kubernetes cluster.
 A more detailed and specific version can be found under `samples/mysql-schema/README.md`.
