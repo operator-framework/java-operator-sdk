@@ -63,7 +63,6 @@ public class Utils {
       builtTime = Date.from(Instant.EPOCH);
     }
     return new Version(
-        properties.getProperty("git.build.version", "unknown"),
         properties.getProperty("git.commit.id.abbrev", "unknown"),
         builtTime);
   }
