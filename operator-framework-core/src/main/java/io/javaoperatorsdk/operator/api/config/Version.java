@@ -6,14 +6,11 @@ import java.util.Date;
 /** A class encapsulating the version information associated with this SDK instance. */
 public class Version {
 
-  public static final Version UNKNOWN = new Version("unknown", "unknown", Date.from(Instant.EPOCH));
-
-  private final String sdk;
+  public static final Version UNKNOWN = new Version("unknown", Date.from(Instant.EPOCH));
   private final String commit;
   private final Date builtTime;
 
-  public Version(String sdkVersion, String commit, Date builtTime) {
-    this.sdk = sdkVersion;
+  public Version(String commit, Date builtTime) {
     this.commit = commit;
     this.builtTime = builtTime;
   }
@@ -24,7 +21,7 @@ public class Version {
    * @return the SDK project version
    */
   public String getSdkVersion() {
-    return sdk;
+    return Versions.JOSDK;
   }
 
   /**
@@ -44,5 +41,15 @@ public class Version {
    */
   public Date getBuiltTime() {
     return builtTime;
+  }
+
+  /**
+   * Returns the version of the Fabric8 Kubernetes Client being used by this version of the SDK
+   *
+   * @return the Fabric8 Kubernetes Client version
+   */
+  @SuppressWarnings("unused")
+  public String getKubernetesClientVersion() {
+    return Versions.KUBERNETES_CLIENT;
   }
 }
