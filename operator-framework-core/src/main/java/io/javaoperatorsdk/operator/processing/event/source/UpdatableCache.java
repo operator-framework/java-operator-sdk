@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import io.javaoperatorsdk.operator.processing.cache.Cache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public interface UpdatableCache<T> extends Cache<T> {

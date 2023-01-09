@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.cache;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -7,20 +7,22 @@ import java.util.stream.Stream;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public interface Cache<T> {
+public interface Cache<R> {
   Predicate TRUE = (a) -> true;
 
-  Optional<T> get(ResourceID resourceID);
+  Optional<R> get(ResourceID resourceID);
 
   default boolean contains(ResourceID resourceID) {
     return get(resourceID).isPresent();
   }
 
+  // todo remove?
+  @Deprecated(forRemoval = true)
   Stream<ResourceID> keys();
 
-  default Stream<T> list() {
+  default Stream<R> list() {
     return list(TRUE);
   }
 
-  Stream<T> list(Predicate<T> predicate);
+  Stream<R> list(Predicate<R> predicate);
 }

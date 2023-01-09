@@ -22,9 +22,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCache
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
+import io.javaoperatorsdk.operator.processing.cache.Cache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.Configurable;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
