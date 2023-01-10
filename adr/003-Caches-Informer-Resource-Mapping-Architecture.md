@@ -8,6 +8,9 @@ Pending
 
 ## Decision
 
+- in order to better control information flow (first cache then propagate the event) the cache is still part of the
+  event source. 
+
 ```mermaid
 
 graph TD
