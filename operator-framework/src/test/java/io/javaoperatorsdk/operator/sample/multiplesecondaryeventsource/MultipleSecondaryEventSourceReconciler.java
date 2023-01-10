@@ -77,8 +77,7 @@ public class MultipleSecondaryEventSourceReconciler
           return Set.of(new ResourceID(name.toString(), s.getMetadata().getNamespace()));
         }).build();
     InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource> configMapEventSource =
-        new InformerEventSource<>(config,
-            context);
+        new InformerEventSource<>(config, context);
     return EventSourceInitializer.nameEventSources(configMapEventSource);
   }
 
