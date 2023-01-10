@@ -48,7 +48,7 @@ jobs:
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
-          minikube version: 'v1.26.0'
+          minikube version: 'v1.28.0'
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
           github token: ${{ secrets.GITHUB_TOKEN }}
@@ -71,7 +71,7 @@ jobs:
       - name: Minikube Min Request Timeout Setting
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
-          minikube version: 'v1.26.0'
+          minikube version: 'v1.28.0'
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
           start args: '--extra-config=apiserver.min-request-timeout=3'
