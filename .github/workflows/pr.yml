@@ -36,7 +36,7 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        kubernetes: [ 'v1.22.15', 'v1.23.12', 'v1.24.6', 'v1.25.2' ]
+        kubernetes: [ 'v1.23.15', 'v1.24.9', 'v1.25.5', '1.26.0' ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Java and Maven
@@ -59,7 +59,7 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        kubernetes: [ 'v1.22.15', 'v1.23.12', 'v1.24.6', 'v1.25.2' ]
+        kubernetes: [ 'v1.23.15', 'v1.24.9', 'v1.25.5', '1.26.0' ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Java and Maven
