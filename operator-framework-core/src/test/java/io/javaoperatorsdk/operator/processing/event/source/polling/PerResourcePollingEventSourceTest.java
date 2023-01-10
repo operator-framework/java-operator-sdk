@@ -29,10 +29,12 @@ class PerResourcePollingEventSourceTest extends
     AbstractEventSourceTestBase<PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
   public static final int PERIOD = 150;
-  private PerResourcePollingEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
+  @SuppressWarnings("unchecked")
+  private final PerResourcePollingEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
       mock(PerResourcePollingEventSource.ResourceFetcher.class);
-  private Cache<TestCustomResource> resourceCache = mock(Cache.class);
-  private TestCustomResource testCustomResource = TestUtils.testCustomResource();
+  @SuppressWarnings("unchecked")
+  private final Cache<TestCustomResource> resourceCache = mock(Cache.class);
+  private final TestCustomResource testCustomResource = TestUtils.testCustomResource();
 
   @BeforeEach
   public void setup() {

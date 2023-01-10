@@ -33,12 +33,14 @@ public class MultipleSecondaryEventSourceReconciler
     if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
         .withName(getName1(resource)).get() == null) {
       client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-          .createOrReplace(configMap(getName1(resource), resource));
+          .resource(configMap(getName1(resource), resource))
+          .createOrReplace();
     }
     if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
         .withName(getName2(resource)).get() == null) {
       client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-          .createOrReplace(configMap(getName2(resource), resource));
+          .resource(configMap(getName2(resource), resource))
+          .createOrReplace();
     }
 
     if (numberOfExecutions.get() >= 3) {
@@ -75,8 +77,7 @@ public class MultipleSecondaryEventSourceReconciler
           return Set.of(new ResourceID(name.toString(), s.getMetadata().getNamespace()));
         }).build();
     InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource> configMapEventSource =
-        new InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource>(config,
-            context);
+        new InformerEventSource<>(config, context);
     return EventSourceInitializer.nameEventSources(configMapEventSource);
   }
 

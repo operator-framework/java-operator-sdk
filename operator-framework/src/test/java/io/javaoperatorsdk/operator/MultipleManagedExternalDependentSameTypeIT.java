@@ -10,7 +10,6 @@ import io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.M
 import io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 
-import static io.javaoperatorsdk.operator.MultipleManagedDependentSameTypeIT.DEFAULT_SPEC_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 

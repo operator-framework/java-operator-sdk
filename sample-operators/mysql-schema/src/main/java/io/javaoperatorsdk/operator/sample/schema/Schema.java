@@ -5,8 +5,8 @@ import java.util.Objects;
 
 public class Schema implements Serializable {
 
-  private String name;
-  private String characterSet;
+  private final String name;
+  private final String characterSet;
 
   public Schema(String name, String characterSet) {
     this.name = name;

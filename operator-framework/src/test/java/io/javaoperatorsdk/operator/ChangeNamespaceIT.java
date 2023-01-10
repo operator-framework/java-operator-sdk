@@ -122,7 +122,8 @@ class ChangeNamespaceIT {
     var res = customResource(name);
     return client().resources(ChangeNamespaceTestCustomResource.class)
         .inNamespace(ADDITIONAL_TEST_NAMESPACE)
-        .create(res);
+        .resource(res)
+        .create();
   }
 
   private KubernetesClient client() {

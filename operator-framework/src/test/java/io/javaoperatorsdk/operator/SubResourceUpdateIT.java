@@ -82,7 +82,7 @@ class SubResourceUpdateIT {
     // waits for the resource to start processing
     waitXms(EVENT_RECEIVE_WAIT);
     resource.getSpec().setValue("new value");
-    operator.resources(SubResourceTestCustomResource.class).createOrReplace(resource);
+    operator.resources(SubResourceTestCustomResource.class).resource(resource).createOrReplace();
 
     awaitStatusUpdated(resource.getMetadata().getName());
 

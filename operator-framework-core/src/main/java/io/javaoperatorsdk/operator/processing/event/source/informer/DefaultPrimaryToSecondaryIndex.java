@@ -9,8 +9,8 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 
 class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryToSecondaryIndex<R> {
 
-  private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
-  private Map<ResourceID, Set<ResourceID>> index = new HashMap<>();
+  private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
+  private final Map<ResourceID, Set<ResourceID>> index = new HashMap<>();
 
   public DefaultPrimaryToSecondaryIndex(SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
     this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;

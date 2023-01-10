@@ -12,7 +12,8 @@ class EventRecorderTest {
 
   public static final String RESOURCE_VERSION = "0";
   public static final String RESOURCE_VERSION1 = "1";
-  EventRecorder<ConfigMap> eventRecorder = new EventRecorder();
+
+  EventRecorder<ConfigMap> eventRecorder = new EventRecorder<>();
 
   ConfigMap testConfigMap = testConfigMap(RESOURCE_VERSION);
   ConfigMap testConfigMap2 = testConfigMap(RESOURCE_VERSION1);

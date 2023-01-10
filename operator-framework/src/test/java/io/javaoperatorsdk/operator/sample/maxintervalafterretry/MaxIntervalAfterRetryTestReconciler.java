@@ -16,7 +16,8 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class MaxIntervalAfterRetryTestReconciler
     implements Reconciler<MaxIntervalAfterRetryTestCustomResource>, TestExecutionInfoProvider {
 
-  private Logger log = LoggerFactory.getLogger(MaxIntervalAfterRetryTestReconciler.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(MaxIntervalAfterRetryTestReconciler.class);
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 

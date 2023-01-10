@@ -11,9 +11,9 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 
 public class TransformingItemStore<R extends HasMetadata> implements ItemStore<R> {
 
-  private Function<R, String> keyFunction;
-  private UnaryOperator<R> transformationFunction;
-  private ConcurrentHashMap<String, R> store = new ConcurrentHashMap<>();
+  private final Function<R, String> keyFunction;
+  private final UnaryOperator<R> transformationFunction;
+  private final ConcurrentHashMap<String, R> store = new ConcurrentHashMap<>();
 
   public TransformingItemStore(UnaryOperator<R> transformationFunction) {
     this(Cache::metaNamespaceKeyFunc, transformationFunction);

@@ -23,7 +23,8 @@ public final class BuilderUtils {
     }
   }
 
-  public static final <T, B> Class<T> builderTargetType(Class<B> builderType) {
+  @SuppressWarnings("unchecked")
+  public static <T, B> Class<T> builderTargetType(Class<B> builderType) {
     try {
       Method method = builderType.getDeclaredMethod("build");
       return (Class<T>) method.getReturnType();

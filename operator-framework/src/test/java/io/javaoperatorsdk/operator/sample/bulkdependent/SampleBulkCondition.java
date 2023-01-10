@@ -16,8 +16,6 @@ public class SampleBulkCondition
   @Override
   public boolean isMet(BulkDependentTestCustomResource primary, Map<String, ConfigMap> secondary,
       Context<BulkDependentTestCustomResource> context) {
-
-    return secondary.values().stream().allMatch(cm -> !cm.getData().isEmpty());
-
+    return secondary.values().stream().noneMatch(cm -> cm.getData().isEmpty());
   }
 }

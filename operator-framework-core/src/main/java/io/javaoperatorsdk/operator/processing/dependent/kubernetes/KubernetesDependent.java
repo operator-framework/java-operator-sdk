@@ -8,10 +8,6 @@ import java.lang.annotation.Target;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.*;
-import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 

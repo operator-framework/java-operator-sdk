@@ -30,7 +30,7 @@ public class ExternalStateReconciler
   public static final String ID_KEY = "id";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
+  private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
   private KubernetesClient client;
 
   InformerEventSource<ConfigMap, ExternalStateCustomResource> configMapEventSource;
@@ -116,7 +116,7 @@ public class ExternalStateReconciler
       }
       var id = configMap.getData().get(ID_KEY);
       var externalResource = externalService.read(id);
-      return externalResource.map(er -> Set.of(er)).orElse(Collections.emptySet());
+      return externalResource.map(Set::of).orElse(Collections.emptySet());
     }, context.getPrimaryCache(), 300L, ExternalResource.class);
 
     return EventSourceInitializer.nameEventSources(configMapEventSource,

@@ -57,6 +57,7 @@ class ManagedWorkflowTest {
     assertThat(managedWorkflow(spec).hasCleaner()).isTrue();
   }
 
+  @SuppressWarnings("unchecked")
   ManagedWorkflow managedWorkflow(DependentResourceSpec... specs) {
     final var configuration = mock(ControllerConfiguration.class);
     final var specList = List.of(specs);

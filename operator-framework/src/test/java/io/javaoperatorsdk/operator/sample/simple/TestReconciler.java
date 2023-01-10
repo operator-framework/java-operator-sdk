@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
@@ -108,8 +107,8 @@ public class TestReconciler
       kubernetesClient
           .configMaps()
           .inNamespace(resource.getMetadata().getNamespace())
-          .withName(existingConfigMap.getMetadata().getName())
-          .createOrReplace(existingConfigMap);
+          .resource(existingConfigMap)
+          .createOrReplace();
     } else {
       Map<String, String> labels = new HashMap<>();
       labels.put("managedBy", TestReconciler.class.getSimpleName());
@@ -125,8 +124,8 @@ public class TestReconciler
               .build();
       kubernetesClient
           .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace())
-          .createOrReplace(newConfigMap);
+          .inNamespace(resource.getMetadata().getNamespace()).resource(newConfigMap)
+          .createOrReplace();
     }
     if (updateStatus) {
       if (resource.getStatus() == null) {

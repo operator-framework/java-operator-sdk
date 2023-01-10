@@ -17,8 +17,10 @@ import static org.mockito.Mockito.when;
 class TemporaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "1";
-  private InformerEventSource<ConfigMap, ?> informerEventSource = mock(InformerEventSource.class);
-  private TemporaryResourceCache<ConfigMap> temporaryResourceCache =
+  @SuppressWarnings("unchecked")
+  private final InformerEventSource<ConfigMap, ?> informerEventSource =
+      mock(InformerEventSource.class);
+  private final TemporaryResourceCache<ConfigMap> temporaryResourceCache =
       new TemporaryResourceCache<>(informerEventSource);
 
   @Test

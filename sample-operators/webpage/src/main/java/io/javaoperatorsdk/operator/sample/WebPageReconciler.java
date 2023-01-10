@@ -105,7 +105,8 @@ public class WebPageReconciler
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      kubernetesClient.configMaps().inNamespace(ns).createOrReplace(desiredHtmlConfigMap);
+      kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
+          .createOrReplace();
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
@@ -114,7 +115,8 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      kubernetesClient.apps().deployments().inNamespace(ns).createOrReplace(desiredDeployment);
+      kubernetesClient.apps().deployments().inNamespace(ns).resource(desiredDeployment)
+          .createOrReplace();
     }
 
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
@@ -123,7 +125,7 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      kubernetesClient.services().inNamespace(ns).createOrReplace(desiredService);
+      kubernetesClient.services().inNamespace(ns).resource(desiredService).createOrReplace();
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
