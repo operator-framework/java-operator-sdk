@@ -1,0 +1,28 @@
+{
+  "version": 4,
+  "terraform_version": "1.2.3",
+  "serial": 1,
+  "lineage": "86545604-7463-4aa5-e9e8-a2a221de98d2",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "example",
+      "provider": "provider[\"registry.terraform.io/...\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "ami": "ami-0fb653ca2d3203ac1",
+            "availability_zone": "us-east-2b",
+            "id": "i-0bc4bbe5b84387543",
+            "instance_state": "running",
+            "instance_type": "t2.micro",
+            "(...)": "(truncated)"
+          }
+        }
+      ]
+    }
+  ]
+}

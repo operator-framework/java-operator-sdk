@@ -76,18 +76,20 @@ also use the declarative support with your own implementations as we shall see l
 they support by implementing trait interfaces. This design has been selected to express the fact
 that not all secondary resources are completely under the control of the primary reconciler:
 some dependent resources are only ever created or updated for example and we needed a way to let
+some dependent resources are only ever created or updated for example and we needed a way to let
 JOSDK know when that is the case. We therefore provide trait interfaces: `Creator`,
 `Updater` and `Deleter` to express that the `DependentResource` implementation will provide custom
 functionality to create, update and delete its associated secondary resources, respectively. If
 these traits are not implemented then parts of the logic described above is never triggered: if
 your implementation doesn't implement `Creator`, for example, `AbstractDependentResource` will
-never try to create the associated secondary resource, even if it doesn't exist. It is
+never try to create the associated secondary resource, even if it doesn't exist. It is event 
 possible to not implement any of these traits and therefore create read-only dependent resources
 that will trigger your reconciler whenever a user interacts with them but that are never
-modified by your reconciler itself.
+modified by your reconciler itself - however notice that read only dependent resource rarely makes sense,
+usually that means that it is enough to register an event source for the target resource.  
 
-[`AbstractSimpleDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/external/AbstractSimpleDependentResource.java)
-and [`KubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
+
+All subclasses of [`AbstractDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/5d7bb45057dcf6f0e539cccd71b567dd2f396de7/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractDependentResource.java)
 sub-classes can also implement
 the [`Matcher`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/Matcher.java)
 interface to customize how the SDK decides whether or not the actual state of the dependent
@@ -129,7 +131,7 @@ JOSDK takes care of everything else using default implementations that you can o
 need more precise control of what's going on.
 
 We also provide implementations that make it very easy to cache
-(`AbstractCachingDependentResource`) or make it easy to poll for changes in external
+(`AbstractExternalDependentResource`) or make it easy to poll for changes in external
 resources (`PollingDependentResource`, `PerResourcePollingDependentResource`). All the provided
 implementations can be found in the `io/javaoperatorsdk/operator/processing/dependent` package of
 the `operator-framework-core` module.
