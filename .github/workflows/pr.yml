@@ -36,7 +36,7 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        kubernetes: [ 'v1.22.15', 'v1.23.12', 'v1.24.6', 'v1.25.2' ]
+        kubernetes: [ 'v1.23.15', 'v1.24.9', 'v1.25.5' ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Java and Maven
@@ -48,7 +48,7 @@ jobs:
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
-          minikube version: 'v1.26.0'
+          minikube version: 'v1.28.0'
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
           github token: ${{ secrets.GITHUB_TOKEN }}
@@ -59,7 +59,7 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        kubernetes: [ 'v1.22.15', 'v1.23.12', 'v1.24.6', 'v1.25.2' ]
+        kubernetes: [ 'v1.23.15', 'v1.24.9', 'v1.25.5' ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Java and Maven
@@ -71,7 +71,7 @@ jobs:
       - name: Minikube Min Request Timeout Setting
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
-          minikube version: 'v1.26.0'
+          minikube version: 'v1.28.0'
           kubernetes version: ${{ matrix.kubernetes }}
           driver: 'docker'
           start args: '--extra-config=apiserver.min-request-timeout=3'
