@@ -2,7 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source.cache;
 
 import java.util.Set;
 
-// todo: rename to cache?
+// todo: rename to cache? (replace the old one)
 public interface BoundedCache<K, R> {
 
   R get(K key);

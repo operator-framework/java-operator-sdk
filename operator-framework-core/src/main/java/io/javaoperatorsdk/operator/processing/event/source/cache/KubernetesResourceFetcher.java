@@ -13,6 +13,10 @@ public class KubernetesResourceFetcher<R extends HasMetadata>
   private final KubernetesClient client;
   private final Function<String, ResourceID> resourceIDFunction;
 
+  public KubernetesResourceFetcher(Class<R> rClass, KubernetesClient client) {
+    this(rClass, client, inverseNamespaceKeyFunction());
+  }
+
   public KubernetesResourceFetcher(Class<R> rClass,
       KubernetesClient client,
       Function<String, ResourceID> resourceIDFunction) {
@@ -27,6 +31,20 @@ public class KubernetesResourceFetcher<R extends HasMetadata>
     return resourceId.getNamespace().map(ns -> client.resources(rClass).inNamespace(ns)
         .withName(resourceId.getName()).get())
         .orElse(client.resources(rClass).withName(resourceId.getName()).get());
-
   }
+
+  /**
+   * This would not be needed
+   **/
+  public static Function<String, ResourceID> inverseNamespaceKeyFunction() {
+    return s -> {
+      int delimiterIndex = s.indexOf("/");
+      if (delimiterIndex == -1) {
+        return new ResourceID(s);
+      } else {
+        return new ResourceID(s.substring(delimiterIndex + 1), s.substring(0, delimiterIndex));
+      }
+    };
+  }
+
 }
