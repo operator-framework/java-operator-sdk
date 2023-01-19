@@ -43,8 +43,8 @@ class MySQLSchemaOperatorE2E {
     infrastructure.add(
         new NamespaceBuilder().withNewMetadata().withName(MY_SQL_NS).endMetadata().build());
     try {
-      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-deployment.yaml")).get());
-      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-service.yaml")).get());
+      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-deployment.yaml")).items());
+      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-service.yaml")).items());
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
