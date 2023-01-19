@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
@@ -133,6 +134,10 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       timeUnit = reconciliationInterval.timeUnit();
     }
 
+    final var itemStore =
+        Utils.instantiateAndConfigureIfNeeded(annotation.itemStore(), ItemStore.class,
+            Utils.contextFor(name), null);
+
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
@@ -152,7 +157,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         valueOrDefault(annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
             Constants.NO_VALUE_SET),
-        null);
+        null, itemStore);
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());

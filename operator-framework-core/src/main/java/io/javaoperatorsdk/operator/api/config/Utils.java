@@ -237,6 +237,10 @@ public class Utils {
     return contextFor(controllerConfiguration.getName(), dependentType, configurationAnnotation);
   }
 
+  public static String contextFor(String reconcilerName) {
+    return contextFor(reconcilerName, null, null);
+  }
+
   @SuppressWarnings("rawtypes")
   public static String contextFor(String reconcilerName,
       Class<? extends DependentResource> dependentType,
