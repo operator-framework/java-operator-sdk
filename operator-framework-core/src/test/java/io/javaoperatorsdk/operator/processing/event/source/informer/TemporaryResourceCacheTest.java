@@ -14,7 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TemporaryResourceBoundedCacheTest {
+class TemporaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "1";
   @SuppressWarnings("unchecked")
