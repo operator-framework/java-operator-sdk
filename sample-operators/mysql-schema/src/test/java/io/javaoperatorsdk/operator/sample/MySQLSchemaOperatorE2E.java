@@ -67,7 +67,7 @@ class MySQLSchemaOperatorE2E {
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, SchemaDependentResource.LOCAL_PORT)
               .build()
           : ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
+              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
               .withInfrastructure(infrastructure)
               .build();
 
