@@ -206,10 +206,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public Set<R> getSecondaryResources(P primary) {
     Set<ResourceID> secondaryIDs;
     if (useSecondaryToPrimaryIndex()) {
+      var primaryResourceID = ResourceID.fromResource(primary);
       secondaryIDs =
-          primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(primary));
+          primaryToSecondaryIndex.getSecondaryResources(primaryResourceID);
+      log.debug(
+          "Using PrimaryToSecondaryIndex to find secondary resources for primary: {}. Found secondary ids: {} ",
+          primaryResourceID, secondaryIDs);
     } else {
       secondaryIDs = primaryToSecondaryMapper.toSecondaryResourceIDs(primary);
+      log.debug(
+          "Using PrimaryToSecondaryMapper to find secondary resources for primary: {}. Found secondary ids: {} ",
+          primary, secondaryIDs);
     }
     return secondaryIDs.stream().map(this::get).flatMap(Optional::stream)
         .collect(Collectors.toSet());
