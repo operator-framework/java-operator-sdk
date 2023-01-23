@@ -93,6 +93,12 @@ public class KubernetesDependentResourceConfig<R> implements NamespaceChangeable
   public void changeNamespaces(Set<String> namespaces) {
     if (!wereNamespacesConfigured()) {
       this.namespacesWereConfigured = true;
+      setNamespaces(namespaces);
+    }
+  }
+
+  protected void setNamespaces(Set<String> namespaces) {
+    if (namespaces != null && !namespaces.isEmpty()) {
       this.namespaces = namespaces;
     }
   }
