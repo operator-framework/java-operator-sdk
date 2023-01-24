@@ -29,11 +29,16 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, false);
+    return match(desired, actualResource, false, false);
   }
 
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
-      boolean considerMetadata) {
+                                                        boolean considerMetadata) {
+      return match(desired,actualResource,considerMetadata,false);
+  }
+
+  public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
+      boolean considerMetadata, boolean strongEquality) {
     if (considerMetadata) {
       final var desiredMetadata = desired.getMetadata();
       final var actualMetadata = actualResource.getMetadata();
@@ -61,6 +66,9 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desired));
       var actualSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(actualResource));
       var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
+      if (strongEquality && diffJsonPatch.size() > 0) {
+        return Result.computed(false, desired);
+      }
       for (int i = 0; i < diffJsonPatch.size(); i++) {
         String operation = diffJsonPatch.get(i).get("op").asText();
         if (!operation.equals("add")) {
@@ -92,8 +100,15 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    */
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
-      Context<P> context, boolean considerMetadata) {
+      Context<P> context, boolean considerMetadata, boolean strongEquality) {
     final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, considerMetadata);
+    return match(desired, actualResource, considerMetadata, strongEquality);
+  }
+
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+          KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+          Context<P> context, boolean considerMetadata) {
+    final var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, considerMetadata, false);
   }
 }
