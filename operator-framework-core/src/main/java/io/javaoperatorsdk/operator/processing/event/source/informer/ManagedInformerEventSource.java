@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends AbstractResourceEventSource<R, P>
-    implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
+    implements EventHandler<R>, Cache<R>, IndexerResourceCache<R>,
     RecentOperationCacheFiller<R>,
     NamespaceChangeable, InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
 
@@ -44,22 +44,22 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
     super(configuration.getResourceClass());
     temporaryResourceCache = new TemporaryResourceCache<>(this);
-    cache = new InformerManager<>(client, configuration, this);
+    cache = new InformerManager<>(client, configuration, this, temporaryResourceCache);
     this.configuration = configuration;
   }
 
   @Override
-  public void onAdd(R resource) {
+  public void onAdd(EventContext eventContext,R resource) {
     temporaryResourceCache.removeResourceFromCache(resource);
   }
 
   @Override
-  public void onUpdate(R oldObj, R newObj) {
+  public void onUpdate(EventContext eventContext,R oldObj, R newObj) {
     temporaryResourceCache.removeResourceFromCache(newObj);
   }
 
   @Override
-  public void onDelete(R obj, boolean deletedFinalStateUnknown) {
+  public void onDelete(EventContext eventContext,R obj, boolean deletedFinalStateUnknown) {
     temporaryResourceCache.removeResourceFromCache(obj);
   }
 

@@ -43,15 +43,17 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private Cloner cloner;
   private final C configuration;
   private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
-  private final ResourceEventHandler<T> eventHandler;
+  private final EventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
+  protected TemporaryResourceCache<T> temporaryResourceCache;
 
   public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
       C configuration,
-      ResourceEventHandler<T> eventHandler) {
+                         EventHandler<T> eventHandler,TemporaryResourceCache<T> temporaryResourceCache) {
     this.client = client;
     this.configuration = configuration;
     this.eventHandler = eventHandler;
+    this.temporaryResourceCache = temporaryResourceCache;
   }
 
   @Override
@@ -118,11 +120,10 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   private InformerWrapper<T> createEventSource(
       FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,
-      ResourceEventHandler<T> eventHandler, String namespaceIdentifier) {
+      EventHandler<T> eventHandler, String namespaceIdentifier) {
     var informer = filteredBySelectorClient.runnableInformer(0);
     var source =
-        new InformerWrapper<>(informer, namespaceIdentifier);
-    source.addEventHandler(eventHandler);
+        new InformerWrapper<>(informer, namespaceIdentifier, client,temporaryResourceCache,eventHandler);
     sources.put(namespaceIdentifier, source);
     return source;
   }

@@ -66,7 +66,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
-    implements ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+        implements RecentOperationEventFilter<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
@@ -104,7 +104,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void onAdd(R newResource) {
+  public void onAdd(EventContext eventContext,R newResource) {
     if (log.isDebugEnabled()) {
       log.debug("On add event received for resource id: {} type: {}",
           ResourceID.fromResource(newResource),
@@ -112,11 +112,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     onAddOrUpdate(Operation.ADD, newResource, null,
-        () -> InformerEventSource.super.onAdd(newResource));
+        () -> InformerEventSource.super.onAdd(eventContext,newResource));
   }
 
   @Override
-  public void onUpdate(R oldObject, R newObject) {
+  public void onUpdate(EventContext eventContext,R oldObject, R newObject) {
     if (log.isDebugEnabled()) {
       log.debug("On update event received for resource id: {} type: {}",
           ResourceID.fromResource(newObject),
@@ -124,18 +124,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     onAddOrUpdate(Operation.UPDATE, newObject, oldObject,
-        () -> InformerEventSource.super.onUpdate(oldObject, newObject));
+        () -> InformerEventSource.super.onUpdate(eventContext,oldObject, newObject));
   }
 
   @Override
-  public void onDelete(R resource, boolean b) {
+  public void onDelete(EventContext eventContext,R resource, boolean b) {
     if (log.isDebugEnabled()) {
       log.debug("On delete event received for resource id: {} type: {}",
           ResourceID.fromResource(resource),
           resourceType().getSimpleName());
     }
     primaryToSecondaryIndex.onDelete(resource);
-    super.onDelete(resource, b);
+    super.onDelete(eventContext,resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
     }

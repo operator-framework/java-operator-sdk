@@ -10,6 +10,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,18 +30,27 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 class InformerWrapper<T extends HasMetadata>
-    implements LifecycleAware, IndexerResourceCache<T>, InformerHealthIndicator {
+    implements LifecycleAware, IndexerResourceCache<T>, InformerHealthIndicator, ResourceEventHandler<T> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerWrapper.class);
 
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
   private final String namespaceIdentifier;
+  private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
+  private EventHandler<T> eventHandler;
+  private final TemporaryResourceCache<T> temporaryResourceCache;
 
-  public InformerWrapper(SharedIndexInformer<T> informer, String namespaceIdentifier) {
+  public InformerWrapper(SharedIndexInformer<T> informer, String namespaceIdentifier,
+                         MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
+                         TemporaryResourceCache<T> temporaryResourceCache, EventHandler<T> eventHandler) {
     this.informer = informer;
+    informer.addEventHandler(this);
     this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
+    this.client = client;
+    this.temporaryResourceCache = temporaryResourceCache;
+    this.eventHandler = eventHandler;
   }
 
   @Override
@@ -178,5 +190,20 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public String getTargetNamespace() {
     return namespaceIdentifier;
+  }
+
+  @Override
+  public void onAdd(T obj) {
+      eventHandler.onAdd(EventContext.informerEventProducerContext(),obj);
+  }
+
+  @Override
+  public void onUpdate(T oldObj, T newObj) {
+    eventHandler.onUpdate(EventContext.informerEventProducerContext(),oldObj,newObj);
+  }
+
+  @Override
+  public void onDelete(T obj, boolean deletedFinalStateUnknown) {
+    eventHandler.onDelete(EventContext.informerEventProducerContext(),obj,deletedFinalStateUnknown);
   }
 }
