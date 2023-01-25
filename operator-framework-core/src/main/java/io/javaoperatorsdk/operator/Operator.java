@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -81,7 +82,6 @@ public class Operator implements LifecycleAware {
    *
    * @deprecated This feature should not be used anymore
    */
-  @Deprecated(forRemoval = true)
   public void installShutdownHook() {
     if (!leaderElectionManager.isLeaderElectionEnabled()) {
       Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
@@ -126,20 +126,24 @@ public class Operator implements LifecycleAware {
     }
   }
 
-  @Override
-  public void stop() throws OperatorException {
+  public void stop(Duration gracefulShutdownTimeout) throws OperatorException {
     final var configurationService = ConfigurationServiceProvider.instance();
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
-    ExecutorServiceManager.stop();
+    ExecutorServiceManager.stop(gracefulShutdownTimeout);
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
     }
 
     started = false;
+  }
+
+  @Override
+  public void stop() throws OperatorException {
+    stop(Duration.ZERO);
   }
 
   /**
