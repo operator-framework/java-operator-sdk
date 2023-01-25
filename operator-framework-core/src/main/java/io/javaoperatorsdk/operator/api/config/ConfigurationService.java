@@ -123,6 +123,7 @@ public interface ConfigurationService {
    *
    * @return the number of seconds to wait before terminating reconciliation threads
    */
+  @Deprecated(forRemoval = true)
   default int getTerminationTimeoutSeconds() {
     return DEFAULT_TERMINATION_TIMEOUT_SECONDS;
   }

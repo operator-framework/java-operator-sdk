@@ -78,13 +78,23 @@ public class Operator implements LifecycleAware {
   }
 
   /**
+   * Uses {@link ConfigurationService#getTerminationTimeoutSeconds()} for graceful shutdown timeout
+   */
+  @Deprecated(forRemoval = true)
+  public void installShutdownHook() {
+    installShutdownHook(
+        Duration.ofSeconds(ConfigurationServiceProvider.instance().getTerminationTimeoutSeconds()));
+  }
+
+  /**
    * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down.
    *
-   * @deprecated This feature should not be used anymore
+   * @param gracefulShutdownTimeout - timeout to wait for executor threads to complete actual
+   *        reconciliations
    */
-  public void installShutdownHook() {
+  public void installShutdownHook(Duration gracefulShutdownTimeout) {
     if (!leaderElectionManager.isLeaderElectionEnabled()) {
-      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(gracefulShutdownTimeout)));
     } else {
       log.warn("Leader election is on, shutdown hook will not be installed.");
     }
