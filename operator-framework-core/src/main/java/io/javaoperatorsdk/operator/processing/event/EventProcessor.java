@@ -393,6 +393,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // timeout. that should finish the currently executing reconciliations but not the ones
         // which where submitted but not started yet
         log.debug("Event processor not running skipping resource processing: {}", resourceID);
+        return;
       }
       // change thread name for easier debugging
       final var thread = Thread.currentThread();
