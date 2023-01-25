@@ -140,7 +140,7 @@ public class ExecutorServiceManager {
   }
 
   private static Callable<Void> shutdown(ExecutorService executorService,
-      Duration gracefulShutdownTimeout) throws InterruptedException {
+      Duration gracefulShutdownTimeout) {
     return () -> {
       executorService.shutdown();
       if (!executorService.awaitTermination(gracefulShutdownTimeout.toMillis(),
