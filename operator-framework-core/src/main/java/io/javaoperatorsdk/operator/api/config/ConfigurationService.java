@@ -122,7 +122,7 @@ public interface ConfigurationService {
    * shutting down.
    *
    * @deprecated use {@link io.javaoperatorsdk.operator.Operator#stop(Duration)} instead. Where the
-   *             parameter can be passed regarding graceful timeout
+   *             parameter can be passed to specify graceful timeout.
    *
    * @return the number of seconds to wait before terminating reconciliation threads
    */

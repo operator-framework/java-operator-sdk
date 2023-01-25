@@ -79,6 +79,9 @@ public class Operator implements LifecycleAware {
 
   /**
    * Uses {@link ConfigurationService#getTerminationTimeoutSeconds()} for graceful shutdown timeout
+   *
+   * @deprecated use the overloaded version with graceful shutdown timeout parameter.
+   *
    */
   @Deprecated(forRemoval = true)
   public void installShutdownHook() {
