@@ -417,6 +417,18 @@ class EventProcessorTest {
     verify(retryTimerEventSourceMock, times(1)).scheduleOnce((ResourceID) any(), anyLong());
   }
 
+  @Test
+  void executionOfReconciliationNotStartIfProcessorStopped() {
+    eventProcessor.handleEvent(prepareCREvent());
+    // note that there could be race condition in this test, however it is very unlikely that it
+    // will happen the stop is called after submission (that could be theoretically executed before
+    // stop)
+    eventProcessor.stop();
+
+    verify(reconciliationDispatcherMock, timeout(SEPARATE_EXECUTION_TIMEOUT).times(0))
+        .handleExecution(any());
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
