@@ -43,6 +43,11 @@ class GenericKubernetesResourceMatcherTest {
         .withFailMessage("Additive changes should be ok")
         .isTrue();
 
+    assertThat(GenericKubernetesResourceMatcher
+        .match(dependentResource, actual, null, context, true, true).matched())
+        .withFailMessage("Strong equality does not ignore additive changes on spec")
+        .isFalse();
+
     actual = createDeployment();
     assertThat(matcher.match(actual, createPrimary("removed"), context).matched())
         .withFailMessage("Removed value should not be ok")
