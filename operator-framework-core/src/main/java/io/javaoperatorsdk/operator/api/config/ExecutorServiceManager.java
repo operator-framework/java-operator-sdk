@@ -33,7 +33,7 @@ public class ExecutorServiceManager {
 
   }
 
-  public static void init() {
+  public static synchronized void init() {
     if (instance == null) {
       final var configuration = ConfigurationServiceProvider.instance();
       final var executorService = configuration.getExecutorService();
@@ -47,6 +47,13 @@ public class ExecutorServiceManager {
     } else {
       log.debug("Already started, reusing already setup instance!");
     }
+  }
+
+  /** For testing purposes only */
+  public static synchronized void reset() {
+    instance().doStop(Duration.ZERO);
+    instance = null;
+    init();
   }
 
   public static synchronized void stop(Duration gracefulShutdownTimeout) {
