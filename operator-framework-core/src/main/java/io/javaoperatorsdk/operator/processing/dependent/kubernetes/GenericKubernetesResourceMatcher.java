@@ -38,21 +38,25 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   }
 
   /**
-   *
-   * @param desired - desired resource
-   * @param actualResource - actual resource
-   * @param considerMetadata - if changes of metadata should be considered. If yes labels and
-   *        annotations will be checked for equality.
-   * @param equality - if false, the algorithm checks if the properties in the desired resource spec
-   *        are same as in the actual resource spec. The reason is that admission controllers and
-   *        default Kubernetes controllers might add default values to some properties which are not
-   *        set in the desired resources spec and comparing it with simple equality check would mean
-   *        that such resource will not match (while conceptually should). However, there is an
-   *        issue with this for example if desired spec contains a list of values and a value is
-   *        removed, this still will match the actual state from previous reconciliation. Setting
-   *        strongEquality to true, will match the resources only if all properties and values are
-   *        equal. This could be implemented also by overriding equals method of spec, should be
-   *        done as an optimization - this implementation does not require that.
+   * Determines whether the specified actual resource matches the specified desired resource,
+   * possibly considering metadata and deeper equality checks.
+   * 
+   * @param desired the desired resource
+   * @param actualResource the actual resource
+   * @param considerMetadata {@code true} if labels and annotations will be checked for equality,
+   *        {@code false} otherwise (meaning that metadata changes will be ignored for matching
+   *        purposes)
+   * @param equality if {@code false}, the algorithm checks if the properties in the desired
+   *        resource spec are same as in the actual resource spec. The reason is that admission
+   *        controllers and default Kubernetes controllers might add default values to some
+   *        properties which are not set in the desired resources' spec and comparing it with simple
+   *        equality check would mean that such resource will not match (while conceptually should).
+   *        However, there is an issue with this for example if desired spec contains a list of
+   *        values and a value is removed, this still will match the actual state from previous
+   *        reconciliation. Setting this parameter to {@code true}, will match the resources only if
+   *        all properties and values are equal. This could be implemented also by overriding equals
+   *        method of spec, should be done as an optimization - this implementation does not require
+   *        that.
    *
    * @return results of matching
    * @param <R> resource
