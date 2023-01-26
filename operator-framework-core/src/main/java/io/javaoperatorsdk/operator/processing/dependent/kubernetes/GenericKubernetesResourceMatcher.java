@@ -40,7 +40,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   /**
    * Determines whether the specified actual resource matches the specified desired resource,
    * possibly considering metadata and deeper equality checks.
-   * 
+   *
    * @param desired the desired resource
    * @param actualResource the actual resource
    * @param considerMetadata {@code true} if labels and annotations will be checked for equality,
