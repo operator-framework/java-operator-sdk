@@ -37,8 +37,28 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     return match(desired, actualResource, considerMetadata, false);
   }
 
+  /**
+   *
+   * @param desired - desired resource
+   * @param actualResource - actual resource
+   * @param considerMetadata - if changes of metadata should be considered. If yes labels and
+   *        annotations will be checked for equality.
+   * @param equality - if false, the algorithm checks if the properties in the desired resource spec
+   *        are same as in the actual resource spec. The reason is that admission controllers and
+   *        default Kubernetes controllers might add default values to some properties which are not
+   *        set in the desired resources spec and comparing it with simple equality check would mean
+   *        that such resource will not match (while conceptually should). However, there is an
+   *        issue with this for example if desired spec contains a list of values and a value is
+   *        removed, this still will match the actual state from previous reconciliation. Setting
+   *        strongEquality to true, will match the resources only if all properties and values are
+   *        equal. This could be implemented also by overriding equals method of spec, should be
+   *        done as an optimization - this implementation does not require that.
+   *
+   * @return results of matching
+   * @param <R> resource
+   */
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
-      boolean considerMetadata, boolean strongEquality) {
+      boolean considerMetadata, boolean equality) {
     if (considerMetadata) {
       final var desiredMetadata = desired.getMetadata();
       final var actualMetadata = actualResource.getMetadata();
@@ -66,7 +86,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desired));
       var actualSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(actualResource));
       var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
-      if (strongEquality && diffJsonPatch.size() > 0) {
+      if (equality && diffJsonPatch.size() > 0) {
         return Result.computed(false, desired);
       }
       for (int i = 0; i < diffJsonPatch.size(); i++) {
