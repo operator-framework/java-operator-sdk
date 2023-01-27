@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolde
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -76,6 +77,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     var ic = InformerConfiguration.from(resourceType())
         .withLabelSelector(labelSelector)
         .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
+        .withPrimaryToSecondaryMapper(getPrimaryToSecondaryMapper())
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
@@ -94,6 +96,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     } else {
       throw new OperatorException("Provide a SecondaryToPrimaryMapper to associate " +
           "this resource with the primary resource. DependentResource: " + getClass().getName());
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
+    if (this instanceof PrimaryToSecondaryMapper) {
+      return (PrimaryToSecondaryMapper<P>) this;
+    } else {
+      return null;
     }
   }
 
