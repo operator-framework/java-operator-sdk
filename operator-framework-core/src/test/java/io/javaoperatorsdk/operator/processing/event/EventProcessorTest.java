@@ -38,7 +38,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.atMostOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class EventProcessorTest {
@@ -412,7 +423,7 @@ class EventProcessorTest {
   }
 
   @Test
-  void executionOfReconciliationNotStartIfProcessorStopped() throws InterruptedException {
+  void executionOfReconciliationShouldNotStartIfProcessorStopped() throws InterruptedException {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then((Answer<PostExecutionControl>) invocationOnMock -> {
           Thread.sleep(DISPATCHING_DELAY);
