@@ -193,6 +193,9 @@ public interface ConfigurationService {
         log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
         System.exit(1);
       } else {
+        // In case informer is stopped on start (not synced) the controller will stop automatically.
+        // The case when already synced and stopped without an exception, can happen only if
+        // informer is stopped explicitly.
         log.debug("Informer stopped: {}. Error: {}", informer, ex);
       }
     });
