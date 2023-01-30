@@ -19,6 +19,11 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.CONFIG_MAP;
 import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.CONFIG_MAP_EVENT_SOURCE;
 
+/**
+ * Sample showcases how it is possible to do a primary to secondary mapper for a dependent resource.
+ * Note that this is usually just used with read only resources. So it has limited usage, one reason
+ * to use it is to have nice condition on that resource within a workflow.
+ */
 @ControllerConfiguration(dependents = {@Dependent(type = ConfigMapDependent.class,
     name = CONFIG_MAP,
     reconcilePrecondition = ConfigMapReconcilePrecondition.class,

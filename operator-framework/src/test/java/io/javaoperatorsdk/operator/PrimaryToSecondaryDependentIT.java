@@ -35,7 +35,7 @@ class PrimaryToSecondaryDependentIT {
   void testPrimaryToSecondaryInDependentResources() {
     var reconciler = operator.getReconcilerOfType(PrimaryToSecondaryDependentReconciler.class);
     var cm = operator.create(configMap(DO_NOT_RECONCILE));
-    var cr = operator.create(testCustomResource());
+    operator.create(testCustomResource());
 
     await().pollDelay(Duration.ofMillis(250)).untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions()).isPositive();
