@@ -91,13 +91,13 @@ public class Operator implements LifecycleAware {
 
   /**
    * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. Note
-   * that graceful shutdown is not always needed, just if you implementation of reconciler requires
-   * it.
-   *
+   * that graceful shutdown is usually not needed, but your {@link Reconciler} implementations might
+   * require it.
+   * <p>
    * Note that you might want to tune "terminationGracePeriodSeconds" for the Pod running the
    * controller.
    *
-   * @param gracefulShutdownTimeout - timeout to wait for executor threads to complete actual
+   * @param gracefulShutdownTimeout timeout to wait for executor threads to complete actual
    *        reconciliations
    */
   public void installShutdownHook(Duration gracefulShutdownTimeout) {
