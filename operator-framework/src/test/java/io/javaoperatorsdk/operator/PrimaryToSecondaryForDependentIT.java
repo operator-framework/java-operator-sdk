@@ -8,7 +8,6 @@ import io.javaoperatorsdk.operator.sample.primarytosecondarydependent.PrimaryToS
 
 class PrimaryToSecondaryForDependentIT {
 
-
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
