@@ -49,7 +49,7 @@ public abstract class AbstractExternalDependentResource extends
   public Matcher.Result<ExternalResource> match(ExternalResource actualResource,
       MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
-    var desired = desired(primary, context);
+    var desired = desired(primary, actualResource, context);
     return Matcher.Result.computed(actualResource.equals(desired), desired);
   }
 
@@ -59,7 +59,9 @@ public abstract class AbstractExternalDependentResource extends
     externalServiceMock.delete(toExternalResourceID(primary));
   }
 
+  @Override
   protected ExternalResource desired(MultipleManagedExternalDependentResourceCustomResource primary,
+      ExternalResource externalResource,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
     return new ExternalResource(toExternalResourceID(primary),
         primary.getSpec().getValue());
