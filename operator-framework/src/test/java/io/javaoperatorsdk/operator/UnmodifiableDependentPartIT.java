@@ -34,8 +34,8 @@ public class UnmodifiableDependentPartIT {
     await().untilAsserted(() -> {
       var cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(cm).isNotNull();
-      assertThat(cm.getData().get(UNMODIFIABLE_INITIAL_DATA_KEY)).isEqualTo(INITIAL_DATA);
-      assertThat(cm.getData().get(ACTUAL_DATA_KEY)).isEqualTo(INITIAL_DATA);
+      assertThat(cm.getData()).containsEntry(UNMODIFIABLE_INITIAL_DATA_KEY, INITIAL_DATA);
+      assertThat(cm.getData()).containsEntry(ACTUAL_DATA_KEY, INITIAL_DATA);
     });
 
     resource.getSpec().setData(UPDATED_DATA);
@@ -44,8 +44,8 @@ public class UnmodifiableDependentPartIT {
     await().untilAsserted(() -> {
       var cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(cm).isNotNull();
-      assertThat(cm.getData().get(UNMODIFIABLE_INITIAL_DATA_KEY)).isEqualTo(INITIAL_DATA);
-      assertThat(cm.getData().get(ACTUAL_DATA_KEY)).isEqualTo(UPDATED_DATA);
+      assertThat(cm.getData()).containsEntry(UNMODIFIABLE_INITIAL_DATA_KEY, INITIAL_DATA);
+      assertThat(cm.getData()).containsEntry(ACTUAL_DATA_KEY, UPDATED_DATA);
     });
   }
 
