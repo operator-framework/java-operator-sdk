@@ -30,6 +30,5 @@ public class ConfigMapDependentResource
             .build())
         .withData(Map.of(DATA_KEY, primary.getMetadata().getName()))
         .build();
-
   }
 }
