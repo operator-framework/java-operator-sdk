@@ -14,7 +14,7 @@ public abstract class BaseStatefulSet extends BaseDependentResource<StatefulSet>
   }
 
   @Override
-  protected StatefulSet desired(ComplexDependentCustomResource primary,
+  protected StatefulSet desired(ComplexDependentCustomResource primary, StatefulSet actual,
       Context<ComplexDependentCustomResource> context) {
     var template = ReconcilerUtils.loadYaml(StatefulSet.class, getClass(), "statefulset.yaml");
     var name = name(primary);

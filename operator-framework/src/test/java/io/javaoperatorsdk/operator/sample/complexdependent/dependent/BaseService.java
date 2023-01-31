@@ -15,7 +15,7 @@ public abstract class BaseService extends BaseDependentResource<Service> {
   }
 
   @Override
-  protected Service desired(ComplexDependentCustomResource primary,
+  protected Service desired(ComplexDependentCustomResource primary, Service actual,
       Context<ComplexDependentCustomResource> context) {
     var template = ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml");
 

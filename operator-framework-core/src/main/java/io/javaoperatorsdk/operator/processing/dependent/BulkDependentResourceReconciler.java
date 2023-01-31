@@ -83,7 +83,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     }
 
     @Override
-    protected R desired(P primary, Context<P> context) {
+    protected R desired(P primary, R actual, Context<P> context) {
       return desired;
     }
 

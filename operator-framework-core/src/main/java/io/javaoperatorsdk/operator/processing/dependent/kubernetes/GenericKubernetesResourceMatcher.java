@@ -28,7 +28,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    var desired = dependentResource.desired(primary, context);
+    var desired = dependentResource.desired(primary, actualResource, context);
     return match(desired, actualResource, false);
   }
 
@@ -93,7 +93,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerMetadata) {
-    final var desired = dependentResource.desired(primary, context);
+    final var desired = dependentResource.desired(primary, actualResource, context);
     return match(desired, actualResource, considerMetadata);
   }
 }

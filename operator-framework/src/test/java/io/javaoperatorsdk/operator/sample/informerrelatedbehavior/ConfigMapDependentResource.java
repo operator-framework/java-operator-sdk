@@ -20,7 +20,7 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(InformerRelatedBehaviorTestCustomResource primary,
+  protected ConfigMap desired(InformerRelatedBehaviorTestCustomResource primary, ConfigMap actual,
       Context<InformerRelatedBehaviorTestCustomResource> context) {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()

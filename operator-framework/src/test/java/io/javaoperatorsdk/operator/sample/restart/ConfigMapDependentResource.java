@@ -20,7 +20,7 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(RestartTestCustomResource primary,
+  protected ConfigMap desired(RestartTestCustomResource primary, ConfigMap actual,
       Context<RestartTestCustomResource> context) {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()

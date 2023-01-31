@@ -23,6 +23,7 @@ public class MultipleManagedDependentResourceMultiInformerConfigMap1
 
   @Override
   protected ConfigMap desired(MultipleManagedDependentResourceMultiInformerCustomResource primary,
+      ConfigMap actual,
       Context<MultipleManagedDependentResourceMultiInformerCustomResource> context) {
     Map<String, String> data = new HashMap<>();
     data.put(MultipleManagedDependentResourceReconciler.DATA_KEY, primary.getSpec().getValue());

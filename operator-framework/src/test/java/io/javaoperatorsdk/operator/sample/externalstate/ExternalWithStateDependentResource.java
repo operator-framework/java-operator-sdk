@@ -45,7 +45,7 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  protected ExternalResource desired(ExternalStateCustomResource primary,
+  protected ExternalResource desired(ExternalStateCustomResource primary, ExternalResource actual,
       Context<ExternalStateCustomResource> context) {
     return new ExternalResource(primary.getSpec().getData());
   }
