@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -58,7 +59,13 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   public void start() throws OperatorException {
     initSources();
     // make sure informers are all started before proceeding further
-    sources.values().parallelStream().forEach(InformerWrapper::start);
+    ExecutorServiceManager.executeAndWaitForAllToComplete(sources.values().stream(),
+        iw -> {
+          iw.start();
+          return null;
+        },
+        iw -> "InformerStarter-" + iw.getTargetNamespace() + "-"
+            + configuration.getResourceClass().getSimpleName());
   }
 
   private void initSources() {
