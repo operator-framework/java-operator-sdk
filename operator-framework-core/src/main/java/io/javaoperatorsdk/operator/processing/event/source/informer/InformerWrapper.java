@@ -73,12 +73,19 @@ class InformerWrapper<T extends HasMetadata>
       final var name = thread.getName();
       try {
         thread.setName(informerInfo() + " " + thread.getId());
+        final var resourceName = informer.getApiTypeClass().getSimpleName();
+        log.debug("Starting informer for namespace: {} resource: {}", namespaceIdentifier,
+            resourceName);
         var start = informer.start();
         // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
         // false, and there is a rbac issue the get never returns; therefore operator never really
         // starts
+        log.trace("Waiting informer to start namespace: {} resource: {}", namespaceIdentifier,
+            resourceName);
         start.toCompletableFuture().get(configService.cacheSyncTimeout().toMillis(),
             TimeUnit.MILLISECONDS);
+        log.debug("Started informer for namespace: {} resource: {}", namespaceIdentifier,
+            resourceName);
       } catch (TimeoutException | ExecutionException e) {
         if (configService.stopOnInformerErrorDuringStartup()) {
           log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);

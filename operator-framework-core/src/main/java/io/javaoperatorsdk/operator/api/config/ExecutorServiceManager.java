@@ -16,6 +16,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javaoperatorsdk.operator.OperatorException;
+
 public class ExecutorServiceManager {
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
   private static ExecutorServiceManager instance;
@@ -82,7 +84,16 @@ public class ExecutorServiceManager {
           // restore original name
           thread.setName(name);
         }
-      }).collect(Collectors.toList()));
+      }).collect(Collectors.toList())).forEach(f -> {
+        try {
+          // to find out any exceptions
+          f.get();
+        } catch (ExecutionException e) {
+          throw new OperatorException(e.getCause());
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      });
       shutdown(instrumented);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

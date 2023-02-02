@@ -82,7 +82,7 @@ public class EventSourceManager<P extends HasMetadata>
     return es -> {
       final var name = es.name();
       return es.priority() + " " + stage + " -> "
-          + (es.isNameSet() ? name + " " + es.original().getClass().getSimpleName() : name);
+          + (es.isNameSet() ? name + " " + es.original().getClass() : es.original());
     };
   }
 

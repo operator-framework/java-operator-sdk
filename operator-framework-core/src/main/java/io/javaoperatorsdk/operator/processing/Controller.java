@@ -335,7 +335,7 @@ public class Controller<P extends HasMetadata>
       if (startEventProcessor) {
         eventProcessor.start();
       }
-      log.info("'{}' controller started, pending event sources initialization", controllerName);
+      log.info("'{}' controller started", controllerName);
     } catch (MissingCRDException e) {
       stop();
       throwMissingCRDException(e.getCrdName(), e.getSpecVersion(), controllerName);

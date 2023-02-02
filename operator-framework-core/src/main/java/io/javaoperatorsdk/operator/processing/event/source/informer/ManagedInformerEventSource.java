@@ -163,4 +163,11 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   public C configuration() {
     return manager().configuration();
   }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName() + "{" +
+        "resourceClass: " + configuration.getResourceClass().getSimpleName() +
+        "}";
+  }
 }
