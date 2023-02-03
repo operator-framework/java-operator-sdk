@@ -65,13 +65,13 @@ public class EventSourceManager<P extends HasMetadata>
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
 
-    ExecutorServiceManager.executeAndWaitForAllToComplete(
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER)),
         this::startEventSource,
         getThreadNamer("start"));
 
-    ExecutorServiceManager.executeAndWaitForAllToComplete(
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT)),
         this::startEventSource,
@@ -93,7 +93,7 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    ExecutorServiceManager.executeAndWaitForAllToComplete(
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources(),
         this::stopEventSource,
         getThreadNamer("stop"));
@@ -183,7 +183,7 @@ public class EventSourceManager<P extends HasMetadata>
   public void changeNamespaces(Set<String> namespaces) {
     eventSources.controllerResourceEventSource()
         .changeNamespaces(namespaces);
-    ExecutorServiceManager.executeAndWaitForAllToComplete(eventSources
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(eventSources
         .additionalEventSources()
         .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)

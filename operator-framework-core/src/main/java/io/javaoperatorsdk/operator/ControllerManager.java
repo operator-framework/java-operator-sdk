@@ -33,7 +33,7 @@ class ControllerManager {
   }
 
   public synchronized void start(boolean startEventProcessor) {
-    ExecutorServiceManager.executeAndWaitForAllToComplete(controllers().stream(), c -> {
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
       c.start(startEventProcessor);
       return null;
     }, c -> "Controller Starter for: " + c.getConfiguration().getName());
@@ -41,7 +41,7 @@ class ControllerManager {
   }
 
   public synchronized void stop() {
-    ExecutorServiceManager.executeAndWaitForAllToComplete(controllers().stream(), c -> {
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
       log.debug("closing {}", c);
       c.stop();
       return null;
@@ -50,7 +50,7 @@ class ControllerManager {
   }
 
   public synchronized void startEventProcessing() {
-    ExecutorServiceManager.executeAndWaitForAllToComplete(controllers().stream(), c -> {
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
       c.startEventProcessing();
       return null;
     }, c -> "Event processor starter for: " + c.getConfiguration().getName());
