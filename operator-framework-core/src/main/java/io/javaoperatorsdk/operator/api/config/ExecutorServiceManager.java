@@ -72,7 +72,7 @@ public class ExecutorServiceManager {
         Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 
     try {
-      instrumented.invokeAll(stream.parallel().map(item -> (Callable<Void>) () -> {
+      instrumented.invokeAll(stream.map(item -> (Callable<Void>) () -> {
         // change thread name for easier debugging
         final var thread = Thread.currentThread();
         final var name = thread.getName();
@@ -91,11 +91,13 @@ public class ExecutorServiceManager {
         } catch (ExecutionException e) {
           throw new OperatorException(e.getCause());
         } catch (InterruptedException e) {
+          log.warn("Interrupted.", e);
           Thread.currentThread().interrupt();
         }
       });
       shutdown(instrumented);
     } catch (InterruptedException e) {
+      log.warn("Interrupted.", e);
       Thread.currentThread().interrupt();
     }
   }

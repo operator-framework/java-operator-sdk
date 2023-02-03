@@ -86,6 +86,10 @@ public class EventSourceManager<P extends HasMetadata>
     };
   }
 
+  private static Function<NamespaceChangeable, String> getEventSourceThreadNamer(String stage) {
+    return es -> stage + " -> " + es;
+  }
+
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
@@ -179,13 +183,15 @@ public class EventSourceManager<P extends HasMetadata>
   public void changeNamespaces(Set<String> namespaces) {
     eventSources.controllerResourceEventSource()
         .changeNamespaces(namespaces);
-    eventSources
+    ExecutorServiceManager.executeAndWaitForAllToComplete(eventSources
         .additionalEventSources()
         .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)
-        .filter(NamespaceChangeable::allowsNamespaceChanges)
-        .parallel()
-        .forEach(ies -> ies.changeNamespaces(namespaces));
+        .filter(NamespaceChangeable::allowsNamespaceChanges), e -> {
+          e.changeNamespaces(namespaces);
+          return null;
+        },
+        getEventSourceThreadNamer("changeNamespace"));
   }
 
   public Set<EventSource> getRegisteredEventSources() {
