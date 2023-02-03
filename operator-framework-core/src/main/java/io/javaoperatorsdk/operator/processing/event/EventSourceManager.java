@@ -98,12 +98,12 @@ public class EventSourceManager<P extends HasMetadata>
   @SuppressWarnings("rawtypes")
   private void logEventSourceEvent(NamedEventSource eventSource, String event) {
     if (log.isDebugEnabled()) {
-      if (eventSource instanceof ResourceEventSource) {
-        ResourceEventSource source = (ResourceEventSource) eventSource;
-        log.debug("{} event source {} for {}", event, eventSource.name(),
+      if (eventSource.original() instanceof ResourceEventSource) {
+        ResourceEventSource source = (ResourceEventSource) eventSource.original();
+        log.debug("{} event source {} for {}", event, eventSource.isNameSet() ? eventSource.name() : eventSource,
             source.resourceType());
       } else {
-        log.debug("{} event source {}", event, eventSource.name());
+        log.debug("{} event source {}", event, eventSource.isNameSet() ? eventSource.name() : eventSource);
       }
     }
   }
