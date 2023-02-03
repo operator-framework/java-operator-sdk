@@ -72,7 +72,7 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
 
   @Override
   public String toString() {
-    return original + " named: '" + name;
+    return original + " named: " + name;
   }
 
   public EventSource original() {
