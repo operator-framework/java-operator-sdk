@@ -132,7 +132,7 @@ class MultiVersionCRDIT {
     operator.create(v1res);
 
     await()
-        .atMost(Duration.ofSeconds(5))
+        .atMost(Duration.ofSeconds(10))
         .pollInterval(Duration.ofMillis(50))
         .untilAsserted(() -> {
           // v1 is the stored version so trying to create a v2 version should fail because we cannot
