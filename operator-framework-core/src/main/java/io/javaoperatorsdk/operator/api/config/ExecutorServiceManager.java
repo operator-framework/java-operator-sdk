@@ -67,9 +67,14 @@ public class ExecutorServiceManager {
   }
 
   public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
-      Function<T, Void> task, Function<T, String> threadNamer) {
+                                                        Function<T, Void> task, Function<T, String> threadNamer) {
+      executeAndWaitForAllToComplete(stream,task,threadNamer,Runtime.getRuntime().availableProcessors());
+  }
+
+  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
+      Function<T, Void> task, Function<T, String> threadNamer, int poolSize) {
     final var instrumented = new InstrumentedExecutorService(
-        Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+        Executors.newFixedThreadPool(poolSize));
 
     try {
       instrumented.invokeAll(stream.parallel().map(item -> (Callable<Void>) () -> {
