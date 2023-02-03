@@ -100,10 +100,12 @@ public class EventSourceManager<P extends HasMetadata>
     if (log.isDebugEnabled()) {
       if (eventSource.original() instanceof ResourceEventSource) {
         ResourceEventSource source = (ResourceEventSource) eventSource.original();
-        log.debug("{} event source {} for {}", event, eventSource.isNameSet() ? eventSource.name() : eventSource,
+        log.debug("{} event source {} for {}", event,
+            eventSource.isNameSet() ? eventSource.name() : eventSource,
             source.resourceType());
       } else {
-        log.debug("{} event source {}", event, eventSource.isNameSet() ? eventSource.name() : eventSource);
+        log.debug("{} event source {}", event,
+            eventSource.isNameSet() ? eventSource.name() : eventSource);
       }
     }
   }
