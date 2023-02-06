@@ -5,6 +5,8 @@ import java.util.HashMap;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -26,6 +28,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
+
+  private static final Logger log = LoggerFactory.getLogger(MultiVersionCRDIT.class);
 
   public static final String CR_V1_NAME = "crv1";
   public static final String CR_V2_NAME = "crv2";
@@ -72,9 +76,15 @@ class MultiVersionCRDIT {
             acceptOnlyIfUnsetOrEqualToAlreadySet(errorMessage, watcherEx.getCause().getMessage());
       }
       final var apiTypeClass = informer.getApiTypeClass();
+
+      System.out.println("!!!Current resourceClassName: " + resourceClassName);
+
       resourceClassName =
           acceptOnlyIfUnsetOrEqualToAlreadySet(resourceClassName, apiTypeClass.getName());
-      System.out.println("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
+
+      System.out.println("!!!API Type Class: " + apiTypeClass.getName()
+          + "  -  resource class name: " + resourceClassName);
+      log.info("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
           + " stopped due to: " + ex.getMessage());
     }
 
