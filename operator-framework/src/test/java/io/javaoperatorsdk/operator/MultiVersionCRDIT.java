@@ -74,12 +74,12 @@ class MultiVersionCRDIT {
       }
       final var apiTypeClass = informer.getApiTypeClass();
 
-      log.info("Current resourceClassName: " + resourceClassName);
+      log.debug("Current resourceClassName: " + resourceClassName);
 
       resourceClassName =
           acceptOnlyIfUnsetOrEqualToAlreadySet(resourceClassName, apiTypeClass.getName());
 
-      log.info("API Type Class: " + apiTypeClass.getName()
+      log.debug("API Type Class: " + apiTypeClass.getName()
           + "  -  resource class name: " + resourceClassName);
       log.info("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
           + " stopped due to: " + ex.getMessage());
