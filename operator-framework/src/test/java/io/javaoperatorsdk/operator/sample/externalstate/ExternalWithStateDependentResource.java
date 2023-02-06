@@ -40,8 +40,8 @@ public class ExternalWithStateDependentResource extends
     return configMapOptional.map(configMap -> {
       var id = configMap.getData().get(ID_KEY);
       var externalResource = externalService.read(id);
-      return externalResource.map(Set::of).orElse(Collections.emptySet());
-    }).orElse(Collections.emptySet());
+      return externalResource.map(Set::of).orElseGet(Collections::emptySet);
+    }).orElseGet(Collections::emptySet);
   }
 
   @Override
