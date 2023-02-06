@@ -52,6 +52,12 @@ public class PrimaryToSecondaryDependentReconciler
     return numberOfExecutions.get();
   }
 
+  /**
+   * Here just simply creating an Event Source, and setting it for the Dependent Resource. Since it
+   * is not possible to do this setup within the bounds of the KubernetesDependentResource API.
+   * However, this is quite a corner case; might be covered more out of the box in the future if
+   * there will be demand for it.
+   **/
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<PrimaryToSecondaryDependentCustomResource> context) {
@@ -73,7 +79,7 @@ public class PrimaryToSecondaryDependentReconciler
     return Map.of(CONFIG_MAP_EVENT_SOURCE, cmES);
   }
 
-  private String indexKey(String clusterName, String namespace) {
-    return clusterName + "#" + namespace;
+  private String indexKey(String configMapName, String namespace) {
+    return configMapName + "#" + namespace;
   }
 }
