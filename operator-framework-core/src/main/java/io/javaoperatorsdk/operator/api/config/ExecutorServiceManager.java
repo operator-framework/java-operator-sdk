@@ -23,10 +23,12 @@ public class ExecutorServiceManager {
   private static ExecutorServiceManager instance;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
+  private final ExecutorService cachingExecutorService;
   private final int terminationTimeoutSeconds;
 
   private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
       int terminationTimeoutSeconds) {
+    this.cachingExecutorService = Executors.newCachedThreadPool();
     this.executor = new InstrumentedExecutorService(executor);
     this.workflowExecutor = new InstrumentedExecutorService(workflowExecutor);
     this.terminationTimeoutSeconds = terminationTimeoutSeconds;
@@ -49,7 +51,7 @@ public class ExecutorServiceManager {
     }
   }
 
-  public synchronized static void stop() {
+  public static synchronized void stop() {
     if (instance != null) {
       instance.doStop();
     }
@@ -66,13 +68,26 @@ public class ExecutorServiceManager {
     return instance;
   }
 
-  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
+  /**
+   * Uses cachingExecutorService from this manager. Use this only for tasks, that don't have dynamic
+   * nature, in sense that won't grow with the number of inputs (thus kubernetes resources)
+   *
+   * @param stream of elements
+   * @param task to call on stream elements
+   * @param threadNamer for naming thread
+   * @param <T> type
+   */
+  public static <T> void boundedExecuteAndWaitForAllToComplete(Stream<T> stream,
       Function<T, Void> task, Function<T, String> threadNamer) {
-    final var instrumented = new InstrumentedExecutorService(
-        Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+    executeAndWaitForAllToComplete(stream, task, threadNamer, instance().cachingExecutorService());
+  }
 
+  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
+      Function<T, Void> task, Function<T, String> threadNamer,
+      ExecutorService executorService) {
+    final var instrumented = new InstrumentedExecutorService(executorService);
     try {
-      instrumented.invokeAll(stream.parallel().map(item -> (Callable<Void>) () -> {
+      instrumented.invokeAll(stream.map(item -> (Callable<Void>) () -> {
         // change thread name for easier debugging
         final var thread = Thread.currentThread();
         final var name = thread.getName();
@@ -91,11 +106,12 @@ public class ExecutorServiceManager {
         } catch (ExecutionException e) {
           throw new OperatorException(e.getCause());
         } catch (InterruptedException e) {
+          log.warn("Interrupted.", e);
           Thread.currentThread().interrupt();
         }
       });
-      shutdown(instrumented);
     } catch (InterruptedException e) {
+      log.warn("Interrupted.", e);
       Thread.currentThread().interrupt();
     }
   }
@@ -108,11 +124,16 @@ public class ExecutorServiceManager {
     return workflowExecutor;
   }
 
+  public ExecutorService cachingExecutorService() {
+    return cachingExecutorService;
+  }
+
   private void doStop() {
     try {
       log.debug("Closing executor");
       shutdown(executor);
       shutdown(workflowExecutor);
+      shutdown(cachingExecutorService);
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
       Thread.currentThread().interrupt();

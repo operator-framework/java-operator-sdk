@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestRec
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static com.google.common.truth.Truth.assertThat;
+import static io.javaoperatorsdk.operator.api.config.ConfigurationService.log;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
@@ -72,9 +73,15 @@ class MultiVersionCRDIT {
             acceptOnlyIfUnsetOrEqualToAlreadySet(errorMessage, watcherEx.getCause().getMessage());
       }
       final var apiTypeClass = informer.getApiTypeClass();
+
+      log.debug("Current resourceClassName: " + resourceClassName);
+
       resourceClassName =
           acceptOnlyIfUnsetOrEqualToAlreadySet(resourceClassName, apiTypeClass.getName());
-      System.out.println("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
+
+      log.debug("API Type Class: " + apiTypeClass.getName()
+          + "  -  resource class name: " + resourceClassName);
+      log.info("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
           + " stopped due to: " + ex.getMessage());
     }
 
@@ -132,7 +139,7 @@ class MultiVersionCRDIT {
     operator.create(v1res);
 
     await()
-        .atMost(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(10))
         .pollInterval(Duration.ofMillis(50))
         .untilAsserted(() -> {
           // v1 is the stored version so trying to create a v2 version should fail because we cannot

@@ -59,7 +59,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   public void start() throws OperatorException {
     initSources();
     // make sure informers are all started before proceeding further
-    ExecutorServiceManager.executeAndWaitForAllToComplete(sources.values().stream(),
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(sources.values().stream(),
         iw -> {
           iw.start();
           return null;
