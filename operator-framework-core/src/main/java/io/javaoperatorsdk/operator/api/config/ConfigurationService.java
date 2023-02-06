@@ -193,7 +193,11 @@ public interface ConfigurationService {
         log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
         System.exit(1);
       } else {
-        log.debug("Informer stopped: {}. Error: {}", informer, ex);
+        log.debug(
+            "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of " +
+                "stopping the controller, or due to an error on startup." +
+                "See also stopOnInformerErrorDuringStartup configuration.",
+            informer, informer.hasSynced(), ex);
       }
     });
   }
