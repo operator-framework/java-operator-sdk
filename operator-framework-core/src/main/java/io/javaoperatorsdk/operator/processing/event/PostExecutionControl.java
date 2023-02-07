@@ -9,6 +9,7 @@ final class PostExecutionControl<R extends HasMetadata> {
   private final boolean finalizerRemoved;
   private final R updatedCustomResource;
   private final boolean updateIsStatusPatch;
+  private final boolean updateIsResourcePatch;
   private final Exception runtimeException;
 
   private Long reScheduleDelay = null;
@@ -16,40 +17,41 @@ final class PostExecutionControl<R extends HasMetadata> {
   private PostExecutionControl(
       boolean finalizerRemoved,
       R updatedCustomResource,
-      boolean updateIsStatusPatch, Exception runtimeException) {
+      boolean updateIsStatusPatch, boolean updateIsResourcePatch, Exception runtimeException) {
     this.finalizerRemoved = finalizerRemoved;
     this.updatedCustomResource = updatedCustomResource;
     this.updateIsStatusPatch = updateIsStatusPatch;
+    this.updateIsResourcePatch = updateIsResourcePatch;
     this.runtimeException = runtimeException;
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> onlyFinalizerAdded(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(false, updatedCustomResource, false, null);
+    return new PostExecutionControl<>(false, updatedCustomResource, false, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> defaultDispatch() {
-    return new PostExecutionControl<>(false, null, false, null);
+    return new PostExecutionControl<>(false, null, false, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> customResourceStatusPatched(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(false, updatedCustomResource, true, null);
+    return new PostExecutionControl<>(false, updatedCustomResource, true, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> customResourceUpdated(
-      R updatedCustomResource) {
-    return new PostExecutionControl<>(false, updatedCustomResource, false, null);
+      R updatedCustomResource, boolean patched) {
+    return new PostExecutionControl<>(false, updatedCustomResource, false, patched, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> customResourceFinalizerRemoved(
       R updatedCustomResource) {
-    return new PostExecutionControl<>(true, updatedCustomResource, false, null);
+    return new PostExecutionControl<>(true, updatedCustomResource, false, false, null);
   }
 
   public static <R extends HasMetadata> PostExecutionControl<R> exceptionDuringExecution(
       Exception exception) {
-    return new PostExecutionControl<>(false, null, false, exception);
+    return new PostExecutionControl<>(false, null, false, false, exception);
   }
 
   public Optional<R> getUpdatedCustomResource() {

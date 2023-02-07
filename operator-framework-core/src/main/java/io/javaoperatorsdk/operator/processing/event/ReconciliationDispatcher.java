@@ -84,7 +84,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     Context<P> context =
         new DefaultContext<>(executionScope.getRetryInfo(), controller, originalResource);
     if (markedForDeletion) {
-      return handleCleanup(originalResource, resourceForExecution, context);
+      return handleCleanup(resourceForExecution, context);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
     }
@@ -140,30 +140,31 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     P updatedCustomResource = null;
     if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource());
+          updateCustomResource(updateControl.getResource(), updateControl.isPatchResource());
       updateControl
           .getResource()
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
       updatedCustomResource =
           updateStatusGenerationAware(updateControl.getResource(), originalResource,
-              updateControl.isPatch());
+              updateControl.isPatchStatus());
     } else if (updateControl.isUpdateStatus()) {
       updatedCustomResource =
           updateStatusGenerationAware(updateControl.getResource(), originalResource,
-              updateControl.isPatch());
+              updateControl.isPatchStatus());
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource());
+          updateCustomResource(updateControl.getResource(), updateControl.isPatchResource());
       if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
         updatedCustomResource =
             updateStatusGenerationAware(updateControl.getResource(), originalResource,
-                updateControl.isPatch());
+                updateControl.isPatchStatus());
       }
     } else if (updateControl.isNoUpdate()
         && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
       updatedCustomResource =
-          updateStatusGenerationAware(originalResource, originalResource, updateControl.isPatch());
+          updateStatusGenerationAware(originalResource, originalResource,
+              updateControl.isPatchStatus());
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -202,7 +203,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           if (updatedResource != null) {
             return errorStatusUpdateControl.isPatch()
                 ? PostExecutionControl.customResourceStatusPatched(updatedResource)
-                : PostExecutionControl.customResourceUpdated(updatedResource);
+                // todo review if this is ok
+                : PostExecutionControl.customResourceUpdated(updatedResource, false);
           } else {
             return PostExecutionControl.defaultDispatch();
           }
@@ -259,11 +261,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       UpdateControl<P> updateControl) {
     PostExecutionControl<P> postExecutionControl;
     if (updatedCustomResource != null) {
-      if (updateControl.isUpdateStatus() && updateControl.isPatch()) {
+      if (updateControl.isUpdateStatus() && updateControl.isPatchStatus()) {
         postExecutionControl =
             PostExecutionControl.customResourceStatusPatched(updatedCustomResource);
       } else {
-        postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource);
+        postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource,
+            updateControl.isPatchResource());
       }
     } else {
       postExecutionControl = PostExecutionControl.defaultDispatch();
@@ -279,7 +282,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
 
-  private PostExecutionControl<P> handleCleanup(P originalResource, P resource,
+  private PostExecutionControl<P> handleCleanup(P resource,
       Context<P> context) {
     log.debug(
         "Executing delete for resource: {} with version: {}",
@@ -316,10 +319,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
-  private P updateCustomResource(P resource) {
-    log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
+  private P updateCustomResource(P resource, boolean isPatch) {
+    log.debug("Updating resource: {} with version: {} patch: {}", getUID(resource),
+        getVersion(resource), isPatch);
     log.trace("Resource before update: {}", resource);
-    return customResourceFacade.updateResource(resource);
+
+    return isPatch ? customResourceFacade.patchResource(resource)
+        : customResourceFacade.updateResource(resource);
   }
 
   ControllerConfiguration<P> configuration() {
@@ -373,6 +379,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } else {
         return resourceOperation.withName(name).get();
       }
+    }
+
+    public R patchResource(R resource) {
+      // todo
+      return null;
     }
 
     public R updateResource(R resource) {
