@@ -75,6 +75,7 @@ class ReconciliationDispatcherTest {
      * equals will fail on the two equal but NOT identical TestCustomResources because equals is not
      * implemented on TestCustomResourceSpec or TestCustomResourceStatus
      */
+    ConfigurationServiceProvider.reset();
     ConfigurationServiceProvider.overrideCurrent(overrider -> overrider
         .checkingCRDAndValidateLocalModel(false).withResourceCloner(new Cloner() {
           @Override
