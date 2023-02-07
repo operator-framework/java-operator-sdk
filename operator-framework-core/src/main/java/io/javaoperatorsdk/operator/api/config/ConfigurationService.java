@@ -121,8 +121,12 @@ public interface ConfigurationService {
    * Retrieves the number of seconds the SDK waits for reconciliation threads to terminate before
    * shutting down.
    *
+   * @deprecated use {@link io.javaoperatorsdk.operator.Operator#stop(Duration)} instead. Where the
+   *             parameter can be passed to specify graceful timeout.
+   *
    * @return the number of seconds to wait before terminating reconciliation threads
    */
+  @Deprecated(forRemoval = true)
   default int getTerminationTimeoutSeconds() {
     return DEFAULT_TERMINATION_TIMEOUT_SECONDS;
   }
