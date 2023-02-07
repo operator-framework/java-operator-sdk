@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class VersionTest {
+class VersionTest {
 
   @Test
   void versionShouldReturnTheSameResultFromMavenAndProperties() {

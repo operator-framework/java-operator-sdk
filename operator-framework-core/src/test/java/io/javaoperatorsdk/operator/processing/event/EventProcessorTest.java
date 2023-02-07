@@ -15,7 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
@@ -39,6 +41,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -56,6 +59,8 @@ class EventProcessorTest {
   public static final int FAKE_CONTROLLER_EXECUTION_DURATION = 250;
   public static final int SEPARATE_EXECUTION_TIMEOUT = 450;
   public static final String TEST_NAMESPACE = "default-event-handler-test";
+  public static final int TIME_TO_WAIT_AFTER_SUBMISSION_BEFORE_EXECUTION = 150;
+  public static final int DISPATCHING_DELAY = 250;
 
   private final ReconciliationDispatcher reconciliationDispatcherMock =
       mock(ReconciliationDispatcher.class);
@@ -415,6 +420,28 @@ class EventProcessorTest {
     eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 
     verify(retryTimerEventSourceMock, times(1)).scheduleOnce((ResourceID) any(), anyLong());
+  }
+
+  @Test
+  void executionOfReconciliationShouldNotStartIfProcessorStopped() throws InterruptedException {
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .then((Answer<PostExecutionControl>) invocationOnMock -> {
+          Thread.sleep(DISPATCHING_DELAY);
+          return PostExecutionControl.defaultDispatch();
+        });
+    // one event will lock the thread / executor
+    ConfigurationServiceProvider.overrideCurrent(o -> o.withConcurrentReconciliationThreads(1));
+    ExecutorServiceManager.reset();
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent());
+    eventProcessor.handleEvent(prepareCREvent());
+    eventProcessor.stop();
+
+    // wait until both event should be handled
+    Thread.sleep(TIME_TO_WAIT_AFTER_SUBMISSION_BEFORE_EXECUTION + 2 * DISPATCHING_DELAY);
+    verify(reconciliationDispatcherMock, atMostOnce())
+        .handleExecution(any());
   }
 
   private ResourceID eventAlreadyUnderProcessing() {
