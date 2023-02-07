@@ -138,7 +138,8 @@ public class ExecutorServiceManager {
       var parallelExec = Executors.newFixedThreadPool(3);
       log.debug("Closing executor");
       parallelExec.invokeAll(List.of(shutdown(executor, gracefulShutdownTimeout),
-              shutdown(workflowExecutor, gracefulShutdownTimeout),shutdown(cachingExecutorService,gracefulShutdownTimeout)));
+          shutdown(workflowExecutor, gracefulShutdownTimeout),
+          shutdown(cachingExecutorService, gracefulShutdownTimeout)));
       parallelExec.shutdownNow();
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
