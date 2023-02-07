@@ -388,6 +388,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
     @Override
     public void run() {
+      if (!running) {
+        // this is needed for the case when controller stopped, but there is a graceful shutdown
+        // timeout. that should finish the currently executing reconciliations but not the ones
+        // which where submitted but not started yet
+        log.debug("Event processor not running skipping resource processing: {}", resourceID);
+        return;
+      }
       // change thread name for easier debugging
       final var thread = Thread.currentThread();
       final var name = thread.getName();

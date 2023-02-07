@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -24,23 +25,20 @@ public class ExecutorServiceManager {
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
   private final ExecutorService cachingExecutorService;
-  private final int terminationTimeoutSeconds;
 
-  private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor,
-      int terminationTimeoutSeconds) {
+  private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor) {
     this.cachingExecutorService = Executors.newCachedThreadPool();
     this.executor = new InstrumentedExecutorService(executor);
     this.workflowExecutor = new InstrumentedExecutorService(workflowExecutor);
-    this.terminationTimeoutSeconds = terminationTimeoutSeconds;
+
   }
 
-  public static void init() {
+  public static synchronized void init() {
     if (instance == null) {
       final var configuration = ConfigurationServiceProvider.instance();
       final var executorService = configuration.getExecutorService();
       final var workflowExecutorService = configuration.getWorkflowExecutorService();
-      instance = new ExecutorServiceManager(executorService, workflowExecutorService,
-          configuration.getTerminationTimeoutSeconds());
+      instance = new ExecutorServiceManager(executorService, workflowExecutorService);
       log.debug(
           "Initialized ExecutorServiceManager executor: {}, workflow executor: {}, timeout: {}",
           executorService.getClass(),
@@ -51,16 +49,23 @@ public class ExecutorServiceManager {
     }
   }
 
-  public static synchronized void stop() {
+  /** For testing purposes only */
+  public static synchronized void reset() {
+    instance().doStop(Duration.ZERO);
+    instance = null;
+    init();
+  }
+
+  public static synchronized void stop(Duration gracefulShutdownTimeout) {
     if (instance != null) {
-      instance.doStop();
+      instance.doStop(gracefulShutdownTimeout);
     }
     // make sure that we remove the singleton so that the thread pool is re-created on next call to
     // start
     instance = null;
   }
 
-  public synchronized static ExecutorServiceManager instance() {
+  public static synchronized ExecutorServiceManager instance() {
     if (instance == null) {
       // provide a default configuration if none has been provided by init
       init();
@@ -128,23 +133,30 @@ public class ExecutorServiceManager {
     return cachingExecutorService;
   }
 
-  private void doStop() {
+  private void doStop(Duration gracefulShutdownTimeout) {
     try {
+      var parallelExec = Executors.newFixedThreadPool(3);
       log.debug("Closing executor");
-      shutdown(executor);
-      shutdown(workflowExecutor);
-      shutdown(cachingExecutorService);
+      parallelExec.invokeAll(List.of(shutdown(executor, gracefulShutdownTimeout),
+          shutdown(workflowExecutor, gracefulShutdownTimeout),
+          shutdown(cachingExecutorService, gracefulShutdownTimeout)));
+      parallelExec.shutdownNow();
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
       Thread.currentThread().interrupt();
     }
   }
 
-  private static void shutdown(ExecutorService executorService) throws InterruptedException {
-    executorService.shutdown();
-    if (!executorService.awaitTermination(instance().terminationTimeoutSeconds, TimeUnit.SECONDS)) {
-      executorService.shutdownNow(); // if we timed out, waiting, cancel everything
-    }
+  private static Callable<Void> shutdown(ExecutorService executorService,
+      Duration gracefulShutdownTimeout) {
+    return () -> {
+      executorService.shutdown();
+      if (!executorService.awaitTermination(gracefulShutdownTimeout.toMillis(),
+          TimeUnit.MILLISECONDS)) {
+        executorService.shutdownNow(); // if we timed out, waiting, cancel everything
+      }
+      return null;
+    };
   }
 
   private static class InstrumentedExecutorService implements ExecutorService {
