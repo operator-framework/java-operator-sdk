@@ -90,6 +90,9 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desired));
       var actualSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(actualResource));
       var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
+      // In case of equality no diffs are allowed, so the both will return if found any with
+      // non-match. On contrary (if equality is false), "add" is allowed for cases when for some
+      // resources Kubernetes fills-in values into spec.
       if (equality && diffJsonPatch.size() > 0) {
         return Result.computed(false, desired);
       }
