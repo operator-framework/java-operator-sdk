@@ -140,7 +140,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     P updatedCustomResource = null;
     if (updateControl.isUpdateResourceAndStatus()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource(), updateControl.isPatchResource());
+          updateCustomResource(updateControl.getResource());
       updateControl
           .getResource()
           .getMetadata()
@@ -154,7 +154,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
               updateControl.isPatchStatus());
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource =
-          updateCustomResource(updateControl.getResource(), updateControl.isPatchResource());
+          updateCustomResource(updateControl.getResource());
       if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
         updatedCustomResource =
             updateStatusGenerationAware(updateControl.getResource(), originalResource,
@@ -203,8 +203,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           if (updatedResource != null) {
             return errorStatusUpdateControl.isPatch()
                 ? PostExecutionControl.customResourceStatusPatched(updatedResource)
-                // todo review if this is ok
-                : PostExecutionControl.customResourceUpdated(updatedResource, false);
+                : PostExecutionControl.customResourceUpdated(updatedResource);
           } else {
             return PostExecutionControl.defaultDispatch();
           }
@@ -265,8 +264,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         postExecutionControl =
             PostExecutionControl.customResourceStatusPatched(updatedCustomResource);
       } else {
-        postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource,
-            updateControl.isPatchResource());
+        postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource);
       }
     } else {
       postExecutionControl = PostExecutionControl.defaultDispatch();
@@ -319,13 +317,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
-  private P updateCustomResource(P resource, boolean isPatch) {
-    log.debug("Updating resource: {} with version: {} patch: {}", getUID(resource),
-        getVersion(resource), isPatch);
+  private P updateCustomResource(P resource) {
+    log.debug("Updating resource: {} with version: {}", getUID(resource),
+        getVersion(resource));
     log.trace("Resource before update: {}", resource);
 
-    return isPatch ? customResourceFacade.patchResource(resource)
-        : customResourceFacade.updateResource(resource);
+    return customResourceFacade.updateResource(resource);
   }
 
   ControllerConfiguration<P> configuration() {
@@ -379,11 +376,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } else {
         return resourceOperation.withName(name).get();
       }
-    }
-
-    public R patchResource(R resource) {
-      // todo
-      return null;
     }
 
     public R updateResource(R resource) {

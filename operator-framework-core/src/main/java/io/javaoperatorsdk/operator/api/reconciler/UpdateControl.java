@@ -9,11 +9,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean updateStatus;
   private final boolean updateResource;
   private final boolean patchStatus;
-  private final boolean patchResource;
 
   private UpdateControl(
-      P resource, boolean updateStatus, boolean updateResource, boolean patchStatus,
-      boolean patchResource) {
+      P resource, boolean updateStatus, boolean updateResource, boolean patchStatus) {
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
@@ -21,7 +19,6 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     this.updateStatus = updateStatus;
     this.updateResource = updateResource;
     this.patchStatus = patchStatus;
-    this.patchResource = patchResource;
   }
 
   /**
@@ -29,12 +26,15 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * itself, not on the status. Note that usually as a results of a reconciliation should be a
    * status update not an update to the resource itself.
    *
+   * Using this update makes sure, that the resource in the next reconciliation is the updated one -
+   * this is not guaranteed by default if you do an update on a resource by the Kubernetes client.
+   *
    * @param <T> custom resource type
    * @param customResource customResource to use for update
    * @return initialized update control
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResource(T customResource) {
-    return new UpdateControl<>(customResource, false, true, false, false);
+    return new UpdateControl<>(customResource, false, true, false);
   }
 
   /**
@@ -53,7 +53,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @return UpdateControl instance
    */
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
-    return new UpdateControl<>(customResource, true, false, true, false);
+    return new UpdateControl<>(customResource, true, false, true);
   }
 
   /**
@@ -69,7 +69,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @return UpdateControl instance
    */
   public static <T extends HasMetadata> UpdateControl<T> updateStatus(T customResource) {
-    return new UpdateControl<>(customResource, true, false, false, false);
+    return new UpdateControl<>(customResource, true, false, false);
   }
 
   /**
@@ -82,22 +82,37 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResourceAndStatus(
       T customResource) {
-    return new UpdateControl<>(customResource, true, true, false, false);
+    return new UpdateControl<>(customResource, true, true, false);
   }
 
+  /**
+   * Updates the resource - with optimistic locking - and patched the status without optimistic
+   * locking in place.
+   *
+   * @param customResource
+   * @return
+   * @param <T>
+   */
   public static <T extends HasMetadata> UpdateControl<T> updateResourceAndPatchStatus(
       T customResource) {
-    return new UpdateControl<>(customResource, true, true, true, false);
+    return new UpdateControl<>(customResource, true, true, true);
   }
 
-  public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(
-      T customResource) {
-    return new UpdateControl<>(customResource, true, true, true, false);
+  /**
+   * Market for removal, because of confusing name. It does not patch the resource just updates it.
+   * This method is same as updateResourceAndPatchStatus.
+   *
+   * @param customResource to update
+   * @return UpdateControl instance
+   * @param <T> resource type
+   */
+  @Deprecated(forRemoval = true)
+  public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(T customResource) {
+    return updateResourceAndStatus(customResource);
   }
-
 
   public static <T extends HasMetadata> UpdateControl<T> noUpdate() {
-    return new UpdateControl<>(null, false, false, false, false);
+    return new UpdateControl<>(null, false, false, false);
   }
 
   public P getResource() {
@@ -116,10 +131,6 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     return patchStatus;
   }
 
-  public boolean isPatchResource() {
-    return patchResource;
-  }
-
   public boolean isNoUpdate() {
     return !updateResource && !updateStatus;
   }
@@ -127,4 +138,5 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   public boolean isUpdateResourceAndStatus() {
     return updateResource && updateStatus;
   }
+
 }
