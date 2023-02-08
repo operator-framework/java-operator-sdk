@@ -54,7 +54,7 @@ public class PrimaryToSecondaryDependentReconciler
 
   /**
    * Creating an Event Source and setting it for the Dependent Resource. Since it is not possible to
-   * do this setup within the bounds of the KubernetesDependentResource API. However, this is quite
+   * do this setup elegantly within the bounds of the KubernetesDependentResource API. However, this is quite
    * a corner case; might be covered more out of the box in the future if there will be demand for
    * it.
    **/
