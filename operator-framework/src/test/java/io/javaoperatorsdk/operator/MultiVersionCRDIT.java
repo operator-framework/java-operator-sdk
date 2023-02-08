@@ -41,11 +41,18 @@ class MultiVersionCRDIT {
           .build();
 
   private static class TestInformerStoppedHandler implements InformerStoppedHandler {
-    private String resourceClassName;
-    private String resourceCreateAsVersion;
+    private volatile String resourceClassName;
+    private volatile String resourceCreateAsVersion;
 
-    private String failedResourceVersion;
-    private String errorMessage;
+    private volatile String failedResourceVersion;
+    private volatile String errorMessage;
+
+    public void reset() {
+      resourceClassName = null;
+      resourceCreateAsVersion = null;
+      failedResourceVersion = null;
+      errorMessage = null;
+    }
 
     @Override
     @SuppressWarnings("rawtypes")
@@ -111,6 +118,7 @@ class MultiVersionCRDIT {
 
   @Test
   void multipleCRDVersions() {
+    informerStoppedHandler.reset();
     operator.create(createTestResourceV1WithoutLabel());
     operator.create(createTestResourceV2WithLabel());
 
@@ -132,6 +140,7 @@ class MultiVersionCRDIT {
 
   @Test
   void invalidEventsShouldStopInformerAndCallInformerStoppedHandler() {
+    informerStoppedHandler.reset();
     var v2res = createTestResourceV2WithLabel();
     v2res.getMetadata().getLabels().clear();
     operator.create(v2res);
