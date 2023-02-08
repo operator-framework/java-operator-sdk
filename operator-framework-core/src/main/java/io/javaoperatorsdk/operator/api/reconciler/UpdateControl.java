@@ -100,7 +100,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
 
   /**
    * Marked for removal, because of confusing name. It does not patch the resource but rather
-   * updates it. This method is same as updateResourceAndPatchStatus.
+   * updates it.
+   *
+   * @deprecated use {@link UpdateControl#updateResourceAndPatchStatus(HasMetadata)}
    *
    * @param customResource to update
    * @return UpdateControl instance
