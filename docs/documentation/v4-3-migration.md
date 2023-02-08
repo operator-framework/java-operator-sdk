@@ -9,8 +9,8 @@ permalink: /docs/v4-3-migration
 
 ## Condition API Change
 
-In Workflows the target of the condition was the managed resource itself, not a dependent resource. This changed, from
-not the API contains the dependent resource.
+In Workflows the target of the condition was the managed resource itself, not the target dependent resource. 
+This changed, now the API contains the dependent resource.
 
 New API:
 
