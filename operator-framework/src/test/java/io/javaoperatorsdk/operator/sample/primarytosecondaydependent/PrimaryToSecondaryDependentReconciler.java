@@ -61,14 +61,21 @@ public class PrimaryToSecondaryDependentReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<PrimaryToSecondaryDependentCustomResource> context) {
+    // there is no owner reference in the config map, but we still want to trigger reconciliation if
+    // the config map changes. So first we add an index which custom resource references the config
+    // map.
     context.getPrimaryCache().addIndexer(CONFIG_MAP_INDEX, (primary -> List
         .of(indexKey(primary.getSpec().getConfigMapName(), primary.getMetadata().getNamespace()))));
 
     var cmES = new InformerEventSource<>(InformerConfiguration
         .from(ConfigMap.class, context)
+        // if there is a many-to-many relationship (thus no direct owner reference)
+        // PrimaryToSecondaryMapper needs to be added
         .withPrimaryToSecondaryMapper(
             (PrimaryToSecondaryMapper<PrimaryToSecondaryDependentCustomResource>) p -> Set
                 .of(new ResourceID(p.getSpec().getConfigMapName(), p.getMetadata().getNamespace())))
+        // the index is used to trigger reconciliation of related custom resources if config map
+        // changes
         .withSecondaryToPrimaryMapper(cm -> context.getPrimaryCache()
             .byIndex(CONFIG_MAP_INDEX, indexKey(cm.getMetadata().getName(),
                 cm.getMetadata().getNamespace()))
