@@ -26,7 +26,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * itself, not on the status. Note that usually as a results of a reconciliation should be a
    * status update not an update to the resource itself.
    *
-   * Using this update makes sure, that the resource in the next reconciliation is the updated one -
+   * Using this update makes sure that the resource in the next reconciliation is the updated one -
    * this is not guaranteed by default if you do an update on a resource by the Kubernetes client.
    *
    * @param <T> custom resource type
@@ -86,7 +86,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
   /**
-   * Updates the resource - with optimistic locking - and patched the status without optimistic
+   * Updates the resource - with optimistic locking - and patches the status without optimistic
    * locking in place.
    *
    * @param customResource
@@ -99,7 +99,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
   /**
-   * Market for removal, because of confusing name. It does not patch the resource just updates it.
+   * Marked for removal, because of confusing name. It does not patch the resource but rather updates it.
    * This method is same as updateResourceAndPatchStatus.
    *
    * @param customResource to update
