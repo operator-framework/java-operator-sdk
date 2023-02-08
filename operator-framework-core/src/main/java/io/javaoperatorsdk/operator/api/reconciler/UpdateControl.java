@@ -89,9 +89,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * Updates the resource - with optimistic locking - and patches the status without optimistic
    * locking in place.
    *
-   * @param customResource
-   * @return
-   * @param <T>
+   * @param customResource to update
+   * @return UpdateControl instance
+   * @param <T> resource type
    */
   public static <T extends HasMetadata> UpdateControl<T> updateResourceAndPatchStatus(
       T customResource) {
