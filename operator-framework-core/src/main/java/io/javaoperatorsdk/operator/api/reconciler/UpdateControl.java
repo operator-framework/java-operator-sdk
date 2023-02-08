@@ -76,6 +76,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * As a results of this there will be two call to K8S API. First the custom resource will be
    * updates then the status sub-resource.
    *
+   * Using this update makes sure that the resource in the next reconciliation is the updated one -
+   * this is not guaranteed by default if you do an update on a resource by the Kubernetes client.
+   *
    * @param <T> resource type
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
@@ -88,6 +91,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   /**
    * Updates the resource - with optimistic locking - and patches the status without optimistic
    * locking in place.
+   *
+   * Note that using this method, it is not guaranteed that the most recent updated resource will be
+   * in case for next reconciliation.
    *
    * @param customResource to update
    * @return UpdateControl instance
