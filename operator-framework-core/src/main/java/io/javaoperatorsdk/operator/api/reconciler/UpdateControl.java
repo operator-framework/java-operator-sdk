@@ -8,23 +8,26 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final P resource;
   private final boolean updateStatus;
   private final boolean updateResource;
-  private final boolean patch;
+  private final boolean patchStatus;
 
   private UpdateControl(
-      P resource, boolean updateStatus, boolean updateResource, boolean patch) {
+      P resource, boolean updateStatus, boolean updateResource, boolean patchStatus) {
     if ((updateResource || updateStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
     this.resource = resource;
     this.updateStatus = updateStatus;
     this.updateResource = updateResource;
-    this.patch = patch;
+    this.patchStatus = patchStatus;
   }
 
   /**
    * Creates an update control instance that instructs the framework to do an update on resource
    * itself, not on the status. Note that usually as a results of a reconciliation should be a
    * status update not an update to the resource itself.
+   *
+   * Using this update makes sure that the resource in the next reconciliation is the updated one -
+   * this is not guaranteed by default if you do an update on a resource by the Kubernetes client.
    *
    * @param <T> custom resource type
    * @param customResource customResource to use for update
@@ -73,6 +76,9 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * As a results of this there will be two call to K8S API. First the custom resource will be
    * updates then the status sub-resource.
    *
+   * Using this update makes sure that the resource in the next reconciliation is the updated one -
+   * this is not guaranteed by default if you do an update on a resource by the Kubernetes client.
+   *
    * @param <T> resource type
    * @param customResource - custom resource to use in both API calls
    * @return UpdateControl instance
@@ -82,11 +88,36 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(customResource, true, true, false);
   }
 
-  public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(
+  /**
+   * Updates the resource - with optimistic locking - and patches the status without optimistic
+   * locking in place.
+   *
+   * Note that using this method, it is not guaranteed that the most recent updated resource will be
+   * in case for next reconciliation.
+   *
+   * @param customResource to update
+   * @return UpdateControl instance
+   * @param <T> resource type
+   */
+  public static <T extends HasMetadata> UpdateControl<T> updateResourceAndPatchStatus(
       T customResource) {
     return new UpdateControl<>(customResource, true, true, true);
   }
 
+  /**
+   * Marked for removal, because of confusing name. It does not patch the resource but rather
+   * updates it.
+   *
+   * @deprecated use {@link UpdateControl#updateResourceAndPatchStatus(HasMetadata)}
+   *
+   * @param customResource to update
+   * @return UpdateControl instance
+   * @param <T> resource type
+   */
+  @Deprecated(forRemoval = true)
+  public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(T customResource) {
+    return updateResourceAndStatus(customResource);
+  }
 
   public static <T extends HasMetadata> UpdateControl<T> noUpdate() {
     return new UpdateControl<>(null, false, false, false);
@@ -104,8 +135,8 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     return updateResource;
   }
 
-  public boolean isPatch() {
-    return patch;
+  public boolean isPatchStatus() {
+    return patchStatus;
   }
 
   public boolean isNoUpdate() {
@@ -115,4 +146,5 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   public boolean isUpdateResourceAndStatus() {
     return updateResource && updateStatus;
   }
+
 }
