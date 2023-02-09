@@ -108,7 +108,7 @@ public class SchemaDependentResource
   public Set<Schema> fetchResources(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
       return SchemaService.getSchema(connection, primaryResource.getMetadata().getName())
-          .map(Set::of).orElse(Collections.emptySet());
+          .map(Set::of).orElseGet(Collections::emptySet);
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying read Schema", e);
     }
@@ -123,7 +123,7 @@ public class SchemaDependentResource
         Class<SchemaDependentResource> originatingClass) {
       if (configAnnotation != null) {
         return new ResourcePollerConfig(configAnnotation.pollPeriod(),
-            new MySQLDbConfig(configAnnotation.host(), "" + configAnnotation.port(),
+            new MySQLDbConfig(configAnnotation.host(), String.valueOf(configAnnotation.port()),
                 configAnnotation.user(), configAnnotation.password()));
       }
       return new ResourcePollerConfig(SchemaConfig.DEFAULT_POLL_PERIOD,

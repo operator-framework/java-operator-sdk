@@ -14,10 +14,11 @@ public class MDCUtils {
   private static final String RESOURCE_VERSION = "resource.resourceVersion";
   private static final String GENERATION = "resource.generation";
   private static final String UID = "resource.uid";
+  private static final String NO_NAMESPACE = "no namespace";
 
   public static void addResourceIDInfo(ResourceID resourceID) {
     MDC.put(NAME, resourceID.getName());
-    MDC.put(NAMESPACE, resourceID.getNamespace().orElse("no namespace"));
+    MDC.put(NAMESPACE, resourceID.getNamespace().orElse(NO_NAMESPACE));
   }
 
   public static void removeResourceIDInfo() {

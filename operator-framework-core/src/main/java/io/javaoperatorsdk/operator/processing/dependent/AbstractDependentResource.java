@@ -66,7 +66,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable) {
           final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
-            final var desired = match.computedDesired().orElse(desired(primary, context));
+            final var desired = match.computedDesired().orElseGet(() -> desired(primary, context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
@@ -125,7 +125,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @param primary the {@link ResourceID} of the primary resource associated with the newly created
    *        resource
    * @param created the newly created resource
-   * @param context
+   * @param context the context in which this operation is called
    */
   protected abstract void onCreated(P primary, R created, Context<P> context);
 
@@ -136,7 +136,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    *        resource
    * @param updated the updated resource
    * @param actual the resource as it was before the update
-   * @param context
+   * @param context the context in which this operation is called
    */
   protected abstract void onUpdated(P primary, R updated, R actual, Context<P> context);
 
