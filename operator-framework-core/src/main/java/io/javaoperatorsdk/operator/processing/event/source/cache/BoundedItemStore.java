@@ -44,7 +44,8 @@ public class BoundedItemStore<R extends HasMetadata> extends BoundedStore<String
     var values = cache.values();
     var notPresentValueKeys = new HashSet<>(existingResources);
     notPresentValueKeys.retainAll(keys);
-    var fetchedValues = notPresentValueKeys.stream().map(k -> fetchAndCacheResource(k));
+    var fetchedValues =
+        notPresentValueKeys.stream().map(k -> fetchAndCacheResourceIfStillNonPresent(k));
     return Stream.concat(values.stream(), fetchedValues);
   }
 

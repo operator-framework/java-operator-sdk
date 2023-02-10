@@ -72,6 +72,7 @@
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.8.0</impsort-maven-plugin.version>
         <okhttp.version>4.10.0</okhttp.version>
+        <caffein.version>3.1.3</caffein.version>
     </properties>
 
     <modules>
@@ -81,6 +82,7 @@
         <module>operator-framework</module>
         <module>micrometer-support</module>
         <module>sample-operators</module>
+        <module>caffein-bounded-cache-support</module>
     </modules>
 
 
@@ -192,6 +194,11 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>mockwebserver</artifactId>
                 <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffein.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

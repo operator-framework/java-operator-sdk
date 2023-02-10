@@ -24,16 +24,16 @@ public class BoundedStore<K, R> {
     if (!existingResources.contains(key)) {
       return null;
     } else {
-      return fetchAndCacheResource(key);
+      return fetchAndCacheResourceIfStillNonPresent(key);
     }
   }
 
-  public R remove(K key) {
+  public synchronized R remove(K key) {
     existingResources.remove(key);
     return cache.remove(key);
   }
 
-  public R put(K key, R object) {
+  public synchronized R put(K key, R object) {
     var res = cache.put(key, object);
     existingResources.add(key);
     return res;
@@ -43,10 +43,22 @@ public class BoundedStore<K, R> {
     return existingResources.stream();
   }
 
-  protected R fetchAndCacheResource(K key) {
+  protected R fetchAndCacheResourceIfStillNonPresent(K key) {
     var newRes = resourceFetcher.fetchResource(key);
-    cache.put(key, newRes);
-    return newRes;
+    // todo unit test
+    // Just want to put the fetched resource if there is still no resource published from different
+    // source.
+    // In case of informers actually multiple events might arrive, therefore non fetched resources
+    // should
+    // take always precedence.
+    synchronized (this) {
+      var actual = cache.get(key);
+      if (actual == null) {
+        cache.put(key, newRes);
+        return newRes;
+      } else {
+        return actual;
+      }
+    }
   }
-
 }
