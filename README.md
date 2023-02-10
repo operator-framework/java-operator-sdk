@@ -67,4 +67,4 @@ project, as shown below:
 - [Locust k8s operator](https://github.com/AbdelrhmanHamouda/locust-k8s-operator): Cloud native solution to run performance tests on any Kubernetes cluster.
 - [Strimzi Schema Registry Operator](https://github.com/shangyuantech/strimzi-registry-ksql-operator): A Schema Registry Operator based on JOSDK for running the Confluent Schema Registry with a Strimzi-based Kafka cluster.
 - [Airflow Dag Operator](https://github.com/cdmikechen/airflow-dag-operator): Use JOSDK(Quarkus Extension) to replace Airflow Git Sync strategy. The main idea of the project is to start a synchronization container on each airflow pod to synchronize the DAG/files into the DAG folder.
-
+- [Glasskube Operator](https://github.com/glasskube/operator): simplifies the deployment, maintenance and upgrade of popular open source business tools. It is written in Kotlin and uses the JOSDK and fabric8 Kubernetes client with Kotlin-based DSL.
