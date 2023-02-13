@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.github.benmanes.caffeine.cache.Cache;
 
 public class CaffeinBoundedCache<K, R> implements BoundedCache<K, R> {

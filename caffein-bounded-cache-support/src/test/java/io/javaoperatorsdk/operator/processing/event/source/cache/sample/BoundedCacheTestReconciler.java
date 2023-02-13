@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache.sample;
 
+import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,16 +10,13 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
-import io.javaoperatorsdk.operator.processing.event.source.cache.CaffeinBoundedCache;
+import io.javaoperatorsdk.operator.processing.event.source.cache.CaffeinBoundedItemStores;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 @ControllerConfiguration
 public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCustomResource>,
@@ -66,13 +63,11 @@ public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCu
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<BoundedCacheTestCustomResource> context) {
-    Cache<String, ConfigMap> cache = Caffeine.newBuilder()
-        .expireAfterAccess(1, TimeUnit.MINUTES)
-        .maximumSize(1)
-        .build();
 
-    BoundedItemStore<ConfigMap> boundedItemStore = new BoundedItemStore<>(client,
-        new CaffeinBoundedCache<>(cache), ConfigMap.class);
+    var boundedItemStore =
+        CaffeinBoundedItemStores.boundedItemStore(new KubernetesClientBuilder().build(),
+            ConfigMap.class, Duration.ofMinutes(1),
+            1);
 
     var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
         .withItemStore(boundedItemStore)

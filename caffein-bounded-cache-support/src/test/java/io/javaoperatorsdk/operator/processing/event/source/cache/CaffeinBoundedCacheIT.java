@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
@@ -13,9 +13,6 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.BoundedCacheTestCustomResource;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.BoundedCacheTestReconciler;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.BoundedCacheTestSpec;
-
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.BoundedCacheTestReconciler.DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,14 +27,10 @@ class CaffeinBoundedCacheIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new BoundedCacheTestReconciler(), o -> {
-        Cache<String, BoundedCacheTestCustomResource> cache = Caffeine.newBuilder()
-            .expireAfterAccess(1, TimeUnit.MINUTES)
-            .maximumSize(1)
-            .build();
-        BoundedItemStore<BoundedCacheTestCustomResource> boundedItemStore =
-            new BoundedItemStore<>(new KubernetesClientBuilder().build(),
-                new CaffeinBoundedCache<>(cache), BoundedCacheTestCustomResource.class);
-        o.withItemStore(boundedItemStore);
+        o.withItemStore(CaffeinBoundedItemStores.boundedItemStore(
+            new KubernetesClientBuilder().build(), BoundedCacheTestCustomResource.class,
+            Duration.ofMinutes(1),
+            1));
       })
           .build();
 
