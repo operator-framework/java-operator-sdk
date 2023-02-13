@@ -3,6 +3,9 @@ package io.javaoperatorsdk.operator.processing.event.source.cache.sample;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -22,6 +25,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCustomResource>,
     EventSourceInitializer<BoundedCacheTestCustomResource>, KubernetesClientAware {
 
+  private static final Logger log = LoggerFactory.getLogger(BoundedCacheTestReconciler.class);
+
   public static final String DATA_KEY = "dataKey";
   private KubernetesClient client;
 
@@ -34,6 +39,7 @@ public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCu
         cm -> updateConfigMapIfNeeded(cm, resource),
         () -> createConfigMap(resource));
     ensureStatus(resource);
+    log.info("Reconciled: {}", resource.getMetadata().getName());
     return UpdateControl.patchStatus(resource);
   }
 
@@ -65,8 +71,8 @@ public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCu
         .maximumSize(1)
         .build();
 
-    BoundedItemStore<ConfigMap> boundedItemStore = new BoundedItemStore<>(client, ConfigMap.class,
-        new CaffeinBoundedCache<>(cache));
+    BoundedItemStore<ConfigMap> boundedItemStore = new BoundedItemStore<>(client,
+        new CaffeinBoundedCache<>(cache), ConfigMap.class);
 
     var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
         .withItemStore(boundedItemStore)

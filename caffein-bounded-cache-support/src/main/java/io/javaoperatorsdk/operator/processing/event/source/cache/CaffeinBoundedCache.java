@@ -30,14 +30,4 @@ public class CaffeinBoundedCache<K, R> implements BoundedCache<K, R> {
     cache.put(key, object);
     return object;
   }
-
-  @Override
-  public Set<K> keys() {
-    return cache.asMap().keySet();
-  }
-
-  @Override
-  public Set<R> values() {
-    return new HashSet<>(cache.asMap().values());
-  }
 }

@@ -30,13 +30,13 @@ class CaffeinBoundedCacheIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new BoundedCacheTestReconciler(), o -> {
-        Cache<String, ConfigMap> cache = Caffeine.newBuilder()
+        Cache<String, BoundedCacheTestCustomResource> cache = Caffeine.newBuilder()
             .expireAfterAccess(1, TimeUnit.MINUTES)
             .maximumSize(1)
             .build();
-        BoundedItemStore<ConfigMap> boundedItemStore =
-            new BoundedItemStore<>(new KubernetesClientBuilder().build(), ConfigMap.class,
-                new CaffeinBoundedCache<>(cache));
+        BoundedItemStore<BoundedCacheTestCustomResource> boundedItemStore =
+            new BoundedItemStore<>(new KubernetesClientBuilder().build(),
+                new CaffeinBoundedCache<>(cache), BoundedCacheTestCustomResource.class);
         o.withItemStore(boundedItemStore);
       })
           .build();
