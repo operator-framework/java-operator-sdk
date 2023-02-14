@@ -25,6 +25,8 @@ public class ClusterScopedCustomResourceReconciler
 
   private static final Logger log =
       LoggerFactory.getLogger(ClusterScopedCustomResourceReconciler.class);
+  public static final String TEST_LABEL_VALUE = "clusterscopecrtest";
+  public static final String TEST_LABEL_KEY = "test";
 
   private KubernetesClient client;
 
@@ -51,6 +53,7 @@ public class ClusterScopedCustomResourceReconciler
         .withMetadata(new ObjectMetaBuilder()
             .withName(resource.getMetadata().getName())
             .withNamespace(resource.getSpec().getTargetNamespace())
+            .withLabels(Map.of(TEST_LABEL_KEY, TEST_LABEL_VALUE))
             .build())
         .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
         .build();
@@ -73,6 +76,7 @@ public class ClusterScopedCustomResourceReconciler
       EventSourceContext<ClusterScopedCustomResource> context) {
     var ies = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
         .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference(true))
+        .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
         .build(), context);
     return EventSourceInitializer.nameEventSources(ies);
   }
