@@ -23,6 +23,7 @@ class CaffeinBoundedCacheIT {
   public static final int NUMBER_OF_RESOURCE_TO_TEST = 3;
   public static final String RESOURCE_NAME_PREFIX = "test-";
   public static final String INITIAL_DATA_PREFIX = "data-";
+  public static final String UPDATED_PREFIX = "updatedPrefix";
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
@@ -38,15 +39,42 @@ class CaffeinBoundedCacheIT {
   void reconciliationWorksWithLimitedCache() {
     createTestResources();
 
-    await().untilAsserted(() -> {
-      assertConfigMapData(INITIAL_DATA_PREFIX);
+    assertConfigMapData(INITIAL_DATA_PREFIX);
+
+    updateTestResources();
+
+    assertConfigMapData(UPDATED_PREFIX);
+
+    deleteTestResources();
+
+    assertConfigMapsDeleted();
+  }
+
+  private void assertConfigMapsDeleted() {
+    await().untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
+      var cm = extension.get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
+      assertThat(cm).isNull();
+    }));
+  }
+
+  private void deleteTestResources() {
+    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
+      var cm = extension.get(BoundedCacheTestCustomResource.class, RESOURCE_NAME_PREFIX + i);
+      extension.delete(cm);
+    });
+  }
+
+  private void updateTestResources() {
+    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
+      var cm = extension.get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
+      cm.getData().put(DATA_KEY, UPDATED_PREFIX + i);
+      extension.replace(cm);
     });
   }
 
   void assertConfigMapData(String dataPrefix) {
-    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
-      assertConfigMap(i, dataPrefix);
-    });
+    await().untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
+        .forEach(i -> assertConfigMap(i, dataPrefix)));
   }
 
   private void assertConfigMap(int i, String prefix) {

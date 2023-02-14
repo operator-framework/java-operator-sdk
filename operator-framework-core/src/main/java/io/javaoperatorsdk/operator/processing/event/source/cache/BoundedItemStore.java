@@ -28,14 +28,15 @@ public class BoundedItemStore<R extends HasMetadata>
 
   public BoundedItemStore(KubernetesClient client,
       BoundedCache<String, R> cache, Class<R> resourceClass) {
-    this(client, cache, resourceClass, namespaceKeyFunc());
+    this(cache, resourceClass, namespaceKeyFunc(),
+        new KubernetesResourceFetcher<>(resourceClass, client));
   }
 
-  public BoundedItemStore(KubernetesClient client,
-      BoundedCache<String, R> cache,
+  public BoundedItemStore(BoundedCache<String, R> cache,
       Class<R> resourceClass,
-      Function<R, String> keyFunction) {
-    this.resourceFetcher = new KubernetesResourceFetcher<>(resourceClass, client);
+      Function<R, String> keyFunction,
+      ResourceFetcher<String, R> resourceFetcher) {
+    this.resourceFetcher = resourceFetcher;
     this.cache = cache;
     this.keyFunction = keyFunction;
     this.resourceClass = resourceClass;

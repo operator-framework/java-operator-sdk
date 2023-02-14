@@ -10,6 +10,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 public class CaffeinBoundedItemStores {
 
+  private CaffeinBoundedItemStores() {}
+
   public static <R extends HasMetadata> BoundedItemStore<R> boundedItemStore(
       KubernetesClient client, Class<R> rClass,
       Duration accessExpireDuration, long cacheMaxSize) {

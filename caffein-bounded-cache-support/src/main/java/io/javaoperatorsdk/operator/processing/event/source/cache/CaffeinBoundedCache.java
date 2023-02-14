@@ -23,8 +23,7 @@ public class CaffeinBoundedCache<K, R> implements BoundedCache<K, R> {
   }
 
   @Override
-  public R put(K key, R object) {
+  public void put(K key, R object) {
     cache.put(key, object);
-    return object;
   }
 }
