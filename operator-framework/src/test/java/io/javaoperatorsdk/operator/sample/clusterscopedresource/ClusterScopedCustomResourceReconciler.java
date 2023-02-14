@@ -29,7 +29,7 @@ public class ClusterScopedCustomResourceReconciler
     var optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
 
     optionalConfigMap.ifPresentOrElse(cm -> {
-      if (cm.getData().get(DATA_KEY).equals(resource.getSpec().getData())) {
+      if (!cm.getData().get(DATA_KEY).equals(resource.getSpec().getData())) {
         client.configMaps().resource(desired(resource)).replace();
       }
     }, () -> client.configMaps().resource(desired(resource)).create());
