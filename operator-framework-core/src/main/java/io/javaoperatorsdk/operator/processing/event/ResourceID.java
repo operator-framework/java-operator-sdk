@@ -14,10 +14,15 @@ public class ResourceID implements Serializable {
   }
 
   public static Optional<ResourceID> fromFirstOwnerReference(HasMetadata resource) {
+    return fromFirstOwnerReference(resource, false);
+  }
+
+  public static Optional<ResourceID> fromFirstOwnerReference(HasMetadata resource,
+      boolean clusterScoped) {
     var ownerReferences = resource.getMetadata().getOwnerReferences();
     if (!ownerReferences.isEmpty()) {
       return Optional.of(new ResourceID(ownerReferences.get(0).getName(),
-          resource.getMetadata().getNamespace()));
+          clusterScoped ? null : resource.getMetadata().getNamespace()));
     } else {
       return Optional.empty();
     }
