@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusters
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestStatus;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
     implements KubernetesClientAware, Reconciler<P>,
@@ -64,15 +63,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
             .build())
         .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
         .build();
-
-    if (resource instanceof Namespaced) {
-      cm.getMetadata()
-          .setLabels(Map.of(Mappers.DEFAULT_ANNOTATION_FOR_NAME, resource.getMetadata().getName()));
-    } else {
-      cm.addOwnerReference(resource);
-    }
-
-
+    cm.addOwnerReference(resource);
     client.configMaps().resource(cm).create();
   }
 
@@ -96,9 +87,6 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
             1);
 
     var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-        .withSecondaryToPrimaryMapper(
-            Namespaced.class.isAssignableFrom(customResourceClass()) ? Mappers.fromOwnerReference()
-                : Mappers.fromDefaultAnnotations())
         .withItemStore(boundedItemStore)
         .build(), context);
 
@@ -110,7 +98,5 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
       resource.setStatus(new BoundedCacheTestStatus());
     }
   }
-
-  protected abstract Class<P> customResourceClass();
 
 }

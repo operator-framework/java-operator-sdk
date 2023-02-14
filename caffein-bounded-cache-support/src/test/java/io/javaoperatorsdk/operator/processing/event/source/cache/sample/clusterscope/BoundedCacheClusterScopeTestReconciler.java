@@ -7,8 +7,4 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.Abstract
 public class BoundedCacheClusterScopeTestReconciler extends
     AbstractTestReconciler<BoundedCacheClusterScopeTestCustomResource> {
 
-  @Override
-  protected Class<BoundedCacheClusterScopeTestCustomResource> customResourceClass() {
-    return BoundedCacheClusterScopeTestCustomResource.class;
-  }
 }
