@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source.cache.sample;
+package io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope;
 
 public class BoundedCacheTestSpec {
 

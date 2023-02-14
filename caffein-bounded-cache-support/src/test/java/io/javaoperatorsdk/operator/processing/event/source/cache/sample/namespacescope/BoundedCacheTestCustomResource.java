@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.event.source.cache.sample;
+package io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;

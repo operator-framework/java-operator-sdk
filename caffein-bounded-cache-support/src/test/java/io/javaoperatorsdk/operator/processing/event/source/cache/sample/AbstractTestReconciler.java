@@ -6,31 +6,38 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.cache.CaffeinBoundedItemStores;
+import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusterscope.BoundedCacheClusterScopeTestReconciler;
+import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
+import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestStatus;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-@ControllerConfiguration
-public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCustomResource>,
-    EventSourceInitializer<BoundedCacheTestCustomResource>, KubernetesClientAware {
+public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
+    implements KubernetesClientAware, Reconciler<P>,
+    EventSourceInitializer<P> {
 
-  private static final Logger log = LoggerFactory.getLogger(BoundedCacheTestReconciler.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(BoundedCacheClusterScopeTestReconciler.class);
 
   public static final String DATA_KEY = "dataKey";
-  private KubernetesClient client;
+  public static final String DEFAULT_NAMESPACE = "default";
+
+  protected KubernetesClient client;
 
   @Override
-  public UpdateControl<BoundedCacheTestCustomResource> reconcile(
-      BoundedCacheTestCustomResource resource,
-      Context<BoundedCacheTestCustomResource> context) {
+  public UpdateControl<P> reconcile(
+      P resource,
+      Context<P> context) {
     var maybeConfigMap = context.getSecondaryResource(ConfigMap.class);
     maybeConfigMap.ifPresentOrElse(
         cm -> updateConfigMapIfNeeded(cm, resource),
@@ -40,7 +47,7 @@ public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCu
     return UpdateControl.patchStatus(resource);
   }
 
-  private void updateConfigMapIfNeeded(ConfigMap cm, BoundedCacheTestCustomResource resource) {
+  protected void updateConfigMapIfNeeded(ConfigMap cm, P resource) {
     var data = cm.getData().get(DATA_KEY);
     if (data == null || data.equals(resource.getSpec().getData())) {
       cm.setData(Map.of(DATA_KEY, resource.getSpec().getData()));
@@ -48,38 +55,25 @@ public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCu
     }
   }
 
-  private void createConfigMap(BoundedCacheTestCustomResource resource) {
+  protected void createConfigMap(P resource) {
     var cm = new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withName(resource.getMetadata().getName())
-            .withNamespace(resource.getMetadata().getNamespace())
+            .withNamespace(resource instanceof Namespaced ? resource.getMetadata().getNamespace()
+                : DEFAULT_NAMESPACE)
             .build())
         .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
         .build();
-    cm.addOwnerReference(resource);
-    client.configMaps().resource(cm).create();
-  }
 
-  @Override
-  public Map<String, EventSource> prepareEventSources(
-      EventSourceContext<BoundedCacheTestCustomResource> context) {
-
-    var boundedItemStore =
-        CaffeinBoundedItemStores.boundedItemStore(new KubernetesClientBuilder().build(),
-            ConfigMap.class, Duration.ofMinutes(1),
-            1);
-
-    var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-        .withItemStore(boundedItemStore)
-        .build(), context);
-
-    return EventSourceInitializer.nameEventSources(es);
-  }
-
-  private void ensureStatus(BoundedCacheTestCustomResource resource) {
-    if (resource.getStatus() == null) {
-      resource.setStatus(new BoundedCacheTestStatus());
+    if (resource instanceof Namespaced) {
+      cm.getMetadata()
+          .setLabels(Map.of(Mappers.DEFAULT_ANNOTATION_FOR_NAME, resource.getMetadata().getName()));
+    } else {
+      cm.addOwnerReference(resource);
     }
+
+
+    client.configMaps().resource(cm).create();
   }
 
   @Override
@@ -91,4 +85,32 @@ public class BoundedCacheTestReconciler implements Reconciler<BoundedCacheTestCu
   public void setKubernetesClient(KubernetesClient kubernetesClient) {
     this.client = kubernetesClient;
   }
+
+  @Override
+  public Map<String, EventSource> prepareEventSources(
+      EventSourceContext<P> context) {
+
+    var boundedItemStore =
+        CaffeinBoundedItemStores.boundedItemStore(new KubernetesClientBuilder().build(),
+            ConfigMap.class, Duration.ofMinutes(1),
+            1);
+
+    var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+        .withSecondaryToPrimaryMapper(
+            Namespaced.class.isAssignableFrom(customResourceClass()) ? Mappers.fromOwnerReference()
+                : Mappers.fromDefaultAnnotations())
+        .withItemStore(boundedItemStore)
+        .build(), context);
+
+    return EventSourceInitializer.nameEventSources(es);
+  }
+
+  private void ensureStatus(P resource) {
+    if (resource.getStatus() == null) {
+      resource.setStatus(new BoundedCacheTestStatus());
+    }
+  }
+
+  protected abstract Class<P> customResourceClass();
+
 }
