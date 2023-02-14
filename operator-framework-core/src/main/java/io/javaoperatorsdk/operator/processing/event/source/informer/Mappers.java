@@ -42,7 +42,17 @@ public class Mappers {
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference() {
-    return resource -> ResourceID.fromFirstOwnerReference(resource).map(Set::of)
+    return fromOwnerReference(false);
+  }
+
+  /**
+   * @param clusterScope if the owner is a cluster scoped resource
+   * @return mapper
+   * @param <T> type of the secondary resource, where the owner reference is
+   */
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference(
+      boolean clusterScope) {
+    return resource -> ResourceID.fromFirstOwnerReference(resource, clusterScope).map(Set::of)
         .orElseGet(Collections::emptySet);
   }
 
