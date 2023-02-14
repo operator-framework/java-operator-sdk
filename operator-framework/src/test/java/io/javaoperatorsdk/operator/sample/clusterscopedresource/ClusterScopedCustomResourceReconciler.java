@@ -2,9 +2,6 @@ package io.javaoperatorsdk.operator.sample.clusterscopedresource;
 
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -23,8 +20,6 @@ public class ClusterScopedCustomResourceReconciler
 
   public static final String DATA_KEY = "data-key";
 
-  private static final Logger log =
-      LoggerFactory.getLogger(ClusterScopedCustomResourceReconciler.class);
   public static final String TEST_LABEL_VALUE = "clusterscopecrtest";
   public static final String TEST_LABEL_KEY = "test";
 
@@ -37,7 +32,6 @@ public class ClusterScopedCustomResourceReconciler
     var optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
 
     optionalConfigMap.ifPresentOrElse(cm -> {
-      log.debug("Existing config map: {} ", cm);
       if (!resource.getSpec().getData().equals(cm.getData().get(DATA_KEY))) {
         client.configMaps().resource(desired(resource)).replace();
       }
