@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 
 /**
  * Caffein cache wrapper to be used in a {@link BoundedItemStore}
- * */
+ */
 public class CaffeinBoundedCache<K, R> implements BoundedCache<K, R> {
 
   private Cache<K, R> cache;

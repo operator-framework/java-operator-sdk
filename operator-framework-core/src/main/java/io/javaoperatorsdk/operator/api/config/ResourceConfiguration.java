@@ -125,15 +125,19 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   /**
-   * See <a href="https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">related method</a>
-   * in fabric8 client.
+   * See <a href=
+   * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">related
+   * method</a> in fabric8 client.
    *
    * The main goal, is to be able to use limited caches.
    *
-   * See {@link io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore} and <a href="https://github.com/java-operator-sdk/java-operator-sdk/blob/d6eda0138dba6d93c0ff22a5ffcaa7663fa65ca2/caffein-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedCache.java">
-   *     CaffeinBoundedCache</a>
+   * See {@link io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore} and
+   * <a href=
+   * "https://github.com/java-operator-sdk/java-operator-sdk/blob/d6eda0138dba6d93c0ff22a5ffcaa7663fa65ca2/caffein-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedCache.java">
+   * CaffeinBoundedCache</a>
    *
-   * @return Optional ItemStore implementation. If present this item store will be used inside the informers.
+   * @return Optional ItemStore implementation. If present this item store will be used inside the
+   *         informers.
    */
   default Optional<ItemStore<R>> getItemStore() {
     return Optional.empty();

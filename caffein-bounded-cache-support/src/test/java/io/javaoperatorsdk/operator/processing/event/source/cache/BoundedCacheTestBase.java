@@ -38,10 +38,11 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   }
 
   private void assertConfigMapsDeleted() {
-    await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
-      var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
-      assertThat(cm).isNull();
-    }));
+    await().atMost(Duration.ofSeconds(20))
+        .untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
+          var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
+          assertThat(cm).isNull();
+        }));
   }
 
   private void deleteTestResources() {
