@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
+import java.time.Duration;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   }
 
   private void assertConfigMapsDeleted() {
-    await().untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
+    await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
       var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
       assertThat(cm).isNull();
     }));
