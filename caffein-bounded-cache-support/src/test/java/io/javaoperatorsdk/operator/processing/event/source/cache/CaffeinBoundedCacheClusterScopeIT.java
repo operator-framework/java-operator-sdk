@@ -11,6 +11,8 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusters
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusterscope.BoundedCacheClusterScopeTestReconciler;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
 
+import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.boundedItemStore;
+
 public class CaffeinBoundedCacheClusterScopeIT
     extends BoundedCacheTestBase<BoundedCacheClusterScopeTestCustomResource> {
 
@@ -18,7 +20,7 @@ public class CaffeinBoundedCacheClusterScopeIT
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new BoundedCacheClusterScopeTestReconciler(), o -> {
-            o.withItemStore(CaffeinBoundedItemStores.boundedItemStore(
+            o.withItemStore(boundedItemStore(
                 new KubernetesClientBuilder().build(),
                 BoundedCacheClusterScopeTestCustomResource.class,
                 Duration.ofMinutes(1),

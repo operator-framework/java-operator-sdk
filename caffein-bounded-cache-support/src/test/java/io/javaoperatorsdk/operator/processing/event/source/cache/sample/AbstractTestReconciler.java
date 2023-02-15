@@ -15,12 +15,16 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.cache.CaffeinBoundedItemStores;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusterscope.BoundedCacheClusterScopeTestReconciler;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestStatus;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
     implements KubernetesClientAware, Reconciler<P>,
@@ -82,9 +86,8 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
       EventSourceContext<P> context) {
 
     var boundedItemStore =
-        CaffeinBoundedItemStores.boundedItemStore(new KubernetesClientBuilder().build(),
-            ConfigMap.class, Duration.ofMinutes(1),
-            1);
+        boundedItemStore(new KubernetesClientBuilder().build(),
+            ConfigMap.class, Duration.ofMinutes(1), 1); // setting max size for testing purposes
 
     var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
         .withItemStore(boundedItemStore)
@@ -101,4 +104,15 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
     }
   }
 
+  public static <R extends HasMetadata> BoundedItemStore<R> boundedItemStore(
+      KubernetesClient client, Class<R> rClass,
+      Duration accessExpireDuration,
+      // max size is only for testing purposes
+      long cacheMaxSize) {
+    Cache<String, R> cache = Caffeine.newBuilder()
+        .expireAfterAccess(accessExpireDuration)
+        .maximumSize(cacheMaxSize)
+        .build();
+    return CaffeinBoundedItemStores.boundedItemStore(client, rClass, cache);
+  }
 }

@@ -11,12 +11,14 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespac
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestReconciler;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
 
+import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.boundedItemStore;
+
 class CaffeinBoundedCacheNamespacedIT extends BoundedCacheTestBase<BoundedCacheTestCustomResource> {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new BoundedCacheTestReconciler(), o -> {
-        o.withItemStore(CaffeinBoundedItemStores.boundedItemStore(
+        o.withItemStore(boundedItemStore(
             new KubernetesClientBuilder().build(), BoundedCacheTestCustomResource.class,
             Duration.ofMinutes(1),
             1));

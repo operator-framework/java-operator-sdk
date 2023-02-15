@@ -114,7 +114,7 @@ public class BoundedItemStore<R extends HasMetadata>
   }
 
   protected R refreshMissingStateFromServer(String key) {
-    log.debug("Fetching resource from server");
+    log.debug("Fetching resource from server for key: {}", key);
     var newRes = resourceFetcher.fetchResource(key);
     synchronized (this) {
       log.debug("Fetched resource: {}", newRes);
