@@ -21,6 +21,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.sample.customresource.WebPage;
+import io.javaoperatorsdk.operator.sample.dependentresource.*;
 
 import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
 import static io.javaoperatorsdk.operator.sample.Utils.handleError;
