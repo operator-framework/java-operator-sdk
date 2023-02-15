@@ -34,6 +34,7 @@ public class CaffeinBoundedCacheClusterScopeIT
         .build());
     res.setSpec(new BoundedCacheTestSpec());
     res.getSpec().setData(INITIAL_DATA_PREFIX + index);
+    res.getSpec().setTargetNamespace(extension.getNamespace());
     return res;
   }
 

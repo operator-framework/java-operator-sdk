@@ -11,9 +11,6 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespac
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestReconciler;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
 
-import static io.javaoperatorsdk.operator.processing.event.source.cache.BoundedCacheTestBase.INITIAL_DATA_PREFIX;
-import static io.javaoperatorsdk.operator.processing.event.source.cache.BoundedCacheTestBase.RESOURCE_NAME_PREFIX;
-
 class CaffeinBoundedCacheNamespacedIT extends BoundedCacheTestBase<BoundedCacheTestCustomResource> {
 
   @RegisterExtension
@@ -33,6 +30,7 @@ class CaffeinBoundedCacheNamespacedIT extends BoundedCacheTestBase<BoundedCacheT
         .build());
     res.setSpec(new BoundedCacheTestSpec());
     res.getSpec().setData(INITIAL_DATA_PREFIX + index);
+    res.getSpec().setTargetNamespace(extension.getNamespace());
     return res;
   }
 
