@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.sample.Utils;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
@@ -29,7 +30,7 @@ public class DeploymentDependentResource
     Map<String, String> labels = new HashMap<>();
     labels.put(SELECTOR, "true");
     var deploymentName = deploymentName(webPage);
-    Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
+    Deployment deployment = loadYaml(Deployment.class, Utils.class, "deployment.yaml");
     deployment.getMetadata().setName(deploymentName);
     deployment.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
     deployment.getMetadata().setLabels(labels);
