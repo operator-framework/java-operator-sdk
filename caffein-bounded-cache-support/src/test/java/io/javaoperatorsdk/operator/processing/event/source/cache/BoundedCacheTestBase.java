@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -16,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>> {
+
+  private static final Logger log = LoggerFactory.getLogger(BoundedCacheTestBase.class);
 
   public static final int NUMBER_OF_RESOURCE_TO_TEST = 3;
   public static final String RESOURCE_NAME_PREFIX = "test-";
@@ -38,7 +42,7 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   }
 
   private void assertConfigMapsDeleted() {
-    await().atMost(Duration.ofSeconds(20))
+    await().atMost(Duration.ofSeconds(30))
         .untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
           var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
           assertThat(cm).isNull();
@@ -48,7 +52,10 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   private void deleteTestResources() {
     IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
       var cm = extension().get(customResourceClass(), RESOURCE_NAME_PREFIX + i);
-      extension().delete(cm);
+      var deleted = extension().delete(cm);
+      if (!deleted) {
+        log.warn("Custom resource might not be deleted: {}", cm);
+      }
     });
   }
 

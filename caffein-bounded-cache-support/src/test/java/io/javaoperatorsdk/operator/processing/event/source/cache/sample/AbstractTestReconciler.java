@@ -34,7 +34,6 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
       LoggerFactory.getLogger(BoundedCacheClusterScopeTestReconciler.class);
 
   public static final String DATA_KEY = "dataKey";
-  public static final String DEFAULT_NAMESPACE = "default";
 
   protected KubernetesClient client;
 
