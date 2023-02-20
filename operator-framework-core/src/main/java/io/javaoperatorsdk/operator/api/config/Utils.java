@@ -203,9 +203,7 @@ public class Utils {
     }
 
     try {
-      final Constructor<? extends T> constructor = targetClass.getDeclaredConstructor();
-      constructor.setAccessible(true);
-      final var instance = constructor.newInstance();
+      final var instance = getConstructor(targetClass).newInstance();
 
       if (configurator != null) {
         configurator.configure(instance);
@@ -213,11 +211,23 @@ public class Utils {
 
       return instance;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-        | NoSuchMethodException e) {
+        | IllegalStateException e) {
       throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
-          + targetClass.getName() + "': you need to provide an accessible no-arg constructor."
+          + targetClass.getName() + "'."
           + (context != null ? " Context: " + context : ""), e);
     }
+  }
+
+  public static <T> Constructor<T> getConstructor(Class<T> targetClass) {
+    final Constructor<T> constructor;
+    try {
+      constructor = targetClass.getDeclaredConstructor();
+    } catch (NoSuchMethodException e) {
+      throw new IllegalStateException(
+          "Couldn't find a no-arg constructor for " + targetClass.getName(), e);
+    }
+    constructor.setAccessible(true);
+    return constructor;
   }
 
   public static <T> T instantiate(Class<? extends T> toInstantiate, Class<T> expectedType,

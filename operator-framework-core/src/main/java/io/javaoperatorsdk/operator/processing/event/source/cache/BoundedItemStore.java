@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +15,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
+import io.javaoperatorsdk.operator.api.config.Utils;
 
 public class BoundedItemStore<R extends HasMetadata>
     implements ItemStore<R> {
@@ -24,7 +26,7 @@ public class BoundedItemStore<R extends HasMetadata>
   private final BoundedCache<String, R> cache;
   private final Function<R, String> keyFunction;
   private final Map<String, R> existingMinimalResources = new ConcurrentHashMap<>();
-  private final Class<R> resourceClass;
+  private final Constructor<R> resourceConstructor;
 
   public BoundedItemStore(BoundedCache<String, R> cache, Class<R> resourceClass,
       KubernetesClient client) {
@@ -39,7 +41,7 @@ public class BoundedItemStore<R extends HasMetadata>
     this.resourceFetcher = resourceFetcher;
     this.cache = cache;
     this.keyFunction = keyFunction;
-    this.resourceClass = resourceClass;
+    this.resourceConstructor = Utils.getConstructor(resourceClass);
   }
 
   @Override
@@ -57,14 +59,15 @@ public class BoundedItemStore<R extends HasMetadata>
 
   private R createMinimalResource(R obj) {
     try {
-      R minimal = resourceClass.getConstructor().newInstance();
-      minimal.setMetadata(new ObjectMetaBuilder().build());
-      minimal.getMetadata().setName(obj.getMetadata().getName());
-      minimal.getMetadata().setNamespace(obj.getMetadata().getNamespace());
-      minimal.getMetadata().setResourceVersion(obj.getMetadata().getResourceVersion());
+      R minimal = resourceConstructor.newInstance();
+      final var metadata = obj.getMetadata();
+      minimal.setMetadata(new ObjectMetaBuilder()
+          .withName(metadata.getName())
+          .withNamespace(metadata.getNamespace())
+          .withResourceVersion(metadata.getResourceVersion())
+          .build());
       return minimal;
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-        | NoSuchMethodException e) {
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new IllegalStateException(e);
     }
   }
