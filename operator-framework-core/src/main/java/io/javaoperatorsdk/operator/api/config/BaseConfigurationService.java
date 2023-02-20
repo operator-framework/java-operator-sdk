@@ -117,14 +117,14 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     final var associatedReconcilerClass =
         ResolvedControllerConfiguration.getAssociatedReconcilerClassName(reconciler.getClass());
 
+    final var context = Utils.contextFor(name);
     final Class<? extends Retry> retryClass = annotation.retry();
     final var retry = Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
-        Utils.contextFor(name, null, null), configuratorFor(Retry.class, reconciler));
+        context, configuratorFor(Retry.class, reconciler));
 
     final Class<? extends RateLimiter> rateLimiterClass = annotation.rateLimiter();
     final var rateLimiter = Utils.instantiateAndConfigureIfNeeded(rateLimiterClass,
-        RateLimiter.class,
-        Utils.contextFor(name, null, null), configuratorFor(RateLimiter.class, reconciler));
+        RateLimiter.class, context, configuratorFor(RateLimiter.class, reconciler));
 
     final var reconciliationInterval = annotation.maxReconciliationInterval();
     long interval = -1;
@@ -133,21 +133,14 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       interval = reconciliationInterval.interval();
       timeUnit = reconciliationInterval.timeUnit();
     }
-
-    final var itemStore =
-        Utils.instantiateAndConfigureIfNeeded(annotation.itemStore(), ItemStore.class,
-            Utils.contextFor(name), null);
-
+                                                                            
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
         ResolvedControllerConfiguration.getMaxReconciliationInterval(interval, timeUnit),
-        Utils.instantiate(annotation.onAddFilter(), OnAddFilter.class,
-            Utils.contextFor(name, null, null)),
-        Utils.instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class,
-            Utils.contextFor(name, null, null)),
-        Utils.instantiate(annotation.genericFilter(), GenericFilter.class,
-            Utils.contextFor(name, null, null)),
+        Utils.instantiate(annotation.onAddFilter(), OnAddFilter.class, context),
+        Utils.instantiate(annotation.onUpdateFilter(), OnUpdateFilter.class, context),
+        Utils.instantiate(annotation.genericFilter(), GenericFilter.class, context),
         Set.of(valueOrDefault(annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::namespaces,
             DEFAULT_NAMESPACES_SET.toArray(String[]::new))),
@@ -157,7 +150,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         valueOrDefault(annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
             Constants.NO_VALUE_SET),
-        null, itemStore);
+        null,
+        Utils.instantiate(annotation.itemStore(), ItemStore.class, context));
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());
