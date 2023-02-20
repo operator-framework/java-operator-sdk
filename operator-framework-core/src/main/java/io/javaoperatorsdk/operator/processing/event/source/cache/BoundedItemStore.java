@@ -26,8 +26,8 @@ public class BoundedItemStore<R extends HasMetadata>
   private final Map<String, R> existingMinimalResources = new ConcurrentHashMap<>();
   private final Class<R> resourceClass;
 
-  public BoundedItemStore(KubernetesClient client,
-      BoundedCache<String, R> cache, Class<R> resourceClass) {
+  public BoundedItemStore(BoundedCache<String, R> cache, Class<R> resourceClass,
+      KubernetesClient client) {
     this(cache, resourceClass, namespaceKeyFunc(),
         new KubernetesResourceFetcher<>(resourceClass, client));
   }

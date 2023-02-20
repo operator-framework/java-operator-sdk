@@ -41,8 +41,7 @@ public class CaffeinBoundedItemStores {
 
   public static <R extends HasMetadata> BoundedItemStore<R> boundedItemStore(
       KubernetesClient client, Class<R> rClass, Cache<String, R> cache) {
-    return new BoundedItemStore<>(client,
-        new CaffeinBoundedCache<>(cache), rClass);
+    return new BoundedItemStore<>(new CaffeinBoundedCache<>(cache), rClass, client);
   }
 
 }

@@ -133,7 +133,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       interval = reconciliationInterval.interval();
       timeUnit = reconciliationInterval.timeUnit();
     }
-                                                                            
+
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
