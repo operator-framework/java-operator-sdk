@@ -11,13 +11,20 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore.namespaceKeyFunc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class BoundedItemStoreTest {
 
   private BoundedItemStore<TestCustomResource> boundedItemStore;
-  private BoundedCache<String, TestCustomResource> boundedCache = mock(BoundedCache.class);
-  private ResourceFetcher<String, TestCustomResource> resourceFetcher = mock(ResourceFetcher.class);
+  @SuppressWarnings("unchecked")
+  private final BoundedCache<String, TestCustomResource> boundedCache = mock(BoundedCache.class);
+  @SuppressWarnings("unchecked")
+  private final ResourceFetcher<String, TestCustomResource> resourceFetcher =
+      mock(ResourceFetcher.class);
 
   @BeforeEach
   void setup() {
@@ -28,7 +35,7 @@ class BoundedItemStoreTest {
   }
 
   @Test
-  void notFetchesResourceFromServer() {
+  void shouldNotFetchResourcesFromServerIfNotKnown() {
     var res = boundedItemStore.get(testRes1Key());
 
     assertThat(res).isNull();
@@ -49,7 +56,7 @@ class BoundedItemStoreTest {
   }
 
   @Test
-  void ifFetchingNotFoundResourceRemovesItFromStore() {
+  void removesResourcesNotFoundOnServerFromStore() {
     boundedItemStore.put(testRes1Key(),
         TestUtils.testCustomResource1());
     when(resourceFetcher.fetchResource(testRes1Key()))
@@ -75,7 +82,7 @@ class BoundedItemStoreTest {
   }
 
   @Test
-  void readingKeySeyNotReadsTheBoundedCache() {
+  void readingKeySetDoesNotReadFromBoundedCache() {
     boundedItemStore.put(testRes1Key(),
         TestUtils.testCustomResource1());
 
@@ -85,7 +92,7 @@ class BoundedItemStoreTest {
   }
 
   @Test
-  void readingValuesNotReadsTheBoundedCache() {
+  void readingValuesDoesNotReadFromBoundedCache() {
     boundedItemStore.put(testRes1Key(),
         TestUtils.testCustomResource1());
 
