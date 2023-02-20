@@ -18,7 +18,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 public class BoundedItemStore<R extends HasMetadata>
     implements ItemStore<R> {
 
-  private Logger log = LoggerFactory.getLogger(BoundedItemStore.class);
+  private static final Logger log = LoggerFactory.getLogger(BoundedItemStore.class);
 
   private final ResourceFetcher<String, R> resourceFetcher;
   private final BoundedCache<String, R> cache;
