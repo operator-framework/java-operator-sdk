@@ -19,9 +19,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  * fetched and populated to the cache, and will remain there for some time, for a subsequent
  * reconciliations.
  */
-public class CaffeinBoundedItemStores {
+public class CaffeineBoundedItemStores {
 
-  private CaffeinBoundedItemStores() {}
+  private CaffeineBoundedItemStores() {}
 
   /**
    * @param client Kubernetes Client
@@ -41,7 +41,7 @@ public class CaffeinBoundedItemStores {
 
   public static <R extends HasMetadata> BoundedItemStore<R> boundedItemStore(
       KubernetesClient client, Class<R> rClass, Cache<String, R> cache) {
-    return new BoundedItemStore<>(new CaffeinBoundedCache<>(cache), rClass, client);
+    return new BoundedItemStore<>(new CaffeineBoundedCache<>(cache), rClass, client);
   }
 
 }

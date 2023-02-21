@@ -13,7 +13,8 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespac
 
 import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.boundedItemStore;
 
-class CaffeinBoundedCacheNamespacedIT extends BoundedCacheTestBase<BoundedCacheTestCustomResource> {
+class CaffeineBoundedCacheNamespacedIT
+    extends BoundedCacheTestBase<BoundedCacheTestCustomResource> {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =

@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespac
 
 import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.boundedItemStore;
 
-public class CaffeinBoundedCacheClusterScopeIT
+public class CaffeineBoundedCacheClusterScopeIT
     extends BoundedCacheTestBase<BoundedCacheClusterScopeTestCustomResource> {
 
   @RegisterExtension

@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
-import io.javaoperatorsdk.operator.processing.event.source.cache.CaffeinBoundedItemStores;
+import io.javaoperatorsdk.operator.processing.event.source.cache.CaffeineBoundedItemStores;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusterscope.BoundedCacheClusterScopeTestReconciler;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestStatus;
@@ -112,6 +112,6 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
         .expireAfterAccess(accessExpireDuration)
         .maximumSize(cacheMaxSize)
         .build();
-    return CaffeinBoundedItemStores.boundedItemStore(client, rClass, cache);
+    return CaffeineBoundedItemStores.boundedItemStore(client, rClass, cache);
   }
 }
