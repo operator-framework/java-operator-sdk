@@ -125,9 +125,9 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   /**
-   * See <a href=
-   * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">related
-   * method</a> in fabric8 client.
+   * Replaces the item store in informer. See underling <a href=
+   * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">
+   * method</a> in fabric8 client informer implementation.
    *
    * The main goal, is to be able to use limited caches.
    *

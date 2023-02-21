@@ -32,10 +32,7 @@ public class KubernetesResourceFetcher<R extends HasMetadata>
         .withName(resourceId.getName()).get())
         .orElse(client.resources(rClass).withName(resourceId.getName()).get());
   }
-
-  /**
-   * This would not be needed
-   **/
+  
   public static Function<String, ResourceID> inverseNamespaceKeyFunction() {
     return s -> {
       int delimiterIndex = s.indexOf("/");
