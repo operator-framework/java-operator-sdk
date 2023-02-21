@@ -127,6 +127,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
       FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,
       ResourceEventHandler<T> eventHandler, String namespaceIdentifier) {
     var informer = filteredBySelectorClient.runnableInformer(0);
+    configuration.getItemStore().ifPresent(informer::itemStore);
     var source =
         new InformerWrapper<>(informer, namespaceIdentifier);
     source.addEventHandler(eventHandler);
