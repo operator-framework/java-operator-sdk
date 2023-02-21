@@ -18,6 +18,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
+import io.javaoperatorsdk.operator.sample.customresource.WebPage;
+import io.javaoperatorsdk.operator.sample.customresource.WebPageSpec;
 
 import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
 import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
