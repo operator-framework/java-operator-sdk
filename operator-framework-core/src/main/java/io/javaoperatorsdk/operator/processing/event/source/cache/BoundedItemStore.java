@@ -128,8 +128,9 @@ public class BoundedItemStore<R extends HasMetadata>
         // even if the fetched resource is null, this will be eventually received as an event.
         if (actual == null) {
           existingMinimalResources.remove(key);
+        } else {
+          return actual;
         }
-        return null;
       }
       // Just want to put the fetched resource if there is still no resource published from
       // different source. In case of informers actually multiple events might arrive, therefore non
