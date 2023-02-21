@@ -756,3 +756,29 @@ with a `mycrs` plural form will result in 2 files:
 **NOTE:**
 > Quarkus users using the `quarkus-operator-sdk` extension do not need to add any extra dependency
 > to get their CRD generated as this is handled by the extension itself.
+
+## Optimizing Caches
+
+One of the ideas around operator pattern, is that all the relevant resources are cached, thus reconciliation is usually
+very fast (especially if it does not need to update resources) since it's mostly working with in memory state.
+However or large clusters, caching huge amount of primary and secondary resources might consume lots of memory.
+There are some semi-experimental (experimental in terms that it works, but we need feedback from real production usage) 
+features to optimize memory usage of controllers. 
+
+### Bounded Caches for Informers 
+
+Limiting caches for informers - thus for Kubernetes resources, both controllers primary resource - is supported for now.
+The idea with the implementation that is provided, is that resources are in the cache for a limited time. 
+So for use cases, when a resource is only frequently reconciled when it is created, and later no or 
+occasionally reconciled, will be evicted from the cache, since the resources are not accessed. 
+If a resource accessed in the future but not in the cache, the bounded cache implementation will fetch it from
+the service if needed. 
+Note that on start of a controller all the resources are reconciled, for this reason explicitly setting a maximal
+size of a cache might not be ideal. In other words it is desired to have all the resources in the cache at startup, 
+but not later if not accessed.
+
+See usage of the related implementation using Caffein cache in integration tests for [primary resource](https://github.com/java-operator-sdk/java-operator-sdk/blob/10e11e587447667ef0da1ddb29e0ba15fcd24ada/caffein-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedCacheNamespacedIT.java#L19-L19) and for an [informer](https://github.com/java-operator-sdk/java-operator-sdk/blob/10e11e587447667ef0da1ddb29e0ba15fcd24ada/caffein-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java#L84-L93).
+
+See also [CaffeinBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/10e11e587447667ef0da1ddb29e0ba15fcd24ada/caffein-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedItemStores.java#L22-L22)
+
+
