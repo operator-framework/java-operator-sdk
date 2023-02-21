@@ -128,6 +128,7 @@ public class BoundedItemStore<R extends HasMetadata>
         // even if the fetched resource is null, this will be eventually received as an event.
         if (actual == null) {
           existingMinimalResources.remove(key);
+          return null;
         } else {
           return actual;
         }
