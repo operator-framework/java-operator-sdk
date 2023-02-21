@@ -248,6 +248,7 @@ class InformerEventSourceTest {
   @Test
   void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
     try {
+      ConfigurationServiceProvider.reset();
       final var exception = new RuntimeException("Informer stopped exceptionally!");
       final var informerStoppedHandler = mock(InformerStoppedHandler.class);
       ConfigurationServiceProvider
