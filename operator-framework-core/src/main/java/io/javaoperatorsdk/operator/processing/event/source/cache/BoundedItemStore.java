@@ -121,14 +121,19 @@ public class BoundedItemStore<R extends HasMetadata>
     var newRes = resourceFetcher.fetchResource(key);
     synchronized (this) {
       log.debug("Fetched resource: {}", newRes);
+      var actual = cache.get(key);
       if (newRes == null) {
-        existingMinimalResources.remove(key);
+        // double-checking if actual, not received since.
+        // If received we just return. Since the resource from informer should be always leading,
+        // even if the fetched resource is null, this will be eventually received as an event.
+        if (actual == null) {
+          existingMinimalResources.remove(key);
+        }
         return null;
       }
       // Just want to put the fetched resource if there is still no resource published from
       // different source. In case of informers actually multiple events might arrive, therefore non
       // fetched resource should take always precedence.
-      var actual = cache.get(key);
       if (actual == null) {
         cache.put(key, newRes);
         existingMinimalResources.put(key, createMinimalResource(newRes));
