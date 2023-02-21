@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.probes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.dependentresource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,6 +6,8 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.sample.Utils;
+import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
@@ -25,7 +27,7 @@ public class ServiceDependentResource extends
   protected Service desired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> serviceLabels = new HashMap<>();
     serviceLabels.put(SELECTOR, "true");
-    Service service = loadYaml(Service.class, getClass(), "service.yaml");
+    Service service = loadYaml(Service.class, Utils.class, "service.yaml");
     service.getMetadata().setName(serviceName(webPage));
     service.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
     service.getMetadata().setLabels(serviceLabels);

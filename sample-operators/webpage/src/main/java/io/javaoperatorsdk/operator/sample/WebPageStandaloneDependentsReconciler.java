@@ -15,6 +15,11 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.sample.customresource.WebPage;
+import io.javaoperatorsdk.operator.sample.dependentresource.ConfigMapDependentResource;
+import io.javaoperatorsdk.operator.sample.dependentresource.DeploymentDependentResource;
+import io.javaoperatorsdk.operator.sample.dependentresource.IngressDependentResource;
+import io.javaoperatorsdk.operator.sample.dependentresource.ServiceDependentResource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.*;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;

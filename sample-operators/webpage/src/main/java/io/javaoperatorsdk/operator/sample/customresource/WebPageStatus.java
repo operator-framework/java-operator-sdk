@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.customresource;
 
 import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 
