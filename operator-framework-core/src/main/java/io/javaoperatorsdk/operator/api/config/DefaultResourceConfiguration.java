@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -19,10 +20,11 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final GenericFilter<R> genericFilter;
   private final String labelSelector;
   private final Set<String> namespaces;
+  private final ItemStore<R> itemStore;
 
   protected DefaultResourceConfiguration(Class<R> resourceClass,
       Set<String> namespaces, String labelSelector, OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter) {
+      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, ItemStore<R> itemStore) {
     this.resourceClass = resourceClass;
     this.resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;
@@ -31,6 +33,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
 
     this.namespaces = ResourceConfiguration.ensureValidNamespaces(namespaces);
     this.labelSelector = ResourceConfiguration.ensureValidLabelSelector(labelSelector);
+    this.itemStore = itemStore;
   }
 
   @Override
@@ -65,5 +68,10 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
 
   public Optional<GenericFilter<R>> genericFilter() {
     return Optional.ofNullable(genericFilter);
+  }
+
+  @Override
+  public Optional<ItemStore<R>> getItemStore() {
+    return Optional.ofNullable(itemStore);
   }
 }
