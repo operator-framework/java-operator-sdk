@@ -43,8 +43,8 @@ class MySQLSchemaOperatorE2E {
     infrastructure.add(
         new NamespaceBuilder().withNewMetadata().withName(MY_SQL_NS).endMetadata().build());
     try {
-      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-deployment.yaml")).get());
-      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-service.yaml")).get());
+      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-deployment.yaml")).items());
+      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-service.yaml")).items());
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
@@ -67,7 +67,7 @@ class MySQLSchemaOperatorE2E {
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, SchemaDependentResource.LOCAL_PORT)
               .build()
           : ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
+              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
               .withInfrastructure(infrastructure)
               .build();
 
