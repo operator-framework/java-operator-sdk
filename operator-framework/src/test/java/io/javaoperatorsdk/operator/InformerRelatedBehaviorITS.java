@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class InformerRelatedBehaviorITS {
 
   public static final String TEST_RESOURCE_NAME = "test1";
+  public static final String ADDITIONAL_NAMESPACE_NAME = "additionalns";
 
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
@@ -99,6 +100,22 @@ class InformerRelatedBehaviorITS {
     setFullResourcesAccess();
     waitForWatchReconnect();
     assertReconciled();
+  }
+
+//  @Test
+  void startsUpIfNoPermissionToOneOfTwoNamespaces() {
+    var otherNamespace = adminClient.namespaces().resource(namespace(ADDITIONAL_NAMESPACE_NAME)).create();
+    try {
+
+
+
+    } finally {
+      adminClient.resource(otherNamespace).delete();
+      await().untilAsserted(()->{
+        var ns = adminClient.namespaces().resource(otherNamespace).get();
+        assertThat(ns).isNull();
+      });
+    }
   }
 
   @Test
@@ -240,7 +257,7 @@ class InformerRelatedBehaviorITS {
     return startOperator(stopOnInformerErrorDuringStartup, true);
   }
 
-  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler) {
+  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler, String ... namespaces) {
     ConfigurationServiceProvider.reset();
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
@@ -253,6 +270,11 @@ class InformerRelatedBehaviorITS {
           }
         });
     operator.register(reconciler);
+//    operator.register(reconciler,o-> {
+//      if (namespaces.length > 0) {
+//        o.settingNamespaces(namespaces);
+//      }
+//    });
     operator.start();
     return operator;
   }
@@ -285,10 +307,14 @@ class InformerRelatedBehaviorITS {
   }
 
   private Namespace namespace() {
+    return namespace(actualNamespace);
+  }
+
+  private Namespace namespace(String name) {
     Namespace n = new Namespace();
     n.setMetadata(new ObjectMetaBuilder()
-        .withName(actualNamespace)
-        .build());
+            .withName(name)
+            .build());
     return n;
   }
 }
