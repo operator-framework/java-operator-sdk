@@ -50,7 +50,7 @@ class TomcatOperatorE2E {
       : ClusterDeployedOperatorExtension.builder()
           .waitForNamespaceDeletion(false)
           .withOperatorDeployment(
-              client.load(new FileInputStream("k8s/operator.yaml")).get())
+              client.load(new FileInputStream("k8s/operator.yaml")).items())
           .build();
 
   Tomcat getTomcat() {
