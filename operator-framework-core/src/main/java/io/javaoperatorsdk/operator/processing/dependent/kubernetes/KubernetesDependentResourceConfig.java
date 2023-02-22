@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Set;
 
-import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -12,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
-public class KubernetesDependentResourceConfig<R> implements NamespaceChangeable {
+public class KubernetesDependentResourceConfig<R> {
 
   private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
   private String labelSelector = NO_VALUE_SET;
@@ -89,12 +88,7 @@ public class KubernetesDependentResourceConfig<R> implements NamespaceChangeable
     return resourceDiscriminator;
   }
 
-  @Override
-  public void changeNamespaces(Set<String> namespaces) {
-    setNamespaces(namespaces);
-    this.namespacesWereConfigured = true;
-  }
-
+  @SuppressWarnings("unused")
   protected void setNamespaces(Set<String> namespaces) {
     if (!wereNamespacesConfigured() && namespaces != null && !namespaces.isEmpty()) {
       this.namespaces = namespaces;
