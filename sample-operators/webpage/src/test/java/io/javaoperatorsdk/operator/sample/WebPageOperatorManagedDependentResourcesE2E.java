@@ -29,7 +29,7 @@ class WebPageOperatorManagedDependentResourcesE2E extends WebPageOperatorAbstrac
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get(),
+              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items(),
                   resources -> {
                     Deployment deployment = (Deployment) resources.stream()
                         .filter(r -> r instanceof Deployment).findFirst().orElseThrow();

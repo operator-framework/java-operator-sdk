@@ -165,7 +165,7 @@ class LeaderElectionE2E {
 
   void applyResources(String path) {
     try {
-      List<HasMetadata> resources = client.load(new FileInputStream(path)).get();
+      List<HasMetadata> resources = client.load(new FileInputStream(path)).items();
       resources.forEach(hm -> {
         hm.getMetadata().setNamespace(namespace);
         if (hm.getKind().toLowerCase(Locale.ROOT).equals("clusterrolebinding")) {
