@@ -22,7 +22,7 @@ class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbst
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).get())
+              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
               .build();
 
   @Override
