@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -9,8 +11,6 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.clusterscopedresource.ClusterScopedCustomResource;
 import io.javaoperatorsdk.operator.sample.clusterscopedresource.ClusterScopedCustomResourceReconciler;
 import io.javaoperatorsdk.operator.sample.clusterscopedresource.ClusterScopedCustomResourceSpec;
-
-import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -49,7 +49,8 @@ class ClusterScopedResourceIT {
     });
 
     operator.delete(resource);
-    await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
+    await().atMost(Duration.ofSeconds(30))
+        .untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
   }
 
 
