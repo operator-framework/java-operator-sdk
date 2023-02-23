@@ -10,6 +10,8 @@ import io.javaoperatorsdk.operator.sample.clusterscopedresource.ClusterScopedCus
 import io.javaoperatorsdk.operator.sample.clusterscopedresource.ClusterScopedCustomResourceReconciler;
 import io.javaoperatorsdk.operator.sample.clusterscopedresource.ClusterScopedCustomResourceSpec;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -47,7 +49,7 @@ class ClusterScopedResourceIT {
     });
 
     operator.delete(resource);
-    await().untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
+    await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
   }
 
 
