@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rbac-behavior
+rules:
+  - apiGroups: [ "sample.javaoperatorsdk" ]
+    resources: [ "informerrelatedbehaviortestcustomresources" ]
+    verbs: [ "get", "watch", "list","post", "delete" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "get", "watch", "list","post", "delete", "create" ]

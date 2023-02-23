@@ -8,13 +8,17 @@ import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
 
@@ -40,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class InformerRelatedBehaviorITS {
 
   public static final String TEST_RESOURCE_NAME = "test1";
+  public static final String ADDITIONAL_NAMESPACE_NAME = "additionalns";
 
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
@@ -54,6 +59,8 @@ class InformerRelatedBehaviorITS {
       actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
       adminClient.resource(namespace()).createOrReplace();
     });
+    // cleans up binding before test, not all test cases use cluster role
+    removeClusterRoleBinding();
   }
 
   @AfterEach
@@ -99,6 +106,51 @@ class InformerRelatedBehaviorITS {
     setFullResourcesAccess();
     waitForWatchReconnect();
     assertReconciled();
+  }
+
+  @Test
+  void startsUpIfNoPermissionToOneOfTwoNamespaces() {
+    var otherNamespace =
+        adminClient.resource(namespace(ADDITIONAL_NAMESPACE_NAME)).createOrReplace();
+    try {
+      addRoleBindingsToTestNamespaces();
+      var operator = startOperator(false, false, actualNamespace, ADDITIONAL_NAMESPACE_NAME);
+      assertInformerNotWatchingForAdditionalNamespace(operator);
+
+      adminClient.resource(testCustomResource()).createOrReplace();
+      waitForWatchReconnect();
+      assertReconciled();
+
+    } finally {
+      adminClient.resource(otherNamespace).delete();
+      await().untilAsserted(() -> {
+        var ns = adminClient.namespaces().resource(otherNamespace).fromServer().get();
+        assertThat(ns).isNull();
+      });
+    }
+  }
+
+  private void assertInformerNotWatchingForAdditionalNamespace(Operator operator) {
+    assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
+    var unhealthyEventSources =
+        operator.getRuntimeInfo().unhealthyInformerWrappingEventSourceHealthIndicator()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+
+    InformerHealthIndicator controllerHealthIndicator =
+        (InformerHealthIndicator) unhealthyEventSources
+            .get(ControllerResourceEventSource.class.getSimpleName())
+            .informerHealthIndicators().get(ADDITIONAL_NAMESPACE_NAME);
+    assertThat(controllerHealthIndicator).isNotNull();
+    assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(ADDITIONAL_NAMESPACE_NAME);
+    assertThat(controllerHealthIndicator.isWatching()).isFalse();
+
+    InformerHealthIndicator configMapHealthIndicator =
+        (InformerHealthIndicator) unhealthyEventSources
+            .get(ConfigMapDependentResource.class.getSimpleName())
+            .informerHealthIndicators().get(ADDITIONAL_NAMESPACE_NAME);
+    assertThat(configMapHealthIndicator).isNotNull();
+    assertThat(configMapHealthIndicator.getTargetNamespace()).isEqualTo(ADDITIONAL_NAMESPACE_NAME);
+    assertThat(configMapHealthIndicator.isWatching()).isFalse();
   }
 
   @Test
@@ -240,7 +292,8 @@ class InformerRelatedBehaviorITS {
     return startOperator(stopOnInformerErrorDuringStartup, true);
   }
 
-  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler) {
+  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler,
+      String... namespaces) {
     ConfigurationServiceProvider.reset();
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
@@ -252,7 +305,11 @@ class InformerRelatedBehaviorITS {
             co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
           }
         });
-    operator.register(reconciler);
+    operator.register(reconciler, o -> {
+      if (namespaces.length > 0) {
+        o.settingNamespaces(namespaces);
+      }
+    });
     operator.start();
     return operator;
   }
@@ -272,6 +329,16 @@ class InformerRelatedBehaviorITS {
     applyClusterRoleBinding();
   }
 
+  private void addRoleBindingsToTestNamespaces() {
+    var role = ReconcilerUtils
+        .loadYaml(Role.class, this.getClass(), "rback-test-only-main-ns-access.yaml");
+    adminClient.resource(role).inNamespace(actualNamespace).createOrReplace();
+    var roleBinding = ReconcilerUtils
+        .loadYaml(RoleBinding.class, this.getClass(),
+            "rback-test-only-main-ns-access-binding.yaml");
+    adminClient.resource(roleBinding).inNamespace(actualNamespace).createOrReplace();
+  }
+
   private void applyClusterRoleBinding() {
     var clusterRoleBinding = ReconcilerUtils
         .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
@@ -285,10 +352,20 @@ class InformerRelatedBehaviorITS {
   }
 
   private Namespace namespace() {
+    return namespace(actualNamespace);
+  }
+
+  private Namespace namespace(String name) {
     Namespace n = new Namespace();
     n.setMetadata(new ObjectMetaBuilder()
-        .withName(actualNamespace)
+        .withName(name)
         .build());
     return n;
+  }
+
+  private void removeClusterRoleBinding() {
+    var clusterRoleBinding = ReconcilerUtils
+        .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+    adminClient.resource(clusterRoleBinding).delete();
   }
 }

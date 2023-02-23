@@ -1,13 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
-# This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
-  name: informer-rbac-startup-global
+  name: read-namespace-access
 subjects:
   - kind: User
     name: rbac-test-user
     apiGroup: rbac.authorization.k8s.io
 roleRef:
-  kind: ClusterRole
+  kind: Role
   name: rbac-behavior
   apiGroup: rbac.authorization.k8s.io
