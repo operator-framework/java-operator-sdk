@@ -36,7 +36,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
   private Map<DependentResourceSpec, Object> configurations;
-  private Class<R> resourceClass;
   private String name;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -52,7 +51,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.genericFilter = original.genericFilter().orElse(null);
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
-    this.resourceClass = original.getResourceClass();
     this.name = original.getName();
   }
 
@@ -161,11 +159,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withResourceClass(Class<R> resourceClass) {
-    this.resourceClass = resourceClass;
-    return this;
-  }
-
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -183,8 +176,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfiguration<R> build() {
-    final var overridden = new ResolvedControllerConfiguration<>(
-        resourceClass, name,
+    final var overridden = new ResolvedControllerConfiguration<>(original.getResourceClass(),
+        name,
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
