@@ -21,8 +21,8 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
 
       doRun(dependentResourceNode, dependentResource);
 
-    } catch (RuntimeException e) {
-      workflowExecutor.handleExceptionInExecutor(dependentResourceNode, e);
+    } catch (Throwable e) {
+      workflowExecutor.handleExceptionInExecutor(dependentResourceNode, new RuntimeException(e));
     } finally {
       workflowExecutor.handleNodeExecutionFinish(dependentResourceNode);
     }
