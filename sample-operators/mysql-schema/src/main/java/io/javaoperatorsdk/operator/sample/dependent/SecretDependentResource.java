@@ -9,15 +9,14 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
-import io.javaoperatorsdk.operator.processing.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.MySQLSchema;
 
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
-    implements Creator<Secret, MySQLSchema>, SecondaryToPrimaryMapper<Secret>,
-    Matcher<Secret, MySQLSchema> {
+    implements Creator<Secret, MySQLSchema>, SecondaryToPrimaryMapper<Secret> {
   public static final String NAME = "secret";
   public static final String SECRET_SUFFIX = "-secret";
   public static final String SECRET_FORMAT = "%s" + SECRET_SUFFIX;
