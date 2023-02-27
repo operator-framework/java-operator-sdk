@@ -105,9 +105,10 @@ public class BaseConfigurationService extends AbstractConfigurationService {
               +
               " annotation for reconciler:  " + reconciler);
     }
+    Class<Reconciler<P>> reconcilerClass = (Class<Reconciler<P>>) reconciler.getClass();
+    final var resourceClass = ConfigurationServiceProvider.instance().getResourceClassResolver()
+        .getResourceClass(reconcilerClass);
 
-    final var resourceClass = (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
-        reconciler.getClass(), Reconciler.class);
     final var name = ReconcilerUtils.getNameFor(reconciler);
     final var generationAware = valueOrDefault(
         annotation,
