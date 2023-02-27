@@ -113,5 +113,11 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
 
   @SuppressWarnings("unchecked")
   @Override
-  Class<P> getResourceClass();
+  default Class<P> getResourceClass() {
+    // note that this implementation at the end not used within the boundaries of the core
+    // framework, should be removed in the future, (and marked as an API changed, or behavior
+    // change)
+    return (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
+        ControllerConfiguration.class);
+  }
 }
