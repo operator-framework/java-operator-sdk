@@ -206,4 +206,8 @@ public interface ConfigurationService {
   default ManagedWorkflowFactory getWorkflowFactory() {
     return ManagedWorkflowFactory.DEFAULT;
   }
+
+  default ResourceClassResolver getResourceClassResolver() {
+    return new DefaultResourceClassResolver();
+  }
 }

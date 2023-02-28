@@ -36,20 +36,22 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
   private Map<DependentResourceSpec, Object> configurations;
+  private String name;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
-    finalizer = original.getFinalizerName();
-    generationAware = original.isGenerationAware();
-    namespaces = new HashSet<>(original.getNamespaces());
-    retry = original.getRetry();
-    labelSelector = original.getLabelSelector();
-    customResourcePredicate = original.getEventFilter();
-    reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
+    this.finalizer = original.getFinalizerName();
+    this.generationAware = original.isGenerationAware();
+    this.namespaces = new HashSet<>(original.getNamespaces());
+    this.retry = original.getRetry();
+    this.labelSelector = original.getLabelSelector();
+    this.customResourcePredicate = original.getEventFilter();
+    this.reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
     this.onAddFilter = original.onAddFilter().orElse(null);
     this.onUpdateFilter = original.onUpdateFilter().orElse(null);
     this.genericFilter = original.genericFilter().orElse(null);
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
+    this.name = original.getName();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -152,6 +154,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withName(String name) {
+    this.name = name;
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -165,13 +172,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
       configurations = new HashMap<>(specs.size());
     }
     configurations.put(spec, dependentResourceConfig);
-
     return this;
   }
 
   public ControllerConfiguration<R> build() {
-    final var overridden = new ResolvedControllerConfiguration<>(
-        original.getResourceClass(), original.getName(),
+    final var overridden = new ResolvedControllerConfiguration<>(original.getResourceClass(),
+        name,
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
