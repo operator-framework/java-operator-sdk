@@ -48,8 +48,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
-    matcher = this instanceof Matcher ? (Matcher<R, P>) this
-        : GenericKubernetesResourceMatcher.matcherFor(resourceType, this);
+    matcher = GenericKubernetesResourceMatcher.matcherFor(resourceType, this);
 
     processor = this instanceof ResourceUpdatePreProcessor
         ? (ResourceUpdatePreProcessor<R>) this
