@@ -21,9 +21,10 @@ public interface Cleaner<P extends HasMetadata> {
    * @param resource the resource that is marked for deletion
    * @param context the context with which the operation is executed
    * @return {@link DeleteControl#defaultDelete()} - so the finalizer is automatically removed after
-   *         the call. {@link DeleteControl#noFinalizerRemoval()} if you don't want to remove the
-   *         finalizer to indicate that the resource should not be deleted after all, in which case
-   *         the controller should restore the resource's state appropriately.
+   *         the call. User {@link DeleteControl#noFinalizerRemoval()} if you don't want to remove
+   *         the finalizer, thus to wait asynchronously for a resource to be deleted. In that case
+   *         if EventSources are in place this method will be triggered again if the state of the
+   *         resource changed, and it is safe remove finalizer is already delete.
    */
   DeleteControl cleanup(P resource, Context<P> context);
 
