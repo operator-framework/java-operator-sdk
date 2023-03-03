@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-
 public class DeleteControl extends BaseControl<DeleteControl> {
 
   private final boolean removeFinalizer;
@@ -18,11 +16,14 @@ public class DeleteControl extends BaseControl<DeleteControl> {
   }
 
   /**
-   * In some corner cases it might take some time while some secondary resources are cleaned up, in
-   * that case delete can be instructed and return for {@link Cleaner#cleanup(HasMetadata, Context)}
-   * method, that will be triggered again by an EventSource when the secondary resource is deleted.
-   * After all resources are cleaned up such async way it is safe to remove the finalizer, thus
-   * return defaultDelete from cleanup method.
+   * In some corner cases it might take some time for secondary resources to be cleaned up. In such
+   * situation, the reconciler shouldn't remove the finalizer until it is safe for the primary
+   * resource to be deleted (because, e.g., secondary resources being removed might need its
+   * information to proceed correctly). Using this method will instruct the reconciler to leave the
+   * finalizer in place, presumably to wait for a new reconciliation triggered by event sources on
+   * the secondary resources (e.g. when they are effectively deleted/cleaned-up) to check whether it
+   * is now safe to delete the primary resource and therefore, remove its finalizer by returning
+   * {@link #defaultDelete()} then.
    *
    * @return delete control that will not remove finalizer.
    */

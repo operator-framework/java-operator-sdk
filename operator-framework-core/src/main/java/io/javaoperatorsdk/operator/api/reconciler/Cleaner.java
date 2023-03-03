@@ -6,7 +6,7 @@ public interface Cleaner<P extends HasMetadata> {
 
   /**
    * This method turns on automatic finalizer usage.
-   *
+   * <p>
    * The implementation should delete the associated component(s). This method is called when an
    * object is marked for deletion. After it's executed the custom resource finalizer is
    * automatically removed by the framework; unless the return value is
@@ -21,10 +21,11 @@ public interface Cleaner<P extends HasMetadata> {
    * @param resource the resource that is marked for deletion
    * @param context the context with which the operation is executed
    * @return {@link DeleteControl#defaultDelete()} - so the finalizer is automatically removed after
-   *         the call. User {@link DeleteControl#noFinalizerRemoval()} if you don't want to remove
-   *         the finalizer, thus to wait asynchronously for a resource to be deleted. In that case
-   *         if EventSources are in place this method will be triggered again if the state of the
-   *         resource changed, and it is safe remove finalizer is already delete.
+   *         the call. Use {@link DeleteControl#noFinalizerRemoval()} when you don't want to remove
+   *         the finalizer immediately but rather wait asynchronously until all secondary resources
+   *         are deleted, thus allowing you to keep the primary resource around until you are sure
+   *         that it can be safely deleted.
+   * @see DeleteControl#noFinalizerRemoval()
    */
   DeleteControl cleanup(P resource, Context<P> context);
 
