@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
@@ -29,4 +30,6 @@ public interface Context<P extends HasMetadata> {
   ManagedDependentResourceContext managedDependentResourceContext();
 
   EventSourceRetriever<P> eventSourceRetriever();
+
+  KubernetesClient getClient();
 }
