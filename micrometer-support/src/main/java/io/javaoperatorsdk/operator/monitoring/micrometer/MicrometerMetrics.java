@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -17,6 +16,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
@@ -31,9 +31,17 @@ public class MicrometerMetrics implements Metrics {
   private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
+  private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
+  private final ScheduledExecutorService metersCleaner = Executors.newScheduledThreadPool(10);
+  private final int cleanUpDelayInSeconds;
 
   public MicrometerMetrics(MeterRegistry registry) {
+    this(registry, 300);
+  }
+
+  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds) {
     this.registry = registry;
+    this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
   }
 
   @Override
@@ -116,6 +124,14 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
     incrementCounter(resourceID, "events.delete", metadata);
+
+    // schedule deletion of meters associated with ResourceID
+    metersCleaner.schedule(() -> {
+      final var toClean = metersPerResource.get(resourceID);
+      if (toClean != null) {
+        toClean.forEach(registry::remove);
+      }
+    }, cleanUpDelayInSeconds, TimeUnit.SECONDS);
   }
 
   @Override
@@ -125,11 +141,11 @@ public class MicrometerMetrics implements Metrics {
     incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "started",
         metadata,
         RECONCILIATIONS + "retries.number",
-        "" + retryInfo.map(RetryInfo::getAttemptCount).orElse(0),
+        String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0)),
         RECONCILIATIONS + "retries.last",
-        "" + retryInfo.map(RetryInfo::isLastAttempt).orElse(true));
+        String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true)));
 
-    AtomicInteger controllerQueueSize =
+    var controllerQueueSize =
         gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
     controllerQueueSize.incrementAndGet();
   }
@@ -141,18 +157,18 @@ public class MicrometerMetrics implements Metrics {
 
   @Override
   public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
-    AtomicInteger reconcilerExecutions =
+    var reconcilerExecutions =
         gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
     reconcilerExecutions.incrementAndGet();
   }
 
   @Override
   public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
-    AtomicInteger reconcilerExecutions =
+    var reconcilerExecutions =
         gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
     reconcilerExecutions.decrementAndGet();
 
-    AtomicInteger controllerQueueSize =
+    var controllerQueueSize =
         gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
     controllerQueueSize.decrementAndGet();
   }
@@ -202,6 +218,8 @@ public class MicrometerMetrics implements Metrics {
           "version", gvk.version,
           "kind", gvk.kind));
     }
-    registry.counter(PREFIX + counterName, tags.toArray(new String[0])).increment();
+    final var counter = registry.counter(PREFIX + counterName, tags.toArray(new String[0]));
+    metersPerResource.computeIfAbsent(id, resourceID -> new HashSet<>()).add(counter.getId());
+    counter.increment();
   }
 }
