@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +74,8 @@ public interface ConfigurationService {
     return false;
   }
 
-  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
+  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 200;
+  int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
 
   /**
    * Retrieves the maximum number of threads the operator can spin out to dispatch reconciliation
@@ -87,10 +87,24 @@ public interface ConfigurationService {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
 
-  int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  default int minConcurrentReconciliationThreads() {
+    return MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  }
 
+  int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  int MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
+
+  /**
+   * Retrieves the maximum number of threads the operator can spin out to be used in the workflows.
+   *
+   * @return the maximum number of concurrent workflow threads
+   */
   default int concurrentWorkflowExecutorThreads() {
     return DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
+  }
+
+  default int minConcurrentWorkflowExecutorThreads() {
+    return MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
   }
 
   /**
@@ -136,11 +150,15 @@ public interface ConfigurationService {
   }
 
   default ExecutorService getExecutorService() {
-    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
+    return new ThreadPoolExecutor(minConcurrentReconciliationThreads(),
+        concurrentReconciliationThreads(),
+        1, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
   }
 
   default ExecutorService getWorkflowExecutorService() {
-    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
+    return new ThreadPoolExecutor(minConcurrentWorkflowExecutorThreads(),
+        concurrentWorkflowExecutorThreads(),
+        1, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
   }
 
   default boolean closeClientOnStop() {
