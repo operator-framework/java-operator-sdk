@@ -19,7 +19,9 @@ public class ConfigurationServiceOverrider {
   private Config clientConfig;
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
+  private Integer minConcurrentReconciliationThreads;
   private Integer concurrentWorkflowExecutorThreads;
+  private Integer minConcurrentWorkflowExecutorThreads;
   private Cloner cloner;
   private Integer timeoutSeconds;
   private Boolean closeClientOnStop;
@@ -53,6 +55,16 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withConcurrentWorkflowExecutorThreads(int threadNumber) {
     this.concurrentWorkflowExecutorThreads = threadNumber;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withMinConcurrentReconciliationThreads(int threadNumber) {
+    this.minConcurrentReconciliationThreads = threadNumber;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withMinConcurrentWorkflowExecutorThreads(int threadNumber) {
+    this.minConcurrentWorkflowExecutorThreads = threadNumber;
     return this;
   }
 
@@ -147,6 +159,18 @@ public class ConfigurationServiceOverrider {
       public int concurrentWorkflowExecutorThreads() {
         return concurrentWorkflowExecutorThreads != null ? concurrentWorkflowExecutorThreads
             : original.concurrentWorkflowExecutorThreads();
+      }
+
+      @Override
+      public int minConcurrentReconciliationThreads() {
+        return minConcurrentReconciliationThreads != null ? minConcurrentReconciliationThreads
+            : original.minConcurrentReconciliationThreads();
+      }
+
+      @Override
+      public int minConcurrentWorkflowExecutorThreads() {
+        return minConcurrentWorkflowExecutorThreads != null ? minConcurrentWorkflowExecutorThreads
+            : original.minConcurrentWorkflowExecutorThreads();
       }
 
       @Override
