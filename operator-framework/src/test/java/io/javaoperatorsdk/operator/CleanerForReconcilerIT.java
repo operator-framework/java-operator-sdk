@@ -24,7 +24,7 @@ class CleanerForReconcilerIT {
   @Test
   void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
     CleanerForReconcilerTestReconciler reconciler =
-             operator.getReconcilerOfType(CleanerForReconcilerTestReconciler.class);
+        operator.getReconcilerOfType(CleanerForReconcilerTestReconciler.class);
     reconciler.setReScheduleCleanup(false);
 
     var testResource = createTestResource();
@@ -45,10 +45,23 @@ class CleanerForReconcilerIT {
   @Test
   void reSchedulesCleanupIfInstructed() {
     CleanerForReconcilerTestReconciler reconciler =
-            operator.getReconcilerOfType(CleanerForReconcilerTestReconciler.class);
-    reconciler.setReScheduleCleanup(false);
+        operator.getReconcilerOfType(CleanerForReconcilerTestReconciler.class);
+    reconciler.setReScheduleCleanup(true);
 
-    
+    var testResource = createTestResource();
+    operator.create(testResource);
+
+    await().until(() -> !operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME)
+        .getMetadata().getFinalizers().isEmpty());
+
+    operator.delete(testResource);
+
+    await().untilAsserted(
+        () -> assertThat(reconciler.getNumberOfCleanupExecutions()).isGreaterThan(5));
+
+    reconciler.setReScheduleCleanup(false);
+    await().until(
+        () -> operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME) == null);
   }
 
   private CleanerForReconcilerCustomResource createTestResource() {
