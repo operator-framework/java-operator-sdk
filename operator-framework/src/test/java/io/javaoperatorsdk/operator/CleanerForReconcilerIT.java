@@ -23,6 +23,10 @@ class CleanerForReconcilerIT {
 
   @Test
   void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
+    CleanerForReconcilerTestReconciler reconciler =
+             operator.getReconcilerOfType(CleanerForReconcilerTestReconciler.class);
+    reconciler.setReScheduleCleanup(false);
+
     var testResource = createTestResource();
     operator.create(testResource);
 
@@ -34,10 +38,17 @@ class CleanerForReconcilerIT {
     await().until(
         () -> operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME) == null);
 
-    CleanerForReconcilerTestReconciler reconciler =
-        (CleanerForReconcilerTestReconciler) operator.getFirstReconciler();
     assertThat(reconciler.getNumberOfExecutions()).isEqualTo(1);
     assertThat(reconciler.getNumberOfCleanupExecutions()).isEqualTo(1);
+  }
+
+  @Test
+  void reSchedulesCleanupIfInstructed() {
+    CleanerForReconcilerTestReconciler reconciler =
+            operator.getReconcilerOfType(CleanerForReconcilerTestReconciler.class);
+    reconciler.setReScheduleCleanup(false);
+
+    
   }
 
   private CleanerForReconcilerCustomResource createTestResource() {
