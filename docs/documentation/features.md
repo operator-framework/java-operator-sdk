@@ -368,14 +368,16 @@ these features:
 
 1. A successful execution resets a retry and the rescheduled executions which were present before
    the reconciliation. However, a new rescheduling can be instructed from the reconciliation
-   outcome (`UpdateControl` or `DeleteControl`). 
-   
-   For example if there was an execution scheduled in 5 minutes, but an event triggered the    
-   reconciliation (or cleanup) the scheduled execution is automatically cancelled, but it    
-   can be of course scheduled again at the end of the reconciliation. 
+   outcome (`UpdateControl` or `DeleteControl`).
 
-   Similarly, if there was a retry scheduled, but an event received (that triggers the execution, see next point)   
-   which results in a successful execution the retry is cancelled.   
+   For example, if a reconciliation had previously been re-scheduled after some amount of time, but an event triggered
+   the reconciliation (or cleanup) in the mean time, the scheduled execution would be automatically cancelled, i.e.
+   re-scheduling a reconciliation does not guarantee that one will occur exactly at that time, it simply guarantees that
+   one reconciliation will occur at that time at the latest, triggering one if no event from the cluster triggered one.
+   Of course, it's always possible to re-schedule a new reconciliation at the end of that "automatic" reconciliation.
+
+   Similarly, if a retry was scheduled, any event from the cluster triggering a successful execution in the mean time
+   would cancel the scheduled retry (because there's now no point in retrying something that already succeeded)
 
 2. In case an exception happened, a retry is initiated. However, if an event is received
    meanwhile, it will be reconciled instantly, and this execution won't count as a retry attempt.
@@ -383,6 +385,12 @@ these features:
    received, the reconciliation will still happen, but won't reset the retry, and will still be
    marked as the last attempt in the retry info. The point (1) still holds, but in case of an
    error, no retry will happen.
+
+The thing to keep in mind when it comes to retrying or rescheduling is that JOSDK tries to avoid unnecessary work. When
+you reschedule an operation, you instruct JOSDK to perform that operation at the latest by the end of the rescheduling
+delay. If something occurred on the cluster that triggers that particular operation (reconciliation or cleanup), then
+JOSDK considers that there's no point in attempting that operation again at the end of the specified delay since there
+is now no point to do so anymore. The same idea also applies to retries.
 
 ## Rate Limiting
 
@@ -619,15 +627,15 @@ Logging is enhanced with additional contextual information using
 [MDC](http://www.slf4j.org/manual.html#mdc). The following attributes are available in most
 parts of reconciliation logic and during the execution of the controller:
 
-| MDC Key      | Value added from primary resource |
-| :---        |:----------------------------------| 
-| `resource.apiVersion`   | `.apiVersion`                     |
-| `resource.kind`   | `.kind`                           |
-| `resource.name`      | `.metadata.name`                  | 
-| `resource.namespace`   | `.metadata.namespace`             |
-| `resource.resourceVersion`   | `.metadata.resourceVersion`       |
-| `resource.generation`   | `.metadata.generation`            |
-| `resource.uid`   | `.metadata.uid`                   |
+| MDC Key                    | Value added from primary resource |
+|:---------------------------|:----------------------------------| 
+| `resource.apiVersion`      | `.apiVersion`                     |
+| `resource.kind`            | `.kind`                           |
+| `resource.name`            | `.metadata.name`                  | 
+| `resource.namespace`       | `.metadata.namespace`             |
+| `resource.resourceVersion` | `.metadata.resourceVersion`       |
+| `resource.generation`      | `.metadata.generation`            |
+| `resource.uid`             | `.metadata.uid`                   |
 
 For more information about MDC see this [link](https://www.baeldung.com/mdc-in-log4j-2-logback).
 
@@ -696,27 +704,28 @@ for this feature.
 
 ## Leader Election
 
-Operators are generally deployed with a single running or active instance. However, it is 
-possible to deploy multiple instances in such a way that only one, called the "leader", processes the 
-events. This is achieved via a mechanism called "leader election". While all the instances are 
-running, and even start their event sources to populate the caches, only the leader will process 
-the events. This means that should the leader change for any reason, for example because it 
-crashed, the other instances are already warmed up and ready to pick up where the previous 
+Operators are generally deployed with a single running or active instance. However, it is
+possible to deploy multiple instances in such a way that only one, called the "leader", processes the
+events. This is achieved via a mechanism called "leader election". While all the instances are
+running, and even start their event sources to populate the caches, only the leader will process
+the events. This means that should the leader change for any reason, for example because it
+crashed, the other instances are already warmed up and ready to pick up where the previous
 leader left off should one of them become elected leader.
 
-See sample configuration in the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/8865302ac0346ee31f2d7b348997ec2913d5922b/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L21-L23)
+See sample configuration in
+the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/8865302ac0346ee31f2d7b348997ec2913d5922b/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L21-L23)
 .
 
 ## Runtime Info
 
-[RuntimeInfo](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RuntimeInfo.java#L16-L16) 
-is used mainly to check the actual health of event sources. Based on this information it is easy to implement custom 
+[RuntimeInfo](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/RuntimeInfo.java#L16-L16)
+is used mainly to check the actual health of event sources. Based on this information it is easy to implement custom
 liveness probes.
 
 [stopOnInformerErrorDuringStartup](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L168-L168)
 setting, where this flag usually needs to be set to false, in order to control the exact liveness properties.
 
-See also an example implementation in the 
+See also an example implementation in the
 [WebPage sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/3e2e7c4c834ef1c409d636156b988125744ca911/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageOperator.java#L38-L43)
 
 ## Automatic Generation of CRDs
