@@ -368,7 +368,15 @@ these features:
 
 1. A successful execution resets a retry and the rescheduled executions which were present before
    the reconciliation. However, a new rescheduling can be instructed from the reconciliation
-   outcome (`UpdateControl` or `DeleteControl`).
+   outcome (`UpdateControl` or `DeleteControl`). 
+   
+   For example if there was an execution scheduled in 5 minutes, but an event triggered the    
+   reconciliation (or cleanup) the scheduled execution is automatically cancelled, but it    
+   can be of course scheduled again at the end of the reconciliation. 
+
+   Similarly, if there was a retry scheduled, but an event received (that triggers the execution, see next point)   
+   which results in a successful execution the retry is cancelled.   
+
 2. In case an exception happened, a retry is initiated. However, if an event is received
    meanwhile, it will be reconciled instantly, and this execution won't count as a retry attempt.
 3. If the retry limit is reached (so no more automatic retry would happen), but a new event
