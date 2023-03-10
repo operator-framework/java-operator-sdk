@@ -111,7 +111,7 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-client</artifactId>
+                <artifactId>kubernetes-client-api</artifactId>
                 <version>${fabric8-client.version}</version>
             </dependency>
             <dependency>
@@ -207,6 +207,28 @@
                 <version>${jenvtest.version}</version>
                 <scope>test</scope>
             </dependency>
+            <!-- Kubernetes client HTTP client implementations -->
+            <dependency>
+              <groupId>io.fabric8</groupId>
+              <artifactId>kubernetes-httpclient-okhttp</artifactId>
+              <version>${fabric8-client.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.fabric8</groupId>
+              <artifactId>kubernetes-httpclient-vertx</artifactId>
+              <version>${fabric8-client.version}</version>
+            </dependency>
+<!--            We currently only recommend using the legacy okhttp client and the vert.x-based implementation -->
+<!--            <dependency>-->
+<!--              <groupId>io.fabric8</groupId>-->
+<!--              <artifactId>kubernetes-httpclient-jdk</artifactId>-->
+<!--              <version>${fabric8-client.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--              <groupId>io.fabric8</groupId>-->
+<!--              <artifactId>kubernetes-httpclient-jetty</artifactId>-->
+<!--              <version>${fabric8-client.version}</version>-->
+<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 
