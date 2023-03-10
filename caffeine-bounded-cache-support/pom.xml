@@ -54,6 +54,11 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kubernetes-httpclient-okhttp</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
