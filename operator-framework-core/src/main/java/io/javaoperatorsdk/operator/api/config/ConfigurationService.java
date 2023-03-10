@@ -78,8 +78,8 @@ public interface ConfigurationService {
   int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
 
   /**
-   * Retrieves the maximum number of threads the operator can spin out to dispatch reconciliation
-   * requests to reconcilers
+   * The maximum number of threads the operator can spin out to dispatch reconciliation requests to
+   * reconcilers
    *
    * @return the maximum number of concurrent reconciliation threads
    */
@@ -87,6 +87,11 @@ public interface ConfigurationService {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
 
+  /**
+   * The minimum number of threads the operator starts in the thread pool for reconciliations.
+   *
+   * @return the minimum number of concurrent reconciliation threads
+   */
   default int minConcurrentReconciliationThreads() {
     return MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
@@ -103,6 +108,11 @@ public interface ConfigurationService {
     return DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
   }
 
+  /**
+   * The minimum number of threads the operator starts in the thread pool for workflows.
+   *
+   * @return the minimum number of concurrent workflow threads
+   */
   default int minConcurrentWorkflowExecutorThreads() {
     return MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
   }
