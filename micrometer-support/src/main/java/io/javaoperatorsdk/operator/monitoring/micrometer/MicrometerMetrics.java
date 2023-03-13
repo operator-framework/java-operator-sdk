@@ -32,16 +32,17 @@ public class MicrometerMetrics implements Metrics {
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
   private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService metersCleaner = Executors.newScheduledThreadPool(10);
+  private final ScheduledExecutorService metersCleaner;
   private final int cleanUpDelayInSeconds;
 
   public MicrometerMetrics(MeterRegistry registry) {
-    this(registry, 300);
+    this(registry, 300, Runtime.getRuntime().availableProcessors());
   }
 
-  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds) {
+  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds, int cleaningThreadsNumber) {
     this.registry = registry;
     this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
+    this.metersCleaner = Executors.newScheduledThreadPool(cleaningThreadsNumber);
   }
 
   @Override
