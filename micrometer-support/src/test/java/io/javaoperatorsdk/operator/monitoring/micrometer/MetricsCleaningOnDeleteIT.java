@@ -68,6 +68,7 @@ public class MetricsCleaningOnDeleteIT {
     assertThat(meters).isNull();
   }
 
+  @ControllerConfiguration
   private static class MetricsCleaningTestReconciler
       implements Reconciler<ConfigMap>, Cleaner<ConfigMap> {
     @Override

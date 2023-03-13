@@ -39,7 +39,8 @@ public class MicrometerMetrics implements Metrics {
     this(registry, 300, Runtime.getRuntime().availableProcessors());
   }
 
-  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds, int cleaningThreadsNumber) {
+  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds,
+      int cleaningThreadsNumber) {
     this.registry = registry;
     this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
     this.metersCleaner = Executors.newScheduledThreadPool(cleaningThreadsNumber);
