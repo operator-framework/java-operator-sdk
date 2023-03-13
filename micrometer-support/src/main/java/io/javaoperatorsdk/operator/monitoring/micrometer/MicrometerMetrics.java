@@ -222,4 +222,8 @@ public class MicrometerMetrics implements Metrics {
     metersPerResource.computeIfAbsent(id, resourceID -> new HashSet<>()).add(counter.getId());
     counter.increment();
   }
+
+  protected Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
+    return metersPerResource.get(resourceID);
+  }
 }
