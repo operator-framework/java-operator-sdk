@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -13,12 +15,11 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class MetricsCleaningOnDeleteIT {
   @RegisterExtension
@@ -26,15 +27,14 @@ public class MetricsCleaningOnDeleteIT {
       LocallyRunOperatorExtension.builder().withReconciler(new MetricsCleaningTestReconciler())
           .build();
 
-  private static final MeterRegistry mockRegistry = mock(MeterRegistry.class);
-  private static final int testDelay = 15;
-  private static final TestMetrics metrics = new TestMetrics(mockRegistry, testDelay);
+  private static final TestSimpleMeterRegistry registry = new TestSimpleMeterRegistry();
+  private static final int testDelay = 1;
+  private static final MicrometerMetrics metrics = new MicrometerMetrics(registry, testDelay, 2);
   private static final String testResourceName = "cleaning-metrics-cr";
 
   @BeforeAll
   static void setup() {
-    ConfigurationServiceProvider.overrideCurrent(
-        overrider -> overrider.withMetrics(new TestMetrics(mockRegistry, testDelay)));
+    ConfigurationServiceProvider.overrideCurrent(overrider -> overrider.withMetrics(metrics));
   }
 
   @AfterAll
@@ -43,7 +43,7 @@ public class MetricsCleaningOnDeleteIT {
   }
 
   @Test
-  void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
+  void removesMetersAssociatedWithResourceAfterItsDeletion() throws InterruptedException {
     var testResource = new ConfigMapBuilder()
         .withNewMetadata()
         .withName(testResourceName)
@@ -51,21 +51,23 @@ public class MetricsCleaningOnDeleteIT {
         .build();
     final var created = operator.create(testResource);
 
-    var meters = metrics.recordedMeterIdsFor(ResourceID.fromResource(created));
-    assertThat(meters).isNotNull();
-    assertThat(meters).isNotEmpty();
-
+    // make sure the resource is created
     await().until(() -> !operator.get(ConfigMap.class, testResourceName)
         .getMetadata().getFinalizers().isEmpty());
 
-    operator.delete(testResource);
+    // check that we properly recorded meters associated with the resource
+    final var meters = metrics.recordedMeterIdsFor(ResourceID.fromResource(created));
+    assertThat(meters).isNotNull();
+    assertThat(meters).isNotEmpty();
 
+    // delete the resource and wait for it to be deleted
+    operator.delete(testResource);
     await().until(() -> operator.get(ConfigMap.class, testResourceName) == null);
 
-    await().atLeast(testDelay + 3, TimeUnit.SECONDS);
-    meters.forEach(id -> verify(mockRegistry.remove(id)));
-    meters = metrics.recordedMeterIdsFor(ResourceID.fromResource(created));
-    assertThat(meters).isNull();
+    // check that the meters are properly removed after the specified delay
+    Thread.sleep(Duration.ofSeconds(testDelay).toMillis());
+    assertThat(registry.removed).isEqualTo(meters);
+    assertThat(metrics.recordedMeterIdsFor(ResourceID.fromResource(created))).isNull();
   }
 
   @ControllerConfiguration
@@ -82,10 +84,14 @@ public class MetricsCleaningOnDeleteIT {
     }
   }
 
-  private static class TestMetrics extends MicrometerMetrics {
+  private static class TestSimpleMeterRegistry extends SimpleMeterRegistry {
+    private final Set<Meter.Id> removed = new HashSet<>();
 
-    public TestMetrics(MeterRegistry registry, int cleanUpDelayInSeconds) {
-      super(registry, cleanUpDelayInSeconds, 2);
+    @Override
+    public Meter remove(Meter.Id mappedId) {
+      final var removed = super.remove(mappedId);
+      this.removed.add(removed.getId());
+      return removed;
     }
   }
 }
