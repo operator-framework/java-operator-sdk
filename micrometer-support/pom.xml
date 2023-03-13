@@ -57,6 +57,11 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kubernetes-httpclient-vertx</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>
