@@ -18,6 +18,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class MetricsCleaningOnDeleteIT {
   @RegisterExtension
@@ -62,6 +63,7 @@ public class MetricsCleaningOnDeleteIT {
     await().until(() -> operator.get(ConfigMap.class, testResourceName) == null);
 
     await().atLeast(testDelay + 3, TimeUnit.SECONDS);
+    meters.forEach(id -> verify(mockRegistry.remove(id)));
     meters = metrics.recordedMeterIdsFor(ResourceID.fromResource(created));
     assertThat(meters).isNull();
   }
@@ -82,7 +84,7 @@ public class MetricsCleaningOnDeleteIT {
   private static class TestMetrics extends MicrometerMetrics {
 
     public TestMetrics(MeterRegistry registry, int cleanUpDelayInSeconds) {
-      super(registry, cleanUpDelayInSeconds);
+      super(registry, cleanUpDelayInSeconds, 2);
     }
   }
 }
