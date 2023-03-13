@@ -32,18 +32,27 @@ public class MicrometerMetrics implements Metrics {
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
   private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService metersCleaner;
-  private final int cleanUpDelayInSeconds;
+  private final Cleaner cleaner;
 
   public MicrometerMetrics(MeterRegistry registry) {
-    this(registry, 300, Runtime.getRuntime().availableProcessors());
+    this(registry, 0);
+  }
+
+  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds) {
+    this(registry, cleanUpDelayInSeconds, 0);
   }
 
   public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds,
       int cleaningThreadsNumber) {
     this.registry = registry;
-    this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
-    this.metersCleaner = Executors.newScheduledThreadPool(cleaningThreadsNumber);
+    if (cleanUpDelayInSeconds < 0) {
+      cleaner = new NoDelayCleaner();
+    } else {
+      cleaningThreadsNumber =
+          cleaningThreadsNumber <= 0 ? Runtime.getRuntime().availableProcessors()
+              : cleaningThreadsNumber;
+      cleaner = new DelayedCleaner(cleanUpDelayInSeconds, cleaningThreadsNumber);
+    }
   }
 
   @Override
@@ -127,16 +136,7 @@ public class MicrometerMetrics implements Metrics {
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
     incrementCounter(resourceID, "events.delete", metadata);
 
-    // schedule deletion of meters associated with ResourceID
-    metersCleaner.schedule(() -> {
-      // remove each meter
-      final var toClean = metersPerResource.get(resourceID);
-      if (toClean != null) {
-        toClean.forEach(registry::remove);
-      }
-      // then clean-up local recording of associations
-      metersPerResource.remove(resourceID);
-    }, cleanUpDelayInSeconds, TimeUnit.SECONDS);
+    cleaner.removeMetersFor(resourceID);
   }
 
   @Override
@@ -230,5 +230,43 @@ public class MicrometerMetrics implements Metrics {
 
   protected Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
     return metersPerResource.get(resourceID);
+  }
+
+  private interface Cleaner {
+    void removeMetersFor(ResourceID resourceID);
+  }
+
+  private void removeMetersFor(ResourceID resourceID) {
+    // remove each meter
+    final var toClean = metersPerResource.get(resourceID);
+    if (toClean != null) {
+      toClean.forEach(registry::remove);
+    }
+    // then clean-up local recording of associations
+    metersPerResource.remove(resourceID);
+  }
+
+  private class NoDelayCleaner implements Cleaner {
+    @Override
+    public void removeMetersFor(ResourceID resourceID) {
+      MicrometerMetrics.this.removeMetersFor(resourceID);
+    }
+  }
+
+  private class DelayedCleaner implements Cleaner {
+    private final ScheduledExecutorService metersCleaner;
+    private final int cleanUpDelayInSeconds;
+
+    private DelayedCleaner(int cleanUpDelayInSeconds, int cleaningThreadsNumber) {
+      this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
+      this.metersCleaner = Executors.newScheduledThreadPool(cleaningThreadsNumber);
+    }
+
+    @Override
+    public void removeMetersFor(ResourceID resourceID) {
+      // schedule deletion of meters associated with ResourceID
+      metersCleaner.schedule(() -> MicrometerMetrics.this.removeMetersFor(resourceID),
+          cleanUpDelayInSeconds, TimeUnit.SECONDS);
+    }
   }
 }
