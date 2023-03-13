@@ -11,8 +11,11 @@ public class CleanerForReconcilerTestReconciler
     Cleaner<CleanerForReconcilerCustomResource>,
     TestExecutionInfoProvider {
 
+  public static final int RESCHEDULE_DELAY = 150;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
+
+  private volatile boolean reScheduleCleanup = false;
 
   @Override
   public UpdateControl<CleanerForReconcilerCustomResource> reconcile(
@@ -33,7 +36,17 @@ public class CleanerForReconcilerTestReconciler
   @Override
   public DeleteControl cleanup(CleanerForReconcilerCustomResource resource,
       Context<CleanerForReconcilerCustomResource> context) {
-    numberOfCleanupExecutions.addAndGet(1);
-    return DeleteControl.defaultDelete();
+    if (reScheduleCleanup) {
+      numberOfCleanupExecutions.addAndGet(1);
+      return DeleteControl.noFinalizerRemoval().rescheduleAfter(RESCHEDULE_DELAY);
+    } else {
+      numberOfCleanupExecutions.addAndGet(1);
+      return DeleteControl.defaultDelete();
+    }
+  }
+
+  public CleanerForReconcilerTestReconciler setReScheduleCleanup(boolean reScheduleCleanup) {
+    this.reScheduleCleanup = reScheduleCleanup;
+    return this;
   }
 }
