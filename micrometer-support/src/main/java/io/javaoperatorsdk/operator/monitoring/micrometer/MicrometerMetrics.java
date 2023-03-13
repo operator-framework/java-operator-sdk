@@ -129,10 +129,13 @@ public class MicrometerMetrics implements Metrics {
 
     // schedule deletion of meters associated with ResourceID
     metersCleaner.schedule(() -> {
+      // remove each meter
       final var toClean = metersPerResource.get(resourceID);
       if (toClean != null) {
         toClean.forEach(registry::remove);
       }
+      // then clean-up local recording of associations
+      metersPerResource.remove(resourceID);
     }, cleanUpDelayInSeconds, TimeUnit.SECONDS);
   }
 
