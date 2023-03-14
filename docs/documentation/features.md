@@ -722,9 +722,9 @@ to add the following dependencies to your project:
 ```xml
 
 <dependency>
-   <groupId>io.fabric8</groupId>
-   <artifactId>crd-generator-apt</artifactId>
-   <scope>provided</scope>
+    <groupId>io.fabric8</groupId>
+    <artifactId>crd-generator-apt</artifactId>
+    <scope>provided</scope>
 </dependency>
 ```
 
@@ -742,26 +742,32 @@ with a `mycrs` plural form will result in 2 files:
 
 ## Optimizing Caches
 
-One of the ideas around operator pattern, is that all the relevant resources are cached, thus reconciliation is usually
-very fast (especially if it does not need to update resources) since it's mostly working with in memory state.
-However or large clusters, caching huge amount of primary and secondary resources might consume lots of memory.
-There are some semi-experimental (experimental in terms that it works, but we need feedback from real production usage) 
-features to optimize memory usage of controllers. 
+One of the ideas around the operator pattern is that all the relevant resources are cached, thus reconciliation is
+usually very fast (especially if no resources are updated in the process) since the operator is then mostly working with
+in-memory state. However for large clusters, caching huge amount of primary and secondary resources might consume lots
+of memory. JOSDK provides ways to mitigate this issue and optimize the memory usage of controllers. While these features
+are working and tested, we need feedback from real production usage.
 
-### Bounded Caches for Informers 
+### Bounded Caches for Informers
 
-Limiting caches for informers - thus for Kubernetes resources, both controllers primary resource - is supported for now.
-The idea with the implementation that is provided, is that resources are in the cache for a limited time. 
-So for use cases, when a resource is only frequently reconciled when it is created, and later no or 
-occasionally reconciled, will be evicted from the cache, since the resources are not accessed. 
-If a resource accessed in the future but not in the cache, the bounded cache implementation will fetch it from
-the service if needed. 
-Note that on start of a controller all the resources are reconciled, for this reason explicitly setting a maximal
-size of a cache might not be ideal. In other words it is desired to have all the resources in the cache at startup, 
-but not later if not accessed.
+Limiting caches for informers - thus for Kubernetes resources - is supported by ensuring that resources are in the cache
+for a limited time, via a cache eviction of least recently used resources. This means that when resources are created
+and frequently reconciled, they stay "hot" in the cache. However, if, over time, a given resource "cools" down, i.e. it
+becomes less and less used to the point that it might not be reconciled anymore, it will eventually get evicted from the
+cache to free up memory. If such an evicted resource were to become reconciled again, the bounded cache implementation
+would then fetch it from the API server and the "hot/cold" cycle would start anew.
 
-See usage of the related implementation using Caffein cache in integration tests for [primary resource](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java#L29-L29).
+Since all resources need to be reconciled when a controller start, it is not practical to set a maximal cache size as
+it's desirable that all resources be cached as soon as possible to make the initial reconciliation process on start as
+fast and efficient as possible, avoiding undue load on the API server. It's therefore more interesting to gradually
+evict cold resources than try to limit cache sizes.
 
-See also [CaffeinBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java#L39-L39)
+See usage of the related implementation using [Caffeine](https://github.com/ben-manes/caffeine) cache in integration
+tests
+for [primary resources](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java#L29-L29).
+
+See
+also [CaffeineBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
+for more details.
 
 
