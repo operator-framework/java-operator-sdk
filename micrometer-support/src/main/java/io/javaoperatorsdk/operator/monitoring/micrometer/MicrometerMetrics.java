@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -127,9 +128,17 @@ public class MicrometerMetrics implements Metrics {
 
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
+    final String[] tags;
+    if (event instanceof ResourceEvent) {
+      tags = new String[] {"event", event.getClass().getSimpleName(), "action",
+          ((ResourceEvent) event).getAction().toString()};
+    } else {
+      tags = new String[] {"event", event.getClass().getSimpleName()};
+    }
+
     incrementCounter(event.getRelatedCustomResourceID(), "events.received",
         metadata,
-        "event", event.getClass().getSimpleName());
+        tags);
   }
 
   @Override
