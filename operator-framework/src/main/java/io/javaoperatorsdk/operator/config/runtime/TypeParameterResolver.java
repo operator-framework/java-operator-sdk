@@ -19,6 +19,8 @@ import static javax.lang.model.type.TypeKind.TYPEVAR;
 /** This class can resolve a type parameter in the given index to the actual type defined. */
 class TypeParameterResolver {
 
+
+  
   private final DeclaredType interestedClass;
   private final int interestedTypeArgumentIndex;
 
