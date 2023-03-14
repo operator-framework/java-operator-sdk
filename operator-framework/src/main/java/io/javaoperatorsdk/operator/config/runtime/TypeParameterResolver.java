@@ -20,7 +20,7 @@ import static javax.lang.model.type.TypeKind.TYPEVAR;
 class TypeParameterResolver {
 
 
-  
+
   private final DeclaredType interestedClass;
   private final int interestedTypeArgumentIndex;
 
