@@ -31,7 +31,7 @@
     <scm>
         <connection>scm:git:git://github.com/java-operator-sdk/java-operator-sdk.git</connection>
         <developerConnection>scm:git:git@github.com/java-operator-sdk/java-operator-sdk.git</developerConnection>
-        <url>https://github.com/java-operator-sdk/java-operator-sdk/tree/master</url>
+        <url>https://github.com/java-operator-sdk/java-operator-sdk/tree/main</url>
     </scm>
 
     <properties>
