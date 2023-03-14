@@ -760,8 +760,8 @@ Note that on start of a controller all the resources are reconciled, for this re
 size of a cache might not be ideal. In other words it is desired to have all the resources in the cache at startup, 
 but not later if not accessed.
 
-See usage of the related implementation using Caffein cache in integration tests for [primary resource](https://github.com/java-operator-sdk/java-operator-sdk/blob/10e11e587447667ef0da1ddb29e0ba15fcd24ada/caffein-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedCacheNamespacedIT.java#L19-L19) and for an [informer](https://github.com/java-operator-sdk/java-operator-sdk/blob/10e11e587447667ef0da1ddb29e0ba15fcd24ada/caffein-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java#L84-L93).
+See usage of the related implementation using Caffein cache in integration tests for [primary resource](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java#L29-L29).
 
-See also [CaffeinBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/10e11e587447667ef0da1ddb29e0ba15fcd24ada/caffein-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedItemStores.java#L22-L22)
+See also [CaffeinBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java#L39-L39)
 
 
