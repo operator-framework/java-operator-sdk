@@ -29,7 +29,8 @@ public class MetricsCleaningOnDeleteIT {
 
   private static final TestSimpleMeterRegistry registry = new TestSimpleMeterRegistry();
   private static final int testDelay = 1;
-  private static final MicrometerMetrics metrics = new MicrometerMetrics(registry, testDelay, 2);
+  private static final MicrometerMetrics metrics = MicrometerMetrics.newMicrometerMetrics(registry)
+      .withCleanUpDelayInSeconds(testDelay).withCleaningThreadNumber(2).build();
   private static final String testResourceName = "cleaning-metrics-cr";
 
   @BeforeAll

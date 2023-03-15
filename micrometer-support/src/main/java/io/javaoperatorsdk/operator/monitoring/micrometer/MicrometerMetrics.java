@@ -30,9 +30,9 @@ public class MicrometerMetrics implements Metrics {
   private static final String RECONCILIATIONS = "reconciliations.";
   private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
   private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
+  private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
-  private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
   private final Cleaner cleaner;
 
   /**
@@ -42,43 +42,30 @@ public class MicrometerMetrics implements Metrics {
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
    */
   public MicrometerMetrics(MeterRegistry registry) {
-    this(registry, 0);
+    this(registry, Cleaner.NOOP);
+  }
+
+  @SuppressWarnings("unused")
+  public static MicrometerMetrics withoutPerResourceMetrics(MeterRegistry registry) {
+    return new MicrometerMetrics(registry);
+  }
+
+  public static MicrometerMetricsBuilder newMicrometerMetrics(MeterRegistry registry) {
+    return new MicrometerMetricsBuilder(registry);
   }
 
   /**
-   * Creates a micrometer-based Metrics implementation that delays cleaning up {@link Meter}s
-   * associated with deleted resources by the specified amount of seconds, using a single thread for
-   * that process.
+   * Creates a micrometer-based Metrics implementation that cleans up {@link Meter}s associated with
+   * deleted resources as specified by the (possibly {@code null}) provided {@link Cleaner}
+   * instance.
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
-   * @param cleanUpDelayInSeconds the number of seconds to wait before meters are removed for
-   *        deleted resources
+   * @param cleaner the {@link Cleaner} to use
    */
-  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds) {
-    this(registry, cleanUpDelayInSeconds, 1);
-  }
-
-  /**
-   * Creates a micrometer-based Metrics implementation that delays cleaning up {@link Meter}s
-   * associated with deleted resources by the specified amount of seconds, using the specified
-   * (maximally) number of threads for that process.
-   *
-   * @param registry the {@link MeterRegistry} instance to use for metrics recording
-   * @param cleanUpDelayInSeconds the number of seconds to wait before meters are removed for
-   *        deleted resources
-   * @param cleaningThreadsNumber the number of threads to use for the cleaning process
-   */
-  public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds,
-      int cleaningThreadsNumber) {
+  private MicrometerMetrics(MeterRegistry registry, Cleaner cleaner) {
     this.registry = registry;
-    if (cleanUpDelayInSeconds < 0) {
-      cleaner = new NoDelayCleaner();
-    } else {
-      cleaningThreadsNumber =
-          cleaningThreadsNumber <= 0 ? Runtime.getRuntime().availableProcessors()
-              : cleaningThreadsNumber;
-      cleaner = new DelayedCleaner(cleanUpDelayInSeconds, cleaningThreadsNumber);
-    }
+    this.cleaner = cleaner;
+    this.collectPerResourceMetrics = Cleaner.NOOP != cleaner;
   }
 
   @Override
@@ -153,45 +140,53 @@ public class MicrometerMetrics implements Metrics {
 
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
-    final String[] tags;
-    if (event instanceof ResourceEvent) {
-      tags = new String[] {"event", event.getClass().getSimpleName(), "action",
-          ((ResourceEvent) event).getAction().toString()};
-    } else {
-      tags = new String[] {"event", event.getClass().getSimpleName()};
-    }
+    if (collectPerResourceMetrics) {
+      final String[] tags;
+      if (event instanceof ResourceEvent) {
+        tags = new String[] {"event", event.getClass().getSimpleName(), "action",
+            ((ResourceEvent) event).getAction().toString()};
+      } else {
+        tags = new String[] {"event", event.getClass().getSimpleName()};
+      }
 
-    incrementCounter(event.getRelatedCustomResourceID(), "events.received",
-        metadata,
-        tags);
+      incrementCounter(event.getRelatedCustomResourceID(), "events.received",
+          metadata,
+          tags);
+    }
   }
 
   @Override
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
-    incrementCounter(resourceID, "events.delete", metadata);
+    if (collectPerResourceMetrics) {
+      incrementCounter(resourceID, "events.delete", metadata);
 
-    cleaner.removeMetersFor(resourceID);
+      cleaner.removeMetersFor(resourceID);
+    }
   }
 
   @Override
   public void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfoNullable,
       Map<String, Object> metadata) {
-    Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "started",
-        metadata,
-        RECONCILIATIONS + "retries.number",
-        String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0)),
-        RECONCILIATIONS + "retries.last",
-        String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true)));
+    if (collectPerResourceMetrics) {
+      Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
+      incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "started",
+          metadata,
+          RECONCILIATIONS + "retries.number",
+          String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0)),
+          RECONCILIATIONS + "retries.last",
+          String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true)));
 
-    var controllerQueueSize =
-        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
-    controllerQueueSize.incrementAndGet();
+      var controllerQueueSize =
+          gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+      controllerQueueSize.incrementAndGet();
+    }
   }
 
   @Override
   public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "success", metadata);
+    if (collectPerResourceMetrics) {
+      incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "success", metadata);
+    }
   }
 
   @Override
@@ -215,15 +210,17 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void failedReconciliation(HasMetadata resource, Exception exception,
       Map<String, Object> metadata) {
-    var cause = exception.getCause();
-    if (cause == null) {
-      cause = exception;
-    } else if (cause instanceof RuntimeException) {
-      cause = cause.getCause() != null ? cause.getCause() : cause;
+    if (collectPerResourceMetrics) {
+      var cause = exception.getCause();
+      if (cause == null) {
+        cause = exception;
+      } else if (cause instanceof RuntimeException) {
+        cause = cause.getCause() != null ? cause.getCause() : cause;
+      }
+      incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "failed", metadata,
+          "exception",
+          cause.getClass().getSimpleName());
     }
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "failed", metadata,
-        "exception",
-        cause.getClass().getSimpleName());
   }
 
   @Override
@@ -258,40 +255,101 @@ public class MicrometerMetrics implements Metrics {
           "kind", gvk.kind));
     }
     final var counter = registry.counter(PREFIX + counterName, tags.toArray(new String[0]));
-    metersPerResource.computeIfAbsent(id, resourceID -> new HashSet<>()).add(counter.getId());
+    cleaner.recordAssociation(id, counter);
     counter.increment();
   }
 
   protected Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
-    return metersPerResource.get(resourceID);
+    return cleaner.recordedMeterIdsFor(resourceID);
+  }
+
+  public static class MicrometerMetricsBuilder {
+    private final MeterRegistry registry;
+    private int cleaningThreadsNumber;
+    private int cleanUpDelayInSeconds;
+
+    private MicrometerMetricsBuilder(MeterRegistry registry) {
+      this.registry = registry;
+    }
+
+    public MicrometerMetricsBuilder withCleaningThreadNumber(int cleaningThreadsNumber) {
+      this.cleaningThreadsNumber = cleaningThreadsNumber;
+      return this;
+    }
+
+    /**
+     * @param cleanUpDelayInSeconds the number of seconds to wait before meters are removed for
+     *        deleted resources
+     */
+    public MicrometerMetricsBuilder withCleanUpDelayInSeconds(int cleanUpDelayInSeconds) {
+      this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
+      return this;
+    }
+
+    public MicrometerMetrics build() {
+      MicrometerMetrics.Cleaner cleaner;
+      if (cleanUpDelayInSeconds < 0) {
+        cleaner = new MicrometerMetrics.DefaultCleaner(registry);
+      } else {
+        cleaningThreadsNumber =
+            cleaningThreadsNumber <= 0 ? Runtime.getRuntime().availableProcessors()
+                : cleaningThreadsNumber;
+        cleaner = new DelayedCleaner(registry, cleanUpDelayInSeconds, cleaningThreadsNumber);
+      }
+
+      return new MicrometerMetrics(registry, cleaner);
+    }
   }
 
   private interface Cleaner {
-    void removeMetersFor(ResourceID resourceID);
-  }
+    Cleaner NOOP = new Cleaner() {};
 
-  private void removeMetersFor(ResourceID resourceID) {
-    // remove each meter
-    final var toClean = metersPerResource.get(resourceID);
-    if (toClean != null) {
-      toClean.forEach(registry::remove);
+    default void removeMetersFor(ResourceID resourceID) {}
+
+    default void recordAssociation(ResourceID resourceID, Meter meter) {}
+
+    default Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
+      return Collections.emptySet();
     }
-    // then clean-up local recording of associations
-    metersPerResource.remove(resourceID);
   }
 
-  private class NoDelayCleaner implements Cleaner {
+  private static class DefaultCleaner implements Cleaner {
+    private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
+    private final MeterRegistry registry;
+
+    private DefaultCleaner(MeterRegistry registry) {
+      this.registry = registry;
+    }
+
     @Override
     public void removeMetersFor(ResourceID resourceID) {
-      MicrometerMetrics.this.removeMetersFor(resourceID);
+      // remove each meter
+      final var toClean = metersPerResource.get(resourceID);
+      if (toClean != null) {
+        toClean.forEach(registry::remove);
+      }
+      // then clean-up local recording of associations
+      metersPerResource.remove(resourceID);
+    }
+
+    @Override
+    public void recordAssociation(ResourceID resourceID, Meter meter) {
+      metersPerResource.computeIfAbsent(resourceID, id -> new HashSet<>()).add(meter.getId());
+    }
+
+    @Override
+    public Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
+      return metersPerResource.get(resourceID);
     }
   }
 
-  private class DelayedCleaner implements Cleaner {
+  private static class DelayedCleaner extends MicrometerMetrics.DefaultCleaner {
     private final ScheduledExecutorService metersCleaner;
     private final int cleanUpDelayInSeconds;
 
-    private DelayedCleaner(int cleanUpDelayInSeconds, int cleaningThreadsNumber) {
+    private DelayedCleaner(MeterRegistry registry, int cleanUpDelayInSeconds,
+        int cleaningThreadsNumber) {
+      super(registry);
       this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
       this.metersCleaner = Executors.newScheduledThreadPool(cleaningThreadsNumber);
     }
@@ -299,7 +357,7 @@ public class MicrometerMetrics implements Metrics {
     @Override
     public void removeMetersFor(ResourceID resourceID) {
       // schedule deletion of meters associated with ResourceID
-      metersCleaner.schedule(() -> MicrometerMetrics.this.removeMetersFor(resourceID),
+      metersCleaner.schedule(() -> super.removeMetersFor(resourceID),
           cleanUpDelayInSeconds, TimeUnit.SECONDS);
     }
   }
