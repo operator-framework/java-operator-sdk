@@ -757,6 +757,51 @@ with a `mycrs` plural form will result in 2 files:
 > Quarkus users using the `quarkus-operator-sdk` extension do not need to add any extra dependency
 > to get their CRD generated as this is handled by the extension itself.
 
+## Metrics
+
+JOSDK provides built-in support for metrics reporting on what is happening with your reconcilers in the form of
+the `Metrics` interface which can be implemented to connect to your metrics provider of choice, JOSDK calling the
+methods as it goes about reconciling resources. By default, a no-operation implementation is provided thus providing a
+no-cost sane default. A [micrometer](https://micrometer.io)-based implementation is also provided.
+
+You can use a different implementation by overriding the default one provided by the default `ConfigurationService`, as
+follows:
+
+```java
+Metrics metrics= …;
+ConfigurationServiceProvider.overrideCurrent(overrider->overrider.withMetrics(metrics));
+```
+
+### Micrometer implementation
+
+The micrometer implementation records a lot of metrics associated to each resource handled by the operator by default.
+In order to be efficient, the implementation removes meters associated with resources when they are deleted. Since it
+might be useful to keep these metrics around for a bit before they are deleted, it is possible to configure a delay
+before their removal. As this is done asynchronously, it is also possible to configure how many threads you want to
+devote to these operations. Both aspects are controlled by the `MicrometerMetrics` constructor so changing the defaults
+is a matter of instantiating `MicrometerMetrics` with the desired values and tell `ConfigurationServiceProvider` about
+it as shown above.
+
+The micrometer implementation records the following metrics:
+
+| Meter name                                                | Type           | Tags                                                                                                       | Description                                                                                            |
+|-----------------------------------------------------------|----------------|------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| operator.sdk.reconciliations.executions.<reconciler name> | gauge          | group, version, kind                                                                                       | Number of executions of the named reconciler                                                           |
+| operator.sdk.reconciliations.queue.size.<reconciler name> | gauge          | group, version, kind                                                                                       | How many resources are queued to get reconciled by named reconciler                                    |
+| operator.sdk.<map name>.size                              | gauge map size |                                                                                                            | Gauge tracking the size of a specified map (currently unused but could be used to monitor caches size) |
+| operator.sdk.events.received                              | counter        | group, version, kind, name, namespace, scope, event, action                                                | Number of received Kubernetes events                                                                   |
+| operator.sdk.events.delete                                | counter        | group, version, kind, name, namespace, scope                                                               | Number of received Kubernetes delete events                                                            |
+| operator.sdk.reconciliations.started                      | counter        | group, version, kind, name, namespace, scope, reconciliations.retries.last, reconciliations.retries.number | Number of started reconciliations per resource type                                                    |
+| operator.sdk.reconciliations.failed                       | counter        | group, version, kind, name, namespace, scope, exception                                                    | Number of failed reconciliations per resource type                                                     |
+| operator.sdk.reconciliations.success                      | counter        | group, version, kind, name, namespace, scope                                                               | Number of successful reconciliations per resource type                                                 |
+| operator.sdk.controllers.execution.reconcile.success      | counter        | controller, type                                                                                           | Number of successful reconciliations per controller                                                    |
+| operator.sdk.controllers.execution.reconcile.failure      | counter        | controller, exception                                                                                      | Number of failed reconciliations per controller                                                        |
+| operator.sdk.controllers.execution.cleanup.success        | counter        | controller, type                                                                                           | Number of successful cleanups per controller                                                           |
+| operator.sdk.controllers.execution.cleanup.failure        | counter        | controller, exception                                                                                      | Number of failed cleanups per controller                                                               |
+
+As you can see all the recorded metrics start with the `operator.sdk` prefix.
+
+
 ## Optimizing Caches
 
 One of the ideas around the operator pattern is that all the relevant resources are cached, thus reconciliation is
