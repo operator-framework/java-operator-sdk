@@ -35,14 +35,39 @@ public class MicrometerMetrics implements Metrics {
   private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
   private final Cleaner cleaner;
 
+  /**
+   * Creates a non-delayed, micrometer-based Metrics implementation. The non-delayed part refers to
+   * the cleaning of meters associated with deleted resources.
+   *
+   * @param registry the {@link MeterRegistry} instance to use for metrics recording
+   */
   public MicrometerMetrics(MeterRegistry registry) {
     this(registry, 0);
   }
 
+  /**
+   * Creates a micrometer-based Metrics implementation that delays cleaning up {@link Meter}s
+   * associated with deleted resources by the specified amount of seconds, using a single thread for
+   * that process.
+   *
+   * @param registry the {@link MeterRegistry} instance to use for metrics recording
+   * @param cleanUpDelayInSeconds the number of seconds to wait before meters are removed for
+   *        deleted resources
+   */
   public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds) {
-    this(registry, cleanUpDelayInSeconds, 0);
+    this(registry, cleanUpDelayInSeconds, 1);
   }
 
+  /**
+   * Creates a micrometer-based Metrics implementation that delays cleaning up {@link Meter}s
+   * associated with deleted resources by the specified amount of seconds, using the specified
+   * (maximally) number of threads for that process.
+   *
+   * @param registry the {@link MeterRegistry} instance to use for metrics recording
+   * @param cleanUpDelayInSeconds the number of seconds to wait before meters are removed for
+   *        deleted resources
+   * @param cleaningThreadsNumber the number of threads to use for the cleaning process
+   */
   public MicrometerMetrics(MeterRegistry registry, int cleanUpDelayInSeconds,
       int cleaningThreadsNumber) {
     this.registry = registry;
