@@ -24,7 +24,7 @@ import static org.awaitility.Awaitility.await;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractMicrometerMetricsTestFixture {
   @RegisterExtension
-  static LocallyRunOperatorExtension operator =
+  LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(new MetricsCleaningTestReconciler())
           .build();
 
