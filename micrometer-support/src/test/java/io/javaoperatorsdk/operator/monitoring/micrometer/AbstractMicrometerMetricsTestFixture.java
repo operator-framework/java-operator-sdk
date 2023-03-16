@@ -7,6 +7,7 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -20,6 +21,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.awaitility.Awaitility.await;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractMicrometerMetricsTestFixture {
   @RegisterExtension
   static LocallyRunOperatorExtension operator =
