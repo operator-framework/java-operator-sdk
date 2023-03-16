@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
+import java.util.Collections;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -14,9 +15,18 @@ public class DefaultBehaviorIT extends AbstractMicrometerMetricsTestFixture {
   }
 
   @Override
+  protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
+    // no meter should be recorded because we're not tracking anything to be deleted later
+    assertThat(metrics.recordedMeterIdsFor(resourceID)).isEmpty();
+    // metrics are collected per resource by default for now, this will change in a future release
+    assertThat(registry.getMetersAsString()).contains(resourceID.getName());
+    return Collections.emptySet();
+  }
+
+  @Override
   protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
       throws Exception {
-    assertThat(metrics.recordedMeterIdsFor(resourceID)).isNotNull();
+    // meters should be neither recorded, nor removed by default
     assertThat(registry.getRemoved()).isEmpty();
   }
 }

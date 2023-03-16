@@ -10,7 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class NoDelayMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixture {
   @Override
   protected MicrometerMetrics getMetrics() {
-    return MicrometerMetrics.newMicrometerMetrics(registry).withCleanUpDelayInSeconds(0).build();
+    return MicrometerMetrics.newPerResourceCollectingMicrometerMetrics(registry)
+        .withCleanUpDelayInSeconds(0).build();
   }
 
   @Override
@@ -20,4 +21,6 @@ public class NoDelayMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsT
     assertThat(registry.getRemoved()).isEqualTo(recordedMeters);
     assertThat(metrics.recordedMeterIdsFor(resourceID)).isNull();
   }
+
+
 }

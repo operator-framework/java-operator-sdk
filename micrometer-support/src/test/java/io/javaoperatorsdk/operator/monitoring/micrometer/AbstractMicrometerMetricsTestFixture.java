@@ -70,6 +70,8 @@ public abstract class AbstractMicrometerMetricsTestFixture {
   protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
     // check that we properly recorded meters associated with the resource
     final var meters = metrics.recordedMeterIdsFor(resourceID);
+    // metrics are collected per resource
+    assertThat(registry.getMetersAsString()).contains(resourceID.getName());
     assertThat(meters).isNotNull();
     assertThat(meters).isNotEmpty();
     return meters;

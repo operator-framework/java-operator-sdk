@@ -36,22 +36,30 @@ public class MicrometerMetrics implements Metrics {
   private final Cleaner cleaner;
 
   /**
-   * Creates a non-delayed, micrometer-based Metrics implementation. The non-delayed part refers to
-   * the cleaning of meters associated with deleted resources.
+   * Creates a default micrometer-based Metrics implementation, collecting metrics on a per resource
+   * basis and not dealing with cleaning these after these resources are deleted. Note that this
+   * probably will change in a future release. If you want more control over what the implementation
+   * actually does, please use the static factory methods instead.
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
+   * @deprecated Use the factory methods / builders instead
    */
+  @Deprecated
   public MicrometerMetrics(MeterRegistry registry) {
-    this(registry, Cleaner.NOOP);
+    this(registry, Cleaner.NOOP, true);
   }
 
-  @SuppressWarnings("unused")
   public static MicrometerMetrics withoutPerResourceMetrics(MeterRegistry registry) {
-    return new MicrometerMetrics(registry);
+    return new MicrometerMetrics(registry, Cleaner.NOOP, false);
   }
 
   public static MicrometerMetricsBuilder newMicrometerMetrics(MeterRegistry registry) {
     return new MicrometerMetricsBuilder(registry);
+  }
+
+  public static PerResourceCollectingMicrometerMetricsBuilder newPerResourceCollectingMicrometerMetrics(
+      MeterRegistry registry) {
+    return new PerResourceCollectingMicrometerMetricsBuilder(registry);
   }
 
   /**
@@ -61,11 +69,13 @@ public class MicrometerMetrics implements Metrics {
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
    * @param cleaner the {@link Cleaner} to use
+   * @param collectingPerResourceMetrics whether or not to collect per resource metrics
    */
-  private MicrometerMetrics(MeterRegistry registry, Cleaner cleaner) {
+  private MicrometerMetrics(MeterRegistry registry, Cleaner cleaner,
+      boolean collectingPerResourceMetrics) {
     this.registry = registry;
     this.cleaner = cleaner;
-    this.collectPerResourceMetrics = Cleaner.NOOP != cleaner;
+    this.collectPerResourceMetrics = collectingPerResourceMetrics;
   }
 
   @Override
@@ -263,41 +273,67 @@ public class MicrometerMetrics implements Metrics {
     return cleaner.recordedMeterIdsFor(resourceID);
   }
 
-  public static class MicrometerMetricsBuilder {
-    private final MeterRegistry registry;
+
+  public static class PerResourceCollectingMicrometerMetricsBuilder
+      extends MicrometerMetricsBuilder {
+
     private int cleaningThreadsNumber;
     private int cleanUpDelayInSeconds;
+
+    private PerResourceCollectingMicrometerMetricsBuilder(MeterRegistry registry) {
+      super(registry);
+    }
+
+    /**
+     * @param cleaningThreadsNumber the maximal number of threads that can be assigned to the
+     *        removal of {@link Meter}s associated with deleted resources, defaults to 1 if not
+     *        specified or if the provided number is lesser or equal to 0
+     */
+    public PerResourceCollectingMicrometerMetricsBuilder withCleaningThreadNumber(
+        int cleaningThreadsNumber) {
+      this.cleaningThreadsNumber = cleaningThreadsNumber <= 0 ? 1 : cleaningThreadsNumber;
+      return this;
+    }
+
+    /**
+     * @param cleanUpDelayInSeconds the number of seconds to wait before {@link Meter}s are removed
+     *        for deleted resources, defaults to 0 (meaning meters will be removed immediately after
+     *        the associated resource is deleted) if not specified or if the provided number is
+     *        lesser or equal to 0
+     */
+    public PerResourceCollectingMicrometerMetricsBuilder withCleanUpDelayInSeconds(
+        int cleanUpDelayInSeconds) {
+      this.cleanUpDelayInSeconds = Math.max(cleanUpDelayInSeconds, 0);
+      return this;
+    }
+
+    @Override
+    public MicrometerMetrics build() {
+      final var cleaner = cleanUpDelayInSeconds == 0 ? new DefaultCleaner(registry)
+          : new DelayedCleaner(registry, cleanUpDelayInSeconds, cleaningThreadsNumber);
+      return new MicrometerMetrics(registry, cleaner, true);
+    }
+  }
+  public static class MicrometerMetricsBuilder {
+    protected final MeterRegistry registry;
+    private boolean collectingPerResourceMetrics = true;
 
     private MicrometerMetricsBuilder(MeterRegistry registry) {
       this.registry = registry;
     }
 
-    public MicrometerMetricsBuilder withCleaningThreadNumber(int cleaningThreadsNumber) {
-      this.cleaningThreadsNumber = cleaningThreadsNumber;
-      return this;
+    public PerResourceCollectingMicrometerMetricsBuilder collectingMetricsPerResource() {
+      collectingPerResourceMetrics = true;
+      return new PerResourceCollectingMicrometerMetricsBuilder(registry);
     }
 
-    /**
-     * @param cleanUpDelayInSeconds the number of seconds to wait before meters are removed for
-     *        deleted resources
-     */
-    public MicrometerMetricsBuilder withCleanUpDelayInSeconds(int cleanUpDelayInSeconds) {
-      this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
+    public MicrometerMetricsBuilder notCollectingMetricsPerResource() {
+      collectingPerResourceMetrics = false;
       return this;
     }
 
     public MicrometerMetrics build() {
-      MicrometerMetrics.Cleaner cleaner;
-      if (cleanUpDelayInSeconds < 0) {
-        cleaner = new MicrometerMetrics.DefaultCleaner(registry);
-      } else {
-        cleaningThreadsNumber =
-            cleaningThreadsNumber <= 0 ? Runtime.getRuntime().availableProcessors()
-                : cleaningThreadsNumber;
-        cleaner = new DelayedCleaner(registry, cleanUpDelayInSeconds, cleaningThreadsNumber);
-      }
-
-      return new MicrometerMetrics(registry, cleaner);
+      return new MicrometerMetrics(registry, Cleaner.NOOP, collectingPerResourceMetrics);
     }
   }
 

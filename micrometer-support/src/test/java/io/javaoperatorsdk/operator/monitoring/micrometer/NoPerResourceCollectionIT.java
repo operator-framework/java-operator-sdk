@@ -17,6 +17,7 @@ public class NoPerResourceCollectionIT extends AbstractMicrometerMetricsTestFixt
   @Override
   protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
     assertThat(metrics.recordedMeterIdsFor(resourceID)).isEmpty();
+    assertThat(registry.getMetersAsString()).doesNotContain(resourceID.getName());
     return Collections.emptySet();
   }
 }
