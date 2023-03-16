@@ -8,7 +8,7 @@ import io.micrometer.core.instrument.Meter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixture {
+public class DelayedMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixture {
 
   private static final int testDelay = 1;
 
@@ -19,19 +19,11 @@ public class MetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixt
   }
 
   @Override
-  protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
-    // check that we properly recorded meters associated with the resource
-    final var meters = metrics.recordedMeterIdsFor(resourceID);
-    assertThat(meters).isNotNull();
-    assertThat(meters).isNotEmpty();
-    return meters;
-  }
-
-  @Override
-  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> meters) throws Exception {
+  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
+      throws Exception {
     // check that the meters are properly removed after the specified delay
     Thread.sleep(Duration.ofSeconds(testDelay).toMillis());
-    assertThat(registry.getRemoved()).isEqualTo(meters);
+    assertThat(registry.getRemoved()).isEqualTo(recordedMeters);
     assertThat(metrics.recordedMeterIdsFor(resourceID)).isNull();
   }
 }

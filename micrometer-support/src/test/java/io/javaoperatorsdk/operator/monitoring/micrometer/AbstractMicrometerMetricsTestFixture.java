@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -68,11 +68,15 @@ public abstract class AbstractMicrometerMetricsTestFixture {
   }
 
   protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
-    return Collections
-        .emptySet();
+    // check that we properly recorded meters associated with the resource
+    final var meters = metrics.recordedMeterIdsFor(resourceID);
+    assertThat(meters).isNotNull();
+    assertThat(meters).isNotEmpty();
+    return meters;
   }
 
-  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> meters) throws Exception {}
+  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
+      throws Exception {}
 
   @ControllerConfiguration
   private static class MetricsCleaningTestReconciler

@@ -1,0 +1,23 @@
+package io.javaoperatorsdk.operator.monitoring.micrometer;
+
+import java.util.Set;
+
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.micrometer.core.instrument.Meter;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class NoDelayMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixture {
+  @Override
+  protected MicrometerMetrics getMetrics() {
+    return MicrometerMetrics.newMicrometerMetrics(registry).withCleanUpDelayInSeconds(0).build();
+  }
+
+  @Override
+  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
+      throws Exception {
+    // check that the meters are properly immediately removed
+    assertThat(registry.getRemoved()).isEqualTo(recordedMeters);
+    assertThat(metrics.recordedMeterIdsFor(resourceID)).isNull();
+  }
+}
