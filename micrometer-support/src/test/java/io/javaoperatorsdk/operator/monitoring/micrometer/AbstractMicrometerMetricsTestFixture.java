@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -63,6 +64,7 @@ public abstract class AbstractMicrometerMetricsTestFixture {
     // delete the resource and wait for it to be deleted
     operator.delete(testResource);
     await().until(() -> operator.get(ConfigMap.class, testResourceName) == null);
+    Thread.sleep(Duration.ofSeconds(1)); // make sure delete event is propagated and handled by the SDK
 
     postDeleteChecks(resourceID, meters);
   }
