@@ -63,7 +63,7 @@ public abstract class AbstractMicrometerMetricsTestFixture {
     // delete the resource and wait for it to be deleted
     operator.delete(testResource);
     await().until(() -> operator.get(ConfigMap.class, testResourceName) == null);
-    
+
     postDeleteChecks(resourceID, meters);
   }
 
