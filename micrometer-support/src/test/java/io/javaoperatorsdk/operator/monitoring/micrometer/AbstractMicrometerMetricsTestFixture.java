@@ -28,7 +28,7 @@ public abstract class AbstractMicrometerMetricsTestFixture {
       LocallyRunOperatorExtension.builder().withReconciler(new MetricsCleaningTestReconciler())
           .build();
 
-  protected static final TestSimpleMeterRegistry registry = new TestSimpleMeterRegistry();
+  protected final TestSimpleMeterRegistry registry = new TestSimpleMeterRegistry();
   protected final MicrometerMetrics metrics = getMetrics();
   protected static final String testResourceName = "micrometer-metrics-cr";
 
