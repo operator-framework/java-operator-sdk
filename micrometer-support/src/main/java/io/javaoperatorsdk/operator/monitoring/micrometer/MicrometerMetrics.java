@@ -278,6 +278,9 @@ public class MicrometerMetrics implements Metrics {
     return cleaner.recordedMeterIdsFor(resourceID);
   }
 
+  protected Cleaner getCleaner() {
+    return cleaner;
+  }
 
   public static class PerResourceCollectingMicrometerMetricsBuilder
       extends MicrometerMetricsBuilder {
@@ -342,7 +345,7 @@ public class MicrometerMetrics implements Metrics {
     }
   }
 
-  private interface Cleaner {
+  interface Cleaner {
     Cleaner NOOP = new Cleaner() {};
 
     default void removeMetersFor(ResourceID resourceID) {}
@@ -354,7 +357,7 @@ public class MicrometerMetrics implements Metrics {
     }
   }
 
-  private static class DefaultCleaner implements Cleaner {
+  static class DefaultCleaner implements Cleaner {
     private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
     private final MeterRegistry registry;
 
@@ -384,7 +387,7 @@ public class MicrometerMetrics implements Metrics {
     }
   }
 
-  private static class DelayedCleaner extends MicrometerMetrics.DefaultCleaner {
+  static class DelayedCleaner extends MicrometerMetrics.DefaultCleaner {
     private final ScheduledExecutorService metersCleaner;
     private final int cleanUpDelayInSeconds;
 
