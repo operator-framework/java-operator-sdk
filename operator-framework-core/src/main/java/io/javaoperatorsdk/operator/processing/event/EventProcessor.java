@@ -238,7 +238,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
       state.markProcessedMarkForDeletion();
-      metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
       postExecutionControl
           .getUpdatedCustomResource()

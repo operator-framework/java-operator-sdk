@@ -153,53 +153,45 @@ public class MicrometerMetrics implements Metrics {
 
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
-    if (collectPerResourceMetrics) {
-      final String[] tags;
-      if (event instanceof ResourceEvent) {
-        tags = new String[] {"event", event.getClass().getSimpleName(), "action",
-            ((ResourceEvent) event).getAction().toString()};
-      } else {
-        tags = new String[] {"event", event.getClass().getSimpleName()};
-      }
-
-      incrementCounter(event.getRelatedCustomResourceID(), "events.received",
-          metadata,
-          tags);
+    final String[] tags;
+    if (event instanceof ResourceEvent) {
+      tags = new String[] {"event", event.getClass().getSimpleName(), "action",
+          ((ResourceEvent) event).getAction().toString()};
+    } else {
+      tags = new String[] {"event", event.getClass().getSimpleName()};
     }
+
+    incrementCounter(event.getRelatedCustomResourceID(), "events.received",
+        metadata,
+        tags);
   }
 
   @Override
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
-    if (collectPerResourceMetrics) {
-      incrementCounter(resourceID, "events.delete", metadata);
+    incrementCounter(resourceID, "events.delete", metadata);
 
-      cleaner.removeMetersFor(resourceID);
-    }
+    cleaner.removeMetersFor(resourceID);
   }
 
   @Override
   public void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfoNullable,
       Map<String, Object> metadata) {
-    if (collectPerResourceMetrics) {
-      Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-      incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "started",
-          metadata,
-          RECONCILIATIONS + "retries.number",
-          String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0)),
-          RECONCILIATIONS + "retries.last",
-          String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true)));
+    Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "started",
+        metadata,
+        RECONCILIATIONS + "retries.number",
+        String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0)),
+        RECONCILIATIONS + "retries.last",
+        String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true)));
 
-      var controllerQueueSize =
-          gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
-      controllerQueueSize.incrementAndGet();
-    }
+    var controllerQueueSize =
+        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+    controllerQueueSize.incrementAndGet();
   }
 
   @Override
   public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    if (collectPerResourceMetrics) {
-      incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "success", metadata);
-    }
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "success", metadata);
   }
 
   @Override
@@ -223,17 +215,15 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void failedReconciliation(HasMetadata resource, Exception exception,
       Map<String, Object> metadata) {
-    if (collectPerResourceMetrics) {
-      var cause = exception.getCause();
-      if (cause == null) {
-        cause = exception;
-      } else if (cause instanceof RuntimeException) {
-        cause = cause.getCause() != null ? cause.getCause() : cause;
-      }
-      incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "failed", metadata,
-          "exception",
-          cause.getClass().getSimpleName());
+    var cause = exception.getCause();
+    if (cause == null) {
+      cause = exception;
+    } else if (cause instanceof RuntimeException) {
+      cause = cause.getCause() != null ? cause.getCause() : cause;
     }
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "failed", metadata,
+        "exception",
+        cause.getClass().getSimpleName());
   }
 
   @Override
@@ -253,10 +243,12 @@ public class MicrometerMetrics implements Metrics {
         additionalTags != null && additionalTags.length > 0 ? additionalTags.length : 0;
     final var metadataNb = metadata != null ? metadata.size() : 0;
     final var tags = new ArrayList<String>(6 + additionalTagsNb + metadataNb);
-    tags.addAll(List.of(
-        "name", id.getName(),
-        "namespace", id.getNamespace().orElse(""),
-        "scope", getScope(id)));
+    if (collectPerResourceMetrics) {
+      tags.addAll(List.of(
+          "name", id.getName(),
+          "namespace", id.getNamespace().orElse(""),
+          "scope", getScope(id)));
+    }
     if (additionalTagsNb > 0) {
       tags.addAll(List.of(additionalTags));
     }
