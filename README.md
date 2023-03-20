@@ -9,7 +9,7 @@ Java Operator SDK is a production-ready framework that makes implementing Kubern
 
 It provides a controller runtime, support for testing operators, and related tooling. In addition to that implementing
 conversion hooks and dynamic admission controllers are supported as a separate project 
-(and much more,see related projects section).
+(and much more, see related projects section).
 
 Under the hood it uses the excellent [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client),
 which provides additional facilities, like generating CRD from source code (and vice versa). 
