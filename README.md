@@ -5,7 +5,7 @@
 
 # Build Kubernetes Operators in Java Without Hassle 
 
-Java Operator SDK is a framework that makes it easy to implement Kubernetes Operators in Java. 
+Java Operator SDK is a production-ready framework that makes implementing Kubernetes Operators in Java easy. 
 
 It provides a controller runtime, support for testing operators, and related tooling. In addition to that implementing
 conversion hooks and dynamic admission controllers are supported as a separate project 
