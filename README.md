@@ -44,7 +44,7 @@ For all features and their usage see the [related section on the website](https:
 * Spring Boot Starter: https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
 * jenvtest: https://github.com/java-operator-sdk/jenvtest 
   Support for integration testing again Kubernetes API Server
-* Kubernetes Webhooks Framework: https://github.com/java-operator-sdk/kubernetes-webooks-framework  
+* Kubernetes Webhooks Framework: https://github.com/java-operator-sdk/kubernetes-webooks-framework
   Framework to implement Admission Controllers and Conversion Hooks.
 * Operator SDK plugin: https://github.com/operator-framework/java-operator-plugins
 
