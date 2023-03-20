@@ -104,15 +104,13 @@ public class MicrometerMetrics implements Metrics {
     final var resourceID = execution.resourceID();
     final var metadata = execution.metadata();
     final var tags = new ArrayList<String>(metadata.size() + 4);
+    tags.add("controller");
+    tags.add(name);
     if (collectPerResourceMetrics) {
       tags.addAll(List.of(
-          "controller", name,
           "resource.name", resourceID.getName(),
           "resource.namespace", resourceID.getNamespace().orElse(""),
           "resource.scope", getScope(resourceID)));
-    } else {
-      tags.add("controller");
-      tags.add(name);
     }
     final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
     if (gvk != null) {
