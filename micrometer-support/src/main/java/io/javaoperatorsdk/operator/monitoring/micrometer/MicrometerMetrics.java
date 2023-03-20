@@ -233,8 +233,12 @@ public class MicrometerMetrics implements Metrics {
 
   public static List<Tag> gvkTags(Class<? extends HasMetadata> resourceClass) {
     final var gvk = GroupVersionKind.gvkFor(resourceClass);
-    return List.of(Tag.of("group", gvk.group), Tag.of("version", gvk.version),
-        Tag.of("kind", gvk.kind));
+    if (groupExists(gvk)) {
+      return List.of(Tag.of("group", gvk.group), Tag.of("version", gvk.version),
+          Tag.of("kind", gvk.kind));
+    } else {
+      return List.of(Tag.of("version", gvk.version), Tag.of("kind", gvk.kind));
+    }
   }
 
   private void incrementCounter(ResourceID id, String counterName, Map<String, Object> metadata,
@@ -254,14 +258,19 @@ public class MicrometerMetrics implements Metrics {
     }
     if (metadataNb > 0) {
       final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
-      tags.addAll(List.of(
-          "group", gvk.group,
-          "version", gvk.version,
-          "kind", gvk.kind));
+      if (groupExists(gvk)) {
+        tags.add("group");
+        tags.add(gvk.group);
+      }
+      tags.addAll(List.of("version", gvk.version, "kind", gvk.kind));
     }
     final var counter = registry.counter(PREFIX + counterName, tags.toArray(new String[0]));
     cleaner.recordAssociation(id, counter);
     counter.increment();
+  }
+
+  private static boolean groupExists(GroupVersionKind gvk) {
+    return gvk.group != null && !gvk.group.isBlank();
   }
 
   protected Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
