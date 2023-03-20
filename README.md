@@ -5,11 +5,18 @@
 
 # Build Kubernetes Operators in Java Without Hassle 
 
+Java Operator SDK is a production-ready framework that makes implementing Kubernetes Operators in Java easy. 
+
+It provides a controller runtime, support for testing operators, and related tooling. In addition to that implementing
+conversion hooks and dynamic admission controllers are supported as a separate project 
+(and much more, see related projects section).
+
+Under the hood it uses the excellent [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client),
+which provides additional facilities, like generating CRD from source code (and vice versa). 
+
 ## Documentation
 
 Documentation can be found on the  **[JOSDK WebSite](https://javaoperatorsdk.io/)**.
-
-It's getting better every day! :)
 
 ## Contact us
 
@@ -40,13 +47,13 @@ For all features and their usage see the [related section on the website](https:
 
 ## Related Projects
 
-Operator SDK plugin: https://github.com/operator-framework/java-operator-plugins
-
-Quarkus Extension: https://github.com/quarkiverse/quarkus-operator-sdk
-
-Spring Boot Starter: https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
-
-Framework to implement Admission Controllers and Conversion Hooks: https://github.com/java-operator-sdk/kubernetes-webooks-framework
+* Quarkus Extension: https://github.com/quarkiverse/quarkus-operator-sdk
+* Spring Boot Starter: https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
+* jenvtest: https://github.com/java-operator-sdk/jenvtest 
+  Support for integration testing against Kubernetes API Server in a lightweight manner
+* Kubernetes Webhooks Framework: https://github.com/java-operator-sdk/kubernetes-webooks-framework
+  Framework to implement Admission Controllers and Conversion Hooks.
+* Operator SDK plugin: https://github.com/operator-framework/java-operator-plugins
 
 ## Projects using JOSDK
 
