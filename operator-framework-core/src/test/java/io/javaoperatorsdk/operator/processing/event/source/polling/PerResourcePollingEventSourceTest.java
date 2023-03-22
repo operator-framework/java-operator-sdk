@@ -139,8 +139,18 @@ class PerResourcePollingEventSourceTest extends
   }
 
   @Test
-  void dynamicDelaysCanBeImplemented() {
+  void supportsDynamicPollingDelay() {
+    when(supplier.fetchResources(any()))
+            .thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchDelay(any(),any()))
+            .thenReturn(Optional.of(Duration.ofMillis(PERIOD*2)))
+            .thenReturn(Optional.of(Duration.ofMillis(PERIOD)));
 
+    source.onResourceCreated(testCustomResource);
+
+    await().pollDelay(Duration.ofMillis(PERIOD)).untilAsserted(() -> {
+      // todo
+    });
   }
 
 }
