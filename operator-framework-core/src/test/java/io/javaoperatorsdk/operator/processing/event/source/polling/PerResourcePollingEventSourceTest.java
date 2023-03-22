@@ -131,4 +131,9 @@ class PerResourcePollingEventSourceTest extends
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
+  @Test
+  void dynamicDelaysCanBeImplemented() {
+
+  }
+
 }
