@@ -143,14 +143,30 @@ class PerResourcePollingEventSourceTest extends
     when(supplier.fetchResources(any()))
             .thenReturn(Set.of(SampleExternalResource.testResource1()));
     when(supplier.fetchDelay(any(),any()))
-            .thenReturn(Optional.of(Duration.ofMillis(PERIOD*2)))
-            .thenReturn(Optional.of(Duration.ofMillis(PERIOD)));
+            .thenReturn(Optional.of(Duration.ofMillis(PERIOD)))
+            .thenReturn(Optional.of(Duration.ofMillis(PERIOD*2)));
 
     source.onResourceCreated(testCustomResource);
 
-    await().pollDelay(Duration.ofMillis(PERIOD)).untilAsserted(() -> {
-      // todo
+    await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis((long) (1.5 * PERIOD)))
+            .pollInterval(Duration.ofMillis(20))
+            .untilAsserted(() -> {
+      verify(supplier,times(1)).fetchResources(any());
     });
+
+    // verifying that it is not called as with normal interval
+    await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis((long) (1.5*PERIOD)))
+            .pollInterval(Duration.ofMillis(20))
+            .untilAsserted(() -> {
+              verify(supplier,times(1)).fetchResources(any());
+            });
+
+    await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis(2 * PERIOD))
+            .pollInterval(Duration.ofMillis(20))
+            .untilAsserted(() -> {
+              verify(supplier,times(2)).fetchResources(any());
+            });
+
   }
 
 }
