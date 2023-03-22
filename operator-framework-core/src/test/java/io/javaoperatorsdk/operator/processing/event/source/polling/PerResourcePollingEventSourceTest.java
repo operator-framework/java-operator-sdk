@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -16,6 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResourc
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
@@ -47,45 +49,50 @@ class PerResourcePollingEventSourceTest extends
   }
 
   @Test
-  void pollsTheResourceAfterAwareOfIt() throws InterruptedException {
+  void pollsTheResourceAfterAwareOfIt() {
     source.onResourceCreated(testCustomResource);
 
-    Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
-    verify(eventHandler, times(1)).handleEvent(any());
+    await().pollDelay(Duration.ofMillis(3 * PERIOD)).untilAsserted(() -> {
+      verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
+      verify(supplier, atLeast(2)).fetchDelay(any(), eq(testCustomResource));
+      verify(eventHandler, times(1)).handleEvent(any());
+    });
   }
 
   @Test
-  void registeringTaskOnAPredicate() throws InterruptedException {
+  void registeringTaskOnAPredicate() {
     setUpSource(new PerResourcePollingEventSource<>(supplier, resourceCache, PERIOD,
         testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
         SampleExternalResource.class, CacheKeyMapper.singleResourceCacheKeyMapper()));
     source.onResourceCreated(testCustomResource);
-    Thread.sleep(2 * PERIOD);
 
-    verify(supplier, times(0)).fetchResources(eq(testCustomResource));
+
+    await().pollDelay(Duration.ofMillis(2 * PERIOD))
+        .untilAsserted(() -> verify(supplier, times(0)).fetchResources(eq(testCustomResource)));
+
     testCustomResource.getMetadata().setGeneration(2L);
     source.onResourceUpdated(testCustomResource, testCustomResource);
 
-    Thread.sleep(2 * PERIOD);
 
-    verify(supplier, atLeast(1)).fetchResources(eq(testCustomResource));
+    await().pollDelay(Duration.ofMillis(2 * PERIOD))
+        .untilAsserted(() -> verify(supplier, atLeast(1)).fetchResources(eq(testCustomResource)));
   }
 
   @Test
-  void propagateEventOnDeletedResource() throws InterruptedException {
+  void propagateEventOnDeletedResource() {
     source.onResourceCreated(testCustomResource);
     when(supplier.fetchResources(any()))
         .thenReturn(Set.of(SampleExternalResource.testResource1()))
         .thenReturn(Collections.emptySet());
 
-    Thread.sleep(3 * PERIOD);
-    verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
-    verify(eventHandler, times(2)).handleEvent(any());
+    await().pollDelay(Duration.ofMillis(3 * PERIOD)).untilAsserted(() -> {
+      verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
+      verify(eventHandler, times(2)).handleEvent(any());
+    });
   }
 
   @Test
-  void getSecondaryResourceInitiatesFetchJustForFirstTime() throws InterruptedException {
+  void getSecondaryResourceInitiatesFetchJustForFirstTime() {
     source.onResourceCreated(testCustomResource);
     when(supplier.fetchResources(any()))
         .thenReturn(Set.of(SampleExternalResource.testResource1()))
@@ -104,31 +111,31 @@ class PerResourcePollingEventSourceTest extends
     verify(supplier, times(1)).fetchResources(eq(testCustomResource));
     verify(eventHandler, never()).handleEvent(any());
 
-    Thread.sleep(PERIOD * 2);
-
-    verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
-    value = source.getSecondaryResources(testCustomResource);
-    assertThat(value).hasSize(2);
+    await().pollDelay(Duration.ofMillis(PERIOD * 2)).untilAsserted(() -> {
+      verify(supplier, atLeast(2)).fetchResources(eq(testCustomResource));
+      var val = source.getSecondaryResources(testCustomResource);
+      assertThat(val).hasSize(2);
+    });
   }
 
   @Test
-  void getsValueFromCacheOrSupplier() throws InterruptedException {
+  void getsValueFromCacheOrSupplier() {
     source.onResourceCreated(testCustomResource);
     when(supplier.fetchResources(any()))
         .thenReturn(Collections.emptySet())
         .thenReturn(Set.of(SampleExternalResource.testResource1()));
 
-    Thread.sleep(PERIOD / 3);
+    await().pollDelay(Duration.ofMillis(PERIOD / 3)).untilAsserted(() -> {
+      var value = source.getSecondaryResources(testCustomResource);
+      verify(eventHandler, times(0)).handleEvent(any());
+      assertThat(value).isEmpty();
+    });
 
-    var value = source.getSecondaryResources(testCustomResource);
-    verify(eventHandler, times(0)).handleEvent(any());
-    assertThat(value).isEmpty();
-
-    Thread.sleep(PERIOD * 2);
-
-    value = source.getSecondaryResources(testCustomResource);
-    assertThat(value).hasSize(1);
-    verify(eventHandler, times(1)).handleEvent(any());
+    await().pollDelay(Duration.ofMillis(PERIOD * 2)).untilAsserted(() -> {
+      var value2 = source.getSecondaryResources(testCustomResource);
+      assertThat(value2).hasSize(1);
+      verify(eventHandler, times(1)).handleEvent(any());
+    });
   }
 
   @Test
