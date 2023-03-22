@@ -304,20 +304,22 @@ public class MicrometerMetrics implements Metrics {
 
     /**
      * @param cleanUpDelayInSeconds the number of seconds to wait before {@link Meter}s are removed
-     *        for deleted resources, defaults to 0 (meaning meters will be removed immediately after
+     *        for deleted resources, defaults to 1 (meaning meters will be removed one second after
      *        the associated resource is deleted) if not specified or if the provided number is
-     *        lesser or equal to 0
+     *        lesser than 0. Threading and the general interaction model of interacting with the API
+     *        server means that it's not possible to ensure that meters are immediately deleted in
+     *        all cases so a minimal delay of one second is always enforced
      */
     public PerResourceCollectingMicrometerMetricsBuilder withCleanUpDelayInSeconds(
         int cleanUpDelayInSeconds) {
-      this.cleanUpDelayInSeconds = Math.max(cleanUpDelayInSeconds, 0);
+      this.cleanUpDelayInSeconds = Math.max(cleanUpDelayInSeconds, 1);
       return this;
     }
 
     @Override
     public MicrometerMetrics build() {
-      final var cleaner = cleanUpDelayInSeconds == 0 ? new DefaultCleaner(registry)
-          : new DelayedCleaner(registry, cleanUpDelayInSeconds, cleaningThreadsNumber);
+      final var cleaner =
+          new DelayedCleaner(registry, cleanUpDelayInSeconds, cleaningThreadsNumber);
       return new MicrometerMetrics(registry, cleaner, true);
     }
   }
