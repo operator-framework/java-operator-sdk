@@ -119,15 +119,11 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   // This method is always called from the same Thread for the same resource,
   // since events from ResourceEventAware are propagated from the thread of the informer. This is
-  // important
-  // because otherwise there will be a race condition related to the timerTasks.
-  @SuppressWarnings("unchecked")
+  // important because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(P resource) {
     var primaryID = ResourceID.fromResource(resource);
     if (scheduledFutures.get(primaryID) == null && (registerPredicate == null
         || registerPredicate.test(resource))) {
-
-
       var cachedResources = cache.get(primaryID);
       var actualResources =
           cachedResources == null ? null : new HashSet<>(cachedResources.values());
@@ -154,7 +150,6 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
       var primary = resourceCache.get(primaryID);
       if (primary.isEmpty()) {
         log.warn("No resource in cache for resource ID: {}", primaryID);
-        // todo think through + test
         // no new execution is scheduled in this case, a on delete event should be received shortly
       } else {
         var actualResources = primary.map(p -> getAndCacheResource(p, false));

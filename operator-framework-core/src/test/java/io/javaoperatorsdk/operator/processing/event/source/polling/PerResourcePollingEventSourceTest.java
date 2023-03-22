@@ -150,23 +150,34 @@ class PerResourcePollingEventSourceTest extends
 
     await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis((long) (1.5 * PERIOD)))
             .pollInterval(Duration.ofMillis(20))
-            .untilAsserted(() -> {
-      verify(supplier,times(1)).fetchResources(any());
-    });
-
+            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
     // verifying that it is not called as with normal interval
     await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis((long) (1.5*PERIOD)))
             .pollInterval(Duration.ofMillis(20))
-            .untilAsserted(() -> {
-              verify(supplier,times(1)).fetchResources(any());
-            });
-
+            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
     await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis(2 * PERIOD))
             .pollInterval(Duration.ofMillis(20))
-            .untilAsserted(() -> {
-              verify(supplier,times(2)).fetchResources(any());
-            });
+            .untilAsserted(() -> verify(supplier,times(2)).fetchResources(any()));
+  }
 
+  @Test
+  void deleteEventCancelsTheScheduling() {
+    when(supplier.fetchResources(any()))
+            .thenReturn(Set.of(SampleExternalResource.testResource1()));
+
+    source.onResourceCreated(testCustomResource);
+
+    await().pollDelay(Duration.ofMillis(PERIOD))
+            .atMost(Duration.ofMillis((2* PERIOD)))
+            .pollInterval(Duration.ofMillis(20))
+            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
+
+    source.onResourceDeleted(testCustomResource);
+
+    // check if not called again.
+    await().pollDelay(Duration.ofMillis(PERIOD))
+            .atMost(Duration.ofMillis((2* PERIOD)))
+            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
   }
 
 }
