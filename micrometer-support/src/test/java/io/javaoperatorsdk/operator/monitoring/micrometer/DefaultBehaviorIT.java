@@ -24,8 +24,7 @@ public class DefaultBehaviorIT extends AbstractMicrometerMetricsTestFixture {
   }
 
   @Override
-  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
-      throws Exception {
+  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters) {
     // meters should be neither recorded, nor removed by default
     assertThat(registry.getRemoved()).isEmpty();
   }

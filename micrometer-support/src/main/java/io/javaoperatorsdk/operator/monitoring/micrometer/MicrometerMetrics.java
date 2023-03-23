@@ -367,6 +367,7 @@ public class MicrometerMetrics implements Metrics {
     /**
      * Configures the instance to collect metrics on a per-resource basis.
      */
+    @SuppressWarnings("unused")
     public PerResourceCollectingMicrometerMetricsBuilder collectingMetricsPerResource() {
       collectingPerResourceMetrics = true;
       return new PerResourceCollectingMicrometerMetricsBuilder(registry);
@@ -376,6 +377,7 @@ public class MicrometerMetrics implements Metrics {
      * Configures the instance to only collect metrics per resource **type**, in an aggregate
      * fashion, instead of per resource instance.
      */
+    @SuppressWarnings("unused")
     public MicrometerMetricsBuilder notCollectingMetricsPerResource() {
       collectingPerResourceMetrics = false;
       return this;
