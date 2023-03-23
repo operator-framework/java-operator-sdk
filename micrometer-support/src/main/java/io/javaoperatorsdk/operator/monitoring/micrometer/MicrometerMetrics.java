@@ -30,6 +30,13 @@ public class MicrometerMetrics implements Metrics {
   private static final String RECONCILIATIONS = "reconciliations.";
   private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
   private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
+  private static final String NAME = "name";
+  private static final String NAMESPACE = "namespace";
+  private static final String GROUP = "group";
+  private static final String VERSION = "version";
+  private static final String KIND = "kind";
+  private static final String SCOPE = "scope";
+  private static final String METADATA_PREFIX = "resource.";
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
@@ -125,22 +132,10 @@ public class MicrometerMetrics implements Metrics {
     final var execName = PREFIX + "controllers.execution." + execution.name();
     final var resourceID = execution.resourceID();
     final var metadata = execution.metadata();
-    final var tags = new ArrayList<String>(metadata.size() + 4);
+    final var tags = new ArrayList<String>(16);
     tags.add("controller");
     tags.add(name);
-    if (collectPerResourceMetrics) {
-      tags.addAll(List.of(
-          "resource.name", resourceID.getName(),
-          "resource.namespace", resourceID.getNamespace().orElse(""),
-          "resource.scope", getScope(resourceID)));
-    }
-    final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
-    if (gvk != null) {
-      tags.addAll(List.of(
-          "resource.group", gvk.group,
-          "resource.version", gvk.version,
-          "resource.kind", gvk.kind));
-    }
+    addMetadataTags(resourceID, metadata, tags, true);
     final var timer =
         Timer.builder(execName)
             .tags(tags.toArray(new String[0]))
@@ -167,6 +162,35 @@ public class MicrometerMetrics implements Metrics {
           .increment();
       throw e;
     }
+  }
+
+  private void addMetadataTags(ResourceID resourceID, Map<String, Object> metadata,
+      List<String> tags, boolean prefixed) {
+    if (collectPerResourceMetrics) {
+      addTag(NAME, resourceID.getName(), tags, prefixed);
+      addTagOmittingOnEmptyValue(NAMESPACE, resourceID.getNamespace().orElse(""), tags, prefixed);
+    }
+    addTag(SCOPE, getScope(resourceID), tags, prefixed);
+    final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
+    if (gvk != null) {
+      addTagOmittingOnEmptyValue(GROUP, gvk.group, tags, prefixed);
+      addTag(VERSION, gvk.version, tags, prefixed);
+      addTag(KIND, gvk.kind, tags, prefixed);
+    }
+  }
+
+  private static void addTag(String name, String value, List<String> tags, boolean prefixed) {
+    tags.add(getPrefixedMetadataTag(name, prefixed));
+    tags.add(value);
+  }
+  private static void addTagOmittingOnEmptyValue(String name, String value, List<String> tags, boolean prefixed) {
+    if (value != null && !value.isBlank()) {
+      addTag(name, value, tags, prefixed);
+    }
+  }
+
+  private static String getPrefixedMetadataTag(String tagName, boolean prefixed) {
+    return prefixed ? METADATA_PREFIX + tagName : tagName;
   }
 
   private static String getScope(ResourceID resourceID) {
@@ -269,22 +293,9 @@ public class MicrometerMetrics implements Metrics {
         additionalTags != null && additionalTags.length > 0 ? additionalTags.length : 0;
     final var metadataNb = metadata != null ? metadata.size() : 0;
     final var tags = new ArrayList<String>(6 + additionalTagsNb + metadataNb);
-    if (collectPerResourceMetrics) {
-      tags.addAll(List.of(
-          "name", id.getName(),
-          "namespace", id.getNamespace().orElse(""),
-          "scope", getScope(id)));
-    }
+    addMetadataTags(id, metadata, tags, false);
     if (additionalTagsNb > 0) {
       tags.addAll(List.of(additionalTags));
-    }
-    if (metadataNb > 0) {
-      final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
-      if (groupExists(gvk)) {
-        tags.add("group");
-        tags.add(gvk.group);
-      }
-      tags.addAll(List.of("version", gvk.version, "kind", gvk.kind));
     }
     final var counter = registry.counter(PREFIX + counterName, tags.toArray(new String[0]));
     cleaner.recordAssociation(id, counter);
