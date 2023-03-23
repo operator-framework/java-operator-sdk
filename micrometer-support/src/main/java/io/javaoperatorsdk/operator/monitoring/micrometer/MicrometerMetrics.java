@@ -49,15 +49,37 @@ public class MicrometerMetrics implements Metrics {
     this(registry, Cleaner.NOOP, true);
   }
 
+  /**
+   * Creates a MicrometerMetrics instance configured to not collect per-resource metrics, just
+   * aggregates per resource **type**
+   *
+   * @param registry the {@link MeterRegistry} instance to use for metrics recording
+   * @return a MicrometerMetrics instance configured to not collect per-resource metrics
+   */
   public static MicrometerMetrics withoutPerResourceMetrics(MeterRegistry registry) {
     return new MicrometerMetrics(registry, Cleaner.NOOP, false);
   }
 
-  public static MicrometerMetricsBuilder newMicrometerMetrics(MeterRegistry registry) {
+  /**
+   * Creates a new builder to configure how the eventual MicrometerMetrics instance will behave.
+   *
+   * @param registry the {@link MeterRegistry} instance to use for metrics recording
+   * @return a MicrometerMetrics instance configured to not collect per-resource metrics
+   * @see MicrometerMetricsBuilder
+   */
+  public static MicrometerMetricsBuilder newMicrometerMetricsBuilder(MeterRegistry registry) {
     return new MicrometerMetricsBuilder(registry);
   }
 
-  public static PerResourceCollectingMicrometerMetricsBuilder newPerResourceCollectingMicrometerMetrics(
+  /**
+   * Creates a new builder to configure how the eventual MicrometerMetrics instance will behave,
+   * pre-configuring it to collect metrics per resource.
+   *
+   * @param registry the {@link MeterRegistry} instance to use for metrics recording
+   * @return a MicrometerMetrics instance configured to not collect per-resource metrics
+   * @see PerResourceCollectingMicrometerMetricsBuilder
+   */
+  public static PerResourceCollectingMicrometerMetricsBuilder newPerResourceCollectingMicrometerMetricsBuilder(
       MeterRegistry registry) {
     return new PerResourceCollectingMicrometerMetricsBuilder(registry);
   }
@@ -331,11 +353,18 @@ public class MicrometerMetrics implements Metrics {
       this.registry = registry;
     }
 
+    /**
+     * Configures the instance to collect metrics on a per-resource basis.
+     */
     public PerResourceCollectingMicrometerMetricsBuilder collectingMetricsPerResource() {
       collectingPerResourceMetrics = true;
       return new PerResourceCollectingMicrometerMetricsBuilder(registry);
     }
 
+    /**
+     * Configures the instance to only collect metrics per resource **type**, in an aggregate
+     * fashion, instead of per resource instance.
+     */
     public MicrometerMetricsBuilder notCollectingMetricsPerResource() {
       collectingPerResourceMetrics = false;
       return this;

@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultBehaviorIT extends AbstractMicrometerMetricsTestFixture {
   @Override
   protected MicrometerMetrics getMetrics() {
-    return MicrometerMetrics.newMicrometerMetrics(registry).build();
+    return MicrometerMetrics.newMicrometerMetricsBuilder(registry).build();
   }
 
   @Override
