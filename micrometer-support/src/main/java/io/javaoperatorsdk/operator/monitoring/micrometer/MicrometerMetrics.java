@@ -183,7 +183,9 @@ public class MicrometerMetrics implements Metrics {
     tags.add(getPrefixedMetadataTag(name, prefixed));
     tags.add(value);
   }
-  private static void addTagOmittingOnEmptyValue(String name, String value, List<String> tags, boolean prefixed) {
+
+  private static void addTagOmittingOnEmptyValue(String name, String value, List<String> tags,
+      boolean prefixed) {
     if (value != null && !value.isBlank()) {
       addTag(name, value, tags, prefixed);
     }
