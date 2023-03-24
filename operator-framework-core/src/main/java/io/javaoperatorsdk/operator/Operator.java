@@ -73,7 +73,11 @@ public class Operator implements LifecycleAware {
                 .build();
     ConfigurationServiceProvider.set(configurationService);
     configurationService.getLeaderElectionConfiguration()
-        .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
+        .ifPresent(c -> leaderElectionManager.init(c,
+            configurationService.getKubernetesClient().isPresent()
+                ? configurationService.getKubernetesClient()
+                    .get()
+                : this.kubernetesClient));
   }
 
   /**

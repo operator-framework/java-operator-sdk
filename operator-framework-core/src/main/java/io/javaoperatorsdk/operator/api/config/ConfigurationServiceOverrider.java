@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +30,7 @@ public class ConfigurationServiceOverrider {
   private LeaderElectionConfiguration leaderElectionConfiguration;
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
+  private KubernetesClient leaderElectionKubernetesClient;
   private Duration cacheSyncTimeout;
   private ResourceClassResolver resourceClassResolver;
 
@@ -95,6 +97,12 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withLeaderElectionConfiguration(
       LeaderElectionConfiguration leaderElectionConfiguration) {
     this.leaderElectionConfiguration = leaderElectionConfiguration;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withLeaderElectionKubernetesClient(
+      KubernetesClient kubernetesClient) {
+    this.leaderElectionKubernetesClient = kubernetesClient;
     return this;
   }
 
@@ -185,6 +193,12 @@ public class ConfigurationServiceOverrider {
       public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
         return leaderElectionConfiguration != null ? Optional.of(leaderElectionConfiguration)
             : original.getLeaderElectionConfiguration();
+      }
+
+      @Override
+      public Optional<KubernetesClient> getKubernetesClient() {
+        return leaderElectionKubernetesClient != null ? Optional.of(leaderElectionKubernetesClient)
+            : original.getKubernetesClient();
       }
 
       @Override

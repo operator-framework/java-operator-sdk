@@ -24,7 +24,9 @@ public class LeaderElectionTestOperator {
 
     var client = new KubernetesClientBuilder().build();
     Operator operator =
-        new Operator(client, c -> c.withLeaderElectionConfiguration(leaderElectionConfiguration));
+        new Operator(client,
+                c -> c.withLeaderElectionConfiguration(leaderElectionConfiguration).
+                        withLeaderElectionKubernetesClient(client));
 
     operator.register(new LeaderElectionTestReconciler(identity));
     operator.start();

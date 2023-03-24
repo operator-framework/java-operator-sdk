@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -153,6 +154,11 @@ public interface ConfigurationService {
   }
 
   default Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
+    return Optional.empty();
+  }
+
+
+  default Optional<KubernetesClient> getKubernetesClient() {
     return Optional.empty();
   }
 
