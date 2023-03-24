@@ -817,18 +817,19 @@ The micrometer implementation records the following metrics:
 | operator.sdk.reconciliations.started                      | counter        | <resource metadata>, reconciliations.retries.last, reconciliations.retries.number | Number of started reconciliations per resource type                                                    |
 | operator.sdk.reconciliations.failed                       | counter        | <resource metadata>, exception                                                    | Number of failed reconciliations per resource type                                                     |
 | operator.sdk.reconciliations.success                      | counter        | <resource metadata>                                                               | Number of successful reconciliations per resource type                                                 |
-| operator.sdk.controllers.execution.reconcile      | timer        | <resource metadata>, controller                                             | Time taken for reconciliations per controller |
-| operator.sdk.controllers.execution.reconcile.success      | counter        | <resource metadata>, controller, type                                             | Number of successful reconciliations per controller                                                    |
-| operator.sdk.controllers.execution.reconcile.failure      | counter        | <resource metadata>, controller, exception                                        | Number of failed reconciliations per controller                                                        |
-| operator.sdk.controllers.execution.cleanup.success        | counter        | <resource metadata>, controller, type                                             | Number of successful cleanups per controller                                                           |
-| operator.sdk.controllers.execution.cleanup.failure        | counter        | <resource metadata>, controller, exception                                        | Number of failed cleanups per controller                                                               |
+| operator.sdk.controllers.execution.reconcile              | timer          | <resource metadata>, controller                                                   | Time taken for reconciliations per controller                                                          |
+| operator.sdk.controllers.execution.cleanup                | timer          | <resource metadata>, controller                                                   | Time taken for cleanups per controller                                                                 |
+| operator.sdk.controllers.execution.reconcile.success      | counter        | controller, type                                                                  | Number of successful reconciliations per controller                                                    |
+| operator.sdk.controllers.execution.reconcile.failure      | counter        | controller, exception                                                             | Number of failed reconciliations per controller                                                        |
+| operator.sdk.controllers.execution.cleanup.success        | counter        | controller, type                                                                  | Number of successful cleanups per controller                                                           |
+| operator.sdk.controllers.execution.cleanup.failure        | counter        | controller, exception                                                             | Number of failed cleanups per controller                                                               |
 
 As you can see all the recorded metrics start with the `operator.sdk` prefix. `<resource metadata>`, in the table above,
 refers to resource-specific metadata and depends on the considered metric and how the implementation is configured and
 could be summed up as follows: `group?, version, kind, [name, namespace?], scope` where the tags in square
 brackets (`[]`) won't be present when per-resource collection is disabled and tags followed by a question mark are
 omitted if the associated value is empty. Of note, when in the context of controllers' execution metrics, these tag
-names are prefixed with `resource.`. This prefix might be removed in a future version for greater consistency. 
+names are prefixed with `resource.`. This prefix might be removed in a future version for greater consistency.
 
 ## Optimizing Caches
 
