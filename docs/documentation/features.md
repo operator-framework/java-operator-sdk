@@ -778,7 +778,7 @@ The micrometer implementation is typically created using one of the provided fac
 is used, will return either a ready to use instance or a builder allowing users to customized how the implementation
 behaves, in particular when it comes to the granularity of collected metrics. It is, for example, possible to collect
 metrics on a per-resource basis via tags that are associated with meters. This is the default, historical behavior but
-this might change in a future version of JOSDK because this dramatically increases the cardinality of metrics, which
+this will change in a future version of JOSDK because this dramatically increases the cardinality of metrics, which
 could lead to performance issues.
 
 To create a `MicrometerMetrics` implementation that behaves how it has historically behaved, you can just create an
