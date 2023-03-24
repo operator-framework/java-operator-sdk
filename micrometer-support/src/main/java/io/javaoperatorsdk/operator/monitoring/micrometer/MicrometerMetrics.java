@@ -28,6 +28,11 @@ public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";
   private static final String RECONCILIATIONS = "reconciliations.";
+  private static final String RECONCILIATIONS_FAILED = RECONCILIATIONS + "failed";
+  private static final String RECONCILIATIONS_SUCCESS = RECONCILIATIONS + "success";
+  private static final String RECONCILIATIONS_RETRIES_LAST = RECONCILIATIONS + "retries.last";
+  private static final String RECONCILIATIONS_RETRIES_NUMBER = RECONCILIATIONS + "retries.number";
+  private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started";
   private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
   private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
   private static final String NAME = "name";
@@ -37,6 +42,18 @@ public class MicrometerMetrics implements Metrics {
   private static final String KIND = "kind";
   private static final String SCOPE = "scope";
   private static final String METADATA_PREFIX = "resource.";
+  private static final String CONTROLLERS_EXECUTION = "controllers.execution.";
+  private static final String CONTROLLER = "controller";
+  private static final String SUCCESS_SUFFIX = ".success";
+  private static final String FAILURE_SUFFIX = ".failure";
+  private static final String TYPE = "type";
+  private static final String EXCEPTION = "exception";
+  private static final String EVENT = "event";
+  private static final String ACTION = "action";
+  private static final String EVENTS_RECEIVED = "events.received";
+  private static final String EVENTS_DELETE = "events.delete";
+  private static final String CLUSTER = "cluster";
+  private static final String SIZE_SUFFIX = ".size";
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
@@ -108,37 +125,35 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void controllerRegistered(Controller<?> controller) {
-    String executingThreadsName =
-        RECONCILIATIONS_EXECUTIONS + controller.getConfiguration().getName();
+  public void controllerRegistered(Controller<? extends HasMetadata> controller) {
+    final var configuration = controller.getConfiguration();
+    final var name = configuration.getName();
+    final var executingThreadsName = RECONCILIATIONS_EXECUTIONS + name;
+    final var resourceClass = configuration.getResourceClass();
+    final var tags = new ArrayList<Tag>(3);
+    addGVKTags(GroupVersionKind.gvkFor(resourceClass), tags, false);
     AtomicInteger executingThreads =
-        registry.gauge(executingThreadsName,
-            gvkTags(controller.getConfiguration().getResourceClass()),
-            new AtomicInteger(0));
+        registry.gauge(executingThreadsName, tags, new AtomicInteger(0));
     gauges.put(executingThreadsName, executingThreads);
 
-    String controllerQueueName =
-        RECONCILIATIONS_QUEUE_SIZE + controller.getConfiguration().getName();
+    final var controllerQueueName = RECONCILIATIONS_QUEUE_SIZE + name;
     AtomicInteger controllerQueueSize =
-        registry.gauge(controllerQueueName,
-            gvkTags(controller.getConfiguration().getResourceClass()),
-            new AtomicInteger(0));
+        registry.gauge(controllerQueueName, tags, new AtomicInteger(0));
     gauges.put(controllerQueueName, controllerQueueSize);
   }
 
   @Override
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
-    final var execName = PREFIX + "controllers.execution." + execution.name();
+    final var execName = PREFIX + CONTROLLERS_EXECUTION + execution.name();
     final var resourceID = execution.resourceID();
     final var metadata = execution.metadata();
-    final var tags = new ArrayList<String>(16);
-    tags.add("controller");
-    tags.add(name);
+    final var tags = new ArrayList<Tag>(16);
+    tags.add(Tag.of(CONTROLLER, name));
     addMetadataTags(resourceID, metadata, tags, true);
     final var timer =
         Timer.builder(execName)
-            .tags(tags.toArray(new String[0]))
+            .tags(tags)
             .publishPercentiles(0.3, 0.5, 0.95)
             .publishPercentileHistogram()
             .register(registry);
@@ -152,71 +167,35 @@ public class MicrometerMetrics implements Metrics {
       });
       final var successType = execution.successTypeName(result);
       registry
-          .counter(execName + ".success", "controller", name, "type", successType)
+          .counter(execName + SUCCESS_SUFFIX, CONTROLLER, name, TYPE, successType)
           .increment();
       return result;
     } catch (Exception e) {
       final var exception = e.getClass().getSimpleName();
       registry
-          .counter(execName + ".failure", "controller", name, "exception", exception)
+          .counter(execName + FAILURE_SUFFIX, CONTROLLER, name, EXCEPTION, exception)
           .increment();
       throw e;
     }
   }
 
-  private void addMetadataTags(ResourceID resourceID, Map<String, Object> metadata,
-      List<String> tags, boolean prefixed) {
-    if (collectPerResourceMetrics) {
-      addTag(NAME, resourceID.getName(), tags, prefixed);
-      addTagOmittingOnEmptyValue(NAMESPACE, resourceID.getNamespace().orElse(""), tags, prefixed);
-    }
-    addTag(SCOPE, getScope(resourceID), tags, prefixed);
-    final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
-    if (gvk != null) {
-      addTagOmittingOnEmptyValue(GROUP, gvk.group, tags, prefixed);
-      addTag(VERSION, gvk.version, tags, prefixed);
-      addTag(KIND, gvk.kind, tags, prefixed);
-    }
-  }
-
-  private static void addTag(String name, String value, List<String> tags, boolean prefixed) {
-    tags.add(getPrefixedMetadataTag(name, prefixed));
-    tags.add(value);
-  }
-
-  private static void addTagOmittingOnEmptyValue(String name, String value, List<String> tags,
-      boolean prefixed) {
-    if (value != null && !value.isBlank()) {
-      addTag(name, value, tags, prefixed);
-    }
-  }
-
-  private static String getPrefixedMetadataTag(String tagName, boolean prefixed) {
-    return prefixed ? METADATA_PREFIX + tagName : tagName;
-  }
-
-  private static String getScope(ResourceID resourceID) {
-    return resourceID.getNamespace().isPresent() ? "namespace" : "cluster";
-  }
-
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
-    final String[] tags;
     if (event instanceof ResourceEvent) {
-      tags = new String[] {"event", event.getClass().getSimpleName(), "action",
-          ((ResourceEvent) event).getAction().toString()};
+      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED,
+          metadata,
+          Tag.of(EVENT, event.getClass().getSimpleName()),
+          Tag.of(ACTION, ((ResourceEvent) event).getAction().toString()));
     } else {
-      tags = new String[] {"event", event.getClass().getSimpleName()};
+      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED,
+          metadata,
+          Tag.of(EVENT, event.getClass().getSimpleName()));
     }
-
-    incrementCounter(event.getRelatedCustomResourceID(), "events.received",
-        metadata,
-        tags);
   }
 
   @Override
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
-    incrementCounter(resourceID, "events.delete", metadata);
+    incrementCounter(resourceID, EVENTS_DELETE, metadata);
 
     cleaner.removeMetersFor(resourceID);
   }
@@ -225,12 +204,12 @@ public class MicrometerMetrics implements Metrics {
   public void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfoNullable,
       Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "started",
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_STARTED,
         metadata,
-        RECONCILIATIONS + "retries.number",
-        String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0)),
-        RECONCILIATIONS + "retries.last",
-        String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true)));
+        Tag.of(RECONCILIATIONS_RETRIES_NUMBER,
+            String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0))),
+        Tag.of(RECONCILIATIONS_RETRIES_LAST,
+            String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true))));
 
     var controllerQueueSize =
         gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
@@ -239,7 +218,7 @@ public class MicrometerMetrics implements Metrics {
 
   @Override
   public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "success", metadata);
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_SUCCESS, metadata);
   }
 
   @Override
@@ -269,51 +248,72 @@ public class MicrometerMetrics implements Metrics {
     } else if (cause instanceof RuntimeException) {
       cause = cause.getCause() != null ? cause.getCause() : cause;
     }
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS + "failed", metadata,
-        "exception",
-        cause.getClass().getSimpleName());
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_FAILED, metadata,
+        Tag.of(EXCEPTION, cause.getClass().getSimpleName()));
   }
 
   @Override
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
-    return registry.gaugeMapSize(PREFIX + name + ".size", Collections.emptyList(), map);
+    return registry.gaugeMapSize(PREFIX + name + SIZE_SUFFIX, Collections.emptyList(), map);
   }
 
-  public static List<Tag> gvkTags(Class<? extends HasMetadata> resourceClass) {
-    final var gvk = GroupVersionKind.gvkFor(resourceClass);
-    if (groupExists(gvk)) {
-      return List.of(Tag.of("group", gvk.group), Tag.of("version", gvk.version),
-          Tag.of("kind", gvk.kind));
-    } else {
-      return List.of(Tag.of("version", gvk.version), Tag.of("kind", gvk.kind));
+
+  private void addMetadataTags(ResourceID resourceID, Map<String, Object> metadata,
+      List<Tag> tags, boolean prefixed) {
+    if (collectPerResourceMetrics) {
+      addTag(NAME, resourceID.getName(), tags, prefixed);
+      addTagOmittingOnEmptyValue(NAMESPACE, resourceID.getNamespace().orElse(null), tags, prefixed);
+    }
+    addTag(SCOPE, getScope(resourceID), tags, prefixed);
+    final var gvk = (GroupVersionKind) metadata.get(Constants.RESOURCE_GVK_KEY);
+    if (gvk != null) {
+      addGVKTags(gvk, tags, prefixed);
     }
   }
 
+  private static void addTag(String name, String value, List<Tag> tags, boolean prefixed) {
+    tags.add(Tag.of(getPrefixedMetadataTag(name, prefixed), value));
+  }
+
+  private static void addTagOmittingOnEmptyValue(String name, String value, List<Tag> tags,
+      boolean prefixed) {
+    if (value != null && !value.isBlank()) {
+      addTag(name, value, tags, prefixed);
+    }
+  }
+
+  private static String getPrefixedMetadataTag(String tagName, boolean prefixed) {
+    return prefixed ? METADATA_PREFIX + tagName : tagName;
+  }
+
+  private static String getScope(ResourceID resourceID) {
+    return resourceID.getNamespace().isPresent() ? NAMESPACE : CLUSTER;
+  }
+
+  private static void addGVKTags(GroupVersionKind gvk, List<Tag> tags, boolean prefixed) {
+    addTagOmittingOnEmptyValue(GROUP, gvk.group, tags, prefixed);
+    addTag(VERSION, gvk.version, tags, prefixed);
+    addTag(KIND, gvk.kind, tags, prefixed);
+  }
+
   private void incrementCounter(ResourceID id, String counterName, Map<String, Object> metadata,
-      String... additionalTags) {
+      Tag... additionalTags) {
     final var additionalTagsNb =
         additionalTags != null && additionalTags.length > 0 ? additionalTags.length : 0;
     final var metadataNb = metadata != null ? metadata.size() : 0;
-    final var tags = new ArrayList<String>(6 + additionalTagsNb + metadataNb);
+    final var tags = new ArrayList<Tag>(6 + additionalTagsNb + metadataNb);
     addMetadataTags(id, metadata, tags, false);
     if (additionalTagsNb > 0) {
       tags.addAll(List.of(additionalTags));
     }
-    final var counter = registry.counter(PREFIX + counterName, tags.toArray(new String[0]));
+
+    final var counter = registry.counter(PREFIX + counterName, tags);
     cleaner.recordAssociation(id, counter);
     counter.increment();
   }
 
-  private static boolean groupExists(GroupVersionKind gvk) {
-    return gvk.group != null && !gvk.group.isBlank();
-  }
-
   protected Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
     return cleaner.recordedMeterIdsFor(resourceID);
-  }
-
-  protected Cleaner getCleaner() {
-    return cleaner;
   }
 
   public static class PerResourceCollectingMicrometerMetricsBuilder

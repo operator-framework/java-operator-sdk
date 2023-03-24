@@ -24,7 +24,7 @@ public interface Metrics {
   /**
    * Do initialization if necessary;
    */
-  default void controllerRegistered(Controller<?> controller) {}
+  default void controllerRegistered(Controller<? extends HasMetadata> controller) {}
 
   /**
    * Called when an event has been accepted by the SDK from an event source, which would result in
@@ -39,6 +39,7 @@ public interface Metrics {
    * @deprecated Use {@link #reconcileCustomResource(HasMetadata, RetryInfo, Map)} instead
    */
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("unused")
   default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo,
       Map<String, Object> metadata) {}
 
@@ -58,6 +59,7 @@ public interface Metrics {
    * @deprecated Use {@link #failedReconciliation(HasMetadata, Exception, Map)} instead
    */
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("unused")
   default void failedReconciliation(ResourceID resourceID, Exception exception,
       Map<String, Object> metadata) {}
 
@@ -112,6 +114,7 @@ public interface Metrics {
    * @deprecated Use {@link #finishedReconciliation(HasMetadata, Map)} instead
    */
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("unused")
   default void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**
