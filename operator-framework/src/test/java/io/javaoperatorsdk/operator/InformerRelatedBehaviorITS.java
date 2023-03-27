@@ -31,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The test relies on a special api server configuration: "min-request-timeout" to have a very low
- * value, use: "minikube start --extra-config=apiserver.min-request-timeout=3"
+ * value (in case want to try with minikube use: "minikube start
+ * --extra-config=apiserver.min-request-timeout=3")
  *
  * <p>
  * This is important when tests are affected by permission changes, since the watch permissions are
@@ -60,7 +61,7 @@ class InformerRelatedBehaviorITS {
         adminClient);
     testInfo.getTestMethod().ifPresent(method -> {
       actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
-      additionalNamespace = actualNamespace+ADDITIONAL_NAMESPACE_SUFFIX;
+      additionalNamespace = actualNamespace + ADDITIONAL_NAMESPACE_SUFFIX;
       adminClient.resource(namespace()).createOrReplace();
     });
     // cleans up binding before test, not all test cases use cluster role
@@ -113,15 +114,15 @@ class InformerRelatedBehaviorITS {
 
   @Test
   void startsUpIfNoPermissionToOneOfTwoNamespaces() {
-      adminClient.resource(namespace(additionalNamespace)).createOrReplace();
+    adminClient.resource(namespace(additionalNamespace)).createOrReplace();
 
-      addRoleBindingsToTestNamespaces();
-      var operator = startOperator(false, false, actualNamespace, additionalNamespace);
-      assertInformerNotWatchingForAdditionalNamespace(operator);
+    addRoleBindingsToTestNamespaces();
+    var operator = startOperator(false, false, actualNamespace, additionalNamespace);
+    assertInformerNotWatchingForAdditionalNamespace(operator);
 
-      adminClient.resource(testCustomResource()).createOrReplace();
-      waitForWatchReconnect();
-      assertReconciled();
+    adminClient.resource(testCustomResource()).createOrReplace();
+    waitForWatchReconnect();
+    assertReconciled();
   }
 
   private void assertInformerNotWatchingForAdditionalNamespace(Operator operator) {
