@@ -1,12 +1,12 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -21,29 +21,31 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class MetricsCleaningOnDeleteIT {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public abstract class AbstractMicrometerMetricsTestFixture {
   @RegisterExtension
-  static LocallyRunOperatorExtension operator =
+  LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(new MetricsCleaningTestReconciler())
           .build();
 
-  private static final TestSimpleMeterRegistry registry = new TestSimpleMeterRegistry();
-  private static final int testDelay = 1;
-  private static final MicrometerMetrics metrics = new MicrometerMetrics(registry, testDelay, 2);
-  private static final String testResourceName = "cleaning-metrics-cr";
+  protected final TestSimpleMeterRegistry registry = new TestSimpleMeterRegistry();
+  protected final MicrometerMetrics metrics = getMetrics();
+  protected static final String testResourceName = "micrometer-metrics-cr";
+
+  protected abstract MicrometerMetrics getMetrics();
 
   @BeforeAll
-  static void setup() {
+  void setup() {
     ConfigurationServiceProvider.overrideCurrent(overrider -> overrider.withMetrics(metrics));
   }
 
   @AfterAll
-  static void reset() {
+  void reset() {
     ConfigurationServiceProvider.reset();
   }
 
   @Test
-  void removesMetersAssociatedWithResourceAfterItsDeletion() throws InterruptedException {
+  void properlyHandlesResourceDeletion() throws Exception {
     var testResource = new ConfigMapBuilder()
         .withNewMetadata()
         .withName(testResourceName)
@@ -55,20 +57,28 @@ public class MetricsCleaningOnDeleteIT {
     await().until(() -> !operator.get(ConfigMap.class, testResourceName)
         .getMetadata().getFinalizers().isEmpty());
 
-    // check that we properly recorded meters associated with the resource
-    final var meters = metrics.recordedMeterIdsFor(ResourceID.fromResource(created));
-    assertThat(meters).isNotNull();
-    assertThat(meters).isNotEmpty();
+    final var resourceID = ResourceID.fromResource(created);
+    final var meters = preDeleteChecks(resourceID);
 
     // delete the resource and wait for it to be deleted
     operator.delete(testResource);
     await().until(() -> operator.get(ConfigMap.class, testResourceName) == null);
 
-    // check that the meters are properly removed after the specified delay
-    Thread.sleep(Duration.ofSeconds(testDelay).toMillis());
-    assertThat(registry.removed).isEqualTo(meters);
-    assertThat(metrics.recordedMeterIdsFor(ResourceID.fromResource(created))).isNull();
+    postDeleteChecks(resourceID, meters);
   }
+
+  protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
+    // check that we properly recorded meters associated with the resource
+    final var meters = metrics.recordedMeterIdsFor(resourceID);
+    // metrics are collected per resource
+    assertThat(registry.getMetersAsString()).contains(resourceID.getName());
+    assertThat(meters).isNotNull();
+    assertThat(meters).isNotEmpty();
+    return meters;
+  }
+
+  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
+      throws Exception {}
 
   @ControllerConfiguration
   private static class MetricsCleaningTestReconciler
@@ -84,13 +94,17 @@ public class MetricsCleaningOnDeleteIT {
     }
   }
 
-  private static class TestSimpleMeterRegistry extends SimpleMeterRegistry {
+  static class TestSimpleMeterRegistry extends SimpleMeterRegistry {
     private final Set<Meter.Id> removed = new HashSet<>();
 
     @Override
     public Meter remove(Meter.Id mappedId) {
       final var removed = super.remove(mappedId);
       this.removed.add(removed.getId());
+      return removed;
+    }
+
+    public Set<Meter.Id> getRemoved() {
       return removed;
     }
   }

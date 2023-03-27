@@ -1,11 +1,6 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,16 +20,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
-import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
@@ -56,6 +42,13 @@ public class Controller<P extends HasMetadata>
     RegisteredController<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
+  private static final String CLEANUP = "cleanup";
+  private static final String DELETE = "delete";
+  private static final String FINALIZER_NOT_REMOVED = "finalizerNotRemoved";
+  private static final String RECONCILE = "reconcile";
+  private static final String RESOURCE = "resource";
+  private static final String STATUS = "status";
+  private static final String BOTH = "both";
 
   private final Reconciler<P> reconciler;
   private final ControllerConfiguration<P> configuration;
@@ -103,7 +96,7 @@ public class Controller<P extends HasMetadata>
         new ControllerExecution<>() {
           @Override
           public String name() {
-            return "reconcile";
+            return RECONCILE;
           }
 
           @Override
@@ -113,12 +106,12 @@ public class Controller<P extends HasMetadata>
 
           @Override
           public String successTypeName(UpdateControl<P> result) {
-            String successType = "resource";
+            String successType = RESOURCE;
             if (result.isUpdateStatus()) {
-              successType = "status";
+              successType = STATUS;
             }
             if (result.isUpdateResourceAndStatus()) {
-              successType = "both";
+              successType = BOTH;
             }
             return successType;
           }
@@ -154,7 +147,7 @@ public class Controller<P extends HasMetadata>
           new ControllerExecution<>() {
             @Override
             public String name() {
-              return "cleanup";
+              return CLEANUP;
             }
 
             @Override
@@ -164,7 +157,7 @@ public class Controller<P extends HasMetadata>
 
             @Override
             public String successTypeName(DeleteControl deleteControl) {
-              return deleteControl.isRemoveFinalizer() ? "delete" : "finalizerNotRemoved";
+              return deleteControl.isRemoveFinalizer() ? DELETE : FINALIZER_NOT_REMOVED;
             }
 
             @Override

@@ -9,7 +9,8 @@ import org.takes.facets.fork.TkFork;
 import org.takes.http.Exit;
 import org.takes.http.FtBasic;
 
-import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
 import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
@@ -25,7 +26,8 @@ public class MySQLSchemaOperator {
 
     KubernetesClient client = new KubernetesClientBuilder().build();
     Operator operator = new Operator(client,
-        overrider -> overrider.withMetrics(new MicrometerMetrics(new LoggingMeterRegistry())));
+        overrider -> overrider
+            .withMetrics(MicrometerMetrics.withoutPerResourceMetrics(new LoggingMeterRegistry())));
 
     MySQLSchemaReconciler schemaReconciler = new MySQLSchemaReconciler();
 
