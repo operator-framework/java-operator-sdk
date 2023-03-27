@@ -2,10 +2,10 @@ package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import org.junit.jupiter.api.*;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -231,13 +231,14 @@ class InformerRelatedBehaviorITS {
         .build());
     return testCustomResource;
   }
+
   private ConfigMap dependentConfigMap() {
     return new ConfigMapBuilder()
-            .withMetadata(new ObjectMetaBuilder()
-                    .withName(TEST_RESOURCE_NAME)
-                    .withNamespace(actualNamespace)
-                    .build())
-            .build();
+        .withMetadata(new ObjectMetaBuilder()
+            .withName(TEST_RESOURCE_NAME)
+            .withNamespace(actualNamespace)
+            .build())
+        .build();
   }
 
   private void assertReconciled() {
