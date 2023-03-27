@@ -115,7 +115,7 @@ public class MicrometerMetrics implements Metrics {
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
    * @param cleaner the {@link Cleaner} to use
-   * @param collectingPerResourceMetrics whether or not to collect per resource metrics
+   * @param collectingPerResourceMetrics whether to collect per resource metrics
    */
   private MicrometerMetrics(MeterRegistry registry, Cleaner cleaner,
       boolean collectingPerResourceMetrics) {
