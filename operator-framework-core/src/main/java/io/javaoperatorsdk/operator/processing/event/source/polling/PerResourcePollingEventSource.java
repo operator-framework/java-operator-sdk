@@ -27,7 +27,6 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * @param <R> the resource polled by the event source
  * @param <P> related custom resource
  */
-// todo check docs
 public class PerResourcePollingEventSource<R, P extends HasMetadata>
     extends ExternalResourceCachingEventSource<R, P>
     implements ResourceEventAware<P> {
