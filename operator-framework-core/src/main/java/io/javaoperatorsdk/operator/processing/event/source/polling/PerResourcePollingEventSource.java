@@ -186,7 +186,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     /**
      * By implementing this method it is possible to specify dynamic durations to wait between the
      * polls of the resources. This is especially handy if a resources "stabilized" so it is not
-     * expected to change it's state frequently. For example an AWS RDS instance is up and running,
+     * expected to change its state frequently. For example an AWS RDS instance is up and running,
      * it is expected to run and be stable for a very long time. In this case it is enough to poll
      * with a lower frequency, compared to the phase when it is being initialized.
      *
