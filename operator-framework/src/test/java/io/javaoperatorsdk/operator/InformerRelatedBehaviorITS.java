@@ -2,6 +2,8 @@ package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import org.junit.jupiter.api.*;
 
 import io.fabric8.kubernetes.api.model.Namespace;
@@ -71,6 +73,7 @@ class InformerRelatedBehaviorITS {
   @AfterEach
   void cleanup() {
     adminClient.resource(testCustomResource()).delete();
+    adminClient.resource(dependentConfigMap()).delete();
   }
 
   @Test
@@ -149,7 +152,7 @@ class InformerRelatedBehaviorITS {
   }
 
   @Test
-  void resilientForLoosingPermissionForCustomResource() throws InterruptedException {
+  void resilientForLoosingPermissionForCustomResource() {
     setFullResourcesAccess();
     startOperator(true);
     setNoCustomResourceAccess();
@@ -227,6 +230,14 @@ class InformerRelatedBehaviorITS {
         .withName(TEST_RESOURCE_NAME)
         .build());
     return testCustomResource;
+  }
+  private ConfigMap dependentConfigMap() {
+    return new ConfigMapBuilder()
+            .withMetadata(new ObjectMetaBuilder()
+                    .withName(TEST_RESOURCE_NAME)
+                    .withNamespace(actualNamespace)
+                    .build())
+            .build();
   }
 
   private void assertReconciled() {
