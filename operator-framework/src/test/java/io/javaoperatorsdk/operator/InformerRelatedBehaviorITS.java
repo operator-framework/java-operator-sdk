@@ -46,11 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class InformerRelatedBehaviorITS {
 
   public static final String TEST_RESOURCE_NAME = "test1";
-  public static final String ADDITIONAL_NAMESPACE_NAME = "additionalns";
+  public static final String ADDITIONAL_NAMESPACE_SUFFIX = "-additional";
 
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
+  String additionalNamespace;
   volatile boolean replacementStopHandlerCalled = false;
 
   @BeforeEach
@@ -59,6 +60,7 @@ class InformerRelatedBehaviorITS {
         adminClient);
     testInfo.getTestMethod().ifPresent(method -> {
       actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
+      additionalNamespace = actualNamespace+ADDITIONAL_NAMESPACE_SUFFIX;
       adminClient.resource(namespace()).createOrReplace();
     });
     // cleans up binding before test, not all test cases use cluster role
@@ -68,7 +70,6 @@ class InformerRelatedBehaviorITS {
   @AfterEach
   void cleanup() {
     adminClient.resource(testCustomResource()).delete();
-    adminClient.resource(namespace()).delete();
   }
 
   @Test
@@ -112,24 +113,15 @@ class InformerRelatedBehaviorITS {
 
   @Test
   void startsUpIfNoPermissionToOneOfTwoNamespaces() {
-    var otherNamespace =
-        adminClient.resource(namespace(ADDITIONAL_NAMESPACE_NAME)).createOrReplace();
-    try {
+      adminClient.resource(namespace(additionalNamespace)).createOrReplace();
+
       addRoleBindingsToTestNamespaces();
-      var operator = startOperator(false, false, actualNamespace, ADDITIONAL_NAMESPACE_NAME);
+      var operator = startOperator(false, false, actualNamespace, additionalNamespace);
       assertInformerNotWatchingForAdditionalNamespace(operator);
 
       adminClient.resource(testCustomResource()).createOrReplace();
       waitForWatchReconnect();
       assertReconciled();
-
-    } finally {
-      adminClient.resource(otherNamespace).delete();
-      await().untilAsserted(() -> {
-        var ns = adminClient.namespaces().resource(otherNamespace).fromServer().get();
-        assertThat(ns).isNull();
-      });
-    }
   }
 
   private void assertInformerNotWatchingForAdditionalNamespace(Operator operator) {
@@ -141,17 +133,17 @@ class InformerRelatedBehaviorITS {
     InformerHealthIndicator controllerHealthIndicator =
         (InformerHealthIndicator) unhealthyEventSources
             .get(ControllerResourceEventSource.class.getSimpleName())
-            .informerHealthIndicators().get(ADDITIONAL_NAMESPACE_NAME);
+            .informerHealthIndicators().get(additionalNamespace);
     assertThat(controllerHealthIndicator).isNotNull();
-    assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(ADDITIONAL_NAMESPACE_NAME);
+    assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
     assertThat(controllerHealthIndicator.isWatching()).isFalse();
 
     InformerHealthIndicator configMapHealthIndicator =
         (InformerHealthIndicator) unhealthyEventSources
             .get(ConfigMapDependentResource.class.getSimpleName())
-            .informerHealthIndicators().get(ADDITIONAL_NAMESPACE_NAME);
+            .informerHealthIndicators().get(additionalNamespace);
     assertThat(configMapHealthIndicator).isNotNull();
-    assertThat(configMapHealthIndicator.getTargetNamespace()).isEqualTo(ADDITIONAL_NAMESPACE_NAME);
+    assertThat(configMapHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
     assertThat(configMapHealthIndicator.isWatching()).isFalse();
   }
 
