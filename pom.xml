@@ -72,6 +72,7 @@
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.8.0</impsort-maven-plugin.version>
         <okhttp.version>4.10.0</okhttp.version>
+        <jenvtest.version>0.4.0</jenvtest.version>
     </properties>
 
     <modules>
@@ -192,6 +193,12 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>mockwebserver</artifactId>
                 <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.javaoperatorsdk</groupId>
+                <artifactId>jenvtest</artifactId>
+                <version>${jenvtest.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
