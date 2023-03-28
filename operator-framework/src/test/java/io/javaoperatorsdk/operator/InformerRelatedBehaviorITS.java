@@ -72,8 +72,8 @@ class InformerRelatedBehaviorITS {
 
   @AfterEach
   void cleanup() {
-    adminClient.resource(testCustomResource()).delete();
     adminClient.resource(dependentConfigMap()).delete();
+    adminClient.resource(testCustomResource()).delete();
   }
 
   @Test
