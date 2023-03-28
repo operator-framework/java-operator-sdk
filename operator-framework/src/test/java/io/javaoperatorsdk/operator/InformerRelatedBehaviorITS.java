@@ -24,6 +24,8 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE;
 import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER;
@@ -34,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * The test relies on a special api server configuration: "min-request-timeout" to have a very low
  * value (in case want to try with minikube use: "minikube start
- * --extra-config=apiserver.min-request-timeout=3")
+ * --extra-config=apiserver.min-request-timeout=1")
  *
  * <p>
  * This is important when tests are affected by permission changes, since the watch permissions are
@@ -45,8 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * The test ends with "ITS" (Special) since it needs to run separately from other ITs
  * </p>
  */
-@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "3"})
+@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"})
 class InformerRelatedBehaviorITS {
+
+  private static final Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorITS.class);
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String ADDITIONAL_NAMESPACE_SUFFIX = "-additional";
@@ -55,6 +59,7 @@ class InformerRelatedBehaviorITS {
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
   String additionalNamespace;
+  Operator operator;
   volatile boolean replacementStopHandlerCalled = false;
 
   @BeforeEach
@@ -72,6 +77,9 @@ class InformerRelatedBehaviorITS {
 
   @AfterEach
   void cleanup() {
+    if (operator != null) {
+      operator.stop(Duration.ofSeconds(1));
+    }
     adminClient.resource(dependentConfigMap()).delete();
     adminClient.resource(testCustomResource()).delete();
   }
@@ -90,7 +98,7 @@ class InformerRelatedBehaviorITS {
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoCustomResourceAccess();
 
-    var operator = startOperator(false);
+    operator = startOperator(false);
     assertNotReconciled();
     assertRuntimeInfoNoCRPermission(operator);
 
@@ -106,7 +114,7 @@ class InformerRelatedBehaviorITS {
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoConfigMapAccess();
 
-    var operator = startOperator(false);
+    operator = startOperator(false);
     assertNotReconciled();
     assertRuntimeInfoForSecondaryPermission(operator);
 
@@ -120,7 +128,7 @@ class InformerRelatedBehaviorITS {
     adminClient.resource(namespace(additionalNamespace)).createOrReplace();
 
     addRoleBindingsToTestNamespaces();
-    var operator = startOperator(false, false, actualNamespace, additionalNamespace);
+    operator = startOperator(false, false, actualNamespace, additionalNamespace);
     assertInformerNotWatchingForAdditionalNamespace(operator);
 
     adminClient.resource(testCustomResource()).createOrReplace();
@@ -155,14 +163,14 @@ class InformerRelatedBehaviorITS {
   @Test
   void resilientForLoosingPermissionForCustomResource() {
     setFullResourcesAccess();
-    startOperator(true);
+    operator = startOperator(true);
     setNoCustomResourceAccess();
 
     waitForWatchReconnect();
+
     adminClient.resource(testCustomResource()).createOrReplace();
 
     assertNotReconciled();
-
     setFullResourcesAccess();
     assertReconciled();
   }
@@ -211,7 +219,7 @@ class InformerRelatedBehaviorITS {
 
   private static void waitForWatchReconnect() {
     try {
-      Thread.sleep(6000);
+      Thread.sleep(5000);
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     }
