@@ -3,6 +3,8 @@ package io.javaoperatorsdk.operator;
 import java.time.Duration;
 
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -24,8 +26,6 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE;
 import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER;
