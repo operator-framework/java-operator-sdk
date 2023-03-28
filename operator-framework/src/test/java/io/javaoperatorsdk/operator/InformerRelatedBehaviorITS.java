@@ -151,7 +151,7 @@ class InformerRelatedBehaviorITS {
     assertThat(configMapHealthIndicator.isWatching()).isFalse();
   }
 
-  
+
   @Test
   void resilientForLoosingPermissionForCustomResource() {
     setFullResourcesAccess();
