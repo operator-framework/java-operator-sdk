@@ -20,7 +20,7 @@ public abstract class ExternalStateTestBase {
   public static final String INITIAL_TEST_DATA = "initialTestData";
   public static final String UPDATED_DATA = "updatedData";
 
-  private ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
+  private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   @Test
   public void reconcilesResourceWithPersistentState() {

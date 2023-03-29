@@ -31,7 +31,8 @@ public class FilterTestReconciler
       Context<FilterTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-        .createOrReplace(createConfigMap(resource));
+        .resource(createConfigMap(resource))
+        .createOrReplace();
     return UpdateControl.noUpdate();
   }
 

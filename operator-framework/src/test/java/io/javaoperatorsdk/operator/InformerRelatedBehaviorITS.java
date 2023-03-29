@@ -8,13 +8,18 @@ import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
 
@@ -26,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The test relies on a special api server configuration: "min-request-timeout" to have a very low
- * value, use: "minikube start --extra-config=apiserver.min-request-timeout=3"
+ * value (in case want to try with minikube use: "minikube start
+ * --extra-config=apiserver.min-request-timeout=3")
  *
  * <p>
  * This is important when tests are affected by permission changes, since the watch permissions are
@@ -37,13 +43,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * The test ends with "ITS" (Special) since it needs to run separately from other ITs
  * </p>
  */
+@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "3"})
 class InformerRelatedBehaviorITS {
 
   public static final String TEST_RESOURCE_NAME = "test1";
+  public static final String ADDITIONAL_NAMESPACE_SUFFIX = "-additional";
 
   KubernetesClient adminClient = new KubernetesClientBuilder().build();
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
+  String additionalNamespace;
   volatile boolean replacementStopHandlerCalled = false;
 
   @BeforeEach
@@ -52,14 +61,16 @@ class InformerRelatedBehaviorITS {
         adminClient);
     testInfo.getTestMethod().ifPresent(method -> {
       actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
+      additionalNamespace = actualNamespace + ADDITIONAL_NAMESPACE_SUFFIX;
       adminClient.resource(namespace()).createOrReplace();
     });
+    // cleans up binding before test, not all test cases use cluster role
+    removeClusterRoleBinding();
   }
 
   @AfterEach
   void cleanup() {
     adminClient.resource(testCustomResource()).delete();
-    adminClient.resource(namespace()).delete();
   }
 
   @Test
@@ -99,6 +110,42 @@ class InformerRelatedBehaviorITS {
     setFullResourcesAccess();
     waitForWatchReconnect();
     assertReconciled();
+  }
+
+  @Test
+  void startsUpIfNoPermissionToOneOfTwoNamespaces() {
+    adminClient.resource(namespace(additionalNamespace)).createOrReplace();
+
+    addRoleBindingsToTestNamespaces();
+    var operator = startOperator(false, false, actualNamespace, additionalNamespace);
+    assertInformerNotWatchingForAdditionalNamespace(operator);
+
+    adminClient.resource(testCustomResource()).createOrReplace();
+    waitForWatchReconnect();
+    assertReconciled();
+  }
+
+  private void assertInformerNotWatchingForAdditionalNamespace(Operator operator) {
+    assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
+    var unhealthyEventSources =
+        operator.getRuntimeInfo().unhealthyInformerWrappingEventSourceHealthIndicator()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+
+    InformerHealthIndicator controllerHealthIndicator =
+        (InformerHealthIndicator) unhealthyEventSources
+            .get(ControllerResourceEventSource.class.getSimpleName())
+            .informerHealthIndicators().get(additionalNamespace);
+    assertThat(controllerHealthIndicator).isNotNull();
+    assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
+    assertThat(controllerHealthIndicator.isWatching()).isFalse();
+
+    InformerHealthIndicator configMapHealthIndicator =
+        (InformerHealthIndicator) unhealthyEventSources
+            .get(ConfigMapDependentResource.class.getSimpleName())
+            .informerHealthIndicators().get(additionalNamespace);
+    assertThat(configMapHealthIndicator).isNotNull();
+    assertThat(configMapHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
+    assertThat(configMapHealthIndicator.isWatching()).isFalse();
   }
 
   @Test
@@ -191,7 +238,7 @@ class InformerRelatedBehaviorITS {
     });
   }
 
-
+  @SuppressWarnings("unchecked")
   private void assertRuntimeInfoNoCRPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
     var unhealthyEventSources =
@@ -209,6 +256,7 @@ class InformerRelatedBehaviorITS {
         .hasSize(1);
   }
 
+  @SuppressWarnings("unchecked")
   private void assertRuntimeInfoForSecondaryPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
     var unhealthyEventSources =
@@ -239,7 +287,8 @@ class InformerRelatedBehaviorITS {
     return startOperator(stopOnInformerErrorDuringStartup, true);
   }
 
-  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler) {
+  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler,
+      String... namespaces) {
     ConfigurationServiceProvider.reset();
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
@@ -251,7 +300,11 @@ class InformerRelatedBehaviorITS {
             co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
           }
         });
-    operator.register(reconciler);
+    operator.register(reconciler, o -> {
+      if (namespaces.length > 0) {
+        o.settingNamespaces(namespaces);
+      }
+    });
     operator.start();
     return operator;
   }
@@ -271,6 +324,16 @@ class InformerRelatedBehaviorITS {
     applyClusterRoleBinding();
   }
 
+  private void addRoleBindingsToTestNamespaces() {
+    var role = ReconcilerUtils
+        .loadYaml(Role.class, this.getClass(), "rback-test-only-main-ns-access.yaml");
+    adminClient.resource(role).inNamespace(actualNamespace).createOrReplace();
+    var roleBinding = ReconcilerUtils
+        .loadYaml(RoleBinding.class, this.getClass(),
+            "rback-test-only-main-ns-access-binding.yaml");
+    adminClient.resource(roleBinding).inNamespace(actualNamespace).createOrReplace();
+  }
+
   private void applyClusterRoleBinding() {
     var clusterRoleBinding = ReconcilerUtils
         .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
@@ -284,10 +347,20 @@ class InformerRelatedBehaviorITS {
   }
 
   private Namespace namespace() {
+    return namespace(actualNamespace);
+  }
+
+  private Namespace namespace(String name) {
     Namespace n = new Namespace();
     n.setMetadata(new ObjectMetaBuilder()
-        .withName(actualNamespace)
+        .withName(name)
         .build());
     return n;
+  }
+
+  private void removeClusterRoleBinding() {
+    var clusterRoleBinding = ReconcilerUtils
+        .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+    adminClient.resource(clusterRoleBinding).delete();
   }
 }

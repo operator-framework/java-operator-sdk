@@ -30,6 +30,7 @@ public class ConfigurationServiceOverrider {
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
+  private ResourceClassResolver resourceClassResolver;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -110,6 +111,12 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withCacheSyncTimeout(Duration cacheSyncTimeout) {
     this.cacheSyncTimeout = cacheSyncTimeout;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withResourceClassResolver(
+      ResourceClassResolver resourceClassResolver) {
+    this.resourceClassResolver = resourceClassResolver;
     return this;
   }
 
@@ -195,6 +202,12 @@ public class ConfigurationServiceOverrider {
       @Override
       public Duration cacheSyncTimeout() {
         return cacheSyncTimeout != null ? cacheSyncTimeout : super.cacheSyncTimeout();
+      }
+
+      @Override
+      public ResourceClassResolver getResourceClassResolver() {
+        return resourceClassResolver != null ? resourceClassResolver
+            : super.getResourceClassResolver();
       }
     };
   }

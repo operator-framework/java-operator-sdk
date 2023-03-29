@@ -19,6 +19,7 @@ public class AbstractEventSourceTestBase<S extends EventSource, T extends EventH
     setUpSource(source, true);
   }
 
+  @SuppressWarnings("unchecked")
   public void setUpSource(S source, boolean start) {
     setUpSource(source, (T) mock(EventHandler.class), start);
   }

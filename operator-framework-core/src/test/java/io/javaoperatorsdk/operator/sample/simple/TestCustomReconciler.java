@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class TestCustomReconciler
@@ -78,8 +77,8 @@ public class TestCustomReconciler
       kubernetesClient
           .configMaps()
           .inNamespace(resource.getMetadata().getNamespace())
-          .withName(existingConfigMap.getMetadata().getName())
-          .createOrReplace(existingConfigMap);
+          .resource(existingConfigMap)
+          .createOrReplace();
     } else {
       Map<String, String> labels = new HashMap<>();
       labels.put("managedBy", TestCustomReconciler.class.getSimpleName());
@@ -96,7 +95,8 @@ public class TestCustomReconciler
       kubernetesClient
           .configMaps()
           .inNamespace(resource.getMetadata().getNamespace())
-          .createOrReplace(newConfigMap);
+          .resource(newConfigMap)
+          .createOrReplace();
     }
     if (updateStatus) {
       if (resource.getStatus() == null) {

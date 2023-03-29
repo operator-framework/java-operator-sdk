@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestRec
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static com.google.common.truth.Truth.assertThat;
+import static io.javaoperatorsdk.operator.api.config.ConfigurationService.log;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
@@ -40,11 +41,18 @@ class MultiVersionCRDIT {
           .build();
 
   private static class TestInformerStoppedHandler implements InformerStoppedHandler {
-    private String resourceClassName;
-    private String resourceCreateAsVersion;
+    private volatile String resourceClassName;
+    private volatile String resourceCreateAsVersion;
 
-    private String failedResourceVersion;
-    private String errorMessage;
+    private volatile String failedResourceVersion;
+    private volatile String errorMessage;
+
+    public void reset() {
+      resourceClassName = null;
+      resourceCreateAsVersion = null;
+      failedResourceVersion = null;
+      errorMessage = null;
+    }
 
     @Override
     @SuppressWarnings("rawtypes")
@@ -72,9 +80,15 @@ class MultiVersionCRDIT {
             acceptOnlyIfUnsetOrEqualToAlreadySet(errorMessage, watcherEx.getCause().getMessage());
       }
       final var apiTypeClass = informer.getApiTypeClass();
+
+      log.debug("Current resourceClassName: " + resourceClassName);
+
       resourceClassName =
           acceptOnlyIfUnsetOrEqualToAlreadySet(resourceClassName, apiTypeClass.getName());
-      System.out.println("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
+
+      log.debug("API Type Class: " + apiTypeClass.getName()
+          + "  -  resource class name: " + resourceClassName);
+      log.info("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
           + " stopped due to: " + ex.getMessage());
     }
 
@@ -104,6 +118,7 @@ class MultiVersionCRDIT {
 
   @Test
   void multipleCRDVersions() {
+    informerStoppedHandler.reset();
     operator.create(createTestResourceV1WithoutLabel());
     operator.create(createTestResourceV2WithLabel());
 
@@ -125,6 +140,7 @@ class MultiVersionCRDIT {
 
   @Test
   void invalidEventsShouldStopInformerAndCallInformerStoppedHandler() {
+    informerStoppedHandler.reset();
     var v2res = createTestResourceV2WithLabel();
     v2res.getMetadata().getLabels().clear();
     operator.create(v2res);
@@ -132,7 +148,7 @@ class MultiVersionCRDIT {
     operator.create(v1res);
 
     await()
-        .atMost(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(10))
         .pollInterval(Duration.ofMillis(50))
         .untilAsserted(() -> {
           // v1 is the stored version so trying to create a v2 version should fail because we cannot

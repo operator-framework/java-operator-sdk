@@ -5,7 +5,7 @@
 
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>operator-framework-bom</artifactId>
-    <version>4.2.3-SNAPSHOT</version>
+    <version>4.2.9-SNAPSHOT</version>
     <name>Operator SDK - Bill of Materials</name>
     <packaging>pom</packaging>
     <description>Java SDK for implementing Kubernetes operators</description>
@@ -63,7 +63,7 @@
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
     </properties>
 
     <profiles>

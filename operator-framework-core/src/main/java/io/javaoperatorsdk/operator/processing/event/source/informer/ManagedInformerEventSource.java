@@ -107,7 +107,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     } else {
       log.debug("Resource not found in temporary cache reading it from informer cache," +
           " for Resource ID: {}", resourceID);
-      return cache.get(resourceID);
+      var res = cache.get(resourceID);
+      log.debug("Resource found in cache: {} for id: {}", res.isPresent(), resourceID);
+      return res;
     }
   }
 
@@ -160,5 +162,12 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   @Override
   public C configuration() {
     return manager().configuration();
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName() + "{" +
+        "resourceClass: " + configuration.getResourceClass().getSimpleName() +
+        "}";
   }
 }

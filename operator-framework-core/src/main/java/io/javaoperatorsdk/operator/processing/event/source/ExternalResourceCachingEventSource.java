@@ -35,7 +35,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
     extends AbstractResourceEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
-  private static Logger log = LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
 
   protected final CacheKeyMapper<R> cacheKeyMapper;
 

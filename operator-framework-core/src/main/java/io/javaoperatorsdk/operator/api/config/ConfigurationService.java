@@ -24,6 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
 
+  Logger log = LoggerFactory.getLogger(ConfigurationService.class);
+
   /**
    * Retrieves the configuration associated with the specified reconciler
    *
@@ -188,9 +190,14 @@ public interface ConfigurationService {
       // hasSynced is checked to verify that informer already started. If not started, in case
       // of a fatal error the operator will stop, no need for explicit exit.
       if (ex != null && informer.hasSynced()) {
-        Logger log = LoggerFactory.getLogger(ConfigurationService.class);
         log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
         System.exit(1);
+      } else {
+        log.debug(
+            "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of " +
+                "stopping the controller, or due to an error on startup." +
+                "See also stopOnInformerErrorDuringStartup configuration.",
+            informer, informer.hasSynced(), ex);
       }
     });
   }
@@ -198,5 +205,9 @@ public interface ConfigurationService {
   @SuppressWarnings("rawtypes")
   default ManagedWorkflowFactory getWorkflowFactory() {
     return ManagedWorkflowFactory.DEFAULT;
+  }
+
+  default ResourceClassResolver getResourceClassResolver() {
+    return new DefaultResourceClassResolver();
   }
 }

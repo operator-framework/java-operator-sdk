@@ -20,13 +20,14 @@ public class Mappers {
     return fromMetadata(nameKey, null, false);
   }
 
+  @SuppressWarnings("unused")
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
       String nameKey, String namespaceKey) {
     return fromMetadata(nameKey, namespaceKey, false);
   }
 
-  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
-      String nameKey) {
+  @SuppressWarnings("unused")
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(String nameKey) {
     return fromMetadata(nameKey, null, true);
   }
 
@@ -34,14 +35,25 @@ public class Mappers {
     return fromMetadata(DEFAULT_ANNOTATION_FOR_NAME, DEFAULT_ANNOTATION_FOR_NAMESPACE, false);
   }
 
+  @SuppressWarnings("unused")
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
       String nameKey, String namespaceKey) {
     return fromMetadata(nameKey, namespaceKey, true);
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference() {
-    return resource -> ResourceID.fromFirstOwnerReference(resource).map(Set::of)
-        .orElse(Collections.emptySet());
+    return fromOwnerReference(false);
+  }
+
+  /**
+   * @param clusterScope if the owner is a cluster scoped resource
+   * @return mapper
+   * @param <T> type of the secondary resource, where the owner reference is
+   */
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference(
+      boolean clusterScope) {
+    return resource -> ResourceID.fromFirstOwnerReference(resource, clusterScope).map(Set::of)
+        .orElseGet(Collections::emptySet);
   }
 
   private static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromMetadata(

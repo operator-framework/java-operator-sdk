@@ -22,15 +22,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class CachingInboundEventSourceTest extends
+class CachingInboundEventSourceTest extends
     AbstractEventSourceTestBase<CachingInboundEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
-  public static final int PERIOD = 150;
-  private CachingInboundEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
+  @SuppressWarnings("unchecked")
+  private final CachingInboundEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
       mock(
           CachingInboundEventSource.ResourceFetcher.class);
-  private TestCustomResource testCustomResource = TestUtils.testCustomResource();
-  private CacheKeyMapper<SampleExternalResource> cacheKeyMapper =
+  private final TestCustomResource testCustomResource = TestUtils.testCustomResource();
+  private final CacheKeyMapper<SampleExternalResource> cacheKeyMapper =
       r -> r.getName() + "#" + r.getValue();
 
   @BeforeEach

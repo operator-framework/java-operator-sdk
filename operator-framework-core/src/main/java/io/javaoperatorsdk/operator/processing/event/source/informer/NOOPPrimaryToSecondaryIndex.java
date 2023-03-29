@@ -11,6 +11,7 @@ class NOOPPrimaryToSecondaryIndex<R extends HasMetadata>
   @SuppressWarnings("rawtypes")
   private static final NOOPPrimaryToSecondaryIndex instance = new NOOPPrimaryToSecondaryIndex();
 
+  @SuppressWarnings("unchecked")
   public static <T extends HasMetadata> NOOPPrimaryToSecondaryIndex<T> getInstance() {
     return instance;
   }

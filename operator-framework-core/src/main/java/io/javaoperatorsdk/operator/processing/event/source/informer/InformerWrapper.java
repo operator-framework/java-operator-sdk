@@ -22,6 +22,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
+import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
@@ -72,12 +73,19 @@ class InformerWrapper<T extends HasMetadata>
       final var name = thread.getName();
       try {
         thread.setName(informerInfo() + " " + thread.getId());
+        final var resourceName = informer.getApiTypeClass().getSimpleName();
+        log.debug("Starting informer for namespace: {} resource: {}", namespaceIdentifier,
+            resourceName);
         var start = informer.start();
         // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
         // false, and there is a rbac issue the get never returns; therefore operator never really
         // starts
+        log.trace("Waiting informer to start namespace: {} resource: {}", namespaceIdentifier,
+            resourceName);
         start.toCompletableFuture().get(configService.cacheSyncTimeout().toMillis(),
             TimeUnit.MILLISECONDS);
+        log.debug("Started informer for namespace: {} resource: {}", namespaceIdentifier,
+            resourceName);
       } catch (TimeoutException | ExecutionException e) {
         if (configService.stopOnInformerErrorDuringStartup()) {
           log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
@@ -173,6 +181,16 @@ class InformerWrapper<T extends HasMetadata>
   @Override
   public boolean isRunning() {
     return informer.isRunning();
+  }
+
+  @Override
+  public Status getStatus() {
+    var status = isRunning() && hasSynced() && isWatching() ? Status.HEALTHY : Status.UNHEALTHY;
+    log.debug(
+        "Informer status: {} for for type: {}, namespace: {}, details[ is running: {}, has synced: {}, is watching: {} ]",
+        status, informer.getApiTypeClass().getSimpleName(), namespaceIdentifier, isRunning(),
+        hasSynced(), isWatching());
+    return status;
   }
 
   @Override

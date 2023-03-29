@@ -4,8 +4,8 @@ import java.util.Objects;
 
 public class ExternalResource {
 
-  private String id;
-  private String data;
+  private final String id;
+  private final String data;
 
   public ExternalResource(String id, String data) {
     this.id = id;

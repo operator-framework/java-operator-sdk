@@ -32,8 +32,8 @@ jobs:
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@v2.7.2
         with:
-          minikube version: v1.25.2
-          kubernetes version: v1.23.6
+          minikube version: v1.28.0
+          kubernetes version: v1.25.5
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
 

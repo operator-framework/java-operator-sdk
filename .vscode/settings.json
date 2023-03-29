@@ -1,0 +1,12 @@
+{
+    "java.format.settings.url": "contributing/eclipse-google-style.xml",
+    "java.completion.importOrder": [
+        "java",
+        "javax",
+        "org",
+        "io",
+        "com",
+        "",
+        "#",
+    ]
+}

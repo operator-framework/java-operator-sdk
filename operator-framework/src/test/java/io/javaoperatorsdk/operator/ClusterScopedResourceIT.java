@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -47,7 +49,8 @@ class ClusterScopedResourceIT {
     });
 
     operator.delete(resource);
-    await().untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
+    await().atMost(Duration.ofSeconds(30))
+        .untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
   }
 
 

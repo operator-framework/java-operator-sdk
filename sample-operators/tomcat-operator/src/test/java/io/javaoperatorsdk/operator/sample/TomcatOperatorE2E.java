@@ -86,9 +86,9 @@ class TomcatOperatorE2E {
     var webappClient = client.resources(Webapp.class);
 
     log.info("Creating test Tomcat object: {}", tomcat);
-    tomcatClient.inNamespace(operator.getNamespace()).create(tomcat);
+    tomcatClient.inNamespace(operator.getNamespace()).resource(tomcat).create();
     log.info("Creating test Webapp object: {}", webapp1);
-    webappClient.inNamespace(operator.getNamespace()).create(webapp1);
+    webappClient.inNamespace(operator.getNamespace()).resource(webapp1).create();
 
     log.info("Waiting 5 minutes for Tomcat and Webapp CR statuses to be updated");
     await().atMost(5, MINUTES).untilAsserted(() -> {

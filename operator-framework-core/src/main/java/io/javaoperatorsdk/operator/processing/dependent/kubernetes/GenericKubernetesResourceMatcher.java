@@ -29,11 +29,40 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, false);
+    return match(desired, actualResource, false, false);
   }
 
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
       boolean considerMetadata) {
+    return match(desired, actualResource, considerMetadata, false);
+  }
+
+  /**
+   * Determines whether the specified actual resource matches the specified desired resource,
+   * possibly considering metadata and deeper equality checks.
+   *
+   * @param desired the desired resource
+   * @param actualResource the actual resource
+   * @param considerMetadata {@code true} if labels and annotations will be checked for equality,
+   *        {@code false} otherwise (meaning that metadata changes will be ignored for matching
+   *        purposes)
+   * @param equality if {@code false}, the algorithm checks if the properties in the desired
+   *        resource spec are same as in the actual resource spec. The reason is that admission
+   *        controllers and default Kubernetes controllers might add default values to some
+   *        properties which are not set in the desired resources' spec and comparing it with simple
+   *        equality check would mean that such resource will not match (while conceptually should).
+   *        However, there is an issue with this for example if desired spec contains a list of
+   *        values and a value is removed, this still will match the actual state from previous
+   *        reconciliation. Setting this parameter to {@code true}, will match the resources only if
+   *        all properties and values are equal. This could be implemented also by overriding equals
+   *        method of spec, should be done as an optimization - this implementation does not require
+   *        that.
+   *
+   * @return results of matching
+   * @param <R> resource
+   */
+  public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
+      boolean considerMetadata, boolean equality) {
     if (considerMetadata) {
       final var desiredMetadata = desired.getMetadata();
       final var actualMetadata = actualResource.getMetadata();
@@ -61,6 +90,12 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desired));
       var actualSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(actualResource));
       var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
+      // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
+      // On contrary (if equality is false), "add" is allowed for cases when for some
+      // resources Kubernetes fills-in values into spec.
+      if (equality && diffJsonPatch.size() > 0) {
+        return Result.computed(false, desired);
+      }
       for (int i = 0; i < diffJsonPatch.size(); i++) {
         String operation = diffJsonPatch.get(i).get("op").asText();
         if (!operation.equals("add")) {
@@ -92,8 +127,15 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    */
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+      Context<P> context, boolean considerMetadata, boolean strongEquality) {
+    final var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, considerMetadata, strongEquality);
+  }
+
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerMetadata) {
     final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, considerMetadata);
+    return match(desired, actualResource, considerMetadata, false);
   }
 }

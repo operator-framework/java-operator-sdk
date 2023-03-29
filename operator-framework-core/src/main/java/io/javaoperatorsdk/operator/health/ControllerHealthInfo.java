@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 @SuppressWarnings("rawtypes")
 public class ControllerHealthInfo {
 
-  private EventSourceManager<?> eventSourceManager;
+  private final EventSourceManager<?> eventSourceManager;
 
   public ControllerHealthInfo(EventSourceManager eventSourceManager) {
     this.eventSourceManager = eventSourceManager;

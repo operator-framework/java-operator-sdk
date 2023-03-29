@@ -1,10 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -69,13 +65,13 @@ public class EventSourceManager<P extends HasMetadata>
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
 
-    ExecutorServiceManager.executeAndWaitForAllToComplete(
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER)),
         this::startEventSource,
         getThreadNamer("start"));
 
-    ExecutorServiceManager.executeAndWaitForAllToComplete(
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT)),
         this::startEventSource,
@@ -86,14 +82,18 @@ public class EventSourceManager<P extends HasMetadata>
     return es -> {
       final var name = es.name();
       return es.priority() + " " + stage + " -> "
-          + (es.isNameSet() ? name + " " + es.original().getClass().getSimpleName() : name);
+          + (es.isNameSet() ? name + " " + es.original().getClass() : es.original());
     };
+  }
+
+  private static Function<NamespaceChangeable, String> getEventSourceThreadNamer(String stage) {
+    return es -> stage + " -> " + es;
   }
 
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    ExecutorServiceManager.executeAndWaitForAllToComplete(
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources(),
         this::stopEventSource,
         getThreadNamer("stop"));
@@ -102,12 +102,14 @@ public class EventSourceManager<P extends HasMetadata>
   @SuppressWarnings("rawtypes")
   private void logEventSourceEvent(NamedEventSource eventSource, String event) {
     if (log.isDebugEnabled()) {
-      if (eventSource instanceof ResourceEventSource) {
-        ResourceEventSource source = (ResourceEventSource) eventSource;
-        log.debug("{} event source {} for {}", event, eventSource.name(),
+      if (eventSource.original() instanceof ResourceEventSource) {
+        ResourceEventSource source = (ResourceEventSource) eventSource.original();
+        log.debug("{} event source {} for {}", event,
+            eventSource.isNameSet() ? eventSource.name() : eventSource,
             source.resourceType());
       } else {
-        log.debug("{} event source {}", event, eventSource.name());
+        log.debug("{} event source {}", event,
+            eventSource.isNameSet() ? eventSource.name() : eventSource);
       }
     }
   }
@@ -183,13 +185,15 @@ public class EventSourceManager<P extends HasMetadata>
   public void changeNamespaces(Set<String> namespaces) {
     eventSources.controllerResourceEventSource()
         .changeNamespaces(namespaces);
-    eventSources
+    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(eventSources
         .additionalEventSources()
         .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)
-        .filter(NamespaceChangeable::allowsNamespaceChanges)
-        .parallel()
-        .forEach(ies -> ies.changeNamespaces(namespaces));
+        .filter(NamespaceChangeable::allowsNamespaceChanges), e -> {
+          e.changeNamespaces(namespaces);
+          return null;
+        },
+        getEventSourceThreadNamer("changeNamespace"));
   }
 
   public Set<EventSource> getRegisteredEventSources() {

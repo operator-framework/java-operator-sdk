@@ -89,7 +89,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         .map(c -> Map.of(
             Constants.RESOURCE_GVK_KEY, c.getAssociatedGroupVersionKind(),
             Constants.CONTROLLER_NAME, controllerConfiguration.getName()))
-        .orElse(new HashMap<>());
+        .orElseGet(HashMap::new);
   }
 
   @Override

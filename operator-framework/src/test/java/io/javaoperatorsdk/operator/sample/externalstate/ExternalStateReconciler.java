@@ -10,7 +10,14 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -30,7 +37,7 @@ public class ExternalStateReconciler
   public static final String ID_KEY = "id";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
+  private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
   private KubernetesClient client;
 
   InformerEventSource<ConfigMap, ExternalStateCustomResource> configMapEventSource;
@@ -89,9 +96,7 @@ public class ExternalStateReconciler
   public DeleteControl cleanup(ExternalStateCustomResource resource,
       Context<ExternalStateCustomResource> context) {
     var externalResource = context.getSecondaryResource(ExternalResource.class);
-    externalResource.ifPresent(er -> {
-      externalService.delete(er.getId());
-    });
+    externalResource.ifPresent(er -> externalService.delete(er.getId()));
     client.configMaps().inNamespace(resource.getMetadata().getNamespace())
         .withName(resource.getMetadata().getName()).delete();
     return DeleteControl.defaultDelete();
@@ -116,7 +121,7 @@ public class ExternalStateReconciler
       }
       var id = configMap.getData().get(ID_KEY);
       var externalResource = externalService.read(id);
-      return externalResource.map(er -> Set.of(er)).orElse(Collections.emptySet());
+      return externalResource.map(Set::of).orElseGet(Collections::emptySet);
     }, context.getPrimaryCache(), 300L, ExternalResource.class);
 
     return EventSourceInitializer.nameEventSources(configMapEventSource,
