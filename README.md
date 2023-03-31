@@ -1,8 +1,8 @@
 # ![java-operator-sdk](docs/assets/images/logo.png)
 
 ![Java CI with Maven](https://github.com/java-operator-sdk/java-operator-sdk/actions/workflows/snapshot-releases.yml/badge.svg)
+[![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white)](https://kubernetes.slack.com/archives/CAW0GV7A5)
 [![Discord](https://img.shields.io/discord/723455000604573736.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.com/channels/723455000604573736)
-[![Slack](https://img.shields.io/badge/Slack-4A154B?style=plastic&logo=slack&logoColor=white)](https://kubernetes.slack.com/archives/CAW0GV7A5)
 
 # Build Kubernetes Operators in Java Without Hassle 
 
