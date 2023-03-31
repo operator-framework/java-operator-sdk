@@ -13,10 +13,16 @@ on:
         type: string
         required: false
         default: 'okhttp'
+      experimental:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   integration_tests:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.experimental }}
+    timeout-minutes: 20
     steps:
       - name: Output HTTP client implementation name
         run: echo ${{ inputs.http-client }}

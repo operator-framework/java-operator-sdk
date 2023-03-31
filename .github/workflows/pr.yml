@@ -50,6 +50,7 @@ jobs:
       java-version: 17
       kube-version: 'v1.25.5'
       http-client: ${{ matrix.httpclient }}
+      experimental: true
 
   special_integration_tests:
     runs-on: ubuntu-latest
