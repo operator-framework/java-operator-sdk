@@ -24,8 +24,8 @@ jobs:
     continue-on-error: ${{ inputs.experimental }}
     timeout-minutes: 20
     steps:
-      - name: Output HTTP client implementation name
-        run: echo ${{ inputs.http-client }}
+      - name: Output test information
+        run: echo "Running ITs with ${{ inputs.http-client }}, ${{ inputs.kube-version }}, ${{ inputs.java-version }}"
       - uses: actions/checkout@v3
       - name: Set up Java and Maven
         uses: actions/setup-java@v3
