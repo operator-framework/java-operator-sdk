@@ -32,28 +32,26 @@ jobs:
         run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
 
   integration_tests:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         java: [ 11, 17 ]
         kubernetes: [ 'v1.23.15', 'v1.24.9', 'v1.25.5' ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Java and Maven
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: ${{ matrix.java }}
-          cache: 'maven'
-      - name: Set up Minikube
-        uses: manusa/actions-setup-minikube@v2.7.2
-        with:
-          minikube version: 'v1.28.0'
-          kubernetes version: ${{ matrix.kubernetes }}
-          driver: 'docker'
-          github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run integration tests
-        run: ./mvnw ${MAVEN_ARGS} -B package -P no-unit-tests --file pom.xml
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      java-version: ${{ matrix.java }}
+      kube-version: ${{ matrix.kubernetes }}
+    
+  httpclient-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        httpclient: ['vertx', 'jdk', 'jetty']
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      java-version: 17
+      kube-version: 'v1.25.5'
+      http-client: ${{ matrix.httpclient }}
+
   special_integration_tests:
     runs-on: ubuntu-latest
     strategy:
