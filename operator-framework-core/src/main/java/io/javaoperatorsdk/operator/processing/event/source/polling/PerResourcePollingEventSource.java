@@ -149,7 +149,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
       var primary = resourceCache.get(primaryID);
       if (primary.isEmpty()) {
         log.warn("No resource in cache for resource ID: {}", primaryID);
-        // no new execution is scheduled in this case, a on delete event should be received shortly
+        // no new execution is scheduled in this case, an on delete event should be received shortly
       } else {
         var actualResources = primary.map(p -> getAndCacheResource(p, false));
         scheduleNextExecution(primary.get(), actualResources.orElse(null));
