@@ -21,7 +21,7 @@ class PrimaryToSecondaryMissingIT {
                     .build();
 
     @Test
-    void missingPrimaryToSecondaryCausesIssue() throws InterruptedException {
+    void missingPrimaryToSecondaryCausesIssueAccessingSecondary() throws InterruptedException {
         var reconciler = operator.getReconcilerOfType(JobReconciler.class);
         operator.create(cluster());
         Thread.sleep(300);
