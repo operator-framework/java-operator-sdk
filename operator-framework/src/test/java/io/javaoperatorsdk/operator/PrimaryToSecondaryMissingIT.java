@@ -34,4 +34,18 @@ class PrimaryToSecondaryMissingIT {
     });
   }
 
+  @Test
+  void accessingDirectlyTheCacheWorksWithoutPToSMapper() throws InterruptedException {
+    var reconciler = operator.getReconcilerOfType(JobReconciler.class);
+    reconciler.setGetResourceDirectlyFromCache(true);
+    operator.create(cluster());
+    Thread.sleep(300);
+    operator.create(job());
+
+    await().untilAsserted(() -> {
+      assertThat(reconciler.isErrorOccurred()).isFalse();
+      assertThat(reconciler.getNumberOfExecutions()).isPositive();
+    });
+  }
+
 }

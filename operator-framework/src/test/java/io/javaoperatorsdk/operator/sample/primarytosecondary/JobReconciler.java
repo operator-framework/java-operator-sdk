@@ -22,6 +22,7 @@ public class JobReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   private final boolean addPrimaryToSecondaryMapper;
+  private boolean getResourceDirectlyFromCache = false;
   private volatile boolean errorOccurred;
 
   public JobReconciler() {
@@ -36,8 +37,20 @@ public class JobReconciler
   public UpdateControl<Job> reconcile(
       Job resource, Context<Job> context) {
 
-    context.getSecondaryResource(Cluster.class)
-        .orElseThrow(() -> new IllegalStateException("Secondary resource should be present"));
+    if (!getResourceDirectlyFromCache) {
+      // this is possible always when there is primary to secondary mapper
+      context.getSecondaryResource(Cluster.class)
+          .orElseThrow(() -> new IllegalStateException("Secondary resource should be present"));
+    } else {
+      // reading the resource from cache as alternative, works without primary to secondary mapper
+      var informerEventSource = (InformerEventSource<Cluster, Job>) context.eventSourceRetriever()
+          .getResourceEventSourceFor(Cluster.class);
+      informerEventSource
+          .get(new ResourceID(resource.getSpec().getClusterName(),
+              resource.getMetadata().getNamespace()))
+          .orElseThrow(
+              () -> new IllegalStateException("Secondary resource cannot be read from cache"));
+    }
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }
@@ -82,5 +95,10 @@ public class JobReconciler
 
   public boolean isErrorOccurred() {
     return errorOccurred;
+  }
+
+  public JobReconciler setGetResourceDirectlyFromCache(boolean getResourceDirectlyFromCache) {
+    this.getResourceDirectlyFromCache = getResourceDirectlyFromCache;
+    return this;
   }
 }
