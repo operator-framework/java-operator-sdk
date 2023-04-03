@@ -55,11 +55,11 @@ public class JobReconciler
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
             .withNamespacesInheritedFromController(context);
 
-          if (addPrimaryToSecondaryMapper) {
-            informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
-                    (PrimaryToSecondaryMapper<Job>) primary -> Set.of(new ResourceID(
-                            primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
-          }
+    if (addPrimaryToSecondaryMapper) {
+      informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
+          (PrimaryToSecondaryMapper<Job>) primary -> Set.of(new ResourceID(
+              primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
+    }
 
     return EventSourceInitializer
         .nameEventSources(new InformerEventSource<>(informerConfiguration.build(), context));
@@ -74,7 +74,8 @@ public class JobReconciler
   }
 
   @Override
-  public ErrorStatusUpdateControl<Job> updateErrorStatus(Job resource, Context<Job> context, Exception e) {
+  public ErrorStatusUpdateControl<Job> updateErrorStatus(Job resource, Context<Job> context,
+      Exception e) {
     errorOccurred = true;
     return ErrorStatusUpdateControl.noStatusUpdate();
   }
