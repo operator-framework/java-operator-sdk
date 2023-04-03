@@ -15,11 +15,22 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration()
 public class JobReconciler
-    implements Reconciler<Job>, EventSourceInitializer<Job> {
+    implements Reconciler<Job>, EventSourceInitializer<Job>, ErrorStatusHandler<Job> {
 
   private static final String JOB_CLUSTER_INDEX = "job-cluster-index";
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+
+  private final boolean addPrimaryToSecondaryMapper;
+  private volatile boolean errorOccurred;
+
+  public JobReconciler() {
+    this(true);
+  }
+
+  public JobReconciler(boolean addPrimaryToSecondaryMapper) {
+    this.addPrimaryToSecondaryMapper = addPrimaryToSecondaryMapper;
+  }
 
   @Override
   public UpdateControl<Job> reconcile(
@@ -36,20 +47,22 @@ public class JobReconciler
     context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
-    InformerConfiguration<Cluster> informerConfiguration =
+    InformerConfiguration.InformerConfigurationBuilder<Cluster> informerConfiguration =
         InformerConfiguration.from(Cluster.class, context)
             .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
                 .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
                     cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
-            .withPrimaryToSecondaryMapper(
-                (PrimaryToSecondaryMapper<Job>) primary -> Set.of(new ResourceID(
-                    primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())))
-            .withNamespacesInheritedFromController(context)
-            .build();
+            .withNamespacesInheritedFromController(context);
+
+          if (addPrimaryToSecondaryMapper) {
+            informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
+                    (PrimaryToSecondaryMapper<Job>) primary -> Set.of(new ResourceID(
+                            primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
+          }
 
     return EventSourceInitializer
-        .nameEventSources(new InformerEventSource<>(informerConfiguration, context));
+        .nameEventSources(new InformerEventSource<>(informerConfiguration.build(), context));
   }
 
   private String indexKey(String clusterName, String namespace) {
@@ -58,5 +71,15 @@ public class JobReconciler
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
+  }
+
+  @Override
+  public ErrorStatusUpdateControl<Job> updateErrorStatus(Job resource, Context<Job> context, Exception e) {
+    errorOccurred = true;
+    return ErrorStatusUpdateControl.noStatusUpdate();
+  }
+
+  public boolean isErrorOccurred() {
+    return errorOccurred;
   }
 }
