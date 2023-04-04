@@ -38,7 +38,7 @@ public class JobReconciler
       Job resource, Context<Job> context) {
 
     if (!getResourceDirectlyFromCache) {
-      // this is possible always when there is primary to secondary mapper
+      // this is only possible when there is primary to secondary mapper
       context.getSecondaryResource(Cluster.class)
           .orElseThrow(() -> new IllegalStateException("Secondary resource should be present"));
     } else {
