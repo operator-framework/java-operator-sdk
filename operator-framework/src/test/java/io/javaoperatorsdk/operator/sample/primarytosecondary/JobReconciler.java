@@ -13,6 +13,11 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
+/**
+ * This reconciler used in integration tests to show the cases when PrimaryToSecondaryMapper is
+ * needed, and to show the use cases when some mechanisms would not work without that. It's not
+ * intended to be a reusable code as it is, rather serves for deeper understanding of the problem.
+ */
 @ControllerConfiguration()
 public class JobReconciler
     implements Reconciler<Job>, EventSourceInitializer<Job>, ErrorStatusHandler<Job> {

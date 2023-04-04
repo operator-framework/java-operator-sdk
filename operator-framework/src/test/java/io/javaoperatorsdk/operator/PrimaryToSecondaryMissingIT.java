@@ -12,6 +12,10 @@ import static io.javaoperatorsdk.operator.PrimaryToSecondaryIT.job;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+/**
+ * The intention with this IT is to show the use cases why the PrimaryToSecondary Mapper is needed,
+ * and the situation when it is not working.
+ */
 class PrimaryToSecondaryMissingIT {
 
   @RegisterExtension
