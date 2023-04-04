@@ -81,6 +81,16 @@ public interface InformerConfiguration<R extends HasMetadata>
    */
   boolean followControllerNamespaceChanges();
 
+  /**
+   * Returns the configured {@link SecondaryToPrimaryMapper} which will allow JOSDK to identify
+   * which secondary resources are associated with a given primary resource in cases where there is
+   * no explicit reference to the primary resource (e.g. using owner references) in the associated
+   * secondary resources.
+   *
+   * @return the configured {@link SecondaryToPrimaryMapper}
+   * @see SecondaryToPrimaryMapper for more explanations on when using such a mapper is useful /
+   *      needed
+   */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
   Optional<OnAddFilter<R>> onAddFilter();
