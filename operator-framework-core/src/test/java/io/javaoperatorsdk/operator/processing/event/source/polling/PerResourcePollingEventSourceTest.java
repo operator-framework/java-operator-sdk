@@ -172,11 +172,12 @@ class PerResourcePollingEventSourceTest extends
             .pollInterval(Duration.ofMillis(20))
             .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
 
+    when(resourceCache.get(any())).thenReturn(Optional.empty());
     source.onResourceDeleted(testCustomResource);
 
-    // check if not called again.
-    await().pollDelay(Duration.ofMillis(PERIOD))
-            .atMost(Duration.ofMillis((2* PERIOD)))
+    // check if not called again
+    await().pollDelay(Duration.ofMillis(2*PERIOD))
+            .atMost(Duration.ofMillis((4* PERIOD)))
             .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
   }
 
