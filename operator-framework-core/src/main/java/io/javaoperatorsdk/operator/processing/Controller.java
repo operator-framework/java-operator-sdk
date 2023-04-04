@@ -309,6 +309,7 @@ public class Controller<P extends HasMetadata>
    * {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
    * passing it the controller's original configuration.
    *
+   * @param startEventProcessor if event processing should be started automatically
    * @throws OperatorException if a problem occurred during the registration process
    */
   public synchronized void start(boolean startEventProcessor) throws OperatorException {

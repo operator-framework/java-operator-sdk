@@ -61,7 +61,12 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     }
   }
 
-  /** To make this backwards compatible even for respect of overriding */
+  /**
+   * To make this backwards compatible even for respect of overriding
+   *
+   * @param context for event sources
+   * @return event source instance
+   */
   @SuppressWarnings("unchecked")
   public T initEventSource(EventSourceContext<P> context) {
     return (T) eventSource(context).orElseThrow();

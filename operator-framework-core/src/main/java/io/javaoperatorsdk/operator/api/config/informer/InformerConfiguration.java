@@ -78,6 +78,8 @@ public interface InformerConfiguration<R extends HasMetadata>
    * {@link io.javaoperatorsdk.operator.RegisteredController}). If true, changing the target
    * namespaces of a controller would result to change target namespaces for the
    * InformerEventSource.
+   *
+   * @return if namespace changes should be followed
    */
   boolean followControllerNamespaceChanges();
 

@@ -10,6 +10,7 @@ public interface RateLimiter<S extends RateLimitState> {
   }
 
   /**
+   * @param rateLimitState state implementation
    * @return empty if permission acquired or minimal duration until a permission could be acquired
    *         again
    */

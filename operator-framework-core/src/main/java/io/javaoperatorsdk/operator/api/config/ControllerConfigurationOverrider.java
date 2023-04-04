@@ -106,6 +106,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   /**
+   * @param retry configuration
+   * @return current instance of overrider
    * @deprecated Use {@link #withRetry(Retry)} instead
    */
   @Deprecated(forRemoval = true)

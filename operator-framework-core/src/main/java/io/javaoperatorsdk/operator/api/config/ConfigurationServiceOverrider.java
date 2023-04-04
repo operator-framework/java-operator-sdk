@@ -238,6 +238,8 @@ public class ConfigurationServiceOverrider {
 
   /**
    * @deprecated Use {@link ConfigurationServiceProvider#overrideCurrent(Consumer)} instead
+   * @param original that will be overriding
+   * @return current overrider
    */
   @Deprecated(since = "2.2.0")
   public static ConfigurationServiceOverrider override(ConfigurationService original) {
