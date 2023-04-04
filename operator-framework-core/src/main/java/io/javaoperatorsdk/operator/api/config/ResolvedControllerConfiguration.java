@@ -156,6 +156,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
 
   /**
    * @deprecated Use {@link OnAddFilter}, {@link OnUpdateFilter} and {@link GenericFilter} instead
+   *
+   * @param eventFilter
    */
   @Deprecated(forRemoval = true)
   protected void setEventFilter(ResourceEventFilter<P> eventFilter) {

@@ -124,6 +124,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @param <R> the type of resource we want to determine whether they match or not
    * @param <P> the type of primary resources associated with the secondary resources we want to
    *        match
+   * @param strongEquality if the resource should match exactly
    */
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,

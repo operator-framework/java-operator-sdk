@@ -21,6 +21,9 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
 
   /**
    * @deprecated Use the {@link GradualRetry} annotation instead
+   *
+   * @param configuration retry config
+   * @return Retry instance
    */
   @Deprecated(forRemoval = true)
   public static Retry fromConfiguration(RetryConfiguration configuration) {

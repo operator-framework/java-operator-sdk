@@ -199,6 +199,8 @@ public interface ConfigurationService {
    * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
    * will try to reconnect periodically in the background.
    * </p>
+   *
+   * @return actual value described above
    */
   default boolean stopOnInformerErrorDuringStartup() {
     return true;
@@ -208,6 +210,8 @@ public interface ConfigurationService {
    * Timeout for cache sync. In other words source start timeout. Note that is
    * "stopOnInformerErrorDuringStartup" is true the operator will stop on timeout. Default is 2
    * minutes.
+   *
+   * @return Duration of sync timeout
    */
   default Duration cacheSyncTimeout() {
     return Duration.ofMinutes(2);
@@ -216,6 +220,8 @@ public interface ConfigurationService {
   /**
    * Handler for an informer stop. Informer stops if there is a non-recoverable error. Like received
    * a resource that cannot be deserialized.
+   *
+   * @return an optional InformerStopHandler
    */
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
     return Optional.of((informer, ex) -> {

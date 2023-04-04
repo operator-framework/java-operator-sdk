@@ -43,6 +43,7 @@ public class Operator implements LifecycleAware {
   }
 
   /**
+   * @param configurationService implementation
    * @deprecated Use {@link #Operator(Consumer)} instead
    */
   @Deprecated(forRemoval = true)
@@ -173,6 +174,7 @@ public class Operator implements LifecycleAware {
    *
    * @param reconciler the reconciler to register
    * @param <P> the {@code CustomResource} type associated with the reconciler
+   * @return registered controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler)
@@ -192,6 +194,7 @@ public class Operator implements LifecycleAware {
    * @param reconciler part of the reconciler to register
    * @param configuration the configuration with which we want to register the reconciler
    * @param <P> the {@code HasMetadata} type associated with the reconciler
+   * @return registered controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
@@ -230,6 +233,7 @@ public class Operator implements LifecycleAware {
    *
    * @param reconciler part of the reconciler to register
    * @param configOverrider consumer to use to change config values
+   * @return registered controller
    * @param <P> the {@code HasMetadata} type associated with the reconciler
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
