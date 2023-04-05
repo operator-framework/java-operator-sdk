@@ -1,0 +1,44 @@
+name: Parameterized Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        type: string
+        required: true
+      kube-version:
+        type: string
+        required: true
+      http-client:
+        type: string
+        required: false
+        default: 'okhttp'
+      experimental:
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  integration_tests:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.experimental }}
+    timeout-minutes: 20
+    steps:
+      - name: Output test information
+        run: echo "Running ITs with ${{ inputs.http-client }}, ${{ inputs.kube-version }}, ${{ inputs.java-version }}"
+      - uses: actions/checkout@v3
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+          cache: 'maven'
+      - name: Set up Minikube
+        uses: manusa/actions-setup-minikube@v2.7.2
+        with:
+          minikube version: 'v1.28.0'
+          kubernetes version: ${{ inputs.kube-version }}
+          driver: 'docker'
+          github token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run integration tests
+        run: ./mvnw ${MAVEN_ARGS} -B package -P no-unit-tests -Dfabric8-httpclient-impl.name=${{inputs.http-client}} --file pom.xml
