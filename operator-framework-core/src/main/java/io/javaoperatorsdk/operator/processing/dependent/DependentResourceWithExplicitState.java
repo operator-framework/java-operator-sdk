@@ -31,7 +31,13 @@ public interface DependentResourceWithExplicitState<R, P extends HasMetadata, S 
    */
   Class<S> stateResourceClass();
 
-  /** State resource which contains the target state. Usually an ID to address the resource */
+  /**
+   * State resource which contains the target state. Usually an ID to address the resource
+   *
+   * @param primary resource
+   * @param resource secondary resource
+   * @return that stores state
+   */
   S stateResource(P primary, R resource);
 
 }

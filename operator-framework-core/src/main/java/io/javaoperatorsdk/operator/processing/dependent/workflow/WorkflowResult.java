@@ -22,6 +22,7 @@ class WorkflowResult {
 
   /**
    * @deprecated Use {@link #erroredDependentsExist()} instead
+   * @return if any dependents are in error state
    */
   @Deprecated(forRemoval = true)
   public boolean erroredDependentsExists() {

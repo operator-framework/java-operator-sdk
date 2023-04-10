@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -42,6 +43,7 @@ public class Operator implements LifecycleAware {
   }
 
   /**
+   * @param configurationService implementation
    * @deprecated Use {@link #Operator(Consumer)} instead
    */
   @Deprecated(forRemoval = true)
@@ -77,14 +79,31 @@ public class Operator implements LifecycleAware {
   }
 
   /**
-   * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down.
+   * Uses {@link ConfigurationService#getTerminationTimeoutSeconds()} for graceful shutdown timeout
    *
-   * @deprecated This feature should not be used anymore
+   * @deprecated use the overloaded version with graceful shutdown timeout parameter.
+   *
    */
   @Deprecated(forRemoval = true)
   public void installShutdownHook() {
+    installShutdownHook(
+        Duration.ofSeconds(ConfigurationServiceProvider.instance().getTerminationTimeoutSeconds()));
+  }
+
+  /**
+   * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. Note
+   * that graceful shutdown is usually not needed, but some {@link Reconciler} implementations might
+   * require it.
+   * <p>
+   * Note that you might want to tune "terminationGracePeriodSeconds" for the Pod running the
+   * controller.
+   *
+   * @param gracefulShutdownTimeout timeout to wait for executor threads to complete actual
+   *        reconciliations
+   */
+  public void installShutdownHook(Duration gracefulShutdownTimeout) {
     if (!leaderElectionManager.isLeaderElectionEnabled()) {
-      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(gracefulShutdownTimeout)));
     } else {
       log.warn("Leader election is on, shutdown hook will not be installed.");
     }
@@ -126,14 +145,16 @@ public class Operator implements LifecycleAware {
     }
   }
 
-  @Override
-  public void stop() throws OperatorException {
+  public void stop(Duration gracefulShutdownTimeout) throws OperatorException {
+    if (!started) {
+      return;
+    }
     final var configurationService = ConfigurationServiceProvider.instance();
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
-    ExecutorServiceManager.stop();
+    ExecutorServiceManager.stop(gracefulShutdownTimeout);
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
@@ -142,12 +163,18 @@ public class Operator implements LifecycleAware {
     started = false;
   }
 
+  @Override
+  public void stop() throws OperatorException {
+    stop(Duration.ZERO);
+  }
+
   /**
    * Add a registration requests for the specified reconciler with this operator. The effective
    * registration of the reconciler is delayed till the operator is started.
    *
    * @param reconciler the reconciler to register
    * @param <P> the {@code CustomResource} type associated with the reconciler
+   * @return registered controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler)
@@ -167,6 +194,7 @@ public class Operator implements LifecycleAware {
    * @param reconciler part of the reconciler to register
    * @param configuration the configuration with which we want to register the reconciler
    * @param <P> the {@code HasMetadata} type associated with the reconciler
+   * @return registered controller
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
@@ -205,6 +233,7 @@ public class Operator implements LifecycleAware {
    *
    * @param reconciler part of the reconciler to register
    * @param configOverrider consumer to use to change config values
+   * @return registered controller
    * @param <P> the {@code HasMetadata} type associated with the reconciler
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,

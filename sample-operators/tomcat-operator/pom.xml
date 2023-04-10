@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.javaoperatorsdk</groupId>
         <artifactId>sample-operators</artifactId>
-        <version>4.2.9-SNAPSHOT</version>
+        <version>4.3.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>sample-tomcat-operator</artifactId>
@@ -37,6 +37,16 @@
         <dependency>
             <groupId>io.javaoperatorsdk</groupId>
             <artifactId>operator-framework</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>kubernetes-httpclient-okhttp</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-httpclient-vertx</artifactId>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>

@@ -38,7 +38,7 @@ class PrimaryToSecondaryIT {
             .isEqualTo(1));
   }
 
-  Job job() {
+  public static Job job() {
     var job = new Job();
     job.setMetadata(new ObjectMetaBuilder()
         .withName("job1")
@@ -48,7 +48,7 @@ class PrimaryToSecondaryIT {
     return job;
   }
 
-  Cluster cluster() {
+  public static Cluster cluster() {
     Cluster cluster = new Cluster();
     cluster.setMetadata(new ObjectMetaBuilder()
         .withName(CLUSTER_NAME)

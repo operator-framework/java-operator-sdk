@@ -739,9 +739,9 @@ to add the following dependencies to your project:
 ```xml
 
 <dependency>
-   <groupId>io.fabric8</groupId>
-   <artifactId>crd-generator-apt</artifactId>
-   <scope>provided</scope>
+    <groupId>io.fabric8</groupId>
+    <artifactId>crd-generator-apt</artifactId>
+    <scope>provided</scope>
 </dependency>
 ```
 
@@ -756,3 +756,109 @@ with a `mycrs` plural form will result in 2 files:
 **NOTE:**
 > Quarkus users using the `quarkus-operator-sdk` extension do not need to add any extra dependency
 > to get their CRD generated as this is handled by the extension itself.
+
+## Metrics
+
+JOSDK provides built-in support for metrics reporting on what is happening with your reconcilers in the form of
+the `Metrics` interface which can be implemented to connect to your metrics provider of choice, JOSDK calling the
+methods as it goes about reconciling resources. By default, a no-operation implementation is provided thus providing a
+no-cost sane default. A [micrometer](https://micrometer.io)-based implementation is also provided.
+
+You can use a different implementation by overriding the default one provided by the default `ConfigurationService`, as
+follows:
+
+```java
+Metrics metrics= …;
+ConfigurationServiceProvider.overrideCurrent(overrider->overrider.withMetrics(metrics));
+```
+
+### Micrometer implementation
+
+The micrometer implementation is typically created using one of the provided factory methods which, depending on which
+is used, will return either a ready to use instance or a builder allowing users to customized how the implementation
+behaves, in particular when it comes to the granularity of collected metrics. It is, for example, possible to collect
+metrics on a per-resource basis via tags that are associated with meters. This is the default, historical behavior but
+this will change in a future version of JOSDK because this dramatically increases the cardinality of metrics, which
+could lead to performance issues.
+
+To create a `MicrometerMetrics` implementation that behaves how it has historically behaved, you can just create an
+instance via:
+
+```java
+MeterRegistry registry= …;
+Metrics metrics=new MicrometerMetrics(registry)
+```
+
+Note, however, that this constructor is deprecated and we encourage you to use the factory methods instead, which either
+return a fully pre-configured instance or a builder object that will allow you to configure more easily how the instance
+will behave. You can, for example, configure whether or not the implementation should collect metrics on a per-resource
+basis, whether or not associated meters should be removed when a resource is deleted and how the clean-up is performed.
+See the relevant classes documentation for more details.
+
+For example, the following will create a `MicrometerMetrics` instance configured to collect metrics on a per-resource
+basis, deleting the associated meters after 5 seconds when a resource is deleted, using up to 2 threads to do so.
+
+```java
+MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
+        .withCleanUpDelayInSeconds(5)
+        .withCleaningThreadNumber(2)
+        .build()
+```
+
+The micrometer implementation records the following metrics:
+
+| Meter name                                                | Type           | Tag names                                                                         | Description                                                                                            |
+|-----------------------------------------------------------|----------------|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| operator.sdk.reconciliations.executions.<reconciler name> | gauge          | group, version, kind                                                              | Number of executions of the named reconciler                                                           |
+| operator.sdk.reconciliations.queue.size.<reconciler name> | gauge          | group, version, kind                                                              | How many resources are queued to get reconciled by named reconciler                                    |
+| operator.sdk.<map name>.size                              | gauge map size |                                                                                   | Gauge tracking the size of a specified map (currently unused but could be used to monitor caches size) |
+| operator.sdk.events.received                              | counter        | <resource metadata>, event, action                                                | Number of received Kubernetes events                                                                   |
+| operator.sdk.events.delete                                | counter        | <resource metadata>                                                               | Number of received Kubernetes delete events                                                            |
+| operator.sdk.reconciliations.started                      | counter        | <resource metadata>, reconciliations.retries.last, reconciliations.retries.number | Number of started reconciliations per resource type                                                    |
+| operator.sdk.reconciliations.failed                       | counter        | <resource metadata>, exception                                                    | Number of failed reconciliations per resource type                                                     |
+| operator.sdk.reconciliations.success                      | counter        | <resource metadata>                                                               | Number of successful reconciliations per resource type                                                 |
+| operator.sdk.controllers.execution.reconcile              | timer          | <resource metadata>, controller                                                   | Time taken for reconciliations per controller                                                          |
+| operator.sdk.controllers.execution.cleanup                | timer          | <resource metadata>, controller                                                   | Time taken for cleanups per controller                                                                 |
+| operator.sdk.controllers.execution.reconcile.success      | counter        | controller, type                                                                  | Number of successful reconciliations per controller                                                    |
+| operator.sdk.controllers.execution.reconcile.failure      | counter        | controller, exception                                                             | Number of failed reconciliations per controller                                                        |
+| operator.sdk.controllers.execution.cleanup.success        | counter        | controller, type                                                                  | Number of successful cleanups per controller                                                           |
+| operator.sdk.controllers.execution.cleanup.failure        | counter        | controller, exception                                                             | Number of failed cleanups per controller                                                               |
+
+As you can see all the recorded metrics start with the `operator.sdk` prefix. `<resource metadata>`, in the table above,
+refers to resource-specific metadata and depends on the considered metric and how the implementation is configured and
+could be summed up as follows: `group?, version, kind, [name, namespace?], scope` where the tags in square
+brackets (`[]`) won't be present when per-resource collection is disabled and tags followed by a question mark are
+omitted if the associated value is empty. Of note, when in the context of controllers' execution metrics, these tag
+names are prefixed with `resource.`. This prefix might be removed in a future version for greater consistency.
+
+## Optimizing Caches
+
+One of the ideas around the operator pattern is that all the relevant resources are cached, thus reconciliation is
+usually very fast (especially if no resources are updated in the process) since the operator is then mostly working with
+in-memory state. However for large clusters, caching huge amount of primary and secondary resources might consume lots
+of memory. JOSDK provides ways to mitigate this issue and optimize the memory usage of controllers. While these features
+are working and tested, we need feedback from real production usage.
+
+### Bounded Caches for Informers
+
+Limiting caches for informers - thus for Kubernetes resources - is supported by ensuring that resources are in the cache
+for a limited time, via a cache eviction of least recently used resources. This means that when resources are created
+and frequently reconciled, they stay "hot" in the cache. However, if, over time, a given resource "cools" down, i.e. it
+becomes less and less used to the point that it might not be reconciled anymore, it will eventually get evicted from the
+cache to free up memory. If such an evicted resource were to become reconciled again, the bounded cache implementation
+would then fetch it from the API server and the "hot/cold" cycle would start anew.
+
+Since all resources need to be reconciled when a controller start, it is not practical to set a maximal cache size as
+it's desirable that all resources be cached as soon as possible to make the initial reconciliation process on start as
+fast and efficient as possible, avoiding undue load on the API server. It's therefore more interesting to gradually
+evict cold resources than try to limit cache sizes.
+
+See usage of the related implementation using [Caffeine](https://github.com/ben-manes/caffeine) cache in integration
+tests
+for [primary resources](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java#L29-L29).
+
+See
+also [CaffeineBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
+for more details.
+
+

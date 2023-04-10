@@ -10,6 +10,8 @@ public interface EventSourceReferencer<P extends HasMetadata> {
   /**
    * Throws {@link EventSourceNotFoundException} an exception if the target event source to use is
    * not found.
+   *
+   * @param eventSourceRetriever for event sources
    */
   void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever)
       throws EventSourceNotFoundException;

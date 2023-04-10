@@ -30,6 +30,7 @@ class ControllerTest {
 
   @Test
   void crdShouldNotBeCheckedForCustomResourcesIfDisabled() {
+    ConfigurationServiceProvider.reset();
     final var client = MockKubernetesClient.client(TestCustomResource.class);
     final var configuration = MockControllerConfiguration.forResource(TestCustomResource.class);
 

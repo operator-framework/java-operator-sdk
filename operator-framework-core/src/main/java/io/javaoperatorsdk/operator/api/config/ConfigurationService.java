@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,11 +74,12 @@ public interface ConfigurationService {
     return false;
   }
 
-  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
+  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 200;
+  int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
 
   /**
-   * Retrieves the maximum number of threads the operator can spin out to dispatch reconciliation
-   * requests to reconcilers
+   * The maximum number of threads the operator can spin out to dispatch reconciliation requests to
+   * reconcilers
    *
    * @return the maximum number of concurrent reconciliation threads
    */
@@ -87,10 +87,34 @@ public interface ConfigurationService {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
 
-  int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  /**
+   * The minimum number of threads the operator starts in the thread pool for reconciliations.
+   *
+   * @return the minimum number of concurrent reconciliation threads
+   */
+  default int minConcurrentReconciliationThreads() {
+    return MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  }
 
+  int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  int MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
+
+  /**
+   * Retrieves the maximum number of threads the operator can spin out to be used in the workflows.
+   *
+   * @return the maximum number of concurrent workflow threads
+   */
   default int concurrentWorkflowExecutorThreads() {
     return DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
+  }
+
+  /**
+   * The minimum number of threads the operator starts in the thread pool for workflows.
+   *
+   * @return the minimum number of concurrent workflow threads
+   */
+  default int minConcurrentWorkflowExecutorThreads() {
+    return MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
   }
 
   /**
@@ -121,8 +145,12 @@ public interface ConfigurationService {
    * Retrieves the number of seconds the SDK waits for reconciliation threads to terminate before
    * shutting down.
    *
+   * @deprecated use {@link io.javaoperatorsdk.operator.Operator#stop(Duration)} instead. Where the
+   *             parameter can be passed to specify graceful timeout.
+   *
    * @return the number of seconds to wait before terminating reconciliation threads
    */
+  @Deprecated(forRemoval = true)
   default int getTerminationTimeoutSeconds() {
     return DEFAULT_TERMINATION_TIMEOUT_SECONDS;
   }
@@ -132,11 +160,15 @@ public interface ConfigurationService {
   }
 
   default ExecutorService getExecutorService() {
-    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
+    return new ThreadPoolExecutor(minConcurrentReconciliationThreads(),
+        concurrentReconciliationThreads(),
+        1, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
   }
 
   default ExecutorService getWorkflowExecutorService() {
-    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
+    return new ThreadPoolExecutor(minConcurrentWorkflowExecutorThreads(),
+        concurrentWorkflowExecutorThreads(),
+        1, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
   }
 
   default boolean closeClientOnStop() {
@@ -167,6 +199,8 @@ public interface ConfigurationService {
    * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
    * will try to reconnect periodically in the background.
    * </p>
+   *
+   * @return actual value described above
    */
   default boolean stopOnInformerErrorDuringStartup() {
     return true;
@@ -176,6 +210,8 @@ public interface ConfigurationService {
    * Timeout for cache sync. In other words source start timeout. Note that is
    * "stopOnInformerErrorDuringStartup" is true the operator will stop on timeout. Default is 2
    * minutes.
+   *
+   * @return Duration of sync timeout
    */
   default Duration cacheSyncTimeout() {
     return Duration.ofMinutes(2);
@@ -184,6 +220,8 @@ public interface ConfigurationService {
   /**
    * Handler for an informer stop. Informer stops if there is a non-recoverable error. Like received
    * a resource that cannot be deserialized.
+   *
+   * @return an optional InformerStopHandler
    */
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
     return Optional.of((informer, ex) -> {

@@ -5,7 +5,7 @@
   <parent>
     <artifactId>java-operator-sdk</artifactId>
     <groupId>io.javaoperatorsdk</groupId>
-    <version>4.2.9-SNAPSHOT</version>
+    <version>4.3.1-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -17,7 +17,10 @@
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-core</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kubernetes-httpclient-${fabric8-httpclient-impl.name}</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>

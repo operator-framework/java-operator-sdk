@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -74,14 +75,22 @@ public @interface ControllerConfiguration {
 
   /**
    * Filter of onAdd events of resources.
+   *
+   * @return on-add filter
    **/
   Class<? extends OnAddFilter> onAddFilter() default OnAddFilter.class;
 
-  /** Filter of onUpdate events of resources. */
+  /**
+   * Filter of onUpdate events of resources.
+   *
+   * @return on-update filter
+   */
   Class<? extends OnUpdateFilter> onUpdateFilter() default OnUpdateFilter.class;
 
   /**
    * Filter applied to all operations (add, update, delete). Used to ignore some resources.
+   *
+   * @return generic filter
    **/
   Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 
@@ -118,4 +127,6 @@ public @interface ControllerConfiguration {
    *         accessible no-arg constructor.
    */
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
+
+  Class<? extends ItemStore> itemStore() default ItemStore.class;
 }

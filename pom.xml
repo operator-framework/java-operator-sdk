@@ -5,7 +5,7 @@
 
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>4.2.9-SNAPSHOT</version>
+    <version>4.3.1-SNAPSHOT</version>
     <name>Operator SDK for Java</name>
     <description>Java SDK for implementing Kubernetes operators</description>
     <packaging>pom</packaging>
@@ -41,9 +41,10 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <sonar.organization>java-operator-sdk</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <fabric8-httpclient-impl.name>okhttp</fabric8-httpclient-impl.name>
 
         <junit.version>5.9.1</junit.version>
-        <fabric8-client.version>6.2.0</fabric8-client.version>
+        <fabric8-client.version>6.5.1</fabric8-client.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.19.0</log4j.version>
         <mokito.version>5.2.0</mokito.version>
@@ -54,6 +55,9 @@
         <awaitility.version>4.2.0</awaitility.version>
         <spring-boot.version>2.7.3</spring-boot.version>
         <micrometer-core.version>1.10.5</micrometer-core.version>
+        <okhttp.version>4.10.0</okhttp.version>
+        <caffeine.version>3.1.3</caffeine.version>
+        <jenvtest.version>0.5.0</jenvtest.version>
 
         <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
@@ -71,8 +75,6 @@
         <formatter-maven-plugin.version>2.22.0</formatter-maven-plugin.version>
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.8.0</impsort-maven-plugin.version>
-        <okhttp.version>4.10.0</okhttp.version>
-        <jenvtest.version>0.4.0</jenvtest.version>
     </properties>
 
     <modules>
@@ -82,6 +84,7 @@
         <module>operator-framework</module>
         <module>micrometer-support</module>
         <module>sample-operators</module>
+        <module>caffeine-bounded-cache-support</module>
     </modules>
 
 
@@ -109,7 +112,7 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-client</artifactId>
+                <artifactId>kubernetes-client-api</artifactId>
                 <version>${fabric8-client.version}</version>
             </dependency>
             <dependency>
@@ -195,10 +198,37 @@
                 <version>${okhttp.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>jenvtest</artifactId>
                 <version>${jenvtest.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <!-- Kubernetes client HTTP client implementations -->
+            <dependency>
+              <groupId>io.fabric8</groupId>
+              <artifactId>kubernetes-httpclient-okhttp</artifactId>
+              <version>${fabric8-client.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.fabric8</groupId>
+              <artifactId>kubernetes-httpclient-vertx</artifactId>
+              <version>${fabric8-client.version}</version>
+            </dependency>
+<!--            We currently only recommend using the legacy okhttp client and the vert.x-based implementation -->
+            <dependency>
+              <groupId>io.fabric8</groupId>
+              <artifactId>kubernetes-httpclient-jdk</artifactId>
+              <version>${fabric8-client.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.fabric8</groupId>
+              <artifactId>kubernetes-httpclient-jetty</artifactId>
+              <version>${fabric8-client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -36,6 +37,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private GenericFilter<R> genericFilter;
   private RateLimiter rateLimiter;
   private Map<DependentResourceSpec, Object> configurations;
+  private ItemStore<R> itemStore;
   private String name;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
@@ -104,6 +106,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   /**
+   * @param retry configuration
+   * @return current instance of overrider
    * @deprecated Use {@link #withRetry(Retry)} instead
    */
   @Deprecated(forRemoval = true)
@@ -154,6 +158,11 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withItemStore(ItemStore<R> itemStore) {
+    this.itemStore = itemStore;
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> withName(String name) {
     this.name = name;
     return this;
@@ -181,7 +190,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
-        namespaces, finalizer, labelSelector, configurations);
+        namespaces, finalizer, labelSelector, configurations, itemStore);
     overridden.setEventFilter(customResourcePredicate);
     return overridden;
   }

@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -38,8 +39,10 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnAddFilter<R> onAddFilter,
         OnUpdateFilter<R> onUpdateFilter,
         OnDeleteFilter<R> onDeleteFilter,
-        GenericFilter<R> genericFilter) {
-      super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter);
+        GenericFilter<R> genericFilter,
+        ItemStore<R> itemStore) {
+      super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
+          itemStore);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -75,9 +78,21 @@ public interface InformerConfiguration<R extends HasMetadata>
    * {@link io.javaoperatorsdk.operator.RegisteredController}). If true, changing the target
    * namespaces of a controller would result to change target namespaces for the
    * InformerEventSource.
+   *
+   * @return if namespace changes should be followed
    */
   boolean followControllerNamespaceChanges();
 
+  /**
+   * Returns the configured {@link SecondaryToPrimaryMapper} which will allow JOSDK to identify
+   * which secondary resources are associated with a given primary resource in cases where there is
+   * no explicit reference to the primary resource (e.g. using owner references) in the associated
+   * secondary resources.
+   *
+   * @return the configured {@link SecondaryToPrimaryMapper}
+   * @see SecondaryToPrimaryMapper for more explanations on when using such a mapper is useful /
+   *      needed
+   */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
   Optional<OnAddFilter<R>> onAddFilter();
@@ -103,6 +118,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private OnDeleteFilter<R> onDeleteFilter;
     private GenericFilter<R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
+    private ItemStore<R> itemStore;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -203,12 +219,17 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public InformerConfigurationBuilder<R> withItemStore(ItemStore<R> itemStore) {
+      this.itemStore = itemStore;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
-          onDeleteFilter, genericFilter);
+          onDeleteFilter, genericFilter, itemStore);
     }
   }
 

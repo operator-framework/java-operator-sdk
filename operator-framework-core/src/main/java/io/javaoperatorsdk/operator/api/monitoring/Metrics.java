@@ -23,8 +23,10 @@ public interface Metrics {
 
   /**
    * Do initialization if necessary;
+   *
+   * @param controller callback
    */
-  default void controllerRegistered(Controller<?> controller) {}
+  default void controllerRegistered(Controller<? extends HasMetadata> controller) {}
 
   /**
    * Called when an event has been accepted by the SDK from an event source, which would result in
@@ -36,9 +38,13 @@ public interface Metrics {
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
   /**
+   * @param metadata additional metadata
+   * @param resourceID of primary resource
+   * @param retryInfo for current execution
    * @deprecated Use {@link #reconcileCustomResource(HasMetadata, RetryInfo, Map)} instead
    */
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("unused")
   default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo,
       Map<String, Object> metadata) {}
 
@@ -55,9 +61,13 @@ public interface Metrics {
   }
 
   /**
+   * @param exception actual exception
+   * @param metadata additional metadata
+   * @param resourceID of primary resource
    * @deprecated Use {@link #failedReconciliation(HasMetadata, Exception, Map)} instead
    */
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("unused")
   default void failedReconciliation(ResourceID resourceID, Exception exception,
       Map<String, Object> metadata) {}
 
@@ -82,7 +92,7 @@ public interface Metrics {
       Map<String, Object> metadata) {}
 
   /**
-   *
+   * @param resourceID of primary resource
    * @deprecated Use (and implement) {@link #cleanupDoneFor(ResourceID, Map)} instead
    */
   @Deprecated
@@ -100,7 +110,7 @@ public interface Metrics {
   default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**
-   *
+   * @param resourceID of primary resource
    * @deprecated Use (and implement) {@link #finishedReconciliation(ResourceID, Map)} instead
    */
   @Deprecated
@@ -109,9 +119,12 @@ public interface Metrics {
   }
 
   /**
+   * @param resourceID of primary resource
+   * @param metadata additional metadata
    * @deprecated Use {@link #finishedReconciliation(HasMetadata, Map)} instead
    */
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("unused")
   default void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**

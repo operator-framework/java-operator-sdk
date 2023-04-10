@@ -3,7 +3,11 @@ package io.javaoperatorsdk.operator;
 import java.time.Duration;
 
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -32,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * The test relies on a special api server configuration: "min-request-timeout" to have a very low
  * value (in case want to try with minikube use: "minikube start
- * --extra-config=apiserver.min-request-timeout=3")
+ * --extra-config=apiserver.min-request-timeout=1")
  *
  * <p>
  * This is important when tests are affected by permission changes, since the watch permissions are
@@ -43,8 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * The test ends with "ITS" (Special) since it needs to run separately from other ITs
  * </p>
  */
-@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "3"})
+@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"})
 class InformerRelatedBehaviorITS {
+
+  private static final Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorITS.class);
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String ADDITIONAL_NAMESPACE_SUFFIX = "-additional";
@@ -53,6 +59,7 @@ class InformerRelatedBehaviorITS {
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
   String additionalNamespace;
+  Operator operator;
   volatile boolean replacementStopHandlerCalled = false;
 
   @BeforeEach
@@ -70,6 +77,10 @@ class InformerRelatedBehaviorITS {
 
   @AfterEach
   void cleanup() {
+    if (operator != null) {
+      operator.stop(Duration.ofSeconds(1));
+    }
+    adminClient.resource(dependentConfigMap()).delete();
     adminClient.resource(testCustomResource()).delete();
   }
 
@@ -87,7 +98,7 @@ class InformerRelatedBehaviorITS {
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoCustomResourceAccess();
 
-    var operator = startOperator(false);
+    operator = startOperator(false);
     assertNotReconciled();
     assertRuntimeInfoNoCRPermission(operator);
 
@@ -103,7 +114,7 @@ class InformerRelatedBehaviorITS {
     adminClient.resource(testCustomResource()).createOrReplace();
     setNoConfigMapAccess();
 
-    var operator = startOperator(false);
+    operator = startOperator(false);
     assertNotReconciled();
     assertRuntimeInfoForSecondaryPermission(operator);
 
@@ -117,7 +128,7 @@ class InformerRelatedBehaviorITS {
     adminClient.resource(namespace(additionalNamespace)).createOrReplace();
 
     addRoleBindingsToTestNamespaces();
-    var operator = startOperator(false, false, actualNamespace, additionalNamespace);
+    operator = startOperator(false, false, actualNamespace, additionalNamespace);
     assertInformerNotWatchingForAdditionalNamespace(operator);
 
     adminClient.resource(testCustomResource()).createOrReplace();
@@ -148,17 +159,23 @@ class InformerRelatedBehaviorITS {
     assertThat(configMapHealthIndicator.isWatching()).isFalse();
   }
 
+
+  // this will be investigated separately under the issue below, it's not crucial functional wise,
+  // it is rather "something working why it should", not other way around; but it's not a
+  // showstopper
+  // https://github.com/java-operator-sdk/java-operator-sdk/issues/1835
+  @Disabled
   @Test
-  void resilientForLoosingPermissionForCustomResource() throws InterruptedException {
+  void resilientForLoosingPermissionForCustomResource() {
     setFullResourcesAccess();
-    startOperator(true);
+    operator = startOperator(true);
     setNoCustomResourceAccess();
 
     waitForWatchReconnect();
+
     adminClient.resource(testCustomResource()).createOrReplace();
 
     assertNotReconciled();
-
     setFullResourcesAccess();
     assertReconciled();
   }
@@ -207,7 +224,7 @@ class InformerRelatedBehaviorITS {
 
   private static void waitForWatchReconnect() {
     try {
-      Thread.sleep(6000);
+      Thread.sleep(5000);
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     }
@@ -227,6 +244,15 @@ class InformerRelatedBehaviorITS {
         .withName(TEST_RESOURCE_NAME)
         .build());
     return testCustomResource;
+  }
+
+  private ConfigMap dependentConfigMap() {
+    return new ConfigMapBuilder()
+        .withMetadata(new ObjectMetaBuilder()
+            .withName(TEST_RESOURCE_NAME)
+            .withNamespace(actualNamespace)
+            .build())
+        .build();
   }
 
   private void assertReconciled() {

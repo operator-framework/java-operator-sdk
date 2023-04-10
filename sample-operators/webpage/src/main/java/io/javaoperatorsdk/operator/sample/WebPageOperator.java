@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
+import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -19,6 +21,10 @@ public class WebPageOperator {
   private static final Logger log = LoggerFactory.getLogger(WebPageOperator.class);
 
 
+  /**
+   * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
+   * can be implemented using the low level and higher level APIs.
+   */
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 

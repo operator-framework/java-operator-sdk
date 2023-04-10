@@ -19,7 +19,9 @@ public class ConfigurationServiceOverrider {
   private Config clientConfig;
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
+  private Integer minConcurrentReconciliationThreads;
   private Integer concurrentWorkflowExecutorThreads;
+  private Integer minConcurrentWorkflowExecutorThreads;
   private Cloner cloner;
   private Integer timeoutSeconds;
   private Boolean closeClientOnStop;
@@ -53,6 +55,16 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withConcurrentWorkflowExecutorThreads(int threadNumber) {
     this.concurrentWorkflowExecutorThreads = threadNumber;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withMinConcurrentReconciliationThreads(int threadNumber) {
+    this.minConcurrentReconciliationThreads = threadNumber;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withMinConcurrentWorkflowExecutorThreads(int threadNumber) {
+    this.minConcurrentWorkflowExecutorThreads = threadNumber;
     return this;
   }
 
@@ -150,6 +162,18 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
+      public int minConcurrentReconciliationThreads() {
+        return minConcurrentReconciliationThreads != null ? minConcurrentReconciliationThreads
+            : original.minConcurrentReconciliationThreads();
+      }
+
+      @Override
+      public int minConcurrentWorkflowExecutorThreads() {
+        return minConcurrentWorkflowExecutorThreads != null ? minConcurrentWorkflowExecutorThreads
+            : original.minConcurrentWorkflowExecutorThreads();
+      }
+
+      @Override
       public int getTerminationTimeoutSeconds() {
         return timeoutSeconds != null ? timeoutSeconds : original.getTerminationTimeoutSeconds();
       }
@@ -214,6 +238,8 @@ public class ConfigurationServiceOverrider {
 
   /**
    * @deprecated Use {@link ConfigurationServiceProvider#overrideCurrent(Consumer)} instead
+   * @param original that will be overriding
+   * @return current overrider
    */
   @Deprecated(since = "2.2.0")
   public static ConfigurationServiceOverrider override(ConfigurationService original) {

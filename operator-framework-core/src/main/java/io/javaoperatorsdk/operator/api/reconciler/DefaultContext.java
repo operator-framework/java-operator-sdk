@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
@@ -67,6 +68,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public EventSourceRetriever<P> eventSourceRetriever() {
     return controller.getEventSourceManager();
+  }
+
+  @Override
+  public KubernetesClient getClient() {
+    return controller.getClient();
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {

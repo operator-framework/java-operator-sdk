@@ -1,6 +1,13 @@
 # Tomcat Operator
 
-Creates a Tomcat deployment from a Custom Resource, while keeping the WAR separated with another Custom Resource.
+Tomcat Operator sample project for the Java Operator SDK.
+
+## Description
+This is a sample project that shows how to use the Java Operator SDK to create an operator that manages
+Tomcat webservers and deploy war files in them. The operator will create a Deployment and a Service for each Tomcat 
+instance. The Tomcat version and the number of replicas can be configured in the Tomcat Custom Resource. The
+operator will download and deploy a war file to the target Tomcat instance for each Webapp Custom Resource that is 
+created. The Webapp resource contains the URL to the WAR file and the context path to deploy the WAR file to.
 
 This sample demonstrates the following capabilities of the Java Operator SDK:
 * Multiple Controllers in a single Operator. The Tomcat resource is managed by the TomcatController while the Webapp
