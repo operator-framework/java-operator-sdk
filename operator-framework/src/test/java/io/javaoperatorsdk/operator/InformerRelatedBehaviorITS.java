@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * The test ends with "ITS" (Special) since it needs to run separately from other ITs
  * </p>
  */
-@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"})
+@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"}, updateKubeConfigFile = true)
 class InformerRelatedBehaviorITS {
 
   private static final Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorITS.class);
