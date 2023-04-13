@@ -5,6 +5,8 @@ import java.util.HashMap;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -22,11 +24,12 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestRec
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import static com.google.common.truth.Truth.assertThat;
-import static io.javaoperatorsdk.operator.api.config.ConfigurationService.log;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
+
+  private static final Logger log = LoggerFactory.getLogger(MultiVersionCRDIT.class);
 
   public static final String CR_V1_NAME = "crv1";
   public static final String CR_V2_NAME = "crv2";
