@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -43,11 +43,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   // this is to handle corner case, when there is a retry, but it is actually limited to 0.
   // Usually for testing purposes.
   private final boolean retryConfigurationHasZeroAttempts;
+  private final Cloner cloner;
 
   ReconciliationDispatcher(Controller<P> controller,
       CustomResourceFacade<P> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
+    this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
 
     var retry = controller.getConfiguration().getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
@@ -124,7 +126,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private P cloneResource(P resource) {
-    final var cloner = ConfigurationServiceProvider.instance().getResourceCloner();
     return cloner.clone(resource);
   }
 

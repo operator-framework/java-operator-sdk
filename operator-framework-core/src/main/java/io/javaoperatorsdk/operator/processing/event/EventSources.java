@@ -30,8 +30,11 @@ class EventSources<R extends HasMetadata> {
   private ControllerResourceEventSource<R> controllerResourceEventSource;
 
 
-  void initControllerEventSource(Controller<R> controller) {
+  void createControllerEventSource(Controller<R> controller) {
     controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
+    controllerResourceEventSource
+        .setConfigurationService(controller.getConfiguration().getConfigurationService());
+    controllerResourceEventSource.setExecutorServiceManager(controller.getExecutorServiceManager());
   }
 
   ControllerResourceEventSource<R> controllerResourceEventSource() {

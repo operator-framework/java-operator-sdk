@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.api.config.*;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.Cloner;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -65,6 +69,8 @@ class ReconciliationDispatcherTest {
   private TestReconciler reconciler;
   private final CustomResourceFacade<TestCustomResource> customResourceFacade =
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
+  private static ConfigurationService configurationService;
+  private static ExecutorServiceManager executorServiceManager;
 
   @BeforeAll
   static void classSetup() {
@@ -75,19 +81,15 @@ class ReconciliationDispatcherTest {
      * equals will fail on the two equal but NOT identical TestCustomResources because equals is not
      * implemented on TestCustomResourceSpec or TestCustomResourceStatus
      */
-    ConfigurationServiceProvider.reset();
-    ConfigurationServiceProvider.overrideCurrent(overrider -> overrider
-        .checkingCRDAndValidateLocalModel(false).withResourceCloner(new Cloner() {
-          @Override
-          public <R extends HasMetadata> R clone(R object) {
-            return object;
-          }
-        }));
-  }
-
-  @AfterAll
-  static void tearDown() {
-    ConfigurationServiceProvider.reset();
+    configurationService =
+        ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
+            overrider -> overrider.checkingCRDAndValidateLocalModel(false)
+                .withResourceCloner(new Cloner() {
+                  @Override
+                  public <R extends HasMetadata> R clone(R object) {
+                    return object;
+                  }
+                }));
   }
 
   @BeforeEach
@@ -103,9 +105,11 @@ class ReconciliationDispatcherTest {
       CustomResourceFacade<R> customResourceFacade, boolean useFinalizer) {
 
     final Class<R> resourceClass = (Class<R>) customResource.getClass();
-    configuration = configuration == null ? MockControllerConfiguration.forResource(resourceClass)
+    configuration = configuration == null
+        ? MockControllerConfiguration.forResource(resourceClass, configurationService)
         : configuration;
 
+    when(configuration.getConfigurationService()).thenReturn(configurationService);
     when(configuration.getFinalizerName()).thenReturn(DEFAULT_FINALIZER);
     when(configuration.getName()).thenReturn("EventDispatcherTestController");
     when(configuration.getResourceClass()).thenReturn(resourceClass);

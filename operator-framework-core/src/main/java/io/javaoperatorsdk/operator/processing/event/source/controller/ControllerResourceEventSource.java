@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,12 +12,14 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerManager;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
@@ -130,5 +135,15 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public void setOnDeleteFilter(OnDeleteFilter<T> onDeleteFilter) {
     throw new IllegalStateException(
         "onDeleteFilter is not supported for controller resource event source");
+  }
+
+  @Override
+  public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
+    manager().addIndexers(indexers);
+  }
+
+  public void setConfigurationService(ConfigurationService configurationService) {
+    cache = new InformerManager<>(client, configuration, configurationService, this);
+    this.configurationService = configurationService;
   }
 }

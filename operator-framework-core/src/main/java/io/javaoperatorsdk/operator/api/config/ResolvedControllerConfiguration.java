@@ -31,6 +31,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final String finalizer;
   private final Map<DependentResourceSpec, Object> configurations;
   private final ItemStore<P> itemStore;
+  private final ConfigurationService configurationService;
 
   private ResourceEventFilter<P> eventFilter;
   private List<DependentResourceSpec> dependentResources;
@@ -43,7 +44,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.genericFilter().orElse(null),
         other.getDependentResources(), other.getNamespaces(),
         other.getFinalizerName(), other.getLabelSelector(), Collections.emptyMap(),
-        other.getItemStore().orElse(null));
+        other.getItemStore().orElse(null), other.getConfigurationService());
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
@@ -70,10 +71,11 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       GenericFilter<P> genericFilter,
       List<DependentResourceSpec> dependentResources,
       Set<String> namespaces, String finalizer, String labelSelector,
-      Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore) {
+      Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
+      ConfigurationService configurationService) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
-        namespaces, finalizer, labelSelector, configurations, itemStore);
+        namespaces, finalizer, labelSelector, configurations, itemStore, configurationService);
     setDependentResources(dependentResources);
   }
 
@@ -82,9 +84,11 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       RateLimiter rateLimiter, Duration maxReconciliationInterval,
       OnAddFilter<P> onAddFilter, OnUpdateFilter<P> onUpdateFilter, GenericFilter<P> genericFilter,
       Set<String> namespaces, String finalizer, String labelSelector,
-      Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore) {
+      Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
+      ConfigurationService configurationService) {
     super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
         itemStore);
+    this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
     this.generationAware = generationAware;
     this.associatedReconcilerClassName = associatedReconcilerClassName;
@@ -98,10 +102,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
-      Class<? extends Reconciler> reconcilerClas) {
+      Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
     this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
         null, null, null, null, null,
-        null, null, null, null);
+        null, null, null, null, configurationService);
   }
 
   @Override
@@ -147,6 +151,11 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public Optional<Duration> maxReconciliationInterval() {
     return Optional.ofNullable(maxReconciliationInterval);
+  }
+
+  @Override
+  public ConfigurationService getConfigurationService() {
+    return configurationService;
   }
 
   @Override

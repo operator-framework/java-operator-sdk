@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,8 @@ import static org.mockito.Mockito.withSettings;
 
 @SuppressWarnings("rawtypes")
 class WorkflowTest {
+
+  ExecutorService executorService = Executors.newCachedThreadPool();
 
   @Test
   void calculatesTopLevelResources() {

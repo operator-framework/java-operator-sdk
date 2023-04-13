@@ -4,7 +4,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public abstract class GenericResourceUpdatePreProcessor<R extends HasMetadata> implements
@@ -44,7 +43,9 @@ public abstract class GenericResourceUpdatePreProcessor<R extends HasMetadata> i
   }
 
   public R replaceSpecOnActual(R actual, R desired, Context<?> context) {
-    var clonedActual = ConfigurationServiceProvider.instance().getResourceCloner().clone(actual);
+    var clonedActual = context.getControllerConfiguration().getConfigurationService()
+        .getResourceCloner()
+        .clone(actual);
     updateClonedActual(clonedActual, desired);
     return clonedActual;
   }

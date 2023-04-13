@@ -10,7 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
 import static io.fabric8.kubernetes.client.Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY;
@@ -21,27 +22,23 @@ import static org.mockito.Mockito.mock;
 
 class LeaderElectionManagerTest {
 
-  private KubernetesClient kubernetesClient;
   private LeaderElectionManager leaderElectionManager;
 
   @BeforeEach
   void setUp() {
     ControllerManager controllerManager = mock(ControllerManager.class);
-    kubernetesClient = mock(KubernetesClient.class);
-    leaderElectionManager = new LeaderElectionManager(controllerManager);
+    final var kubernetesClient = mock(KubernetesClient.class);
+    var configurationService =
+        ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
+            o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test")));
+    leaderElectionManager =
+        new LeaderElectionManager(kubernetesClient, controllerManager, configurationService);
   }
 
   @AfterEach
   void tearDown() {
-    ConfigurationServiceProvider.reset();
     System.getProperties().remove(KUBERNETES_NAMESPACE_FILE);
     System.getProperties().remove(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
-  }
-
-  @Test
-  void testInit() {
-    leaderElectionManager.init(new LeaderElectionConfiguration("test", "testns"), kubernetesClient);
-    assertTrue(leaderElectionManager.isLeaderElectionEnabled());
   }
 
   @Test
@@ -53,7 +50,7 @@ class LeaderElectionManagerTest {
     System.setProperty(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
     System.setProperty(KUBERNETES_NAMESPACE_FILE, namespacePath.toString());
 
-    leaderElectionManager.init(new LeaderElectionConfiguration("test"), kubernetesClient);
+    leaderElectionManager.start();
     assertTrue(leaderElectionManager.isLeaderElectionEnabled());
   }
 
@@ -62,7 +59,6 @@ class LeaderElectionManagerTest {
     System.setProperty(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
     assertThrows(
         IllegalArgumentException.class,
-        () -> leaderElectionManager.init(new LeaderElectionConfiguration("test"),
-            kubernetesClient));
+        () -> leaderElectionManager.start());
   }
 }

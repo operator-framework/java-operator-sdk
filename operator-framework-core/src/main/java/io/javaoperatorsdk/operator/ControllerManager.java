@@ -22,6 +22,12 @@ class ControllerManager {
   @SuppressWarnings("rawtypes")
   private final Map<String, Controller> controllers = new HashMap<>();
   private boolean started = false;
+  private final ExecutorServiceManager executorServiceManager;
+
+  public ControllerManager(ExecutorServiceManager executorServiceManager) {
+    this.executorServiceManager = executorServiceManager;
+  }
+
 
   public synchronized void shouldStart() {
     if (started) {
@@ -33,7 +39,7 @@ class ControllerManager {
   }
 
   public synchronized void start(boolean startEventProcessor) {
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
       c.start(startEventProcessor);
       return null;
     }, c -> "Controller Starter for: " + c.getConfiguration().getName());
@@ -41,7 +47,7 @@ class ControllerManager {
   }
 
   public synchronized void stop() {
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
       log.debug("closing {}", c);
       c.stop();
       return null;
@@ -50,7 +56,7 @@ class ControllerManager {
   }
 
   public synchronized void startEventProcessing() {
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
       c.startEventProcessing();
       return null;
     }, c -> "Event processor starter for: " + c.getConfiguration().getName());

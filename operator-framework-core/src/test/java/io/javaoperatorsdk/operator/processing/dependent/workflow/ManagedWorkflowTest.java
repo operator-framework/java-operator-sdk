@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
@@ -63,7 +63,7 @@ class ManagedWorkflowTest {
     final var specList = List.of(specs);
 
     when(configuration.getDependentResources()).thenReturn(specList);
-    return ConfigurationServiceProvider.instance().getWorkflowFactory()
+    return new BaseConfigurationService().getWorkflowFactory()
         .workflowFor(configuration);
   }
 

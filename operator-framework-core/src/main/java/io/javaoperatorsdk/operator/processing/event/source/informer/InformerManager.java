@@ -23,10 +23,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.Cloner;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -46,20 +43,23 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
   private final ResourceEventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
+  private ExecutorServiceManager executorServiceManager;
+  private final ConfigurationService configurationService;
 
   public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      C configuration,
+      C configuration, ConfigurationService configurationService,
       ResourceEventHandler<T> eventHandler) {
     this.client = client;
     this.configuration = configuration;
     this.eventHandler = eventHandler;
+    this.configurationService = configurationService;
   }
 
   @Override
   public void start() throws OperatorException {
     initSources();
     // make sure informers are all started before proceeding further
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(sources.values().stream(),
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(sources.values().stream(),
         iw -> {
           iw.start();
           return null;
@@ -72,8 +72,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     if (!sources.isEmpty()) {
       throw new IllegalStateException("Some sources already initialized.");
     }
-    cloner = ConfigurationServiceProvider.instance().getResourceCloner();
-    final var targetNamespaces = configuration.getEffectiveNamespaces();
+    cloner = configurationService.getResourceCloner();
+    final var targetNamespaces = configuration.getEffectiveNamespaces(configurationService);
     if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
       var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
       log.debug("Registered {} -> {} for any namespace", this, source);
@@ -129,7 +129,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     var informer = filteredBySelectorClient.runnableInformer(0);
     configuration.getItemStore().ifPresent(informer::itemStore);
     var source =
-        new InformerWrapper<>(informer, namespaceIdentifier);
+        new InformerWrapper<>(informer, configurationService, namespaceIdentifier);
     source.addEventHandler(eventHandler);
     sources.put(namespaceIdentifier, source);
     return source;
@@ -207,11 +207,17 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     return "InformerManager ["
         + ReconcilerUtils.getResourceTypeNameWithVersion(configuration.getResourceClass())
         + "] watching: "
-        + configuration.getEffectiveNamespaces()
+        + configuration.getEffectiveNamespaces(configurationService)
         + (selector != null ? " selector: " + selector : "");
   }
 
   public Map<String, InformerHealthIndicator> informerHealthIndicators() {
     return Collections.unmodifiableMap(sources);
+  }
+
+  public InformerManager<T, C> setExecutorServiceManager(
+      ExecutorServiceManager executorServiceManager) {
+    this.executorServiceManager = executorServiceManager;
+    return this;
   }
 }
