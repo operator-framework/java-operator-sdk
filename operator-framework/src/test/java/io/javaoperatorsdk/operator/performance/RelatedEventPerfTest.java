@@ -10,8 +10,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,8 +18,14 @@ import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -28,7 +33,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"})
+@EnableKubeAPIServer
 public class RelatedEventPerfTest {
 
     KubernetesClient adminClient = new KubernetesClientBuilder().build();
@@ -61,25 +66,41 @@ public class RelatedEventPerfTest {
     }
 
     @Test
-    public void perfTestSynteticEvents() {
+    public void perfTestSyntheticEvents() throws InterruptedException, IOException {
+        int numberOfCounters = 3;
+        int numberOfEvents = 10000;
+        int millisBetweenEvents = 1;
+
+        log.info("Creating Counters");
+        for (int i = 0; i < numberOfCounters; i++) {
+            Counter counter = new Counter();
+            counter.getMetadata().setName("counter-" + i);
+            counter.setSpec(new CounterSpec());
+            counter.getSpec().setCount(1);
+            counterClient.inNamespace(namespace).resource(counter).create();
+        }
+
+        Thread.sleep(1000);
+
+        Instant start = Instant.now();
         eventCounter.set(0);
 
-        int numberOfEvents = 10000;
-
         for (int i = 0; i < numberOfEvents; i++) {
-            eventSource.generateEvent(i);
+            eventSource.generateEvent(i % numberOfCounters);
+            if (millisBetweenEvents > 0) Thread.sleep(millisBetweenEvents);
             if (i % (numberOfEvents / 10) == 0) log.info("Generated " + i + " events");
         }
 
-        Instant instant = Instant.now();
         await()
                 .atMost(2, MINUTES)
                 .untilAsserted(() -> assertThat(eventCounter.get(), equalTo(numberOfEvents)));
-        Duration duration = Duration.between(instant, Instant.now());
+        Duration duration = Duration.between(start, Instant.now());
         log.info("Duration: " + duration.toMillis() + "ms");
+        writeCsvOutput(numberOfCounters, numberOfEvents, millisBetweenEvents, duration);
     }
 
     @Test
+    @Ignore
     public void perfTestKubernetes() {
         warmup();
         log.info("Warmup finished");
@@ -138,5 +159,19 @@ public class RelatedEventPerfTest {
                 .withName(namespace)
                 .build());
         return n;
+    }
+
+    private void writeCsvOutput(int numberOfObjects, int numberOfEvents, int millisBetweenEvents, Duration totalTime) throws IOException {
+        File csvFile = new File("target/perf-test-stats.csv");
+        var dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+        boolean fileExists = csvFile.exists();
+        try (var writer = new FileWriter(csvFile, true)) {
+            if (!fileExists) {
+                writer.write("Date, Nr of Objects, Nr of Events, Ms between Events, Total time ms\n");
+            }
+            writer.write(String.format(Locale.ROOT, "%s,%d,%d,%d,%d\n",
+                    dateFormat.format(Date.from(Instant.now())),
+                    numberOfObjects, numberOfEvents, millisBetweenEvents, totalTime.toMillis()));
+        }
     }
 }

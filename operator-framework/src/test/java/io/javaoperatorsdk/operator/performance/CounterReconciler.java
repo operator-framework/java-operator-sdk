@@ -24,10 +24,11 @@ class CounterReconciler implements Reconciler<Counter>, EventSourceInitializer<C
   @Override
   public UpdateControl<Counter> reconcile(Counter counter, Context<Counter> context)
       throws Exception {
-    if (eventCounter.get() % 1000 == 0) {
-      log.info("Reconciling event: {}", eventCounter.get());
+    int eventCount = eventCounter.incrementAndGet();
+    if (eventCount % 1000 == 0) {
+      log.info("Reconciling event: {}", eventCount);
     }
-    eventCounter.incrementAndGet();
+
     if (counter.getStatus() == null) {
       counter.setStatus(new CounterStatus());
     }
