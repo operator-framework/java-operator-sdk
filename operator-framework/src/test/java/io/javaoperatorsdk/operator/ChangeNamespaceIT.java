@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import io.javaoperatorsdk.operator.sample.changenamespace.ChangeNamespaceTestRec
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class ChangeNamespaceIT {
 
   public static final String TEST_RESOURCE_NAME_1 = "test1";
@@ -29,9 +31,14 @@ class ChangeNamespaceIT {
   public static final String TEST_RESOURCE_NAME_3 = "test3";
   public static final String ADDITIONAL_TEST_NAMESPACE = "additional-test-namespace";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new ChangeNamespaceTestReconciler())
+      LocallyRunOperatorExtension.builder()
+              .withKubernetesClient(client)
+              .waitForNamespaceDeletion(false)
+              .withReconciler(new ChangeNamespaceTestReconciler())
           .build();
 
   @BeforeEach

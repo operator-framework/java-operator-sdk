@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.maxinterval.MaxIntervalTestCustomResource;
 import io.javaoperatorsdk.operator.sample.maxinterval.MaxIntervalTestReconciler;
@@ -13,11 +15,17 @@ import io.javaoperatorsdk.operator.sample.maxinterval.MaxIntervalTestReconciler;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class MaxIntervalIT {
+
+  static KubernetesClient client;
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new MaxIntervalTestReconciler()).build();
+      LocallyRunOperatorExtension.builder()
+              .waitForNamespaceDeletion(false)
+              .withKubernetesClient(client)
+              .withReconciler(new MaxIntervalTestReconciler()).build();
 
   @Test
   void reconciliationTriggeredBasedOnMaxInterval() {
