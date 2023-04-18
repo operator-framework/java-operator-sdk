@@ -452,7 +452,7 @@ as a sample.
    `getResource()` of the dependent resource or getting the resource from the `EventSource`
    itself won't return the just updated resource, in the case where the associated event hasn't
    been received from the Kubernetes API. The `KubernetesDependentResource` implementation,
-   however, addresses this issue so you don't have to worry about it by making sure that it or
+   however, addresses this issue, so you don't have to worry about it by making sure that it or
    the related `InformerEventSource` always return the up-to-date resource.
 
 2. Another feature of `KubernetesDependentResource` is to make sure that if a resource is created or
@@ -468,3 +468,16 @@ as a sample.
    to select only the relevant events, see
    in [related integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/orderedmanageddependent/ConfigMapDependentResource1.java)
    . 
+
+## Read-only Dependent Resources?
+
+It can happen that a resource is just read-only, thus it serves just as an input for the reconciliation,
+like a config map to configure common characteristics for multiple custom resources in one place.
+It is up to the debate if it is useful to create a dependent resource in this case. Dependent resources
+helps with a reconciliation, thus making sure that a target resource in the desired state, in this case
+however there is no desired state. As an alternative it might be enough just to register an event source
+for such resources.
+
+On the other hand it might be useful to have a read-only dependent from the Workflows perspective, to add 
+conditions on for a reconciliation. Thus, for example to reconcile a dependent resource which depends on
+a read-only dependent resource only if some reconcile pre-condition holds on the read-only resource.
