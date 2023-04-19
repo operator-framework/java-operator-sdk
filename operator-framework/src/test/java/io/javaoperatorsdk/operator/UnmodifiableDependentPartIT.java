@@ -5,6 +5,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.unmodifiabledependentpart.UnmodifiableDependentPartCustomResource;
 import io.javaoperatorsdk.operator.sample.unmodifiabledependentpart.UnmodifiableDependentPartReconciler;
@@ -15,15 +17,20 @@ import static io.javaoperatorsdk.operator.sample.unmodifiabledependentpart.Unmod
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 public class UnmodifiableDependentPartIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String INITIAL_DATA = "initialData";
   public static final String UPDATED_DATA = "updatedData";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(UnmodifiableDependentPartReconciler.class)
           .build();
 

@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperReconciler;
 import io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper.DependentAnnotationSecondaryMapperResource;
@@ -16,13 +18,18 @@ import static io.javaoperatorsdk.operator.processing.event.source.informer.Mappe
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class DependentAnnotationSecondaryMapperIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(DependentAnnotationSecondaryMapperReconciler.class)
           .build();
 

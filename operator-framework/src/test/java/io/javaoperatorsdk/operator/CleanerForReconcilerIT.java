@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.cleanerforreconciler.CleanerForReconcilerCustomResource;
 import io.javaoperatorsdk.operator.sample.cleanerforreconciler.CleanerForReconcilerTestReconciler;
@@ -11,13 +13,19 @@ import io.javaoperatorsdk.operator.sample.cleanerforreconciler.CleanerForReconci
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class CleanerForReconcilerIT {
 
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new CleanerForReconcilerTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(new CleanerForReconcilerTestReconciler())
           .build();
 
 

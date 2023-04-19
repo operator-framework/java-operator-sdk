@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.informereventsource.InformerEventSourceTestCustomResource;
@@ -19,15 +21,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class InformerEventSourceIT {
 
   public static final String RESOURCE_NAME = "informertestcr";
   public static final String INITIAL_STATUS_MESSAGE = "Initial Status";
   public static final String UPDATE_STATUS_MESSAGE = "Updated Status";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(new InformerEventSourceTestCustomReconciler())
           .build();
 

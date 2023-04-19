@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.cleanupconflict.CleanupConflictCustomResource;
 import io.javaoperatorsdk.operator.sample.cleanupconflict.CleanupConflictReconciler;
@@ -14,14 +16,20 @@ import static io.javaoperatorsdk.operator.sample.cleanupconflict.CleanupConflict
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class CleanupConflictIT {
 
   private static final String ADDITIONAL_FINALIZER = "javaoperatorsdk.io/additionalfinalizer";
   public static final String TEST_RESOURCE_NAME = "test1";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new CleanupConflictReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(new CleanupConflictReconciler())
           .build();
 
   @Test

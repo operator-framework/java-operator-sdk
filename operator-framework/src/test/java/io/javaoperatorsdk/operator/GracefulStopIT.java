@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestCustomResource;
 import io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestCustomResourceSpec;
@@ -15,14 +17,19 @@ import static io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestRe
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 public class GracefulStopIT {
 
   public static final String TEST_1 = "test1";
   public static final String TEST_2 = "test2";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withConfigurationService(o -> o.withCloseClientOnStop(false))
           .withReconciler(new GracefulStopTestReconciler())
           .build();

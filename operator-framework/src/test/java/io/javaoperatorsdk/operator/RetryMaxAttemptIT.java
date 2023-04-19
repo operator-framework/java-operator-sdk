@@ -3,6 +3,8 @@ package io.javaoperatorsdk.operator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomReconciler;
@@ -11,6 +13,7 @@ import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResource;
 import static io.javaoperatorsdk.operator.RetryIT.createTestCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EnableKubeAPIServer
 class RetryMaxAttemptIT {
 
   public static final int MAX_RETRY_ATTEMPTS = 3;
@@ -19,9 +22,13 @@ class RetryMaxAttemptIT {
 
   RetryTestCustomReconciler reconciler = new RetryTestCustomReconciler(ALL_EXECUTION_TO_FAIL);
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(reconciler,
               new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
                   .setMaxAttempts(MAX_RETRY_ATTEMPTS))

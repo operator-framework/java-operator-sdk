@@ -43,6 +43,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   protected final boolean preserveNamespaceOnError;
   protected final boolean waitForNamespaceDeletion;
   protected final int namespaceDeleteTimeout = DEFAULT_NAMESPACE_DELETE_TIMEOUT;
+  protected final boolean clientProvided;
 
   protected String namespace;
 
@@ -53,6 +54,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       KubernetesClient kubernetesClient) {
+    this.clientProvided = kubernetesClient != null;
     this.kubernetesClient = kubernetesClient != null ? kubernetesClient
         : new KubernetesClientBuilder()
             .withConfig(ConfigurationServiceProvider.instance().getClientConfiguration()).build();
@@ -182,6 +184,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   protected void afterEachImpl(ExtensionContext context) {
     // resets the config service provider so the controller configs are reconstructed always
     ConfigurationServiceProvider.reset();
+    ConfigurationServiceProvider.overrideCurrent(c -> c.withCloseClientOnStop(!clientProvided));
     if (!oneNamespacePerClass) {
       after(context);
     }
@@ -257,6 +260,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     }
 
     public T withConfigurationService(Consumer<ConfigurationServiceOverrider> overrider) {
+      ConfigurationServiceProvider.reset();
       ConfigurationServiceProvider.overrideCurrent(overrider);
       return (T) this;
     }

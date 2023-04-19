@@ -9,6 +9,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentCustomResource;
 import io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler;
@@ -19,15 +21,20 @@ import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.Prim
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class PrimaryToSecondaryDependentIT {
 
   public static final String TEST_CONFIG_MAP_NAME = "testconfigmap";
   public static final String TEST_CR_NAME = "test1";
   public static final String TEST_DATA = "testData";
-  public
 
-  @RegisterExtension LocallyRunOperatorExtension operator =
+  static KubernetesClient client;
+
+  @RegisterExtension
+  LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(new PrimaryToSecondaryDependentReconciler())
           .build();
 

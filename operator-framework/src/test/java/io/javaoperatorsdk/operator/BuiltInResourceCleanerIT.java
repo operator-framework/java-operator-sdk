@@ -2,14 +2,14 @@ package io.javaoperatorsdk.operator;
 
 import java.util.Map;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.builtinresourcecleaner.ObservedGenerationTestReconciler;
 
@@ -26,8 +26,8 @@ class BuiltInResourceCleanerIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-              .withKubernetesClient(client)
-              .waitForNamespaceDeletion(false)
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(new ObservedGenerationTestReconciler())
           .build();
 

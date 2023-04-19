@@ -20,6 +20,7 @@ class IndexDiscriminatorIT {
 
   public static final String TEST_RESOURCE_1 = "test1";
   public static final String CHANGED_SPEC_VALUE = "otherValue";
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(IndexDiscriminatorTestReconciler.class)

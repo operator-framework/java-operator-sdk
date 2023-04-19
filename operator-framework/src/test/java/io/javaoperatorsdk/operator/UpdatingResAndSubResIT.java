@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.doubleupdate.DoubleUpdateTestCustomResource;
@@ -16,10 +18,17 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class UpdatingResAndSubResIT {
+
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(DoubleUpdateTestCustomReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(DoubleUpdateTestCustomReconciler.class)
           .build();
 
   @Test

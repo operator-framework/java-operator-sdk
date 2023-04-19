@@ -24,6 +24,7 @@ import static io.javaoperatorsdk.operator.sample.deployment.DeploymentReconciler
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+// todo not use pod?
 class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension

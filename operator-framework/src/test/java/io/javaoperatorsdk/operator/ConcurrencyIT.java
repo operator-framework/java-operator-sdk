@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestReconciler;
@@ -18,6 +20,7 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class ConcurrencyIT {
   public static final int NUMBER_OF_RESOURCES_CREATED = 50;
   public static final int NUMBER_OF_RESOURCES_DELETED = 30;
@@ -25,9 +28,14 @@ class ConcurrencyIT {
   public static final String UPDATED_SUFFIX = "_updated";
   private static final Logger log = LoggerFactory.getLogger(ConcurrencyIT.class);
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(new TestReconciler(true)).build();
 
   @Test
   void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {

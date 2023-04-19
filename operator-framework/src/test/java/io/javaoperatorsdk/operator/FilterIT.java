@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.filter.FilterTestCustomResource;
 import io.javaoperatorsdk.operator.sample.filter.FilterTestReconciler;
@@ -15,14 +17,20 @@ import static io.javaoperatorsdk.operator.sample.filter.FilterTestReconciler.CON
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class FilterIT {
 
   public static final String RESOURCE_NAME = "test1";
   public static final int POLL_DELAY = 150;
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(FilterTestReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(FilterTestReconciler.class)
           .build();
 
   @Test

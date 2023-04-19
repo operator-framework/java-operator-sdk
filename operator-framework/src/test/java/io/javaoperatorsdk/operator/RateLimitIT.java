@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.ratelimit.RateLimitCustomResource;
 import io.javaoperatorsdk.operator.sample.ratelimit.RateLimitCustomResourceSpec;
@@ -18,13 +20,18 @@ import static io.javaoperatorsdk.operator.sample.ratelimit.RateLimitReconciler.R
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class RateLimitIT {
 
   private final static Logger log = LoggerFactory.getLogger(RateLimitIT.class);
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(new RateLimitReconciler())
           .build();
 

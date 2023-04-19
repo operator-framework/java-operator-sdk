@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.Cluster;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.Job;
@@ -15,14 +17,19 @@ import io.javaoperatorsdk.operator.sample.primarytosecondary.JobSpec;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class PrimaryToSecondaryIT {
 
   public static final String CLUSTER_NAME = "cluster1";
   public static final int MIN_DELAY = 150;
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withAdditionalCustomResourceDefinition(Cluster.class)
           .withReconciler(new JobReconciler())
           .build();

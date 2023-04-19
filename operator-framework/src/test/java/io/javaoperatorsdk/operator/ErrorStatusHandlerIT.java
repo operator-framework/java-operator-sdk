@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerTestCustomResource;
@@ -14,14 +16,19 @@ import io.javaoperatorsdk.operator.sample.errorstatushandler.ErrorStatusHandlerT
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class ErrorStatusHandlerIT {
 
   public static final int MAX_RETRY_ATTEMPTS = 3;
   ErrorStatusHandlerTestReconciler reconciler = new ErrorStatusHandlerTestReconciler();
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(reconciler,
               new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
           .build();

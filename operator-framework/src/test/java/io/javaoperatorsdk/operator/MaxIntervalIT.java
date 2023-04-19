@@ -23,9 +23,9 @@ class MaxIntervalIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-              .waitForNamespaceDeletion(false)
-              .withKubernetesClient(client)
-              .withReconciler(new MaxIntervalTestReconciler()).build();
+          .waitForNamespaceDeletion(false)
+          .withKubernetesClient(client)
+          .withReconciler(new MaxIntervalTestReconciler()).build();
 
   @Test
   void reconciliationTriggeredBasedOnMaxInterval() {

@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.createupdateeventfilter.CreateUpdateEventFilterTestCustomResource;
 import io.javaoperatorsdk.operator.sample.createupdateeventfilter.CreateUpdateEventFilterTestCustomResourceSpec;
@@ -16,13 +18,18 @@ import static io.javaoperatorsdk.operator.sample.createupdateeventfilter.CreateU
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class CreateUpdateInformerEventSourceEventFilterIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(new CreateUpdateEventFilterTestReconciler())
           .build();
+
+  static KubernetesClient client;
 
   @Test
   void updateEventNotReceivedAfterCreateOrUpdate() {

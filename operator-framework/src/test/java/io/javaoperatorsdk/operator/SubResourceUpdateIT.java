@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
@@ -17,14 +19,20 @@ import static io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCust
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class SubResourceUpdateIT {
 
   public static final int WAIT_AFTER_EXECUTION = 500;
   public static final int EVENT_RECEIVE_WAIT = 200;
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(SubResourceTestCustomReconciler.class)
           .build();
 
   @Test

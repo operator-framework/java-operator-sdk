@@ -10,9 +10,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResource1;
@@ -27,6 +29,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class MultiVersionCRDIT {
 
   private static final Logger log = LoggerFactory.getLogger(MultiVersionCRDIT.class);
@@ -34,9 +37,13 @@ class MultiVersionCRDIT {
   public static final String CR_V1_NAME = "crv1";
   public static final String CR_V2_NAME = "crv2";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
           .withReconciler(MultiVersionCRDTestReconciler1.class)
           .withReconciler(MultiVersionCRDTestReconciler2.class)
           .withConfigurationService(

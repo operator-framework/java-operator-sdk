@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationTestCustomResource;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationTestReconciler;
@@ -13,10 +15,17 @@ import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenerationT
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class ObservedGenerationHandlingIT {
+
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new ObservedGenerationTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(new ObservedGenerationTestReconciler())
           .build();
 
   @Test

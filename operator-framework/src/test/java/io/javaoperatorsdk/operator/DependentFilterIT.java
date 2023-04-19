@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.dependentfilter.DependentFilterTestCustomResource;
 import io.javaoperatorsdk.operator.sample.dependentfilter.DependentFilterTestReconciler;
@@ -18,13 +20,19 @@ import static io.javaoperatorsdk.operator.sample.dependentfilter.DependentFilter
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@EnableKubeAPIServer
 class DependentFilterIT {
 
   public static final String RESOURCE_NAME = "test1";
 
+  static KubernetesClient client;
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(DependentFilterTestReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(DependentFilterTestReconciler.class)
           .build();
 
   @Test

@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestReconciler;
 import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestResource;
@@ -11,11 +13,17 @@ import io.javaoperatorsdk.operator.sample.customfilter.CustomFilteringTestResour
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EnableKubeAPIServer
 class CustomResourceFilterIT {
+
+  static KubernetesClient client;
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new CustomFilteringTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withKubernetesClient(client)
+          .waitForNamespaceDeletion(false)
+          .withReconciler(new CustomFilteringTestReconciler())
           .build();
 
   @Test
