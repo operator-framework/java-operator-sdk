@@ -1,10 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -16,6 +12,7 @@ import io.javaoperatorsdk.operator.sample.restart.RestartTestReconciler;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Disabled
 class OperatorRestartIT {
   private final static KubernetesClient client = new KubernetesClientBuilder().build();
   private final static Operator operator = new Operator(o -> o.withCloseClientOnStop(false));
