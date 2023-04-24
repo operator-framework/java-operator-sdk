@@ -469,15 +469,25 @@ as a sample.
    in [related integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/orderedmanageddependent/ConfigMapDependentResource1.java)
    . 
 
-## Read-only Dependent Resources?
+## "Read-only" Dependent Resources vs. Event Source
 
-It can happen that a resource is just read-only, thus it serves just as an input for the reconciliation,
-like a config map to configure common characteristics for multiple custom resources in one place.
-It is up to the debate if it is useful to create a dependent resource in this case. Dependent resources
-helps with a reconciliation, thus making sure that a target resource in the desired state, in this case
-however there is no desired state. As an alternative it might be enough just to register an event source
-for such resources.
+Some secondary resources only exist as input for the reconciliation process and are never
+updated *by a controller* (they might, and actually usually do, get updated by users interacting
+with the resources directly, however). This might be the case, for example, of a `ConfigMap`that is 
+used to configure common characteristics of multiple resources in one convenient place.
 
-On the other hand it might be useful to have a read-only dependent from the Workflows perspective, to add 
-conditions on for a reconciliation. Thus, for example to reconcile a dependent resource which depends on
-a read-only dependent resource only if some reconcile pre-condition holds on the read-only resource.
+In such situations, one might wonder whether it makes sense to create a dependent resource in 
+this case or simply use an `EventSource` so that the primary resource gets reconciled whenever a 
+user changes the resource. Typical dependent resources provide a desired state that the 
+reconciliation process attempts to match. In the case of so-called read-only dependents, though, 
+there is no such desired state because the operator / controller will never update the resource 
+itself, just react to external changes to it. An `EventSource` would achieve the same result. 
+
+Using a dependent resource for that purpose instead of a simple `EventSource`, however, provides 
+several benefits:
+- dependents can be created declaratively, while an event source would need to be manually created
+- if dependents are already used in a controller, it makes sense to unify the handling of all 
+  secondary resources as dependents from a code organization perspective
+- dependent resources can also interact with the workflow feature, thus allowing the read-only 
+  resource to participate in conditions, in particular to decide whether or not the primary 
+  resource needs/can be reconciled using reconcile pre-conditions
