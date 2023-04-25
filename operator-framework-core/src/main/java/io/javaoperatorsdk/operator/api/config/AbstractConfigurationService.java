@@ -90,8 +90,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
-    System.out
-        .println("Cannot find reconciler named '" + reconcilerKey + "'. " + reconcilersNameMessage);
+    log.warn("Cannot find reconciler named '{}'. {}", reconcilerKey, reconcilersNameMessage);
   }
 
   private String getReconcilersNameMessage() {
