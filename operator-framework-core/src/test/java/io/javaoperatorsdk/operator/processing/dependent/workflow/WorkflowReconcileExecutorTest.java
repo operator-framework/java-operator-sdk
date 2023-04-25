@@ -453,4 +453,15 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     Assertions.assertThat(res.getNotReadyDependents()).containsExactlyInAnyOrder(dr2);
   }
 
+  @Test
+  void garbageCollectedResourceIsDeletedIfReconcilePreconditionNotHolds() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(gcDeleter).withReconcilePrecondition(not_met_reconcile_condition)
+        .build();
+
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    assertThat(executionHistory).deleted(gcDeleter);
+  }
+
 }

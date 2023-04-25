@@ -117,15 +117,14 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void dontDeleteIfGarbageCollected() {
-    GarbageCollectedDeleter gcDel = new GarbageCollectedDeleter("GC_DELETER");
     var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(gcDel)
+        .addDependentResource(gcDeleter)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), null);
 
     assertThat(executionHistory)
-        .notReconciled(gcDel);
+        .notReconciled(gcDeleter);
 
     Assertions.assertThat(res.getDeleteCalledOnDependents()).isEmpty();
   }

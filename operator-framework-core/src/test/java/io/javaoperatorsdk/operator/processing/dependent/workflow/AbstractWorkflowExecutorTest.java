@@ -22,6 +22,7 @@ public class AbstractWorkflowExecutorTest {
   protected TestDeleterDependent drDeleter = new TestDeleterDependent("DR_DELETER");
   protected TestErrorDependent drError = new TestErrorDependent("ERROR_1");
   protected TestErrorDeleterDependent errorDD = new TestErrorDeleterDependent("ERROR_DELETER");
+  protected GarbageCollectedDeleter gcDeleter = new GarbageCollectedDeleter("GC_DELETER");
 
   @SuppressWarnings("rawtypes")
   protected final Condition noMetDeletePostCondition = (primary, secondary, context) -> false;
