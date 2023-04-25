@@ -22,7 +22,6 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
     currentNode = new DependentResourceNode<>(dependentResource);
-    // todo is this wrong?
     isCleaner = dependentResource.isDeletable();
     final var name = currentNode.getName();
     dependentResourceNodes.put(name, currentNode);
