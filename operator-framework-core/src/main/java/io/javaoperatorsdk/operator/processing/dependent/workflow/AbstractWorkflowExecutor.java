@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -25,7 +24,7 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
    * Covers both deleted and reconciled
    */
   private final Set<DependentResourceNode> alreadyVisited = ConcurrentHashMap.newKeySet();
-  private final Map<DependentResourceNode, Future<?>> actualExecutions = new HashMap<>();
+  private final Map<DependentResourceNode, Future<?>> actualExecutions = new ConcurrentHashMap<>();
   private final Map<DependentResourceNode, Exception> exceptionsDuringExecution =
       new ConcurrentHashMap<>();
 
