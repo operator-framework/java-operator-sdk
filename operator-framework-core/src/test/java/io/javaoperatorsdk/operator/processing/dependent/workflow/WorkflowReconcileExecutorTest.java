@@ -454,7 +454,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  void garbageCollectedResourceIsDeletedIfReconcilePreconditionNotHolds() {
+  void garbageCollectedResourceIsDeletedIfReconcilePreconditionDoesNotHold() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(gcDeleter).withReconcilePrecondition(not_met_reconcile_condition)
         .build();
@@ -466,7 +466,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  void garbageCollectedDeepResourceIsDeletedIfReconcilePreconditionNotHolds() {
+  void garbageCollectedDeepResourceIsDeletedIfReconcilePreconditionDoesNotHold() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1).withReconcilePrecondition(not_met_reconcile_condition)
         .addDependentResource(gcDeleter).dependsOn(dr1)
