@@ -15,10 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.*;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -430,7 +427,10 @@ class EventProcessorTest {
           return PostExecutionControl.defaultDispatch();
         });
     // one event will lock the thread / executor
-    ConfigurationServiceProvider.overrideCurrent(o -> o.withConcurrentReconciliationThreads(1));
+    ConfigurationServiceProvider.overrideCurrent(o -> {
+      o.withConcurrentReconciliationThreads(1);
+      o.withMinConcurrentReconciliationThreads(1);
+    });
     ExecutorServiceManager.reset();
     eventProcessor.start();
 
@@ -490,6 +490,7 @@ class EventProcessorTest {
     when(res.getRetry()).thenReturn(retry);
     when(res.getRateLimiter()).thenReturn(rateLimiter);
     when(res.maxReconciliationInterval()).thenReturn(Optional.of(Duration.ofMillis(1000)));
+    when(res.getConfigurationService()).thenReturn(new BaseConfigurationService());
     return res;
   }
 

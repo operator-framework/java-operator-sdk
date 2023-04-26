@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.client.Config;
@@ -191,13 +190,13 @@ public class ConfigurationServiceOverrider {
       @Override
       public ExecutorService getExecutorService() {
         return executorService != null ? executorService
-            : Executors.newFixedThreadPool(concurrentReconciliationThreads());
+            : super.getExecutorService();
       }
 
       @Override
       public ExecutorService getWorkflowExecutorService() {
         return workflowExecutorService != null ? workflowExecutorService
-            : Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
+            : super.getWorkflowExecutorService();
       }
 
       @Override
