@@ -120,10 +120,5 @@ class ConfigurationServiceOverriderTest {
     assertNotEquals(config.getInformerStoppedHandler(),
         overridden.getLeaderElectionConfiguration());
   }
-
-  @Test
-  void executorServiceIsBasedReturnedFromConfigurationServiceIfNoOverride() {
-
-  }
-
+  
 }
