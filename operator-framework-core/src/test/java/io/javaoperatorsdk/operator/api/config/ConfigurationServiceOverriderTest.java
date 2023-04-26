@@ -120,5 +120,5 @@ class ConfigurationServiceOverriderTest {
     assertNotEquals(config.getInformerStoppedHandler(),
         overridden.getLeaderElectionConfiguration());
   }
-  
+
 }
