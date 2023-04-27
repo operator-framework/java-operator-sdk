@@ -7,6 +7,9 @@ concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
 on:
+  schedule:
+    #   Run on end of the day
+    - cron: '0 0 * * *'
   push:
     paths-ignore:
       - 'docs/**'
