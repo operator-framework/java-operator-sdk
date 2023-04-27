@@ -10,7 +10,7 @@ on:
   push:
     paths-ignore:
       - 'docs/**'
-    branches: [ main, v1, v2, v3, next ]
+    branches: [ fabric8-next-version ]
   workflow_dispatch:
 jobs:
   test:
