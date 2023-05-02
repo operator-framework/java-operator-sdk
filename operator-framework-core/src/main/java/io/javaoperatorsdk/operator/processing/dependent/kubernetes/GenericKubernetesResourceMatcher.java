@@ -99,23 +99,10 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     var considerIgnoreList = !specEquality && !ignoreList.isEmpty();
 
     if (considerMetadata) {
-      if (metadataEquality) {
-        final var desiredMetadata = desired.getMetadata();
-        final var actualMetadata = actualResource.getMetadata();
-
-        final var matched =
-            Objects.equals(desiredMetadata.getAnnotations(), actualMetadata.getAnnotations()) &&
-                Objects.equals(desiredMetadata.getLabels(), actualMetadata.getLabels());
-        if (!matched) {
-          return Result.computed(false, desired);
-        }
-      } else {
-        var metadataJSonDiffs = getDiffsWithPathSuffix(wholeDiffJsonPatch,
-            "/metadata/labels",
-            "/metadata/annotations");
-        if (!allDiffsAreAddOps(metadataJSonDiffs)) {
-          return Result.computed(false, desired);
-        }
+      Optional<Result<R>> res =
+          matchMetadata(desired, actualResource, metadataEquality, wholeDiffJsonPatch);
+      if (res.isPresent()) {
+        return res.orElseThrow();
       }
     }
     if (desired instanceof ConfigMap) {
@@ -127,26 +114,54 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
           ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
           desired);
     } else {
-      // reflection will be replaced by this:
-      // https://github.com/fabric8io/kubernetes-client/issues/3816
-      var specDiffJsonPatch = getDiffsWithPathSuffix(wholeDiffJsonPatch, "/spec");
-      // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
-      // On contrary (if equality is false), "add" is allowed for cases when for some
-      // resources Kubernetes fills-in values into spec.
-      if (specEquality && !specDiffJsonPatch.isEmpty()) {
+      return matchSpec(desired, specEquality, ignoreList, wholeDiffJsonPatch, considerIgnoreList);
+    }
+  }
+
+  private static <R extends HasMetadata> Result<R> matchSpec(R desired, boolean specEquality,
+      List<String> ignoreList, JsonNode wholeDiffJsonPatch, boolean considerIgnoreList) {
+    // reflection will be replaced by this:
+    // https://github.com/fabric8io/kubernetes-client/issues/3816
+    var specDiffJsonPatch = getDiffsWithPathSuffix(wholeDiffJsonPatch, "/spec");
+    // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
+    // On contrary (if equality is false), "add" is allowed for cases when for some
+    // resources Kubernetes fills-in values into spec.
+    if (specEquality && !specDiffJsonPatch.isEmpty()) {
+      return Result.computed(false, desired);
+    }
+    if (considerIgnoreList) {
+      if (!allDiffsOnIgnoreList(specDiffJsonPatch, ignoreList)) {
         return Result.computed(false, desired);
       }
-      if (considerIgnoreList) {
-        if (!allDiffsOnIgnoreList(specDiffJsonPatch, ignoreList)) {
-          return Result.computed(false, desired);
-        }
-      } else {
-        if (!allDiffsAreAddOps(specDiffJsonPatch)) {
-          return Result.computed(false, desired);
-        }
+    } else {
+      if (!allDiffsAreAddOps(specDiffJsonPatch)) {
+        return Result.computed(false, desired);
       }
-      return Result.computed(true, desired);
     }
+    return Result.computed(true, desired);
+  }
+
+  private static <R extends HasMetadata> Optional<Result<R>> matchMetadata(R desired,
+      R actualResource, boolean metadataEquality, JsonNode wholeDiffJsonPatch) {
+    if (metadataEquality) {
+      final var desiredMetadata = desired.getMetadata();
+      final var actualMetadata = actualResource.getMetadata();
+
+      final var matched =
+          Objects.equals(desiredMetadata.getAnnotations(), actualMetadata.getAnnotations()) &&
+              Objects.equals(desiredMetadata.getLabels(), actualMetadata.getLabels());
+      if (!matched) {
+        return Optional.of(Result.computed(false, desired));
+      }
+    } else {
+      var metadataJSonDiffs = getDiffsWithPathSuffix(wholeDiffJsonPatch,
+          "/metadata/labels",
+          "/metadata/annotations");
+      if (!allDiffsAreAddOps(metadataJSonDiffs)) {
+        return Optional.of(Result.computed(false, desired));
+      }
+    }
+    return Optional.empty();
   }
 
   private static boolean allDiffsAreAddOps(List<JsonNode> metadataJSonDiffs) {
