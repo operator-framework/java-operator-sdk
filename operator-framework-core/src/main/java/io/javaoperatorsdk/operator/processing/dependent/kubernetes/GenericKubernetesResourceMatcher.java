@@ -30,7 +30,8 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, false, false);
+    return match(desired, actualResource, true, false,
+        false, Collections.emptyList());
   }
 
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
@@ -64,18 +65,27 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    */
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
       boolean considerMetadata, boolean equality) {
-    return match(desired, actualResource, considerMetadata, equality, Collections.emptyList());
+    return match(desired, actualResource, considerMetadata, false, equality,
+        Collections.emptyList());
   }
 
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
       boolean considerMetadata, String... ignoreList) {
-    return match(desired, actualResource, considerMetadata, false, Arrays.asList(ignoreList));
+    return match(desired, actualResource, considerMetadata, false, false,
+        Arrays.asList(ignoreList));
   }
 
+  public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
+      boolean considerMetadata, boolean metadataEquality, String... ignoreList) {
+    return match(desired, actualResource, considerMetadata, metadataEquality, false,
+        Arrays.asList(ignoreList));
+  }
 
   private static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
-      boolean considerMetadata, boolean equality, List<String> ignoreList) {
-    if (equality && !ignoreList.isEmpty()) {
+      boolean considerMetadata, boolean metadataEquality, boolean specEquality,
+      List<String> ignoreList) {
+
+    if (specEquality && !ignoreList.isEmpty()) {
       throw new IllegalArgumentException(
           "Equality should be false in case of ignore list provided");
     }
@@ -86,10 +96,10 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     var actualNode = objectMapper.valueToTree(actualResource);
     var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
 
-    var considerIgnoreList = !equality && !ignoreList.isEmpty();
+    var considerIgnoreList = !specEquality && !ignoreList.isEmpty();
 
     if (considerMetadata) {
-      if (equality) {
+      if (metadataEquality) {
         final var desiredMetadata = desired.getMetadata();
         final var actualMetadata = actualResource.getMetadata();
 
@@ -123,7 +133,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
       // On contrary (if equality is false), "add" is allowed for cases when for some
       // resources Kubernetes fills-in values into spec.
-      if (equality && !specDiffJsonPatch.isEmpty()) {
+      if (specEquality && !specDiffJsonPatch.isEmpty()) {
         return Result.computed(false, desired);
       }
       if (considerIgnoreList) {
@@ -216,8 +226,11 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @param <R> the type of resource we want to determine whether they match or not
    * @param <P> the type of primary resources associated with the secondary resources we want to
    *        match
-   * @param ignorePaths are paths in the resource that are ignored on matching. Anny related change
-   *        on a calculated JSON Patch between actual and desired will be ignored.
+   * @param ignorePaths are paths in the resource that are ignored on matching (basically an ignore
+   *        list). All changes with a target prefix path on a calculated JSON Patch between actual
+   *        and desired will be ignored. If there are other changes, non-present on ignore list
+   *        match fails.
+   *
    */
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
@@ -228,8 +241,25 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+      Context<P> context, boolean considerMetadata, boolean metadataEquality,
+      String... ignorePaths) {
+    final var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, considerMetadata, metadataEquality, ignorePaths);
+  }
+
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerMetadata) {
     final var desired = dependentResource.desired(primary, context);
     return match(desired, actualResource, considerMetadata, false);
+  }
+
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+      Context<P> context, boolean considerMetadata, boolean metadataEquality,
+      boolean strongEquality) {
+    final var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, considerMetadata, metadataEquality, strongEquality,
+        Collections.emptyList());
   }
 }

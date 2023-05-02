@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -21,6 +22,12 @@ class GenericKubernetesResourceMatcherTest {
 
   private static final Context context = mock(Context.class);
 
+  Deployment actual = createDeployment();
+  Deployment desired = createDeployment();
+  TestDependentResource dependentResource = new TestDependentResource(desired);
+  Matcher matcher =
+      GenericKubernetesResourceMatcher.matcherFor(Deployment.class, dependentResource);
+
   @BeforeAll
   static void setUp() {
     final var controllerConfiguration = mock(ControllerConfiguration.class);
@@ -28,42 +35,68 @@ class GenericKubernetesResourceMatcherTest {
   }
 
   @Test
-  void checksIfDesiredValuesAreTheSame() {
-    var actual = createDeployment();
-    final var desired = createDeployment();
-    final var dependentResource = new TestDependentResource(desired);
-    final var matcher =
-        GenericKubernetesResourceMatcher.matcherFor(Deployment.class, dependentResource);
+  void matchesTrivialCases() {
     assertThat(matcher.match(actual, null, context).matched()).isTrue();
     assertThat(matcher.match(actual, null, context).computedDesired()).isPresent();
     assertThat(matcher.match(actual, null, context).computedDesired()).contains(desired);
+  }
 
+  @Test
+  void matchesAdditiveOnlyChanges() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(matcher.match(actual, null, context).matched())
         .withFailMessage("Additive changes should be ok")
         .isTrue();
+  }
 
+  @Test
+  void matchesWithStrongSpecEquality() {
+    actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, true, true).matched())
         .withFailMessage("Strong equality does not ignore additive changes on spec")
         .isFalse();
+  }
 
+  @Test
+  void notMatchesRemovedValues() {
     actual = createDeployment();
     assertThat(matcher.match(actual, createPrimary("removed"), context).matched())
         .withFailMessage("Removed value should not be ok")
         .isFalse();
+  }
 
+  @Test
+  void notMatchesChangedValues() {
     actual = createDeployment();
     actual.getSpec().setReplicas(2);
     assertThat(matcher.match(actual, null, context).matched())
         .withFailMessage("Changed values are not ok")
         .isFalse();
+  }
 
+  @Test
+  void notMatchesIgnoredPaths() {
+    actual = createDeployment();
+    actual.getSpec().setReplicas(2);
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, false, "/spec/replicas").matched())
         .withFailMessage("Ignored paths are not matched")
         .isTrue();
+  }
 
+  @Test
+  void ignoresWholeSubPath() {
+    actual = createDeployment();
+    actual.getSpec().getTemplate().getMetadata().getLabels().put("additionak-key", "val");
+    assertThat(GenericKubernetesResourceMatcher
+        .match(dependentResource, actual, null, context, false, "/spec/template").matched())
+        .withFailMessage("Ignored sub-paths are not matched")
+        .isTrue();
+  }
+
+  @Test
+  void matchesMetadata() {
     actual = new DeploymentBuilder(createDeployment())
         .editOrNewMetadata()
         .addToAnnotations("test", "value")
@@ -75,7 +108,7 @@ class GenericKubernetesResourceMatcherTest {
         .isTrue();
 
     assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, true, true).matched())
+        .match(dependentResource, actual, null, context, true, true, true).matched())
         .withFailMessage("Annotations should matter when metadata is considered")
         .isFalse();
 
