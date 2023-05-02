@@ -35,8 +35,8 @@ class GenericKubernetesResourceMatcherTest {
     final var matcher =
         GenericKubernetesResourceMatcher.matcherFor(Deployment.class, dependentResource);
     assertThat(matcher.match(actual, null, context).matched()).isTrue();
-    assertThat(matcher.match(actual, null, context).computedDesired().isPresent()).isTrue();
-    assertThat(matcher.match(actual, null, context).computedDesired().get()).isEqualTo(desired);
+    assertThat(matcher.match(actual, null, context).computedDesired()).isPresent();
+    assertThat(matcher.match(actual, null, context).computedDesired()).contains(desired);
 
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(matcher.match(actual, null, context).matched())
@@ -59,6 +59,11 @@ class GenericKubernetesResourceMatcherTest {
         .withFailMessage("Changed values are not ok")
         .isFalse();
 
+    assertThat(GenericKubernetesResourceMatcher
+        .match(dependentResource, actual, null, context, false, "/spec/replicas").matched())
+        .withFailMessage("Ignored paths are not matched")
+        .isTrue();
+
     actual = new DeploymentBuilder(createDeployment())
         .editOrNewMetadata()
         .addToAnnotations("test", "value")
@@ -70,9 +75,15 @@ class GenericKubernetesResourceMatcherTest {
         .isTrue();
 
     assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, true).matched())
+        .match(dependentResource, actual, null, context, true, true).matched())
         .withFailMessage("Annotations should matter when metadata is considered")
         .isFalse();
+
+    assertThat(GenericKubernetesResourceMatcher
+        .match(dependentResource, actual, null, context, true, false).matched())
+        .withFailMessage("Non strong equality on labels and annotations")
+        .isTrue();
+
   }
 
   Deployment createDeployment() {
