@@ -27,6 +27,11 @@ public class ServiceStrictMatcherIT {
   void testTheMatchingDoesNoTTriggersFurtherUpdates() {
     var resource = operator.create(testResource());
 
+    await().untilAsserted(() -> {
+      assertThat(operator.getReconcilerOfType(ServiceStrictMatcherTestReconciler.class)
+          .getNumberOfExecutions()).isEqualTo(1);
+    });
+
     // make an update to spec to reconcile again
     resource.getSpec().setValue(2);
     operator.replace(resource);
