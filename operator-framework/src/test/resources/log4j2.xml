@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
+<Configuration name="TestConfig" status="WARN">
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d %threadId %-30c{1.} [%-5level] %msg%n%throwable"/>
     </Console>
   </Appenders>
   <Loggers>
-    <Logger>
-      <Logger name="org.eclipse.jetty" level="info">
-        <AppenderRef ref="Console"/>
-      </Logger>
+    <Logger level="debug" name="io.javaoperatorsdk.operator" additivity="false">
+      <AppenderRef ref="Console"/>
     </Logger>
-    <Root level="debug">
+    <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
   </Loggers>
