@@ -34,7 +34,7 @@ public class ServiceStrictMatcherIT {
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
       assertThat(operator.getReconcilerOfType(ServiceStrictMatcherTestReconciler.class)
           .getNumberOfExecutions()).isEqualTo(2);
-      assertThat(ServiceDependentResource.updated.get()).isEqualTo(0);
+      assertThat(ServiceDependentResource.updated.get()).isZero();
     });
   }
 
