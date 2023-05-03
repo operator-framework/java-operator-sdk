@@ -53,7 +53,9 @@ class GenericKubernetesResourceMatcherTest {
   void matchesWithStrongSpecEquality() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, true, true).matched())
+        .match(dependentResource, actual, null, context, true, true,
+            true)
+        .matched())
         .withFailMessage("Adding values should fail matching when strong equality is required")
         .isFalse();
   }
