@@ -76,7 +76,18 @@ class GenericKubernetesResourceMatcherTest {
   }
 
   @Test
-  void doesNotMatchIgnoredPaths() {
+  void doesNotMatchChangedValuesWhenNoIgnoredPathsAreProvided() {
+    actual = createDeployment();
+    actual.getSpec().setReplicas(2);
+    assertThat(GenericKubernetesResourceMatcher
+        .match(dependentResource, actual, null, context, true).matched())
+        .withFailMessage(
+            "Should not have matched because values have changed and no ignored path is provided")
+        .isFalse();
+  }
+
+  @Test
+  void doesNotAttemptToMatchIgnoredPaths() {
     actual = createDeployment();
     actual.getSpec().setReplicas(2);
     assertThat(GenericKubernetesResourceMatcher
@@ -114,7 +125,8 @@ class GenericKubernetesResourceMatcherTest {
 
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, true, false).matched())
-        .withFailMessage("Should match when strong equality is not considered and only additive changes are made")
+        .withFailMessage(
+            "Should match when strong equality is not considered and only additive changes are made")
         .isTrue();
 
   }
