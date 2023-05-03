@@ -174,7 +174,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   private static boolean allDiffsOnIgnoreList(List<JsonNode> metadataJSonDiffs,
       List<String> ignoreList) {
     if (metadataJSonDiffs.isEmpty()) {
-      return true;
+      return false;
     }
     return metadataJSonDiffs.stream().allMatch(n -> {
       var path = n.get("path").asText();
