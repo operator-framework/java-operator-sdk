@@ -11,8 +11,10 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings("rawtypes")
 public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
@@ -46,8 +48,14 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
           logger().warn("Notified but still resources under execution. This should not happen.");
         }
       } catch (InterruptedException e) {
-        logger().warn("Thread interrupted", e);
-        Thread.currentThread().interrupt();
+        if (noMoreExecutionsScheduled()) {
+          logger().debug("interrupted, no more executions for: {}",
+              ResourceID.fromResource(primary));
+          return;
+        } else {
+          logger().error("Thread interrupted for primary: {}", ResourceID.fromResource(primary), e);
+          throw new OperatorException(e);
+        }
       }
     }
   }
