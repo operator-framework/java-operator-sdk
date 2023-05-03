@@ -34,7 +34,8 @@ public class Utils {
    * via the {@code git-commit-id-plugin} maven plugin.
    *
    * @return a {@link Version} object encapsulating the version information
-   * @deprecated use {@link #VERSION} instead, as this method will be made internal in a future release
+   * @deprecated use {@link #VERSION} instead, as this method will be made internal in a future
+   *             release
    */
   @Deprecated
   public static Version loadFromProperties() {
