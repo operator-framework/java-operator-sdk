@@ -92,7 +92,7 @@ public interface Matcher<R, P extends HasMetadata> {
    * @return a {@link Result} encapsulating whether the resource matched its desired state and this
    *         associated state if it was computed as part of the matching process. Use the static
    *         convenience methods ({@link Result#nonComputed(boolean)} and
-   *         {@link Result#computed(boolean, Object)})
+   *         {@link Result#computed(boolean, Object)}) to create your return {@link Result}.
    */
   Result<R> match(R actualResource, P primary, Context<P> context);
 }
