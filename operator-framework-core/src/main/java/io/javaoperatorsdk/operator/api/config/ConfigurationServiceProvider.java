@@ -70,6 +70,6 @@ public class ConfigurationServiceProvider {
   }
 
   static ConfigurationService createDefault() {
-    return new BaseConfigurationService(Utils.loadFromProperties());
+    return new BaseConfigurationService(Utils.VERSION);
   }
 }
