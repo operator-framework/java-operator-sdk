@@ -45,7 +45,7 @@ class GenericKubernetesResourceMatcherTest {
   void matchesAdditiveOnlyChanges() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(matcher.match(actual, null, context).matched())
-        .withFailMessage("Additive changes should be ok")
+        .withFailMessage("Additive changes should be not cause a mismatch by default")
         .isTrue();
   }
 
@@ -54,44 +54,44 @@ class GenericKubernetesResourceMatcherTest {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, true, true).matched())
-        .withFailMessage("Strong equality does not ignore additive changes on spec")
+        .withFailMessage("Adding values should fail matching when strong equality is required")
         .isFalse();
   }
 
   @Test
-  void notMatchesRemovedValues() {
+  void doesNotMatchRemovedValues() {
     actual = createDeployment();
     assertThat(matcher.match(actual, createPrimary("removed"), context).matched())
-        .withFailMessage("Removed value should not be ok")
+        .withFailMessage("Removing values in metadata should lead to a mismatch")
         .isFalse();
   }
 
   @Test
-  void notMatchesChangedValues() {
+  void doesNotMatchChangedValues() {
     actual = createDeployment();
     actual.getSpec().setReplicas(2);
     assertThat(matcher.match(actual, null, context).matched())
-        .withFailMessage("Changed values are not ok")
+        .withFailMessage("Should not have matched because values have changed")
         .isFalse();
   }
 
   @Test
-  void notMatchesIgnoredPaths() {
+  void doesNotMatchIgnoredPaths() {
     actual = createDeployment();
     actual.getSpec().setReplicas(2);
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, false, "/spec/replicas").matched())
-        .withFailMessage("Ignored paths are not matched")
+        .withFailMessage("Should not have compared ignored paths")
         .isTrue();
   }
 
   @Test
   void ignoresWholeSubPath() {
     actual = createDeployment();
-    actual.getSpec().getTemplate().getMetadata().getLabels().put("additionak-key", "val");
+    actual.getSpec().getTemplate().getMetadata().getLabels().put("additional-key", "val");
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, false, "/spec/template").matched())
-        .withFailMessage("Ignored sub-paths are not matched")
+        .withFailMessage("Should match when only changes impact ignored sub-paths")
         .isTrue();
   }
 
@@ -114,7 +114,7 @@ class GenericKubernetesResourceMatcherTest {
 
     assertThat(GenericKubernetesResourceMatcher
         .match(dependentResource, actual, null, context, true, false).matched())
-        .withFailMessage("Non strong equality on labels and annotations")
+        .withFailMessage("Should match when strong equality is not considered and only additive changes are made")
         .isTrue();
 
   }
