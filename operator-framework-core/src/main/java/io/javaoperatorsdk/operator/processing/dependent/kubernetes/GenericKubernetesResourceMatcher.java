@@ -116,6 +116,52 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
         labelsAndAnnotationsEquality, false, ignorePaths);
   }
 
+  /**
+   * Determines whether the specified actual resource matches the desired state defined by the
+   * specified {@link KubernetesDependentResource} based on the observed state of the associated
+   * specified primary resource.
+   *
+   * @param dependentResource the {@link KubernetesDependentResource} implementation used to compute
+   *        the desired state associated with the specified primary resource
+   * @param actualResource the observed dependent resource for which we want to determine whether it
+   *        matches the desired state or not
+   * @param primary the primary resource from which we want to compute the desired state
+   * @param context the {@link Context} instance within which this method is called
+   * @param considerLabelsAndAnnotations {@code true} to consider the metadata of the actual
+   *        resource when determining if it matches the desired state, {@code false} if matching
+   *        should occur only considering the spec of the resources
+   * @param labelsAndAnnotationsEquality if true labels and annotation match exactly in the actual
+   *        and desired state if false, additional elements are allowed in actual annotations.
+   *        Considered only if considerLabelsAndAnnotations is true.
+   * @param <R> the type of resource we want to determine whether they match or not
+   * @param <P> the type of primary resources associated with the secondary resources we want to
+   *        match
+   * @param ignorePaths are paths in the resource that are ignored on matching (basically an ignore
+   *        list). All changes with a target prefix path on a calculated JSON Patch between actual
+   *        and desired will be ignored. If there are other changes, non-present on ignore list
+   *        match fails.
+   * @return a {@link io.javaoperatorsdk.operator.processing.dependent.Matcher.Result} object
+   */
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+      Context<P> context, boolean considerLabelsAndAnnotations,
+      boolean labelsAndAnnotationsEquality,
+      String... ignorePaths) {
+    final var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, considerLabelsAndAnnotations,
+        labelsAndAnnotationsEquality, ignorePaths);
+  }
+
+  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
+      Context<P> context, boolean considerLabelsAndAnnotations,
+      boolean labelsAndAnnotationsEquality,
+      boolean specEquality) {
+    final var desired = dependentResource.desired(primary, context);
+    return match(desired, actualResource, considerLabelsAndAnnotations,
+        labelsAndAnnotationsEquality, specEquality);
+  }
+
   private static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
       boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean specEquality,
       String... ignoredPaths) {
@@ -258,49 +304,4 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     return match(desired, actualResource, considerLabelsAndAnnotations, true, ignorePaths);
   }
 
-  /**
-   * Determines whether the specified actual resource matches the desired state defined by the
-   * specified {@link KubernetesDependentResource} based on the observed state of the associated
-   * specified primary resource.
-   *
-   * @param dependentResource the {@link KubernetesDependentResource} implementation used to compute
-   *        the desired state associated with the specified primary resource
-   * @param actualResource the observed dependent resource for which we want to determine whether it
-   *        matches the desired state or not
-   * @param primary the primary resource from which we want to compute the desired state
-   * @param context the {@link Context} instance within which this method is called
-   * @param considerLabelsAndAnnotations {@code true} to consider the metadata of the actual
-   *        resource when determining if it matches the desired state, {@code false} if matching
-   *        should occur only considering the spec of the resources
-   * @param labelsAndAnnotationsEquality if true labels and annotation match exactly in the actual
-   *        and desired state if false, additional elements are allowed in actual annotations.
-   *        Considered only if considerLabelsAndAnnotations is true.
-   * @param <R> the type of resource we want to determine whether they match or not
-   * @param <P> the type of primary resources associated with the secondary resources we want to
-   *        match
-   * @param ignorePaths are paths in the resource that are ignored on matching (basically an ignore
-   *        list). All changes with a target prefix path on a calculated JSON Patch between actual
-   *        and desired will be ignored. If there are other changes, non-present on ignore list
-   *        match fails.
-   * @return a {@link io.javaoperatorsdk.operator.processing.dependent.Matcher.Result} object
-   */
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
-      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
-      Context<P> context, boolean considerLabelsAndAnnotations,
-      boolean labelsAndAnnotationsEquality,
-      String... ignorePaths) {
-    final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, ignorePaths);
-  }
-
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
-      KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
-      Context<P> context, boolean considerLabelsAndAnnotations,
-      boolean labelsAndAnnotationsEquality,
-      boolean specEquality) {
-    final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, specEquality);
-  }
 }
