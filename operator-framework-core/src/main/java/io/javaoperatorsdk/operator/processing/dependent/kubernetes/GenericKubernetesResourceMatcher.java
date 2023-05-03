@@ -1,6 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -122,7 +127,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       List<String> ignoreList, JsonNode wholeDiffJsonPatch, boolean considerIgnoreList) {
     // reflection will be replaced by this:
     // https://github.com/fabric8io/kubernetes-client/issues/3816
-    var specDiffJsonPatch = getDiffsWithPathSuffix(wholeDiffJsonPatch, "/spec");
+    var specDiffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, "/spec");
     // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
     // On contrary (if equality is false), "add" is allowed for cases when for some
     // resources Kubernetes fills-in values into spec.
@@ -154,7 +159,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
         return Optional.of(Result.computed(false, desired));
       }
     } else {
-      var metadataJSonDiffs = getDiffsWithPathSuffix(wholeDiffJsonPatch,
+      var metadataJSonDiffs = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch,
           "/metadata/labels",
           "/metadata/annotations");
       if (!allDiffsAreAddOps(metadataJSonDiffs)) {
@@ -176,20 +181,25 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     if (metadataJSonDiffs.isEmpty()) {
       return false;
     }
-    return metadataJSonDiffs.stream().allMatch(n -> {
-      var path = n.get("path").asText();
-      return ignoreList.stream().anyMatch(path::startsWith);
-    });
+    return metadataJSonDiffs.stream().allMatch(n -> nodeIsChildOf(n, ignoreList));
   }
 
-  private static List<JsonNode> getDiffsWithPathSuffix(JsonNode diffJsonPatch,
-      String... ignorePaths) {
+  private static boolean nodeIsChildOf(JsonNode n, List<String> prefixes) {
+    var path = getPath(n);
+    return prefixes.stream().anyMatch(path::startsWith);
+  }
+
+  private static String getPath(JsonNode n) {
+    return n.get("path").asText();
+  }
+
+  private static List<JsonNode> getDiffsImpactingPathsWithPrefixes(JsonNode diffJsonPatch,
+      String... prefixes) {
     var res = new ArrayList<JsonNode>();
-    var prefixList = Arrays.asList(ignorePaths);
+    var prefixList = Arrays.asList(prefixes);
     for (int i = 0; i < diffJsonPatch.size(); i++) {
       var node = diffJsonPatch.get(i);
-      String path = diffJsonPatch.get(i).get("path").asText();
-      if (prefixList.stream().anyMatch(path::startsWith)) {
+      if (nodeIsChildOf(node, prefixList)) {
         res.add(node);
       }
     }
