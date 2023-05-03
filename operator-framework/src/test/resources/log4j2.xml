@@ -6,6 +6,11 @@
     </Console>
   </Appenders>
   <Loggers>
+    <Logger>
+      <Logger name="org.eclipse.jetty" level="info">
+        <AppenderRef ref="Console"/>
+      </Logger>
+    </Logger>
     <Root level="debug">
       <AppenderRef ref="Console"/>
     </Root>
