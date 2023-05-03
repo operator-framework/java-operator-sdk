@@ -20,13 +20,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
     implements Matcher<R, P> {
 
+  private static final String SPEC = "/spec";
+  private static final String METADATA_LABELS = "/metadata/labels";
+  private static final String METADATA_ANNOTATIONS = "/metadata/annotations";
+  private static final String ADD = "add";
+  private static final String OP = "op";
+  private static final String PATH = "path";
+  private final static String[] EMPTY_ARRAY = {};
   private final KubernetesDependentResource<R, P> dependentResource;
 
   private GenericKubernetesResourceMatcher(KubernetesDependentResource<R, P> dependentResource) {
     this.dependentResource = dependentResource;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked", "rawtypes", "unused"})
   static <R extends HasMetadata, P extends HasMetadata> Matcher<R, P> matcherFor(
       Class<R> resourceType, KubernetesDependentResource<R, P> dependentResource) {
     return new GenericKubernetesResourceMatcher(dependentResource);
@@ -86,7 +93,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       boolean considerLabelsAndAnnotations, boolean labelsAndAnnotationsEquality,
       boolean specEquality) {
     return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, specEquality, new String[0]);
+        labelsAndAnnotationsEquality, specEquality, EMPTY_ARRAY);
   }
 
   /**
@@ -206,7 +213,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       List<String> ignoreList, JsonNode wholeDiffJsonPatch, boolean considerIgnoreList) {
     // reflection will be replaced by this:
     // https://github.com/fabric8io/kubernetes-client/issues/3816
-    var specDiffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, "/spec");
+    var specDiffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, SPEC);
     // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
     // On contrary (if equality is false), "add" is allowed for cases when for some
     // resources Kubernetes fills-in values into spec.
@@ -239,8 +246,8 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       }
     } else {
       var metadataJSonDiffs = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch,
-          "/metadata/labels",
-          "/metadata/annotations");
+          METADATA_LABELS,
+          METADATA_ANNOTATIONS);
       if (!allDiffsAreAddOps(metadataJSonDiffs)) {
         return Optional.of(Result.computed(false, desired));
       }
@@ -252,7 +259,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     if (metadataJSonDiffs.isEmpty()) {
       return true;
     }
-    return metadataJSonDiffs.stream().allMatch(n -> "add".equals(n.get("op").asText()));
+    return metadataJSonDiffs.stream().allMatch(n -> ADD.equals(n.get(OP).asText()));
   }
 
   private static boolean allDiffsOnIgnoreList(List<JsonNode> metadataJSonDiffs,
@@ -269,7 +276,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   }
 
   private static String getPath(JsonNode n) {
-    return n.get("path").asText();
+    return n.get(PATH).asText();
   }
 
   private static List<JsonNode> getDiffsImpactingPathsWithPrefixes(JsonNode diffJsonPatch,
