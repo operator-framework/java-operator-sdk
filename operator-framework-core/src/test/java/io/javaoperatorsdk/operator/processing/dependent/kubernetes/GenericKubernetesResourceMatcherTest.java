@@ -45,7 +45,7 @@ class GenericKubernetesResourceMatcherTest {
   void matchesAdditiveOnlyChanges() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(matcher.match(actual, null, context).matched())
-        .withFailMessage("Additive changes should be not cause a mismatch by default")
+        .withFailMessage("Additive changes should not cause a mismatch by default")
         .isTrue();
   }
 
