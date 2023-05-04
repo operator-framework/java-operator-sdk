@@ -27,12 +27,17 @@ public class Utils {
   public static final String GENERIC_PARAMETER_TYPE_ERROR_PREFIX =
       "Couldn't retrieve generic parameter type from ";
 
+  public static final Version VERSION = loadFromProperties();
+
   /**
    * Attempts to load version information from a properties file produced at build time, currently
    * via the {@code git-commit-id-plugin} maven plugin.
    *
    * @return a {@link Version} object encapsulating the version information
+   * @deprecated use {@link #VERSION} instead, as this method will be made internal in a future
+   *             release
    */
+  @Deprecated
   public static Version loadFromProperties() {
     final var is =
         Thread.currentThread().getContextClassLoader().getResourceAsStream("version.properties");

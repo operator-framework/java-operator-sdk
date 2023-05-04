@@ -53,7 +53,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   }
 
   public BaseConfigurationService() {
-    this(Utils.loadFromProperties());
+    this(Utils.VERSION);
   }
 
   @Override

@@ -8,7 +8,7 @@ class VersionTest {
 
   @Test
   void versionShouldReturnTheSameResultFromMavenAndProperties() {
-    String versionFromProperties = Utils.loadFromProperties().getSdkVersion();
+    String versionFromProperties = Utils.VERSION.getSdkVersion();
     String versionFromMaven = Version.UNKNOWN.getSdkVersion();
 
     assertEquals(versionFromProperties, versionFromMaven);
