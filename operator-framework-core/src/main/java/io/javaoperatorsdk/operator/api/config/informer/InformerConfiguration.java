@@ -175,8 +175,7 @@ public interface InformerConfiguration<R extends HasMetadata>
      */
     public <P extends HasMetadata> InformerConfigurationBuilder<R> withNamespacesInheritedFromController(
         EventSourceContext<P> context) {
-      namespaces = context.getControllerConfiguration().getEffectiveNamespaces(
-          context.getControllerConfiguration().getConfigurationService());
+      namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
       this.inheritControllerNamespacesOnChange = true;
       return this;
     }
