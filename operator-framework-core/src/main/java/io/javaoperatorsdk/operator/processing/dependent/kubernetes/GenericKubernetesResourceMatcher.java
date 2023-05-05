@@ -11,11 +11,11 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.zjsonpatch.JsonDiff;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
     implements Matcher<R, P> {
@@ -58,7 +58,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     var desired = dependentResource.desired(primary, context);
     return match(desired, actualResource, false, false, false,
-            context.getControllerConfiguration().getConfigurationService().getObjectMapper());
+        context.getControllerConfiguration().getConfigurationService().getObjectMapper());
   }
 
   /**
@@ -91,9 +91,9 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    */
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
       boolean considerLabelsAndAnnotations, boolean labelsAndAnnotationsEquality,
-      boolean specEquality,ObjectMapper objectMapper) {
+      boolean specEquality, ObjectMapper objectMapper) {
     return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, specEquality,objectMapper, EMPTY_ARRAY);
+        labelsAndAnnotationsEquality, specEquality, objectMapper, EMPTY_ARRAY);
   }
 
   /**
@@ -120,7 +120,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       boolean considerLabelsAndAnnotations, boolean labelsAndAnnotationsEquality,
       ObjectMapper objectMapper, String... ignorePaths) {
     return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, false,objectMapper, ignorePaths);
+        labelsAndAnnotationsEquality, false, objectMapper, ignorePaths);
   }
 
   /**
@@ -152,11 +152,13 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerLabelsAndAnnotations,
-      boolean labelsAndAnnotationsEquality,ObjectMapper objectMapper,
+      boolean labelsAndAnnotationsEquality,
       String... ignorePaths) {
     final var desired = dependentResource.desired(primary, context);
     return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, ignorePaths);
+        labelsAndAnnotationsEquality, context.getControllerConfiguration()
+            .getConfigurationService().getObjectMapper(),
+        ignorePaths);
   }
 
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
@@ -166,11 +168,13 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       boolean specEquality) {
     final var desired = dependentResource.desired(primary, context);
     return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, specEquality);
+        labelsAndAnnotationsEquality, specEquality, context.getControllerConfiguration()
+            .getConfigurationService().getObjectMapper());
   }
 
   private static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
       boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean specEquality,
+      ObjectMapper objectMapper,
       String... ignoredPaths) {
     final List<String> ignoreList =
         ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
@@ -298,7 +302,8 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerLabelsAndAnnotations, boolean specEquality) {
     final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, considerLabelsAndAnnotations, specEquality, context.getControllerConfiguration().getConfigurationService().getObjectMapper());
+    return match(desired, actualResource, considerLabelsAndAnnotations, specEquality,
+        context.getControllerConfiguration().getConfigurationService().getObjectMapper());
   }
 
   @Deprecated(forRemoval = true)
@@ -306,7 +311,9 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context, boolean considerLabelsAndAnnotations, String... ignorePaths) {
     final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, considerLabelsAndAnnotations, true, context.getControllerConfiguration().getConfigurationService().getObjectMapper(), ignorePaths);
+    return match(desired, actualResource, considerLabelsAndAnnotations, true,
+        context.getControllerConfiguration().getConfigurationService().getObjectMapper(),
+        ignorePaths);
   }
 
 }
