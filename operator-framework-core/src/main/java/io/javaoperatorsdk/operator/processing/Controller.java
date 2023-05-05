@@ -404,7 +404,7 @@ public class Controller<P extends HasMetadata>
    */
   private void failOnMissingCurrentNS() {
     try {
-      configuration.getEffectiveNamespaces(getConfiguration().getConfigurationService());
+      configuration.getEffectiveNamespaces();
     } catch (OperatorException e) {
       throw new OperatorException(
           "Controller '"
