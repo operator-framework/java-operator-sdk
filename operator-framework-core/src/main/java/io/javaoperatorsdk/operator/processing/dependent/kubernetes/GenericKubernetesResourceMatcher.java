@@ -41,18 +41,20 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   /**
    * {@inheritDoc}
-   * <p/>
+   * <p>
    * This implementation attempts to cover most common cases out of the box by considering
    * non-additive changes to the resource's spec (if the resource in question has a {@code spec}
    * field), making special provisions for {@link ConfigMap} and {@link Secret} resources. Additive
    * changes (i.e. a field is added that previously didn't exist) are not considered as triggering a
    * mismatch by default to account for validating webhooks that might add default values
    * automatically when not present or some other controller adding labels and/or annotations.
-   * <p/>
+   * </p>
+   * <p>
    * It should be noted that this implementation is potentially intensive because it generically
    * attempts to cover common use cases by performing diffs on the JSON representation of objects.
    * If performance is a concern, it might be easier / simpler to provide a {@link Matcher}
    * implementation optimized for your use case.
+   * </p>
    */
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
