@@ -84,7 +84,6 @@ public class Controller<P extends HasMetadata>
     associatedGVK = GroupVersionKind.gvkFor(configuration.getResourceClass());
 
     final var configurationService = configuration.getConfigurationService();
-    final var executorServiceManager = configurationService.getExecutorServiceManager();
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;

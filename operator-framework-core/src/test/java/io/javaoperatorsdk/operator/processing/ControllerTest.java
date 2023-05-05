@@ -30,8 +30,7 @@ class ControllerTest {
     final var client = MockKubernetesClient.client(Secret.class);
     final var configuration =
         MockControllerConfiguration.forResource(Secret.class, configurationService);
-    final var controller =
-        new Controller<Secret>(reconciler, configuration, client);
+    final var controller = new Controller<Secret>(reconciler, configuration, client);
     controller.start();
     verify(client, never()).apiextensions();
   }

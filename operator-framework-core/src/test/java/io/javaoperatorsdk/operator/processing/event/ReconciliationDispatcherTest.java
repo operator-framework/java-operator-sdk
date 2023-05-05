@@ -25,7 +25,6 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -70,7 +69,6 @@ class ReconciliationDispatcherTest {
   private final CustomResourceFacade<TestCustomResource> customResourceFacade =
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
   private static ConfigurationService configurationService;
-  private static ExecutorServiceManager executorServiceManager;
 
   @BeforeAll
   static void classSetup() {

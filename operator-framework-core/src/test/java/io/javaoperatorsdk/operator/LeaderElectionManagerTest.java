@@ -57,8 +57,6 @@ class LeaderElectionManagerTest {
   @Test
   void testFailedToInitInferLeaseNamespace() {
     System.setProperty(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> leaderElectionManager.start());
+    assertThrows(IllegalArgumentException.class, () -> leaderElectionManager.start());
   }
 }

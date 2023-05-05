@@ -91,8 +91,7 @@ public class Operator implements LifecycleAware {
    */
   @Deprecated(forRemoval = true)
   public void installShutdownHook() {
-    installShutdownHook(
-        Duration.ofSeconds(configurationService.getTerminationTimeoutSeconds()));
+    installShutdownHook(Duration.ofSeconds(configurationService.getTerminationTimeoutSeconds()));
   }
 
   /**
@@ -182,8 +181,7 @@ public class Operator implements LifecycleAware {
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler)
       throws OperatorException {
-    final var controllerConfiguration =
-        configurationService.getConfigurationFor(reconciler);
+    final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     return register(reconciler, controllerConfiguration);
   }
 
