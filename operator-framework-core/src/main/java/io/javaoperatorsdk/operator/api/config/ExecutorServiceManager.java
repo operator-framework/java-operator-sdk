@@ -8,6 +8,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -20,7 +22,9 @@ import org.slf4j.LoggerFactory;
 import io.javaoperatorsdk.operator.OperatorException;
 
 public class ExecutorServiceManager {
+
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
+  public static final int MIN_THREAD_NUMBER = 0;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
   private final ExecutorService cachingExecutorService;
@@ -30,6 +34,14 @@ public class ExecutorServiceManager {
     this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
     this.workflowExecutor =
         new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
+  }
+
+  public static ExecutorService newThreadPoolExecutor(int minThreads, int maxThreads) {
+    minThreads = Utils.ensureValid(minThreads, "minimum number of threads", MIN_THREAD_NUMBER);
+    maxThreads = Utils.ensureValid(maxThreads, "maximum number of threads", minThreads + 1);
+
+    return new ThreadPoolExecutor(minThreads, maxThreads, 1, TimeUnit.MINUTES,
+        new LinkedBlockingDeque<>());
   }
 
   /**

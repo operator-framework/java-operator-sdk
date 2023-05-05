@@ -45,7 +45,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   }
 
   public BaseConfigurationService(Version version, Cloner cloner, ObjectMapper mapper) {
-    super(version, cloner, mapper);
+    super(version, cloner, mapper, null);
   }
 
   public BaseConfigurationService(Version version, Cloner cloner) {
@@ -62,6 +62,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         reconcilersNameMessage);
   }
 
+  @SuppressWarnings("unused")
   public String getLoggerName() {
     return LOGGER_NAME;
   }
