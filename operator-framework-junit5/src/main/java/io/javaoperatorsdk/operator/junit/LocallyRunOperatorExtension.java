@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.RegisteredController;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -52,7 +52,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
-      KubernetesClient kubernetesClient) {
+      KubernetesClient kubernetesClient,
+      ConfigurationService configurationService) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -64,7 +65,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
-    this.operator = new Operator(getKubernetesClient());
+    this.operator = new Operator(getKubernetesClient(), configurationService);
     this.registeredControllers = new HashMap<>();
   }
 
@@ -131,9 +132,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     additionalCustomResourceDefinitions
         .forEach(cr -> applyCrd(ReconcilerUtils.getResourceTypeName(cr)));
 
-    final var configurationService = ConfigurationServiceProvider.instance();
     for (var ref : reconcilers) {
-      final var config = configurationService.getConfigurationFor(ref.reconciler);
+      final var config = operator.getConfigurationService().getConfigurationFor(ref.reconciler);
       final var oconfig = override(config);
 
       if (Namespaced.class.isAssignableFrom(config.getResourceClass())) {
@@ -288,7 +288,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass,
-          kubernetesClient);
+          kubernetesClient,
+          configurationService);
     }
   }
 

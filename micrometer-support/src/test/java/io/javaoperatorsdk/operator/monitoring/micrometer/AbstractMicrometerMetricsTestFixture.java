@@ -3,15 +3,12 @@ package io.javaoperatorsdk.operator.monitoring.micrometer;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -23,26 +20,21 @@ import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractMicrometerMetricsTestFixture {
-  @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new MetricsCleaningTestReconciler())
-          .build();
 
   protected final TestSimpleMeterRegistry registry = new TestSimpleMeterRegistry();
   protected final MicrometerMetrics metrics = getMetrics();
   protected static final String testResourceName = "micrometer-metrics-cr";
 
+
+  @RegisterExtension
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
+          .withConfigurationService(overrider -> overrider.withMetrics(metrics))
+          .withReconciler(new MetricsCleaningTestReconciler())
+          .build();
+
+
   protected abstract MicrometerMetrics getMetrics();
-
-  @BeforeAll
-  void setup() {
-    ConfigurationServiceProvider.overrideCurrent(overrider -> overrider.withMetrics(metrics));
-  }
-
-  @AfterAll
-  void reset() {
-    ConfigurationServiceProvider.reset();
-  }
 
   @Test
   void properlyHandlesResourceDeletion() throws Exception {

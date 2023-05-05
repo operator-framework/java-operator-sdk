@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultConfigurationServiceTest {
 
   public static final String CUSTOM_FINALIZER_NAME = "a.custom/finalizer";
-  final DefaultConfigurationService configurationService = DefaultConfigurationService.instance();
+  final DefaultConfigurationService configurationService = new DefaultConfigurationService();
 
   @Test
   void returnsValuesFromControllerAnnotationFinalizer() {

@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -25,8 +24,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   private final List<DependentResourceSpec> orderedSpecs;
   private final boolean hasCleaner;
 
-  protected DefaultManagedWorkflow(List<DependentResourceSpec> orderedSpecs,
-      boolean hasCleaner) {
+  protected DefaultManagedWorkflow(List<DependentResourceSpec> orderedSpecs, boolean hasCleaner) {
     this.hasCleaner = hasCleaner;
     topLevelResources = new HashSet<>(orderedSpecs.size());
     bottomLevelResources = orderedSpecs.stream()
@@ -102,7 +100,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
       KubernetesClient client,
       ControllerConfiguration<P> configuration) {
     final DependentResource<R, P> dependentResource =
-        ConfigurationServiceProvider.instance().dependentResourceFactory()
+        configuration.getConfigurationService().dependentResourceFactory()
             .createFrom(spec, configuration);
 
     if (dependentResource instanceof KubernetesClientAware) {

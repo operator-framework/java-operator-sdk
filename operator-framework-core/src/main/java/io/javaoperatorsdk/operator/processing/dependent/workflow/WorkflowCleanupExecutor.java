@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -10,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -23,9 +23,11 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
   private final Set<DependentResourceNode> postDeleteConditionNotMet =
       ConcurrentHashMap.newKeySet();
   private final Set<DependentResourceNode> deleteCalled = ConcurrentHashMap.newKeySet();
+  private final ExecutorService executorService;
 
   public WorkflowCleanupExecutor(Workflow<P> workflow, P primary, Context<P> context) {
     super(workflow, primary, context);
+    this.executorService = context.getWorkflowExecutorService();
   }
 
   public synchronized WorkflowCleanupResult cleanup() {
@@ -43,18 +45,17 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private synchronized void handleCleanup(DependentResourceNode dependentResourceNode) {
-    log.debug("Submitting for cleanup: {}", dependentResourceNode);
+    log.debug("Submitting for cleanup: {} primaryID: {}", dependentResourceNode, primaryID);
 
     if (alreadyVisited(dependentResourceNode)
         || isExecutingNow(dependentResourceNode)
         || !allDependentsCleaned(dependentResourceNode)
         || hasErroredDependent(dependentResourceNode)) {
-      log.debug("Skipping submit of: {}, ", dependentResourceNode);
+      log.debug("Skipping submit of: {} primaryID: {}", dependentResourceNode, primaryID);
       return;
     }
 
-    Future<?> nodeFuture = ExecutorServiceManager.instance().workflowExecutorService()
-        .submit(new CleanupExecutor<>(dependentResourceNode));
+    Future<?> nodeFuture = executorService.submit(new CleanupExecutor<>(dependentResourceNode));
     markAsExecuting(dependentResourceNode, nodeFuture);
     log.debug("Submitted for cleanup: {}", dependentResourceNode);
   }
@@ -94,7 +95,8 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
     var dependOns = dependentResourceNode.getDependsOn();
     if (dependOns != null) {
       dependOns.forEach(d -> {
-        log.debug("Handle cleanup for dependent: {} of parent:{}", d, dependentResourceNode);
+        log.debug("Handle cleanup for dependent: {} of parent: {} primaryID: {}", d,
+            dependentResourceNode, primaryID);
         handleCleanup(d);
       });
     }

@@ -14,12 +14,11 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Version;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -29,17 +28,18 @@ public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
   private static final int DEFAULT_MAX_CONCURRENT_REQUEST = 512;
   private final KubernetesClient kubernetesClient;
-  private final ControllerManager controllerManager = new ControllerManager();
-  private final LeaderElectionManager leaderElectionManager =
-      new LeaderElectionManager(controllerManager);
+  private final ControllerManager controllerManager;
+  private final LeaderElectionManager leaderElectionManager;
+  private final ConfigurationService configurationService;
   private volatile boolean started = false;
+
 
   public Operator() {
     this((KubernetesClient) null);
   }
 
   public Operator(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, ConfigurationServiceProvider.instance());
+    this(kubernetesClient, new BaseConfigurationService());
   }
 
   /**
@@ -56,7 +56,8 @@ public class Operator implements LifecycleAware {
   }
 
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(client, ConfigurationServiceProvider.overrideCurrent(overrider));
+    this(client, ConfigurationService
+        .newOverriddenConfigurationService(new BaseConfigurationService(), overrider));
   }
 
   /**
@@ -67,15 +68,19 @@ public class Operator implements LifecycleAware {
    * @param configurationService provides configuration
    */
   public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
+    this.configurationService = configurationService;
+    final var executorServiceManager = configurationService.getExecutorServiceManager();
+    controllerManager = new ControllerManager(executorServiceManager);
     this.kubernetesClient =
         kubernetesClient != null ? kubernetesClient
             : new KubernetesClientBuilder()
                 .withConfig(new ConfigBuilder()
                     .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST).build())
                 .build();
-    ConfigurationServiceProvider.set(configurationService);
-    configurationService.getLeaderElectionConfiguration()
-        .ifPresent(c -> leaderElectionManager.init(c, this.kubernetesClient));
+
+
+    leaderElectionManager =
+        new LeaderElectionManager(kubernetesClient, controllerManager, configurationService);
   }
 
   /**
@@ -86,8 +91,7 @@ public class Operator implements LifecycleAware {
    */
   @Deprecated(forRemoval = true)
   public void installShutdownHook() {
-    installShutdownHook(
-        Duration.ofSeconds(ConfigurationServiceProvider.instance().getTerminationTimeoutSeconds()));
+    installShutdownHook(Duration.ofSeconds(configurationService.getTerminationTimeoutSeconds()));
   }
 
   /**
@@ -123,9 +127,8 @@ public class Operator implements LifecycleAware {
       if (started) {
         return;
       }
-      ExecutorServiceManager.init();
       controllerManager.shouldStart();
-      final var version = ConfigurationServiceProvider.instance().getVersion();
+      final var version = configurationService.getVersion();
       log.info(
           "Operator SDK {} (commit: {}) built on {} starting...",
           version.getSdkVersion(),
@@ -149,12 +152,11 @@ public class Operator implements LifecycleAware {
     if (!started) {
       return;
     }
-    final var configurationService = ConfigurationServiceProvider.instance();
     log.info(
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
-    ExecutorServiceManager.stop(gracefulShutdownTimeout);
+    configurationService.getExecutorServiceManager().stop(gracefulShutdownTimeout);
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       kubernetesClient.close();
@@ -179,8 +181,7 @@ public class Operator implements LifecycleAware {
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler)
       throws OperatorException {
-    final var controllerConfiguration =
-        ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
+    final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     return register(reconciler, controllerConfiguration);
   }
 
@@ -210,7 +211,7 @@ public class Operator implements LifecycleAware {
               " reconciler named " + ReconcilerUtils.getNameFor(reconciler)
               + " because its configuration cannot be found.\n" +
               " Known reconcilers are: "
-              + ConfigurationServiceProvider.instance().getKnownReconcilerNames());
+              + configurationService.getKnownReconcilerNames());
     }
 
     final var controller = new Controller<>(reconciler, configuration, kubernetesClient);
@@ -239,7 +240,7 @@ public class Operator implements LifecycleAware {
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
       Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
     final var controllerConfiguration =
-        ConfigurationServiceProvider.instance().getConfigurationFor(reconciler);
+        configurationService.getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
     return register(reconciler, configToOverride.build());
@@ -263,5 +264,9 @@ public class Operator implements LifecycleAware {
 
   boolean isStarted() {
     return started;
+  }
+
+  public ConfigurationService getConfigurationService() {
+    return configurationService;
   }
 }

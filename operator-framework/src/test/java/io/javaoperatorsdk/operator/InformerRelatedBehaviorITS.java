@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
@@ -315,7 +314,7 @@ class InformerRelatedBehaviorITS {
 
   Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler,
       String... namespaces) {
-    ConfigurationServiceProvider.reset();
+
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
     Operator operator = new Operator(clientUsingServiceAccount(),

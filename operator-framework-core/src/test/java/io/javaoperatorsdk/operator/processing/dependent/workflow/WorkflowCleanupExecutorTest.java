@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
@@ -10,6 +14,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
@@ -17,7 +22,14 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   protected TestDeleterDependent dd2 = new TestDeleterDependent("DR_DELETER_2");
   protected TestDeleterDependent dd3 = new TestDeleterDependent("DR_DELETER_3");
   @SuppressWarnings("unchecked")
+
   Context<TestCustomResource> mockContext = mock(Context.class);
+  ExecutorService executorService = Executors.newCachedThreadPool();
+
+  @BeforeEach
+  void setup() {
+    when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
+  }
 
   @Test
   void cleanUpDiamondWorkflow() {
@@ -28,7 +40,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(dd3).dependsOn(dr1, dd2)
         .build();
 
-    var res = workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory).reconciledInOrder(dd3, dd2, dd1).notReconciled(dr1);
 
@@ -121,7 +133,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResource(gcDeleter)
         .build();
 
-    var res = workflow.cleanup(new TestCustomResource(), null);
+    var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
     assertThat(executionHistory)
         .notReconciled(gcDeleter);

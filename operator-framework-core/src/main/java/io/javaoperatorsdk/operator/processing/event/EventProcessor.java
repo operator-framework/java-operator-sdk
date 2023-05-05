@@ -11,9 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -46,13 +45,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private final Map<String, Object> metricsMetadata;
   private ExecutorService executor;
 
-  public EventProcessor(EventSourceManager<P> eventSourceManager) {
+  public EventProcessor(EventSourceManager<P> eventSourceManager,
+      ConfigurationService configurationService) {
     this(
         eventSourceManager.getController().getConfiguration(),
-        eventSourceManager.getControllerResourceEventSource(),
-        new ReconciliationDispatcher<>(eventSourceManager.getController()),
-        ConfigurationServiceProvider.instance().getMetrics(),
-        eventSourceManager);
+        new ReconciliationDispatcher<>(eventSourceManager.getController()), eventSourceManager,
+        configurationService.getMetrics(), eventSourceManager.getControllerResourceEventSource());
   }
 
   @SuppressWarnings("rawtypes")
@@ -63,19 +61,15 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       Metrics metrics) {
     this(
         controllerConfiguration,
-        eventSourceManager.getControllerResourceEventSource(),
-        reconciliationDispatcher,
-        metrics,
-        eventSourceManager);
+        reconciliationDispatcher, eventSourceManager, metrics,
+        eventSourceManager.getControllerResourceEventSource());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private EventProcessor(
       ControllerConfiguration controllerConfiguration,
-      Cache<P> cache,
       ReconciliationDispatcher<P> reconciliationDispatcher,
-      Metrics metrics,
-      EventSourceManager<P> eventSourceManager) {
+      EventSourceManager<P> eventSourceManager, Metrics metrics, Cache<P> cache) {
     this.controllerConfiguration = controllerConfiguration;
     this.running = false;
     this.reconciliationDispatcher = reconciliationDispatcher;
@@ -367,7 +361,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   @Override
   public void start() throws OperatorException {
     // on restart new executor service is created and needs to be set here
-    executor = ExecutorServiceManager.instance().executorService();
+    executor = controllerConfiguration.getConfigurationService().getExecutorServiceManager()
+        .reconcileExecutorService();
     this.running = true;
     handleAlreadyMarkedEvents();
   }

@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -144,7 +145,7 @@ class ResourceEventFilterTest {
           null,
           null,
           null,
-          null, null, null, finalizer, null, null);
+          null, null, null, finalizer, null, null, new BaseConfigurationService());
       setEventFilter(eventFilter);
     }
   }
