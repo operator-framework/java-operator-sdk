@@ -3,7 +3,11 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -247,5 +251,20 @@ public interface ConfigurationService {
 
   default ResourceClassResolver getResourceClassResolver() {
     return new DefaultResourceClassResolver();
+  }
+
+  static ConfigurationService newOverriddenConfigurationService(
+      ConfigurationService baseConfiguration,
+      Consumer<ConfigurationServiceOverrider> overrider) {
+    if (overrider != null) {
+      final var toOverride = new ConfigurationServiceOverrider(baseConfiguration);
+      overrider.accept(toOverride);
+      return toOverride.build();
+    }
+    return baseConfiguration;
+  }
+
+  default ExecutorServiceManager getExecutorServiceManager() {
+    return new ExecutorServiceManager(this);
   }
 }

@@ -56,7 +56,6 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
       boolean hasCleaner) {
     this.throwExceptionAutomatically = throwExceptionAutomatically;
     this.hasCleaner = hasCleaner;
-
     this.topLevelResources = topLevelResources;
     this.bottomLevelResource = bottomLevelResource;
     this.dependentResourceNodes = dependentResourceNodes;
