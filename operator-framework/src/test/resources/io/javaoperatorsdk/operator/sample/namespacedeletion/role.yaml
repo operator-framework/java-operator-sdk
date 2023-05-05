@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: namespace-deletion-test
+rules:
+  - apiGroups: [ "sample.javaoperatorsdk" ]
+    resources: [ "namespacedeletiontestcustomresources" ]
+    verbs: [ "get", "watch", "list", "post", "update", "patch", "delete" ]
+
+
