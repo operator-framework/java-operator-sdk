@@ -259,7 +259,6 @@ class InformerEventSourceTest {
           throw exception;
         }));
     informerEventSource.setConfigurationService(configuration);
-    informerEventSource.setExecutorServiceManager(configuration.getExecutorServiceManager());
 
     // by default informer fails to start if there is an exception in the client on start.
     // Throws the exception further.

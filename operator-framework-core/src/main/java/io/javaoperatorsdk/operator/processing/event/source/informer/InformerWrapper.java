@@ -35,7 +35,7 @@ class InformerWrapper<T extends HasMetadata>
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
   private final String namespaceIdentifier;
-  private ConfigurationService configurationService;
+  private final ConfigurationService configurationService;
 
   public InformerWrapper(SharedIndexInformer<T> informer, ConfigurationService configurationService,
       String namespaceIdentifier) {
@@ -43,7 +43,6 @@ class InformerWrapper<T extends HasMetadata>
     this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
     this.configurationService = configurationService;
-
   }
 
   @Override
@@ -51,24 +50,23 @@ class InformerWrapper<T extends HasMetadata>
     try {
 
       // register stopped handler if we have one defined
-      configurationService.getInformerStoppedHandler()
-          .ifPresent(ish -> {
-            final var stopped = informer.stopped();
-            if (stopped != null) {
-              stopped.handle((res, ex) -> {
-                ish.onStop(informer, ex);
-                return null;
-              });
-            } else {
-              final var apiTypeClass = informer.getApiTypeClass();
-              final var fullResourceName =
-                  HasMetadata.getFullResourceName(apiTypeClass);
-              final var version = HasMetadata.getVersion(apiTypeClass);
-              throw new IllegalStateException(
-                  "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
-                      + fullResourceName + "/" + version);
-            }
+      configurationService.getInformerStoppedHandler().ifPresent(ish -> {
+        final var stopped = informer.stopped();
+        if (stopped != null) {
+          stopped.handle((res, ex) -> {
+            ish.onStop(informer, ex);
+            return null;
           });
+        } else {
+          final var apiTypeClass = informer.getApiTypeClass();
+          final var fullResourceName =
+              HasMetadata.getFullResourceName(apiTypeClass);
+          final var version = HasMetadata.getVersion(apiTypeClass);
+          throw new IllegalStateException(
+              "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
+                  + fullResourceName + "/" + version);
+        }
+      });
       if (!configurationService.stopOnInformerErrorDuringStartup()) {
         informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
       }

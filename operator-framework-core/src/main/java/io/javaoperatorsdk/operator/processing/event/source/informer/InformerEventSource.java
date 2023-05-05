@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -343,12 +347,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
 
-  // Since this event source instance is created by the user, the ConfigService and
-  // ExecutorManagerService is actually injected after it is registered. Some of the subcomponents
-  // are created that time here.
+  // Since this event source instance is created by the user, the ConfigurationService is actually
+  // injected after it is registered. Some of the subcomponents are initialized at that time here.
   public void setConfigurationService(ConfigurationService configurationService) {
-    this.configurationService = configurationService;
-    cache = new InformerManager<>(client, configuration, configurationService, this);
+    super.setConfigurationService(configurationService);
+
     cache.addIndexers(indexerBuffer);
     indexerBuffer = null;
   }

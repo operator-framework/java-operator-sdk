@@ -23,7 +23,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.*;
+import io.javaoperatorsdk.operator.api.config.Cloner;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -43,7 +45,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
   private final ResourceEventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
-  private ExecutorServiceManager executorServiceManager;
   private final ConfigurationService configurationService;
 
   public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
@@ -59,7 +60,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   public void start() throws OperatorException {
     initSources();
     // make sure informers are all started before proceeding further
-    executorServiceManager.boundedExecuteAndWaitForAllToComplete(sources.values().stream(),
+    configurationService.getExecutorServiceManager().boundedExecuteAndWaitForAllToComplete(
+        sources.values().stream(),
         iw -> {
           iw.start();
           return null;
@@ -128,8 +130,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
       ResourceEventHandler<T> eventHandler, String namespaceIdentifier) {
     var informer = filteredBySelectorClient.runnableInformer(0);
     configuration.getItemStore().ifPresent(informer::itemStore);
-    var source =
-        new InformerWrapper<>(informer, configurationService, namespaceIdentifier);
+    var source = new InformerWrapper<>(informer, configurationService, namespaceIdentifier);
     source.addEventHandler(eventHandler);
     sources.put(namespaceIdentifier, source);
     return source;
@@ -213,11 +214,5 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
   public Map<String, InformerHealthIndicator> informerHealthIndicators() {
     return Collections.unmodifiableMap(sources);
-  }
-
-  public InformerManager<T, C> setExecutorServiceManager(
-      ExecutorServiceManager executorServiceManager) {
-    this.executorServiceManager = executorServiceManager;
-    return this;
   }
 }

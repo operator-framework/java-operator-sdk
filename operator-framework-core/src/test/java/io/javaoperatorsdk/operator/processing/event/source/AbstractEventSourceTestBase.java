@@ -47,8 +47,6 @@ public class AbstractEventSourceTestBase<S extends EventSource, T extends EventH
 
     if (source instanceof ManagedInformerEventSource) {
       ((ManagedInformerEventSource) source).setConfigurationService(configurationService);
-      ((ManagedInformerEventSource) source).setExecutorServiceManager(
-          configurationService.getExecutorServiceManager());
     }
 
     source.setEventHandler(eventHandler);

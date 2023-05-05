@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
@@ -42,7 +41,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   protected InformerManager<R, C> cache;
   protected C configuration;
   protected MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
-  protected ConfigurationService configurationService;
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
@@ -173,9 +171,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
         "}";
   }
 
-  public abstract void setConfigurationService(ConfigurationService configurationService);
-
-  public void setExecutorServiceManager(ExecutorServiceManager executorServiceManager) {
-    cache.setExecutorServiceManager(executorServiceManager);
+  public void setConfigurationService(ConfigurationService configurationService) {
+    cache = new InformerManager<>(client, configuration, configurationService, this);
   }
 }

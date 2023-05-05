@@ -157,9 +157,8 @@ public class EventSourceManager<P extends HasMetadata>
       }
       if (eventSource instanceof ManagedInformerEventSource) {
         var managedInformerEventSource = ((ManagedInformerEventSource) eventSource);
-        managedInformerEventSource.setConfigurationService(controller
-            .getConfiguration().getConfigurationService());
-        managedInformerEventSource.setExecutorServiceManager(executorServiceManager);
+        managedInformerEventSource.setConfigurationService(
+            controller.getConfiguration().getConfigurationService());
       }
       final var named = new NamedEventSource(eventSource, name);
       eventSources.add(named);

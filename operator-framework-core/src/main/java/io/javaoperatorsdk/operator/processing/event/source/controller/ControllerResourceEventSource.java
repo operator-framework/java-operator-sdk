@@ -12,14 +12,12 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerManager;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
@@ -44,20 +42,23 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
+    final var config = controller.getConfiguration();
     OnUpdateFilter<T> internalOnUpdateFilter =
         (OnUpdateFilter<T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
-            controller.getConfiguration().getFinalizerName())
-            .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
+            config.getFinalizerName())
+            .or(onUpdateGenerationAware(config.isGenerationAware()))
             .or(onUpdateMarkedForDeletion());
 
-    legacyFilters = controller.getConfiguration().getEventFilter();
+    legacyFilters = config.getEventFilter();
 
     // by default the on add should be processed in all cases regarding internal filters
-    controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
-    controller.getConfiguration().onUpdateFilter()
+    config.onAddFilter().ifPresent(this::setOnAddFilter);
+    config.onUpdateFilter()
         .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
             () -> setOnUpdateFilter(internalOnUpdateFilter));
-    controller.getConfiguration().genericFilter().ifPresent(this::setGenericFilter);
+    config.genericFilter().ifPresent(this::setGenericFilter);
+
+    setConfigurationService(config.getConfigurationService());
   }
 
   @Override
@@ -140,10 +141,5 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   @Override
   public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
     manager().addIndexers(indexers);
-  }
-
-  public void setConfigurationService(ConfigurationService configurationService) {
-    cache = new InformerManager<>(client, configuration, configurationService, this);
-    this.configurationService = configurationService;
   }
 }
