@@ -25,15 +25,13 @@ public class ExecutorServiceManager {
 
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
   public static final int MIN_THREAD_NUMBER = 0;
-  private final ExecutorService executor;
-  private final ExecutorService workflowExecutor;
-  private final ExecutorService cachingExecutorService;
+  private ExecutorService executor;
+  private ExecutorService workflowExecutor;
+  private ExecutorService cachingExecutorService;
+  private boolean started;
 
   ExecutorServiceManager(ConfigurationService configurationService) {
-    this.cachingExecutorService = Executors.newCachedThreadPool();
-    this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
-    this.workflowExecutor =
-        new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
+    start(configurationService);
   }
 
   public static ExecutorService newThreadPoolExecutor(int minThreads, int maxThreads) {
@@ -102,6 +100,16 @@ public class ExecutorServiceManager {
 
   public ExecutorService cachingExecutorService() {
     return cachingExecutorService;
+  }
+
+  public void start(ConfigurationService configurationService) {
+    if (!started) {
+      this.cachingExecutorService = Executors.newCachedThreadPool();
+      this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
+      this.workflowExecutor =
+          new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
+      started = true;
+    }
   }
 
   public void stop(Duration gracefulShutdownTimeout) {
