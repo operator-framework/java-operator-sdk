@@ -12,8 +12,7 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
 public class LeaderElectionManager {
@@ -24,41 +23,19 @@ public class LeaderElectionManager {
   private final ControllerManager controllerManager;
   private String identity;
   private CompletableFuture<?> leaderElectionFuture;
+  private final ConfigurationService configurationService;
+  private final KubernetesClient kubernetesClient;
 
-  public LeaderElectionManager(ControllerManager controllerManager) {
+  public LeaderElectionManager(KubernetesClient kubernetesClient,
+      ControllerManager controllerManager,
+      ConfigurationService configurationService) {
+    this.kubernetesClient = kubernetesClient;
     this.controllerManager = controllerManager;
-  }
-
-  public void init(LeaderElectionConfiguration config, KubernetesClient client) {
-    this.identity = identity(config);
-    final var leaseNamespace =
-        config.getLeaseNamespace().orElseGet(
-            () -> ConfigurationServiceProvider.instance().getClientConfiguration().getNamespace());
-    if (leaseNamespace == null) {
-      final var message =
-          "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
-      log.error(message);
-      throw new IllegalArgumentException(message);
-    }
-    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
-    // releaseOnCancel is not used in the underlying implementation
-    leaderElector =
-        new LeaderElectorBuilder(
-            client, ExecutorServiceManager.instance().executorService())
-            .withConfig(
-                new LeaderElectionConfig(
-                    lock,
-                    config.getLeaseDuration(),
-                    config.getRenewDeadline(),
-                    config.getRetryPeriod(),
-                    leaderCallbacks(),
-                    true,
-                    config.getLeaseName()))
-            .build();
+    this.configurationService = configurationService;
   }
 
   public boolean isLeaderElectionEnabled() {
-    return leaderElector != null;
+    return configurationService.getLeaderElectionConfiguration().isPresent();
   }
 
   private LeaderCallbacks leaderCallbacks() {
@@ -90,6 +67,7 @@ public class LeaderElectionManager {
 
   public void start() {
     if (isLeaderElectionEnabled()) {
+      init(configurationService.getLeaderElectionConfiguration().orElseThrow());
       leaderElectionFuture = leaderElector.start();
     }
   }
@@ -98,5 +76,32 @@ public class LeaderElectionManager {
     if (leaderElectionFuture != null) {
       leaderElectionFuture.cancel(false);
     }
+  }
+
+  private void init(LeaderElectionConfiguration config) {
+    this.identity = identity(config);
+    final var leaseNamespace =
+        config.getLeaseNamespace().orElseGet(
+            () -> configurationService.getClientConfiguration().getNamespace());
+    if (leaseNamespace == null) {
+      final var message =
+          "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
+      log.error(message);
+      throw new IllegalArgumentException(message);
+    }
+    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
+    // releaseOnCancel is not used in the underlying implementation
+    leaderElector = new LeaderElectorBuilder(
+        kubernetesClient, configurationService.getExecutorServiceManager().cachingExecutorService())
+        .withConfig(
+            new LeaderElectionConfig(
+                lock,
+                config.getLeaseDuration(),
+                config.getRenewDeadline(),
+                config.getRetryPeriod(),
+                leaderCallbacks(),
+                true,
+                config.getLeaseName()))
+        .build();
   }
 }

@@ -1,13 +1,16 @@
 package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.*;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResource;
 import io.javaoperatorsdk.operator.sample.standalonedependent.StandaloneDependentTestCustomResourceSpec;
@@ -52,7 +55,7 @@ public class StandaloneDependentResourceIT {
 
     awaitForDeploymentReadyReplicas(1);
 
-    var clonedCr = ConfigurationServiceProvider.instance().getResourceCloner().clone(createdCR);
+    var clonedCr = cloner().clone(createdCR);
     clonedCr.getSpec().setReplicaCount(2);
     operator.replace(clonedCr);
 
@@ -81,4 +84,25 @@ public class StandaloneDependentResourceIT {
                   && deployment.getStatus().getReadyReplicas() == expectedReplicaCount;
             });
   }
+
+  Cloner cloner() {
+    return new ConfigurationService() {
+      @Override
+      public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
+          Reconciler<R> reconciler) {
+        return null;
+      }
+
+      @Override
+      public Set<String> getKnownReconcilerNames() {
+        return null;
+      }
+
+      @Override
+      public Version getVersion() {
+        return null;
+      }
+    }.getResourceCloner();
+  }
+
 }

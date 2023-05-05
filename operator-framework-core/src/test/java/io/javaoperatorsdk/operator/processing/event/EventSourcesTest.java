@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -73,9 +74,10 @@ class EventSourcesTest {
   void checkControllerResourceEventSource() {
     final var eventSources = new EventSources();
     final var configuration = MockControllerConfiguration.forResource(HasMetadata.class);
+    when(configuration.getConfigurationService()).thenReturn(new BaseConfigurationService());
     final var controller = new Controller(mock(Reconciler.class), configuration,
         MockKubernetesClient.client(HasMetadata.class));
-    eventSources.initControllerEventSource(controller);
+    eventSources.createControllerEventSource(controller);
     final var controllerResourceEventSource = eventSources.controllerResourceEventSource();
     assertNotNull(controllerResourceEventSource);
     assertEquals(HasMetadata.class, controllerResourceEventSource.resourceType());

@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -32,4 +33,9 @@ public interface Context<P extends HasMetadata> {
   EventSourceRetriever<P> eventSourceRetriever();
 
   KubernetesClient getClient();
+
+  /**
+   * ExecutorService initialized by framework for workflows. Used for workflow standalone mode.
+   */
+  ExecutorService getWorkflowExecutorService();
 }

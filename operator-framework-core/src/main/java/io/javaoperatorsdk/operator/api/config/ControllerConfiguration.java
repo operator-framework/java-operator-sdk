@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -107,9 +108,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
   }
 
   @SuppressWarnings("unused")
-  default ConfigurationService getConfigurationService() {
-    return ConfigurationServiceProvider.instance();
-  }
+  ConfigurationService getConfigurationService();
 
   @SuppressWarnings("unchecked")
   @Override
@@ -119,5 +118,10 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     // change)
     return (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
         ControllerConfiguration.class);
+  }
+
+  @SuppressWarnings("unused")
+  default Set<String> getEffectiveNamespaces() {
+    return ResourceConfiguration.super.getEffectiveNamespaces(getConfigurationService());
   }
 }

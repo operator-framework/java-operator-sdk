@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -36,7 +37,8 @@ class ControllerResourceEventSourceTest extends
 
   @BeforeEach
   public void setup() {
-    setUpSource(new ControllerResourceEventSource<>(testController), false);
+    setUpSource(new ControllerResourceEventSource<>(testController), false,
+        new BaseConfigurationService());
   }
 
   @Test
@@ -196,7 +198,7 @@ class ControllerResourceEventSourceTest extends
           null,
           null,
           FINALIZER,
-          null, null);
+          null, null, new BaseConfigurationService());
     }
   }
 }

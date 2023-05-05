@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -73,6 +74,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public KubernetesClient getClient() {
     return controller.getClient();
+  }
+
+  @Override
+  public ExecutorService getWorkflowExecutorService() {
+    // note that this should be always received from executor service manager, so we are able to do
+    // restarts.
+    return controller.getExecutorServiceManager().workflowExecutorService();
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {

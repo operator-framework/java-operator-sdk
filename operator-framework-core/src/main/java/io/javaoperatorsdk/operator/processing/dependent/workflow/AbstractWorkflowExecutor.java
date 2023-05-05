@@ -21,6 +21,7 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
   protected final Workflow<P> workflow;
   protected final P primary;
+  protected final ResourceID primaryID;
   protected final Context<P> context;
   /**
    * Covers both deleted and reconciled
@@ -34,6 +35,7 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     this.workflow = workflow;
     this.primary = primary;
     this.context = context;
+    this.primaryID = ResourceID.fromResource(primary);
   }
 
   protected abstract Logger logger();
@@ -49,11 +51,10 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
         }
       } catch (InterruptedException e) {
         if (noMoreExecutionsScheduled()) {
-          logger().debug("interrupted, no more executions for: {}",
-              ResourceID.fromResource(primary));
+          logger().debug("interrupted, no more executions for: {}", primaryID);
           return;
         } else {
-          logger().error("Thread interrupted for primary: {}", ResourceID.fromResource(primary), e);
+          logger().error("Thread interrupted for primary: {}", primaryID, e);
           throw new OperatorException(e);
         }
       }
@@ -99,7 +100,7 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
   protected synchronized void handleNodeExecutionFinish(
       DependentResourceNode<?, P> dependentResourceNode) {
-    logger().debug("Finished execution for: {}", dependentResourceNode);
+    logger().trace("Finished execution for: {} primary: {}", dependentResourceNode, primaryID);
     actualExecutions.remove(dependentResourceNode);
     if (noMoreExecutionsScheduled()) {
       this.notifyAll();
