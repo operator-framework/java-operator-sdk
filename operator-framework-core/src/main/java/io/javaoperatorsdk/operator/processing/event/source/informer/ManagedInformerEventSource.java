@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -172,8 +175,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   public abstract void setConfigurationService(ConfigurationService configurationService);
 
-  public void setExecutorServiceManager(
-      ExecutorServiceManager executorServiceManager) {
+  public void setExecutorServiceManager(ExecutorServiceManager executorServiceManager) {
     cache.setExecutorServiceManager(executorServiceManager);
   }
 }

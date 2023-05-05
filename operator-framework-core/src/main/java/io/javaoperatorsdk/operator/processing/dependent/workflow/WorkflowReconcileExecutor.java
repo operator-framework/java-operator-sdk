@@ -69,8 +69,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     if (!reconcileConditionMet) {
       handleReconcileConditionNotMet(dependentResourceNode);
     } else {
-      Future<?> nodeFuture = executorService
-          .submit(new NodeReconcileExecutor(dependentResourceNode));
+      var nodeFuture = executorService.submit(new NodeReconcileExecutor(dependentResourceNode));
       markAsExecuting(dependentResourceNode, nodeFuture);
       log.debug("Submitted to reconcile: {} primaryID: {}", dependentResourceNode, primaryID);
     }

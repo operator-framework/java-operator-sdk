@@ -55,8 +55,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
       return;
     }
 
-    Future<?> nodeFuture = executorService
-        .submit(new CleanupExecutor<>(dependentResourceNode));
+    Future<?> nodeFuture = executorService.submit(new CleanupExecutor<>(dependentResourceNode));
     markAsExecuting(dependentResourceNode, nodeFuture);
     log.debug("Submitted for cleanup: {}", dependentResourceNode);
   }

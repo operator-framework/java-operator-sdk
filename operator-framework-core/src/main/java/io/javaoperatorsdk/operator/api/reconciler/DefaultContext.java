@@ -78,7 +78,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public ExecutorService getWorkflowExecutorService() {
-    // not that this should be always received from executor service manager, so we are able to do
+    // note that this should be always received from executor service manager, so we are able to do
     // restarts.
     return controller.getExecutorServiceManager().workflowExecutorService();
   }
