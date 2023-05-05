@@ -28,6 +28,8 @@ public interface DependentResourceWithExplicitState<R, P extends HasMetadata, S 
 
   /**
    * Class of the state resource.
+   *
+   * @return the type of the resource that stores state
    */
   Class<S> stateResourceClass();
 
