@@ -10,7 +10,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +27,9 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Utils;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 
 public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     BeforeAllCallback,
@@ -54,8 +59,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       boolean waitForNamespaceDeletion,
       KubernetesClient kubernetesClient) {
     this.kubernetesClient = kubernetesClient != null ? kubernetesClient
-        : new KubernetesClientBuilder()
-            .withConfig(ConfigurationServiceProvider.instance().getClientConfiguration()).build();
+        : new KubernetesClientBuilder().build();
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
     this.oneNamespacePerClass = oneNamespacePerClass;
@@ -180,8 +184,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   }
 
   protected void afterEachImpl(ExtensionContext context) {
-    // resets the config service provider so the controller configs are reconstructed always
-    ConfigurationServiceProvider.reset();
     if (!oneNamespacePerClass) {
       after(context);
     }
@@ -219,6 +221,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean waitForNamespaceDeletion;
     protected boolean oneNamespacePerClass;
     protected int namespaceDeleteTimeout;
+    protected ConfigurationService configurationService = new BaseConfigurationService();
 
     protected AbstractBuilder() {
       this.infrastructure = new ArrayList<>();
@@ -257,7 +260,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     }
 
     public T withConfigurationService(Consumer<ConfigurationServiceOverrider> overrider) {
-      ConfigurationServiceProvider.overrideCurrent(overrider);
+      configurationService =
+          ConfigurationService.newOverriddenConfigurationService(configurationService, overrider);
       return (T) this;
     }
 

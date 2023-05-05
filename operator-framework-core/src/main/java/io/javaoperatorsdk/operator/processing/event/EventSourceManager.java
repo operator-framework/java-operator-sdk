@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,6 +26,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 public class EventSourceManager<P extends HasMetadata>
@@ -31,6 +36,7 @@ public class EventSourceManager<P extends HasMetadata>
 
   private final EventSources<P> eventSources;
   private final Controller<P> controller;
+  private final ExecutorServiceManager executorServiceManager;
 
   public EventSourceManager(Controller<P> controller) {
     this(controller, new EventSources<>());
@@ -39,10 +45,9 @@ public class EventSourceManager<P extends HasMetadata>
   EventSourceManager(Controller<P> controller, EventSources<P> eventSources) {
     this.eventSources = eventSources;
     this.controller = controller;
+    this.executorServiceManager = controller.getExecutorServiceManager();
     // controller event source needs to be available before we create the event processor
-    eventSources.initControllerEventSource(controller);
-
-
+    eventSources.createControllerEventSource(controller);
     postProcessDefaultEventSourcesAfterProcessorInitializer();
   }
 
@@ -65,13 +70,13 @@ public class EventSourceManager<P extends HasMetadata>
   public synchronized void start() {
     startEventSource(eventSources.namedControllerResourceEventSource());
 
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER)),
         this::startEventSource,
         getThreadNamer("start"));
 
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT)),
         this::startEventSource,
@@ -93,7 +98,7 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public synchronized void stop() {
     stopEventSource(eventSources.namedControllerResourceEventSource());
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalNamedEventSources(),
         this::stopEventSource,
         getThreadNamer("stop"));
@@ -142,12 +147,18 @@ public class EventSourceManager<P extends HasMetadata>
     registerEventSource(null, eventSource);
   }
 
+  @SuppressWarnings("rawtypes")
   public final synchronized void registerEventSource(String name, EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
       if (name == null || name.isBlank()) {
         name = EventSourceInitializer.generateNameFor(eventSource);
+      }
+      if (eventSource instanceof ManagedInformerEventSource) {
+        var managedInformerEventSource = ((ManagedInformerEventSource) eventSource);
+        managedInformerEventSource.setConfigurationService(
+            controller.getConfiguration().getConfigurationService());
       }
       final var named = new NamedEventSource(eventSource, name);
       eventSources.add(named);
@@ -185,7 +196,7 @@ public class EventSourceManager<P extends HasMetadata>
   public void changeNamespaces(Set<String> namespaces) {
     eventSources.controllerResourceEventSource()
         .changeNamespaces(namespaces);
-    ExecutorServiceManager.boundedExecuteAndWaitForAllToComplete(eventSources
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(eventSources
         .additionalEventSources()
         .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)

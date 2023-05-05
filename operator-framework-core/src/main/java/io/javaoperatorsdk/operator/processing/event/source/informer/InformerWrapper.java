@@ -20,7 +20,7 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -35,37 +35,39 @@ class InformerWrapper<T extends HasMetadata>
   private final SharedIndexInformer<T> informer;
   private final Cache<T> cache;
   private final String namespaceIdentifier;
+  private final ConfigurationService configurationService;
 
-  public InformerWrapper(SharedIndexInformer<T> informer, String namespaceIdentifier) {
+  public InformerWrapper(SharedIndexInformer<T> informer, ConfigurationService configurationService,
+      String namespaceIdentifier) {
     this.informer = informer;
     this.namespaceIdentifier = namespaceIdentifier;
     this.cache = (Cache<T>) informer.getStore();
+    this.configurationService = configurationService;
   }
 
   @Override
   public void start() throws OperatorException {
     try {
-      var configService = ConfigurationServiceProvider.instance();
+
       // register stopped handler if we have one defined
-      configService.getInformerStoppedHandler()
-          .ifPresent(ish -> {
-            final var stopped = informer.stopped();
-            if (stopped != null) {
-              stopped.handle((res, ex) -> {
-                ish.onStop(informer, ex);
-                return null;
-              });
-            } else {
-              final var apiTypeClass = informer.getApiTypeClass();
-              final var fullResourceName =
-                  HasMetadata.getFullResourceName(apiTypeClass);
-              final var version = HasMetadata.getVersion(apiTypeClass);
-              throw new IllegalStateException(
-                  "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
-                      + fullResourceName + "/" + version);
-            }
+      configurationService.getInformerStoppedHandler().ifPresent(ish -> {
+        final var stopped = informer.stopped();
+        if (stopped != null) {
+          stopped.handle((res, ex) -> {
+            ish.onStop(informer, ex);
+            return null;
           });
-      if (!configService.stopOnInformerErrorDuringStartup()) {
+        } else {
+          final var apiTypeClass = informer.getApiTypeClass();
+          final var fullResourceName =
+              HasMetadata.getFullResourceName(apiTypeClass);
+          final var version = HasMetadata.getVersion(apiTypeClass);
+          throw new IllegalStateException(
+              "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
+                  + fullResourceName + "/" + version);
+        }
+      });
+      if (!configurationService.stopOnInformerErrorDuringStartup()) {
         informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
       }
       // change thread name for easier debugging
@@ -82,12 +84,12 @@ class InformerWrapper<T extends HasMetadata>
         // starts
         log.trace("Waiting informer to start namespace: {} resource: {}", namespaceIdentifier,
             resourceName);
-        start.toCompletableFuture().get(configService.cacheSyncTimeout().toMillis(),
+        start.toCompletableFuture().get(configurationService.cacheSyncTimeout().toMillis(),
             TimeUnit.MILLISECONDS);
         log.debug("Started informer for namespace: {} resource: {}", namespaceIdentifier,
             resourceName);
       } catch (TimeoutException | ExecutionException e) {
-        if (configService.stopOnInformerErrorDuringStartup()) {
+        if (configurationService.stopOnInformerErrorDuringStartup()) {
           log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
           throw new OperatorException(e);
         } else {

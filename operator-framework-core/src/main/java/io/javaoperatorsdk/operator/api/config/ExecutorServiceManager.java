@@ -21,56 +21,15 @@ import io.javaoperatorsdk.operator.OperatorException;
 
 public class ExecutorServiceManager {
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
-  private static ExecutorServiceManager instance;
   private final ExecutorService executor;
   private final ExecutorService workflowExecutor;
   private final ExecutorService cachingExecutorService;
 
-  private ExecutorServiceManager(ExecutorService executor, ExecutorService workflowExecutor) {
+  ExecutorServiceManager(ConfigurationService configurationService) {
     this.cachingExecutorService = Executors.newCachedThreadPool();
-    this.executor = new InstrumentedExecutorService(executor);
-    this.workflowExecutor = new InstrumentedExecutorService(workflowExecutor);
-
-  }
-
-  public static synchronized void init() {
-    if (instance == null) {
-      final var configuration = ConfigurationServiceProvider.instance();
-      final var executorService = configuration.getExecutorService();
-      final var workflowExecutorService = configuration.getWorkflowExecutorService();
-      instance = new ExecutorServiceManager(executorService, workflowExecutorService);
-      log.debug(
-          "Initialized ExecutorServiceManager executor: {}, workflow executor: {}, timeout: {}",
-          executorService.getClass(),
-          workflowExecutorService.getClass(),
-          configuration.getTerminationTimeoutSeconds());
-    } else {
-      log.debug("Already started, reusing already setup instance!");
-    }
-  }
-
-  /** For testing purposes only */
-  public static synchronized void reset() {
-    instance().doStop(Duration.ZERO);
-    instance = null;
-    init();
-  }
-
-  public static synchronized void stop(Duration gracefulShutdownTimeout) {
-    if (instance != null) {
-      instance.doStop(gracefulShutdownTimeout);
-    }
-    // make sure that we remove the singleton so that the thread pool is re-created on next call to
-    // start
-    instance = null;
-  }
-
-  public static synchronized ExecutorServiceManager instance() {
-    if (instance == null) {
-      // provide a default configuration if none has been provided by init
-      init();
-    }
-    return instance;
+    this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
+    this.workflowExecutor =
+        new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
   }
 
   /**
@@ -82,9 +41,9 @@ public class ExecutorServiceManager {
    * @param threadNamer for naming thread
    * @param <T> type
    */
-  public static <T> void boundedExecuteAndWaitForAllToComplete(Stream<T> stream,
+  public <T> void boundedExecuteAndWaitForAllToComplete(Stream<T> stream,
       Function<T, Void> task, Function<T, String> threadNamer) {
-    executeAndWaitForAllToComplete(stream, task, threadNamer, instance().cachingExecutorService());
+    executeAndWaitForAllToComplete(stream, task, threadNamer, cachingExecutorService());
   }
 
   public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
@@ -121,7 +80,7 @@ public class ExecutorServiceManager {
     }
   }
 
-  public ExecutorService executorService() {
+  public ExecutorService reconcileExecutorService() {
     return executor;
   }
 
@@ -133,7 +92,7 @@ public class ExecutorServiceManager {
     return cachingExecutorService;
   }
 
-  private void doStop(Duration gracefulShutdownTimeout) {
+  public void stop(Duration gracefulShutdownTimeout) {
     try {
       var parallelExec = Executors.newFixedThreadPool(3);
       log.debug("Closing executor");

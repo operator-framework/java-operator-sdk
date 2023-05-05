@@ -28,6 +28,7 @@ class DependentResourceCrossRefIT {
 
   @Test
   void dependentResourceCanReferenceEachOther() {
+
     for (int i = 0; i < EXECUTION_NUMBER; i++) {
       operator.create(testResource(i));
     }
@@ -43,6 +44,7 @@ class DependentResourceCrossRefIT {
                 assertThat(operator.get(Secret.class, TEST_RESOURCE_NAME + i)).isNotNull();
               }
             });
+
   }
 
   DependentResourceCrossRefResource testResource(int n) {

@@ -16,14 +16,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 @SuppressWarnings({"rawtypes", "unchecked"})
 class ManagedWorkflowSupport {
 
-  private final static ManagedWorkflowSupport instance = new ManagedWorkflowSupport();
-
-  static ManagedWorkflowSupport instance() {
-    return instance;
-  }
-
-  private ManagedWorkflowSupport() {}
-
   public void checkForNameDuplication(List<DependentResourceSpec> dependentResourceSpecs) {
     if (dependentResourceSpecs == null) {
       return;

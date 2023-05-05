@@ -15,7 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.*;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -426,12 +429,17 @@ class EventProcessorTest {
           Thread.sleep(DISPATCHING_DELAY);
           return PostExecutionControl.defaultDispatch();
         });
-    // one event will lock the thread / executor
-    ConfigurationServiceProvider.overrideCurrent(o -> {
-      o.withConcurrentReconciliationThreads(1);
-      o.withMinConcurrentReconciliationThreads(1);
-    });
-    ExecutorServiceManager.reset();
+
+    final var configurationService = ConfigurationService.newOverriddenConfigurationService(
+        new BaseConfigurationService(),
+        o -> {
+          o.withConcurrentReconciliationThreads(1);
+          o.withMinConcurrentReconciliationThreads(1);
+        });
+    eventProcessor =
+            spy(new EventProcessor(controllerConfiguration(null, rateLimiterMock, configurationService),
+                    reconciliationDispatcherMock,
+                    eventSourceManagerMock, null));
     eventProcessor.start();
 
     eventProcessor.handleEvent(prepareCREvent());
@@ -485,12 +493,17 @@ class EventProcessorTest {
   }
 
   ControllerConfiguration controllerConfiguration(Retry retry, RateLimiter rateLimiter) {
+    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService());
+  }
+
+  ControllerConfiguration controllerConfiguration(Retry retry, RateLimiter rateLimiter,
+      ConfigurationService configurationService) {
     ControllerConfiguration res = mock(ControllerConfiguration.class);
     when(res.getName()).thenReturn("Test");
     when(res.getRetry()).thenReturn(retry);
     when(res.getRateLimiter()).thenReturn(rateLimiter);
     when(res.maxReconciliationInterval()).thenReturn(Optional.of(Duration.ofMillis(1000)));
-    when(res.getConfigurationService()).thenReturn(new BaseConfigurationService());
+    when(res.getConfigurationService()).thenReturn(configurationService);
     return res;
   }
 

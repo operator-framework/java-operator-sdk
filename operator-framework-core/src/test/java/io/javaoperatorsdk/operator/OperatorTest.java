@@ -1,20 +1,10 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Optional;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
-import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -29,26 +19,9 @@ class OperatorTest {
   private final KubernetesClient kubernetesClient = MockKubernetesClient.client(ConfigMap.class);
   private Operator operator;
 
-  @BeforeAll
-  @AfterAll
-  static void setUpConfigurationServiceProvider() {
-    ConfigurationServiceProvider.reset();
-  }
-
   @BeforeEach
   void initOperator() {
-    ConfigurationServiceProvider.reset();
     operator = new Operator(kubernetesClient);
-  }
-
-  @Test
-  @DisplayName("should throw `OperationException` when Configuration is null")
-  public void shouldThrowOperatorExceptionWhenConfigurationIsNull() {
-    // use a ConfigurationService that doesn't automatically create configurations
-    ConfigurationServiceProvider.reset();
-    ConfigurationServiceProvider.set(new AbstractConfigurationService(null));
-
-    Assertions.assertThrows(OperatorException.class, () -> operator.register(new FooReconciler()));
   }
 
   @Test
@@ -76,32 +49,6 @@ class OperatorTest {
     registeredControllers = operator.getRegisteredControllers();
     assertEquals(1, registeredControllers.size());
     assertEquals(maybeController.get(), registeredControllers.stream().findFirst().orElseThrow());
-  }
-
-  @Test
-  void shouldBeAbleToProvideLeaderElectionConfiguration() {
-    assertTrue(ConfigurationServiceProvider.instance().getLeaderElectionConfiguration().isEmpty());
-    new Operator(kubernetesClient, c -> c.withLeaderElectionConfiguration(
-        new LeaderElectionConfiguration("leader-election-test", "namespace", "identity")));
-    assertEquals("identity", ConfigurationServiceProvider.instance()
-        .getLeaderElectionConfiguration().orElseThrow().getIdentity().orElseThrow());
-  }
-
-  @Test
-  void shouldBeAbleToInitLeaderElectionManagerWithoutOverrider() {
-    ConfigurationServiceProvider.reset();
-    final LeaderElectionConfiguration leaderElectionConfiguration =
-        new LeaderElectionConfiguration("leader-election-test", "namespace", "identity");
-    final AbstractConfigurationService configurationService =
-        new AbstractConfigurationService(Version.UNKNOWN) {
-          @Override
-          public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
-            return Optional.of(leaderElectionConfiguration);
-          }
-        };
-    new Operator(kubernetesClient, configurationService);
-    assertEquals("identity", ConfigurationServiceProvider.instance()
-        .getLeaderElectionConfiguration().orElseThrow().getIdentity().orElseThrow());
   }
 
   @ControllerConfiguration
