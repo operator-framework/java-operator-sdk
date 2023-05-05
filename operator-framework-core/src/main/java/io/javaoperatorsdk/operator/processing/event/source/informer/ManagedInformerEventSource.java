@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
@@ -31,20 +32,21 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends AbstractResourceEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
-    RecentOperationCacheFiller<R>,
-    NamespaceChangeable, InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
+    RecentOperationCacheFiller<R>, NamespaceChangeable,
+    InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
 
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected InformerManager<R, C> cache;
   protected C configuration;
+  protected MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
 
   protected ManagedInformerEventSource(
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
     super(configuration.getResourceClass());
+    this.client = client;
     temporaryResourceCache = new TemporaryResourceCache<>(this);
-    cache = new InformerManager<>(client, configuration, this);
     this.configuration = configuration;
   }
 
@@ -126,9 +128,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     this.temporaryResourceCache = temporaryResourceCache;
   }
 
-  public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
-    manager().addIndexers(indexers);
-  }
+  public abstract void addIndexers(Map<String, Function<R, List<String>>> indexers);
 
   public List<R> byIndex(String indexName, String indexKey) {
     return manager().byIndex(indexName, indexKey);
@@ -169,5 +169,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     return getClass().getSimpleName() + "{" +
         "resourceClass: " + configuration.getResourceClass().getSimpleName() +
         "}";
+  }
+
+  public void setConfigurationService(ConfigurationService configurationService) {
+    cache = new InformerManager<>(client, configuration, configurationService, this);
   }
 }

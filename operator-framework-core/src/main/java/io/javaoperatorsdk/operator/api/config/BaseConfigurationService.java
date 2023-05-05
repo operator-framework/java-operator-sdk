@@ -107,8 +107,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
               " annotation for reconciler:  " + reconciler);
     }
     Class<Reconciler<P>> reconcilerClass = (Class<Reconciler<P>>) reconciler.getClass();
-    final var resourceClass = ConfigurationServiceProvider.instance().getResourceClassResolver()
-        .getResourceClass(reconcilerClass);
+    final var resourceClass = getResourceClassResolver().getResourceClass(reconcilerClass);
 
     final var name = ReconcilerUtils.getNameFor(reconciler);
     final var generationAware = valueOrDefault(
@@ -152,7 +151,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
             Constants.NO_VALUE_SET),
         null,
-        Utils.instantiate(annotation.itemStore(), ItemStore.class, context));
+        Utils.instantiate(annotation.itemStore(), ItemStore.class, context), this);
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());

@@ -21,7 +21,7 @@ class ManagedWorkflowSupportTest {
   public static final String NAME_3 = "name3";
   public static final String NAME_4 = "name4";
 
-  ManagedWorkflowSupport managedWorkflowSupport = ManagedWorkflowSupport.instance();
+  ManagedWorkflowSupport managedWorkflowSupport = new ManagedWorkflowSupport();
 
   @Test
   void trivialCasesNameDuplicates() {

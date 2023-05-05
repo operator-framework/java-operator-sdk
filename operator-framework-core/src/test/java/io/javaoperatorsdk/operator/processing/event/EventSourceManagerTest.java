@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -148,6 +149,10 @@ class EventSourceManagerTest {
     String newNamespaces = "new-namespace";
 
     final var configuration = MockControllerConfiguration.forResource(HasMetadata.class);
+
+    final var configService = new BaseConfigurationService();
+    when(configuration.getConfigurationService()).thenReturn(configService);
+
     final Controller controller = new Controller(mock(Reconciler.class), configuration,
         MockKubernetesClient.client(HasMetadata.class));
 
@@ -173,6 +178,9 @@ class EventSourceManagerTest {
 
   private EventSourceManager initManager() {
     final var configuration = MockControllerConfiguration.forResource(ConfigMap.class);
+    final var configService = new BaseConfigurationService();
+    when(configuration.getConfigurationService()).thenReturn(configService);
+
     final Controller controller = new Controller(mock(Reconciler.class), configuration,
         MockKubernetesClient.client(ConfigMap.class));
     return new EventSourceManager(controller);

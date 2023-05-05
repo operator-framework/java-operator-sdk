@@ -30,7 +30,7 @@ class EventSources<R extends HasMetadata> {
   private ControllerResourceEventSource<R> controllerResourceEventSource;
 
 
-  void initControllerEventSource(Controller<R> controller) {
+  void createControllerEventSource(Controller<R> controller) {
     controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
   }
 

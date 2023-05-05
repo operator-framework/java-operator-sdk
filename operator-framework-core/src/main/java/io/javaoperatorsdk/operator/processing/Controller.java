@@ -1,6 +1,11 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +21,20 @@ import io.javaoperatorsdk.operator.CustomResourceUtils;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
@@ -69,10 +83,10 @@ public class Controller<P extends HasMetadata>
     // needs to be initialized early since it's used in other downstream classes
     associatedGVK = GroupVersionKind.gvkFor(configuration.getResourceClass());
 
+    final var configurationService = configuration.getConfigurationService();
     this.reconciler = reconciler;
     this.configuration = configuration;
     this.kubernetesClient = kubernetesClient;
-    final var configurationService = ConfigurationServiceProvider.instance();
     this.metrics = Optional.ofNullable(configurationService.getMetrics()).orElse(Metrics.NOOP);
     contextInitializer = reconciler instanceof ContextInitializer;
     isCleaner = reconciler instanceof Cleaner;
@@ -81,13 +95,13 @@ public class Controller<P extends HasMetadata>
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
 
     eventSourceManager = new EventSourceManager<>(this);
-    eventProcessor = new EventProcessor<>(eventSourceManager);
+    eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
     final var context = new EventSourceContext<>(
         eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
     initAndRegisterEventSources(context);
-    ConfigurationServiceProvider.instance().getMetrics().controllerRegistered(this);
+    configurationService.getMetrics().controllerRegistered(this);
   }
 
   @Override
@@ -340,7 +354,7 @@ public class Controller<P extends HasMetadata>
   private void validateCRDWithLocalModelIfRequired(Class<P> resClass, String controllerName,
       String crdName, String specVersion) {
     final CustomResourceDefinition crd;
-    if (ConfigurationServiceProvider.instance().checkCRDAndValidateLocalModel()
+    if (getConfiguration().getConfigurationService().checkCRDAndValidateLocalModel()
         && CustomResource.class.isAssignableFrom(resClass)) {
       crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
           .get();
@@ -421,5 +435,9 @@ public class Controller<P extends HasMetadata>
 
   public EventProcessor<P> getEventProcessor() {
     return eventProcessor;
+  }
+
+  public ExecutorServiceManager getExecutorServiceManager() {
+    return getConfiguration().getConfigurationService().getExecutorServiceManager();
   }
 }
