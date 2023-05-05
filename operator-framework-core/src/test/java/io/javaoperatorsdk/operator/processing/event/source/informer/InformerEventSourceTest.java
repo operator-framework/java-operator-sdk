@@ -11,7 +11,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -47,7 +48,7 @@ class InformerEventSourceTest {
 
   @BeforeEach
   void setup() {
-    when(informerConfiguration.getEffectiveNamespaces())
+    when(informerConfiguration.getEffectiveNamespaces(any()))
         .thenReturn(DEFAULT_NAMESPACES_SET);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
@@ -247,25 +248,22 @@ class InformerEventSourceTest {
 
   @Test
   void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
-    try {
-      ConfigurationServiceProvider.reset();
-      final var exception = new RuntimeException("Informer stopped exceptionally!");
-      final var informerStoppedHandler = mock(InformerStoppedHandler.class);
-      ConfigurationServiceProvider
-          .overrideCurrent(
-              overrider -> overrider.withInformerStoppedHandler(informerStoppedHandler));
-      informerEventSource = new InformerEventSource<>(informerConfiguration,
-          MockKubernetesClient.client(Deployment.class, unused -> {
-            throw exception;
-          }));
+    final var exception = new RuntimeException("Informer stopped exceptionally!");
+    final var informerStoppedHandler = mock(InformerStoppedHandler.class);
+    var configuration =
+        ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
+            o -> o.withInformerStoppedHandler(informerStoppedHandler));
 
-      // by default informer fails to start if there is an exception in the client on start.
-      // Throws the exception further.
-      assertThrows(OperatorException.class, () -> informerEventSource.start());
-      verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
-    } finally {
-      ConfigurationServiceProvider.reset();
-    }
+    informerEventSource = new InformerEventSource<>(informerConfiguration,
+        MockKubernetesClient.client(Deployment.class, unused -> {
+          throw exception;
+        }));
+    informerEventSource.setConfigurationService(configuration);
+
+    // by default informer fails to start if there is an exception in the client on start.
+    // Throws the exception further.
+    assertThrows(OperatorException.class, () -> informerEventSource.start());
+    verify(informerStoppedHandler, atLeastOnce()).onStop(any(), eq(exception));
   }
 
   Deployment testDeployment() {

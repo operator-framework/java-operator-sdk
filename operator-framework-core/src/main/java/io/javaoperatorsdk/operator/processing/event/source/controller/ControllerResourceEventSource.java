@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,20 +42,23 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
+    final var config = controller.getConfiguration();
     OnUpdateFilter<T> internalOnUpdateFilter =
         (OnUpdateFilter<T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
-            controller.getConfiguration().getFinalizerName())
-            .or(onUpdateGenerationAware(controller.getConfiguration().isGenerationAware()))
+            config.getFinalizerName())
+            .or(onUpdateGenerationAware(config.isGenerationAware()))
             .or(onUpdateMarkedForDeletion());
 
-    legacyFilters = controller.getConfiguration().getEventFilter();
+    legacyFilters = config.getEventFilter();
 
     // by default the on add should be processed in all cases regarding internal filters
-    controller.getConfiguration().onAddFilter().ifPresent(this::setOnAddFilter);
-    controller.getConfiguration().onUpdateFilter()
+    config.onAddFilter().ifPresent(this::setOnAddFilter);
+    config.onUpdateFilter()
         .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
             () -> setOnUpdateFilter(internalOnUpdateFilter));
-    controller.getConfiguration().genericFilter().ifPresent(this::setGenericFilter);
+    config.genericFilter().ifPresent(this::setGenericFilter);
+
+    setConfigurationService(config.getConfigurationService());
   }
 
   @Override
@@ -130,5 +136,10 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public void setOnDeleteFilter(OnDeleteFilter<T> onDeleteFilter) {
     throw new IllegalStateException(
         "onDeleteFilter is not supported for controller resource event source");
+  }
+
+  @Override
+  public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
+    manager().addIndexers(indexers);
   }
 }

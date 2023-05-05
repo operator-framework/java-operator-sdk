@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
@@ -33,6 +34,8 @@ class GenericKubernetesResourceMatcherTest {
   @BeforeAll
   static void setUp() {
     final var controllerConfiguration = mock(ControllerConfiguration.class);
+    when(controllerConfiguration.getConfigurationService())
+        .thenReturn(new BaseConfigurationService());
     when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 

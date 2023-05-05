@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -11,12 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowExecutor<P> {
@@ -33,9 +32,11 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   private final Set<DependentResourceNode> reconciled = ConcurrentHashMap.newKeySet();
   private final Map<DependentResource, ReconcileResult> reconcileResults =
       new ConcurrentHashMap<>();
+  private final ExecutorService executorService;
 
   public WorkflowReconcileExecutor(Workflow<P> workflow, P primary, Context<P> context) {
     super(workflow, primary, context);
+    this.executorService = context.getWorkflowExecutorService();
   }
 
   public synchronized WorkflowReconcileResult reconcile() {
@@ -52,14 +53,14 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   }
 
   private synchronized <R> void handleReconcile(DependentResourceNode<R, P> dependentResourceNode) {
-    log.debug("Submitting for reconcile: {}", dependentResourceNode);
+    log.debug("Submitting for reconcile: {} primaryID: {}", dependentResourceNode, primaryID);
 
     if (alreadyVisited(dependentResourceNode)
         || isExecutingNow(dependentResourceNode)
         || !allParentsReconciledAndReady(dependentResourceNode)
         || markedForDelete.contains(dependentResourceNode)
         || hasErroredParent(dependentResourceNode)) {
-      log.debug("Skipping submit of: {}, ", dependentResourceNode);
+      log.debug("Skipping submit of: {}, primaryID: {}", dependentResourceNode, primaryID);
       return;
     }
 
@@ -68,10 +69,9 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     if (!reconcileConditionMet) {
       handleReconcileConditionNotMet(dependentResourceNode);
     } else {
-      Future<?> nodeFuture = ExecutorServiceManager.instance().workflowExecutorService()
-          .submit(new NodeReconcileExecutor(dependentResourceNode));
+      var nodeFuture = executorService.submit(new NodeReconcileExecutor(dependentResourceNode));
       markAsExecuting(dependentResourceNode, nodeFuture);
-      log.debug("Submitted to reconcile: {}", dependentResourceNode);
+      log.debug("Submitted to reconcile: {} primaryID: {}", dependentResourceNode, primaryID);
     }
   }
 
@@ -82,11 +82,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
         || isExecutingNow(dependentResourceNode)
         || !markedForDelete.contains(dependentResourceNode)
         || !allDependentsDeletedAlready(dependentResourceNode)) {
-      log.debug("Skipping submit for delete of: {}, ", dependentResourceNode);
+      log.debug("Skipping submit for delete of: {} primaryID: {} ", dependentResourceNode,
+          primaryID);
       return;
     }
 
-    Future<?> nodeFuture = ExecutorServiceManager.instance().workflowExecutorService()
+    Future<?> nodeFuture = executorService
         .submit(new NodeDeleteExecutor(dependentResourceNode));
     markAsExecuting(dependentResourceNode, nodeFuture);
     log.debug("Submitted to delete: {}", dependentResourceNode);
@@ -115,12 +116,9 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     @Override
     protected void doRun(DependentResourceNode<R, P> dependentResourceNode,
         DependentResource<R, P> dependentResource) {
-      if (log.isDebugEnabled()) {
-        log.debug(
-            "Reconciling {} for primary: {}",
-            dependentResourceNode,
-            ResourceID.fromResource(primary));
-      }
+
+      log.debug(
+          "Reconciling for primary: {} node: {} ", primaryID, dependentResourceNode);
       ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
       reconcileResults.put(dependentResource, reconcileResult);
       reconciled.add(dependentResourceNode);
@@ -128,7 +126,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       boolean ready = isConditionMet(dependentResourceNode.getReadyPostcondition(),
           dependentResource);
       if (ready) {
-        log.debug("Setting already reconciled for: {}", dependentResourceNode);
+        log.debug("Setting already reconciled for: {} primaryID: {}",
+            dependentResourceNode, primaryID);
         markAsVisited(dependentResourceNode);
         handleDependentsReconcile(dependentResourceNode);
       } else {
@@ -171,7 +170,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   private synchronized void handleDependentDeleted(
       DependentResourceNode<?, P> dependentResourceNode) {
     dependentResourceNode.getDependsOn().forEach(dr -> {
-      log.debug("Handle deleted for: {} with dependent: {}", dr, dependentResourceNode);
+      log.debug("Handle deleted for: {} with dependent: {} primaryID: {}", dr,
+          dependentResourceNode, primaryID);
       handleDelete(dr);
     });
   }
@@ -180,7 +180,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       DependentResourceNode<?, P> dependentResourceNode) {
     var dependents = dependentResourceNode.getParents();
     dependents.forEach(d -> {
-      log.debug("Handle reconcile for dependent: {} of parent:{}", d, dependentResourceNode);
+      log.debug("Handle reconcile for dependent: {} of parent:{} primaryID: {}", d,
+          dependentResourceNode, primaryID);
       handleReconcile(d);
     });
   }

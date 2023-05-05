@@ -1,9 +1,13 @@
 package io.javaoperatorsdk.operator;
 
 import java.util.Arrays;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReviewSpecBuilder;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +18,7 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
 public class LeaderElectionManager {
@@ -30,45 +33,49 @@ public class LeaderElectionManager {
   private String identity;
   private CompletableFuture<?> leaderElectionFuture;
   private KubernetesClient client;
-  private String leaseName;
+  private final ConfigurationService configurationService;
   private String leaseNamespace;
 
-  public LeaderElectionManager(ControllerManager controllerManager) {
+  public LeaderElectionManager(KubernetesClient kubernetesClient,
+      ControllerManager controllerManager,
+      ConfigurationService configurationService) {
+    this.kubernetesClient = kubernetesClient;
     this.controllerManager = controllerManager;
-  }
-
-  public void init(LeaderElectionConfiguration config, KubernetesClient client) {
-    this.client = client;
-    this.identity = identity(config);
-    this.leaseName = config.getLeaseName();
-    leaseNamespace =
-        config.getLeaseNamespace().orElseGet(
-            () -> ConfigurationServiceProvider.instance().getClientConfiguration().getNamespace());
-    if (leaseNamespace == null) {
-      final var message =
-          "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
-      log.error(message);
-      throw new IllegalArgumentException(message);
-    }
-    final var lock = new LeaseLock(leaseNamespace, leaseName, identity);
-    // releaseOnCancel is not used in the underlying implementation
-    leaderElector =
-        new LeaderElectorBuilder(
-            client, ExecutorServiceManager.instance().executorService())
-            .withConfig(new LeaderElectionConfig(
-                lock,
-                config.getLeaseDuration(),
-                config.getRenewDeadline(),
-                config.getRetryPeriod(),
-                leaderCallbacks(),
-                true,
-                config.getLeaseName()))
-            .build();
+    this.configurationService = configurationService;
   }
 
   public boolean isLeaderElectionEnabled() {
-    return leaderElector != null;
+    return configurationService.getLeaderElectionConfiguration().isPresent();
   }
+
+  public void init(LeaderElectionConfiguration config) {
+    this.identity = identity(config);
+    leaseNamespace =
+            config.getLeaseNamespace().orElseGet(
+                    () -> configurationService.getClientConfiguration().getNamespace());
+    if (leaseNamespace == null) {
+      final var message =
+              "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
+      log.error(message);
+      throw new IllegalArgumentException(message);
+    }
+    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
+    // releaseOnCancel is not used in the underlying implementation
+    leaderElector = new LeaderElectorBuilder(
+            kubernetesClient, configurationService.getExecutorServiceManager().cachingExecutorService())
+            .withConfig(
+                    new LeaderElectionConfig(
+                            lock,
+                            config.getLeaseDuration(),
+                            config.getRenewDeadline(),
+                            config.getRetryPeriod(),
+                            leaderCallbacks(),
+                            true,
+                            config.getLeaseName()))
+            .build();
+  }
+
+
 
   private LeaderCallbacks leaderCallbacks() {
     return new LeaderCallbacks(
@@ -99,6 +106,7 @@ public class LeaderElectionManager {
 
   public void start() {
     if (isLeaderElectionEnabled()) {
+      init(configurationService.getLeaderElectionConfiguration().orElseThrow());
       checkLeaseAccess();
       leaderElectionFuture = leaderElector.start();
     }
@@ -117,13 +125,13 @@ public class LeaderElectionManager {
     var reviewResult = client.resource(review).create();
     log.debug("SelfSubjectRulesReview result: {}", reviewResult);
     var foundRule = reviewResult.getStatus().getResourceRules().stream()
-        .filter(rule -> rule.getApiGroups().contains("coordination.k8s.io")
-            && rule.getResources().contains("leases")
-            && (rule.getVerbs().containsAll(verbs)) || rule.getVerbs().contains("*"))
-        .findAny();
+            .filter(rule -> rule.getApiGroups().contains("coordination.k8s.io")
+                    && rule.getResources().contains("leases")
+                    && (rule.getVerbs().containsAll(verbs)) || rule.getVerbs().contains("*"))
+            .findAny();
     if (foundRule.isEmpty()) {
       throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
-          " in namespace: " + leaseNamespace);
+              " in namespace: " + leaseNamespace);
     }
   }
 }

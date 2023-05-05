@@ -1,7 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -10,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
@@ -76,6 +82,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
+  private Map<String, Function<R, List<String>>> indexerBuffer = new HashMap<>();
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
@@ -338,4 +345,22 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return (onDeleteFilter == null || onDeleteFilter.accept(resource, b)) &&
         (genericFilter == null || genericFilter.accept(resource));
   }
+
+
+  // Since this event source instance is created by the user, the ConfigurationService is actually
+  // injected after it is registered. Some of the subcomponents are initialized at that time here.
+  public void setConfigurationService(ConfigurationService configurationService) {
+    super.setConfigurationService(configurationService);
+
+    cache.addIndexers(indexerBuffer);
+    indexerBuffer = null;
+  }
+
+  public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
+    if (indexerBuffer == null) {
+      throw new OperatorException("Cannot add indexers after InformerEventSource started.");
+    }
+    indexerBuffer.putAll(indexers);
+  }
+
 }
