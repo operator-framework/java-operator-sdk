@@ -120,6 +120,7 @@ public class ExecutorServiceManager {
           shutdown(workflowExecutor, gracefulShutdownTimeout),
           shutdown(cachingExecutorService, gracefulShutdownTimeout)));
       parallelExec.shutdownNow();
+      started = false;
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
       Thread.currentThread().interrupt();
