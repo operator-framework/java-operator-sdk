@@ -57,13 +57,21 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  private int minimumMaxValueFor(Integer minValue) {
+    return minValue != null ? (minValue < 0 ? 0 : minValue) + 1 : 1;
+  }
+
   public ConfigurationServiceOverrider withMinConcurrentReconciliationThreads(int threadNumber) {
-    this.minConcurrentReconciliationThreads = threadNumber;
+    this.minConcurrentReconciliationThreads = Utils.ensureValid(threadNumber,
+        "minimum reconciliation threads", ExecutorServiceManager.MIN_THREAD_NUMBER,
+        original.minConcurrentReconciliationThreads());
     return this;
   }
 
   public ConfigurationServiceOverrider withMinConcurrentWorkflowExecutorThreads(int threadNumber) {
-    this.minConcurrentWorkflowExecutorThreads = threadNumber;
+    this.minConcurrentWorkflowExecutorThreads = Utils.ensureValid(threadNumber,
+        "minimum workflow execution threads", ExecutorServiceManager.MIN_THREAD_NUMBER,
+        original.minConcurrentWorkflowExecutorThreads());
     return this;
   }
 
@@ -150,14 +158,22 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public int concurrentReconciliationThreads() {
-        return concurrentReconciliationThreads != null ? concurrentReconciliationThreads
-            : original.concurrentReconciliationThreads();
+        return Utils.ensureValid(
+            concurrentReconciliationThreads != null ? concurrentReconciliationThreads
+                : original.concurrentReconciliationThreads(),
+            "maximum reconciliation threads",
+            minimumMaxValueFor(minConcurrentReconciliationThreads),
+            original.concurrentReconciliationThreads());
       }
 
       @Override
       public int concurrentWorkflowExecutorThreads() {
-        return concurrentWorkflowExecutorThreads != null ? concurrentWorkflowExecutorThreads
-            : original.concurrentWorkflowExecutorThreads();
+        return Utils.ensureValid(
+            concurrentWorkflowExecutorThreads != null ? concurrentWorkflowExecutorThreads
+                : original.concurrentWorkflowExecutorThreads(),
+            "maximum workflow execution threads",
+            minimumMaxValueFor(minConcurrentWorkflowExecutorThreads),
+            original.concurrentWorkflowExecutorThreads());
       }
 
       @Override
