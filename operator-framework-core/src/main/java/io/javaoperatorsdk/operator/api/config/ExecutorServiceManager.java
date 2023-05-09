@@ -8,6 +8,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -20,16 +22,24 @@ import org.slf4j.LoggerFactory;
 import io.javaoperatorsdk.operator.OperatorException;
 
 public class ExecutorServiceManager {
+
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
-  private final ExecutorService executor;
-  private final ExecutorService workflowExecutor;
-  private final ExecutorService cachingExecutorService;
+  public static final int MIN_THREAD_NUMBER = 0;
+  private ExecutorService executor;
+  private ExecutorService workflowExecutor;
+  private ExecutorService cachingExecutorService;
+  private boolean started;
 
   ExecutorServiceManager(ConfigurationService configurationService) {
-    this.cachingExecutorService = Executors.newCachedThreadPool();
-    this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
-    this.workflowExecutor =
-        new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
+    start(configurationService);
+  }
+
+  public static ExecutorService newThreadPoolExecutor(int minThreads, int maxThreads) {
+    minThreads = Utils.ensureValid(minThreads, "minimum number of threads", MIN_THREAD_NUMBER);
+    maxThreads = Utils.ensureValid(maxThreads, "maximum number of threads", minThreads + 1);
+
+    return new ThreadPoolExecutor(minThreads, maxThreads, 1, TimeUnit.MINUTES,
+        new LinkedBlockingDeque<>());
   }
 
   /**
@@ -92,6 +102,16 @@ public class ExecutorServiceManager {
     return cachingExecutorService;
   }
 
+  public void start(ConfigurationService configurationService) {
+    if (!started) {
+      this.cachingExecutorService = Executors.newCachedThreadPool();
+      this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
+      this.workflowExecutor =
+          new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
+      started = true;
+    }
+  }
+
   public void stop(Duration gracefulShutdownTimeout) {
     try {
       var parallelExec = Executors.newFixedThreadPool(3);
@@ -100,6 +120,7 @@ public class ExecutorServiceManager {
           shutdown(workflowExecutor, gracefulShutdownTimeout),
           shutdown(cachingExecutorService, gracefulShutdownTimeout)));
       parallelExec.shutdownNow();
+      started = false;
     } catch (InterruptedException e) {
       log.debug("Exception closing executor: {}", e.getLocalizedMessage());
       Thread.currentThread().interrupt();

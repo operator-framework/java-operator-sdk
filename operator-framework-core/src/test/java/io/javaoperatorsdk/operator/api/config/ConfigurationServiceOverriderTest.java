@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.junit.jupiter.api.Test;
@@ -13,6 +12,7 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class ConfigurationServiceOverriderTest {
@@ -43,28 +43,8 @@ class ConfigurationServiceOverriderTest {
       }
 
       @Override
-      public int concurrentReconciliationThreads() {
-        return -1;
-      }
-
-      @Override
-      public int getTerminationTimeoutSeconds() {
-        return -1;
-      }
-
-      @Override
       public Metrics getMetrics() {
         return METRICS;
-      }
-
-      @Override
-      public ExecutorService getExecutorService() {
-        return null;
-      }
-
-      @Override
-      public boolean closeClientOnStop() {
-        return true;
       }
 
       @Override
@@ -119,6 +99,26 @@ class ConfigurationServiceOverriderTest {
         overridden.getLeaderElectionConfiguration());
     assertNotEquals(config.getInformerStoppedHandler(),
         overridden.getLeaderElectionConfiguration());
+  }
+
+  @Test
+  void shouldReplaceInvalidValues() {
+    final var original = new BaseConfigurationService();
+
+    final var service = ConfigurationService.newOverriddenConfigurationService(original,
+        o -> o
+            .withConcurrentReconciliationThreads(0)
+            .withMinConcurrentReconciliationThreads(-1)
+            .withConcurrentWorkflowExecutorThreads(2)
+            .withMinConcurrentWorkflowExecutorThreads(3));
+
+    assertEquals(original.minConcurrentReconciliationThreads(),
+        service.minConcurrentReconciliationThreads());
+    assertEquals(original.concurrentReconciliationThreads(),
+        service.concurrentReconciliationThreads());
+    assertEquals(3, service.minConcurrentWorkflowExecutorThreads());
+    assertEquals(original.concurrentWorkflowExecutorThreads(),
+        service.concurrentWorkflowExecutorThreads());
   }
 
 }

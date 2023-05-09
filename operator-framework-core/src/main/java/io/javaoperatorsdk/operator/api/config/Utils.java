@@ -72,6 +72,24 @@ public class Utils {
         builtTime);
   }
 
+  public static int ensureValid(int value, String description, int minValue) {
+    return ensureValid(value, description, minValue, minValue);
+  }
+
+  public static int ensureValid(int value, String description, int minValue, int defaultValue) {
+    if (value < minValue) {
+      if (defaultValue < minValue) {
+        throw new IllegalArgumentException(
+            "Default value for " + description + " must be greater than " + minValue);
+      }
+      log.warn("Requested " + description + " should be greater than " + minValue + ". Requested: "
+          + value + ", using " + defaultValue + (defaultValue == minValue ? "" : " (default)") +
+          " instead");
+      value = defaultValue;
+    }
+    return value;
+  }
+
   @SuppressWarnings("unused")
   // this is used in the Quarkus extension
   public static boolean isValidateCustomResourcesEnvVarSet() {

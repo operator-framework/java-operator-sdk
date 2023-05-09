@@ -134,9 +134,13 @@ public class Operator implements LifecycleAware {
           version.getSdkVersion(),
           version.getCommit(),
           version.getBuiltTime());
-
       final var clientVersion = Version.clientVersion();
       log.info("Client version: {}", clientVersion);
+
+      // need to create new thread pools if we're restarting because they've been shut down when we
+      // previously stopped
+      configurationService.getExecutorServiceManager().start(configurationService);
+
       // first start the controller manager before leader election,
       // the leader election would start subsequently the processor if on
       controllerManager.start(!leaderElectionManager.isLeaderElectionEnabled());

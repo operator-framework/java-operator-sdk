@@ -4,9 +4,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -23,6 +20,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -164,15 +163,13 @@ public interface ConfigurationService {
   }
 
   default ExecutorService getExecutorService() {
-    return new ThreadPoolExecutor(minConcurrentReconciliationThreads(),
-        concurrentReconciliationThreads(),
-        1, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
+    return newThreadPoolExecutor(minConcurrentReconciliationThreads(),
+        concurrentReconciliationThreads());
   }
 
   default ExecutorService getWorkflowExecutorService() {
-    return new ThreadPoolExecutor(minConcurrentWorkflowExecutorThreads(),
-        concurrentWorkflowExecutorThreads(),
-        1, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
+    return newThreadPoolExecutor(minConcurrentWorkflowExecutorThreads(),
+        concurrentWorkflowExecutorThreads());
   }
 
   default boolean closeClientOnStop() {
