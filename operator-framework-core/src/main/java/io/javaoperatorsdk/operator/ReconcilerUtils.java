@@ -24,6 +24,10 @@ public class ReconcilerUtils {
 
   private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
   protected static final String MISSING_GROUP_SUFFIX = ".javaoperatorsdk.io";
+  private static final String GET_SPEC = "getSpec";
+  private static final String SET_SPEC = "setSpec";
+  private static final Pattern API_URI_PATTERN =
+      Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*"); // NOSONAR: input is controlled
 
   // prevent instantiation of util class
   private ReconcilerUtils() {}
@@ -94,23 +98,53 @@ public class ReconcilerUtils {
 
   // will be replaced with: https://github.com/fabric8io/kubernetes-client/issues/3816
   public static Object getSpec(HasMetadata resource) {
+    // optimize CustomResource case
+    if (resource instanceof CustomResource) {
+      CustomResource cr = (CustomResource) resource;
+      return cr.getSpec();
+    }
+
     try {
-      Method getSpecMethod = resource.getClass().getMethod("getSpec");
+      Method getSpecMethod = resource.getClass().getMethod(GET_SPEC);
       return getSpecMethod.invoke(resource);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-      throw new IllegalStateException("No spec found on resource", e);
+      throw noSpecException(resource, e);
     }
   }
 
+  @SuppressWarnings("unchecked")
   public static Object setSpec(HasMetadata resource, Object spec) {
+    // optimize CustomResource case
+    if (resource instanceof CustomResource) {
+      CustomResource cr = (CustomResource) resource;
+      cr.setSpec(spec);
+      return null;
+    }
+
     try {
       Class<? extends HasMetadata> resourceClass = resource.getClass();
-      Method setSpecMethod =
-          resource.getClass().getMethod("setSpec", getSpecClass(resourceClass, spec));
+
+      // if given spec is null, find the method just using its name
+      Method setSpecMethod;
+      if (spec != null) {
+        setSpecMethod = resourceClass.getMethod(SET_SPEC, spec.getClass());
+      } else {
+        setSpecMethod = Arrays.stream(resourceClass.getMethods())
+            .filter(method -> SET_SPEC.equals(method.getName()))
+            .findFirst()
+            .orElseThrow(() -> noSpecException(resource, null));
+      }
+
       return setSpecMethod.invoke(resource, spec);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-      throw new IllegalStateException("No spec found on resource", e);
+      throw noSpecException(resource, e);
     }
+  }
+
+  private static IllegalStateException noSpecException(HasMetadata resource,
+      ReflectiveOperationException e) {
+    return new IllegalStateException("No spec found on resource " + resource.getClass().getName(),
+        e);
   }
 
   public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {
@@ -149,9 +183,7 @@ public class ReconcilerUtils {
     } else {
       // extract matching information from URI in the message if available
       final var message = exception.getMessage();
-      final var regex = Pattern
-          .compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*") // NOSONAR: input is controlled
-          .matcher(message);
+      final var regex = API_URI_PATTERN.matcher(message);
       if (regex.matches()) {
         var group = regex.group(3);
         if (group.endsWith(".")) {
@@ -168,14 +200,4 @@ public class ReconcilerUtils {
     }
     return false;
   }
-
-  // CustomResouce has a parameterized parameter type
-  private static Class getSpecClass(Class<? extends HasMetadata> resourceClass, Object spec) {
-    if (CustomResource.class.isAssignableFrom(resourceClass)) {
-      return Object.class;
-    } else {
-      return spec.getClass();
-    }
-  }
-
 }

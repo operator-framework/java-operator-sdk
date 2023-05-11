@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSpec;
@@ -83,6 +84,16 @@ class ReconcilerUtilsTest {
 
     DeploymentSpec spec = (DeploymentSpec) ReconcilerUtils.getSpec(deployment);
     assertThat(spec.getReplicas()).isEqualTo(5);
+  }
+
+  @Test
+  void properlyHandlesNullSpec() {
+    Namespace ns = new Namespace();
+
+    final var spec = ReconcilerUtils.getSpec(ns);
+    assertThat(spec).isNull();
+
+    ReconcilerUtils.setSpec(ns, null);
   }
 
   @Test
