@@ -27,7 +27,7 @@ public class ReconcilerUtils {
   private static final String GET_SPEC = "getSpec";
   private static final String SET_SPEC = "setSpec";
   private static final Pattern API_URI_PATTERN =
-      Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*");
+      Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*"); // NOSONAR: input is controlled
 
   // prevent instantiation of util class
   private ReconcilerUtils() {}
@@ -183,8 +183,7 @@ public class ReconcilerUtils {
     } else {
       // extract matching information from URI in the message if available
       final var message = exception.getMessage();
-      final var regex = API_URI_PATTERN // NOSONAR: input is controlled
-          .matcher(message);
+      final var regex = API_URI_PATTERN.matcher(message);
       if (regex.matches()) {
         var group = regex.group(3);
         if (group.endsWith(".")) {
