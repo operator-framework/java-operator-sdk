@@ -9,10 +9,13 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceSpec;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -72,6 +75,19 @@ class GenericResourceUpdatePreProcessorTest {
     assertThat(result.getMetadata().getLabels().get("additionalActualKey")).isEqualTo("value");
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("1234");
     assertThat(result.getSpec()).isNull();
+  }
+
+  @Test
+  void checkSecret() {
+    var processor = GenericResourceUpdatePreProcessor.processorFor(Secret.class);
+    var desired =
+        new SecretBuilder().withImmutable().withType("Opaque").addToData("foo", "bar").build();
+    var actual = new SecretBuilder().build();
+
+    final var secret = processor.replaceSpecOnActual(actual, desired, context);
+    assertThat(secret.getImmutable()).isTrue();
+    assertThat(secret.getType()).isEqualTo("Opaque");
+    assertThat(secret.getData()).containsOnlyKeys("foo");
   }
 
   Deployment createDeployment() {
