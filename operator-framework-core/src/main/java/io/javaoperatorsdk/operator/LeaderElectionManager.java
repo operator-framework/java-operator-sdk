@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.authorization.v1.ResourceAttributesBuilder;
-import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectAccessReview;
-import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectAccessReviewSpecBuilder;
+import io.fabric8.kubernetes.api.model.authorization.v1.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
@@ -112,30 +111,18 @@ public class LeaderElectionManager {
   }
 
   private void checkLeaseAccess() {
-    var verbs = new String[] {"create", "update", "get"};
-    for (String verb : verbs) {
-      var allowed = checkLeaseAccess(verb);
-      if (!allowed) {
-        throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
-      }
+    var verbs = Arrays.asList("create", "update", "get");
+    SelfSubjectRulesReview review = new SelfSubjectRulesReview();
+    review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
+    var reviewResult = client.resource(review).create();
+    var foundRule = reviewResult.getStatus().getResourceRules().stream()
+        .filter(rule -> rule.getApiGroups().contains("coordination.k8s.io")
+            && rule.getResources().contains("leases")
+            && rule.getVerbs().containsAll(verbs))
+        .findAny();
+    if (foundRule.isEmpty()) {
+      throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
+          " in namespace: " + leaseNamespace);
     }
-  }
-
-  private boolean checkLeaseAccess(String verb) {
-    var res = client.resource(selfSubjectReview(verb, leaseName, leaseNamespace)).create();
-    return res.getStatus().getAllowed();
-  }
-
-  private SelfSubjectAccessReview selfSubjectReview(String verb, String name, String namespace) {
-    var res = new SelfSubjectAccessReview();
-    res.setSpec(new SelfSubjectAccessReviewSpecBuilder()
-        .withResourceAttributes(new ResourceAttributesBuilder()
-            .withGroup("coordination.k8s.io")
-            .withNamespace(namespace)
-            .withName(name)
-            .withVerb(verb)
-            .build())
-        .build());
-    return res;
   }
 }

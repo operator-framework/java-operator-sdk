@@ -44,7 +44,7 @@ class LeaderElectionPermissionIT {
         operator::start);
 
     assertThat(exception.getCause().getMessage())
-        .isEqualTo(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
+        .contains(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
   }
 
 
