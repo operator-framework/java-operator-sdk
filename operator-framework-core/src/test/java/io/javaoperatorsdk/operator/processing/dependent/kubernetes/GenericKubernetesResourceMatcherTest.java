@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -75,6 +77,20 @@ class GenericKubernetesResourceMatcherTest {
         .isFalse();
   }
 
+  @Test
+  void checkServiceAccount() {
+    final var serviceAccountDR = new ServiceAccountDR();
+
+    final var desired = serviceAccountDR.desired(null, context);
+    var actual = new ServiceAccountBuilder(desired)
+        .addNewImagePullSecret("imagePullSecret3")
+        .build();
+
+    final var matcher = GenericKubernetesResourceMatcher.matcherFor(ServiceAccount.class,
+        serviceAccountDR);
+    assertThat(matcher.match(actual, null, context).matched()).isFalse();
+  }
+
   Deployment createDeployment() {
     return ReconcilerUtils.loadYaml(
         Deployment.class, GenericKubernetesResourceMatcherTest.class, "nginx-deployment.yaml");
@@ -86,6 +102,24 @@ class GenericKubernetesResourceMatcherTest {
         .addToLabels("case", caseName)
         .endMetadata()
         .build();
+  }
+
+  private static class ServiceAccountDR
+      extends KubernetesDependentResource<ServiceAccount, HasMetadata> {
+
+    public ServiceAccountDR() {
+      super(ServiceAccount.class);
+    }
+
+    @Override
+    protected ServiceAccount desired(HasMetadata primary, Context<HasMetadata> context) {
+      return new ServiceAccountBuilder()
+          .withNewMetadata().withName("foo").endMetadata()
+          .withAutomountServiceAccountToken()
+          .addNewImagePullSecret("imagePullSecret1")
+          .addNewImagePullSecret("imagePullSecret2")
+          .build();
+    }
   }
 
   private class TestDependentResource extends KubernetesDependentResource<Deployment, HasMetadata> {

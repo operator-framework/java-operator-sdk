@@ -2,14 +2,10 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Objects;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.zjsonpatch.JsonDiff;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
     implements Matcher<R, P> {
@@ -61,6 +57,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @return results of matching
    * @param <R> resource
    */
+  @SuppressWarnings("unchecked")
   public static <R extends HasMetadata> Result<R> match(R desired, R actualResource,
       boolean considerMetadata, boolean equality) {
     if (considerMetadata) {
@@ -74,36 +71,10 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       }
     }
 
-    if (desired instanceof ConfigMap) {
-      return Result.computed(
-          ResourceComparators.compareConfigMapData((ConfigMap) desired, (ConfigMap) actualResource),
-          desired);
-    } else if (desired instanceof Secret) {
-      return Result.computed(
-          ResourceComparators.compareSecretData((Secret) desired, (Secret) actualResource),
-          desired);
-    } else {
-      final var objectMapper = ConfigurationServiceProvider.instance().getObjectMapper();
-
-      // reflection will be replaced by this:
-      // https://github.com/fabric8io/kubernetes-client/issues/3816
-      var desiredSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(desired));
-      var actualSpecNode = objectMapper.valueToTree(ReconcilerUtils.getSpec(actualResource));
-      var diffJsonPatch = JsonDiff.asJson(desiredSpecNode, actualSpecNode);
-      // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
-      // On contrary (if equality is false), "add" is allowed for cases when for some
-      // resources Kubernetes fills-in values into spec.
-      if (equality && diffJsonPatch.size() > 0) {
-        return Result.computed(false, desired);
-      }
-      for (int i = 0; i < diffJsonPatch.size(); i++) {
-        String operation = diffJsonPatch.get(i).get("op").asText();
-        if (!operation.equals("add")) {
-          return Result.computed(false, desired);
-        }
-      }
-      return Result.computed(true, desired);
-    }
+    final ResourceUpdatePreProcessor<R> processor =
+        GenericResourceUpdatePreProcessor.processorFor((Class<R>) desired.getClass());
+    final var matched = processor.matches(actualResource, desired, equality);
+    return Result.computed(matched, desired);
   }
 
   /**

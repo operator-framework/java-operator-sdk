@@ -10,4 +10,9 @@ public class ClusterRoleBindingResourceUpdatePreProcessor
     actual.setRoleRef(desired.getRoleRef());
     actual.setSubjects(desired.getSubjects());
   }
+
+  @Override
+  public boolean matches(ClusterRoleBinding actual, ClusterRoleBinding desired, boolean equality) {
+    return super.matches(actual, desired, equality);
+  }
 }
