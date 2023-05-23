@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ class LeaderElectionE2E {
   @ParameterizedTest
   @ValueSource(strings = {"namespace-inferred-", ""})
   // not for local mode by design
-  // @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
+   @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
   void otherInstancesTakesOverWhenSteppingDown(String yamlFilePrefix) {
     log.info("Applying custom resource");
     applyCustomResource();
