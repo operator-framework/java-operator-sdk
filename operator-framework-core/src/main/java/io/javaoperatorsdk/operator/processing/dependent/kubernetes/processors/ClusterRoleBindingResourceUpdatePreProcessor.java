@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
 
+import java.util.Objects;
+
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 
 public class ClusterRoleBindingResourceUpdatePreProcessor
@@ -13,6 +15,7 @@ public class ClusterRoleBindingResourceUpdatePreProcessor
 
   @Override
   public boolean matches(ClusterRoleBinding actual, ClusterRoleBinding desired, boolean equality) {
-    return super.matches(actual, desired, equality);
+    return Objects.equals(actual.getRoleRef(), desired.getRoleRef()) &&
+        Objects.equals(actual.getSubjects(), desired.getSubjects());
   }
 }
