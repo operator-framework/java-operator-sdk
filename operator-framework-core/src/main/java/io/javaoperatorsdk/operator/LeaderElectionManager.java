@@ -115,10 +115,11 @@ public class LeaderElectionManager {
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
     var reviewResult = client.resource(review).create();
+    log.debug("SelfSubjectRulesReview result: {}", reviewResult);
     var foundRule = reviewResult.getStatus().getResourceRules().stream()
         .filter(rule -> rule.getApiGroups().contains("coordination.k8s.io")
             && rule.getResources().contains("leases")
-            && rule.getVerbs().containsAll(verbs))
+            && (rule.getVerbs().containsAll(verbs)) || rule.getVerbs().contains("*"))
         .findAny();
     if (foundRule.isEmpty()) {
       throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
