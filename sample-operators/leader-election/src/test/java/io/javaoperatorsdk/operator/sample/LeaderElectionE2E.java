@@ -52,7 +52,7 @@ class LeaderElectionE2E {
   @ParameterizedTest
   @ValueSource(strings = {"namespace-inferred-", ""})
   // not for local mode by design
-   @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
+  @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
   void otherInstancesTakesOverWhenSteppingDown(String yamlFilePrefix) {
     log.info("Applying custom resource");
     applyCustomResource();
