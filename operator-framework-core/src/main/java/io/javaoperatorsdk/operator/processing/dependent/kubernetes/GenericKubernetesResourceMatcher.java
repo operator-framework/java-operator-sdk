@@ -18,7 +18,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <R extends HasMetadata, P extends HasMetadata> Matcher<R, P> matcherFor(
-      Class<R> resourceType, KubernetesDependentResource<R, P> dependentResource) {
+      KubernetesDependentResource<R, P> dependentResource) {
     return new GenericKubernetesResourceMatcher(dependentResource);
   }
 

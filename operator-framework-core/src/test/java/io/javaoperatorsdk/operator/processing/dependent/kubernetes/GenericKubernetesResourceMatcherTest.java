@@ -34,8 +34,7 @@ class GenericKubernetesResourceMatcherTest {
     var actual = createDeployment();
     final var desired = createDeployment();
     final var dependentResource = new TestDependentResource(desired);
-    final var matcher =
-        GenericKubernetesResourceMatcher.matcherFor(Deployment.class, dependentResource);
+    final var matcher = GenericKubernetesResourceMatcher.matcherFor(dependentResource);
     assertThat(matcher.match(actual, null, context).matched()).isTrue();
     assertThat(matcher.match(actual, null, context).computedDesired().isPresent()).isTrue();
     assertThat(matcher.match(actual, null, context).computedDesired().get()).isEqualTo(desired);
@@ -86,8 +85,7 @@ class GenericKubernetesResourceMatcherTest {
         .addNewImagePullSecret("imagePullSecret3")
         .build();
 
-    final var matcher = GenericKubernetesResourceMatcher.matcherFor(ServiceAccount.class,
-        serviceAccountDR);
+    final var matcher = GenericKubernetesResourceMatcher.matcherFor(serviceAccountDR);
     assertThat(matcher.match(actual, null, context).matched()).isFalse();
   }
 
