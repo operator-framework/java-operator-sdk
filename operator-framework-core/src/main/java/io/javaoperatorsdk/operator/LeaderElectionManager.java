@@ -6,8 +6,10 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.authorization.v1.ResourceAttributesBuilder;
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectAccessReview;
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectAccessReviewSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
@@ -28,8 +30,9 @@ public class LeaderElectionManager {
   private final ControllerManager controllerManager;
   private String identity;
   private CompletableFuture<?> leaderElectionFuture;
-  private LeaderElectionConfig leaderElectionConfig;
   private KubernetesClient client;
+  private String leaseName;
+  private String leaseNamespace;
 
   public LeaderElectionManager(ControllerManager controllerManager) {
     this.controllerManager = controllerManager;
@@ -38,7 +41,8 @@ public class LeaderElectionManager {
   public void init(LeaderElectionConfiguration config, KubernetesClient client) {
     this.client = client;
     this.identity = identity(config);
-    final var leaseNamespace =
+    this.leaseName = config.getLeaseName();
+    leaseNamespace =
         config.getLeaseNamespace().orElseGet(
             () -> ConfigurationServiceProvider.instance().getClientConfiguration().getNamespace());
     if (leaseNamespace == null) {
@@ -47,21 +51,19 @@ public class LeaderElectionManager {
       log.error(message);
       throw new IllegalArgumentException(message);
     }
-    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
+    final var lock = new LeaseLock(leaseNamespace, leaseName, identity);
     // releaseOnCancel is not used in the underlying implementation
-    leaderElectionConfig = new LeaderElectionConfig(
-        lock,
-        config.getLeaseDuration(),
-        config.getRenewDeadline(),
-        config.getRetryPeriod(),
-        leaderCallbacks(),
-        true,
-        config.getLeaseName());
-
     leaderElector =
         new LeaderElectorBuilder(
             client, ExecutorServiceManager.instance().executorService())
-            .withConfig(leaderElectionConfig)
+            .withConfig(new LeaderElectionConfig(
+                lock,
+                config.getLeaseDuration(),
+                config.getRenewDeadline(),
+                config.getRetryPeriod(),
+                leaderCallbacks(),
+                true,
+                config.getLeaseName()))
             .build();
   }
 
@@ -110,14 +112,30 @@ public class LeaderElectionManager {
   }
 
   private void checkLeaseAccess() {
-    try {
-      leaderElectionConfig.getLock().get(client);
-    } catch (KubernetesClientException e) {
-      if (e.getCode() == 403) {
-        throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE, e);
-      } else {
-        throw e;
+    var verbs = new String[] {"create", "update", "get"};
+    for (String verb : verbs) {
+      var allowed = checkLeaseAccess(verb);
+      if (!allowed) {
+        throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
       }
     }
+  }
+
+  private boolean checkLeaseAccess(String verb) {
+    var res = client.resource(selfSubjectReview(verb, leaseName, leaseNamespace)).create();
+    return res.getStatus().getAllowed();
+  }
+
+  private SelfSubjectAccessReview selfSubjectReview(String verb, String name, String namespace) {
+    var res = new SelfSubjectAccessReview();
+    res.setSpec(new SelfSubjectAccessReviewSpecBuilder()
+        .withResourceAttributes(new ResourceAttributesBuilder()
+            .withGroup("coordination.k8s.io")
+            .withNamespace(namespace)
+            .withName(name)
+            .withVerb(verb)
+            .build())
+        .build());
+    return res;
   }
 }

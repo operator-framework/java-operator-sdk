@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.authorization.v1.*;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -68,5 +69,4 @@ class LeaderElectionPermissionIT {
         .loadYaml(Role.class, this.getClass(), "leader-elector-stop-role-noaccess.yaml");
     adminClient.resource(role).createOrReplace();
   }
-
 }
