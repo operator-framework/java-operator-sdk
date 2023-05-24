@@ -50,7 +50,6 @@ public class LeaderElectionManager {
       log.error(message);
       throw new IllegalArgumentException(message);
     }
-    checkLeaseAccess();
     final var lock = new LeaseLock(leaseNamespace, leaseName, identity);
     // releaseOnCancel is not used in the underlying implementation
     leaderElector =
@@ -100,6 +99,7 @@ public class LeaderElectionManager {
 
   public void start() {
     if (isLeaderElectionEnabled()) {
+      checkLeaseAccess();
       leaderElectionFuture = leaderElector.start();
     }
   }

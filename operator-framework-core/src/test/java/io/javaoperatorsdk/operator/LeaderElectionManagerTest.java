@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
@@ -28,7 +27,7 @@ class LeaderElectionManagerTest {
   @BeforeEach
   void setUp() {
     ControllerManager controllerManager = mock(ControllerManager.class);
-    kubernetesClient = MockKubernetesClient.client(ConfigMap.class);
+    kubernetesClient = mock(KubernetesClient.class);
     leaderElectionManager = new LeaderElectionManager(controllerManager);
   }
 

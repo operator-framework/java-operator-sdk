@@ -33,14 +33,18 @@ class LeaderElectionPermissionIT {
         .withImpersonateUsername("leader-elector-stop-noaccess")
         .build()).build();
 
-    OperatorException exception = assertThrows(
-        OperatorException.class, () -> new Operator(client, o -> {
-          o.withLeaderElectionConfiguration(
-              new LeaderElectionConfiguration("lease1", "default"));
-          o.withStopOnInformerErrorDuringStartup(false);
-        }));
+    var operator = new Operator(client, o -> {
+      o.withLeaderElectionConfiguration(
+          new LeaderElectionConfiguration("lease1", "default"));
+      o.withStopOnInformerErrorDuringStartup(false);
+    });
+    operator.register(new TestReconciler(), o -> o.settingNamespace("default"));
 
-    assertThat(exception.getMessage())
+    OperatorException exception = assertThrows(
+        OperatorException.class,
+        operator::start);
+
+    assertThat(exception.getCause().getMessage())
         .contains(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
     ConfigurationServiceProvider.reset();
   }

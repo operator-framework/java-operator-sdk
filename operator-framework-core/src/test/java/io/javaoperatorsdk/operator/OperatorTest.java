@@ -43,7 +43,7 @@ class OperatorTest {
 
   @Test
   @DisplayName("should throw `OperationException` when Configuration is null")
-  void shouldThrowOperatorExceptionWhenConfigurationIsNull() {
+  public void shouldThrowOperatorExceptionWhenConfigurationIsNull() {
     // use a ConfigurationService that doesn't automatically create configurations
     ConfigurationServiceProvider.reset();
     ConfigurationServiceProvider.set(new AbstractConfigurationService(null));
