@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.authorization.v1.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
@@ -20,18 +22,26 @@ public class LeaderElectionManager {
 
   private static final Logger log = LoggerFactory.getLogger(LeaderElectionManager.class);
 
+  public static final String NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE =
+      "No permission to lease resource.";
+
   private LeaderElector leaderElector = null;
   private final ControllerManager controllerManager;
   private String identity;
   private CompletableFuture<?> leaderElectionFuture;
+  private KubernetesClient client;
+  private String leaseName;
+  private String leaseNamespace;
 
   public LeaderElectionManager(ControllerManager controllerManager) {
     this.controllerManager = controllerManager;
   }
 
   public void init(LeaderElectionConfiguration config, KubernetesClient client) {
+    this.client = client;
     this.identity = identity(config);
-    final var leaseNamespace =
+    this.leaseName = config.getLeaseName();
+    leaseNamespace =
         config.getLeaseNamespace().orElseGet(
             () -> ConfigurationServiceProvider.instance().getClientConfiguration().getNamespace());
     if (leaseNamespace == null) {
@@ -40,20 +50,19 @@ public class LeaderElectionManager {
       log.error(message);
       throw new IllegalArgumentException(message);
     }
-    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
+    final var lock = new LeaseLock(leaseNamespace, leaseName, identity);
     // releaseOnCancel is not used in the underlying implementation
     leaderElector =
         new LeaderElectorBuilder(
             client, ExecutorServiceManager.instance().executorService())
-            .withConfig(
-                new LeaderElectionConfig(
-                    lock,
-                    config.getLeaseDuration(),
-                    config.getRenewDeadline(),
-                    config.getRetryPeriod(),
-                    leaderCallbacks(),
-                    true,
-                    config.getLeaseName()))
+            .withConfig(new LeaderElectionConfig(
+                lock,
+                config.getLeaseDuration(),
+                config.getRenewDeadline(),
+                config.getRetryPeriod(),
+                leaderCallbacks(),
+                true,
+                config.getLeaseName()))
             .build();
   }
 
@@ -90,6 +99,7 @@ public class LeaderElectionManager {
 
   public void start() {
     if (isLeaderElectionEnabled()) {
+      checkLeaseAccess();
       leaderElectionFuture = leaderElector.start();
     }
   }
@@ -97,6 +107,23 @@ public class LeaderElectionManager {
   public void stop() {
     if (leaderElectionFuture != null) {
       leaderElectionFuture.cancel(false);
+    }
+  }
+
+  private void checkLeaseAccess() {
+    var verbs = Arrays.asList("create", "update", "get");
+    SelfSubjectRulesReview review = new SelfSubjectRulesReview();
+    review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
+    var reviewResult = client.resource(review).create();
+    log.debug("SelfSubjectRulesReview result: {}", reviewResult);
+    var foundRule = reviewResult.getStatus().getResourceRules().stream()
+        .filter(rule -> rule.getApiGroups().contains("coordination.k8s.io")
+            && rule.getResources().contains("leases")
+            && (rule.getVerbs().containsAll(verbs)) || rule.getVerbs().contains("*"))
+        .findAny();
+    if (foundRule.isEmpty()) {
+      throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
+          " in namespace: " + leaseNamespace);
     }
   }
 }
