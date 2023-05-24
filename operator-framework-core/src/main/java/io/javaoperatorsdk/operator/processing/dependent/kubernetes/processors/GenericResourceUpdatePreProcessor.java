@@ -2,14 +2,13 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
 
 import java.util.Map;
 
-import javax.management.relation.Role;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
