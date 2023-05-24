@@ -50,7 +50,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
     matcher = this instanceof Matcher ? (Matcher<R, P>) this
-        : GenericKubernetesResourceMatcher.matcherFor(resourceType, this);
+        : GenericKubernetesResourceMatcher.matcherFor(this);
 
     processor = this instanceof ResourceUpdatePreProcessor
         ? (ResourceUpdatePreProcessor<R>) this
