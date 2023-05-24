@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdatePreProcessor;
 
@@ -40,7 +39,8 @@ public class GenericResourceUpdatePreProcessor<R extends HasMetadata> implements
   }
 
   public R replaceSpecOnActual(R actual, R desired, Context<?> context) {
-    var clonedActual = ConfigurationServiceProvider.instance().getResourceCloner().clone(actual);
+    var clonedActual = context.getControllerConfiguration().getConfigurationService()
+        .getResourceCloner().clone(actual);
     updateClonedActual(clonedActual, desired);
     return clonedActual;
   }
