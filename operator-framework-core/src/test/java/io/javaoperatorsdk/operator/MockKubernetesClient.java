@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.authorization.v1.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.*;
@@ -70,6 +71,25 @@ public class MockKubernetesClient {
     when(v1.customResourceDefinitions()).thenReturn(operation);
     when(operation.withName(any())).thenReturn(mock(Resource.class));
 
+    var mockSelfSubjectReviewHandler = mock(NamespaceableResource.class);
+    when(mockSelfSubjectReviewHandler.create())
+        .thenReturn(validSelfSubjectRulesReviewForLeaderElection());
+    when(client.resource(any(SelfSubjectRulesReview.class)))
+        .thenReturn(mockSelfSubjectReviewHandler);
+
     return client;
   }
+
+  private static SelfSubjectRulesReview validSelfSubjectRulesReviewForLeaderElection() {
+    SelfSubjectRulesReview res = new SelfSubjectRulesReview();
+    res.setStatus(new SubjectRulesReviewStatusBuilder()
+        .withResourceRules(new ResourceRuleBuilder()
+            .withApiGroups("coordination.k8s.io")
+            .withResources("leases")
+            .withVerbs("*")
+            .build())
+        .build());
+    return res;
+  }
+
 }
