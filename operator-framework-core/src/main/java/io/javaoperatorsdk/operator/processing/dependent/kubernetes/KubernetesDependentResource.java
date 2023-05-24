@@ -22,7 +22,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -41,7 +40,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
-  private final Matcher<R, P> matcher;
   private final ResourceUpdatePreProcessor<R> processor;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
@@ -49,8 +47,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
-    matcher = this instanceof Matcher ? (Matcher<R, P>) this
-        : GenericKubernetesResourceMatcher.matcherFor(this);
 
     processor = this instanceof ResourceUpdatePreProcessor
         ? (ResourceUpdatePreProcessor<R>) this
@@ -141,7 +137,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    return matcher.match(actualResource, primary, context);
+    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
   }
 
   @SuppressWarnings("unused")
