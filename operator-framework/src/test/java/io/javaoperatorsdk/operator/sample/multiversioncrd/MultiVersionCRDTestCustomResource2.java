@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version(value = "v2", storage = false)
 @Kind("MultiVersionCRDTestCustomResource")
-@ShortNames("mv2")
+@ShortNames("mvc")
 public class MultiVersionCRDTestCustomResource2
     extends
     CustomResource<MultiVersionCRDTestCustomResourceSpec2, MultiVersionCRDTestCustomResourceStatus2>
