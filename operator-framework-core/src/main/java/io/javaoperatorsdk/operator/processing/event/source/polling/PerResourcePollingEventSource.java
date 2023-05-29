@@ -154,7 +154,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
    * @param executorService custom executor service
    */
 
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public PerResourcePollingEventSource(
       ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
