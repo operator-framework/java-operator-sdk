@@ -52,6 +52,15 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         CacheKeyMapper.singleResourceCacheKeyMapper());
   }
 
+  /**
+   * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
+   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *
+   * @param resourceFetcher fetches resource related to a primary resource
+   * @param resourceCache cache of the primary resource
+   * @param period default polling period
+   * @param resourceClass class of the target resource
+   */
   @Deprecated(forRemoval = true)
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
@@ -68,6 +77,17 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         null, resourceClass, cacheKeyMapper);
   }
 
+  /**
+   * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
+   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *
+   * @param resourceFetcher fetches resource related to a primary resource
+   * @param resourceCache cache of the primary resource
+   * @param period default polling period
+   * @param resourceClass class of the target resource
+   * @param cacheKeyMapper use to distinguish resource in case more resources are handled for a
+   *        single primary resource
+   */
   @Deprecated(forRemoval = true)
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass,
@@ -86,6 +106,19 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         new ScheduledThreadPoolExecutor(DEFAULT_EXECUTOR_THREAD_NUMBER));
   }
 
+  /**
+   * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
+   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *
+   * @param resourceFetcher fetches resource related to a primary resource
+   * @param resourceCache cache of the primary resource
+   * @param period default polling period
+   * @param resourceClass class of the target resource
+   * @param cacheKeyMapper use to distinguish resource in case more resources are handled for a
+   *        single primary resource
+   * @param registerPredicate used to determine if the related resource for a custom resource should
+   *        be polled or not.
+   */
   @Deprecated(forRemoval = true)
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
@@ -105,6 +138,21 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         registerPredicate,
         resourceClass, cacheKeyMapper, executorService);
   }
+
+  /**
+   * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
+   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *
+   * @param resourceFetcher fetches resource related to a primary resource
+   * @param resourceCache cache of the primary resource
+   * @param period default polling period
+   * @param resourceClass class of the target resource
+   * @param cacheKeyMapper use to distinguish resource in case more resources are handled for a
+   *        single primary resource
+   * @param registerPredicate used to determine if the related resource for a custom resource should
+   *        be polled or not.
+   * @param executorService custom executor service
+   */
 
   @Deprecated
   public PerResourcePollingEventSource(
