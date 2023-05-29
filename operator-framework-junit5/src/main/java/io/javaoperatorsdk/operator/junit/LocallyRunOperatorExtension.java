@@ -179,7 +179,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         throw new IllegalStateException("Cannot find CRD at " + path);
       }
       var crdString = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-      LOGGER.debug("Applying CRD: {}",crdString);
+      LOGGER.debug("Applying CRD: {}", crdString);
       final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
       crd.createOrReplace();
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
