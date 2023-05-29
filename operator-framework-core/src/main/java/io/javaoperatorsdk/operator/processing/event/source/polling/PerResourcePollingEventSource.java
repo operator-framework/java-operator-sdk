@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
@@ -43,7 +44,15 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final long period;
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
 
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
+      EventSourceContext<P> context, Duration defaultPollingPeriod,
+      Class<R> resourceClass) {
+    this(resourceFetcher, context.getPrimaryCache(), defaultPollingPeriod.toMillis(),
+        null, resourceClass,
+        CacheKeyMapper.singleResourceCacheKeyMapper());
+  }
 
+  @Deprecated
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
     this(resourceFetcher, resourceCache, period, null, resourceClass,
@@ -51,11 +60,33 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   }
 
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
+      EventSourceContext<P> context,
+      Duration defaultPollingPeriod,
+      Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    this(resourceFetcher, context.getPrimaryCache(), defaultPollingPeriod.toMillis(),
+        null, resourceClass, cacheKeyMapper);
+  }
+
+  @Deprecated
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
     this(resourceFetcher, resourceCache, period, null, resourceClass, cacheKeyMapper);
   }
 
+  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
+      EventSourceContext<P> context,
+      Duration defaultPollingPeriod,
+      Predicate<P> registerPredicate,
+      Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    this(resourceFetcher, context.getPrimaryCache(), defaultPollingPeriod.toMillis(),
+        registerPredicate, resourceClass, cacheKeyMapper,
+        new ScheduledThreadPoolExecutor(DEFAULT_EXECUTOR_THREAD_NUMBER));
+  }
+
+  @Deprecated
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
       Predicate<P> registerPredicate, Class<R> resourceClass,
@@ -64,7 +95,20 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         new ScheduledThreadPoolExecutor(DEFAULT_EXECUTOR_THREAD_NUMBER));
   }
 
-  public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
+
+  public PerResourcePollingEventSource(
+      ResourceFetcher<R, P> resourceFetcher,
+      EventSourceContext<P> context, Duration defaultPollingPeriod,
+      Predicate<P> registerPredicate, Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper, ScheduledExecutorService executorService) {
+    this(resourceFetcher, context.getPrimaryCache(), defaultPollingPeriod.toMillis(),
+        registerPredicate,
+        resourceClass, cacheKeyMapper, executorService);
+  }
+
+  @Deprecated
+  public PerResourcePollingEventSource(
+      ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
       Predicate<P> registerPredicate, Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper, ScheduledExecutorService executorService) {

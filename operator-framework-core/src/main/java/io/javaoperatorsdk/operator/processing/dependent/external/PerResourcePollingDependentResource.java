@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.external;
 
+import java.time.Duration;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -23,8 +25,8 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
   @Override
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
-    return new PerResourcePollingEventSource<>(this, context.getPrimaryCache(),
-        getPollingPeriod(), resourceType(), this);
+    return new PerResourcePollingEventSource<>(this, context,
+        Duration.ofMillis(getPollingPeriod()), resourceType(), this);
   }
 
 }
