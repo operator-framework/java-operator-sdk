@@ -52,7 +52,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         CacheKeyMapper.singleResourceCacheKeyMapper());
   }
 
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass) {
     this(resourceFetcher, resourceCache, period, null, resourceClass,
@@ -68,7 +68,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         null, resourceClass, cacheKeyMapper);
   }
 
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period, Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
@@ -86,7 +86,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
         new ScheduledThreadPoolExecutor(DEFAULT_EXECUTOR_THREAD_NUMBER));
   }
 
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public PerResourcePollingEventSource(ResourceFetcher<R, P> resourceFetcher,
       Cache<P> resourceCache, long period,
       Predicate<P> registerPredicate, Class<R> resourceClass,
