@@ -14,7 +14,8 @@ public class ClusterRoleResourceUpdatePreProcessor
   }
 
   @Override
-  public boolean matches(ClusterRole actual, ClusterRole desired, boolean equality) {
+  public boolean matches(ClusterRole actual, ClusterRole desired, boolean equality,
+      String[] ignoredPaths) {
     return Objects.equals(actual.getRules(), desired.getRules()) &&
         Objects.equals(actual.getAggregationRule(), desired.getAggregationRule());
   }

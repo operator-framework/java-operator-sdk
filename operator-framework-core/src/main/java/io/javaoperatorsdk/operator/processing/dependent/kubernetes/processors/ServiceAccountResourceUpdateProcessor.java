@@ -15,7 +15,8 @@ public class ServiceAccountResourceUpdateProcessor
   }
 
   @Override
-  public boolean matches(ServiceAccount actual, ServiceAccount desired, boolean equality) {
+  public boolean matches(ServiceAccount actual, ServiceAccount desired, boolean equality,
+      String[] ignoredPaths) {
     return Objects.equals(actual.getAutomountServiceAccountToken(),
         desired.getAutomountServiceAccountToken()) &&
         Objects.equals(actual.getImagePullSecrets(), desired.getImagePullSecrets()) &&

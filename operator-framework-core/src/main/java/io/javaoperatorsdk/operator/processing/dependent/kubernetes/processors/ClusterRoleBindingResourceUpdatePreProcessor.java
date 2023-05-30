@@ -14,7 +14,8 @@ public class ClusterRoleBindingResourceUpdatePreProcessor
   }
 
   @Override
-  public boolean matches(ClusterRoleBinding actual, ClusterRoleBinding desired, boolean equality) {
+  public boolean matches(ClusterRoleBinding actual, ClusterRoleBinding desired, boolean equality,
+      String[] ignoredPaths) {
     return Objects.equals(actual.getRoleRef(), desired.getRoleRef()) &&
         Objects.equals(actual.getSubjects(), desired.getSubjects());
   }
