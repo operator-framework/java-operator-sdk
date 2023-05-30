@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ServiceAccountResourceUpdateProcessor
     extends GenericResourceUpdatePreProcessor<ServiceAccount> {
 
@@ -16,6 +18,7 @@ public class ServiceAccountResourceUpdateProcessor
 
   @Override
   public boolean matches(ServiceAccount actual, ServiceAccount desired, boolean equality,
+      ObjectMapper objectMapper,
       String[] ignoredPaths) {
     return Objects.equals(actual.getAutomountServiceAccountToken(),
         desired.getAutomountServiceAccountToken()) &&
