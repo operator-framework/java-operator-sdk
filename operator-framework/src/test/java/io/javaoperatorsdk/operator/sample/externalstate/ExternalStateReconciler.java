@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.externalstate;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -122,7 +123,7 @@ public class ExternalStateReconciler
       var id = configMap.getData().get(ID_KEY);
       var externalResource = externalService.read(id);
       return externalResource.map(Set::of).orElseGet(Collections::emptySet);
-    }, context.getPrimaryCache(), 300L, ExternalResource.class);
+    }, context, Duration.ofMillis(300L), ExternalResource.class);
 
     return EventSourceInitializer.nameEventSources(configMapEventSource,
         externalResourceEventSource);
