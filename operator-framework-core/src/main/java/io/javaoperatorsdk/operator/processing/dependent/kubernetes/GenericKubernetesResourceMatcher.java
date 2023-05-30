@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -12,7 +11,6 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
@@ -186,15 +184,16 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
     if (considerMetadata) {
       Optional<Result<R>> res =
-              matchMetadata(desired, actualResource, labelsAndAnnotationsEquality, objectMapper);
+          matchMetadata(desired, actualResource, labelsAndAnnotationsEquality, objectMapper);
       if (res.isPresent()) {
         return res.orElseThrow();
       }
     }
 
     final ResourceUpdatePreProcessor<R> processor =
-            GenericResourceUpdatePreProcessor.processorFor((Class<R>) desired.getClass());
-    final var matched = processor.matches(actualResource, desired, specEquality, ignoredPaths);
+        GenericResourceUpdatePreProcessor.processorFor((Class<R>) desired.getClass());
+    final var matched =
+        processor.matches(actualResource, desired, specEquality, objectMapper, ignoredPaths);
     return Result.computed(matched, desired);
   }
 

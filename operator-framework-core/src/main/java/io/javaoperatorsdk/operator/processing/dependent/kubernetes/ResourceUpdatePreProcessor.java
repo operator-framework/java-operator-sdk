@@ -6,10 +6,10 @@ import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.zjsonpatch.JsonDiff;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.*;
 
@@ -19,9 +19,9 @@ public interface ResourceUpdatePreProcessor<R extends HasMetadata> {
 
   R replaceSpecOnActual(R actual, R desired, Context<?> context);
 
-  default boolean matches(R actual, R desired, boolean equality, String[] ignoredPaths) {
+  default boolean matches(R actual, R desired, boolean equality, ObjectMapper objectMapper,
+      String[] ignoredPaths) {
 
-    var objectMapper = ConfigurationServiceProvider.instance().getObjectMapper();
     var desiredNode = objectMapper.valueToTree(desired);
     var actualNode = objectMapper.valueToTree(actual);
     var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
