@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ConfigMapResourceUpdatePreProcessor
     extends GenericResourceUpdatePreProcessor<ConfigMap> {
 
@@ -16,6 +18,7 @@ public class ConfigMapResourceUpdatePreProcessor
 
   @Override
   public boolean matches(ConfigMap actual, ConfigMap desired, boolean equality,
+      ObjectMapper objectMapper,
       String[] ignoredPaths) {
     return Objects.equals(actual.getImmutable(), desired.getImmutable()) &&
         Objects.equals(actual.getData(), desired.getData()) &&

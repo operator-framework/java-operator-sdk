@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.rbac.Role;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class RoleResourceUpdatePreProcessor extends GenericResourceUpdatePreProcessor<Role> {
 
   @Override
@@ -12,7 +14,8 @@ public class RoleResourceUpdatePreProcessor extends GenericResourceUpdatePreProc
   }
 
   @Override
-  public boolean matches(Role actual, Role desired, boolean equality, String[] ignoredPaths) {
+  public boolean matches(Role actual, Role desired, boolean equality, ObjectMapper objectMapper,
+      String[] ignoredPaths) {
     return Objects.equals(actual.getRules(), desired.getRules());
   }
 }
