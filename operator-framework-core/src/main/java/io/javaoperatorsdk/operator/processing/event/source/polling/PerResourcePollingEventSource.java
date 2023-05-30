@@ -1,8 +1,16 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import org.slf4j.Logger;
@@ -54,7 +62,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   /**
    * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
-   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *             {@link Duration} for period parameter as it provides a more intuitive API.
    *
    * @param resourceFetcher fetches resource related to a primary resource
    * @param resourceCache cache of the primary resource
@@ -79,7 +87,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   /**
    * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
-   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *             {@link Duration} for period parameter as it provides a more intuitive API.
    *
    * @param resourceFetcher fetches resource related to a primary resource
    * @param resourceCache cache of the primary resource
@@ -108,7 +116,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   /**
    * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
-   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *             {@link Duration} for period parameter as it provides a more intuitive API.
    *
    * @param resourceFetcher fetches resource related to a primary resource
    * @param resourceCache cache of the primary resource
@@ -141,7 +149,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
   /**
    * @deprecated use the variant which uses {@link EventSourceContext} instead of {@link Cache} and
-   *             {@link Duration} for period parameter. What provides a more intuitive API.
+   *             {@link Duration} for period parameter as it provides a more intuitive API.
    *
    * @param resourceFetcher fetches resource related to a primary resource
    * @param resourceCache cache of the primary resource
