@@ -15,7 +15,7 @@ public class SecretResourceUpdatePreProcessor extends GenericResourceUpdatePrePr
   }
 
   @Override
-  public boolean matches(Secret actual, Secret desired, boolean equality) {
+  public boolean matches(Secret actual, Secret desired, boolean equality, String[] ignoredPaths) {
     return Objects.equals(actual.getImmutable(), desired.getImmutable()) &&
         Objects.equals(actual.getType(), desired.getType()) &&
         Objects.equals(actual.getData(), desired.getData()) &&

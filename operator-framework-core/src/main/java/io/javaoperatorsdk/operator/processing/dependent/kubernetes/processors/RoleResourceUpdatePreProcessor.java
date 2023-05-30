@@ -12,7 +12,7 @@ public class RoleResourceUpdatePreProcessor extends GenericResourceUpdatePreProc
   }
 
   @Override
-  public boolean matches(Role actual, Role desired, boolean equality) {
+  public boolean matches(Role actual, Role desired, boolean equality, String[] ignoredPaths) {
     return Objects.equals(actual.getRules(), desired.getRules());
   }
 }
