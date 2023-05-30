@@ -15,7 +15,8 @@ public class ConfigMapResourceUpdatePreProcessor
   }
 
   @Override
-  public boolean matches(ConfigMap actual, ConfigMap desired, boolean equality) {
+  public boolean matches(ConfigMap actual, ConfigMap desired, boolean equality,
+      String[] ignoredPaths) {
     return Objects.equals(actual.getImmutable(), desired.getImmutable()) &&
         Objects.equals(actual.getData(), desired.getData()) &&
         Objects.equals(actual.getBinaryData(), desired.getBinaryData());
