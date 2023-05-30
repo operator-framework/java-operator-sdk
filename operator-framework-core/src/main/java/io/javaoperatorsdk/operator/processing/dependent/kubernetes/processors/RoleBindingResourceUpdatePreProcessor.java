@@ -14,7 +14,8 @@ public class RoleBindingResourceUpdatePreProcessor
   }
 
   @Override
-  public boolean matches(RoleBinding actual, RoleBinding desired, boolean equality) {
+  public boolean matches(RoleBinding actual, RoleBinding desired, boolean equality,
+      String[] ignoredPaths) {
     return Objects.equals(actual.getRoleRef(), desired.getRoleRef()) &&
         Objects.equals(actual.getSubjects(), desired.getSubjects());
   }
