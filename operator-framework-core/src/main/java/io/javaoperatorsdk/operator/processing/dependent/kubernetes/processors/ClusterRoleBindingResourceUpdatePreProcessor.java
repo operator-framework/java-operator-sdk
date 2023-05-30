@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ClusterRoleBindingResourceUpdatePreProcessor
     extends GenericResourceUpdatePreProcessor<ClusterRoleBinding> {
 
@@ -15,6 +17,7 @@ public class ClusterRoleBindingResourceUpdatePreProcessor
 
   @Override
   public boolean matches(ClusterRoleBinding actual, ClusterRoleBinding desired, boolean equality,
+      ObjectMapper objectMapper,
       String[] ignoredPaths) {
     return Objects.equals(actual.getRoleRef(), desired.getRoleRef()) &&
         Objects.equals(actual.getSubjects(), desired.getSubjects());

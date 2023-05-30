@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -46,7 +45,6 @@ class LeaderElectionPermissionIT {
 
     assertThat(exception.getCause().getMessage())
         .contains(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
-    ConfigurationServiceProvider.reset();
   }
 
 

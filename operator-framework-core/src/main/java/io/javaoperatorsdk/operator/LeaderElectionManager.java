@@ -1,17 +1,14 @@
 package io.javaoperatorsdk.operator;
 
 import java.util.Arrays;
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
-import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReviewSpecBuilder;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.authorization.v1.*;
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReviewSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
@@ -27,12 +24,15 @@ public class LeaderElectionManager {
 
   public static final String NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE =
       "No permission to lease resource.";
+  public static final String UNIVERSAL_VERB = "*";
+  public static final String COORDINATION_GROUP = "coordination.k8s.io";
+  public static final String LEASES_RESOURCE = "leases";
 
   private LeaderElector leaderElector = null;
   private final ControllerManager controllerManager;
   private String identity;
   private CompletableFuture<?> leaderElectionFuture;
-  private KubernetesClient client;
+  private KubernetesClient kubernetesClient;
   private final ConfigurationService configurationService;
   private String leaseNamespace;
 
@@ -48,31 +48,31 @@ public class LeaderElectionManager {
     return configurationService.getLeaderElectionConfiguration().isPresent();
   }
 
-  public void init(LeaderElectionConfiguration config) {
+  private void init(LeaderElectionConfiguration config) {
     this.identity = identity(config);
     leaseNamespace =
-            config.getLeaseNamespace().orElseGet(
-                    () -> configurationService.getClientConfiguration().getNamespace());
+        config.getLeaseNamespace().orElseGet(
+            () -> configurationService.getClientConfiguration().getNamespace());
     if (leaseNamespace == null) {
       final var message =
-              "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
+          "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
       log.error(message);
       throw new IllegalArgumentException(message);
     }
     final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
     // releaseOnCancel is not used in the underlying implementation
     leaderElector = new LeaderElectorBuilder(
-            kubernetesClient, configurationService.getExecutorServiceManager().cachingExecutorService())
-            .withConfig(
-                    new LeaderElectionConfig(
-                            lock,
-                            config.getLeaseDuration(),
-                            config.getRenewDeadline(),
-                            config.getRetryPeriod(),
-                            leaderCallbacks(),
-                            true,
-                            config.getLeaseName()))
-            .build();
+        kubernetesClient, configurationService.getExecutorServiceManager().cachingExecutorService())
+        .withConfig(
+            new LeaderElectionConfig(
+                lock,
+                config.getLeaseDuration(),
+                config.getRenewDeadline(),
+                config.getRetryPeriod(),
+                leaderCallbacks(),
+                true,
+                config.getLeaseName()))
+        .build();
   }
 
 
@@ -122,16 +122,16 @@ public class LeaderElectionManager {
     var verbs = Arrays.asList("create", "update", "get");
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
-    var reviewResult = client.resource(review).create();
+    var reviewResult = kubernetesClient.resource(review).create();
     log.debug("SelfSubjectRulesReview result: {}", reviewResult);
     var foundRule = reviewResult.getStatus().getResourceRules().stream()
-            .filter(rule -> rule.getApiGroups().contains("coordination.k8s.io")
-                    && rule.getResources().contains("leases")
-                    && (rule.getVerbs().containsAll(verbs)) || rule.getVerbs().contains("*"))
-            .findAny();
+        .filter(rule -> rule.getApiGroups().contains(COORDINATION_GROUP)
+            && rule.getResources().contains(LEASES_RESOURCE)
+            && (rule.getVerbs().containsAll(verbs)) || rule.getVerbs().contains(UNIVERSAL_VERB))
+        .findAny();
     if (foundRule.isEmpty()) {
       throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
-              " in namespace: " + leaseNamespace);
+          " in namespace: " + leaseNamespace);
     }
   }
 }
