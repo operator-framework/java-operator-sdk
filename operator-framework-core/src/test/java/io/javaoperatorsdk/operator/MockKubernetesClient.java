@@ -1,11 +1,15 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.authorization.v1.ResourceRule;
+import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
+import io.fabric8.kubernetes.api.model.authorization.v1.SubjectRulesReviewStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.*;
@@ -13,6 +17,7 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 
+import static io.javaoperatorsdk.operator.LeaderElectionManager.*;
 import static org.mockito.Mockito.*;
 
 public class MockKubernetesClient {
@@ -61,6 +66,10 @@ public class MockKubernetesClient {
     when(client.resources(clazz)).thenReturn(resources);
     when(client.leaderElector())
         .thenReturn(new LeaderElectorBuilder(client, Executors.newSingleThreadExecutor()));
+    var selfSubjectResourceResourceMock = mock(NamespaceableResource.class);
+    when(client.resource(any(SelfSubjectRulesReview.class)))
+        .thenReturn(selfSubjectResourceResourceMock);
+    when(selfSubjectResourceResourceMock.create()).thenReturn(allowSelfSubjectReview());
 
     final var apiGroupDSL = mock(ApiextensionsAPIGroupDSL.class);
     when(client.apiextensions()).thenReturn(apiGroupDSL);
@@ -71,5 +80,16 @@ public class MockKubernetesClient {
     when(operation.withName(any())).thenReturn(mock(Resource.class));
 
     return client;
+  }
+
+  private static Object allowSelfSubjectReview() {
+    SelfSubjectRulesReview review = new SelfSubjectRulesReview();
+    review.setStatus(new SubjectRulesReviewStatus());
+    var resourceRule = new ResourceRule();
+    resourceRule.setApiGroups(Arrays.asList(COORDINATION_GROUP));
+    resourceRule.setResources(Arrays.asList(LEASES_RESOURCE));
+    resourceRule.setVerbs(Arrays.asList(UNIVERSAL_VERB));
+    review.getStatus().setResourceRules(Arrays.asList(resourceRule));
+    return review;
   }
 }
