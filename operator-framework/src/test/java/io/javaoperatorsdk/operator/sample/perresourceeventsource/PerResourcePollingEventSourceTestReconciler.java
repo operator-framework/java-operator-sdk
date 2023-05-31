@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.perresourceeventsource;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -41,7 +42,7 @@ public class PerResourcePollingEventSourceTestReconciler
           numberOfFetchExecutions.compute(resource.getMetadata().getName(), (s, v) -> v + 1);
           return Set.of(UUID.randomUUID().toString());
         },
-            context.getPrimaryCache(), POLL_PERIOD, String.class);
+            context, Duration.ofMillis(POLL_PERIOD), String.class);
     return EventSourceInitializer.nameEventSources(eventSource);
   }
 
