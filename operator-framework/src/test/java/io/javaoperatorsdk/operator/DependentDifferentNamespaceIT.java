@@ -17,7 +17,7 @@ import static org.awaitility.Awaitility.await;
 
 class DependentDifferentNamespaceIT {
 
-  public static final String TEST_1 = "test1";
+  public static final String TEST_1 = "different-ns-test1";
   public static final String INITIAL_VALUE = "initial_value";
   public static final String CHANGED_VALUE = "changed_value";
 
