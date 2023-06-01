@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -59,15 +62,14 @@ public class ConfigMapDeleterBulkDependentResource
   @Override
   public Map<String, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
-    var configMaps = context.getSecondaryResources(ConfigMap.class);
-    Map<String, ConfigMap> result = new HashMap<>(configMaps.size());
-    configMaps.forEach(cm -> {
-      String name = cm.getMetadata().getName();
-      if (name.startsWith(primary.getMetadata().getName())) {
-        String key = name.substring(name.lastIndexOf(INDEX_DELIMITER) + 1);
-        result.put(key, cm);
-      }
-    });
-    return result;
+    return context.getSecondaryResourcesAsStream(ConfigMap.class)
+        .filter(cm -> getName(cm).startsWith(primary.getMetadata().getName()))
+        .collect(Collectors.toMap(
+            cm -> getName(cm).substring(getName(cm).lastIndexOf(INDEX_DELIMITER) + 1),
+            Function.identity()));
+  }
+
+  private static String getName(ConfigMap cm) {
+    return cm.getMetadata().getName();
   }
 }

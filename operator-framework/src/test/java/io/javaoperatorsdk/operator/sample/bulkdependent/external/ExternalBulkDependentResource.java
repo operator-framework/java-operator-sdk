@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent.external;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -75,7 +78,7 @@ public class ExternalBulkDependentResource
   public Map<String, ExternalResource> getSecondaryResources(
       BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
-    return context.getSecondaryResources(resourceType()).stream()
+    return context.getSecondaryResourcesAsStream(resourceType())
         .filter(r -> r.getId()
             .startsWith(primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
                 primary.getMetadata().getNamespace() +

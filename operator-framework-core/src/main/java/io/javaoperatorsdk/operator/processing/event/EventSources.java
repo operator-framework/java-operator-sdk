@@ -165,7 +165,7 @@ class EventSources<R extends HasMetadata> {
 
   @SuppressWarnings("rawtypes")
   private String keyAsString(Class dependentType, String name) {
-    return name != null && name.length() > 0
+    return name != null && !name.isEmpty()
         ? "(" + dependentType.getName() + ", " + name + ")"
         : dependentType.getName();
   }

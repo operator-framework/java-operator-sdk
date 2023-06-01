@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -35,10 +36,14 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
+    return getSecondaryResourcesAsStream(expectedType).collect(Collectors.toSet());
+  }
+
+  @Override
+  public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
     return controller.getEventSourceManager().getResourceEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
-        .flatMap(Set::stream)
-        .collect(Collectors.toSet());
+        .flatMap(Set::stream);
   }
 
   @Override

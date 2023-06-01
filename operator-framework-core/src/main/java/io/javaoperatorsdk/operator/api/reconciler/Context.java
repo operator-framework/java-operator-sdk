@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,6 +19,10 @@ public interface Context<P extends HasMetadata> {
   }
 
   <R> Set<R> getSecondaryResources(Class<R> expectedType);
+
+  default <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
+    return getSecondaryResources(expectedType).stream();
+  }
 
   @Deprecated(forRemoval = true)
   <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
