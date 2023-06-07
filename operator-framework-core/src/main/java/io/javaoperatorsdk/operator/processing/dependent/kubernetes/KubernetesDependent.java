@@ -27,7 +27,7 @@ public @interface KubernetesDependent {
   String[] namespaces() default {Constants.SAME_AS_CONTROLLER};
 
   /**
-   * Optional label selector used to identify the set of custom resources the controller will acc
+   * Optional label selector used to identify the set of custom resources the controller will act
    * upon. The label selector can be made of multiple comma separated requirements that acts as a
    * logical AND operator.
    *
