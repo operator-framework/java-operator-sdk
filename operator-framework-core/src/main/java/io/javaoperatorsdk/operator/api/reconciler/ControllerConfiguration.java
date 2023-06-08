@@ -17,6 +17,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
+import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.DEFAULT_FIELD_MANAGER;
+
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -129,4 +131,7 @@ public @interface ControllerConfiguration {
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
 
   Class<? extends ItemStore> itemStore() default ItemStore.class;
+
+  // todo javadoc
+  String fieldManager() default DEFAULT_FIELD_MANAGER;
 }

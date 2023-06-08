@@ -1,0 +1,44 @@
+kind: FlowSchema
+metadata:
+  annotations:
+    apf.kubernetes.io/autoupdate-spec: "true"
+  creationTimestamp: "2023-06-08T11:18:25Z"
+  generation: 1
+  managedFields:
+    - apiVersion: flowcontrol.apiserver.k8s.io/v1beta3
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:apf.kubernetes.io/autoupdate-spec: {}
+        f:spec:
+          f:matchingPrecedence: {}
+          f:priorityLevelConfiguration:
+            f:name: {}
+          f:rules: {}
+      manager: controller
+      operation: Apply
+      time: "2023-06-08T11:18:25Z"
+  name: probes
+  resourceVersion: "68"
+  uid: 50913e35-e855-469f-bec6-3e8cd2607ab4
+spec:
+  matchingPrecedence: 2
+  priorityLevelConfiguration:
+    name: exempt
+  rules:
+    - nonResourceRules:
+        - nonResourceURLs:
+            - /healthz
+            - /readyz
+            - /livez
+          verbs:
+            - get
+      subjects:
+        - group:
+            name: system:unauthenticated
+          kind: Group
+        - group:
+            name: system:authenticated
+          kind: Group

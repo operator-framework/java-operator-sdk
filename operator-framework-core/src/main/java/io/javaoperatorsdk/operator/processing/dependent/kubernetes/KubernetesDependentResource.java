@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -38,11 +40,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
+  private static final PatchContext SSA_PATCH_CONTEXT = new PatchContext.Builder()
+      .withPatchType(PatchType.SERVER_SIDE_APPLY)
+      .withForce(true)
+      .build();
 
   protected KubernetesClient client;
   private final ResourceUpdatePreProcessor<R> processor;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
+
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -128,16 +135,35 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
-    return prepare(target, primary, "Creating").create();
+    if (context.getControllerConfiguration().getConfigurationService()
+        .legacyCreateUpdateAndMatchingForDependentResources()) {
+      return prepare(target, primary, "Creating").create();
+    } else {
+      return prepare(target, primary, "Creating").patch(getSSAPatchContext(context));
+    }
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
-    var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-    return prepare(updatedActual, primary, "Updating").replace();
+    if (context.getControllerConfiguration().getConfigurationService()
+        .legacyCreateUpdateAndMatchingForDependentResources()) {
+      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
+      return prepare(updatedActual, primary, "Updating").replace();
+    } else {
+      return prepare(target, primary, "Updating").patch(getSSAPatchContext(context));
+    }
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
+    if (context.getControllerConfiguration().getConfigurationService()
+        .legacyCreateUpdateAndMatchingForDependentResources()) {
+      return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
+    } else {
+      final var desired = desired(primary, context);
+      addReferenceHandlingMetadata(desired, primary);
+      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
+          desired, context);
+      return Result.computed(matches, desired);
+    }
   }
 
   @SuppressWarnings("unused")
@@ -164,16 +190,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         desired.getClass(),
         ResourceID.fromResource(desired));
 
-    if (addOwnerReference()) {
-      desired.addOwnerReference(primary);
-    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
-      addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
-    }
+    addReferenceHandlingMetadata(desired, primary);
 
     if (desired instanceof Namespaced) {
       return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
     } else {
       return client.resource(desired);
+    }
+  }
+
+  protected void addReferenceHandlingMetadata(R desired, P primary) {
+    if (addOwnerReference()) {
+      desired.addOwnerReference(primary);
+    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
+      addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
   }
 
@@ -258,6 +288,14 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public boolean isDeletable() {
     return super.isDeletable() && !garbageCollected;
+  }
+
+  private PatchContext getSSAPatchContext(Context<P> context) {
+    return new PatchContext.Builder()
+        .withPatchType(PatchType.SERVER_SIDE_APPLY)
+        .withForce(true)
+        .withFieldManager(context.getControllerConfiguration().fieldManager())
+        .build();
   }
 
 }

@@ -39,6 +39,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Map<DependentResourceSpec, Object> configurations;
   private ItemStore<R> itemStore;
   private String name;
+  private String fieldManager;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -54,6 +55,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
+    this.fieldManager = original.fieldManager();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -168,6 +170,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withFieldManager(
+      String dependentFieldManager) {
+    this.fieldManager = dependentFieldManager;
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -190,7 +198,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
-        namespaces, finalizer, labelSelector, configurations, itemStore,
+        namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
         original.getConfigurationService());
     overridden.setEventFilter(customResourcePredicate);
     return overridden;

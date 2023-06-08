@@ -6,6 +6,6 @@ metadata:
 rules:
   - apiGroups: [ "sample.javaoperatorsdk" ]
     resources: [ "informerrelatedbehaviortestcustomresources" ]
-    verbs: [ "get", "watch", "list","post", "delete" ]
+    verbs: [ "get", "watch", "list","post", "delete","patch" ]
 
 

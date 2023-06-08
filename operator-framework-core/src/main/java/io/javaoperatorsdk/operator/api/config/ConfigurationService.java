@@ -264,4 +264,10 @@ public interface ConfigurationService {
   default ExecutorServiceManager getExecutorServiceManager() {
     return new ExecutorServiceManager(this);
   }
+
+  // todo test transition
+  // todo javadoc
+  default boolean legacyCreateUpdateAndMatchingForDependentResources() {
+    return false;
+  }
 }

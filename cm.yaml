@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test1
+  namespace: default
+  ownerReferences:
+    - apiVersion: v1
+      kind: ConfigMap
+      name: kube-root-ca.crt
+      uid: 1ef74cb4-dbbd-45ef-9caf-aa76186594ea
+data:
+  key1: "val1"
+#  key2: "val2"
+

@@ -32,6 +32,7 @@ public class ConfigurationServiceOverrider {
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
   private ResourceClassResolver resourceClassResolver;
+  private Boolean legacyCreateUpdateAndMatchingForDependentResources;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -136,6 +137,12 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withResourceClassResolver(
       ResourceClassResolver resourceClassResolver) {
     this.resourceClassResolver = resourceClassResolver;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withLegacyCreateUpdateAndMatchingForDependentResources(
+      boolean value) {
+    this.legacyCreateUpdateAndMatchingForDependentResources = value;
     return this;
   }
 
@@ -247,6 +254,13 @@ public class ConfigurationServiceOverrider {
       public ResourceClassResolver getResourceClassResolver() {
         return resourceClassResolver != null ? resourceClassResolver
             : super.getResourceClassResolver();
+      }
+
+      @Override
+      public boolean legacyCreateUpdateAndMatchingForDependentResources() {
+        return legacyCreateUpdateAndMatchingForDependentResources != null
+            ? legacyCreateUpdateAndMatchingForDependentResources
+            : super.legacyCreateUpdateAndMatchingForDependentResources();
       }
     };
   }

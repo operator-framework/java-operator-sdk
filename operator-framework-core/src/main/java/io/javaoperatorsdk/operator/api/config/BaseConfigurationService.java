@@ -33,6 +33,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.DEFAULT_FIELD_MANAGER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 public class BaseConfigurationService extends AbstractConfigurationService {
@@ -134,6 +135,11 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       interval = reconciliationInterval.interval();
       timeUnit = reconciliationInterval.timeUnit();
     }
+
+    final var dependentFieldManager = valueOrDefault(
+        annotation,
+        io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::fieldManager,
+        DEFAULT_FIELD_MANAGER);
 
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
