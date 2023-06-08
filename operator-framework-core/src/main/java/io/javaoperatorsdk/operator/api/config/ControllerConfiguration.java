@@ -127,7 +127,11 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return ResourceConfiguration.super.getEffectiveNamespaces(getConfigurationService());
   }
 
-  // todo javadoc
+  /**
+   * fieldManager name used for the dependent resource to do create/update (in practice SSA Patch).
+   * In future this might be used also for other purposes like to make status updates of the primary
+   * resource with SSA.
+   */
   default String fieldManager() {
     return DEFAULT_FIELD_MANAGER;
   }

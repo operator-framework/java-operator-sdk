@@ -132,6 +132,10 @@ public @interface ControllerConfiguration {
 
   Class<? extends ItemStore> itemStore() default ItemStore.class;
 
-  // todo javadoc
+  /**
+   * fieldManager name used for the dependent resource to do create/update (in practice SSA Patch).
+   * In future this might be used also for other purposes like to make status updates of the primary
+   * resource with SSA.
+   */
   String fieldManager() default DEFAULT_FIELD_MANAGER;
 }
