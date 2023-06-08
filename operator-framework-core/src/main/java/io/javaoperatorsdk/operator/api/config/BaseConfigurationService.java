@@ -158,7 +158,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
             Constants.NO_VALUE_SET),
         null,
-        Utils.instantiate(annotation.itemStore(), ItemStore.class, context), this);
+        Utils.instantiate(annotation.itemStore(), ItemStore.class, context), dependentFieldManager,
+        this);
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());
