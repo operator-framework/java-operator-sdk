@@ -17,11 +17,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
  *
- * The ide of algorithm is basically trivial, we convert resources to Map/List composition.
- * The actual resource (from the server) is pruned, all the fields which are not mentioed in managedFields
- * of the target manager is removed. Some irrelevant fields are also removed from desired. And the
- * two resulted Maps are compared for equality. The implementation is a bit nasty since have to deal with
- * some specific cases of managedFields format. 
+ * The ide of algorithm is basically trivial, we convert resources to Map/List composition. The
+ * actual resource (from the server) is pruned, all the fields which are not mentioed in
+ * managedFields of the target manager is removed. Some irrelevant fields are also removed from
+ * desired. And the two resulted Maps are compared for equality. The implementation is a bit nasty
+ * since have to deal with some specific cases of managedFields format.
  *
  * @param <R> matched resource type
  */
@@ -158,7 +158,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   // list entries referenced by key, or when "k:" prefix is used
   private void handleListKeyEntrySet(Map<String, Object> result, Map<String, Object> actualMap,
-      ObjectMapper objectMapper, String keyInActual, Set<Map.Entry<String, Object>> managedEntrySet) {
+      ObjectMapper objectMapper, String keyInActual,
+      Set<Map.Entry<String, Object>> managedEntrySet) {
     var valueList = new ArrayList<>();
     result.put(keyInActual, valueList);
     var actualValueList = (List<Map<String, Object>>) actualMap.get(keyInActual);
