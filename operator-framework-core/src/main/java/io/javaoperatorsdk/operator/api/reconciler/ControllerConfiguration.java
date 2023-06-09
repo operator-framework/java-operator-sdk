@@ -135,7 +135,7 @@ public @interface ControllerConfiguration {
   /**
    * fieldManager name used for the dependent resource to do create/update (in practice SSA Patch).
    * In future this might be used also for other purposes like to make status updates of the primary
-   * resource with SSA.
+   * resource with SSA. If not set, sanitized controller name is used as field manager.
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 }

@@ -89,6 +89,18 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   }
 
   @Test
+  void changeValueActualMakesMatchFail() {
+    var desiredConfigMap = loadResource("configmap.empty-owner-reference-desired.yaml",
+        ConfigMap.class);
+
+    var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml",
+        ConfigMap.class);
+    actualConfigMap.getData().put("key1", "different value");
+
+    assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
+  }
+
+  @Test
   void addedLabelInDesiredMakesMatchFail() {
     var desiredConfigMap = loadResource("configmap.empty-owner-reference-desired.yaml",
         ConfigMap.class);
