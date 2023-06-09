@@ -265,8 +265,12 @@ public interface ConfigurationService {
     return new ExecutorServiceManager(this);
   }
 
-  // todo test transition
-  // todo javadoc
+  /**
+   * The default approach how the Kubernetes Dependent Resources are created/updated but also
+   * matched was changed, by default it uses SSA based approach. This is a feature flag to use the
+   * old approach. Note that the legacy approach might be removed in the future (especially for
+   * create and update) along with this flag.
+   */
   default boolean legacyCreateUpdateAndMatchingForDependentResources() {
     return false;
   }

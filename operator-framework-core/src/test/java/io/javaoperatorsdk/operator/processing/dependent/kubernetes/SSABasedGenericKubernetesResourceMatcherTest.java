@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +56,6 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isTrue();
   }
 
-
   // the whole "rules:" part is just implicitly managed
   @Test
   void wholeComplexFieldManaged() {
@@ -66,7 +67,6 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isTrue();
   }
 
-
   @Test
   void multiItemList() {
     var desiredConfigMap = loadResource("multi-container-pod-desired.yaml",
@@ -75,6 +75,29 @@ class SSABasedGenericKubernetesResourceMatcherTest {
         ConfigMap.class);
 
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isTrue();
+  }
+
+  @Test
+  void changeValueInDesiredMakesMatchFail() {
+    var desiredConfigMap = loadResource("configmap.empty-owner-reference-desired.yaml",
+        ConfigMap.class);
+    desiredConfigMap.getData().put("key1", "different value");
+    var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml",
+        ConfigMap.class);
+
+    assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
+  }
+
+  @Test
+  void addedLabelInDesiredMakesMatchFail() {
+    var desiredConfigMap = loadResource("configmap.empty-owner-reference-desired.yaml",
+        ConfigMap.class);
+    desiredConfigMap.getMetadata().setLabels(Map.of("newlabel", "val"));
+
+    var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml",
+        ConfigMap.class);
+
+    assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
   }
 
   private <R> R loadResource(String fileName, Class<R> clazz) {
