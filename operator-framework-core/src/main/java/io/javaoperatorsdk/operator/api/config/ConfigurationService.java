@@ -266,12 +266,21 @@ public interface ConfigurationService {
   }
 
   /**
-   * The default approach how the Kubernetes Dependent Resources are created/updated but also
-   * matched was changed, by default it uses SSA based approach. This is a feature flag to use the
-   * old approach. Note that the legacy approach might be removed in the future (especially for
-   * create and update) along with this flag.
+   * The default approach how the Kubernetes Dependent Resources are created/updated was changed, by
+   * default it uses SSA based approach. This is a feature flag to use the old approach. Note that
+   * the legacy approach might be removed in the future.
    */
-  default boolean legacyCreateUpdateAndMatchingForDependentResources() {
-    return false;
+  default boolean ssaBasedCreateUpdateForDependentResource() {
+    return true;
   }
+
+  /**
+   * We introduced a new generic matching algorithm for Kubernetes Dependent Resources, since it
+   * very quite high complexity and prone to bugs, this feature flag is used to revert it to the old
+   * default approach. However, this flag might be reverted in the future.
+   */
+  default boolean ssaBasedDefaultMatchingForDependentResources() {
+    return true;
+  }
+
 }

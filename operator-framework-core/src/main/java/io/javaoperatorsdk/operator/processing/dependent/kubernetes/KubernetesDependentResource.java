@@ -135,8 +135,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
-    if (context.getControllerConfiguration().getConfigurationService()
-        .legacyCreateUpdateAndMatchingForDependentResources()) {
+    if (!context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedCreateUpdateForDependentResource()) {
       return prepare(target, primary, "Creating").create();
     } else {
       return prepare(target, primary, "Creating").patch(getSSAPatchContext(context));
@@ -144,8 +144,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
-    if (context.getControllerConfiguration().getConfigurationService()
-        .legacyCreateUpdateAndMatchingForDependentResources()) {
+    if (!context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedCreateUpdateForDependentResource()) {
       var updatedActual = processor.replaceSpecOnActual(actual, target, context);
       return prepare(updatedActual, primary, "Updating").replace();
     } else {
@@ -154,8 +154,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    if (context.getControllerConfiguration().getConfigurationService()
-        .legacyCreateUpdateAndMatchingForDependentResources()) {
+    if (!context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedDefaultMatchingForDependentResources()) {
       return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
     } else {
       final var desired = desired(primary, context);

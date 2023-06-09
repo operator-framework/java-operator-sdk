@@ -32,7 +32,8 @@ public class ConfigurationServiceOverrider {
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
   private ResourceClassResolver resourceClassResolver;
-  private Boolean legacyCreateUpdateAndMatchingForDependentResources;
+  private Boolean ssaBasedCreateUpdateForDependentResource;
+  private Boolean ssaBasedDefaultMatchingForDependentResources;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -140,9 +141,15 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withLegacyCreateUpdateAndMatchingForDependentResources(
+  public ConfigurationServiceOverrider withSSABasedCreateUpdateForDependentResource(
       boolean value) {
-    this.legacyCreateUpdateAndMatchingForDependentResources = value;
+    this.ssaBasedCreateUpdateForDependentResource = value;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withSSABasedDefaultMatchingForDependentResources(
+      boolean value) {
+    this.ssaBasedDefaultMatchingForDependentResources = value;
     return this;
   }
 
@@ -257,10 +264,17 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean legacyCreateUpdateAndMatchingForDependentResources() {
-        return legacyCreateUpdateAndMatchingForDependentResources != null
-            ? legacyCreateUpdateAndMatchingForDependentResources
-            : super.legacyCreateUpdateAndMatchingForDependentResources();
+      public boolean ssaBasedCreateUpdateForDependentResource() {
+        return ssaBasedCreateUpdateForDependentResource != null
+            ? ssaBasedCreateUpdateForDependentResource
+            : super.ssaBasedCreateUpdateForDependentResource();
+      }
+
+      @Override
+      public boolean ssaBasedDefaultMatchingForDependentResources() {
+        return ssaBasedDefaultMatchingForDependentResources != null
+            ? ssaBasedDefaultMatchingForDependentResources
+            : super.ssaBasedDefaultMatchingForDependentResources();
       }
     };
   }
