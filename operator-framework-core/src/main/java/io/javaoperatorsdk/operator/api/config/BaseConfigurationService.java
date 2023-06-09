@@ -136,10 +136,9 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       timeUnit = reconciliationInterval.timeUnit();
     }
 
-    final var dependentFieldManager = valueOrDefault(
-        annotation,
-        io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::fieldManager,
-        CONTROLLER_NAME_AS_FIELD_MANAGER);
+    final var dependentFieldManager =
+        annotation.fieldManager().equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name
+            : annotation.fieldManager();
 
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,

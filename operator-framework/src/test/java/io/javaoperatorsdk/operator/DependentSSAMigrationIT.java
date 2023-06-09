@@ -23,6 +23,7 @@ import static org.awaitility.Awaitility.await;
 
 class DependentSSAMigrationIT {
 
+  public static final String FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER = "fabric8-kubernetes-client";
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String INITIAL_VALUE = "INITIAL_VALUE";
   public static final String CHANGED_VALUE = "CHANGED_VALUE";

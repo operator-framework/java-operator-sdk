@@ -26,7 +26,6 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
    * Will use the controller name as fieldManager if set.
    */
   String CONTROLLER_NAME_AS_FIELD_MANAGER = "default";
-  String FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER = "fabric8-kubernetes-client";
 
   default String getName() {
     return ensureValidName(null, getAssociatedReconcilerClassName());
