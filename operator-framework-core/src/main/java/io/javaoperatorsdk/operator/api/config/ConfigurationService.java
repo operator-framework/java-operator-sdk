@@ -275,9 +275,10 @@ public interface ConfigurationService {
   }
 
   /**
-   * We introduced a new generic matching algorithm for Kubernetes Dependent Resources, since it
-   * very quite high complexity and prone to bugs, this feature flag is used to revert it to the old
-   * default approach. However, this flag might be reverted in the future.
+   * A new generic matching algorithm for Kubernetes Dependent Resources was introduced, since it
+   * has quite high complexity, this feature flag is used to revert it to the old default approach
+   * in case some of the use cases something goes wrong. However, this flag might be removed in the
+   * future.
    */
   default boolean ssaBasedDefaultMatchingForDependentResources() {
     return true;
