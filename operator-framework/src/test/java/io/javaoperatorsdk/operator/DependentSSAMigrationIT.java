@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSASpec;
 import io.javaoperatorsdk.operator.sample.dependentssa.DependnetSSACustomResource;
 import io.javaoperatorsdk.operator.sample.dependentssa.SSAConfigMapDependent;
 
-import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
