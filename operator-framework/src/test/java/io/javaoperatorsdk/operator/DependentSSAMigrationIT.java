@@ -76,7 +76,10 @@ class DependentSSAMigrationIT {
 
     assertThat(cm.getMetadata().getManagedFields()).hasSize(2);
     assertThat(cm.getMetadata().getManagedFields())
-        .allMatch(fm -> fm.getManager().equals(FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER));
+        // Jetty seems to be a bug in fabric8 client, it is only the default fieldManager if Jetty
+        // is used as http client
+        .allMatch(fm -> fm.getManager().equals(FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER)
+            || fm.getManager().equals("Jetty"));
   }
 
   private void reconcileAgainWithLegacy(Operator legacyOperator,

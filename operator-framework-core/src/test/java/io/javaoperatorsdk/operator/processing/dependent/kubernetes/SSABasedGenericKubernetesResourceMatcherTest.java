@@ -28,7 +28,7 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   @SuppressWarnings("unchecked")
   void setup() {
     var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.fieldManager()).thenCallRealMethod();
+    when(controllerConfiguration.fieldManager()).thenReturn("controller");
     var configurationService = mock(ConfigurationService.class);
     when(configurationService.getObjectMapper()).thenCallRealMethod();
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);

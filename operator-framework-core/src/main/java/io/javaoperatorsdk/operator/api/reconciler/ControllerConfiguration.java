@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.DEFAULT_FIELD_MANAGER;
+import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
 
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
@@ -137,5 +137,5 @@ public @interface ControllerConfiguration {
    * In future this might be used also for other purposes like to make status updates of the primary
    * resource with SSA.
    */
-  String fieldManager() default DEFAULT_FIELD_MANAGER;
+  String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 }

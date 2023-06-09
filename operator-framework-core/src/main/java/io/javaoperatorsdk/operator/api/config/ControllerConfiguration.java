@@ -22,7 +22,10 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
-  String DEFAULT_FIELD_MANAGER = "controller";
+  /**
+   * Will use the controller name as fieldManager if set.
+   */
+  String CONTROLLER_NAME_AS_FIELD_MANAGER = "default";
   String FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER = "fabric8-kubernetes-client";
 
   default String getName() {
@@ -133,7 +136,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
    * resource with SSA.
    */
   default String fieldManager() {
-    return DEFAULT_FIELD_MANAGER;
+    return getName();
   }
 
 }
