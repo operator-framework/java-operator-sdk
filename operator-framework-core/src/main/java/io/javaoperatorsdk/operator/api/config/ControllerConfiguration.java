@@ -25,7 +25,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
   /**
    * Will use the controller name as fieldManager if set.
    */
-  String CONTROLLER_NAME_AS_FIELD_MANAGER = "default";
+  String CONTROLLER_NAME_AS_FIELD_MANAGER = "use_controller_name";
 
   default String getName() {
     return ensureValidName(null, getAssociatedReconcilerClassName());
