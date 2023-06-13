@@ -11,8 +11,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.PatchContext;
-import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -40,10 +38,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
-  private static final PatchContext SSA_PATCH_CONTEXT = new PatchContext.Builder()
-      .withPatchType(PatchType.SERVER_SIDE_APPLY)
-      .withForce(true)
-      .build();
 
   protected KubernetesClient client;
   private final ResourceUpdatePreProcessor<R> processor;
