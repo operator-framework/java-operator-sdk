@@ -1,6 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -17,11 +22,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
  *
- * The ide of algorithm is basically trivial, we convert resources to Map/List composition. The
- * actual resource (from the server) is pruned, all the fields which are not mentioed in
- * managedFields of the target manager is removed. Some irrelevant fields are also removed from
- * desired. And the two resulted Maps are compared for equality. The implementation is a bit nasty
- * since have to deal with some specific cases of managedFields format.
+ * <p>
+ * The basis of algorithm is to extract the fields managed we convert resources to Map/List
+ * composition. The actual resource (from the server) is pruned, all the fields which are not
+ * mentioed in managedFields of the target manager is removed. Some irrelevant fields are also
+ * removed from desired. And the two resulted Maps are compared for equality. The implementation is
+ * a bit nasty since have to deal with some specific cases of managedFields format.
+ * </p>
  *
  * @param <R> matched resource type
  */
@@ -47,7 +54,11 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   private static final String F_PREFIX = "f:";
   private static final String K_PREFIX = "k:";
   private static final String V_PREFIX = "v:";
-  public static final String METADATA_KEY = "metadata";
+  private static final String METADATA_KEY = "metadata";
+  private static final String NAME_KEY = "name";
+  private static final String NAMESPACE_KEY = "namespace";
+  private static final String KIND_KEY = "kind";
+  private static final String API_VERSION_KEY = "apiVersion";
 
   private static final Logger log =
       LoggerFactory.getLogger(SSABasedGenericKubernetesResourceMatcher.class);
@@ -56,10 +67,11 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   public boolean matches(R actual, R desired, Context<?> context) {
     try {
       var optionalManagedFieldsEntry =
-          checkIfFieldManagerExists(actual,
-              context.getControllerConfiguration().fieldManager());
-      // the results of this is that it will add the field manager; it's important from migration
-      // aspect
+          checkIfFieldManagerExists(actual, context.getControllerConfiguration().fieldManager());
+      // If no field is managed by our controller, that means the controller hasn't touched the
+      // resource yet and the resource probably doesn't match the desired state. Not matching here
+      // means that the resource will need to be updated and since this will be done using SSA, the
+      // fields our controller cares about will become managed by it
       if (optionalManagedFieldsEntry.isEmpty()) {
         return false;
       }
@@ -74,8 +86,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
       log.trace("Original actual: \n {} \n original desired: \n {} ", actual, desiredMap);
 
-      var prunedActual = new HashMap<String, Object>();
-      pruneActualAccordingManagedFields(prunedActual, actualMap,
+      var prunedActual = new HashMap<String, Object>(actualMap.size());
+      keepOnlyManagedFields(prunedActual, actualMap,
           managedFieldsEntry.getFieldsV1().getAdditionalProperties(), objectMapper);
 
       removeIrrelevantValues(desiredMap);
@@ -88,18 +100,20 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
   }
 
-  private void removeIrrelevantValues(HashMap<String, Object> desiredMap) {
+  @SuppressWarnings("unchecked")
+  private static void removeIrrelevantValues(Map<String, Object> desiredMap) {
     var metadata = (Map<String, Object>) desiredMap.get(METADATA_KEY);
-    metadata.remove("name");
-    metadata.remove("namespace");
+    metadata.remove(NAME_KEY);
+    metadata.remove(NAMESPACE_KEY);
     if (metadata.isEmpty()) {
       desiredMap.remove(METADATA_KEY);
     }
-    desiredMap.remove("kind");
-    desiredMap.remove("apiVersion");
+    desiredMap.remove(KIND_KEY);
+    desiredMap.remove(API_VERSION_KEY);
   }
 
-  private void pruneActualAccordingManagedFields(Map<String, Object> result,
+  @SuppressWarnings("unchecked")
+  private static void keepOnlyManagedFields(Map<String, Object> result,
       Map<String, Object> actualMap,
       Map<String, Object> managedFields, ObjectMapper objectMapper) throws JsonProcessingException {
 
@@ -111,9 +125,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       String key = entry.getKey();
       if (key.startsWith(F_PREFIX)) {
         String keyInActual = keyWithoutPrefix(key);
-        var managedFieldValue = entry.getValue();
+        var managedFieldValue = (Map<String, Object>) entry.getValue();
         if (isNestedValue(managedFieldValue)) {
-          var managedEntrySet = ((Map<String, Object>) managedFieldValue).entrySet();
+          var managedEntrySet = managedFieldValue.entrySet();
 
           // two special cases "k:" and "v:" prefixes
           if (isListKeyEntrySet(managedEntrySet)) {
@@ -121,8 +135,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           } else if (isSetValueField(managedEntrySet)) {
             handleSetValues(result, actualMap, objectMapper, keyInActual, managedEntrySet);
           } else {
-            // basically if we should travers further
-            fillResultsAndTraversFurther(result, actualMap, managedFields, objectMapper, key,
+            // basically if we should traverse further
+            fillResultsAndTraverseFurther(result, actualMap, managedFields, objectMapper, key,
                 keyInActual, managedFieldValue);
           }
         } else {
@@ -139,7 +153,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
   }
 
-  private void fillResultsAndTraversFurther(Map<String, Object> result,
+  private static void fillResultsAndTraverseFurther(Map<String, Object> result,
       Map<String, Object> actualMap, Map<String, Object> managedFields, ObjectMapper objectMapper,
       String key, String keyInActual, Object managedFieldValue) throws JsonProcessingException {
     var emptyMapValue = new HashMap<String, Object>();
@@ -148,16 +162,17 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     log.debug("key: {} actual map value: {} managedFieldValue: {}", keyInActual,
         actualMapValue, managedFieldValue);
 
-    pruneActualAccordingManagedFields(emptyMapValue, (Map<String, Object>) actualMapValue,
+    keepOnlyManagedFields(emptyMapValue, (Map<String, Object>) actualMapValue,
         (Map<String, Object>) managedFields.get(key), objectMapper);
   }
 
-  private static boolean isNestedValue(Object managedFieldValue) {
-    return managedFieldValue instanceof Map && (!((Map) managedFieldValue).isEmpty());
+  private static boolean isNestedValue(Map<?, ?> managedFieldValue) {
+    return !managedFieldValue.isEmpty();
   }
 
   // list entries referenced by key, or when "k:" prefix is used
-  private void handleListKeyEntrySet(Map<String, Object> result, Map<String, Object> actualMap,
+  private static void handleListKeyEntrySet(Map<String, Object> result,
+      Map<String, Object> actualMap,
       ObjectMapper objectMapper, String keyInActual,
       Set<Map.Entry<String, Object>> managedEntrySet) {
     var valueList = new ArrayList<>();
@@ -185,7 +200,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           var emptyResMapValue = new HashMap<String, Object>();
           valueList.add(emptyResMapValue);
           try {
-            pruneActualAccordingManagedFields(emptyResMapValue, e.getValue(),
+            keepOnlyManagedFields(emptyResMapValue, e.getValue(),
                 mangedEntryByIndex.get(e.getKey()), objectMapper);
           } catch (JsonProcessingException ex) {
             throw new IllegalStateException(ex);
@@ -230,25 +245,26 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
   }
 
-  private boolean isSetValueField(Set<Map.Entry<String, Object>> managedEntrySet) {
+  private static boolean isSetValueField(Set<Map.Entry<String, Object>> managedEntrySet) {
+    return isKeyPrefixedSkippingDotKey(managedEntrySet, V_PREFIX);
+  }
+
+  private static boolean isListKeyEntrySet(Set<Map.Entry<String, Object>> managedEntrySet) {
+    return isKeyPrefixedSkippingDotKey(managedEntrySet, K_PREFIX);
+  }
+
+  private static boolean isKeyPrefixedSkippingDotKey(Set<Map.Entry<String, Object>> managedEntrySet,
+      String prefix) {
     var iterator = managedEntrySet.iterator();
     var managedFieldEntry = iterator.next();
     if (managedFieldEntry.getKey().equals(DOT_KEY)) {
       managedFieldEntry = iterator.next();
     }
-    return managedFieldEntry.getKey().startsWith(V_PREFIX);
+    return managedFieldEntry.getKey().startsWith(prefix);
   }
 
-  private boolean isListKeyEntrySet(Set<Map.Entry<String, Object>> managedEntrySet) {
-    var iterator = managedEntrySet.iterator();
-    var managedFieldEntry = iterator.next();
-    if (managedFieldEntry.getKey().equals(DOT_KEY)) {
-      managedFieldEntry = iterator.next();
-    }
-    return managedFieldEntry.getKey().startsWith(K_PREFIX);
-  }
-
-  private java.util.Map.Entry<Integer, Map<String, Object>> selectListEntryBasedOnKey(String key,
+  private static java.util.Map.Entry<Integer, Map<String, Object>> selectListEntryBasedOnKey(
+      String key,
       List<Map<String, Object>> values,
       ObjectMapper objectMapper) {
     try {
@@ -308,7 +324,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
     // this should not happen in theory
     if (targetManagedFields.size() > 1) {
-      log.debug("More field managers exists with name: {} in resource: {} with name: {} ",
+      log.debug("More than one field manager exists with name: {} in resource: {} with name: {} ",
           fieldManager,
           actual, actual.getMetadata().getName());
     }
