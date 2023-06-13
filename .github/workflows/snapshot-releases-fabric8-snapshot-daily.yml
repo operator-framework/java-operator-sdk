@@ -31,6 +31,8 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: fabric8-next-version
       - name: Set up Java and Maven
         uses: actions/setup-java@v3
         with:
