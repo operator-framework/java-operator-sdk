@@ -43,7 +43,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     this.controller = controller;
 
     final var config = controller.getConfiguration();
-    OnUpdateFilter<T> internalOnUpdateFilter =
+    OnUpdateFilter internalOnUpdateFilter =
         (OnUpdateFilter<T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
             config.getFinalizerName())
             .or(onUpdateGenerationAware(config.isGenerationAware()))
