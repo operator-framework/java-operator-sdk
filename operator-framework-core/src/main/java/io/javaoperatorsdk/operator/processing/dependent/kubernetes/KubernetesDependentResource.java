@@ -139,8 +139,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .ssaBasedCreateUpdateForDependentResource()) {
       return prepare(target, primary, "Creating").create();
     } else {
-      return prepare(target, primary, "Creating").forceConflicts()
-              .serverSideApply();
+      return prepare(target, primary, "Creating")
+          .fieldManager(context.getControllerConfiguration().fieldManager())
+          .forceConflicts()
+          .serverSideApply();
     }
   }
 
@@ -151,7 +153,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       return prepare(updatedActual, primary, "Updating").replace();
     } else {
       target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
-      return prepare(target, primary, "Updating").forceConflicts().serverSideApply();
+      return prepare(target, primary, "Updating")
+          .fieldManager(context.getControllerConfiguration().fieldManager())
+          .forceConflicts().serverSideApply();
     }
   }
 
