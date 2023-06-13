@@ -155,6 +155,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private static void fillResultsAndTraverseFurther(Map<String, Object> result,
       Map<String, Object> actualMap, Map<String, Object> managedFields, ObjectMapper objectMapper,
       String key, String keyInActual, Object managedFieldValue) throws JsonProcessingException {
@@ -173,6 +174,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   // list entries referenced by key, or when "k:" prefix is used
+  @SuppressWarnings("unchecked")
   private static void handleListKeyEntrySet(Map<String, Object> result,
       Map<String, Object> actualMap,
       ObjectMapper objectMapper, String keyInActual,
@@ -182,7 +184,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var actualValueList = (List<Map<String, Object>>) actualMap.get(keyInActual);
 
     SortedMap<Integer, Map<String, Object>> targetValuesByIndex = new TreeMap<>();
-    Map<Integer, Map<String, Object>> mangedEntryByIndex = new HashMap<>();
+    Map<Integer, Map<String, Object>> managedEntryByIndex = new HashMap<>();
 
     for (Map.Entry<String, Object> listEntry : managedEntrySet) {
       if (DOT_KEY.equals(listEntry.getKey())) {
@@ -191,14 +193,14 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       var actualListEntry = selectListEntryBasedOnKey(keyWithoutPrefix(listEntry.getKey()),
           actualValueList, objectMapper);
       targetValuesByIndex.put(actualListEntry.getKey(), actualListEntry.getValue());
-      mangedEntryByIndex.put(actualListEntry.getKey(), (Map<String, Object>) listEntry.getValue());
+      managedEntryByIndex.put(actualListEntry.getKey(), (Map<String, Object>) listEntry.getValue());
     }
 
     targetValuesByIndex.forEach((key, value) -> {
       var emptyResMapValue = new HashMap<String, Object>();
       valueList.add(emptyResMapValue);
       try {
-        keepOnlyManagedFields(emptyResMapValue, value, mangedEntryByIndex.get(key), objectMapper);
+        keepOnlyManagedFields(emptyResMapValue, value, managedEntryByIndex.get(key), objectMapper);
       } catch (JsonProcessingException ex) {
         throw new IllegalStateException(ex);
       }
@@ -206,6 +208,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   // set values, the "v:" prefix
+  @SuppressWarnings("rawtypes")
   private static void handleSetValues(Map<String, Object> result, Map<String, Object> actualMap,
       ObjectMapper objectMapper, String keyInActual,
       Set<Map.Entry<String, Object>> managedEntrySet) {
