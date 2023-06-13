@@ -67,6 +67,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     return Optional.ofNullable(onUpdateFilter);
   }
 
+  @Override
   public Optional<GenericFilter<? super R>> genericFilter() {
     return Optional.ofNullable(genericFilter);
   }
