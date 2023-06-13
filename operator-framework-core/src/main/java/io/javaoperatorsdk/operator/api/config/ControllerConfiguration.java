@@ -130,9 +130,11 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
   }
 
   /**
-   * fieldManager name used for the dependent resource to do create/update (in practice SSA Patch).
-   * In future this might be used also for other purposes like to make status updates of the primary
-   * resource with SSA. If not set, sanitized controller name is used as field manager.
+   * Retrieves the name used to assign as field manager for
+   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
+   * Apply</a> (SSA) operations. If unset, the sanitized controller name will be used.
+   *
+   * @return the name used as field manager for SSA operations
    */
   default String fieldManager() {
     return getName();

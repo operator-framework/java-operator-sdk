@@ -49,7 +49,7 @@ public @interface ControllerConfiguration {
    * Specified which namespaces this Controller monitors for custom resources events. If no
    * namespace is specified then the controller will monitor all namespaces by default.
    *
-   * @return the list of namespaces this controller monitors
+   * @return the array of namespaces this controller monitors
    */
   String[] namespaces() default Constants.WATCH_ALL_NAMESPACES;
 
@@ -110,7 +110,7 @@ public @interface ControllerConfiguration {
    * Optional list of {@link Dependent} configurations which associate a resource type to a
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
    *
-   * @return the list of {@link Dependent} configurations
+   * @return the array of {@link Dependent} configurations
    */
   Dependent[] dependents() default {};
 
@@ -133,9 +133,11 @@ public @interface ControllerConfiguration {
   Class<? extends ItemStore> itemStore() default ItemStore.class;
 
   /**
-   * fieldManager name used for the dependent resource to do create/update (in practice SSA Patch).
-   * In future this might be used also for other purposes like to make status updates of the primary
-   * resource with SSA. If not set, sanitized controller name is used as field manager.
+   * Retrieves the name used to assign as field manager for
+   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
+   * Apply</a> (SSA) operations. If unset, the sanitized controller name will be used.
+   *
+   * @return the name used as field manager for SSA operations
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 }
