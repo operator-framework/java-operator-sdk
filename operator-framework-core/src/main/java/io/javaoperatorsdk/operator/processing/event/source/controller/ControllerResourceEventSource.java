@@ -133,7 +133,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void setOnDeleteFilter(OnDeleteFilter<T> onDeleteFilter) {
+  public void setOnDeleteFilter(OnDeleteFilter<? super T> onDeleteFilter) {
     throw new IllegalStateException(
         "onDeleteFilter is not supported for controller resource event source");
   }

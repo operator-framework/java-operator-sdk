@@ -11,10 +11,10 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
     implements ResourceEventSource<R, P> {
   private final Class<R> resourceClass;
 
-  protected OnAddFilter<R> onAddFilter;
-  protected OnUpdateFilter<R> onUpdateFilter;
-  protected OnDeleteFilter<R> onDeleteFilter;
-  protected GenericFilter<R> genericFilter;
+  protected OnAddFilter<? super R> onAddFilter;
+  protected OnUpdateFilter<? super R> onUpdateFilter;
+  protected OnDeleteFilter<? super R> onDeleteFilter;
+  protected GenericFilter<? super R> genericFilter;
 
   protected AbstractResourceEventSource(Class<R> resourceClass) {
     this.resourceClass = resourceClass;
@@ -25,21 +25,21 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
     return resourceClass;
   }
 
-  public void setOnAddFilter(OnAddFilter<R> onAddFilter) {
+  public void setOnAddFilter(OnAddFilter<? super R> onAddFilter) {
     this.onAddFilter = onAddFilter;
   }
 
   public void setOnUpdateFilter(
-      OnUpdateFilter<R> onUpdateFilter) {
+      OnUpdateFilter<? super R> onUpdateFilter) {
     this.onUpdateFilter = onUpdateFilter;
   }
 
   public void setOnDeleteFilter(
-      OnDeleteFilter<R> onDeleteFilter) {
+      OnDeleteFilter<? super R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
   }
 
-  public void setGenericFilter(GenericFilter<R> genericFilter) {
+  public void setGenericFilter(GenericFilter<? super R> genericFilter) {
     this.genericFilter = genericFilter;
   }
 }

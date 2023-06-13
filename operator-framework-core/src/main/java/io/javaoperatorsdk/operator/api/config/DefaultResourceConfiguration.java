@@ -15,16 +15,17 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
 
   private final Class<R> resourceClass;
   private final String resourceTypeName;
-  private final OnAddFilter<R> onAddFilter;
-  private final OnUpdateFilter<R> onUpdateFilter;
-  private final GenericFilter<R> genericFilter;
+  private final OnAddFilter<? super R> onAddFilter;
+  private final OnUpdateFilter<? super R> onUpdateFilter;
+  private final GenericFilter<? super R> genericFilter;
   private final String labelSelector;
   private final Set<String> namespaces;
   private final ItemStore<R> itemStore;
 
   protected DefaultResourceConfiguration(Class<R> resourceClass,
-      Set<String> namespaces, String labelSelector, OnAddFilter<R> onAddFilter,
-      OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, ItemStore<R> itemStore) {
+      Set<String> namespaces, String labelSelector, OnAddFilter<? super R> onAddFilter,
+      OnUpdateFilter<? super R> onUpdateFilter, GenericFilter<? super R> genericFilter,
+      ItemStore<R> itemStore) {
     this.resourceClass = resourceClass;
     this.resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;
@@ -57,16 +58,16 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   }
 
   @Override
-  public Optional<OnAddFilter<R>> onAddFilter() {
+  public Optional<OnAddFilter<? super R>> onAddFilter() {
     return Optional.ofNullable(onAddFilter);
   }
 
   @Override
-  public Optional<OnUpdateFilter<R>> onUpdateFilter() {
+  public Optional<OnUpdateFilter<? super R>> onUpdateFilter() {
     return Optional.ofNullable(onUpdateFilter);
   }
 
-  public Optional<GenericFilter<R>> genericFilter() {
+  public Optional<GenericFilter<? super R>> genericFilter() {
     return Optional.ofNullable(genericFilter);
   }
 

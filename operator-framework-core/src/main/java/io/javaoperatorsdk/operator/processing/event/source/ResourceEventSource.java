@@ -32,11 +32,11 @@ public interface ResourceEventSource<R, P extends HasMetadata> extends EventSour
 
   Set<R> getSecondaryResources(P primary);
 
-  void setOnAddFilter(OnAddFilter<R> onAddFilter);
+  void setOnAddFilter(OnAddFilter<? super R> onAddFilter);
 
-  void setOnUpdateFilter(OnUpdateFilter<R> onUpdateFilter);
+  void setOnUpdateFilter(OnUpdateFilter<? super R> onUpdateFilter);
 
-  void setOnDeleteFilter(OnDeleteFilter<R> onDeleteFilter);
+  void setOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter);
 
-  void setGenericFilter(GenericFilter<R> genericFilter);
+  void setGenericFilter(GenericFilter<? super R> genericFilter);
 }
