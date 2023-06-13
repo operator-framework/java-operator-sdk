@@ -136,7 +136,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
     if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateForDependentResource()) {
+        .ssaBasedCreateUpdateForDependentResources()) {
       return prepare(target, primary, "Creating").create();
     } else {
       return prepare(target, primary, "Creating")
@@ -148,7 +148,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public R update(R actual, R target, P primary, Context<P> context) {
     if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateForDependentResource()) {
+        .ssaBasedCreateUpdateForDependentResources()) {
       var updatedActual = processor.replaceSpecOnActual(actual, target, context);
       return prepare(updatedActual, primary, "Updating").replace();
     } else {

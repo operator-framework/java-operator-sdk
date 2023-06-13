@@ -269,11 +269,11 @@ public interface ConfigurationService {
    * Allows to revert to the 4.3 behavior when it comes to creating or updating Kubernetes Dependent
    * Resources when set to {@code false}. The default approach how these resources are
    * created/updated was change to use
-   * <a href='https://kubernetes.io/docs/reference/using-api/server-side-apply/'>Server-Side
+   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
    * Apply</a> (SSA) by default. Note that the legacy approach, and this setting, might be removed
    * in the future.
    */
-  default boolean ssaBasedCreateUpdateForDependentResource() {
+  default boolean ssaBasedCreateUpdateForDependentResources() {
     return true;
   }
 

@@ -32,7 +32,7 @@ public class ConfigurationServiceOverrider {
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
   private ResourceClassResolver resourceClassResolver;
-  private Boolean ssaBasedCreateUpdateForDependentResource;
+  private Boolean ssaBasedCreateUpdateForDependentResources;
   private Boolean ssaBasedDefaultMatchingForDependentResources;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
@@ -141,9 +141,9 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withSSABasedCreateUpdateForDependentResource(
+  public ConfigurationServiceOverrider withSSABasedCreateUpdateForDependentResources(
       boolean value) {
-    this.ssaBasedCreateUpdateForDependentResource = value;
+    this.ssaBasedCreateUpdateForDependentResources = value;
     return this;
   }
 
@@ -264,10 +264,10 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean ssaBasedCreateUpdateForDependentResource() {
-        return ssaBasedCreateUpdateForDependentResource != null
-            ? ssaBasedCreateUpdateForDependentResource
-            : super.ssaBasedCreateUpdateForDependentResource();
+      public boolean ssaBasedCreateUpdateForDependentResources() {
+        return ssaBasedCreateUpdateForDependentResources != null
+            ? ssaBasedCreateUpdateForDependentResources
+            : super.ssaBasedCreateUpdateForDependentResources();
       }
 
       @Override
