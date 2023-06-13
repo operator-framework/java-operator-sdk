@@ -1,0 +1,69 @@
+name: Verify Pull Request
+
+env:
+  MAVEN_ARGS: -V -ntp -e
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+on:
+  schedule:
+    #   Run on end of the day
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+jobs:
+  check_format_and_unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: fabric8-next-version
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+      - name: Check code format
+        run: |
+          ./mvnw ${MAVEN_ARGS} formatter:validate -Dconfigfile=$PWD/contributing/eclipse-google-style.xml -pl '!operator-framework-bom' --file pom.xml
+          ./mvnw ${MAVEN_ARGS} impsort:check -pl '!operator-framework-bom' --file pom.xml
+      - name: Run unit tests
+        run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
+
+  integration_tests:
+    strategy:
+      matrix:
+        java: [ 11, 17 ]
+        kubernetes: [ 'v1.23.15', 'v1.24.9', 'v1.25.5' ]
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      java-version: ${{ matrix.java }}
+      kube-version: ${{ matrix.kubernetes }}
+    
+  httpclient-tests:
+    strategy:
+      matrix:
+        httpclient: [ 'vertx', 'jdk', 'jetty' ]
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      java-version: 17
+      kube-version: 'v1.25.5'
+      http-client: ${{ matrix.httpclient }}
+      experimental: true
+
+  special_integration_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 11, 17 ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+      - name: Run Special Integration Tests
+        run: ./mvnw ${MAVEN_ARGS} -B package -P minimal-watch-timeout-dependent-it --file pom.xml
