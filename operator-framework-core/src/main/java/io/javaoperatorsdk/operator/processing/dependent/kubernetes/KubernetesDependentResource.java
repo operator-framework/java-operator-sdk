@@ -139,7 +139,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .ssaBasedCreateUpdateForDependentResource()) {
       return prepare(target, primary, "Creating").create();
     } else {
-      return prepare(target, primary, "Creating").patch(getSSAPatchContext(context));
+      return prepare(target, primary, "Creating").forceConflicts()
+              .serverSideApply();
     }
   }
 
@@ -149,7 +150,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       var updatedActual = processor.replaceSpecOnActual(actual, target, context);
       return prepare(updatedActual, primary, "Updating").replace();
     } else {
-      return prepare(target, primary, "Updating").patch(getSSAPatchContext(context));
+      target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
+      return prepare(target, primary, "Updating").forceConflicts().serverSideApply();
     }
   }
 
@@ -288,14 +290,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public boolean isDeletable() {
     return super.isDeletable() && !garbageCollected;
-  }
-
-  private PatchContext getSSAPatchContext(Context<P> context) {
-    return new PatchContext.Builder()
-        .withPatchType(PatchType.SERVER_SIDE_APPLY)
-        .withForce(true)
-        .withFieldManager(context.getControllerConfiguration().fieldManager())
-        .build();
   }
 
 }
