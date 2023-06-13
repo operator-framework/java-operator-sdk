@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -179,7 +181,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     result.put(keyInActual, valueList);
     var actualValueList = (List<Map<String, Object>>) actualMap.get(keyInActual);
 
-    Map<Integer, Map<String, Object>> targetValuesByIndex = new HashMap<>();
+    SortedMap<Integer, Map<String, Object>> targetValuesByIndex = new TreeMap<>();
     Map<Integer, Map<String, Object>> mangedEntryByIndex = new HashMap<>();
 
     for (Map.Entry<String, Object> listEntry : managedEntrySet) {
@@ -192,20 +194,15 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       mangedEntryByIndex.put(actualListEntry.getKey(), (Map<String, Object>) listEntry.getValue());
     }
 
-    targetValuesByIndex.entrySet()
-        .stream()
-        // list is sorted according to the value in actual
-        .sorted(Map.Entry.comparingByKey())
-        .forEach(e -> {
-          var emptyResMapValue = new HashMap<String, Object>();
-          valueList.add(emptyResMapValue);
-          try {
-            keepOnlyManagedFields(emptyResMapValue, e.getValue(),
-                mangedEntryByIndex.get(e.getKey()), objectMapper);
-          } catch (JsonProcessingException ex) {
-            throw new IllegalStateException(ex);
-          }
-        });
+    targetValuesByIndex.forEach((key, value) -> {
+      var emptyResMapValue = new HashMap<String, Object>();
+      valueList.add(emptyResMapValue);
+      try {
+        keepOnlyManagedFields(emptyResMapValue, value, mangedEntryByIndex.get(key), objectMapper);
+      } catch (JsonProcessingException ex) {
+        throw new IllegalStateException(ex);
+      }
+    });
   }
 
   // set values, the "v:" prefix
