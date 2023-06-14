@@ -219,9 +219,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   // Set values, the "v:" prefix. Form in managed fields: "f:some-set":{"v:1":{}},"v:2":{},"v:3":{}}
   // Note that this should be just used in very rate cases, actually was not able to produce a
-  // sample.
-  // And developers of this in Kubernetes was not able to provide one either. Basically this method
-  // just adds the values from "v:<value>" to the result.
+  // sample. And developers of this in Kubernetes was not able to provide one either. Basically this
+  // method just adds the values from "v:<value>" to the result.
   @SuppressWarnings("rawtypes")
   private static void handleSetValues(Map<String, Object> result, Map<String, Object> actualMap,
       ObjectMapper objectMapper, String keyInActual,
