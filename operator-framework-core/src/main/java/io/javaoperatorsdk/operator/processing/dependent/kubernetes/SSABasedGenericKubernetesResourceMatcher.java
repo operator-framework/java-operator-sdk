@@ -174,16 +174,16 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return !managedFieldValue.isEmpty();
   }
 
-  // List entries referenced by key, or when "k:" prefix is used. It works in a way
-  // that in it selects the target element based on the field(s) in "k:" for example
-  // when there is a list of element of owner references, the uid can server as a key
-  // for a list element: "k:{"uid":"1ef74cb4-dbbd-45ef-9caf-aa76186594ea"}".
-  // It selects the element and recursively processes it.
-  // Note that in these lists the order matter and seems that if there are more keys ("k:"),
-  // the ordering of those in the managed fields are not the same as the value order. So
-  // this also explicitly orders the result based on the value order in the resource not
-  // the key order in managed field.
-
+  /**
+   * List entries referenced by key, or when "k:" prefix is used. It works in a way that it selects
+   * the target element based on the field(s) in "k:" for example when there is a list of element of
+   * owner references, the uid can serve as a key for a list element:
+   * "k:{"uid":"1ef74cb4-dbbd-45ef-9caf-aa76186594ea"}". It selects the element and recursively
+   * processes it. Note that in these lists the order matters and seems that if there are more keys
+   * ("k:"), the ordering of those in the managed fields are not the same as the value order. So
+   * this also explicitly orders the result based on the value order in the resource not the key
+   * order in managed field.
+   */
   @SuppressWarnings("unchecked")
   private static void handleListKeyEntrySet(Map<String, Object> result,
       Map<String, Object> actualMap,
@@ -217,10 +217,13 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     });
   }
 
-  // Set values, the "v:" prefix. Form in managed fields: "f:some-set":{"v:1":{}},"v:2":{},"v:3":{}}
-  // Note that this should be just used in very rate cases, actually was not able to produce a
-  // sample. And developers of this in Kubernetes was not able to provide one either. Basically this
-  // method just adds the values from "v:<value>" to the result.
+  /**
+   * Set values, the "v:" prefix. Form in managed fields: "f:some-set":{"v:1":{}},"v:2":{},"v:3":{}}
+   * Note that this should be just used in very rare cases, actually was not able to produce a
+   * sample. Kubernetes developers who worked on this feature were not able to provide one either
+   * when prompted. Basically this method just adds the values from {@code "v:<value>"} to the
+   * result.
+   */
   @SuppressWarnings("rawtypes")
   private static void handleSetValues(Map<String, Object> result, Map<String, Object> actualMap,
       ObjectMapper objectMapper, String keyInActual,
@@ -266,10 +269,11 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return isKeyPrefixedSkippingDotKey(managedEntrySet, K_PREFIX);
   }
 
-  // Sometimes (not always) the first subfield of a managed field ("f:") is ".:{}",
-  // it looks that those are added when there are more subfields of a field referenced.
-  // See samples of tests. But does not seem to be have additional functionality, so can be
-  // just skipped.
+  /**
+   * Sometimes (not always) the first subfield of a managed field ("f:") is ".:{}", it looks that
+   * those are added when there are more subfields of a referenced field. See test samples. Does not
+   * seem to provide additional functionality, so can be just skipped for now.
+   */
   private static boolean isKeyPrefixedSkippingDotKey(Set<Map.Entry<String, Object>> managedEntrySet,
       String prefix) {
     var iterator = managedEntrySet.iterator();
