@@ -37,13 +37,13 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private final Controller<T> controller;
   private final ResourceEventFilter<T> legacyFilters;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerResourceEventSource(Controller<T> controller) {
     super(controller.getCRClient(), controller.getConfiguration());
     this.controller = controller;
 
     final var config = controller.getConfiguration();
-    OnUpdateFilter<T> internalOnUpdateFilter =
+    OnUpdateFilter internalOnUpdateFilter =
         (OnUpdateFilter<T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
             config.getFinalizerName())
             .or(onUpdateGenerationAware(config.isGenerationAware()))
@@ -133,7 +133,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void setOnDeleteFilter(OnDeleteFilter<T> onDeleteFilter) {
+  public void setOnDeleteFilter(OnDeleteFilter<? super T> onDeleteFilter) {
     throw new IllegalStateException(
         "onDeleteFilter is not supported for controller resource event source");
   }

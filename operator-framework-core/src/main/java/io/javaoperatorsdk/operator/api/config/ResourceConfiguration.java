@@ -23,15 +23,15 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
-  default Optional<OnAddFilter<R>> onAddFilter() {
+  default Optional<OnAddFilter<? super R>> onAddFilter() {
     return Optional.empty();
   }
 
-  default Optional<OnUpdateFilter<R>> onUpdateFilter() {
+  default Optional<OnUpdateFilter<? super R>> onUpdateFilter() {
     return Optional.empty();
   }
 
-  default Optional<GenericFilter<R>> genericFilter() {
+  default Optional<GenericFilter<? super R>> genericFilter() {
     return Optional.empty();
   }
 
