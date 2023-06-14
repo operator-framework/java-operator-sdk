@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -341,9 +342,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
     // this should not happen in theory
     if (targetManagedFields.size() > 1) {
-      log.debug("More than one field manager exists with name: {} in resource: {} with name: {} ",
-          fieldManager,
-          actual, actual.getMetadata().getName());
+      throw new OperatorException(
+          "More than one field manager exists with name: " + fieldManager + "in resource: " +
+              actual + " with name: " + actual.getMetadata().getName());
     }
     return Optional.of(targetManagedFields.get(0));
   }
