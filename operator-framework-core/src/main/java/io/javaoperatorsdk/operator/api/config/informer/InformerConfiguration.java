@@ -29,17 +29,17 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
-    private final OnDeleteFilter<R> onDeleteFilter;
+    private final OnDeleteFilter<? super R> onDeleteFilter;
 
     protected DefaultInformerConfiguration(String labelSelector,
         Class<R> resourceClass,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         Set<String> namespaces, boolean followControllerNamespaceChanges,
-        OnAddFilter<R> onAddFilter,
-        OnUpdateFilter<R> onUpdateFilter,
-        OnDeleteFilter<R> onDeleteFilter,
-        GenericFilter<R> genericFilter,
+        OnAddFilter<? super R> onAddFilter,
+        OnUpdateFilter<? super R> onUpdateFilter,
+        OnDeleteFilter<? super R> onDeleteFilter,
+        GenericFilter<? super R> genericFilter,
         ItemStore<R> itemStore) {
       super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
           itemStore);
@@ -62,7 +62,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       return secondaryToPrimaryMapper;
     }
 
-    public Optional<OnDeleteFilter<R>> onDeleteFilter() {
+    public Optional<OnDeleteFilter<? super R>> onDeleteFilter() {
       return Optional.ofNullable(onDeleteFilter);
     }
 
@@ -95,13 +95,13 @@ public interface InformerConfiguration<R extends HasMetadata>
    */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  Optional<OnAddFilter<R>> onAddFilter();
+  Optional<OnAddFilter<? super R>> onAddFilter();
 
-  Optional<OnUpdateFilter<R>> onUpdateFilter();
+  Optional<OnUpdateFilter<? super R>> onUpdateFilter();
 
-  Optional<OnDeleteFilter<R>> onDeleteFilter();
+  Optional<OnDeleteFilter<? super R>> onDeleteFilter();
 
-  Optional<GenericFilter<R>> genericFilter();
+  Optional<GenericFilter<? super R>> genericFilter();
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
@@ -113,10 +113,10 @@ public interface InformerConfiguration<R extends HasMetadata>
     private Set<String> namespaces;
     private String labelSelector;
     private final Class<R> resourceClass;
-    private OnAddFilter<R> onAddFilter;
-    private OnUpdateFilter<R> onUpdateFilter;
-    private OnDeleteFilter<R> onDeleteFilter;
-    private GenericFilter<R> genericFilter;
+    private OnAddFilter<? super R> onAddFilter;
+    private OnUpdateFilter<? super R> onUpdateFilter;
+    private OnDeleteFilter<? super R> onDeleteFilter;
+    private GenericFilter<? super R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
     private ItemStore<R> itemStore;
 
@@ -198,23 +198,25 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withOnAddFilter(OnAddFilter<R> onAddFilter) {
+    public InformerConfigurationBuilder<R> withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
       this.onAddFilter = onAddFilter;
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withOnUpdateFilter(OnUpdateFilter<R> onUpdateFilter) {
+    public InformerConfigurationBuilder<R> withOnUpdateFilter(
+        OnUpdateFilter<? super R> onUpdateFilter) {
       this.onUpdateFilter = onUpdateFilter;
       return this;
     }
 
     public InformerConfigurationBuilder<R> withOnDeleteFilter(
-        OnDeleteFilter<R> onDeleteFilter) {
+        OnDeleteFilter<? super R> onDeleteFilter) {
       this.onDeleteFilter = onDeleteFilter;
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withGenericFilter(GenericFilter<R> genericFilter) {
+    public InformerConfigurationBuilder<R> withGenericFilter(
+        GenericFilter<? super R> genericFilter) {
       this.genericFilter = genericFilter;
       return this;
     }

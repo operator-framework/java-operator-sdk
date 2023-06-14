@@ -32,9 +32,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
-  private OnAddFilter<R> onAddFilter;
-  private OnUpdateFilter<R> onUpdateFilter;
-  private GenericFilter<R> genericFilter;
+  private OnAddFilter<? super R> onAddFilter;
+  private OnUpdateFilter<? super R> onUpdateFilter;
+  private GenericFilter<? super R> genericFilter;
   private RateLimiter rateLimiter;
   private Map<DependentResourceSpec, Object> configurations;
   private ItemStore<R> itemStore;
