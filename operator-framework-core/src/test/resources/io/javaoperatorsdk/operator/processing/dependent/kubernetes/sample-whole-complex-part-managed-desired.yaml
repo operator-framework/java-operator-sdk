@@ -1,0 +1,24 @@
+kind: FlowSchema
+metadata:
+  annotations:
+    apf.kubernetes.io/autoupdate-spec: "true"
+  name: probes
+spec:
+  matchingPrecedence: 2
+  priorityLevelConfiguration:
+    name: exempt
+  rules:
+    - nonResourceRules:
+        - nonResourceURLs:
+            - /healthz
+            - /readyz
+            - /livez
+          verbs:
+            - get
+      subjects:
+        - group:
+            name: system:unauthenticated
+          kind: Group
+        - group:
+            name: system:authenticated
+          kind: Group

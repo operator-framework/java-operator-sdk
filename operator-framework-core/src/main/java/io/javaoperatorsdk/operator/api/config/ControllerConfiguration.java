@@ -22,6 +22,10 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
+  /**
+   * Will use the controller name as fieldManager if set.
+   */
+  String CONTROLLER_NAME_AS_FIELD_MANAGER = "use_controller_name";
 
   default String getName() {
     return ensureValidName(null, getAssociatedReconcilerClassName());
@@ -124,4 +128,16 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
   default Set<String> getEffectiveNamespaces() {
     return ResourceConfiguration.super.getEffectiveNamespaces(getConfigurationService());
   }
+
+  /**
+   * Retrieves the name used to assign as field manager for
+   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
+   * Apply</a> (SSA) operations. If unset, the sanitized controller name will be used.
+   *
+   * @return the name used as field manager for SSA operations
+   */
+  default String fieldManager() {
+    return getName();
+  }
+
 }

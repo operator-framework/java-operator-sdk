@@ -44,6 +44,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
+
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
@@ -128,16 +129,41 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
-    return prepare(target, primary, "Creating").create();
+    if (!context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedCreateUpdateForDependentResources()) {
+      return prepare(target, primary, "Creating").create();
+    } else {
+      return prepare(target, primary, "Creating")
+          .fieldManager(context.getControllerConfiguration().fieldManager())
+          .forceConflicts()
+          .serverSideApply();
+    }
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
-    var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-    return prepare(updatedActual, primary, "Updating").replace();
+    if (!context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedCreateUpdateForDependentResources()) {
+      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
+      return prepare(updatedActual, primary, "Updating").replace();
+    } else {
+      target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
+      return prepare(target, primary, "Updating")
+          .fieldManager(context.getControllerConfiguration().fieldManager())
+          .forceConflicts().serverSideApply();
+    }
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
+    if (!context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedDefaultMatchingForDependentResources()) {
+      return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
+    } else {
+      final var desired = desired(primary, context);
+      addReferenceHandlingMetadata(desired, primary);
+      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
+          desired, context);
+      return Result.computed(matches, desired);
+    }
   }
 
   @SuppressWarnings("unused")
@@ -164,16 +190,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         desired.getClass(),
         ResourceID.fromResource(desired));
 
-    if (addOwnerReference()) {
-      desired.addOwnerReference(primary);
-    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
-      addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
-    }
+    addReferenceHandlingMetadata(desired, primary);
 
     if (desired instanceof Namespaced) {
       return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
     } else {
       return client.resource(desired);
+    }
+  }
+
+  protected void addReferenceHandlingMetadata(R desired, P primary) {
+    if (addOwnerReference()) {
+      desired.addOwnerReference(primary);
+    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
+      addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
   }
 
