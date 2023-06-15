@@ -8,4 +8,4 @@ rules:
     verbs: [ "get", "watch", "list","post", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "configmaps" ]
-    verbs: [ "get", "watch", "list","post", "delete", "create" ]
+    verbs: [ "get", "watch", "list","post", "delete", "create","patch" ]
