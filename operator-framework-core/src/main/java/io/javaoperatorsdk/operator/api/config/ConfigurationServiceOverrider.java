@@ -32,6 +32,8 @@ public class ConfigurationServiceOverrider {
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
   private ResourceClassResolver resourceClassResolver;
+  private Boolean ssaBasedCreateUpdateForDependentResources;
+  private Boolean ssaBasedDefaultMatchingForDependentResources;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -136,6 +138,18 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withResourceClassResolver(
       ResourceClassResolver resourceClassResolver) {
     this.resourceClassResolver = resourceClassResolver;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withSSABasedCreateUpdateForDependentResources(
+      boolean value) {
+    this.ssaBasedCreateUpdateForDependentResources = value;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withSSABasedDefaultMatchingForDependentResources(
+      boolean value) {
+    this.ssaBasedDefaultMatchingForDependentResources = value;
     return this;
   }
 
@@ -247,6 +261,20 @@ public class ConfigurationServiceOverrider {
       public ResourceClassResolver getResourceClassResolver() {
         return resourceClassResolver != null ? resourceClassResolver
             : super.getResourceClassResolver();
+      }
+
+      @Override
+      public boolean ssaBasedCreateUpdateForDependentResources() {
+        return ssaBasedCreateUpdateForDependentResources != null
+            ? ssaBasedCreateUpdateForDependentResources
+            : super.ssaBasedCreateUpdateForDependentResources();
+      }
+
+      @Override
+      public boolean ssaBasedDefaultMatchingForDependentResources() {
+        return ssaBasedDefaultMatchingForDependentResources != null
+            ? ssaBasedDefaultMatchingForDependentResources
+            : super.ssaBasedDefaultMatchingForDependentResources();
       }
     };
   }

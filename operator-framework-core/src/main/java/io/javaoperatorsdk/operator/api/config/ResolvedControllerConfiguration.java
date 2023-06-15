@@ -32,6 +32,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final Map<DependentResourceSpec, Object> configurations;
   private final ItemStore<P> itemStore;
   private final ConfigurationService configurationService;
+  private final String fieldManager;
 
   private ResourceEventFilter<P> eventFilter;
   private List<DependentResourceSpec> dependentResources;
@@ -44,7 +45,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.genericFilter().orElse(null),
         other.getDependentResources(), other.getNamespaces(),
         other.getFinalizerName(), other.getLabelSelector(), Collections.emptyMap(),
-        other.getItemStore().orElse(null), other.getConfigurationService());
+        other.getItemStore().orElse(null), other.fieldManager(),
+        other.getConfigurationService());
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
@@ -72,10 +74,12 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       List<DependentResourceSpec> dependentResources,
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
+      String fieldManager,
       ConfigurationService configurationService) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
-        namespaces, finalizer, labelSelector, configurations, itemStore, configurationService);
+        namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
+        configurationService);
     setDependentResources(dependentResources);
   }
 
@@ -86,6 +90,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       GenericFilter<? super P> genericFilter,
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
+      String fieldManager,
       ConfigurationService configurationService) {
     super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
         itemStore);
@@ -100,13 +105,14 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.itemStore = itemStore;
     this.finalizer =
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
+    this.fieldManager = fieldManager;
   }
 
   protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
       Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
     this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
         null, null, null, null, null,
-        null, null, null, null, configurationService);
+        null, null, null, null, null, configurationService);
   }
 
   @Override
@@ -182,5 +188,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public Optional<ItemStore<P>> getItemStore() {
     return Optional.ofNullable(itemStore);
+  }
+
+  @Override
+  public String fieldManager() {
+    return fieldManager;
   }
 }

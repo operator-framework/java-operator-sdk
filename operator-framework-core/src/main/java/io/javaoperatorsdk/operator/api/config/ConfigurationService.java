@@ -264,4 +264,28 @@ public interface ConfigurationService {
   default ExecutorServiceManager getExecutorServiceManager() {
     return new ExecutorServiceManager(this);
   }
+
+  /**
+   * Allows to revert to the 4.3 behavior when it comes to creating or updating Kubernetes Dependent
+   * Resources when set to {@code false}. The default approach how these resources are
+   * created/updated was change to use
+   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
+   * Apply</a> (SSA) by default. Note that the legacy approach, and this setting, might be removed
+   * in the future.
+   */
+  default boolean ssaBasedCreateUpdateForDependentResources() {
+    return true;
+  }
+
+  /**
+   * Allows to revert to the 4.3 generic matching algorithm for Kubernetes Dependent Resources when
+   * set to {@code false}. Version 4.4 introduced a new generic matching algorithm for Kubernetes
+   * Dependent Resources which is quite complex. As a consequence, we introduced this setting to
+   * allow folks to revert to the previous matching algorithm if needed. Note, however, that the
+   * legacy algorithm, and this setting, might be removed in the future.
+   */
+  default boolean ssaBasedDefaultMatchingForDependentResources() {
+    return true;
+  }
+
 }
