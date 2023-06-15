@@ -18,6 +18,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
+import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
+
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
@@ -48,7 +50,7 @@ public @interface ControllerConfiguration {
    * Specified which namespaces this Controller monitors for custom resources events. If no
    * namespace is specified then the controller will monitor all namespaces by default.
    *
-   * @return the list of namespaces this controller monitors
+   * @return the array of namespaces this controller monitors
    */
   String[] namespaces() default Constants.WATCH_ALL_NAMESPACES;
 
@@ -109,7 +111,7 @@ public @interface ControllerConfiguration {
    * Optional list of {@link Dependent} configurations which associate a resource type to a
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
    *
-   * @return the list of {@link Dependent} configurations
+   * @return the array of {@link Dependent} configurations
    */
   Dependent[] dependents() default {};
 
@@ -147,4 +149,13 @@ public @interface ControllerConfiguration {
    * @return the class of the {@link ItemStore} implementation to use
    */
   Class<? extends ItemStore> itemStore() default ItemStore.class;
+
+  /**
+   * Retrieves the name used to assign as field manager for
+   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
+   * Apply</a> (SSA) operations. If unset, the sanitized controller name will be used.
+   *
+   * @return the name used as field manager for SSA operations
+   */
+  String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 }

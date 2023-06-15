@@ -33,6 +33,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 public class BaseConfigurationService extends AbstractConfigurationService {
@@ -135,6 +136,10 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       timeUnit = reconciliationInterval.timeUnit();
     }
 
+    final var dependentFieldManager =
+        annotation.fieldManager().equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name
+            : annotation.fieldManager();
+
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
@@ -152,7 +157,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
             Constants.NO_VALUE_SET),
         null,
-        Utils.instantiate(annotation.itemStore(), ItemStore.class, context), this);
+        Utils.instantiate(annotation.itemStore(), ItemStore.class, context), dependentFieldManager,
+        this);
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());

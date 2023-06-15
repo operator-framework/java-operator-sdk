@@ -19,8 +19,8 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   private static final String ADD = "add";
   private static final String OP = "op";
-  private static final String METADATA_LABELS = "/metadata/labels";
-  private static final String METADATA_ANNOTATIONS = "/metadata/annotations";
+  public static final String METADATA_LABELS = "/metadata/labels";
+  public static final String METADATA_ANNOTATIONS = "/metadata/annotations";
 
   private static final String PATH = "path";
   private static final String[] EMPTY_ARRAY = {};
