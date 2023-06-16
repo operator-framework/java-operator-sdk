@@ -9,7 +9,7 @@
     <name>Operator SDK - Bill of Materials</name>
     <packaging>pom</packaging>
     <description>Java SDK for implementing Kubernetes operators</description>
-    <url>https://github.com/java-operator-sdk/java-operator-sdk</url>
+    <url>https://github.com/operator-framework/java-operator-sdk</url>
 
     <licenses>
         <license>
@@ -31,7 +31,7 @@
     <scm>
         <connection>scm:git:git://github.com/java-operator-sdk/java-operator-sdk.git</connection>
         <developerConnection>scm:git:git@github.com/java-operator-sdk/java-operator-sdk.git</developerConnection>
-        <url>https://github.com/java-operator-sdk/java-operator-sdk/tree/master</url>
+        <url>https://github.com/operator-framework/java-operator-sdk/tree/master</url>
     </scm>
 
     <dependencyManagement>

@@ -13,7 +13,7 @@
     button: default
     type: discord
   - title: Contribute
-    url: https://github.com/java-operator-sdk/java-operator-sdk
+    url: https://github.com/operator-framework/java-operator-sdk
     button: default
     type: github
 

@@ -29,7 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * </p>
  * <p>
  * You can see an example of this in action in the <a href=
- * "https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/primarytosecondary/JobReconciler.java">Reconciler
+ * "https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/primarytosecondary/JobReconciler.java">Reconciler
  * for the PrimaryToSecondaryIT</a> integration tests that handles many-to-many relationship.
  * </p>
  *

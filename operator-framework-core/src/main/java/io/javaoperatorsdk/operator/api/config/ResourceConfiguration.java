@@ -133,7 +133,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    *
    * See {@link io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore} and
    * <a href=
-   * "https://github.com/java-operator-sdk/java-operator-sdk/blob/d6eda0138dba6d93c0ff22a5ffcaa7663fa65ca2/caffein-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedCache.java">
+   * "https://github.com/operator-framework/java-operator-sdk/blob/d6eda0138dba6d93c0ff22a5ffcaa7663fa65ca2/caffein-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeinBoundedCache.java">
    * CaffeinBoundedCache</a>
    *
    * @return Optional ItemStore implementation. If present this item store will be used inside the

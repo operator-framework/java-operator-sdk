@@ -8,7 +8,7 @@ accepted
 
 In case there are multiple versions of a custom resource it can happen that a controller/informer tracking
 such a resource might run into deserialization problem as shown
-in [this integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/07aab1a9914d865364d7236e496ef9ba5b50699e/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultiVersionCRDIT.java#L55-L55)
+in [this integration test](https://github.com/operator-framework/java-operator-sdk/blob/07aab1a9914d865364d7236e496ef9ba5b50699e/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultiVersionCRDIT.java#L55-L55)
 .
 Such case is possible (as seen in the test) if there are no conversion hooks in place, so the two custom resources
 which have different version are stored in the original form (not converted) and are not compatible.
