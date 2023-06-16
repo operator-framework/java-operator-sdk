@@ -53,7 +53,7 @@ public class StandaloneDependentTestReconciler
     }
 
     if (deployment.get().getSpec().getReplicas() != primary.getSpec().getReplicaCount()) {
-      // see https://github.com/java-operator-sdk/java-operator-sdk/issues/924
+      // see https://github.com/operator-framework/java-operator-sdk/issues/924
       throw new IllegalStateException("Something went wrong withe the cache mechanism.");
     }
     return UpdateControl.noUpdate();

@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  * primary resource will be automatically added to this managed resource.
  * </p>
  * <p>
- * See <a href="https://github.com/java-operator-sdk/java-operator-sdk/issues/1127">this issue</a>
+ * See <a href="https://github.com/operator-framework/java-operator-sdk/issues/1127">this issue</a>
  * for more details.
  * </p>
  *
