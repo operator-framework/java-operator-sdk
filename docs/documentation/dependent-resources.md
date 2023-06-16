@@ -471,6 +471,8 @@ as a sample.
 
 ## "Read-only" Dependent Resources vs. Event Source
 
+See Integration test for a read-only dependent [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/249b41f3c68c4d0e9c77c41eca647a69a24347b0/operator-framework/src/test/java/io/javaoperatorsdk/operator/PrimaryToSecondaryDependentIT.java).
+
 Some secondary resources only exist as input for the reconciliation process and are never
 updated *by a controller* (they might, and actually usually do, get updated by users interacting
 with the resources directly, however). This might be the case, for example, of a `ConfigMap`that is 
