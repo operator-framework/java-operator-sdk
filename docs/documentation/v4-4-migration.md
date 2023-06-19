@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/v4-4-migration
 ---
 
-# Migrating from v4.4 to v4.4
+# Migrating from v4.3 to v4.4
 
 ## Using SSA in Dependent Resources
 
