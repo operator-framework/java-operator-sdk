@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+  creationTimestamp: "2023-06-19T18:58:17Z"
+  generation: 2
+  labels:
+    app: pause
+  managedFields:
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:labels:
+          f:app: {}
+      f:spec:
+        f:replicas: {}
+        f:selector: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              f:app: {}
+          f:spec:
+            f:containers:
+              k:{"name":"pause"}:
+                .: {}
+                f:image: {}
+                f:name: {}
+            f:topologySpreadConstraints:
+              k:{"topologyKey":"zone1","whenUnsatisfiable":"DoNotSchedule"}:
+                .: {}
+                f:labelSelector: {}
+                f:maxSkew: {}
+                f:topologyKey: {}
+                f:whenUnsatisfiable: {}
+    manager: controller
+    operation: Apply
+    time: "2023-06-19T18:58:17Z"
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:deployment.kubernetes.io/revision: {}
+      f:status:
+        f:conditions:
+          .: {}
+          k:{"type":"Available"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Progressing"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+        f:observedGeneration: {}
+    manager: kube-controller-manager
+    operation: Update
+    subresource: status
+    time: "2023-06-19T18:58:17Z"
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:spec:
+        f:template:
+          f:spec:
+            f:containers:
+              k:{"name":"pause"}:
+                f:imagePullPolicy: {}
+    manager: kubectl-edit
+    operation: Update
+    time: "2023-06-19T18:58:31Z"
+  name: pause-deployment
+  namespace: default
+  resourceVersion: "758175"
+  uid: 61a391a9-2dec-4005-90d3-855f1dac5f44
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 0
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: pause
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: pause
+    spec:
+      containers:
+      - image: registry.k8s.io/pause:3.1
+        imagePullPolicy: Always
+        name: pause
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            foo: bar
+        maxSkew: 1
+        topologyKey: zone1
+        whenUnsatisfiable: DoNotSchedule

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -98,6 +99,26 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     actualConfigMap.getData().put("key1", "different value");
 
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testChangedDefault() {
+    // see https://github.com/kubernetes/kubernetes/issues/118725#issuecomment-1597574423
+
+    // imagine you create a deployment without specifying the imagepull policy, it will end up defaulting
+    // to IfNotPresent in this case. Then something modifies to Always - that is the starting state for
+    // actualDeployment
+
+    var actualDeployment = loadResource("deployment-with-managed-fields-modified-imagepull.yaml",
+        Deployment.class);
+
+    // try to revert the change by removing it
+    var desiredDeployment = loadResource("deployment-with-managed-fields-remove-imagepull.yaml",
+        Deployment.class);
+
+    // ideally this would return false - but even when it did, reapplying won't actually go back to using
+    // the default value.
+    assertThat(matcher.matches(actualDeployment, desiredDeployment, mockedContext)).isFalse();
   }
 
   @Test
