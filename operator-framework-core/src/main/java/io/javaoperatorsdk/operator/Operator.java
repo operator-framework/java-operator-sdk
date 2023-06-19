@@ -10,9 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Version;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -26,7 +24,7 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 @SuppressWarnings("rawtypes")
 public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
-  private static final int DEFAULT_MAX_CONCURRENT_REQUEST = 512;
+
   private final KubernetesClient kubernetesClient;
   private final ControllerManager controllerManager;
   private final LeaderElectionManager leaderElectionManager;
@@ -38,8 +36,8 @@ public class Operator implements LifecycleAware {
     this((KubernetesClient) null);
   }
 
-  public Operator(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, new BaseConfigurationService());
+  Operator(KubernetesClient kubernetesClient) {
+    this(kubernetesClient, null);
   }
 
   /**
@@ -48,39 +46,43 @@ public class Operator implements LifecycleAware {
    */
   @Deprecated(forRemoval = true)
   public Operator(ConfigurationService configurationService) {
-    this(null, configurationService);
+    this(null, null);
   }
 
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
     this(null, overrider);
   }
 
-  public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(client, ConfigurationService
-        .newOverriddenConfigurationService(new BaseConfigurationService(), overrider));
-  }
-
   /**
    * Note that Operator by default closes the client on stop, this can be changed using
    * {@link ConfigurationService}
    *
-   * @param kubernetesClient client to use to all Kubernetes related operations
-   * @param configurationService provides configuration
+   * @param client client to use to all Kubernetes related operations
+   * @param overrider a {@link ConfigurationServiceOverrider} consumer used to override the default
+   *        {@link ConfigurationService} values
    */
-  public Operator(KubernetesClient kubernetesClient, ConfigurationService configurationService) {
-    this.configurationService = configurationService;
+  public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
+    // initialize the client if the user didn't provide one
+    if (client == null) {
+      var configurationService = ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
+      client = configurationService.getKubernetesClient();
+    }
+
+    this.kubernetesClient = client;
+
+    // override the configuration service to use the same client
+    if (overrider != null) {
+      overrider = overrider.andThen(o -> o.withKubernetesClient(this.kubernetesClient));
+    } else {
+      overrider = o -> o.withKubernetesClient(this.kubernetesClient);
+    }
+    this.configurationService = ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
+
     final var executorServiceManager = configurationService.getExecutorServiceManager();
     controllerManager = new ControllerManager(executorServiceManager);
-    this.kubernetesClient =
-        kubernetesClient != null ? kubernetesClient
-            : new KubernetesClientBuilder()
-                .withConfig(new ConfigBuilder()
-                    .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST).build())
-                .build();
-
 
     leaderElectionManager =
-        new LeaderElectionManager(kubernetesClient, controllerManager, configurationService);
+        new LeaderElectionManager(this.kubernetesClient, controllerManager, configurationService);
   }
 
   /**

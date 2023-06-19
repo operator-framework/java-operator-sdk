@@ -9,7 +9,6 @@ import org.takes.facets.fork.TkFork;
 import org.takes.http.Exit;
 import org.takes.http.FtBasic;
 
-import io.fabric8.kubernetes.client.*;
 import io.javaoperatorsdk.operator.Operator;
 
 public class TomcatOperator {
@@ -18,10 +17,9 @@ public class TomcatOperator {
 
   public static void main(String[] args) throws IOException {
 
-    KubernetesClient client = new KubernetesClientBuilder().build();
-    Operator operator = new Operator(client);
+    Operator operator = new Operator();
     operator.register(new TomcatReconciler());
-    operator.register(new WebappReconciler(client));
+    operator.register(new WebappReconciler(operator.getKubernetesClient()));
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080).start(Exit.NEVER);

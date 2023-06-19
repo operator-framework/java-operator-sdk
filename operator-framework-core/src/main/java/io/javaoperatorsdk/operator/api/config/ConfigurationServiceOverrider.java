@@ -6,13 +6,19 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SuppressWarnings("unused")
 public class ConfigurationServiceOverrider {
+
+  private static final Logger log = LoggerFactory.getLogger(ConfigurationServiceOverrider.class);
   private final ConfigurationService original;
   private Metrics metrics;
   private Config clientConfig;
@@ -25,6 +31,7 @@ public class ConfigurationServiceOverrider {
   private Integer timeoutSeconds;
   private Boolean closeClientOnStop;
   private ObjectMapper objectMapper;
+  private KubernetesClient client;
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
@@ -110,6 +117,11 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withObjectMapper(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withKubernetesClient(KubernetesClient client) {
+    this.client = client;
     return this;
   }
 

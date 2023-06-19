@@ -11,14 +11,16 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
@@ -27,6 +29,8 @@ import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newT
 public interface ConfigurationService {
 
   Logger log = LoggerFactory.getLogger(ConfigurationService.class);
+
+  int DEFAULT_MAX_CONCURRENT_REQUEST = 512;
 
   /**
    * Retrieves the configuration associated with the specified reconciler
@@ -43,9 +47,44 @@ public interface ConfigurationService {
    *
    * @return the configuration of the Kubernetes client, defaulting to the provided
    *         auto-configuration
+   * @deprecated Configure your client as needed using {@link #getKubernetesClient()} or a
+   *             {@link ConfigurationServiceOverrider} to pass your own client instance, configured
+   *             as needed, instead
    */
+  @Deprecated(since = "4.4.0", forRemoval = true)
   default Config getClientConfiguration() {
-    return Config.autoConfigure(null);
+    return getKubernetesClient().getConfiguration();
+  }
+
+
+  ObjectMapper mapper = new ObjectMapper();
+  default ObjectMapper getObjectMapper() {
+    return mapper;
+  }
+
+  /**
+   * Used to clone custom resources. It is strongly suggested that implementors override this method
+   * since the default implementation creates a new {@link Cloner} instance each time this method is
+   * called.
+   *
+   * @return the configured {@link Cloner}
+   */
+  default Cloner getResourceCloner() {
+    return new Cloner() {
+      @Override
+      public <R extends HasMetadata> R clone(R object) {
+        return getKubernetesClient().getKubernetesSerialization().clone(object);
+      }
+    };
+  }
+
+  default KubernetesClient getKubernetesClient() {
+    return new KubernetesClientBuilder()
+        .withConfig(new ConfigBuilder(Config.autoConfigure(null))
+            .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
+            .build())
+        .withKubernetesSerialization(new KubernetesSerialization(getObjectMapper(), true))
+        .build();
   }
 
   /**
@@ -120,28 +159,6 @@ public interface ConfigurationService {
     return MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
   }
 
-  /**
-   * Used to clone custom resources. It is strongly suggested that implementors override this method
-   * since the default implementation creates a new {@link Cloner} instance each time this method is
-   * called.
-   *
-   * @return the configured {@link Cloner}
-   */
-  default Cloner getResourceCloner() {
-    return new Cloner() {
-      @SuppressWarnings("unchecked")
-      @Override
-      public HasMetadata clone(HasMetadata object) {
-        try {
-          final var mapper = getObjectMapper();
-          return mapper.readValue(mapper.writeValueAsString(object), object.getClass());
-        } catch (JsonProcessingException e) {
-          throw new IllegalStateException(e);
-        }
-      }
-    };
-  }
-
   int DEFAULT_TERMINATION_TIMEOUT_SECONDS = 10;
 
   /**
@@ -174,10 +191,6 @@ public interface ConfigurationService {
 
   default boolean closeClientOnStop() {
     return true;
-  }
-
-  default ObjectMapper getObjectMapper() {
-    return Serialization.jsonMapper();
   }
 
   @SuppressWarnings("rawtypes")
