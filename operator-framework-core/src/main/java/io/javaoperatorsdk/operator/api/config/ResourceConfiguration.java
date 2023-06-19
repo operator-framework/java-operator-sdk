@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -125,19 +126,21 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   /**
-   * Replaces the item store in informer. See underling <a href=
-   * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">
-   * method</a> in fabric8 client informer implementation.
+   * Replaces the item store in informer. See underlying <a href=
+   * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">method</a>
+   * in fabric8 client informer implementation.
    *
+   * <p>
    * The main goal, is to be able to use limited caches or provide any custom implementation.
+   * </p>
    *
-   * See {@link io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore} and
-   * <a href=
-   * "https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedCache.java">
-   * * CaffeinBoundedCache"> CaffeinBoundedCache</a>
+   * <p>
+   * See {@link BoundedItemStore} and <a href=
+   * "https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedCache.java">CaffeineBoundedCache</a>
+   * </p>
    *
-   * @return Optional ItemStore implementation. If present this item store will be used inside the
-   *         informers.
+   * @return Optional {@link ItemStore} implementation. If present this item store will be used by
+   *         the informers.
    */
   default Optional<ItemStore<R>> getItemStore() {
     return Optional.empty();

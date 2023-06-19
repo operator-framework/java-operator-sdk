@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
+import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -129,20 +130,21 @@ public @interface ControllerConfiguration {
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
 
   /**
-   * Replaces the item store in informer for the underlying controller primary resource. See
-   * underling <a href=
+   * Replaces the item store used by the informer for the associated primary resource controller.
+   * See underlying <a href=
    * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">
    * method</a> in fabric8 client informer implementation.
    *
+   * <p>
    * The main goal, is to be able to use limited caches or provide any custom implementation.
+   * </p>
    *
-   * See {@link io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore} and
-   * <a href=
-   * "https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedCache.java">
-   * CaffeinBoundedCache</a>
+   * <p>
+   * See {@link BoundedItemStore} and <a href=
+   * "https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedCache.java">CaffeinBoundedCache</a>
+   * </p>
    *
-   * @return Optional ItemStore implementation. If present this item store will be used inside the
-   *         informers.
+   * @return the class of the {@link ItemStore} implementation to use
    */
   Class<? extends ItemStore> itemStore() default ItemStore.class;
 }
