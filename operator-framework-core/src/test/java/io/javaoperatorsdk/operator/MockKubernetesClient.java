@@ -12,13 +12,28 @@ import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SubjectRulesReviewStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.*;
+import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 
-import static io.javaoperatorsdk.operator.LeaderElectionManager.*;
-import static org.mockito.Mockito.*;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.COORDINATION_GROUP;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.LEASES_RESOURCE;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.UNIVERSAL_VERB;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.nullable;
+import static org.mockito.Mockito.when;
 
 public class MockKubernetesClient {
 
@@ -78,6 +93,9 @@ public class MockKubernetesClient {
     final var operation = mock(NonNamespaceOperation.class);
     when(v1.customResourceDefinitions()).thenReturn(operation);
     when(operation.withName(any())).thenReturn(mock(Resource.class));
+
+    final var serialization = new KubernetesSerialization();
+    when(client.getKubernetesSerialization()).thenReturn(serialization);
 
     return client;
   }

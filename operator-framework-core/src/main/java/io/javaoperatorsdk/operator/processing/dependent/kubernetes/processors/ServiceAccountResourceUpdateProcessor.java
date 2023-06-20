@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public class ServiceAccountResourceUpdateProcessor
     extends GenericResourceUpdatePreProcessor<ServiceAccount> {
@@ -18,8 +17,7 @@ public class ServiceAccountResourceUpdateProcessor
 
   @Override
   public boolean matches(ServiceAccount actual, ServiceAccount desired, boolean equality,
-      ObjectMapper objectMapper,
-      String[] ignoredPaths) {
+      Context<?> context, String[] ignoredPaths) {
     return Objects.equals(actual.getAutomountServiceAccountToken(),
         desired.getAutomountServiceAccountToken()) &&
         Objects.equals(actual.getImagePullSecrets(), desired.getImagePullSecrets()) &&

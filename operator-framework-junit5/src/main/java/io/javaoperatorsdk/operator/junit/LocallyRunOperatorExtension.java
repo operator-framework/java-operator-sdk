@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.client.LocalPortForward;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.RegisteredController;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -53,7 +53,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
-      ConfigurationService configurationService) {
+      Consumer<ConfigurationServiceOverrider> configurationServiceOverrider) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -65,7 +65,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
-    this.operator = new Operator(getKubernetesClient(), configurationService);
+    this.operator = new Operator(getKubernetesClient(), configurationServiceOverrider);
     this.registeredControllers = new HashMap<>();
   }
 
@@ -289,7 +289,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient,
-          configurationService);
+          configurationServiceOverrider);
     }
   }
 

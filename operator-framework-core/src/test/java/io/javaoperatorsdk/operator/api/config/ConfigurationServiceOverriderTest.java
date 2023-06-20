@@ -6,11 +6,7 @@ import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -18,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 class ConfigurationServiceOverriderTest {
 
   private static final Metrics METRICS = new Metrics() {};
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
   private static final LeaderElectionConfiguration LEADER_ELECTION_CONFIGURATION =
       new LeaderElectionConfiguration("foo", "fooNS");
 
@@ -38,18 +34,8 @@ class ConfigurationServiceOverriderTest {
       }
 
       @Override
-      public Config getClientConfiguration() {
-        return new ConfigBuilder().withNamespace("namespace").build();
-      }
-
-      @Override
       public Metrics getMetrics() {
         return METRICS;
-      }
-
-      @Override
-      public ObjectMapper getObjectMapper() {
-        return OBJECT_MAPPER;
       }
 
       @Override
@@ -63,12 +49,10 @@ class ConfigurationServiceOverriderTest {
       }
     };
     final var overridden = new ConfigurationServiceOverrider(config)
-        .withClientConfiguration(new ConfigBuilder().withNamespace("newNS").build())
         .checkingCRDAndValidateLocalModel(true)
         .withExecutorService(Executors.newSingleThreadExecutor())
         .withWorkflowExecutorService(Executors.newFixedThreadPool(4))
         .withCloseClientOnStop(false)
-        .withObjectMapper(new ObjectMapper())
         .withResourceCloner(new Cloner() {
           @Override
           public <R extends HasMetadata> R clone(R object) {
@@ -90,11 +74,9 @@ class ConfigurationServiceOverriderTest {
         overridden.concurrentReconciliationThreads());
     assertNotEquals(config.getTerminationTimeoutSeconds(),
         overridden.getTerminationTimeoutSeconds());
-    assertNotEquals(config.getClientConfiguration(), overridden.getClientConfiguration());
     assertNotEquals(config.getExecutorService(), overridden.getExecutorService());
     assertNotEquals(config.getWorkflowExecutorService(), overridden.getWorkflowExecutorService());
     assertNotEquals(config.getMetrics(), overridden.getMetrics());
-    assertNotEquals(config.getObjectMapper(), overridden.getObjectMapper());
     assertNotEquals(config.getLeaderElectionConfiguration(),
         overridden.getLeaderElectionConfiguration());
     assertNotEquals(config.getInformerStoppedHandler(),

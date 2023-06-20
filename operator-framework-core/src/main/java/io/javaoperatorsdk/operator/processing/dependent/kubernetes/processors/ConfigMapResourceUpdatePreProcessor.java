@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public class ConfigMapResourceUpdatePreProcessor
     extends GenericResourceUpdatePreProcessor<ConfigMap> {
@@ -18,8 +17,7 @@ public class ConfigMapResourceUpdatePreProcessor
 
   @Override
   public boolean matches(ConfigMap actual, ConfigMap desired, boolean equality,
-      ObjectMapper objectMapper,
-      String[] ignoredPaths) {
+      Context<?> context, String[] ignoredPaths) {
     return Objects.equals(actual.getImmutable(), desired.getImmutable()) &&
         Objects.equals(actual.getData(), desired.getData()) &&
         Objects.equals(actual.getBinaryData(), desired.getBinaryData());

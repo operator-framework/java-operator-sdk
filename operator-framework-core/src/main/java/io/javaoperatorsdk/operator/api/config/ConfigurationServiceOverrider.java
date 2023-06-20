@@ -6,16 +6,18 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
-import io.fabric8.kubernetes.client.Config;
-import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
 @SuppressWarnings("unused")
 public class ConfigurationServiceOverrider {
+
+  private static final Logger log = LoggerFactory.getLogger(ConfigurationServiceOverrider.class);
   private final ConfigurationService original;
   private Metrics metrics;
-  private Config clientConfig;
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
   private Integer minConcurrentReconciliationThreads;
@@ -24,7 +26,7 @@ public class ConfigurationServiceOverrider {
   private Cloner cloner;
   private Integer timeoutSeconds;
   private Boolean closeClientOnStop;
-  private ObjectMapper objectMapper;
+  private KubernetesClient client;
   private ExecutorService executorService;
   private ExecutorService workflowExecutorService;
   private LeaderElectionConfiguration leaderElectionConfiguration;
@@ -37,11 +39,6 @@ public class ConfigurationServiceOverrider {
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
-  }
-
-  public ConfigurationServiceOverrider withClientConfiguration(Config configuration) {
-    this.clientConfig = configuration;
-    return this;
   }
 
   public ConfigurationServiceOverrider checkingCRDAndValidateLocalModel(boolean check) {
@@ -108,8 +105,8 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withObjectMapper(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public ConfigurationServiceOverrider withKubernetesClient(KubernetesClient client) {
+    this.client = client;
     return this;
   }
 
@@ -154,15 +151,10 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationService build() {
-    return new BaseConfigurationService(original.getVersion(), cloner, objectMapper) {
+    return new BaseConfigurationService(original.getVersion(), cloner) {
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
-      }
-
-      @Override
-      public Config getClientConfiguration() {
-        return clientConfig != null ? clientConfig : original.getClientConfiguration();
       }
 
       @Override
@@ -230,8 +222,8 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public ObjectMapper getObjectMapper() {
-        return objectMapper != null ? objectMapper : original.getObjectMapper();
+      public KubernetesClient getKubernetesClient() {
+        return client != null ? client : original.getKubernetesClient();
       }
 
       @Override
