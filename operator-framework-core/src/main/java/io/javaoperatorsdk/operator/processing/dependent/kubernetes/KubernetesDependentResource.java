@@ -168,8 +168,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
-    return GenericKubernetesResourceMatcher.match(desired, actualResource, false,
-        false, false, context);
+    if (!context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedDefaultMatchingForDependentResources()) {
+      return GenericKubernetesResourceMatcher.match(desired, actualResource, false,
+          false, false, context);
+    } else {
+      addReferenceHandlingMetadata(desired, primary);
+      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
+          desired, context);
+      return Result.computed(matches, desired);
+    }
   }
 
   protected void handleDelete(P primary, R secondary, Context<P> context) {
