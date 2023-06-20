@@ -21,8 +21,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
 
 /** An interface from which to retrieve configuration information. */
@@ -42,26 +40,6 @@ public interface ConfigurationService {
    */
   <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler);
 
-  /**
-   * Retrieves the Kubernetes client configuration
-   *
-   * @return the configuration of the Kubernetes client, defaulting to the provided
-   *         auto-configuration
-   * @deprecated Configure your client as needed using {@link #getKubernetesClient()} or a
-   *             {@link ConfigurationServiceOverrider} to pass your own client instance, configured
-   *             as needed, instead
-   */
-  @Deprecated(since = "4.4.0", forRemoval = true)
-  default Config getClientConfiguration() {
-    return getKubernetesClient().getConfiguration();
-  }
-
-
-  ObjectMapper mapper = new ObjectMapper();
-
-  default ObjectMapper getObjectMapper() {
-    return mapper;
-  }
 
   /**
    * Used to clone custom resources. It is strongly suggested that implementors override this method
@@ -84,7 +62,7 @@ public interface ConfigurationService {
         .withConfig(new ConfigBuilder(Config.autoConfigure(null))
             .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
             .build())
-        .withKubernetesSerialization(new KubernetesSerialization(getObjectMapper(), true))
+        .withKubernetesSerialization(new KubernetesSerialization())
         .build();
   }
 
@@ -273,6 +251,11 @@ public interface ConfigurationService {
       return toOverride.build();
     }
     return baseConfiguration;
+  }
+
+  static ConfigurationService newOverriddenConfigurationService(
+      Consumer<ConfigurationServiceOverrider> overrider) {
+    return newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
   }
 
   default ExecutorServiceManager getExecutorServiceManager() {

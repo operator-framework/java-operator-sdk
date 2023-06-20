@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReviewSpecBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfig;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
@@ -32,14 +31,11 @@ public class LeaderElectionManager {
   private final ControllerManager controllerManager;
   private String identity;
   private CompletableFuture<?> leaderElectionFuture;
-  private KubernetesClient kubernetesClient;
   private final ConfigurationService configurationService;
   private String leaseNamespace;
 
-  public LeaderElectionManager(KubernetesClient kubernetesClient,
-      ControllerManager controllerManager,
+  LeaderElectionManager(ControllerManager controllerManager,
       ConfigurationService configurationService) {
-    this.kubernetesClient = kubernetesClient;
     this.controllerManager = controllerManager;
     this.configurationService = configurationService;
   }
@@ -52,7 +48,7 @@ public class LeaderElectionManager {
     this.identity = identity(config);
     leaseNamespace =
         config.getLeaseNamespace().orElseGet(
-            () -> configurationService.getClientConfiguration().getNamespace());
+            () -> configurationService.getKubernetesClient().getConfiguration().getNamespace());
     if (leaseNamespace == null) {
       final var message =
           "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
@@ -62,7 +58,8 @@ public class LeaderElectionManager {
     final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
     // releaseOnCancel is not used in the underlying implementation
     leaderElector = new LeaderElectorBuilder(
-        kubernetesClient, configurationService.getExecutorServiceManager().cachingExecutorService())
+        configurationService.getKubernetesClient(),
+        configurationService.getExecutorServiceManager().cachingExecutorService())
         .withConfig(
             new LeaderElectionConfig(
                 lock,
@@ -122,7 +119,7 @@ public class LeaderElectionManager {
     var verbs = Arrays.asList("create", "update", "get");
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
-    var reviewResult = kubernetesClient.resource(review).create();
+    var reviewResult = configurationService.getKubernetesClient().resource(review).create();
     log.debug("SelfSubjectRulesReview result: {}", reviewResult);
     var foundRule = reviewResult.getStatus().getResourceRules().stream()
         .filter(rule -> rule.getApiGroups().contains(COORDINATION_GROUP)

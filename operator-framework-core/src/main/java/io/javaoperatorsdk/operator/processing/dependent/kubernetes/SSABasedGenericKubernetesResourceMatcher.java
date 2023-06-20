@@ -21,7 +21,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -52,8 +51,6 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   public static <L extends HasMetadata> SSABasedGenericKubernetesResourceMatcher<L> getInstance() {
     return INSTANCE;
   }
-
-  private static final TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() {};
 
   private static final String F_PREFIX = "f:";
   private static final String K_PREFIX = "k:";

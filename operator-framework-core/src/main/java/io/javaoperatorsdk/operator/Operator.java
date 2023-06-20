@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Version;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -45,6 +44,7 @@ public class Operator implements LifecycleAware {
    * @deprecated Use {@link #Operator(Consumer)} instead
    */
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("unused")
   public Operator(ConfigurationService configurationService) {
     this(null, null);
   }
@@ -60,12 +60,14 @@ public class Operator implements LifecycleAware {
    * @param client client to use to all Kubernetes related operations
    * @param overrider a {@link ConfigurationServiceOverrider} consumer used to override the default
    *        {@link ConfigurationService} values
+   * @deprecated Use {@link Operator#Operator(Consumer)} instead, passing your custom client with
+   *             {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}
    */
+  @Deprecated
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
-      var configurationService = ConfigurationService
-          .newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
+      var configurationService = ConfigurationService.newOverriddenConfigurationService(overrider);
       client = configurationService.getKubernetesClient();
     }
 
@@ -77,14 +79,12 @@ public class Operator implements LifecycleAware {
     } else {
       overrider = o -> o.withKubernetesClient(this.kubernetesClient);
     }
-    this.configurationService = ConfigurationService
-        .newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
+    this.configurationService = ConfigurationService.newOverriddenConfigurationService(overrider);
 
     final var executorServiceManager = configurationService.getExecutorServiceManager();
     controllerManager = new ControllerManager(executorServiceManager);
 
-    leaderElectionManager =
-        new LeaderElectionManager(this.kubernetesClient, controllerManager, configurationService);
+    leaderElectionManager = new LeaderElectionManager(controllerManager, configurationService);
   }
 
   /**
