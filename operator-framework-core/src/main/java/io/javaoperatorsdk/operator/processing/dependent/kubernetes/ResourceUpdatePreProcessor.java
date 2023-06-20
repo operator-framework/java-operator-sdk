@@ -9,9 +9,10 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.*;
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.allDiffsAreAddOps;
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.getDiffsImpactingPathsWithPrefixes;
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.nodeIsChildOf;
 
 public interface ResourceUpdatePreProcessor<R extends HasMetadata> {
 
@@ -19,11 +20,12 @@ public interface ResourceUpdatePreProcessor<R extends HasMetadata> {
 
   R replaceSpecOnActual(R actual, R desired, Context<?> context);
 
-  default boolean matches(R actual, R desired, boolean equality, ObjectMapper objectMapper,
+  default boolean matches(R actual, R desired, boolean equality, Context<?> context,
       String[] ignoredPaths) {
 
-    var desiredNode = objectMapper.valueToTree(desired);
-    var actualNode = objectMapper.valueToTree(actual);
+    final var objectMapper = context.getClient().getKubernetesSerialization();
+    var desiredNode = objectMapper.convertValue(desired, JsonNode.class);
+    var actualNode = objectMapper.convertValue(actual, JsonNode.class);
     var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
 
     final List<String> ignoreList =

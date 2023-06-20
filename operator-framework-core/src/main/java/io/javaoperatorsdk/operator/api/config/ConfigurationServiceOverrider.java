@@ -174,7 +174,8 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public Config getClientConfiguration() {
-        return clientConfig != null ? clientConfig : original.getClientConfiguration();
+        //todo: check if client exists
+        return clientConfig != null ? clientConfig : (client != null ? client.getConfiguration() : original.getClientConfiguration());
       }
 
       @Override
@@ -243,7 +244,14 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public ObjectMapper getObjectMapper() {
+        // todo: check if client exits
         return objectMapper != null ? objectMapper : original.getObjectMapper();
+      }
+
+      @Override
+      public KubernetesClient getKubernetesClient() {
+        // TODO: we need to use the client's mapper if we provided a client
+        return client != null ? client : original.getKubernetesClient();
       }
 
       @Override

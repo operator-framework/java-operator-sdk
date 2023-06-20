@@ -58,6 +58,7 @@ public interface ConfigurationService {
 
 
   ObjectMapper mapper = new ObjectMapper();
+
   default ObjectMapper getObjectMapper() {
     return mapper;
   }

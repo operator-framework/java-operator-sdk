@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.fabric8.kubernetes.client.Config;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
@@ -19,6 +20,7 @@ import static io.fabric8.kubernetes.client.Config.KUBERNETES_NAMESPACE_FILE;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class LeaderElectionManagerTest {
 
@@ -28,9 +30,11 @@ class LeaderElectionManagerTest {
   void setUp() {
     ControllerManager controllerManager = mock(ControllerManager.class);
     final var kubernetesClient = MockKubernetesClient.client(Lease.class);
+    when(kubernetesClient.getConfiguration()).thenReturn(Config.autoConfigure(null));
     var configurationService =
         ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
-            o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test")));
+            o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test"))
+                .withKubernetesClient(kubernetesClient));
     leaderElectionManager =
         new LeaderElectionManager(kubernetesClient, controllerManager, configurationService);
   }

@@ -64,7 +64,8 @@ public class Operator implements LifecycleAware {
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
-      var configurationService = ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
+      var configurationService = ConfigurationService
+          .newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
       client = configurationService.getKubernetesClient();
     }
 
@@ -76,7 +77,8 @@ public class Operator implements LifecycleAware {
     } else {
       overrider = o -> o.withKubernetesClient(this.kubernetesClient);
     }
-    this.configurationService = ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
+    this.configurationService = ConfigurationService
+        .newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
 
     final var executorServiceManager = configurationService.getExecutorServiceManager();
     controllerManager = new ControllerManager(executorServiceManager);
