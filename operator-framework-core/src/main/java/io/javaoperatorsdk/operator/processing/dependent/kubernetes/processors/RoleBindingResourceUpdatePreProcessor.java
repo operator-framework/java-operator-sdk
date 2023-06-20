@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public class RoleBindingResourceUpdatePreProcessor
     extends GenericResourceUpdatePreProcessor<RoleBinding> {
@@ -17,7 +16,7 @@ public class RoleBindingResourceUpdatePreProcessor
 
   @Override
   public boolean matches(RoleBinding actual, RoleBinding desired, boolean equality,
-      ObjectMapper objectMapper,
+      Context<?> context,
       String[] ignoredPaths) {
     return Objects.equals(actual.getRoleRef(), desired.getRoleRef()) &&
         Objects.equals(actual.getSubjects(), desired.getSubjects());

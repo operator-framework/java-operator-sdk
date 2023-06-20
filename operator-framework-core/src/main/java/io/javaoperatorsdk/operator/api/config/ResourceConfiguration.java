@@ -115,7 +115,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {
       final String namespace =
-          configurationService.getClientConfiguration().getNamespace();
+          configurationService.getKubernetesClient().getConfiguration().getNamespace();
       if (namespace == null) {
         throw new OperatorException(
             "Couldn't retrieve the currently connected namespace. Make sure it's correctly set in your ~/.kube/config file, using, e.g. 'kubectl config set-context <your context> --namespace=<your namespace>'");

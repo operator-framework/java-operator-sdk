@@ -5,12 +5,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.fabric8.kubernetes.client.Config;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 
@@ -19,20 +18,19 @@ import static io.fabric8.kubernetes.client.Config.KUBERNETES_NAMESPACE_FILE;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class LeaderElectionManagerTest {
 
-  private LeaderElectionManager leaderElectionManager;
-
-  @BeforeEach
-  void setUp() {
+  private LeaderElectionManager leaderElectionManager() {
     ControllerManager controllerManager = mock(ControllerManager.class);
     final var kubernetesClient = MockKubernetesClient.client(Lease.class);
+    when(kubernetesClient.getConfiguration()).thenReturn(Config.autoConfigure(null));
     var configurationService =
-        ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
-            o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test")));
-    leaderElectionManager =
-        new LeaderElectionManager(kubernetesClient, controllerManager, configurationService);
+        ConfigurationService.newOverriddenConfigurationService(
+            o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test"))
+                .withKubernetesClient(kubernetesClient));
+    return new LeaderElectionManager(controllerManager, configurationService);
   }
 
   @AfterEach
@@ -50,6 +48,7 @@ class LeaderElectionManagerTest {
     System.setProperty(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
     System.setProperty(KUBERNETES_NAMESPACE_FILE, namespacePath.toString());
 
+    final var leaderElectionManager = leaderElectionManager();
     leaderElectionManager.start();
     assertTrue(leaderElectionManager.isLeaderElectionEnabled());
   }
@@ -57,6 +56,6 @@ class LeaderElectionManagerTest {
   @Test
   void testFailedToInitInferLeaseNamespace() {
     System.setProperty(KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
-    assertThrows(IllegalArgumentException.class, () -> leaderElectionManager.start());
+    assertThrows(IllegalArgumentException.class, () -> leaderElectionManager().start());
   }
 }

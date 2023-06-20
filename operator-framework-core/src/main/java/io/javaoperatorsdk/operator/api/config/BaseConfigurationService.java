@@ -31,8 +31,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
@@ -43,10 +41,6 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   public BaseConfigurationService(Version version) {
     super(version);
-  }
-
-  public BaseConfigurationService(Version version, Cloner cloner, ObjectMapper mapper) {
-    super(version, cloner, mapper, null);
   }
 
   public BaseConfigurationService(Version version, Cloner cloner) {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -15,12 +16,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -52,8 +52,6 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return INSTANCE;
   }
 
-  private static final TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() {};
-
   private static final String F_PREFIX = "f:";
   private static final String K_PREFIX = "k:";
   private static final String V_PREFIX = "v:";
@@ -81,11 +79,10 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
       var managedFieldsEntry = optionalManagedFieldsEntry.orElseThrow();
 
-      var objectMapper =
-          context.getControllerConfiguration().getConfigurationService().getObjectMapper();
+      var objectMapper = context.getClient().getKubernetesSerialization();
 
-      var actualMap = objectMapper.convertValue(actual, typeRef);
-      var desiredMap = objectMapper.convertValue(desired, typeRef);
+      var actualMap = objectMapper.convertValue(actual, Map.class);
+      var desiredMap = objectMapper.convertValue(desired, Map.class);
 
       log.trace("Original actual: \n {} \n original desired: \n {} ", actual, desiredMap);
 
@@ -118,7 +115,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private static void keepOnlyManagedFields(Map<String, Object> result,
       Map<String, Object> actualMap,
-      Map<String, Object> managedFields, ObjectMapper objectMapper) throws JsonProcessingException {
+      Map<String, Object> managedFields, KubernetesSerialization objectMapper)
+      throws JsonProcessingException {
 
     if (managedFields.isEmpty()) {
       result.putAll(actualMap);
@@ -158,7 +156,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   private static void fillResultsAndTraverseFurther(Map<String, Object> result,
-      Map<String, Object> actualMap, Map<String, Object> managedFields, ObjectMapper objectMapper,
+      Map<String, Object> actualMap, Map<String, Object> managedFields,
+      KubernetesSerialization objectMapper,
       String key, String keyInActual, Object managedFieldValue) throws JsonProcessingException {
     var emptyMapValue = new HashMap<String, Object>();
     result.put(keyInActual, emptyMapValue);
@@ -187,8 +186,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private static void handleListKeyEntrySet(Map<String, Object> result,
       Map<String, Object> actualMap,
-      ObjectMapper objectMapper, String keyInActual,
-      Set<Map.Entry<String, Object>> managedEntrySet) {
+      KubernetesSerialization objectMapper, String keyInActual,
+      Set<Entry<String, Object>> managedEntrySet) {
     var valueList = new ArrayList<>();
     result.put(keyInActual, valueList);
     var actualValueList = (List<Map<String, Object>>) actualMap.get(keyInActual);
@@ -226,8 +225,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
    */
   @SuppressWarnings("rawtypes")
   private static void handleSetValues(Map<String, Object> result, Map<String, Object> actualMap,
-      ObjectMapper objectMapper, String keyInActual,
-      Set<Map.Entry<String, Object>> managedEntrySet) {
+      KubernetesSerialization objectMapper, String keyInActual,
+      Set<Entry<String, Object>> managedEntrySet) {
     var valueList = new ArrayList<>();
     result.put(keyInActual, valueList);
     for (Map.Entry<String, Object> valueEntry : managedEntrySet) {
@@ -241,23 +240,18 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         targetClass = values.get(0).getClass();
       }
 
-      var value =
-          parseKeyValue(keyWithoutPrefix(valueEntry.getKey()), targetClass, objectMapper);
+      var value = parseKeyValue(keyWithoutPrefix(valueEntry.getKey()), targetClass, objectMapper);
       valueList.add(value);
     }
   }
 
   public static Object parseKeyValue(String stringValue, Class<?> targetClass,
-      ObjectMapper objectMapper) {
-    try {
-      stringValue = stringValue.trim();
-      if (targetClass != null) {
-        return objectMapper.readValue(stringValue, targetClass);
-      } else {
-        return objectMapper.readValue(stringValue, typeRef);
-      }
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException(e);
+      KubernetesSerialization objectMapper) {
+    stringValue = stringValue.trim();
+    if (targetClass != null) {
+      return objectMapper.unmarshal(stringValue, targetClass);
+    } else {
+      return objectMapper.unmarshal(stringValue, Map.class);
     }
   }
 
@@ -287,46 +281,42 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   private static java.util.Map.Entry<Integer, Map<String, Object>> selectListEntryBasedOnKey(
       String key,
       List<Map<String, Object>> values,
-      ObjectMapper objectMapper) {
-    try {
-      Map<String, Object> ids = objectMapper.readValue(key, typeRef);
-      List<Map<String, Object>> possibleTargets = new ArrayList<>(1);
-      int index = -1;
-      for (int i = 0; i < values.size(); i++) {
-        var v = values.get(i);
-        if (v.entrySet().containsAll(ids.entrySet())) {
-          possibleTargets.add(v);
-          index = i;
-        }
+      KubernetesSerialization objectMapper) {
+    Map<String, Object> ids = objectMapper.unmarshal(key, Map.class);
+    List<Map<String, Object>> possibleTargets = new ArrayList<>(1);
+    int index = -1;
+    for (int i = 0; i < values.size(); i++) {
+      var v = values.get(i);
+      if (v.entrySet().containsAll(ids.entrySet())) {
+        possibleTargets.add(v);
+        index = i;
       }
-      if (possibleTargets.isEmpty()) {
-        throw new IllegalStateException(
-            "Cannot find list element for key:" + key + ", in map: " + values);
-      }
-      if (possibleTargets.size() > 1) {
-        throw new IllegalStateException(
-            "More targets found in list element for key:" + key + ", in map: " + values);
-      }
-      final var finalIndex = index;
-      return new Map.Entry<>() {
-        @Override
-        public Integer getKey() {
-          return finalIndex;
-        }
-
-        @Override
-        public Map<String, Object> getValue() {
-          return possibleTargets.get(0);
-        }
-
-        @Override
-        public Map<String, Object> setValue(Map<String, Object> stringObjectMap) {
-          throw new IllegalStateException("should not be called");
-        }
-      };
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException(e);
     }
+    if (possibleTargets.isEmpty()) {
+      throw new IllegalStateException(
+          "Cannot find list element for key:" + key + ", in map: " + values);
+    }
+    if (possibleTargets.size() > 1) {
+      throw new IllegalStateException(
+          "More targets found in list element for key:" + key + ", in map: " + values);
+    }
+    final var finalIndex = index;
+    return new Map.Entry<>() {
+      @Override
+      public Integer getKey() {
+        return finalIndex;
+      }
+
+      @Override
+      public Map<String, Object> getValue() {
+        return possibleTargets.get(0);
+      }
+
+      @Override
+      public Map<String, Object> setValue(Map<String, Object> stringObjectMap) {
+        throw new IllegalStateException("should not be called");
+      }
+    };
   }
 
 

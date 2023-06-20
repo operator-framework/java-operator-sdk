@@ -10,9 +10,8 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
@@ -28,15 +27,12 @@ class GenericKubernetesResourceMatcherTest {
   Deployment actual = createDeployment();
   Deployment desired = createDeployment();
   TestDependentResource dependentResource = new TestDependentResource(desired);
-  Matcher matcher =
-      GenericKubernetesResourceMatcher.matcherFor(dependentResource);
+  Matcher matcher = GenericKubernetesResourceMatcher.matcherFor(dependentResource);
 
   @BeforeAll
   static void setUp() {
-    final var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.getConfigurationService())
-        .thenReturn(new BaseConfigurationService());
-    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    final var client = MockKubernetesClient.client(HasMetadata.class);
+    when(context.getClient()).thenReturn(client);
   }
 
   @Test
