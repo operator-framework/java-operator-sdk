@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 public class SecretResourceUpdatePreProcessor extends GenericResourceUpdatePreProcessor<Secret> {
 
@@ -17,7 +16,7 @@ public class SecretResourceUpdatePreProcessor extends GenericResourceUpdatePrePr
   }
 
   @Override
-  public boolean matches(Secret actual, Secret desired, boolean equality, ObjectMapper objectMapper,
+  public boolean matches(Secret actual, Secret desired, boolean equality, Context<?> context,
       String[] ignoredPaths) {
     return Objects.equals(actual.getImmutable(), desired.getImmutable()) &&
         Objects.equals(actual.getType(), desired.getType()) &&

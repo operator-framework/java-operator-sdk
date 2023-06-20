@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -30,7 +31,10 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     var controllerConfiguration = mock(ControllerConfiguration.class);
     when(controllerConfiguration.fieldManager()).thenReturn("controller");
     var configurationService = mock(ConfigurationService.class);
-    when(configurationService.getObjectMapper()).thenCallRealMethod();
+
+    final var client = MockKubernetesClient.client(HasMetadata.class);
+    when(mockedContext.getClient()).thenReturn(client);
+
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
     when(mockedContext.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }

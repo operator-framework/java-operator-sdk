@@ -169,8 +169,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unused")
   public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     return GenericKubernetesResourceMatcher.match(desired, actualResource, false,
-        false, false,
-        context.getControllerConfiguration().getConfigurationService().getObjectMapper());
+        false, false, context);
   }
 
   protected void handleDelete(P primary, R secondary, Context<P> context) {
