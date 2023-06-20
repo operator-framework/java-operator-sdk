@@ -252,9 +252,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       KubernetesSerialization objectMapper) {
     stringValue = stringValue.trim();
     if (targetClass != null) {
-      return objectMapper.readValue(stringValue, targetClass);
+      return objectMapper.unmarshal(stringValue, targetClass);
     } else {
-      return objectMapper.readValue(stringValue, Map.class);
+      return objectMapper.unmarshal(stringValue, Map.class);
     }
   }
 
@@ -285,7 +285,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       String key,
       List<Map<String, Object>> values,
       KubernetesSerialization objectMapper) {
-    Map<String, Object> ids = objectMapper.readValue(key, Map.class);
+    Map<String, Object> ids = objectMapper.unmarshal(key, Map.class);
     List<Map<String, Object>> possibleTargets = new ArrayList<>(1);
     int index = -1;
     for (int i = 0; i < values.size(); i++) {
