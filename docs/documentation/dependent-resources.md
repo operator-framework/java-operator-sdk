@@ -331,6 +331,33 @@ sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/s
 Note also the Workflows feature makes it possible to also support this conditional creation use
 case in managed dependent resources.
 
+## Creating/Updating Kubernetes Resources
+
+From version 4.4 of the framework the resources are created and updated using [Server Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/)
+, thus the desired state is simply sent using this approach to update the actual resource.
+
+## Matching
+
+During the reconciliation of a dependent resource the desired state is matched with the actual state from the caches,
+and only if the actual state is different from the desired and update is executed. In terms on Kubernetes resources
+this matching is a complex problems, given the properties of Kubernetes API and behavior. Usually it is easier to 
+do this in general with external resources. Kubernetes fillis in default values, can even normalize values in some cases
+but the API can be extended also with [dynamic admission controllers](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)
+which can also modify the resource. So in general it is hard to prepare a matcher implementation that would cover all
+the cases. 
+
+The default implementation of the matcher is called [SSABasedGenericKubernetesResourceMatcher](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/SSABasedGenericKubernetesResourceMatcher.java)
+based on Server Side Apply `managedFields` content, it compares the desired state and the relevant state based
+on this attribute (thus only the fields that are managed by the controller). See javadoc for further details. 
+
+Alternative (former approach) is to use [GenericKubernetesResourceMatcher](https://github.com/java-operator-sdk/java-operator-sdk/blob/e16559fd41bbb8bef6ce9d1f47bffa212a941b09/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/GenericKubernetesResourceMatcher.java) 
+
+There is feature flag out of the box to switch between these implementation. See in [ConfigurationService](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L332-L358).
+
+Developers however can provide their own implementation, simply just overriding the `match(...)` [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/e16559fd41bbb8bef6ce9d1f47bffa212a941b09/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L156-L156).
+Event returning always `false` works, that would mean, on every reconciliation the Kubernetes resource 
+is updated using SSA.
+
 ## Telling JOSDK how to find which secondary resources are associated with a given primary resource
 
 [`KubernetesDependentResource`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
