@@ -105,6 +105,13 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  /**
+   * Replaces the default {@link KubernetesClient} instance by the specified one. This is the
+   * preferred mechanism to configure which client will be used to access the cluster.
+   *
+   * @param client the fully configured client to use for cluster access
+   * @return this {@link ConfigurationServiceOverrider} for chained customization
+   */
   public ConfigurationServiceOverrider withKubernetesClient(KubernetesClient client) {
     this.client = client;
     return this;

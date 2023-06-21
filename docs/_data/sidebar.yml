@@ -9,7 +9,7 @@
     url: /docs/glossary
   - title: Features
     url: /docs/features
-  - title: Dependent Resource Feature
+  - title: Dependent Resources
     url: /docs/dependent-resources
   - title: Workflows
     url: /docs/workflows
@@ -27,3 +27,7 @@
     url: /docs/v3-migration
   - title: Migrating from v3 to v3.1
     url: /docs/v3-1-migration
+  - title: Migrating from v4.2 to v4.3
+    url: /docs/v4-3-migration
+  - title: Migrating from v4.3 to v4.4
+    url: /docs/v4-4-migration
