@@ -20,8 +20,6 @@ import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
  *
@@ -65,39 +63,36 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       LoggerFactory.getLogger(SSABasedGenericKubernetesResourceMatcher.class);
 
 
+  @SuppressWarnings("unchecked")
   public boolean matches(R actual, R desired, Context<?> context) {
-    try {
-      var optionalManagedFieldsEntry =
-          checkIfFieldManagerExists(actual, context.getControllerConfiguration().fieldManager());
-      // If no field is managed by our controller, that means the controller hasn't touched the
-      // resource yet and the resource probably doesn't match the desired state. Not matching here
-      // means that the resource will need to be updated and since this will be done using SSA, the
-      // fields our controller cares about will become managed by it
-      if (optionalManagedFieldsEntry.isEmpty()) {
-        return false;
-      }
-
-      var managedFieldsEntry = optionalManagedFieldsEntry.orElseThrow();
-
-      var objectMapper = context.getClient().getKubernetesSerialization();
-
-      var actualMap = objectMapper.convertValue(actual, Map.class);
-      var desiredMap = objectMapper.convertValue(desired, Map.class);
-
-      log.trace("Original actual: \n {} \n original desired: \n {} ", actual, desiredMap);
-
-      var prunedActual = new HashMap<String, Object>(actualMap.size());
-      keepOnlyManagedFields(prunedActual, actualMap,
-          managedFieldsEntry.getFieldsV1().getAdditionalProperties(), objectMapper);
-
-      removeIrrelevantValues(desiredMap);
-
-      log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
-
-      return prunedActual.equals(desiredMap);
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException(e);
+    var optionalManagedFieldsEntry =
+        checkIfFieldManagerExists(actual, context.getControllerConfiguration().fieldManager());
+    // If no field is managed by our controller, that means the controller hasn't touched the
+    // resource yet and the resource probably doesn't match the desired state. Not matching here
+    // means that the resource will need to be updated and since this will be done using SSA, the
+    // fields our controller cares about will become managed by it
+    if (optionalManagedFieldsEntry.isEmpty()) {
+      return false;
     }
+
+    var managedFieldsEntry = optionalManagedFieldsEntry.orElseThrow();
+
+    var objectMapper = context.getClient().getKubernetesSerialization();
+
+    var actualMap = objectMapper.convertValue(actual, Map.class);
+    var desiredMap = objectMapper.convertValue(desired, Map.class);
+
+    log.trace("Original actual: \n {} \n original desired: \n {} ", actual, desiredMap);
+
+    var prunedActual = new HashMap<String, Object>(actualMap.size());
+    keepOnlyManagedFields(prunedActual, actualMap,
+        managedFieldsEntry.getFieldsV1().getAdditionalProperties(), objectMapper);
+
+    removeIrrelevantValues(desiredMap);
+
+    log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
+
+    return prunedActual.equals(desiredMap);
   }
 
   @SuppressWarnings("unchecked")
@@ -115,8 +110,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private static void keepOnlyManagedFields(Map<String, Object> result,
       Map<String, Object> actualMap,
-      Map<String, Object> managedFields, KubernetesSerialization objectMapper)
-      throws JsonProcessingException {
+      Map<String, Object> managedFields, KubernetesSerialization objectMapper) {
 
     if (managedFields.isEmpty()) {
       result.putAll(actualMap);
@@ -157,8 +151,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private static void fillResultsAndTraverseFurther(Map<String, Object> result,
       Map<String, Object> actualMap, Map<String, Object> managedFields,
-      KubernetesSerialization objectMapper,
-      String key, String keyInActual, Object managedFieldValue) throws JsonProcessingException {
+      KubernetesSerialization objectMapper, String key, String keyInActual,
+      Object managedFieldValue) {
     var emptyMapValue = new HashMap<String, Object>();
     result.put(keyInActual, emptyMapValue);
     var actualMapValue = actualMap.get(keyInActual);
@@ -208,11 +202,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     targetValuesByIndex.forEach((key, value) -> {
       var emptyResMapValue = new HashMap<String, Object>();
       valueList.add(emptyResMapValue);
-      try {
-        keepOnlyManagedFields(emptyResMapValue, value, managedEntryByIndex.get(key), objectMapper);
-      } catch (JsonProcessingException ex) {
-        throw new IllegalStateException(ex);
-      }
+      keepOnlyManagedFields(emptyResMapValue, value, managedEntryByIndex.get(key), objectMapper);
     });
   }
 
@@ -278,6 +268,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return managedFieldEntry.getKey().startsWith(prefix);
   }
 
+  @SuppressWarnings("unchecked")
   private static java.util.Map.Entry<Integer, Map<String, Object>> selectListEntryBasedOnKey(
       String key,
       List<Map<String, Object>> values,
