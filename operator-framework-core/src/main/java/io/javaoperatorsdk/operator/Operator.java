@@ -24,7 +24,6 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
 
-  private final KubernetesClient kubernetesClient;
   private final ControllerManager controllerManager;
   private final LeaderElectionManager leaderElectionManager;
   private final ConfigurationService configurationService;
@@ -40,15 +39,29 @@ public class Operator implements LifecycleAware {
   }
 
   /**
-   * @param configurationService implementation
-   * @deprecated Use {@link #Operator(Consumer)} instead
+   * Creates an Operator based on the configuration provided by the specified
+   * {@link ConfigurationService}. If you intend to use different values than the default, you use
+   * {@link Operator#Operator(Consumer)} instead to override the default with your intended setup.
+   *
+   * @param configurationService a {@link ConfigurationService} providing the configuration for the
+   *        operator
    */
-  @Deprecated(forRemoval = true)
-  @SuppressWarnings("unused")
   public Operator(ConfigurationService configurationService) {
-    this(null, null);
+    this.configurationService = configurationService;
+
+    final var executorServiceManager = configurationService.getExecutorServiceManager();
+    controllerManager = new ControllerManager(executorServiceManager);
+
+    leaderElectionManager = new LeaderElectionManager(controllerManager, configurationService);
   }
 
+  /**
+   * Creates an Operator overriding the default configuration with the values provided by the
+   * specified {@link ConfigurationServiceOverrider}.
+   *
+   * @param overrider a {@link ConfigurationServiceOverrider} consumer used to override the default
+   *        {@link ConfigurationService} values
+   */
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
     this(null, overrider);
   }
@@ -65,26 +78,27 @@ public class Operator implements LifecycleAware {
    */
   @Deprecated
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
+    this(initConfigurationService(client, overrider));
+  }
+
+  private static ConfigurationService initConfigurationService(KubernetesClient client,
+      Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
       var configurationService = ConfigurationService.newOverriddenConfigurationService(overrider);
       client = configurationService.getKubernetesClient();
     }
 
-    this.kubernetesClient = client;
+    final var kubernetesClient = client;
 
     // override the configuration service to use the same client
     if (overrider != null) {
-      overrider = overrider.andThen(o -> o.withKubernetesClient(this.kubernetesClient));
+      overrider = overrider.andThen(o -> o.withKubernetesClient(kubernetesClient));
     } else {
-      overrider = o -> o.withKubernetesClient(this.kubernetesClient);
+      overrider = o -> o.withKubernetesClient(kubernetesClient);
     }
-    this.configurationService = ConfigurationService.newOverriddenConfigurationService(overrider);
 
-    final var executorServiceManager = configurationService.getExecutorServiceManager();
-    controllerManager = new ControllerManager(executorServiceManager);
-
-    leaderElectionManager = new LeaderElectionManager(controllerManager, configurationService);
+    return ConfigurationService.newOverriddenConfigurationService(overrider);
   }
 
   /**
@@ -118,7 +132,7 @@ public class Operator implements LifecycleAware {
   }
 
   public KubernetesClient getKubernetesClient() {
-    return kubernetesClient;
+    return configurationService.getKubernetesClient();
   }
 
   /**
@@ -167,7 +181,7 @@ public class Operator implements LifecycleAware {
     configurationService.getExecutorServiceManager().stop(gracefulShutdownTimeout);
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
-      kubernetesClient.close();
+      getKubernetesClient().close();
     }
 
     started = false;
@@ -222,7 +236,7 @@ public class Operator implements LifecycleAware {
               + configurationService.getKnownReconcilerNames());
     }
 
-    final var controller = new Controller<>(reconciler, configuration, kubernetesClient);
+    final var controller = new Controller<>(reconciler, configuration, getKubernetesClient());
 
     controllerManager.add(controller);
 
