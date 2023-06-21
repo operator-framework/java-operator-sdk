@@ -42,9 +42,12 @@ public interface ConfigurationService {
 
 
   /**
-   * Used to clone custom resources. It is strongly suggested that implementors override this method
-   * since the default implementation creates a new {@link Cloner} instance each time this method is
-   * called.
+   * Used to clone custom resources.
+   *
+   * <p>
+   * <em>NOTE:</em> It is strongly suggested that implementors override this method since the
+   * default implementation creates a new {@link Cloner} instance each time this method is called.
+   * </p>
    *
    * @return the configured {@link Cloner}
    */
@@ -57,6 +60,32 @@ public interface ConfigurationService {
     };
   }
 
+  /**
+   * Provides the fully configured {@link KubernetesClient} to use for controllers to the target
+   * cluster. Note that this client only needs to be able to connect to the cluster, the SDK will
+   * take care of creating the required connections to watch the target resources (in particular,
+   * you do not need to worry about setting the namespace information in most cases).
+   *
+   * <p>
+   * Previous versions of this class provided direct access to the serialization mechanism (via
+   * {@link com.fasterxml.jackson.databind.ObjectMapper}) or the client's configuration. This was
+   * somewhat confusing, in particular with respect to changes made in the Fabric8 client
+   * serialization architecture made in 6.7. The proper way to configure these aspects is now to
+   * configure the Kubernetes client accordingly and the SDK will extract the information it needs
+   * from this instance. The recommended way to do so is to create your operator with
+   * {@link io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance
+   * with {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
+   * </p>
+   *
+   * <p>
+   * <em>NOTE:</em> It is strongly suggested that implementors override this method since the
+   * default implementation creates a new {@link KubernetesClient} instance each time this method is
+   * called.
+   * </p>
+   *
+   * @return the configured {@link KubernetesClient}
+   * @since 4.4.0
+   */
   default KubernetesClient getKubernetesClient() {
     return new KubernetesClientBuilder()
         .withConfig(new ConfigBuilder(Config.autoConfigure(null))
@@ -242,6 +271,25 @@ public interface ConfigurationService {
     return new DefaultResourceClassResolver();
   }
 
+  /**
+   * Creates a new {@link ConfigurationService} instance used to configure an
+   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the specified base
+   * configuration and overriding specific aspects according to the provided
+   * {@link ConfigurationServiceOverrider} instance.
+   *
+   * <p>
+   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
+   * your Operator instance as the configuration service is set at creation time and cannot be
+   * subsequently changed. As a result, overriding values this way after the Operator has been
+   * configured will not take effect.
+   * </p>
+   *
+   * @param baseConfiguration the {@link ConfigurationService} to start from
+   * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
+   *        by the base configuration
+   * @return a new {@link ConfigurationService} starting from the configuration provided as base but
+   *         with overridden values.
+   */
   static ConfigurationService newOverriddenConfigurationService(
       ConfigurationService baseConfiguration,
       Consumer<ConfigurationServiceOverrider> overrider) {
@@ -253,6 +301,25 @@ public interface ConfigurationService {
     return baseConfiguration;
   }
 
+  /**
+   * Creates a new {@link ConfigurationService} instance used to configure an
+   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the default configuration
+   * and overriding specific aspects according to the provided {@link ConfigurationServiceOverrider}
+   * instance.
+   *
+   * <p>
+   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
+   * your Operator instance as the configuration service is set at creation time and cannot be
+   * subsequently changed. As a result, overriding values this way after the Operator has been
+   * configured will not take effect.
+   * </p>
+   *
+   * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
+   *        by the default configuration
+   * @return a new {@link ConfigurationService} overriding the default values with the ones provided
+   *         by the specified {@link ConfigurationServiceOverrider}
+   * @since 4.4.0
+   */
   static ConfigurationService newOverriddenConfigurationService(
       Consumer<ConfigurationServiceOverrider> overrider) {
     return newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
@@ -269,6 +336,8 @@ public interface ConfigurationService {
    * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
    * Apply</a> (SSA) by default. Note that the legacy approach, and this setting, might be removed
    * in the future.
+   *
+   * @since 4.4.0
    */
   default boolean ssaBasedCreateUpdateForDependentResources() {
     return true;
@@ -280,6 +349,8 @@ public interface ConfigurationService {
    * Dependent Resources which is quite complex. As a consequence, we introduced this setting to
    * allow folks to revert to the previous matching algorithm if needed. Note, however, that the
    * legacy algorithm, and this setting, might be removed in the future.
+   *
+   * @since 4.4.0
    */
   default boolean ssaBasedDefaultMatchingForDependentResources() {
     return true;

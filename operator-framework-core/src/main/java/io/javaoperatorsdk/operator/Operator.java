@@ -67,16 +67,13 @@ public class Operator implements LifecycleAware {
   }
 
   /**
-   * Note that Operator by default closes the client on stop, this can be changed using
-   * {@link ConfigurationService}
-   *
    * @param client client to use to all Kubernetes related operations
    * @param overrider a {@link ConfigurationServiceOverrider} consumer used to override the default
    *        {@link ConfigurationService} values
    * @deprecated Use {@link Operator#Operator(Consumer)} instead, passing your custom client with
    *             {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}
    */
-  @Deprecated
+  @Deprecated(since = "4.4.0")
   public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     this(initConfigurationService(client, overrider));
   }
