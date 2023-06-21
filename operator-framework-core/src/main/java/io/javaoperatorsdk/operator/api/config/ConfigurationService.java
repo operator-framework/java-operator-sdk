@@ -43,7 +43,7 @@ public interface ConfigurationService {
 
   /**
    * Used to clone custom resources.
-   * 
+   *
    * <p>
    * <em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link Cloner} instance each time this method is called.
@@ -76,13 +76,13 @@ public interface ConfigurationService {
    * {@link io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance
    * with {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
    * </p>
-   * 
+   *
    * <p>
    * <em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link KubernetesClient} instance each time this method is
    * called.
    * </p>
-   * 
+   *
    * @return the configured {@link KubernetesClient}
    * @since 4.4.0
    */
@@ -276,14 +276,14 @@ public interface ConfigurationService {
    * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the specified base
    * configuration and overriding specific aspects according to the provided
    * {@link ConfigurationServiceOverrider} instance.
-   * 
+   *
    * <p>
    * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
    * your Operator instance as the configuration service is set at creation time and cannot be
    * subsequently changed. As a result, overriding values this way after the Operator has been
    * configured will not take effect.
    * </p>
-   * 
+   *
    * @param baseConfiguration the {@link ConfigurationService} to start from
    * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
    *        by the base configuration
@@ -313,7 +313,7 @@ public interface ConfigurationService {
    * subsequently changed. As a result, overriding values this way after the Operator has been
    * configured will not take effect.
    * </p>
-   * 
+   *
    * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
    *        by the default configuration
    * @return a new {@link ConfigurationService} overriding the default values with the ones provided
@@ -336,7 +336,7 @@ public interface ConfigurationService {
    * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
    * Apply</a> (SSA) by default. Note that the legacy approach, and this setting, might be removed
    * in the future.
-   * 
+   *
    * @since 4.4.0
    */
   default boolean ssaBasedCreateUpdateForDependentResources() {
@@ -349,7 +349,7 @@ public interface ConfigurationService {
    * Dependent Resources which is quite complex. As a consequence, we introduced this setting to
    * allow folks to revert to the previous matching algorithm if needed. Note, however, that the
    * legacy algorithm, and this setting, might be removed in the future.
-   * 
+   *
    * @since 4.4.0
    */
   default boolean ssaBasedDefaultMatchingForDependentResources() {
