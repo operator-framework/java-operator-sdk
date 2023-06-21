@@ -4,8 +4,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -21,6 +19,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowExecutor<P> {
 
   private static final Logger log = LoggerFactory.getLogger(WorkflowReconcileExecutor.class);
+  private static final String RECONCILE = "reconcile";
+  private static final String DELETE = "delete";
 
 
   private final Set<DependentResourceNode> notReady = ConcurrentHashMap.newKeySet();
@@ -32,11 +32,9 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   private final Set<DependentResourceNode> reconciled = ConcurrentHashMap.newKeySet();
   private final Map<DependentResource, ReconcileResult> reconcileResults =
       new ConcurrentHashMap<>();
-  private final ExecutorService executorService;
 
   public WorkflowReconcileExecutor(Workflow<P> workflow, P primary, Context<P> context) {
     super(workflow, primary, context);
-    this.executorService = context.getWorkflowExecutorService();
   }
 
   public synchronized WorkflowReconcileResult reconcile() {
@@ -69,9 +67,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     if (!reconcileConditionMet) {
       handleReconcileConditionNotMet(dependentResourceNode);
     } else {
-      var nodeFuture = executorService.submit(new NodeReconcileExecutor(dependentResourceNode));
-      markAsExecuting(dependentResourceNode, nodeFuture);
-      log.debug("Submitted to reconcile: {} primaryID: {}", dependentResourceNode, primaryID);
+      submit(dependentResourceNode, new NodeReconcileExecutor<>(dependentResourceNode), RECONCILE);
     }
   }
 
@@ -87,10 +83,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       return;
     }
 
-    Future<?> nodeFuture = executorService
-        .submit(new NodeDeleteExecutor(dependentResourceNode));
-    markAsExecuting(dependentResourceNode, nodeFuture);
-    log.debug("Submitted to delete: {}", dependentResourceNode);
+    submit(dependentResourceNode, new NodeDeleteExecutor<>(dependentResourceNode), DELETE);
   }
 
   private boolean allDependentsDeletedAlready(DependentResourceNode<?, P> dependentResourceNode) {
