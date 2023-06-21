@@ -176,7 +176,7 @@ The `@KubernetesDependent` annotation can be used to further configure **managed
 resource that are extending `KubernetesDependentResource`.
 
 See the full source
-code [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/DeploymentDependentResource.java)
+code [here](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/dependentresource/DeploymentDependentResource.java)
 .
 
 ## Managed Dependent Resources
@@ -223,7 +223,7 @@ public class WebPageManagedDependentsReconciler
 ```
 
 See the full source code of
-sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java)
+sample [here](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java)
 .
 
 ## Standalone Dependent Resources
@@ -325,7 +325,7 @@ There are multiple things happening here:
    can be read using the reference. This could be written in a same way as in the managed example.
 
 See the full source code of
-sample [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java)
+sample [here](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java)
 .
 
 Note also the Workflows feature makes it possible to also support this conditional creation use
