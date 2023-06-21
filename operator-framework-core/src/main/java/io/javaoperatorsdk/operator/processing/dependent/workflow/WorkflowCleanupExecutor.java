@@ -3,8 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -19,15 +17,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExecutor<P> {
 
   private static final Logger log = LoggerFactory.getLogger(WorkflowCleanupExecutor.class);
+  private static final String CLEANUP = "cleanup";
 
   private final Set<DependentResourceNode> postDeleteConditionNotMet =
       ConcurrentHashMap.newKeySet();
   private final Set<DependentResourceNode> deleteCalled = ConcurrentHashMap.newKeySet();
-  private final ExecutorService executorService;
 
   public WorkflowCleanupExecutor(Workflow<P> workflow, P primary, Context<P> context) {
     super(workflow, primary, context);
-    this.executorService = context.getWorkflowExecutorService();
   }
 
   public synchronized WorkflowCleanupResult cleanup() {
@@ -55,9 +52,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
       return;
     }
 
-    Future<?> nodeFuture = executorService.submit(new CleanupExecutor<>(dependentResourceNode));
-    markAsExecuting(dependentResourceNode, nodeFuture);
-    log.debug("Submitted for cleanup: {}", dependentResourceNode);
+    submit(dependentResourceNode, new CleanupExecutor<>(dependentResourceNode), CLEANUP);
   }
 
 
