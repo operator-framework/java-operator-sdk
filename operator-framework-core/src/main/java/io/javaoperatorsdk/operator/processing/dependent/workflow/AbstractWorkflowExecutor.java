@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -30,12 +31,14 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   private final Map<DependentResourceNode, Future<?>> actualExecutions = new ConcurrentHashMap<>();
   private final Map<DependentResourceNode, Exception> exceptionsDuringExecution =
       new ConcurrentHashMap<>();
+  private final ExecutorService executorService;
 
   public AbstractWorkflowExecutor(Workflow<P> workflow, P primary, Context<P> context) {
     this.workflow = workflow;
     this.primary = primary;
     this.context = context;
     this.primaryID = ResourceID.fromResource(primary);
+    executorService = context.getWorkflowExecutorService();
   }
 
   protected abstract Logger logger();
@@ -107,10 +110,16 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     }
   }
 
-  @SuppressWarnings("unchecked")
   protected <R> boolean isConditionMet(Optional<Condition<R, P>> condition,
       DependentResource<R, P> dependentResource) {
-    return condition.map(c -> c.isMet(dependentResource, primary, context))
-        .orElse(true);
+    return condition.map(c -> c.isMet(dependentResource, primary, context)).orElse(true);
+  }
+
+  protected <R> void submit(DependentResourceNode<R, P> dependentResourceNode,
+      NodeExecutor<R, P> nodeExecutor, String operation) {
+    final Future<?> future = executorService.submit(nodeExecutor);
+    markAsExecuting(dependentResourceNode, future);
+    logger().debug("Submitted to {}: {} primaryID: {}", operation, dependentResourceNode,
+        primaryID);
   }
 }
