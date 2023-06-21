@@ -158,7 +158,7 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationService build() {
-    return new BaseConfigurationService(original.getVersion(), cloner) {
+    return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
       public Set<String> getKnownReconcilerNames() {
         return original.getKnownReconcilerNames();
@@ -226,11 +226,6 @@ public class ConfigurationServiceOverrider {
       public ExecutorService getWorkflowExecutorService() {
         return workflowExecutorService != null ? workflowExecutorService
             : super.getWorkflowExecutorService();
-      }
-
-      @Override
-      public KubernetesClient getKubernetesClient() {
-        return client != null ? client : original.getKubernetesClient();
       }
 
       @Override

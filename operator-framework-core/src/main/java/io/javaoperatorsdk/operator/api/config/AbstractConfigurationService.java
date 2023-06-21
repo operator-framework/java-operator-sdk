@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
@@ -13,21 +14,36 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 public class AbstractConfigurationService implements ConfigurationService {
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
+  private KubernetesClient client;
   private Cloner cloner;
   private ExecutorServiceManager executorServiceManager;
 
   public AbstractConfigurationService(Version version) {
-    this(version, null, null);
+    this(version, null);
   }
 
   public AbstractConfigurationService(Version version, Cloner cloner) {
-    this(version, cloner, null);
+    this(version, cloner, null, null);
   }
 
+  /**
+   * Creates a new {@link AbstractConfigurationService} with the specified parameters.
+   *
+   * @param client the {@link KubernetesClient} instance to use to connect to the cluster, if let
+   *        {@code null}, the client will be lazily instantiated with the default configuration
+   *        provided by {@link ConfigurationService#getKubernetesClient()} the first time
+   *        {@link #getKubernetesClient()} is called
+   * @param version the version information
+   * @param cloner the {@link Cloner} to use, if {@code null} the default provided by
+   *        {@link ConfigurationService#getResourceCloner()} will be used
+   * @param executorServiceManager the {@link ExecutorServiceManager} instance to be used, can be
+   *        {@code null} to lazily initialize one by default when
+   *        {@link #getExecutorServiceManager()} is called
+   */
   public AbstractConfigurationService(Version version, Cloner cloner,
-      ExecutorServiceManager executorServiceManager) {
+      ExecutorServiceManager executorServiceManager, KubernetesClient client) {
     this.version = version;
-    init(cloner, executorServiceManager);
+    init(cloner, executorServiceManager, client);
   }
 
   /**
@@ -36,10 +52,19 @@ public class AbstractConfigurationService implements ConfigurationService {
    * is useful in situations where the cloner depends on a mapper that might require additional
    * configuration steps before it's ready to be used.
    *
-   * @param cloner the {@link Cloner} instance to be used
-   * @param executorServiceManager the {@link ExecutorServiceManager} instance to be used
+   * @param cloner the {@link Cloner} instance to be used, if {@code null}, the default provided by
+   *        {@link ConfigurationService#getResourceCloner()} will be used
+   * @param executorServiceManager the {@link ExecutorServiceManager} instance to be used, can be
+   *        {@code null} to lazily initialize one by default when
+   *        {@link #getExecutorServiceManager()} is called
+   * @param client the {@link KubernetesClient} instance to use to connect to the cluster, if let
+   *        {@code null}, the client will be lazily instantiated with the default configuration
+   *        provided by {@link ConfigurationService#getKubernetesClient()} the first time
+   *        {@link #getKubernetesClient()} is called
    */
-  protected void init(Cloner cloner, ExecutorServiceManager executorServiceManager) {
+  protected void init(Cloner cloner, ExecutorServiceManager executorServiceManager,
+      KubernetesClient client) {
+    this.client = client;
     this.cloner = cloner != null ? cloner : ConfigurationService.super.getResourceCloner();
     this.executorServiceManager = executorServiceManager;
   }
@@ -125,6 +150,15 @@ public class AbstractConfigurationService implements ConfigurationService {
   @Override
   public Cloner getResourceCloner() {
     return cloner;
+  }
+
+  @Override
+  public KubernetesClient getKubernetesClient() {
+    // lazy init to avoid needing initializing a client when not needed (in tests, in particular)
+    if (client == null) {
+      client = ConfigurationService.super.getKubernetesClient();
+    }
+    return client;
   }
 
   @Override
