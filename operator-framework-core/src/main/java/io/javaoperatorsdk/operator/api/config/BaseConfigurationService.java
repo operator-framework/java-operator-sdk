@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -40,11 +41,15 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   private static final Logger logger = LoggerFactory.getLogger(LOGGER_NAME);
 
   public BaseConfigurationService(Version version) {
-    super(version);
+    this(version, null);
   }
 
   public BaseConfigurationService(Version version, Cloner cloner) {
-    super(version, cloner);
+    this(version, cloner, null);
+  }
+
+  public BaseConfigurationService(Version version, Cloner cloner, KubernetesClient client) {
+    super(version, cloner, null, client);
   }
 
   public BaseConfigurationService() {
