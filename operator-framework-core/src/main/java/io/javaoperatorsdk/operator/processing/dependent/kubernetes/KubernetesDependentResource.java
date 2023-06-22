@@ -23,7 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentRes
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher.GenericResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -40,18 +40,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
-  private final ResourceUpdatePreProcessor<R> processor;
+  private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
-
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
 
-    processor = this instanceof ResourceUpdatePreProcessor
-        ? (ResourceUpdatePreProcessor<R>) this
-        : GenericResourceUpdatePreProcessor.processorFor(resourceType);
+    updaterMatcher = this instanceof ResourceUpdaterMatcher
+        ? (ResourceUpdaterMatcher<R>) this
+        : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType);
   }
 
   @SuppressWarnings("unchecked")
@@ -143,7 +142,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public R update(R actual, R target, P primary, Context<P> context) {
     if (!context.getControllerConfiguration().getConfigurationService()
         .ssaBasedCreateUpdateForDependentResources()) {
-      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
+      var updatedActual = updaterMatcher.updateResource(actual, target, context);
       return prepare(updatedActual, primary, "Updating").replace();
     } else {
       target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
@@ -154,11 +153,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
+    final var desired = desired(primary, context);
     if (!context.getControllerConfiguration().getConfigurationService()
         .ssaBasedDefaultMatchingForDependentResources()) {
-      return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
+      return Result.computed(updaterMatcher.matches(actualResource, desired, context), desired);
     } else {
-      final var desired = desired(primary, context);
       addReferenceHandlingMetadata(desired, primary);
       var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
           desired, context);

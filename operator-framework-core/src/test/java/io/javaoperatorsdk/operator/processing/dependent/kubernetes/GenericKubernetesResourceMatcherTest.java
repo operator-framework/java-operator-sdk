@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher.GenericResourceUpdaterMatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -143,8 +144,8 @@ class GenericKubernetesResourceMatcherTest {
         .addNewImagePullSecret("imagePullSecret3")
         .build();
 
-    final var matcher = GenericKubernetesResourceMatcher.matcherFor(serviceAccountDR);
-    assertThat(matcher.match(actual, null, context).matched()).isFalse();
+    final var matcher = GenericResourceUpdaterMatcher.updaterMatcherFor(ServiceAccount.class);
+    assertThat(matcher.matches(actual, desired, context)).isFalse();
   }
 
   Deployment createDeployment() {
