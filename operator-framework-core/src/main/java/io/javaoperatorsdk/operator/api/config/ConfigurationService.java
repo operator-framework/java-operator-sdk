@@ -334,8 +334,7 @@ public interface ConfigurationService {
    * Resources when set to {@code false}. The default approach how these resources are
    * created/updated was change to use
    * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
-   * Apply</a> (SSA) by default. Note that the legacy approach, and this setting, might be removed
-   * in the future.
+   * Apply</a> (SSA) by default.
    *
    * @since 4.4.0
    */
@@ -347,8 +346,7 @@ public interface ConfigurationService {
    * Allows to revert to the 4.3 generic matching algorithm for Kubernetes Dependent Resources when
    * set to {@code false}. Version 4.4 introduced a new generic matching algorithm for Kubernetes
    * Dependent Resources which is quite complex. As a consequence, we introduced this setting to
-   * allow folks to revert to the previous matching algorithm if needed. Note, however, that the
-   * legacy algorithm, and this setting, might be removed in the future.
+   * allow folks to revert to the previous matching algorithm if needed.
    *
    * @since 4.4.0
    */
