@@ -73,4 +73,17 @@ see those
 in [ConfigurationService](https://github.com/java-operator-sdk/java-operator-sdk/blob/e95f9c8a8b8a8561c9a735e60fc5d82b7758df8e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L268-L289)
 
 Note that it is possible to override the related methods/behavior on class level when extending
-the `KubernetesDependentResource`.
+the `KubernetesDependentResource`. 
+
+### Migration from plain Update/Create to SSA Based Patch
+
+Migration to SSA might not be trivial based on the uses cases and the type of managed resources. 
+In general this is not a solved problem is Kubernetes. The Java Operator SDK Team tries to follow
+the related issues, but in terms of implementation this is not something that the framework explicitly
+supports. Thus, no code is added that tries to mitigate related issues. Users should thoroughly
+test the migration, and even consider not to migrate in some cases (see feature flags above).
+
+See some related issues in [kubernetes](https://github.com/kubernetes/kubernetes/issues/118725) or
+[here](https://github.com/keycloak/keycloak/pull). Please create related issue in JOSDK if any.
+
+
