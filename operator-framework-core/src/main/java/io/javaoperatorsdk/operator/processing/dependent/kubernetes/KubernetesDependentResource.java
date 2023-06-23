@@ -23,7 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentRes
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher.GenericResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -40,18 +40,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
-  private final ResourceUpdatePreProcessor<R> processor;
+  private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
-
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
 
-    processor = this instanceof ResourceUpdatePreProcessor
-        ? (ResourceUpdatePreProcessor<R>) this
-        : GenericResourceUpdatePreProcessor.processorFor(resourceType);
+    updaterMatcher = this instanceof ResourceUpdaterMatcher
+        ? (ResourceUpdaterMatcher<R>) this
+        : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType);
   }
 
   @SuppressWarnings("unchecked")
@@ -129,55 +128,57 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateForDependentResources()) {
-      return prepare(target, primary, "Creating").create();
-    } else {
-      return prepare(target, primary, "Creating")
-          .fieldManager(context.getControllerConfiguration().fieldManager())
-          .forceConflicts()
-          .serverSideApply();
-    }
+    final var resource = prepare(target, primary, "Creating");
+    return useSSA(context)
+        ? resource
+            .fieldManager(context.getControllerConfiguration().fieldManager())
+            .forceConflicts()
+            .serverSideApply()
+        : resource.create();
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateForDependentResources()) {
-      var updatedActual = processor.replaceSpecOnActual(actual, target, context);
-      return prepare(updatedActual, primary, "Updating").replace();
-    } else {
+    if (useSSA(context)) {
       target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
       return prepare(target, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
           .forceConflicts().serverSideApply();
+    } else {
+      var updatedActual = updaterMatcher.updateResource(actual, target, context);
+      return prepare(updatedActual, primary, "Updating").replace();
     }
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedDefaultMatchingForDependentResources()) {
-      return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false);
-    } else {
-      final var desired = desired(primary, context);
+    final var desired = desired(primary, context);
+    final boolean matches;
+    if (useSSA(context)) {
       addReferenceHandlingMetadata(desired, primary);
-      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
-          desired, context);
-      return Result.computed(matches, desired);
+      matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
+          .matches(actualResource, desired, context);
+    } else {
+      matches = updaterMatcher.matches(actualResource, desired, context);
     }
+    return Result.computed(matches, desired);
   }
 
   @SuppressWarnings("unused")
   public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedDefaultMatchingForDependentResources()) {
-      return GenericKubernetesResourceMatcher.match(desired, actualResource, false,
-          false, false, context);
-    } else {
+    if (useSSA(context)) {
       addReferenceHandlingMetadata(desired, primary);
-      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
-          desired, context);
+      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
+          .matches(actualResource, desired, context);
       return Result.computed(matches, desired);
+    } else {
+      return GenericKubernetesResourceMatcher
+          .match(desired, actualResource, true,
+              false, false, context);
     }
+  }
+
+  private boolean useSSA(Context<P> context) {
+    return context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedCreateUpdateMatchForDependentResources();
   }
 
   protected void handleDelete(P primary, R secondary, Context<P> context) {

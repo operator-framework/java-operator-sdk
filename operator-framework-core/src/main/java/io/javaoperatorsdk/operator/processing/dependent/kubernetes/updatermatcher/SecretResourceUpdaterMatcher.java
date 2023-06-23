@@ -1,11 +1,11 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
+package io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher;
 
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-public class SecretResourceUpdatePreProcessor extends GenericResourceUpdatePreProcessor<Secret> {
+public class SecretResourceUpdaterMatcher extends GenericResourceUpdaterMatcher<Secret> {
 
   @Override
   protected void updateClonedActual(Secret actual, Secret desired) {
@@ -16,8 +16,7 @@ public class SecretResourceUpdatePreProcessor extends GenericResourceUpdatePrePr
   }
 
   @Override
-  public boolean matches(Secret actual, Secret desired, boolean equality, Context<?> context,
-      String[] ignoredPaths) {
+  public boolean matches(Secret actual, Secret desired, Context<?> context) {
     return Objects.equals(actual.getImmutable(), desired.getImmutable()) &&
         Objects.equals(actual.getType(), desired.getType()) &&
         Objects.equals(actual.getData(), desired.getData()) &&

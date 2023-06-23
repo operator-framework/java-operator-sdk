@@ -13,14 +13,13 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors.GenericResourceUpdatePreProcessor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
     implements Matcher<R, P> {
 
-
+  private static String SPEC = "/spec";
   private static final String ADD = "add";
   private static final String OP = "op";
   public static final String METADATA_LABELS = "/metadata/labels";
@@ -171,7 +170,6 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
         labelsAndAnnotationsEquality, specEquality, context);
   }
 
-  @SuppressWarnings("unchecked")
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
       R actualResource,
       boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean specEquality,
@@ -194,13 +192,50 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       }
     }
 
-    final ResourceUpdatePreProcessor<R> processor =
-        GenericResourceUpdatePreProcessor.processorFor((Class<R>) desired.getClass());
-    final var matched =
-        processor.matches(actualResource, desired, specEquality, context, ignoredPaths);
+    final var matched = matchSpec(actualResource, desired, specEquality, context, ignoredPaths);
     return Result.computed(matched, desired);
   }
 
+  private static <R extends HasMetadata> boolean matchSpec(R actual, R desired, boolean equality,
+      Context<?> context,
+      String[] ignoredPaths) {
+
+    final var kubernetesSerialization = context.getClient().getKubernetesSerialization();
+    var desiredNode = kubernetesSerialization.convertValue(desired, JsonNode.class);
+    var actualNode = kubernetesSerialization.convertValue(actual, JsonNode.class);
+    var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
+
+    final List<String> ignoreList =
+        ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
+            : Collections.emptyList();
+    // reflection will be replaced by this:
+    // https://github.com/fabric8io/kubernetes-client/issues/3816
+    var specDiffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, SPEC);
+    // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
+    // On contrary (if equality is false), "add" is allowed for cases when for some
+    // resources Kubernetes fills-in values into spec.
+    if (equality && !specDiffJsonPatch.isEmpty()) {
+      return false;
+    }
+    if (!equality && !ignoreList.isEmpty()) {
+      if (!allDiffsOnIgnoreList(specDiffJsonPatch, ignoreList)) {
+        return false;
+      }
+    } else {
+      if (!allDiffsAreAddOps(specDiffJsonPatch)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean allDiffsOnIgnoreList(List<JsonNode> metadataJSonDiffs,
+      List<String> ignoreList) {
+    if (metadataJSonDiffs.isEmpty()) {
+      return false;
+    }
+    return metadataJSonDiffs.stream().allMatch(n -> nodeIsChildOf(n, ignoreList));
+  }
 
   private static <R extends HasMetadata, P extends HasMetadata> Optional<Result<R>> matchMetadata(
       R desired,

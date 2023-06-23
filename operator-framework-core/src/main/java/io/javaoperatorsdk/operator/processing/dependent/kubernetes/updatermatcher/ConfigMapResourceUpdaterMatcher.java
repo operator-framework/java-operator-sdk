@@ -1,12 +1,12 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
+package io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher;
 
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-public class ConfigMapResourceUpdatePreProcessor
-    extends GenericResourceUpdatePreProcessor<ConfigMap> {
+public class ConfigMapResourceUpdaterMatcher
+    extends GenericResourceUpdaterMatcher<ConfigMap> {
 
   @Override
   protected void updateClonedActual(ConfigMap actual, ConfigMap desired) {
@@ -16,8 +16,7 @@ public class ConfigMapResourceUpdatePreProcessor
   }
 
   @Override
-  public boolean matches(ConfigMap actual, ConfigMap desired, boolean equality,
-      Context<?> context, String[] ignoredPaths) {
+  public boolean matches(ConfigMap actual, ConfigMap desired, Context<?> context) {
     return Objects.equals(actual.getImmutable(), desired.getImmutable()) &&
         Objects.equals(actual.getData(), desired.getData()) &&
         Objects.equals(actual.getBinaryData(), desired.getBinaryData());

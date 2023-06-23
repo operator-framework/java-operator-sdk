@@ -34,8 +34,7 @@ public class ConfigurationServiceOverrider {
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
   private ResourceClassResolver resourceClassResolver;
-  private Boolean ssaBasedCreateUpdateForDependentResources;
-  private Boolean ssaBasedDefaultMatchingForDependentResources;
+  private Boolean ssaBasedCreateUpdateMatchForDependentResources;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -145,15 +144,9 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withSSABasedCreateUpdateForDependentResources(
+  public ConfigurationServiceOverrider withSSABasedCreateUpdateMatchForDependentResources(
       boolean value) {
-    this.ssaBasedCreateUpdateForDependentResources = value;
-    return this;
-  }
-
-  public ConfigurationServiceOverrider withSSABasedDefaultMatchingForDependentResources(
-      boolean value) {
-    this.ssaBasedDefaultMatchingForDependentResources = value;
+    this.ssaBasedCreateUpdateMatchForDependentResources = value;
     return this;
   }
 
@@ -258,17 +251,10 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean ssaBasedCreateUpdateForDependentResources() {
-        return ssaBasedCreateUpdateForDependentResources != null
-            ? ssaBasedCreateUpdateForDependentResources
-            : super.ssaBasedCreateUpdateForDependentResources();
-      }
-
-      @Override
-      public boolean ssaBasedDefaultMatchingForDependentResources() {
-        return ssaBasedDefaultMatchingForDependentResources != null
-            ? ssaBasedDefaultMatchingForDependentResources
-            : super.ssaBasedDefaultMatchingForDependentResources();
+      public boolean ssaBasedCreateUpdateMatchForDependentResources() {
+        return ssaBasedCreateUpdateMatchForDependentResources != null
+            ? ssaBasedCreateUpdateMatchForDependentResources
+            : super.ssaBasedCreateUpdateMatchForDependentResources();
       }
     };
   }

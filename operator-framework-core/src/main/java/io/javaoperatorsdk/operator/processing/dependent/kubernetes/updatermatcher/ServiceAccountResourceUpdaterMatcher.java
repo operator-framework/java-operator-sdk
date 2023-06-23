@@ -1,12 +1,12 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes.processors;
+package io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher;
 
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-public class ServiceAccountResourceUpdateProcessor
-    extends GenericResourceUpdatePreProcessor<ServiceAccount> {
+public class ServiceAccountResourceUpdaterMatcher
+    extends GenericResourceUpdaterMatcher<ServiceAccount> {
 
   @Override
   protected void updateClonedActual(ServiceAccount actual, ServiceAccount desired) {
@@ -16,8 +16,7 @@ public class ServiceAccountResourceUpdateProcessor
   }
 
   @Override
-  public boolean matches(ServiceAccount actual, ServiceAccount desired, boolean equality,
-      Context<?> context, String[] ignoredPaths) {
+  public boolean matches(ServiceAccount actual, ServiceAccount desired, Context<?> context) {
     return Objects.equals(actual.getAutomountServiceAccountToken(),
         desired.getAutomountServiceAccountToken()) &&
         Objects.equals(actual.getImagePullSecrets(), desired.getImagePullSecrets()) &&

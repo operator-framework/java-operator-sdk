@@ -62,18 +62,22 @@ default [Dependent Resources](https://javaoperatorsdk.io/docs/dependent-resource
 [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/) to
 create and
 update Kubernetes resources. A
-new [default matching](https://github.com/java-operator-sdk/java-operator-sdk/blob/e95f9c8a8b8a8561c9a735e60fc5d82b7758df8e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L163-L163)
+new [default matching](https://github.com/java-operator-sdk/java-operator-sdk/blob/2cc3bb7710adb8fca14767fbff8d93533dd05ef0/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L157-L157)
 algorithm is provided for `KubernetesDependentResource` that is based on `managedFields` of SSA. For
 details
-see [SSABasedGenericKubernetesResourceMatcher](https://github.com/java-operator-sdk/java-operator-sdk/blob/e95f9c8a8b8a8561c9a735e60fc5d82b7758df8e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/SSABasedGenericKubernetesResourceMatcher.java)
+see [SSABasedGenericKubernetesResourceMatcher](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/SSABasedGenericKubernetesResourceMatcher.java)
 
 Since those features are hard to completely test, we provided feature flags to revert to the
 legacy behavior if needed,
-see those
-in [ConfigurationService](https://github.com/java-operator-sdk/java-operator-sdk/blob/e95f9c8a8b8a8561c9a735e60fc5d82b7758df8e/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L268-L289)
+see 
+in [ConfigurationService](https://github.com/java-operator-sdk/java-operator-sdk/blob/2cc3bb7710adb8fca14767fbff8d93533dd05ef0/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L332-L347)
 
 Note that it is possible to override the related methods/behavior on class level when extending
 the `KubernetesDependentResource`. 
+
+The SSA based create/update can be combined with the legacy matcher, simply override the `match` method 
+and use the [GenericKubernetesResourceMatcher](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/GenericKubernetesResourceMatcher.java#L19-L19)
+directly.
 
 ### Migration from plain Update/Create to SSA Based Patch
 
