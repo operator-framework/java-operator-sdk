@@ -177,7 +177,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       matchWithSSA = context.getControllerConfiguration().getConfigurationService()
           .ssaBasedDefaultMatchingForDependentResources();
     }
-    return matchWithSSA;
+    return matchWithSSA && createUpdateWithSSA(context);
   }
 
   @SuppressWarnings("unused")

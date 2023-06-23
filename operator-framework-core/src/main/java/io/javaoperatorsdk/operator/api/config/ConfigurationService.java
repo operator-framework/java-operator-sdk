@@ -348,8 +348,7 @@ public interface ConfigurationService {
    * Dependent Resources which is quite complex. As a consequence, we introduced this setting to
    * allow folks to revert to the previous matching algorithm if needed.
    *
-   * Note that this intended to be used only for case when SSA is used to Create and Update
-   * dependent resources.
+   * Note that flag is only considered if ssaBasedCreateUpdateForDependentResources is true.
    *
    * @since 4.4.0
    */
