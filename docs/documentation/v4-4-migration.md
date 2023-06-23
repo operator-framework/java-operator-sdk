@@ -77,7 +77,7 @@ the `KubernetesDependentResource`.
 
 The SSA based create/update can be combined with the legacy matcher, simply override the `match` method 
 and use the [GenericKubernetesResourceMatcher](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/GenericKubernetesResourceMatcher.java#L19-L19)
-directly.
+directly. See related [sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/ssalegacymatcher/ServiceDependentResource.java#L39-L44).
 
 ### Migration from plain Update/Create to SSA Based Patch
 
