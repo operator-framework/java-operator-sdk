@@ -18,14 +18,13 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdat
 public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
     ResourceUpdaterMatcher<R> {
 
-  private static final ResourceUpdaterMatcher<?> INSTANCE =
-      new GenericResourceUpdaterMatcher<>();
+  private static final ResourceUpdaterMatcher<?> INSTANCE = new GenericResourceUpdaterMatcher<>();
 
   @SuppressWarnings("rawtypes")
   private static final Map<Class, ResourceUpdaterMatcher> processors = Map.of(
       Secret.class, new SecretResourceUpdaterMatcher(),
       ConfigMap.class, new ConfigMapResourceUpdaterMatcher(),
-      ServiceAccount.class, new ServiceAccountResourceUpdateProcessor(),
+      ServiceAccount.class, new ServiceAccountResourceUpdaterMatcher(),
       Role.class, new RoleResourceUpdaterMatcher(),
       ClusterRole.class, new ClusterRoleResourceUpdaterMatcher(),
       RoleBinding.class, new RoleBindingResourceUpdaterMatcher(),

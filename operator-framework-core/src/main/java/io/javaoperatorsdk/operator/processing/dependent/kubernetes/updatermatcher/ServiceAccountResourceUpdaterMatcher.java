@@ -5,7 +5,7 @@ import java.util.Objects;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-public class ServiceAccountResourceUpdateProcessor
+public class ServiceAccountResourceUpdaterMatcher
     extends GenericResourceUpdaterMatcher<ServiceAccount> {
 
   @Override
