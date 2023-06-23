@@ -43,6 +43,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
+  private static Boolean createUpdateWithSSA;
+  private static Boolean matchWithSSA;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -128,54 +130,66 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateForDependentResources()) {
-      return prepare(target, primary, "Creating").create();
-    } else {
-      return prepare(target, primary, "Creating")
-          .fieldManager(context.getControllerConfiguration().fieldManager())
-          .forceConflicts()
-          .serverSideApply();
+    final var resource = prepare(target, primary, "Creating");
+    return createUpdateWithSSA(context)
+        ? resource
+            .fieldManager(context.getControllerConfiguration().fieldManager())
+            .forceConflicts()
+            .serverSideApply()
+        : resource.create();
+  }
+
+  private static <P extends HasMetadata> boolean createUpdateWithSSA(Context<P> context) {
+    if (createUpdateWithSSA == null) {
+      createUpdateWithSSA = context.getControllerConfiguration().getConfigurationService()
+          .ssaBasedCreateUpdateForDependentResources();
     }
+    return createUpdateWithSSA;
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateForDependentResources()) {
-      var updatedActual = updaterMatcher.updateResource(actual, target, context);
-      return prepare(updatedActual, primary, "Updating").replace();
-    } else {
+    if (createUpdateWithSSA(context)) {
       target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
       return prepare(target, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
           .forceConflicts().serverSideApply();
+    } else {
+      var updatedActual = updaterMatcher.updateResource(actual, target, context);
+      return prepare(updatedActual, primary, "Updating").replace();
     }
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     final var desired = desired(primary, context);
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedDefaultMatchingForDependentResources()) {
-      return Result.computed(updaterMatcher.matches(actualResource, desired, context), desired);
-    } else {
+    final boolean matches;
+    if (matchWithSSA(context)) {
       addReferenceHandlingMetadata(desired, primary);
-      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
-          desired, context);
-      return Result.computed(matches, desired);
+      matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
+          .matches(actualResource, desired, context);
+    } else {
+      matches = updaterMatcher.matches(actualResource, desired, context);
     }
+    return Result.computed(matches, desired);
+  }
+
+  private static <P extends HasMetadata> boolean matchWithSSA(Context<P> context) {
+    if (matchWithSSA == null) {
+      matchWithSSA = context.getControllerConfiguration().getConfigurationService()
+          .ssaBasedDefaultMatchingForDependentResources();
+    }
+    return matchWithSSA;
   }
 
   @SuppressWarnings("unused")
   public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
-    if (!context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedDefaultMatchingForDependentResources()) {
-      return GenericKubernetesResourceMatcher.match(desired, actualResource, false,
-          false, false, context);
-    } else {
+    if (matchWithSSA(context)) {
       addReferenceHandlingMetadata(desired, primary);
-      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
-          desired, context);
+      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
+          .matches(actualResource, desired, context);
       return Result.computed(matches, desired);
+    } else {
+      return GenericKubernetesResourceMatcher
+          .match(desired, actualResource, false, false, false, context);
     }
   }
 
