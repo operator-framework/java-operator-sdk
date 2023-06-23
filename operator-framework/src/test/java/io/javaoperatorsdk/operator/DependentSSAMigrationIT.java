@@ -144,8 +144,7 @@ class DependentSSAMigrationIT {
   private Operator createOperator(KubernetesClient client, boolean legacyDependentHandling,
       String fieldManager) {
     Operator operator = new Operator(client,
-        o -> o.withSSABasedCreateUpdateForDependentResources(!legacyDependentHandling)
-            .withSSABasedDefaultMatchingForDependentResources(!legacyDependentHandling)
+        o -> o.withSSABasedCreateUpdateMatchForDependentResources(!legacyDependentHandling)
             .withCloseClientOnStop(false));
     operator.register(new DependentSSAReconciler(), o -> {
       o.settingNamespace(namespace);
