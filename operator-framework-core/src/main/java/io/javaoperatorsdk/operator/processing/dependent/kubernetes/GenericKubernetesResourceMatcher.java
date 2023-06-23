@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
     implements Matcher<R, P> {
 
-  private static String SPEC = "/spec";
+  private static final String SPEC = "/spec";
   private static final String ADD = "add";
   private static final String OP = "op";
   public static final String METADATA_LABELS = "/metadata/labels";
