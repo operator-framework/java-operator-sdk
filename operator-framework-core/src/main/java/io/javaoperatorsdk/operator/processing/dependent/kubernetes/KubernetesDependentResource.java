@@ -171,7 +171,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       return Result.computed(matches, desired);
     } else {
       return GenericKubernetesResourceMatcher
-          .match(desired, actualResource, false, false, false, context);
+          .match(desired, actualResource, true,
+              false, false, context);
     }
   }
 
