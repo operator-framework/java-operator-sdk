@@ -170,7 +170,6 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
         labelsAndAnnotationsEquality, specEquality, context);
   }
 
-  @SuppressWarnings("unchecked")
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
       R actualResource,
       boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean specEquality,

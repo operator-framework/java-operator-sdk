@@ -43,8 +43,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
-  private static Boolean createUpdateWithSSA;
-  private static Boolean matchWithSSA;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -131,7 +129,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
     final var resource = prepare(target, primary, "Creating");
-    return createUpdateWithSSA(context)
+    return useSSA(context)
         ? resource
             .fieldManager(context.getControllerConfiguration().fieldManager())
             .forceConflicts()
@@ -139,16 +137,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         : resource.create();
   }
 
-  private static <P extends HasMetadata> boolean createUpdateWithSSA(Context<P> context) {
-    if (createUpdateWithSSA == null) {
-      createUpdateWithSSA = context.getControllerConfiguration().getConfigurationService()
-          .ssaBasedCreateUpdateForDependentResources();
-    }
-    return createUpdateWithSSA;
-  }
-
   public R update(R actual, R target, P primary, Context<P> context) {
-    if (createUpdateWithSSA(context)) {
+    if (useSSA(context)) {
       target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
       return prepare(target, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
@@ -162,7 +152,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     final var desired = desired(primary, context);
     final boolean matches;
-    if (matchWithSSA(context)) {
+    if (useSSA(context)) {
       addReferenceHandlingMetadata(desired, primary);
       matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
           .matches(actualResource, desired, context);
@@ -172,17 +162,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return Result.computed(matches, desired);
   }
 
-  private static <P extends HasMetadata> boolean matchWithSSA(Context<P> context) {
-    if (matchWithSSA == null) {
-      matchWithSSA = context.getControllerConfiguration().getConfigurationService()
-          .ssaBasedDefaultMatchingForDependentResources();
-    }
-    return matchWithSSA && createUpdateWithSSA(context);
-  }
-
   @SuppressWarnings("unused")
   public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
-    if (matchWithSSA(context)) {
+    if (useSSA(context)) {
       addReferenceHandlingMetadata(desired, primary);
       var matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
           .matches(actualResource, desired, context);
@@ -191,6 +173,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       return GenericKubernetesResourceMatcher
           .match(desired, actualResource, false, false, false, context);
     }
+  }
+
+  private boolean useSSA(Context<P> context) {
+    return context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedCreateUpdateMatchForDependentResources();
   }
 
   protected void handleDelete(P primary, R secondary, Context<P> context) {
