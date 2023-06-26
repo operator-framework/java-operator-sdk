@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: test1
-  namespace: default
-data:
-  key3: "val3"
-
-
