@@ -12,7 +12,20 @@
   <artifactId>operator-framework</artifactId>
   <name>Operator SDK - Framework - Plain Java</name>
 
+
   <dependencies>
+    <!-- https://mvnrepository.com/artifact/org.testcontainers/k3s -->
+    <dependency>
+      <groupId>com.dajudge.kindcontainer</groupId>
+      <artifactId>kindcontainer</artifactId>
+      <version>1.4.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.15.2</version>
+    </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-core</artifactId>
@@ -79,11 +92,6 @@
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-junit-5</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>jenvtest</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
