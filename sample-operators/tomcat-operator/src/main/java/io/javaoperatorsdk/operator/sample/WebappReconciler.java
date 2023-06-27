@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +62,9 @@ public class WebappReconciler
     InformerConfiguration<Tomcat> configuration =
         InformerConfiguration.from(Tomcat.class, context)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
+            .withPrimaryToSecondaryMapper(
+                (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
+                    primary.getMetadata().getNamespace())))
             .build();
     return EventSourceInitializer
         .nameEventSources(new InformerEventSource<>(configuration, context));
