@@ -82,7 +82,7 @@ following code style schemes based on the IDE you use:
 
 ## Thanks
 
-These guidelines were best on several sources, including
+These guidelines were based on several sources, including
 [Atom](https://github.com/atom/atom/blob/master/CONTRIBUTING.md), [PurpleBooth's
 advice](https://gist.github.com/PurpleBooth/b24679402957c63ec426) and the [Contributor
 Covenant](https://www.contributor-covenant.org/).

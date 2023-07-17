@@ -313,7 +313,7 @@ object. Of note, particularly interesting is the `isLastAttempt` method, which c
 in your resource' status, for example, when attempting a last retry.
 
 Note, though, that reaching the retry limit won't prevent new events to be processed. New
-reconciliations will happen for new events as usual. However, if an error also ocurrs that
+reconciliations will happen for new events as usual. However, if an error also occurs that
 would normally trigger a retry, the SDK won't schedule one at this point since the retry limit
 is already reached.
 

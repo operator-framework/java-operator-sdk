@@ -229,7 +229,7 @@ stateDiagram-v2
 - Root nodes (i.e. nodes that don't depend on any others) are reconciled first. In this example,
   DR `1` is reconciled first since it doesn't depend on others.
   After that both DR `2` and `3` are reconciled concurrently, then DR `4` once both are
-  reconciled sucessfully.
+  reconciled successfully.
 - If DR `2` had a ready condition and if it evaluated to as `false`, DR `4` would not be reconciled.
   However `1`,`2` and `3` would be.
 - If `1` had a `false` ready condition, neither `2`,`3` or `4` would be reconciled.
