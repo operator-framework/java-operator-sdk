@@ -40,6 +40,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ItemStore<R> itemStore;
   private String name;
   private String fieldManager;
+  private Long informerListLimit;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -56,6 +57,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
+    this.informerListLimit = original.getInformerListLimit().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -176,6 +178,20 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+
+  /**
+   * Sets a max page size limit when starting the informer. This will result in pagination while
+   * populating the cache. This means that longer lists will take multiple requests to fetch. See
+   * {@link io.fabric8.kubernetes.client.dsl.Informable#withLimit(Long)} for more details.
+   *
+   * @param informerListLimit null (the default) results in no pagination
+   */
+  public ControllerConfigurationOverrider<R> withInformerListLimit(
+      Long informerListLimit) {
+    this.informerListLimit = informerListLimit;
+    return this;
+  }
+
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
@@ -199,7 +215,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
         namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        original.getConfigurationService());
+        original.getConfigurationService(), informerListLimit);
     overridden.setEventFilter(customResourcePredicate);
     return overridden;
   }

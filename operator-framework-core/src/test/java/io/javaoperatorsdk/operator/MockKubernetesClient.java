@@ -12,13 +12,7 @@ import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SubjectRulesReviewStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.*;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
@@ -76,8 +70,15 @@ public class MockKubernetesClient {
     }
     doAnswer(invocation -> null).when(informer).stop();
     Indexer mockIndexer = mock(Indexer.class);
+
     when(informer.getIndexer()).thenReturn(mockIndexer);
+
     when(filterable.runnableInformer(anyLong())).thenReturn(informer);
+
+    Informable<T> informable = mock(Informable.class);
+    when(filterable.withLimit(anyLong())).thenReturn(informable);
+    when(informable.runnableInformer(anyLong())).thenReturn(informer);
+
     when(client.resources(clazz)).thenReturn(resources);
     when(client.leaderElector())
         .thenReturn(new LeaderElectorBuilder(client, Executors.newSingleThreadExecutor()));

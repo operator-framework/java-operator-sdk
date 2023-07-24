@@ -40,9 +40,9 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnUpdateFilter<? super R> onUpdateFilter,
         OnDeleteFilter<? super R> onDeleteFilter,
         GenericFilter<? super R> genericFilter,
-        ItemStore<R> itemStore) {
+        ItemStore<R> itemStore, Long informerListLimit) {
       super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
-          itemStore);
+          itemStore, informerListLimit);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
 
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -119,6 +119,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private GenericFilter<? super R> genericFilter;
     private boolean inheritControllerNamespacesOnChange = false;
     private ItemStore<R> itemStore;
+    private Long informerListLimit;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -226,12 +227,24 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    /**
+     * Sets a max page size limit when starting the informer. This will result in pagination while
+     * populating the cache. This means that longer lists will take multiple requests to fetch. See
+     * {@link io.fabric8.kubernetes.client.dsl.Informable#withLimit(Long)} for more details.
+     *
+     * @param informerListLimit null (the default) results in no pagination
+     */
+    public InformerConfigurationBuilder<R> withInformerListLimit(Long informerListLimit) {
+      this.informerListLimit = informerListLimit;
+      return this;
+    }
+
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass,
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
-          onDeleteFilter, genericFilter, itemStore);
+          onDeleteFilter, genericFilter, itemStore, informerListLimit);
     }
   }
 

@@ -128,7 +128,8 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private InformerWrapper<T> createEventSource(
       FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,
       ResourceEventHandler<T> eventHandler, String namespaceIdentifier) {
-    var informer = filteredBySelectorClient.runnableInformer(0);
+    var informer = configuration.getInformerListLimit().map(filteredBySelectorClient::withLimit)
+        .orElse(filteredBySelectorClient).runnableInformer(0);
     configuration.getItemStore().ifPresent(informer::itemStore);
     var source = new InformerWrapper<>(informer, configurationService, namespaceIdentifier);
     source.addEventHandler(eventHandler);
