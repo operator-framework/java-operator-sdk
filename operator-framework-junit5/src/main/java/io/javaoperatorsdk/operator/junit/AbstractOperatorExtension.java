@@ -18,9 +18,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -164,7 +162,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     kubernetesClient
         .namespaces()
         .resource(
-            new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build())
+            new NamespaceBuilder().withMetadata(new ObjectMetaBuilder().withName(namespace).build())
+                .build())
         .create();
 
     kubernetesClient
