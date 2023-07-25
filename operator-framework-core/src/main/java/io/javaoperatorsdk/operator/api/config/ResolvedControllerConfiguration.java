@@ -46,7 +46,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.getDependentResources(), other.getNamespaces(),
         other.getFinalizerName(), other.getLabelSelector(), Collections.emptyMap(),
         other.getItemStore().orElse(null), other.fieldManager(),
-        other.getConfigurationService());
+        other.getConfigurationService(),
+        other.getInformerListLimit().orElse(null));
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
@@ -75,11 +76,11 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
       String fieldManager,
-      ConfigurationService configurationService) {
+      ConfigurationService configurationService, Long informerListLimit) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
         namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        configurationService);
+        configurationService, informerListLimit);
     setDependentResources(dependentResources);
   }
 
@@ -91,9 +92,9 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
       String fieldManager,
-      ConfigurationService configurationService) {
+      ConfigurationService configurationService, Long informerListLimit) {
     super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
-        itemStore);
+        itemStore, informerListLimit);
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
     this.generationAware = generationAware;
@@ -112,7 +113,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
     this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
         null, null, null, null, null,
-        null, null, null, null, null, configurationService);
+        null, null, null, null, null, configurationService, null);
   }
 
   @Override

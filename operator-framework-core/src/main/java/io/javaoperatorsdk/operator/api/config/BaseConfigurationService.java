@@ -157,7 +157,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             Constants.NO_VALUE_SET),
         null,
         Utils.instantiate(annotation.itemStore(), ItemStore.class, context), dependentFieldManager,
-        this);
+        this,
+        null);
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());

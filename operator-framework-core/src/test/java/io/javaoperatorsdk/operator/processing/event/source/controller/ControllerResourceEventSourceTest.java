@@ -198,7 +198,8 @@ class ControllerResourceEventSourceTest extends
           null,
           null,
           FINALIZER,
-          null, null, null, new BaseConfigurationService());
+          null, null, null, new BaseConfigurationService(),
+          null);
     }
   }
 }

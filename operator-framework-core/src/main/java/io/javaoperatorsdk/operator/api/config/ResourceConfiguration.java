@@ -145,4 +145,12 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   default Optional<ItemStore<R>> getItemStore() {
     return Optional.empty();
   }
+
+  /**
+   * The maximum amount of items to return for a single list call when starting an informer. If this
+   * is a not null it will result in paginating for the initial load of the informer cache.
+   */
+  default Optional<Long> getInformerListLimit() {
+    return Optional.empty();
+  }
 }

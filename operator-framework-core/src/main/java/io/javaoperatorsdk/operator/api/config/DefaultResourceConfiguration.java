@@ -21,11 +21,12 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   private final String labelSelector;
   private final Set<String> namespaces;
   private final ItemStore<R> itemStore;
+  private final Long informerListLimit;
 
   protected DefaultResourceConfiguration(Class<R> resourceClass,
       Set<String> namespaces, String labelSelector, OnAddFilter<? super R> onAddFilter,
       OnUpdateFilter<? super R> onUpdateFilter, GenericFilter<? super R> genericFilter,
-      ItemStore<R> itemStore) {
+      ItemStore<R> itemStore, Long informerListLimit) {
     this.resourceClass = resourceClass;
     this.resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;
@@ -35,6 +36,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     this.namespaces = ResourceConfiguration.ensureValidNamespaces(namespaces);
     this.labelSelector = ResourceConfiguration.ensureValidLabelSelector(labelSelector);
     this.itemStore = itemStore;
+    this.informerListLimit = informerListLimit;
   }
 
   @Override
@@ -75,5 +77,10 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   @Override
   public Optional<ItemStore<R>> getItemStore() {
     return Optional.ofNullable(itemStore);
+  }
+
+  @Override
+  public Optional<Long> getInformerListLimit() {
+    return Optional.ofNullable(informerListLimit);
   }
 }
