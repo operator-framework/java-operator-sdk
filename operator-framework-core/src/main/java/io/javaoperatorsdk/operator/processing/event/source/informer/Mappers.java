@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -92,5 +93,27 @@ public class Mappers {
       default:
         throw new IllegalArgumentException("Cannot extract a ResourceID from " + cacheKey);
     }
+  }
+
+  /**
+   * Produces a mapper that will associate a secondary resource with all owners of the primary type.
+   */
+  public static <OWNER extends HasMetadata, T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerType(
+      Class<OWNER> clazz) {
+    String kind = HasMetadata.getKind(clazz);
+    return resource -> {
+      var meta = resource.getMetadata();
+      if (meta == null) {
+        return Set.of();
+      }
+      var owners = meta.getOwnerReferences();
+      if (owners == null || owners.isEmpty()) {
+        return Set.of();
+      }
+      return owners.stream()
+          .filter(it -> kind.equals(it.getKind()))
+          .map(it -> new ResourceID(it.getName(), resource.getMetadata().getNamespace()))
+          .collect(Collectors.toSet());
+    };
   }
 }
