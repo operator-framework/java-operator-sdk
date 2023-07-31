@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Arrays;
-
 import io.fabric8.kubernetes.api.model.Cluster;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
@@ -18,7 +16,7 @@ public class CustomResourceUtils {
    * @throws OperatorException when the Custom Resource has validation error
    */
   public static void assertCustomResource(Class<?> resClass, CustomResourceDefinition crd) {
-    var namespaced = Arrays.asList(resClass.getInterfaces()).contains(Namespaced.class);
+    var namespaced = Namespaced.class.isAssignableFrom(resClass);
 
     if (!namespaced && Namespaced.class.getSimpleName().equals(crd.getSpec().getScope())) {
       throw new OperatorException(
