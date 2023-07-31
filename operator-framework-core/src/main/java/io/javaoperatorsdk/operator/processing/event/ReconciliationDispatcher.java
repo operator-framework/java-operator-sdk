@@ -294,12 +294,23 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = conflictRetryingUpdate(resource, r -> r.removeFinalizer(finalizerName));
+        P customResource = conflictRetryingUpdate(resource, r -> {
+          // the operator might not be allowed to retrieve the resource on a retry, e.g. when its
+          // permissions are removed by deleting the namespace concurrently
+          if (r == null) {
+            log.warn(
+                "Could not remove finalizer on null resource: {} with version: {}",
+                getUID(resource),
+                getVersion(resource));
+            return false;
+          }
+          return r.removeFinalizer(finalizerName);
+        });
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
     log.debug(
-        "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, uses finalizer: {} ",
+        "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, uses finalizer: {}",
         getUID(resource),
         getVersion(resource),
         deleteControl,
