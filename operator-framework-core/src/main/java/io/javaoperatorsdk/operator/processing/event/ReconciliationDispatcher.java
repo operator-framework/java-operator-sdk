@@ -280,7 +280,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
-
   private PostExecutionControl<P> handleCleanup(P resource,
       Context<P> context) {
     log.debug(
@@ -385,15 +384,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           getName(resource),
           resource.getMetadata().getResourceVersion());
       return resource(resource).lockResourceVersion(resource.getMetadata().getResourceVersion())
-          .replace();
+          .update();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       return resource(resource)
           .lockResourceVersion()
-          .replaceStatus();
+          .updateStatus();
     }
 
     public R patchStatus(R resource, R originalResource) {
