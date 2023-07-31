@@ -107,8 +107,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
             + ((HasMetadata) desired).getKind()
         : desired.getClass().getSimpleName();
-    log.info("{} {} for primary {}", operation, desiredDesc, ResourceID.fromResource(primary));
-    log.trace("{} dependent {} for primary {}", operation, desired, primary);
+    log.debug("{} {} for primary {}", operation, desiredDesc, ResourceID.fromResource(primary));
   }
 
   protected R handleCreate(R desired, P primary, Context<P> context) {
