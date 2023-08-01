@@ -2,10 +2,8 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatch
 
 import java.util.Map;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.discovery.v1.EndpointSlice;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -28,7 +26,9 @@ public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
       Role.class, new RoleResourceUpdaterMatcher(),
       ClusterRole.class, new ClusterRoleResourceUpdaterMatcher(),
       RoleBinding.class, new RoleBindingResourceUpdaterMatcher(),
-      ClusterRoleBinding.class, new ClusterRoleBindingResourceUpdaterMatcher());
+      ClusterRoleBinding.class, new ClusterRoleBindingResourceUpdaterMatcher(),
+      Endpoints.class, new EndpointsResourceUpdaterMatcher(),
+      EndpointSlice.class, new EndpointSliceResourceUpdateMatcher());
 
   protected GenericResourceUpdaterMatcher() {}
 
