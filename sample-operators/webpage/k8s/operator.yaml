@@ -50,6 +50,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: webpage-operator
+  namespace: default
 roleRef:
   kind: ClusterRole
   name: webpage-operator
