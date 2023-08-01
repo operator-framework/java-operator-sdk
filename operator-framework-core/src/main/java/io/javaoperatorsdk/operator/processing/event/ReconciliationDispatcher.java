@@ -280,7 +280,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
-
   private PostExecutionControl<P> handleCleanup(P resource,
       Context<P> context) {
     log.debug(
@@ -295,12 +294,23 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = conflictRetryingUpdate(resource, r -> r.removeFinalizer(finalizerName));
+        P customResource = conflictRetryingUpdate(resource, r -> {
+          // the operator might not be allowed to retrieve the resource on a retry, e.g. when its
+          // permissions are removed by deleting the namespace concurrently
+          if (r == null) {
+            log.warn(
+                "Could not remove finalizer on null resource: {} with version: {}",
+                getUID(resource),
+                getVersion(resource));
+            return false;
+          }
+          return r.removeFinalizer(finalizerName);
+        });
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
     log.debug(
-        "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, uses finalizer: {} ",
+        "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, uses finalizer: {}",
         getUID(resource),
         getVersion(resource),
         deleteControl,
@@ -385,15 +395,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           getName(resource),
           resource.getMetadata().getResourceVersion());
       return resource(resource).lockResourceVersion(resource.getMetadata().getResourceVersion())
-          .replace();
+          .update();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public R updateStatus(R resource) {
       log.trace("Updating status for resource: {}", resource);
       return resource(resource)
           .lockResourceVersion()
-          .replaceStatus();
+          .updateStatus();
     }
 
     public R patchStatus(R resource, R originalResource) {

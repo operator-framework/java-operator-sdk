@@ -241,6 +241,24 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
+  void nullResourceIsGracefullyHandledOnFinalizerRemovalRetry() {
+    // simulate the operator not able or not be allowed to get the custom resource during the retry
+    // of the finalizer removal
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
+    when(customResourceFacade.updateResource(any()))
+        .thenThrow(new KubernetesClientException(null, 409, null));
+    when(customResourceFacade.getResource(any(), any())).thenReturn(null);
+
+    var postExecControl =
+        reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+
+    assertThat(postExecControl.isFinalizerRemoved()).isTrue();
+    verify(customResourceFacade, times(1)).updateResource(testCustomResource);
+    verify(customResourceFacade, times(1)).getResource(any(), any());
+  }
+
+  @Test
   void throwsExceptionIfFinalizerRemovalRetryExceeded() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
@@ -306,8 +324,6 @@ class ReconciliationDispatcherTest {
 
     assertEquals(0, testCustomResource.getMetadata().getFinalizers().size());
   }
-
-
 
   @Test
   void doesNotRemovesTheSetFinalizerIfTheDeleteNotMethodInstructsIt() {
@@ -590,7 +606,6 @@ class ReconciliationDispatcherTest {
     reconciler.errorHandler =
         (r, ri, e) -> ErrorStatusUpdateControl.patchStatus(testCustomResource);
 
-
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
 
@@ -672,7 +687,6 @@ class ReconciliationDispatcherTest {
     resourceWithFinalizer.addFinalizer(DEFAULT_FINALIZER);
     return resourceWithFinalizer;
   }
-
 
   private void removeFinalizers(CustomResource customResource) {
     customResource.getMetadata().getFinalizers().clear();
