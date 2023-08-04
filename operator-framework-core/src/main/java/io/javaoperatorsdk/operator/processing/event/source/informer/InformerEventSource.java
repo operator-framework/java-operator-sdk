@@ -51,7 +51,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
  * </p>
  * <br>
  * <p>
- * 2. Additional API is provided that is ment to be used with the combination of the previous one,
+ * 2. Additional API is provided that is meant to be used with the combination of the previous one,
  * and the goal is to filter out events that are the results of updates and creates made by the
  * controller itself. For example if in reconciler a ConfigMaps is created, there should be an
  * Informer in place to handle change events of that ConfigMap, but since it has bean created (or
