@@ -113,9 +113,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void onAdd(R newResource) {
     if (log.isDebugEnabled()) {
-      log.debug("On add event received for resource id: {} type: {}",
+      log.debug("On add event received for resource id: {} type: {} version: {}",
           ResourceID.fromResource(newResource),
-          resourceType().getSimpleName());
+          resourceType().getSimpleName(), newResource.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     onAddOrUpdate(Operation.ADD, newResource, null,
@@ -125,9 +125,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void onUpdate(R oldObject, R newObject) {
     if (log.isDebugEnabled()) {
-      log.debug("On update event received for resource id: {} type: {}",
+      log.debug(
+          "On update event received for resource id: {} type: {} version: {} old version: {} ",
           ResourceID.fromResource(newObject),
-          resourceType().getSimpleName());
+          resourceType().getSimpleName(),
+          newObject.getMetadata().getResourceVersion(),
+          oldObject.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     onAddOrUpdate(Operation.UPDATE, newObject, oldObject,
@@ -277,22 +280,32 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       R newResource, R oldResource) {
     ResourceID resourceID = ResourceID.fromResource(newResource);
     try {
+      // what if the prev event delayed, thus that even did not clear the temp cache.
       if (!eventRecorder.containsEventWithResourceVersion(
           resourceID, newResource.getMetadata().getResourceVersion())) {
         log.debug(
             "Did not found event in buffer with target version and resource id: {}", resourceID);
         temporaryResourceCache.unconditionallyCacheResource(newResource);
-      } else if (eventRecorder.containsEventWithVersionButItsNotLastOne(
-          resourceID, newResource.getMetadata().getResourceVersion())) {
-        R lastEvent = eventRecorder.getLastEvent(resourceID);
-        log.debug(
-            "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
-            resourceID);
-        if (eventAcceptedByFilter(operation, newResource, oldResource)) {
-          propagateEvent(lastEvent);
+      } else {
+        // if the resource is not added to the temp cache, it is cleared, since
+        // the cache is cleared by subsequent events after updates, but if those did not received
+        // the temp cache is still filled at this point with an old resource
+        log.debug("Cleaning temporal cache for resource id: {}", resourceID);
+        temporaryResourceCache.removeResourceFromCache(newResource);
+        if (eventRecorder.containsEventWithVersionButItsNotLastOne(
+            resourceID, newResource.getMetadata().getResourceVersion())) {
+          R lastEvent = eventRecorder.getLastEvent(resourceID);
+
+          log.debug(
+              "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
+              resourceID);
+          if (eventAcceptedByFilter(operation, newResource, oldResource)) {
+            propagateEvent(lastEvent);
+          }
         }
       }
     } finally {
+      log.debug("Stopping event recording for: {}", resourceID);
       eventRecorder.stopEventRecording(resourceID);
     }
   }
