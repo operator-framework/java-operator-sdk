@@ -79,6 +79,9 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
       }
       map.put(node.getName(), node);
     }
+    if (topLevelResources.size() <= 0 ){
+      throw new IllegalStateException("Top level dependent resources set size must be bigger than 0 .");
+    }
     return map;
   }
 
