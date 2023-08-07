@@ -10,13 +10,13 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.createonlyifnotexistsdependentwithssa.CreateOnlyIfNotExistsDependentWithSSACustomResource;
-import io.javaoperatorsdk.operator.sample.createonlyifnotexistsdependentwithssa.CreateOnlyIfNotExistsDependentWithSSAReconciler;
+import io.javaoperatorsdk.operator.sample.createonlyifnotexistsdependentwithssa.CreateOnlyIfNotExistingDependentWithSSACustomResource;
+import io.javaoperatorsdk.operator.sample.createonlyifnotexistsdependentwithssa.CreateOnlyIfNotExistingDependentWithSSAReconciler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class CreateOnlyIfNotExistsDependentWithSSA {
+class CreateOnlyIfNotExistingDependentWithSSA {
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String KEY = "key";
@@ -24,12 +24,12 @@ class CreateOnlyIfNotExistsDependentWithSSA {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(new CreateOnlyIfNotExistsDependentWithSSAReconciler())
+          .withReconciler(new CreateOnlyIfNotExistingDependentWithSSAReconciler())
           .build();
 
 
   @Test
-  void createsResourceOnlyIfNotExists() {
+  void createsResourceOnlyIfNotExisting() {
     var cm = new ConfigMapBuilder().withMetadata(new ObjectMetaBuilder()
         .withName(TEST_RESOURCE_NAME)
         .build())
@@ -45,8 +45,8 @@ class CreateOnlyIfNotExistsDependentWithSSA {
     });
   }
 
-  CreateOnlyIfNotExistsDependentWithSSACustomResource testResource() {
-    var res = new CreateOnlyIfNotExistsDependentWithSSACustomResource();
+  CreateOnlyIfNotExistingDependentWithSSACustomResource testResource() {
+    var res = new CreateOnlyIfNotExistingDependentWithSSACustomResource();
     res.setMetadata(new ObjectMetaBuilder()
         .withName(TEST_RESOURCE_NAME)
         .build());

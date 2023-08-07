@@ -8,15 +8,15 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class ConfigMapDependentResource extends
-    CRUDKubernetesDependentResource<ConfigMap, CreateOnlyIfNotExistsDependentWithSSACustomResource> {
+    CRUDKubernetesDependentResource<ConfigMap, CreateOnlyIfNotExistingDependentWithSSACustomResource> {
 
   public ConfigMapDependentResource() {
     super(ConfigMap.class);
   }
 
   @Override
-  protected ConfigMap desired(CreateOnlyIfNotExistsDependentWithSSACustomResource primary,
-      Context<CreateOnlyIfNotExistsDependentWithSSACustomResource> context) {
+  protected ConfigMap desired(CreateOnlyIfNotExistingDependentWithSSACustomResource primary,
+      Context<CreateOnlyIfNotExistingDependentWithSSACustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName())
