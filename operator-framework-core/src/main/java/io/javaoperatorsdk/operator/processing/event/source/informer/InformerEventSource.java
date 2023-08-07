@@ -288,7 +288,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         temporaryResourceCache.unconditionallyCacheResource(newResource);
       } else {
         // if the resource is not added to the temp cache, it is cleared, since
-        // the cache is cleared by subsequent events after updates, but if those did not received
+        // the cache is cleared by subsequent events after updates, but if those did not receive
         // the temp cache is still filled at this point with an old resource
         log.debug("Cleaning temporal cache for resource id: {}", resourceID);
         temporaryResourceCache.removeResourceFromCache(newResource);
