@@ -79,6 +79,10 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
       }
       map.put(node.getName(), node);
     }
+    if (topLevelResources.size() == 0) {
+      throw new IllegalStateException(
+          "No top-level dependent resources found. This might indicate a cyclic Set of DependentResourceNode has been provided.");
+    }
     return map;
   }
 
