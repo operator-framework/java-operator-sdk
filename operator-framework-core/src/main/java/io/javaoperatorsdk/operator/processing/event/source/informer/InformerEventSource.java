@@ -51,7 +51,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
  * </p>
  * <br>
  * <p>
- * 2. Additional API is provided that is ment to be used with the combination of the previous one,
+ * 2. Additional API is provided that is meant to be used with the combination of the previous one,
  * and the goal is to filter out events that are the results of updates and creates made by the
  * controller itself. For example if in reconciler a ConfigMaps is created, there should be an
  * Informer in place to handle change events of that ConfigMap, but since it has bean created (or
@@ -113,9 +113,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void onAdd(R newResource) {
     if (log.isDebugEnabled()) {
-      log.debug("On add event received for resource id: {} type: {}",
+      log.debug("On add event received for resource id: {} type: {} version: {}",
           ResourceID.fromResource(newResource),
-          resourceType().getSimpleName());
+          resourceType().getSimpleName(), newResource.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     onAddOrUpdate(Operation.ADD, newResource, null,
@@ -125,9 +125,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void onUpdate(R oldObject, R newObject) {
     if (log.isDebugEnabled()) {
-      log.debug("On update event received for resource id: {} type: {}",
+      log.debug(
+          "On update event received for resource id: {} type: {} version: {} old version: {} ",
           ResourceID.fromResource(newObject),
-          resourceType().getSimpleName());
+          resourceType().getSimpleName(),
+          newObject.getMetadata().getResourceVersion(),
+          oldObject.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     onAddOrUpdate(Operation.UPDATE, newObject, oldObject,
@@ -282,17 +285,26 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         log.debug(
             "Did not found event in buffer with target version and resource id: {}", resourceID);
         temporaryResourceCache.unconditionallyCacheResource(newResource);
-      } else if (eventRecorder.containsEventWithVersionButItsNotLastOne(
-          resourceID, newResource.getMetadata().getResourceVersion())) {
-        R lastEvent = eventRecorder.getLastEvent(resourceID);
-        log.debug(
-            "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
-            resourceID);
-        if (eventAcceptedByFilter(operation, newResource, oldResource)) {
-          propagateEvent(lastEvent);
+      } else {
+        // if the resource is not added to the temp cache, it is cleared, since
+        // the cache is cleared by subsequent events after updates, but if those did not receive
+        // the temp cache is still filled at this point with an old resource
+        log.debug("Cleaning temporary cache for resource id: {}", resourceID);
+        temporaryResourceCache.removeResourceFromCache(newResource);
+        if (eventRecorder.containsEventWithVersionButItsNotLastOne(
+            resourceID, newResource.getMetadata().getResourceVersion())) {
+          R lastEvent = eventRecorder.getLastEvent(resourceID);
+
+          log.debug(
+              "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
+              resourceID);
+          if (eventAcceptedByFilter(operation, newResource, oldResource)) {
+            propagateEvent(lastEvent);
+          }
         }
       }
     } finally {
+      log.debug("Stopping event recording for: {}", resourceID);
       eventRecorder.stopEventRecording(resourceID);
     }
   }
