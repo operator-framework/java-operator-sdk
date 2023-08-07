@@ -129,7 +129,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
     if (useSSA(context)) {
-      // setting resource version for SSA so only created if not exists yet
+      // setting resource version for SSA so only created if it doesn't exist already
       target.getMetadata().setResourceVersion("1");
     }
     final var resource = prepare(target, primary, "Creating");
