@@ -14,6 +14,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTS_WITH_SSA;
+
 public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMetadata> implements
     ConfigurationConverter<KubernetesDependent, KubernetesDependentResourceConfig<R>, KubernetesDependentResource<R, P>> {
 
@@ -25,6 +27,7 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     var namespaces = parentConfiguration.getNamespaces();
     var configuredNS = false;
     String labelSelector = null;
+    var createResourceOnlyIfNotExistsWithSSA = DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTS_WITH_SSA;
     OnAddFilter<? extends HasMetadata> onAddFilter = null;
     OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
@@ -53,9 +56,12 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
       resourceDiscriminator =
           Utils.instantiate(configAnnotation.resourceDiscriminator(), ResourceDiscriminator.class,
               context);
+      createResourceOnlyIfNotExistsWithSSA =
+          configAnnotation.createResourceOnlyIfNotExistsWithSSA();
     }
 
     return new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
+        createResourceOnlyIfNotExistsWithSSA,
         resourceDiscriminator, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
   }
 }

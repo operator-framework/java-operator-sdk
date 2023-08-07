@@ -130,7 +130,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public R create(R target, P primary, Context<P> context) {
     if (useSSA(context)) {
       // setting resource version for SSA so only created if it doesn't exist already
-      target.getMetadata().setResourceVersion("1");
+      var createIfNotExists = kubernetesDependentResourceConfig == null
+          ? KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTS_WITH_SSA
+          : kubernetesDependentResourceConfig.createResourceOnlyIfNotExistsWithSSA();
+      if (createIfNotExists) {
+        target.getMetadata().setResourceVersion("1");
+      }
     }
     final var resource = prepare(target, primary, "Creating");
     return useSSA(context)

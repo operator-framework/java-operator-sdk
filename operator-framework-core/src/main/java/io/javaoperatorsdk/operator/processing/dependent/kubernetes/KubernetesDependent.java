@@ -69,4 +69,8 @@ public @interface KubernetesDependent {
 
   Class<? extends ResourceDiscriminator> resourceDiscriminator() default ResourceDiscriminator.class;
 
+  /**
+   * Creates the resource only if did not exist before, this applies only if SSA is used.
+   */
+  boolean createResourceOnlyIfNotExistsWithSSA() default KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTS_WITH_SSA;
 }
