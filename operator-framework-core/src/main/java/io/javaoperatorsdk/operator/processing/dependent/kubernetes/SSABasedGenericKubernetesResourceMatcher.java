@@ -90,7 +90,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     removeIrrelevantValues(desiredMap);
 
-    log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
+    log.trace("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
 
     return prunedActual.equals(desiredMap);
   }
