@@ -280,7 +280,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       R newResource, R oldResource) {
     ResourceID resourceID = ResourceID.fromResource(newResource);
     try {
-      // what if the prev event delayed, thus that even did not clear the temp cache.
       if (!eventRecorder.containsEventWithResourceVersion(
           resourceID, newResource.getMetadata().getResourceVersion())) {
         log.debug(
