@@ -128,6 +128,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
+    if (useSSA(context)) {
+      // setting resource version for SSA so only created if it doesn't exist already
+      target.getMetadata().setResourceVersion("1");
+    }
     final var resource = prepare(target, primary, "Creating");
     return useSSA(context)
         ? resource
@@ -138,15 +142,23 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public R update(R actual, R target, P primary, Context<P> context) {
+    if (log.isDebugEnabled()) {
+      log.debug("Updating actual resource: {} version: {}", ResourceID.fromResource(actual),
+          actual.getMetadata().getResourceVersion());
+    }
+    R updatedResource;
     if (useSSA(context)) {
       target.getMetadata().setResourceVersion(actual.getMetadata().getResourceVersion());
-      return prepare(target, primary, "Updating")
+      updatedResource = prepare(target, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
           .forceConflicts().serverSideApply();
     } else {
       var updatedActual = updaterMatcher.updateResource(actual, target, context);
-      return prepare(updatedActual, primary, "Updating").replace();
+      updatedResource = prepare(updatedActual, primary, "Updating").replace();
     }
+    log.debug("Resource version after update: {}",
+        updatedResource.getMetadata().getResourceVersion());
+    return updatedResource;
   }
 
   public Result<R> match(R actualResource, P primary, Context<P> context) {
