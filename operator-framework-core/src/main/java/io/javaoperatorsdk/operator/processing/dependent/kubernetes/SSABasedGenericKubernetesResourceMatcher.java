@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.LoggingUtils;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -81,8 +82,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     var actualMap = objectMapper.convertValue(actual, Map.class);
     var desiredMap = objectMapper.convertValue(desired, Map.class);
-
-    log.trace("Original actual: \n {} \n original desired: \n {} ", actual, desiredMap);
+    if (LoggingUtils.isNotSensitiveResource(desired)) {
+      log.trace("Original actual: \n {} \n original desired: \n {} ", actual, desiredMap);
+    }
 
     var prunedActual = new HashMap<String, Object>(actualMap.size());
     keepOnlyManagedFields(prunedActual, actualMap,
@@ -90,7 +92,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     removeIrrelevantValues(desiredMap);
 
-    log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
+    if (LoggingUtils.isNotSensitiveResource(desired)) {
+      log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
+    }
 
     return prunedActual.equals(desiredMap);
   }
