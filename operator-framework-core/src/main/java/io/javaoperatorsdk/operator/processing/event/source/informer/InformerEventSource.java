@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -18,7 +19,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationEventFilter;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -72,17 +73,16 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
-    implements ResourceEventHandler<R>, RecentOperationEventFilter<R> {
+    implements ResourceEventHandler<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final InformerConfiguration<R> configuration;
-  // always called from a synchronized method
-  private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private Map<String, Function<R, List<String>>> indexerBuffer = new HashMap<>();
+  private String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
@@ -108,6 +108,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     onUpdateFilter = configuration.onUpdateFilter().orElse(null);
     onDeleteFilter = configuration.onDeleteFilter().orElse(null);
     genericFilter = configuration.genericFilter().orElse(null);
+  }
+
+  public String getId() {
+    return id;
   }
 
   @Override
@@ -154,12 +158,23 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private synchronized void onAddOrUpdate(Operation operation, R newObject, R oldObject,
       Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
-    if (eventRecorder.isRecordingFor(resourceID)) {
-      log.debug("Recording event for: {}", resourceID);
-      eventRecorder.recordEvent(newObject);
-      return;
+
+    String previous = newObject.getMetadata().getAnnotations()
+        .get(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY);
+    boolean known = false;
+    if (previous != null) {
+      String[] parts = previous.split(",");
+      if (id.equals(parts[0])) {
+        if (oldObject == null && parts.length == 1) {
+          known = true;
+        } else if (oldObject != null && parts.length == 2
+            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
+          known = true;
+        }
+      }
     }
-    if (temporaryCacheHasResourceWithSameVersionAs(newObject)) {
+    if (temporaryCacheHasResourceWithSameVersionAs(newObject)
+        || (known && temporaryResourceCache.getResourceFromCache(resourceID).isEmpty())) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource ID: {}",
           operation,
@@ -239,97 +254,34 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource,
-        () -> super.handleRecentResourceUpdate(resourceID, resource, previousVersionOfResource));
+    handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource);
   }
 
   @Override
   public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(Operation.ADD, resource, null,
-        () -> super.handleRecentResourceCreate(resourceID, resource));
+    handleRecentCreateOrUpdate(Operation.ADD, resource, null);
   }
 
-  private void handleRecentCreateOrUpdate(Operation operation, R resource, R oldResource,
-      Runnable runnable) {
-    primaryToSecondaryIndex.onAddOrUpdate(resource);
-    if (eventRecorder.isRecordingFor(ResourceID.fromResource(resource))) {
-      handleRecentResourceOperationAndStopEventRecording(operation, resource, oldResource);
-    } else {
-      runnable.run();
-    }
-  }
-
-  /**
-   * There can be the following cases:
-   * <ul>
-   * <li>1. Did not receive the event yet for the target resource, then we need to put it to temp
-   * cache. Because event will arrive. Note that this not necessary mean that the even is not sent
-   * yet (we are in sync context). Also does not mean that there are no more events received after
-   * that. But during the event processing (onAdd, onUpdate) we make sure that the propagation just
-   * skipped for the right event.</li>
-   * <li>2. Received the event about the operation already, it was the last. This means already is
-   * on cache of informer. So we have to do nothing. Since it was just recorded and not propagated.
-   * </li>
-   * <li>3. Received the event but more events received since, so those were not propagated yet. So
-   * an event needs to be propagated to compensate.</li>
-   * </ul>
-   *
-   * @param newResource just created or updated resource
-   */
-  private void handleRecentResourceOperationAndStopEventRecording(Operation operation,
-      R newResource, R oldResource) {
+  private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
+    primaryToSecondaryIndex.onAddOrUpdate(newResource);
     ResourceID resourceID = ResourceID.fromResource(newResource);
-    try {
-      if (!eventRecorder.containsEventWithResourceVersion(
-          resourceID, newResource.getMetadata().getResourceVersion())) {
-        log.debug(
-            "Did not found event in buffer with target version and resource id: {}", resourceID);
-        temporaryResourceCache.unconditionallyCacheResource(newResource);
-      } else {
-        // if the resource is not added to the temp cache, it is cleared, since
-        // the cache is cleared by subsequent events after updates, but if those did not receive
-        // the temp cache is still filled at this point with an old resource
-        log.debug("Cleaning temporary cache for resource id: {}", resourceID);
-        temporaryResourceCache.removeResourceFromCache(newResource);
-        if (eventRecorder.containsEventWithVersionButItsNotLastOne(
-            resourceID, newResource.getMetadata().getResourceVersion())) {
-          R lastEvent = eventRecorder.getLastEvent(resourceID);
-
-          log.debug(
-              "Found events in event buffer but the target event is not last for id: {}. Propagating event.",
-              resourceID);
-          if (eventAcceptedByFilter(operation, newResource, oldResource)) {
-            propagateEvent(lastEvent);
-          }
-        }
-      }
-    } finally {
-      log.debug("Stopping event recording for: {}", resourceID);
-      eventRecorder.stopEventRecording(resourceID);
+    R cachedResource = get(resourceID).orElse(null);
+    if ((oldResource == null && cachedResource == null) || (cachedResource != null && oldResource != null
+        && cachedResource.getMetadata().getResourceVersion().equals(oldResource.getMetadata().getResourceVersion()))) {
+      log.debug(
+          "Temporarily moving ahead to target version {} for resource id: {}",
+          newResource.getMetadata().getResourceVersion(), resourceID);
+      temporaryResourceCache.unconditionallyCacheResource(newResource);
+    } else if (temporaryResourceCache.removeResourceFromCache(newResource).isPresent()) {
+      // if the resource is not added to the temp cache, it is cleared, since
+      // the cache is cleared by subsequent events after updates, but if those did not receive
+      // the temp cache is still filled at this point with an old resource
+      log.debug("Cleaning temporary cache for resource id: {}", resourceID);
     }
   }
 
   private boolean useSecondaryToPrimaryIndex() {
     return this.primaryToSecondaryMapper == null;
-  }
-
-  @Override
-  public synchronized void prepareForCreateOrUpdateEventFiltering(ResourceID resourceID,
-      R resource) {
-    log.debug("Starting event recording for: {}", resourceID);
-    eventRecorder.startEventRecording(resourceID);
-  }
-
-  /**
-   * Mean to be called to clean up in case of an exception from the client. Usually in a catch
-   * block.
-   *
-   * @param resourceID to cleanup
-   */
-  @Override
-  public synchronized void cleanupOnCreateOrUpdateEventFiltering(ResourceID resourceID) {
-    log.debug("Stopping event recording for: {}", resourceID);
-    eventRecorder.stopEventRecording(resourceID);
   }
 
   @Override
@@ -361,6 +313,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   // Since this event source instance is created by the user, the ConfigurationService is actually
   // injected after it is registered. Some of the subcomponents are initialized at that time here.
+  @Override
   public void setConfigurationService(ConfigurationService configurationService) {
     super.setConfigurationService(configurationService);
 
@@ -368,6 +321,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     indexerBuffer = null;
   }
 
+  @Override
   public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
     if (indexerBuffer == null) {
       throw new OperatorException("Cannot add indexers after InformerEventSource started.");

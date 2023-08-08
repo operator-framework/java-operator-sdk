@@ -41,8 +41,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     this.managedInformerEventSource = managedInformerEventSource;
   }
 
-  public synchronized void removeResourceFromCache(T resource) {
-    cache.remove(ResourceID.fromResource(resource));
+  public synchronized Optional<T> removeResourceFromCache(T resource) {
+    return Optional.ofNullable(cache.remove(ResourceID.fromResource(resource)));
   }
 
   public synchronized void unconditionallyCacheResource(T newResource) {

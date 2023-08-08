@@ -90,6 +90,15 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     keepOnlyManagedFields(prunedActual, actualMap,
         managedFieldsEntry.getFieldsV1().getAdditionalProperties(), objectMapper);
 
+    ((Map<String, Object>) prunedActual.get(METADATA_KEY)).computeIfPresent("annotations", (k, v) -> {
+      var annotations = (Map<String, Object>)v;
+      annotations.remove(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY);
+      if (annotations.isEmpty()) {
+        return null;
+      }
+      return annotations;
+    });
+
     removeIrrelevantValues(desiredMap);
 
     if (LoggingUtils.isNotSensitiveResource(desired)) {
