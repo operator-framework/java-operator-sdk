@@ -14,6 +14,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
+
 public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMetadata> implements
     ConfigurationConverter<KubernetesDependent, KubernetesDependentResourceConfig<R>, KubernetesDependentResource<R, P>> {
 
@@ -25,6 +27,8 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     var namespaces = parentConfiguration.getNamespaces();
     var configuredNS = false;
     String labelSelector = null;
+    var createResourceOnlyIfNotExistingWithSSA =
+        DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
     OnAddFilter<? extends HasMetadata> onAddFilter = null;
     OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
@@ -39,9 +43,8 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
       final var fromAnnotation = configAnnotation.labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
 
-      final var context =
-          Utils.contextFor(parentConfiguration, originatingClass,
-              configAnnotation.annotationType());
+      final var context = Utils.contextFor(parentConfiguration, originatingClass,
+          configAnnotation.annotationType());
       onAddFilter = Utils.instantiate(configAnnotation.onAddFilter(), OnAddFilter.class, context);
       onUpdateFilter =
           Utils.instantiate(configAnnotation.onUpdateFilter(), OnUpdateFilter.class, context);
@@ -53,9 +56,12 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
       resourceDiscriminator =
           Utils.instantiate(configAnnotation.resourceDiscriminator(), ResourceDiscriminator.class,
               context);
+      createResourceOnlyIfNotExistingWithSSA =
+          configAnnotation.createResourceOnlyIfNotExistingWithSSA();
     }
 
     return new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
+        createResourceOnlyIfNotExistingWithSSA,
         resourceDiscriminator, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
   }
 }
