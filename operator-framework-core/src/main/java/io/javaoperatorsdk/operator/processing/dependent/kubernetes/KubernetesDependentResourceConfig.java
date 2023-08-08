@@ -13,9 +13,12 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig<R> {
 
+  public static final boolean DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA = true;
+
   private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
   private String labelSelector = NO_VALUE_SET;
   private boolean namespacesWereConfigured = false;
+  private boolean createResourceOnlyIfNotExistingWithSSA;
   private ResourceDiscriminator<R, ?> resourceDiscriminator;
 
   private OnAddFilter<R> onAddFilter;
@@ -28,14 +31,18 @@ public class KubernetesDependentResourceConfig<R> {
 
   public KubernetesDependentResourceConfig() {}
 
-  public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
-      boolean configuredNS, ResourceDiscriminator<R, ?> resourceDiscriminator,
+  public KubernetesDependentResourceConfig(Set<String> namespaces,
+      String labelSelector,
+      boolean configuredNS,
+      boolean createResourceOnlyIfNotExistingWithSSA,
+      ResourceDiscriminator<R, ?> resourceDiscriminator,
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
       OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.namespacesWereConfigured = configuredNS;
+    this.createResourceOnlyIfNotExistingWithSSA = createResourceOnlyIfNotExistingWithSSA;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
     this.onDeleteFilter = onDeleteFilter;
@@ -44,7 +51,8 @@ public class KubernetesDependentResourceConfig<R> {
   }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
-    this(namespaces, labelSelector, true, null, null, null,
+    this(namespaces, labelSelector, true, DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
+        null, null, null,
         null, null);
   }
 
@@ -70,6 +78,9 @@ public class KubernetesDependentResourceConfig<R> {
     return onAddFilter;
   }
 
+  public boolean createResourceOnlyIfNotExistingWithSSA() {
+    return createResourceOnlyIfNotExistingWithSSA;
+  }
 
   public OnUpdateFilter<R> onUpdateFilter() {
     return onUpdateFilter;
