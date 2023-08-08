@@ -154,7 +154,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           .forceConflicts().serverSideApply();
     } else {
       var updatedActual = updaterMatcher.updateResource(actual, target, context);
-      updatedResource = prepare(updatedActual, primary, "Updating").replace();
+      updatedResource = prepare(updatedActual, primary, "Updating").update();
     }
     log.debug("Resource version after update: {}",
         updatedResource.getMetadata().getResourceVersion());
