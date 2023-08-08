@@ -90,6 +90,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     keepOnlyManagedFields(prunedActual, actualMap,
         managedFieldsEntry.getFieldsV1().getAdditionalProperties(), objectMapper);
 
+    removeSDKAnnotations(prunedActual);
+
     removeIrrelevantValues(desiredMap);
 
     if (LoggingUtils.isNotSensitiveResource(desired)) {
@@ -97,6 +99,19 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
 
     return prunedActual.equals(desiredMap);
+  }
+
+  private void removeSDKAnnotations(HashMap<String, Object> prunedActual) {
+    Optional.ofNullable(((Map<String, Object>) prunedActual.get(METADATA_KEY)))
+        .ifPresent(m -> m.computeIfPresent("annotations",
+            (k, v) -> {
+              var annotations = (Map<String, Object>) v;
+              annotations.remove(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY);
+              if (annotations.isEmpty()) {
+                return null;
+              }
+              return annotations;
+            }));
   }
 
   @SuppressWarnings("unchecked")

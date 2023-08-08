@@ -46,41 +46,26 @@ public class CreateUpdateEventFilterTestReconciler
     if (configMap == null) {
       var configMapToCreate = createConfigMap(resource);
       final var resourceID = ResourceID.fromResource(configMapToCreate);
-      try {
-        informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID, configMapToCreate);
-        configMap =
-            client
-                .configMaps()
-                .inNamespace(resource.getMetadata().getNamespace())
-                .resource(configMapToCreate)
-                .create();
-        informerEventSource.handleRecentResourceCreate(resourceID, configMap);
-      } catch (RuntimeException e) {
-        informerEventSource
-            .cleanupOnCreateOrUpdateEventFiltering(resourceID);
-        throw e;
-      }
+      configMap =
+          client
+              .configMaps()
+              .inNamespace(resource.getMetadata().getNamespace())
+              .resource(configMapToCreate)
+              .create();
+      informerEventSource.handleRecentResourceCreate(resourceID, configMap);
     } else {
       ResourceID resourceID = ResourceID.fromResource(configMap);
       if (!Objects.equals(
           configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY), resource.getSpec().getValue())) {
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
-        try {
-          informerEventSource
-              .prepareForCreateOrUpdateEventFiltering(resourceID, configMap);
-          var newConfigMap =
-              client
-                  .configMaps()
-                  .inNamespace(resource.getMetadata().getNamespace())
-                  .resource(configMap)
-                  .replace();
-          informerEventSource.handleRecentResourceUpdate(resourceID,
-              newConfigMap, configMap);
-        } catch (RuntimeException e) {
-          informerEventSource
-              .cleanupOnCreateOrUpdateEventFiltering(resourceID);
-          throw e;
-        }
+        var newConfigMap =
+            client
+                .configMaps()
+                .inNamespace(resource.getMetadata().getNamespace())
+                .resource(configMap)
+                .replace();
+        informerEventSource.handleRecentResourceUpdate(resourceID,
+            newConfigMap, configMap);
       }
     }
     return UpdateControl.noUpdate();

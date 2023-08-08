@@ -37,6 +37,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     implements KubernetesClientAware,
     DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
+  public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
+
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   protected KubernetesClient client;
@@ -103,29 +105,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     setEventSource(informerEventSource);
   }
 
-
-  protected R handleCreate(R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(desired);
-    try {
-      prepareEventFiltering(desired, resourceID);
-      return super.handleCreate(desired, primary, context);
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(resourceID);
-      throw e;
-    }
-  }
-
-  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(desired);
-    try {
-      prepareEventFiltering(desired, resourceID);
-      return super.handleUpdate(actual, desired, primary, context);
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(resourceID);
-      throw e;
-    }
-  }
-
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
     if (useSSA(context)) {
@@ -137,6 +116,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         target.getMetadata().setResourceVersion("1");
       }
     }
+    String id = ((InformerEventSource<R, P>) eventSource().orElseThrow()).getId();
+    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY, id);
     final var resource = prepare(target, primary, "Creating");
     return useSSA(context)
         ? resource
@@ -152,6 +133,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           actual.getMetadata().getResourceVersion());
     }
     R updatedResource;
+    String id = ((InformerEventSource<R, P>) eventSource().orElseThrow()).getId();
+    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
+        id + "," + actual.getMetadata().getResourceVersion());
     if (useSSA(context)) {
       updatedResource = prepare(target, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
@@ -165,6 +149,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return updatedResource;
   }
 
+  @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     final var desired = desired(primary, context);
     final boolean matches;
@@ -197,6 +182,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .ssaBasedCreateUpdateMatchForDependentResources();
   }
 
+  @Override
   protected void handleDelete(P primary, R secondary, Context<P> context) {
     if (secondary != null) {
       client.resource(secondary).delete();
@@ -292,16 +278,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
-  }
-
-  private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    ((InformerEventSource<R, P>) eventSource().orElseThrow())
-        .prepareForCreateOrUpdateEventFiltering(resourceID, desired);
-  }
-
-  private void cleanupAfterEventFiltering(ResourceID resourceID) {
-    ((InformerEventSource<R, P>) eventSource().orElseThrow())
-        .cleanupOnCreateOrUpdateEventFiltering(resourceID);
   }
 
   @Override
