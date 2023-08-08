@@ -139,6 +139,10 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         annotation.fieldManager().equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name
             : annotation.fieldManager();
 
+    final var informerListLimit =
+        annotation.informerListLimit() == Constants.NO_LONG_VALUE_SET ? null
+            : annotation.informerListLimit();
+
     final var config = new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
@@ -157,8 +161,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             Constants.NO_VALUE_SET),
         null,
         Utils.instantiate(annotation.itemStore(), ItemStore.class, context), dependentFieldManager,
-        this,
-        null);
+        this, informerListLimit);
 
     ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
     config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());

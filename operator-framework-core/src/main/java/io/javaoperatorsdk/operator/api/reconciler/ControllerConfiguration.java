@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
@@ -158,4 +159,6 @@ public @interface ControllerConfiguration {
    * @return the name used as field manager for SSA operations
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
+
+  long informerListLimit() default NO_LONG_VALUE_SET;
 }
