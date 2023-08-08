@@ -14,6 +14,7 @@ public final class Constants {
       Collections.singleton(Constants.SAME_AS_CONTROLLER);
 
   public static final String NO_VALUE_SET = "";
+  public static final long NO_LONG_VALUE_SET = -1L;
   public static final String WATCH_CURRENT_NAMESPACE = "JOSDK_WATCH_CURRENT";
   public static final String WATCH_ALL_NAMESPACES = "JOSDK_ALL_NAMESPACES";
 
