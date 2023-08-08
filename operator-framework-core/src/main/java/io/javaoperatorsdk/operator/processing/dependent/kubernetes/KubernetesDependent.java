@@ -7,7 +7,10 @@ import java.lang.annotation.Target;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
-import io.javaoperatorsdk.operator.processing.event.source.filter.*;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -69,4 +72,8 @@ public @interface KubernetesDependent {
 
   Class<? extends ResourceDiscriminator> resourceDiscriminator() default ResourceDiscriminator.class;
 
+  /**
+   * Creates the resource only if did not exist before, this applies only if SSA is used.
+   */
+  boolean createResourceOnlyIfNotExistingWithSSA() default KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
 }
