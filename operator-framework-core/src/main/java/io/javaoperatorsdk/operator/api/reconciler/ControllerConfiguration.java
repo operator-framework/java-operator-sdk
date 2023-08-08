@@ -160,5 +160,10 @@ public @interface ControllerConfiguration {
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 
+  /**
+   * The maximum amount of items to return for a single list call when starting the primary resource
+   * related informers. If this is a not null it will result in paginating for the initial load of
+   * the informer cache.
+   */
   long informerListLimit() default NO_LONG_VALUE_SET;
 }
