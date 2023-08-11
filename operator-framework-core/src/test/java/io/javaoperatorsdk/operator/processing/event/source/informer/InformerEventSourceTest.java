@@ -82,15 +82,20 @@ class InformerEventSourceTest {
   @Test
   void skipsAddEventPropagationViaAnnotation() {
     informerEventSource.onAdd(new DeploymentBuilder(testDeployment()).editMetadata()
-        .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY, informerEventSource.getId()).endMetadata().build());
+        .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY,
+            informerEventSource.getId())
+        .endMetadata().build());
 
     verify(eventHandlerMock, never()).handleEvent(any());
   }
 
   @Test
   void skipsUpdateEventPropagationViaAnnotation() {
-    informerEventSource.onUpdate(testDeployment(), new DeploymentBuilder(testDeployment()).editMetadata()
-        .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY, informerEventSource.getId() + ",1").endMetadata().build());
+    informerEventSource.onUpdate(testDeployment(),
+        new DeploymentBuilder(testDeployment()).editMetadata()
+            .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY,
+                informerEventSource.getId() + ",1")
+            .endMetadata().build());
 
     verify(eventHandlerMock, never()).handleEvent(any());
   }
@@ -105,7 +110,8 @@ class InformerEventSourceTest {
   @Test
   void processEventPropagationWithIncorrectAnnotation() {
     informerEventSource.onAdd(new DeploymentBuilder(testDeployment()).editMetadata()
-        .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY, "invalid").endMetadata().build());
+        .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY, "invalid")
+        .endMetadata().build());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }

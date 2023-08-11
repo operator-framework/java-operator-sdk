@@ -40,6 +40,7 @@ import io.javaoperatorsdk.operator.processing.LoggingUtils;
 // see also: https://kubernetes.slack.com/archives/C0123CNN8F3/p1686141087220719
 public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
+  private static final String ANNOTATIONS_KEY = "annotations";
   @SuppressWarnings("rawtypes")
   private static final SSABasedGenericKubernetesResourceMatcher INSTANCE =
       new SSABasedGenericKubernetesResourceMatcher<>();
@@ -101,9 +102,10 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return prunedActual.equals(desiredMap);
   }
 
-  private void removeSDKAnnotations(HashMap<String, Object> prunedActual) {
+  @SuppressWarnings("unchecked")
+  private static void removeSDKAnnotations(HashMap<String, Object> prunedActual) {
     Optional.ofNullable(((Map<String, Object>) prunedActual.get(METADATA_KEY)))
-        .ifPresent(m -> m.computeIfPresent("annotations",
+        .ifPresent(m -> m.computeIfPresent(ANNOTATIONS_KEY,
             (k, v) -> {
               var annotations = (Map<String, Object>) v;
               annotations.remove(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY);

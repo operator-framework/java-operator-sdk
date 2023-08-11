@@ -147,9 +147,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   void addPreviousAnnotation(String resourceVersion, HasMetadata target) {
-    String id = ((InformerEventSource<HasMetadata, HasMetadata>) eventSource().orElseThrow()).getId();
+    String id =
+        ((InformerEventSource<HasMetadata, HasMetadata>) eventSource().orElseThrow()).getId();
     target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
-        id + resourceVersion != null ? ("," + resourceVersion) : "");
+        id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
   }
 
   @Override

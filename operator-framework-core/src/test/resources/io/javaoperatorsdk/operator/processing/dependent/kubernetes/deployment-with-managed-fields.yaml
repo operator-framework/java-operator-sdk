@@ -3,12 +3,17 @@ kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "1"
+    javaoperatorsdk.io/previous: "abc,400"
   creationTimestamp: "2023-06-01T08:43:47Z"
   generation: 1
   managedFields:
     - apiVersion: apps/v1
       fieldsType: FieldsV1
       fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:javaoperatorsdk.io/previous: {}
         f:spec:
           f:progressDeadlineSeconds: {}
           f:replicas: {}
