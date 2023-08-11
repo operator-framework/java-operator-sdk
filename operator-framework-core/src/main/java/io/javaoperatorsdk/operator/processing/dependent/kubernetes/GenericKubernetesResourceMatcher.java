@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -24,6 +25,9 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
   private static final String OP = "op";
   public static final String METADATA_LABELS = "/metadata/labels";
   public static final String METADATA_ANNOTATIONS = "/metadata/annotations";
+  // without knowing the CRD we cannot ignore status as it may not be a subresource, so if it's
+  // included we expect it to match
+  private static Set<String> NOT_OTHER_FIELDS = Set.of(SPEC, "/metadata", "/apiVersion", "/kind");
 
   private static final String PATH = "path";
   private static final String[] EMPTY_ARRAY = {};
@@ -192,11 +196,11 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       }
     }
 
-    final var matched = matchSpec(actualResource, desired, specEquality, context, ignoredPaths);
+    final var matched = match(actualResource, desired, specEquality, context, ignoredPaths);
     return Result.computed(matched, desired);
   }
 
-  private static <R extends HasMetadata> boolean matchSpec(R actual, R desired, boolean equality,
+  private static <R extends HasMetadata> boolean match(R actual, R desired, boolean equality,
       Context<?> context,
       String[] ignoredPaths) {
 
@@ -208,25 +212,38 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     final List<String> ignoreList =
         ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
             : Collections.emptyList();
-    // reflection will be replaced by this:
-    // https://github.com/fabric8io/kubernetes-client/issues/3816
-    var specDiffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, SPEC);
+    boolean specMatch = match(equality, wholeDiffJsonPatch, ignoreList, SPEC);
+    if (!specMatch) {
+      return false;
+    }
+    // expect everything else to be equal
+    var names = desiredNode.fieldNames();
+    List<String> prefixes = new ArrayList<>();
+    while (names.hasNext()) {
+      String prefix = "/" + names.next();
+      if (!NOT_OTHER_FIELDS.contains(prefix)) {
+        prefixes.add(prefix);
+      }
+    }
+    return match(true, wholeDiffJsonPatch, ignoreList, prefixes.toArray(String[]::new));
+  }
+
+  private static boolean match(boolean equality, JsonNode wholeDiffJsonPatch,
+      final List<String> ignoreList, String... prefixes) {
+    var diffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, prefixes);
     // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
     // On contrary (if equality is false), "add" is allowed for cases when for some
     // resources Kubernetes fills-in values into spec.
-    if (equality && !specDiffJsonPatch.isEmpty()) {
+    if (diffJsonPatch.isEmpty()) {
+      return true;
+    }
+    if (equality) {
       return false;
     }
-    if (!equality && !ignoreList.isEmpty()) {
-      if (!allDiffsOnIgnoreList(specDiffJsonPatch, ignoreList)) {
-        return false;
-      }
-    } else {
-      if (!allDiffsAreAddOps(specDiffJsonPatch)) {
-        return false;
-      }
+    if (!ignoreList.isEmpty()) {
+      return allDiffsOnIgnoreList(diffJsonPatch, ignoreList);
     }
-    return true;
+    return allDiffsAreAddOps(diffJsonPatch);
   }
 
   private static boolean allDiffsOnIgnoreList(List<JsonNode> metadataJSonDiffs,

@@ -33,7 +33,7 @@ class GenericResourceUpdaterMatcherTest {
     final var client = MockKubernetesClient.client(HasMetadata.class);
     when(configService.getKubernetesClient()).thenReturn(client);
     when(configService.getResourceCloner()).thenCallRealMethod();
-
+    when(context.getClient()).thenReturn(client);
     when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 
