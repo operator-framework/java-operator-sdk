@@ -116,8 +116,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         target.getMetadata().setResourceVersion("1");
       }
     }
-    String id = ((InformerEventSource<R, P>) eventSource().orElseThrow()).getId();
-    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY, id);
+    addPreviousAnnotation(null, target);
     final var resource = prepare(target, primary, "Creating");
     return useSSA(context)
         ? resource
@@ -133,9 +132,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           actual.getMetadata().getResourceVersion());
     }
     R updatedResource;
-    String id = ((InformerEventSource<R, P>) eventSource().orElseThrow()).getId();
-    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
-        id + "," + actual.getMetadata().getResourceVersion());
+    addPreviousAnnotation(actual.getMetadata().getResourceVersion(), target);
     if (useSSA(context)) {
       updatedResource = prepare(target, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
@@ -147,6 +144,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     log.debug("Resource version after update: {}",
         updatedResource.getMetadata().getResourceVersion());
     return updatedResource;
+  }
+
+  void addPreviousAnnotation(String resourceVersion, HasMetadata target) {
+    String id = ((InformerEventSource<HasMetadata, HasMetadata>) eventSource().orElseThrow()).getId();
+    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
+        id + resourceVersion != null ? ("," + resourceVersion) : "");
   }
 
   @Override

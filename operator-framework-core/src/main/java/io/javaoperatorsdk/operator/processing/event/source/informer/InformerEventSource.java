@@ -159,22 +159,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
 
-    String previous = newObject.getMetadata().getAnnotations()
-        .get(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY);
-    boolean known = false;
-    if (previous != null) {
-      String[] parts = previous.split(",");
-      if (id.equals(parts[0])) {
-        if (oldObject == null && parts.length == 1) {
-          known = true;
-        } else if (oldObject != null && parts.length == 2
-            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
-          known = true;
-        }
-      }
-    }
-    if (temporaryCacheHasResourceWithSameVersionAs(newObject)
-        || (known && temporaryResourceCache.getResourceFromCache(resourceID).isEmpty())) {
+    if (canSkipEvent(newObject, oldObject, resourceID)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource ID: {}",
           operation,
@@ -194,16 +179,34 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  private boolean temporaryCacheHasResourceWithSameVersionAs(R resource) {
-    var resourceID = ResourceID.fromResource(resource);
+  private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
     var res = temporaryResourceCache.getResourceFromCache(resourceID);
-    return res.map(r -> {
-      boolean resVersionsEqual = r.getMetadata().getResourceVersion()
-          .equals(resource.getMetadata().getResourceVersion());
-      log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
-          resourceID, resVersionsEqual);
-      return resVersionsEqual;
-    }).orElse(false);
+    if (res.isEmpty()) {
+      return isEventKnownFromAnnotation(newObject, oldObject);
+    }
+    boolean resVersionsEqual = newObject.getMetadata().getResourceVersion()
+        .equals(res.get().getMetadata().getResourceVersion());
+    log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
+        resourceID, resVersionsEqual);
+    return resVersionsEqual;
+  }
+
+  private boolean isEventKnownFromAnnotation(R newObject, R oldObject) {
+    String previous = newObject.getMetadata().getAnnotations()
+        .get(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY);
+    boolean known = false;
+    if (previous != null) {
+      String[] parts = previous.split(",");
+      if (id.equals(parts[0])) {
+        if (oldObject == null && parts.length == 1) {
+          known = true;
+        } else if (oldObject != null && parts.length == 2
+            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
+          known = true;
+        }
+      }
+    }
+    return known;
   }
 
   private void propagateEvent(R object) {
