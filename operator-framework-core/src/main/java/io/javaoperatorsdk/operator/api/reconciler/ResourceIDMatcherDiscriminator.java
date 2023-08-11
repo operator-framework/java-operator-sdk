@@ -32,9 +32,14 @@ public class ResourceIDMatcherDiscriminator<R extends HasMetadata, P extends Has
           eventSourceName))
           .get(resourceID);
     } else {
-      return context.getSecondaryResourcesAsStream(resource)
-          .filter(resourceID::isSameResource)
-          .findFirst();
+      var eventSources = context.eventSourceRetriever().getResourceEventSourcesFor(resource);
+      if (eventSources.size() == 1) {
+        return ((Cache<R>) eventSources.get(0)).get(resourceID);
+      } else {
+        return context.getSecondaryResourcesAsStream(resource)
+            .filter(resourceID::isSameResource)
+            .findFirst();
+      }
     }
   }
 }
