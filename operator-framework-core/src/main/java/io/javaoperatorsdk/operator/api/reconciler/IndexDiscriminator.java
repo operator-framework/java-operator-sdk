@@ -6,6 +6,11 @@ import java.util.function.Function;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
+/**
+ * Uses a custom index of {@link InformerEventSource} to access the target resource. The index needs
+ * to be explicitly created when the event source is defined. This approach improves the performance
+ * to access the resource.
+ */
 public class IndexDiscriminator<R extends HasMetadata, P extends HasMetadata>
     implements ResourceDiscriminator<R, P> {
 
