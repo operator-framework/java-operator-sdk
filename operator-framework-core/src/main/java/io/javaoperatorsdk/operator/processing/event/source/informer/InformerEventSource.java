@@ -264,22 +264,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    ResourceID resourceID = ResourceID.fromResource(newResource);
-    R cachedResource = get(resourceID).orElse(null);
-    if ((oldResource == null && cachedResource == null)
-        || (cachedResource != null && oldResource != null
-            && cachedResource.getMetadata().getResourceVersion()
-                .equals(oldResource.getMetadata().getResourceVersion()))) {
-      log.debug(
-          "Temporarily moving ahead to target version {} for resource id: {}",
-          newResource.getMetadata().getResourceVersion(), resourceID);
-      temporaryResourceCache.unconditionallyCacheResource(newResource);
-    } else if (temporaryResourceCache.removeResourceFromCache(newResource).isPresent()) {
-      // if the resource is not added to the temp cache, it is cleared, since
-      // the cache is cleared by subsequent events after updates, but if those did not receive
-      // the temp cache is still filled at this point with an old resource
-      log.debug("Cleaning temporary cache for resource id: {}", resourceID);
-    }
+    temporaryResourceCache.putResource(newResource, Optional.ofNullable(oldResource)
+        .map(r -> r.getMetadata().getResourceVersion()).orElse(null));
   }
 
   private boolean useSecondaryToPrimaryIndex() {
