@@ -81,10 +81,10 @@ public class IndexDiscriminatorTestReconciler
 
     firstDependentResourceConfigMap
         .setResourceDiscriminator(
-            new IndexDiscriminator(CONFIG_MAP_INDEX_1, FIRST_CONFIG_MAP_SUFFIX_1));
+            new TestIndexDiscriminator(CONFIG_MAP_INDEX_1, FIRST_CONFIG_MAP_SUFFIX_1));
     secondDependentResourceConfigMap
         .setResourceDiscriminator(
-            new IndexDiscriminator(CONFIG_MAP_INDEX_2, FIRST_CONFIG_MAP_SUFFIX_2));
+            new TestIndexDiscriminator(CONFIG_MAP_INDEX_2, FIRST_CONFIG_MAP_SUFFIX_2));
     return EventSourceInitializer.nameEventSources(eventSource);
   }
 
