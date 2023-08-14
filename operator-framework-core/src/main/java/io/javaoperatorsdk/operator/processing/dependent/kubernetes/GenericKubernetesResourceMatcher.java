@@ -1,12 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -21,13 +17,12 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     implements Matcher<R, P> {
 
   private static final String SPEC = "/spec";
+  private static final String METADATA = "/metadata";
   private static final String ADD = "add";
   private static final String OP = "op";
+  private static final List<String> IGNORED_FIELDS = List.of("/apiVersion", "/kind", "/status");
   public static final String METADATA_LABELS = "/metadata/labels";
   public static final String METADATA_ANNOTATIONS = "/metadata/annotations";
-  // without knowing the CRD we cannot ignore status as it may not be a subresource, so if it's
-  // included we expect it to match
-  private static Set<String> NOT_OTHER_FIELDS = Set.of(SPEC, "/metadata", "/apiVersion", "/kind");
 
   private static final String PATH = "path";
   private static final String[] EMPTY_ARRAY = {};
@@ -188,100 +183,39 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
           "Equality should be false in case of ignore list provided");
     }
 
-    if (considerMetadata) {
-      Optional<Result<R>> res =
-          matchMetadata(desired, actualResource, labelsAndAnnotationsEquality, context);
-      if (res.isPresent()) {
-        return res.orElseThrow();
+    final var kubernetesSerialization = context.getClient().getKubernetesSerialization();
+    var desiredNode = kubernetesSerialization.convertValue(desired, JsonNode.class);
+    var actualNode = kubernetesSerialization.convertValue(actualResource, JsonNode.class);
+    var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
+
+    boolean matched = true;
+    for (int i = 0; i < wholeDiffJsonPatch.size() && matched; i++) {
+      var node = wholeDiffJsonPatch.get(i);
+      if (nodeIsChildOf(node, List.of(SPEC))) {
+        matched = match(specEquality, node, ignoreList);
+      } else if (nodeIsChildOf(node, List.of(METADATA))) {
+        // conditionally consider labels and annotations
+        if (considerMetadata
+            && nodeIsChildOf(node, List.of(METADATA_LABELS, METADATA_ANNOTATIONS))) {
+          matched = match(labelsAndAnnotationsEquality, node, Collections.emptyList());
+        }
+      } else if (!nodeIsChildOf(node, IGNORED_FIELDS)) {
+        matched = match(true, node, ignoreList);
       }
     }
 
-    final var matched = match(actualResource, desired, specEquality, context, ignoredPaths);
     return Result.computed(matched, desired);
   }
 
-  private static <R extends HasMetadata> boolean match(R actual, R desired, boolean equality,
-      Context<?> context,
-      String[] ignoredPaths) {
-
-    final var kubernetesSerialization = context.getClient().getKubernetesSerialization();
-    var desiredNode = kubernetesSerialization.convertValue(desired, JsonNode.class);
-    var actualNode = kubernetesSerialization.convertValue(actual, JsonNode.class);
-    var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
-
-    final List<String> ignoreList =
-        ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
-            : Collections.emptyList();
-    boolean specMatch = match(equality, wholeDiffJsonPatch, ignoreList, SPEC);
-    if (!specMatch) {
-      return false;
-    }
-    // expect everything else to be equal
-    var names = desiredNode.fieldNames();
-    List<String> prefixes = new ArrayList<>();
-    while (names.hasNext()) {
-      String prefix = "/" + names.next();
-      if (!NOT_OTHER_FIELDS.contains(prefix)) {
-        prefixes.add(prefix);
-      }
-    }
-    return match(true, wholeDiffJsonPatch, ignoreList, prefixes.toArray(String[]::new));
-  }
-
-  private static boolean match(boolean equality, JsonNode wholeDiffJsonPatch,
-      final List<String> ignoreList, String... prefixes) {
-    var diffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, prefixes);
-    // In case of equality is set to true, no diffs are allowed, so we return early if diffs exist
-    // On contrary (if equality is false), "add" is allowed for cases when for some
-    // resources Kubernetes fills-in values into spec.
-    if (diffJsonPatch.isEmpty()) {
-      return true;
-    }
+  private static boolean match(boolean equality, JsonNode diff,
+      final List<String> ignoreList) {
     if (equality) {
       return false;
     }
     if (!ignoreList.isEmpty()) {
-      return allDiffsOnIgnoreList(diffJsonPatch, ignoreList);
+      return nodeIsChildOf(diff, ignoreList);
     }
-    return allDiffsAreAddOps(diffJsonPatch);
-  }
-
-  private static boolean allDiffsOnIgnoreList(List<JsonNode> metadataJSonDiffs,
-      List<String> ignoreList) {
-    if (metadataJSonDiffs.isEmpty()) {
-      return false;
-    }
-    return metadataJSonDiffs.stream().allMatch(n -> nodeIsChildOf(n, ignoreList));
-  }
-
-  private static <R extends HasMetadata, P extends HasMetadata> Optional<Result<R>> matchMetadata(
-      R desired,
-      R actualResource,
-      boolean labelsAndAnnotationsEquality, Context<P> context) {
-
-    if (labelsAndAnnotationsEquality) {
-      final var desiredMetadata = desired.getMetadata();
-      final var actualMetadata = actualResource.getMetadata();
-
-      final var matched =
-          Objects.equals(desiredMetadata.getAnnotations(), actualMetadata.getAnnotations()) &&
-              Objects.equals(desiredMetadata.getLabels(), actualMetadata.getLabels());
-      if (!matched) {
-        return Optional.of(Result.computed(false, desired));
-      }
-    } else {
-      final var objectMapper = context.getClient().getKubernetesSerialization();
-      var desiredNode = objectMapper.convertValue(desired, JsonNode.class);
-      var actualNode = objectMapper.convertValue(actualResource, JsonNode.class);
-      var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
-      var metadataJSonDiffs = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch,
-          METADATA_LABELS,
-          METADATA_ANNOTATIONS);
-      if (!allDiffsAreAddOps(metadataJSonDiffs)) {
-        return Optional.of(Result.computed(false, desired));
-      }
-    }
-    return Optional.empty();
+    return ADD.equals(diff.get(OP).asText());
   }
 
   static boolean nodeIsChildOf(JsonNode n, List<String> prefixes) {
@@ -291,29 +225,6 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   static String getPath(JsonNode n) {
     return n.get(PATH).asText();
-  }
-
-  static boolean allDiffsAreAddOps(List<JsonNode> metadataJSonDiffs) {
-    if (metadataJSonDiffs.isEmpty()) {
-      return true;
-    }
-    return metadataJSonDiffs.stream().allMatch(n -> ADD.equals(n.get(OP).asText()));
-  }
-
-  public static List<JsonNode> getDiffsImpactingPathsWithPrefixes(JsonNode diffJsonPatch,
-      String... prefixes) {
-    if (prefixes != null && prefixes.length > 0) {
-      var res = new ArrayList<JsonNode>();
-      var prefixList = Arrays.asList(prefixes);
-      for (int i = 0; i < diffJsonPatch.size(); i++) {
-        var node = diffJsonPatch.get(i);
-        if (nodeIsChildOf(node, prefixList)) {
-          res.add(node);
-        }
-      }
-      return res;
-    }
-    return Collections.emptyList();
   }
 
   @Deprecated(forRemoval = true)
