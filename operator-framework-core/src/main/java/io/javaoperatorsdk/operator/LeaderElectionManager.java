@@ -66,7 +66,7 @@ public class LeaderElectionManager {
                 config.getLeaseDuration(),
                 config.getRenewDeadline(),
                 config.getRetryPeriod(),
-                leaderCallbacks(),
+                leaderCallbacks(config),
                 true,
                 config.getLeaseName()))
         .build();
@@ -74,11 +74,20 @@ public class LeaderElectionManager {
 
 
 
-  private LeaderCallbacks leaderCallbacks() {
+  private LeaderCallbacks leaderCallbacks(LeaderElectionConfiguration config) {
     return new LeaderCallbacks(
-        this::startLeading,
-        this::stopLeading,
-        leader -> log.info("New leader with identity: {}", leader));
+        () -> {
+          config.getLeaderCallbacks().ifPresent(LeaderCallbacks::onStartLeading);
+          LeaderElectionManager.this.startLeading();
+        },
+        () -> {
+          config.getLeaderCallbacks().ifPresent(LeaderCallbacks::onStopLeading);
+          LeaderElectionManager.this.stopLeading();
+        },
+        leader -> {
+          config.getLeaderCallbacks().ifPresent(cb -> cb.onNewLeader(leader));
+          log.info("New leader with identity: {}", leader);
+        });
   }
 
   private void startLeading() {
