@@ -19,7 +19,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -75,6 +74,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
     implements ResourceEventHandler<R> {
 
+  public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
+
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
   private final InformerConfiguration<R> configuration;
@@ -82,7 +83,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private Map<String, Function<R, List<String>>> indexerBuffer = new HashMap<>();
-  private String id = UUID.randomUUID().toString();
+  private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
@@ -108,10 +109,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     onUpdateFilter = configuration.onUpdateFilter().orElse(null);
     onDeleteFilter = configuration.onDeleteFilter().orElse(null);
     genericFilter = configuration.genericFilter().orElse(null);
-  }
-
-  public String getId() {
-    return id;
   }
 
   @Override
@@ -192,8 +189,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean isEventKnownFromAnnotation(R newObject, R oldObject) {
-    String previous = newObject.getMetadata().getAnnotations()
-        .get(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY);
+    String previous = newObject.getMetadata().getAnnotations().get(PREVIOUS_ANNOTATION_KEY);
     boolean known = false;
     if (previous != null) {
       String[] parts = previous.split(",");
@@ -318,6 +314,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       throw new OperatorException("Cannot add indexers after InformerEventSource started.");
     }
     indexerBuffer.putAll(indexers);
+  }
+
+  /**
+   * Add an annotation to the resource so that the subsequent will be omitted
+   *
+   * @param resourceVersion null if there is no prior version
+   * @param target mutable resource that will be returned
+   */
+  public R addPreviousAnnotation(String resourceVersion, R target) {
+    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
+        id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
+    return target;
   }
 
 }

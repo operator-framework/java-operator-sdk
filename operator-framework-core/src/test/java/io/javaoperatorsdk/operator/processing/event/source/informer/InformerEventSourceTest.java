@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -38,7 +37,6 @@ class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
   private static final String DEFAULT_RESOURCE_VERSION = "1";
-  private static final String NEXT_RESOURCE_VERSION = "2";
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -81,10 +79,7 @@ class InformerEventSourceTest {
 
   @Test
   void skipsAddEventPropagationViaAnnotation() {
-    informerEventSource.onAdd(new DeploymentBuilder(testDeployment()).editMetadata()
-        .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY,
-            informerEventSource.getId())
-        .endMetadata().build());
+    informerEventSource.onAdd(informerEventSource.addPreviousAnnotation(null, testDeployment()));
 
     verify(eventHandlerMock, never()).handleEvent(any());
   }
@@ -92,10 +87,7 @@ class InformerEventSourceTest {
   @Test
   void skipsUpdateEventPropagationViaAnnotation() {
     informerEventSource.onUpdate(testDeployment(),
-        new DeploymentBuilder(testDeployment()).editMetadata()
-            .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY,
-                informerEventSource.getId() + ",1")
-            .endMetadata().build());
+        informerEventSource.addPreviousAnnotation("1", testDeployment()));
 
     verify(eventHandlerMock, never()).handleEvent(any());
   }
@@ -110,7 +102,7 @@ class InformerEventSourceTest {
   @Test
   void processEventPropagationWithIncorrectAnnotation() {
     informerEventSource.onAdd(new DeploymentBuilder(testDeployment()).editMetadata()
-        .addToAnnotations(KubernetesDependentResource.PREVIOUS_ANNOTATION_KEY, "invalid")
+        .addToAnnotations(InformerEventSource.PREVIOUS_ANNOTATION_KEY, "invalid")
         .endMetadata().build());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());

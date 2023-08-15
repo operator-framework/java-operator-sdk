@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,8 +37,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
     implements KubernetesClientAware,
     DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
-
-  public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
@@ -146,17 +145,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return updatedResource;
   }
 
-  void addPreviousAnnotation(String resourceVersion, HasMetadata target) {
-    String id =
-        ((InformerEventSource<HasMetadata, HasMetadata>) eventSource().orElseThrow()).getId();
-    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
-        id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
+  private void addPreviousAnnotation(String resourceVersion, HasMetadata target) {
+    ((InformerEventSource<HasMetadata, HasMetadata>) eventSource().orElseThrow())
+        .addPreviousAnnotation(resourceVersion, target);
   }
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     final var desired = desired(primary, context);
     final boolean matches;
+    copySDKAnnotations(actualResource, desired);
     if (useSSA(context)) {
       addReferenceHandlingMetadata(desired, primary);
       matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
@@ -170,6 +168,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unused")
   public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     if (useSSA(context)) {
+      copySDKAnnotations(actualResource, desired);
       addReferenceHandlingMetadata(desired, primary);
       var matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
           .matches(actualResource, desired, context);
@@ -178,6 +177,21 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       return GenericKubernetesResourceMatcher
           .match(desired, actualResource, true,
               false, false, context);
+    }
+  }
+
+  private void copySDKAnnotations(R actualResource, final R desired) {
+    String actual = actualResource.getMetadata().getAnnotations()
+        .get(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
+    Map<String, String> annotations = desired.getMetadata().getAnnotations();
+    if (actual != null) {
+      if (annotations == null) {
+        annotations = new LinkedHashMap<>();
+        desired.getMetadata().setAnnotations(annotations);
+      }
+      annotations.put(InformerEventSource.PREVIOUS_ANNOTATION_KEY, actual);
+    } else if (annotations != null) {
+      annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
     }
   }
 
@@ -254,7 +268,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private void addDefaultSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
     var annotations = desired.getMetadata().getAnnotations();
     if (annotations == null) {
-      annotations = new HashMap<>();
+      annotations = new LinkedHashMap<>();
       desired.getMetadata().setAnnotations(annotations);
     }
     annotations.put(Mappers.DEFAULT_ANNOTATION_FOR_NAME, primary.getMetadata().getName());
