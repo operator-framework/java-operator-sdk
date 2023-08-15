@@ -145,9 +145,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return updatedResource;
   }
 
-  private void addPreviousAnnotation(String resourceVersion, HasMetadata target) {
-    ((InformerEventSource<HasMetadata, HasMetadata>) eventSource().orElseThrow())
-        .addPreviousAnnotation(resourceVersion, target);
+  private void addPreviousAnnotation(String resourceVersion, R target) {
+    eventSource().orElseThrow().addPreviousAnnotation(resourceVersion, target);
   }
 
   @Override
@@ -258,7 +257,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
           resourceType().getSimpleName());
     }
-    return (InformerEventSource<R, P>) eventSource().orElseThrow();
+    return eventSource().orElseThrow();
   }
 
   private boolean useDefaultAnnotationsToIdentifyPrimary() {
