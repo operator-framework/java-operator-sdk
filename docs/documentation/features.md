@@ -769,7 +769,7 @@ follows:
 
 ```java
 Metrics metrics= …;
-ConfigurationServiceProvider.overrideCurrent(overrider->overrider.withMetrics(metrics));
+Operator operator = new Operator(client, o -> o.withMetrics());
 ```
 
 ### Micrometer implementation

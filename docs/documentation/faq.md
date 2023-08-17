@@ -73,9 +73,8 @@ Furthermore, you may not be able to list CRDs at startup which is required when 
 is `true` (`false` by default). To disable, set it to `false` at [Operator-level configuration](./configuration.md#operator-level-configuration):
 
 ```java
-ConfigurationServiceProvider.overrideCurrent(o -> o.checkingCRDAndValidateLocalModel(false));
+Operator operator = new Operator( override -> override.checkingCRDAndValidateLocalModel(false));
 ```
-
 
 ### Q: How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
 
