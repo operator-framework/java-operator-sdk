@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
