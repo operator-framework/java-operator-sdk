@@ -9,7 +9,7 @@ public abstract class BaseControl<T extends BaseControl<T>> {
   private Long scheduleDelay = null;
 
   public T rescheduleAfter(long delay) {
-    this.scheduleDelay = delay;
+    rescheduleAfter(Duration.ofMillis(delay));
     return (T) this;
   }
 

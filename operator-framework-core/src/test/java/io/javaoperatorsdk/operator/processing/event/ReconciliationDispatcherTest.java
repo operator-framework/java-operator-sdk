@@ -673,6 +673,24 @@ class ReconciliationDispatcherTest {
     verify(customResourceFacade, times(2)).updateResource(any());
   }
 
+  @Test
+  void reSchedulesFromErrorHandler() {
+    var delay = 1000L;
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    reconciler.reconcile = (r, c) -> {
+      throw new IllegalStateException("Error Status Test");
+    };
+    reconciler.errorHandler =
+        (r, ri, e) -> ErrorStatusUpdateControl.<TestCustomResource>noStatusUpdate()
+            .rescheduleAfter(delay);
+
+    var res = reconciliationDispatcher.handleExecution(
+        new ExecutionScope(null).setResource(testCustomResource));
+
+    assertThat(res.getReScheduleDelay()).contains(delay);
+    assertThat(res.getRuntimeException()).isEmpty();
+  }
+
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();
     observedGenCustomResource.setMetadata(new ObjectMeta());
