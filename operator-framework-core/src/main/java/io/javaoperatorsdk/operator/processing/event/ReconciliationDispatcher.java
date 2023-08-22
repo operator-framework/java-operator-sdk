@@ -201,13 +201,17 @@ class ReconciliationDispatcher<P extends HasMetadata> {
                   .updateStatus(errorStatusUpdateControl.getResource().orElseThrow());
         }
         if (errorStatusUpdateControl.isNoRetry()) {
+          PostExecutionControl<P> postExecutionControl;
           if (updatedResource != null) {
-            return errorStatusUpdateControl.isPatch()
+            postExecutionControl = errorStatusUpdateControl.isPatch()
                 ? PostExecutionControl.customResourceStatusPatched(updatedResource)
                 : PostExecutionControl.customResourceUpdated(updatedResource);
           } else {
-            return PostExecutionControl.defaultDispatch();
+            postExecutionControl = PostExecutionControl.defaultDispatch();
           }
+          errorStatusUpdateControl.getScheduleDelay()
+              .ifPresent(postExecutionControl::withReSchedule);
+          return postExecutionControl;
         }
       } catch (RuntimeException ex) {
         log.error("Error during error status handling.", ex);
