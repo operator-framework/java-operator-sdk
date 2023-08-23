@@ -15,7 +15,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 class InformerErrorHandlerStartIT {
-
+  /**
+   * Test showcases that the operator starts even if there is no access right for some resource.
+   */
   @Test
   @Timeout(5)
   void operatorStart() {
