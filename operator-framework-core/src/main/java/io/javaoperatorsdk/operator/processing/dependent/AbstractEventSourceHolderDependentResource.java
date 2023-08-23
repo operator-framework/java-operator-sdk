@@ -34,7 +34,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.resourceType = resourceType;
   }
 
-  public Optional<ResourceEventSource<R, P>> eventSource(EventSourceContext<P> context) {
+  public Optional<T> eventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
     // before this method is called in the managed case, so only create the event source if it
     // hasn't already been set.
@@ -67,9 +67,8 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
    * @param context for event sources
    * @return event source instance
    */
-  @SuppressWarnings("unchecked")
   public T initEventSource(EventSourceContext<P> context) {
-    return (T) eventSource(context).orElseThrow();
+    return eventSource(context).orElseThrow();
   }
 
   @Override
@@ -96,7 +95,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.eventSource.setGenericFilter(genericFilter);
   }
 
-  public Optional<ResourceEventSource<R, P>> eventSource() {
+  public Optional<T> eventSource() {
     return Optional.ofNullable(eventSource);
   }
 
