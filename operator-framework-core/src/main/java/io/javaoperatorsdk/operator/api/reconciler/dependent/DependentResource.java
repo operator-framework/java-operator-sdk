@@ -44,7 +44,7 @@ public interface DependentResource<R, P extends HasMetadata> {
    * @param eventSourceContext context of event source initialization
    * @return an optional event source
    */
-  default Optional<ResourceEventSource<R, P>> eventSource(
+  default Optional<? extends ResourceEventSource<R, P>> eventSource(
       EventSourceContext<P> eventSourceContext) {
     return Optional.empty();
   }
