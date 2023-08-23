@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -103,29 +102,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     setEventSource(informerEventSource);
   }
 
-
-  protected R handleCreate(R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(desired);
-    try {
-      prepareEventFiltering(desired, resourceID);
-      return super.handleCreate(desired, primary, context);
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(resourceID);
-      throw e;
-    }
-  }
-
-  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
-    ResourceID resourceID = ResourceID.fromResource(desired);
-    try {
-      prepareEventFiltering(desired, resourceID);
-      return super.handleUpdate(actual, desired, primary, context);
-    } catch (RuntimeException e) {
-      cleanupAfterEventFiltering(resourceID);
-      throw e;
-    }
-  }
-
   @SuppressWarnings("unused")
   public R create(R target, P primary, Context<P> context) {
     if (useSSA(context)) {
@@ -137,6 +113,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         target.getMetadata().setResourceVersion("1");
       }
     }
+    addMetadata(false, null, target, primary);
     final var resource = prepare(target, primary, "Creating");
     return useSSA(context)
         ? resource
@@ -152,6 +129,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           actual.getMetadata().getResourceVersion());
     }
     R updatedResource;
+    addMetadata(false, actual, target, primary);
     if (useSSA(context)) {
       updatedResource = prepare(target, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
@@ -165,31 +143,50 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return updatedResource;
   }
 
+  @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     final var desired = desired(primary, context);
+    return match(actualResource, desired, primary, updaterMatcher, context);
+  }
+
+  @SuppressWarnings({"unused", "unchecked"})
+  public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
+    return match(actualResource, desired, primary,
+        (ResourceUpdaterMatcher<R>) GenericResourceUpdaterMatcher
+            .updaterMatcherFor(actualResource.getClass()),
+        context);
+  }
+
+  public Result<R> match(R actualResource, R desired, P primary, ResourceUpdaterMatcher<R> matcher,
+      Context<P> context) {
     final boolean matches;
+    addMetadata(true, actualResource, desired, primary);
     if (useSSA(context)) {
-      addReferenceHandlingMetadata(desired, primary);
       matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
           .matches(actualResource, desired, context);
     } else {
-      matches = updaterMatcher.matches(actualResource, desired, context);
+      matches = matcher.matches(actualResource, desired, context);
     }
     return Result.computed(matches, desired);
   }
 
-  @SuppressWarnings("unused")
-  public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
-    if (useSSA(context)) {
-      addReferenceHandlingMetadata(desired, primary);
-      var matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
-          .matches(actualResource, desired, context);
-      return Result.computed(matches, desired);
-    } else {
-      return GenericKubernetesResourceMatcher
-          .match(desired, actualResource, true,
-              false, false, context);
+  protected void addMetadata(boolean forMatch, R actualResource, final R target, P primary) {
+    if (forMatch) { // keep the current
+      String actual = actualResource.getMetadata().getAnnotations()
+          .get(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
+      Map<String, String> annotations = target.getMetadata().getAnnotations();
+      if (actual != null) {
+        annotations.put(InformerEventSource.PREVIOUS_ANNOTATION_KEY, actual);
+      } else {
+        annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
+      }
+    } else { // set a new one
+      eventSource().orElseThrow().addPreviousAnnotation(
+          Optional.ofNullable(actualResource).map(r -> r.getMetadata().getResourceVersion())
+              .orElse(null),
+          target);
     }
+    addReferenceHandlingMetadata(target, primary);
   }
 
   private boolean useSSA(Context<P> context) {
@@ -197,6 +194,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .ssaBasedCreateUpdateMatchForDependentResources();
   }
 
+  @Override
   protected void handleDelete(P primary, R secondary, Context<P> context) {
     if (secondary != null) {
       client.resource(secondary).delete();
@@ -214,13 +212,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         desired.getClass(),
         ResourceID.fromResource(desired));
 
-    addReferenceHandlingMetadata(desired, primary);
-
-    if (desired instanceof Namespaced) {
-      return client.resource(desired).inNamespace(desired.getMetadata().getNamespace());
-    } else {
-      return client.resource(desired);
-    }
+    return client.resource(desired);
   }
 
   protected void addReferenceHandlingMetadata(R desired, P primary) {
@@ -254,7 +246,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
           resourceType().getSimpleName());
     }
-    return (InformerEventSource<R, P>) eventSource().orElseThrow();
+    return eventSource().orElseThrow();
   }
 
   private boolean useDefaultAnnotationsToIdentifyPrimary() {
@@ -263,10 +255,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private void addDefaultSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
     var annotations = desired.getMetadata().getAnnotations();
-    if (annotations == null) {
-      annotations = new HashMap<>();
-      desired.getMetadata().setAnnotations(annotations);
-    }
     annotations.put(Mappers.DEFAULT_ANNOTATION_FOR_NAME, primary.getMetadata().getName());
     var primaryNamespaces = primary.getMetadata().getNamespace();
     if (primaryNamespaces != null) {
@@ -292,16 +280,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected R desired(P primary, Context<P> context) {
     return super.desired(primary, context);
-  }
-
-  private void prepareEventFiltering(R desired, ResourceID resourceID) {
-    ((InformerEventSource<R, P>) eventSource().orElseThrow())
-        .prepareForCreateOrUpdateEventFiltering(resourceID, desired);
-  }
-
-  private void cleanupAfterEventFiltering(ResourceID resourceID) {
-    ((InformerEventSource<R, P>) eventSource().orElseThrow())
-        .cleanupOnCreateOrUpdateEventFiltering(resourceID);
   }
 
   @Override
