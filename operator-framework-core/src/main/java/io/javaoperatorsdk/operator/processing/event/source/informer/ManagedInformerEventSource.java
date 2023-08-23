@@ -91,7 +91,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   @Override
   public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousVersionOfResource) {
-    temporaryResourceCache.putUpdatedResource(resource,
+    temporaryResourceCache.putResource(resource,
         previousVersionOfResource.getMetadata().getResourceVersion());
   }
 
@@ -128,8 +128,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     this.temporaryResourceCache = temporaryResourceCache;
   }
 
+  @Override
   public abstract void addIndexers(Map<String, Function<R, List<String>>> indexers);
 
+  @Override
   public List<R> byIndex(String indexName, String indexKey) {
     return manager().byIndex(indexName, indexKey);
   }
