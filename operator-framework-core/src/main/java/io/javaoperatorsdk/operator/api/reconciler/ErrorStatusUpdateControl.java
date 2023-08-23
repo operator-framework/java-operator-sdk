@@ -1,15 +1,16 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class ErrorStatusUpdateControl<P extends HasMetadata> {
+public class ErrorStatusUpdateControl<P extends HasMetadata>
+    extends BaseControl<ErrorStatusUpdateControl<P>> {
 
   private final P resource;
   private final boolean patch;
   private boolean noRetry = false;
-
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatus(T resource) {
     return new ErrorStatusUpdateControl<>(resource, true);
@@ -48,5 +49,17 @@ public class ErrorStatusUpdateControl<P extends HasMetadata> {
 
   public boolean isPatch() {
     return patch;
+  }
+
+  /**
+   * If re-scheduled using this method, it is not considered as retry, it effectively cancels retry.
+   *
+   * @param delay for next execution
+   * @return ErrorStatusUpdateControl
+   */
+  @Override
+  public ErrorStatusUpdateControl<P> rescheduleAfter(Duration delay) {
+    withNoRetry();
+    return super.rescheduleAfter(delay);
   }
 }
