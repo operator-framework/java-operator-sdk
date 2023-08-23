@@ -28,7 +28,9 @@ class DependentReInitializationIT {
 
   private static void startEndStopOperator(KubernetesClient client,
       ConfigMapDependentResource dependent) {
-    Operator o1 = new Operator(client, o -> o.withCloseClientOnStop(false));
+    Operator o1 = new Operator(o -> o
+        .withCloseClientOnStop(false)
+        .withKubernetesClient(client));
     o1.register(new DependentReInitializationReconciler(dependent, client));
     o1.start();
     o1.stop();
