@@ -30,7 +30,7 @@ class TemporaryResourceCacheTest {
     prevTestResource.getMetadata().setResourceVersion("0");
     when(informerEventSource.get(any())).thenReturn(Optional.of(prevTestResource));
 
-    temporaryResourceCache.putUpdatedResource(testResource, "0");
+    temporaryResourceCache.putResource(testResource, "0");
 
     var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isPresent();
@@ -43,7 +43,7 @@ class TemporaryResourceCacheTest {
     informerCachedResource.getMetadata().setResourceVersion("x");
     when(informerEventSource.get(any())).thenReturn(Optional.of(informerCachedResource));
 
-    temporaryResourceCache.putUpdatedResource(testResource, "0");
+    temporaryResourceCache.putResource(testResource, "0");
 
     var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isNotPresent();
