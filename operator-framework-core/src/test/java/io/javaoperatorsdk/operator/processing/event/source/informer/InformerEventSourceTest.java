@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -36,7 +37,6 @@ class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
   private static final String DEFAULT_RESOURCE_VERSION = "1";
-  private static final String NEXT_RESOURCE_VERSION = "2";
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -78,6 +78,37 @@ class InformerEventSourceTest {
   }
 
   @Test
+  void skipsAddEventPropagationViaAnnotation() {
+    informerEventSource.onAdd(informerEventSource.addPreviousAnnotation(null, testDeployment()));
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void skipsUpdateEventPropagationViaAnnotation() {
+    informerEventSource.onUpdate(testDeployment(),
+        informerEventSource.addPreviousAnnotation("1", testDeployment()));
+
+    verify(eventHandlerMock, never()).handleEvent(any());
+  }
+
+  @Test
+  void processEventPropagationWithoutAnnotation() {
+    informerEventSource.onUpdate(testDeployment(), testDeployment());
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
+  void processEventPropagationWithIncorrectAnnotation() {
+    informerEventSource.onAdd(new DeploymentBuilder(testDeployment()).editMetadata()
+        .addToAnnotations(InformerEventSource.PREVIOUS_ANNOTATION_KEY, "invalid")
+        .endMetadata().build());
+
+    verify(eventHandlerMock, times(1)).handleEvent(any());
+  }
+
+  @Test
   void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
     Deployment cachedDeployment = testDeployment();
     cachedDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
@@ -89,115 +120,6 @@ class InformerEventSourceTest {
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
     verify(temporaryResourceCacheMock, times(1)).removeResourceFromCache(any());
-  }
-
-  @Test
-  void notPropagatesEventIfAfterUpdateReceivedJustTheRelatedEvent() {
-    var testDeployment = testDeployment();
-    var prevTestDeployment = testDeployment();
-    prevTestDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
-
-
-    informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
-            testDeployment);
-    informerEventSource.onUpdate(prevTestDeployment, testDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
-        testDeployment, prevTestDeployment);
-
-    verify(eventHandlerMock, times(0)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
-  }
-
-
-  @Test
-  void notPropagatesEventIfAfterCreateReceivedJustTheRelatedEvent() {
-    var testDeployment = testDeployment();
-
-    informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
-            testDeployment);
-    informerEventSource.onAdd(testDeployment);
-    informerEventSource.handleRecentResourceCreate(ResourceID.fromResource(testDeployment),
-        testDeployment);
-
-    verify(eventHandlerMock, times(0)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
-  }
-
-  @Test
-  void propagatesEventIfNewEventReceivedAfterTheCurrentTargetEvent() {
-    var testDeployment = testDeployment();
-    var prevTestDeployment = testDeployment();
-    prevTestDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
-    var nextTestDeployment = testDeployment();
-    nextTestDeployment.getMetadata().setResourceVersion(NEXT_RESOURCE_VERSION);
-
-    informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
-            testDeployment);
-    informerEventSource.onUpdate(prevTestDeployment, testDeployment);
-    informerEventSource.onUpdate(testDeployment, nextTestDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
-        testDeployment, prevTestDeployment);
-
-    verify(eventHandlerMock, times(1)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
-  }
-
-  @Test
-  void notPropagatesEventIfMoreReceivedButTheLastIsTheUpdated() {
-    var testDeployment = testDeployment();
-    var prevTestDeployment = testDeployment();
-    prevTestDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
-    var prevPrevTestDeployment = testDeployment();
-    prevPrevTestDeployment.getMetadata().setResourceVersion("-1");
-
-    informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
-            testDeployment);
-    informerEventSource.onUpdate(prevPrevTestDeployment, prevTestDeployment);
-    informerEventSource.onUpdate(prevTestDeployment, testDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
-        testDeployment, prevTestDeployment);
-
-    verify(eventHandlerMock, times(0)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(0)).unconditionallyCacheResource(any());
-  }
-
-  @Test
-  void putsResourceOnTempCacheIfNoEventRecorded() {
-    var testDeployment = testDeployment();
-    var prevTestDeployment = testDeployment();
-    prevTestDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
-
-    informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
-            testDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
-        testDeployment, prevTestDeployment);
-
-    verify(eventHandlerMock, times(0)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(1)).unconditionallyCacheResource(any());
-  }
-
-  @Test
-  void putsResourceOnTempCacheIfNoEventRecordedWithSameResourceVersion() {
-    var testDeployment = testDeployment();
-    var prevTestDeployment = testDeployment();
-    prevTestDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
-    var prevPrevTestDeployment = testDeployment();
-    prevPrevTestDeployment.getMetadata().setResourceVersion("-1");
-
-    informerEventSource
-        .prepareForCreateOrUpdateEventFiltering(ResourceID.fromResource(testDeployment),
-            testDeployment);
-    informerEventSource.onUpdate(prevPrevTestDeployment, prevTestDeployment);
-    informerEventSource.handleRecentResourceUpdate(ResourceID.fromResource(testDeployment),
-        testDeployment, prevTestDeployment);
-
-    verify(eventHandlerMock, times(0)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(1)).unconditionallyCacheResource(any());
   }
 
   @Test

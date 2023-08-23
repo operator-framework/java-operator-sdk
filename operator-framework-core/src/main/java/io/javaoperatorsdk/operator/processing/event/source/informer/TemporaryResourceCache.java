@@ -41,40 +41,37 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     this.managedInformerEventSource = managedInformerEventSource;
   }
 
-  public synchronized void removeResourceFromCache(T resource) {
-    cache.remove(ResourceID.fromResource(resource));
-  }
-
-  public synchronized void unconditionallyCacheResource(T newResource) {
-    putToCache(newResource, null);
+  public synchronized Optional<T> removeResourceFromCache(T resource) {
+    return Optional.ofNullable(cache.remove(ResourceID.fromResource(resource)));
   }
 
   public synchronized void putAddedResource(T newResource) {
-    ResourceID resourceID = ResourceID.fromResource(newResource);
-    if (managedInformerEventSource.get(resourceID).isEmpty()) {
-      log.debug("Putting resource to cache with ID: {}", resourceID);
-      putToCache(newResource, resourceID);
-    } else {
-      log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
-    }
+    putResource(newResource, null);
   }
 
-  public synchronized void putUpdatedResource(T newResource, String previousResourceVersion) {
+  /**
+   * put the item into the cache if the previousResourceVersion matches the current state. If not
+   * the currently cached item is removed.
+   *
+   * @param previousResourceVersion null indicates an add
+   */
+  public synchronized void putResource(T newResource, String previousResourceVersion) {
     var resourceId = ResourceID.fromResource(newResource);
-    var informerCacheResource = managedInformerEventSource.get(resourceId);
-    if (informerCacheResource.isEmpty()) {
-      log.debug("No cached value present for resource: {}", newResource);
-      return;
-    }
-    // if this is not true that means the cache was already updated
-    if (informerCacheResource.get().getMetadata().getResourceVersion()
-        .equals(previousResourceVersion)) {
-      log.debug("Putting resource to temporal cache with id: {}", resourceId);
+    var cachedResource = getResourceFromCache(resourceId)
+        .orElse(managedInformerEventSource.get(resourceId).orElse(null));
+
+    if ((previousResourceVersion == null && cachedResource == null)
+        || (cachedResource != null && previousResourceVersion != null
+            && cachedResource.getMetadata().getResourceVersion()
+                .equals(previousResourceVersion))) {
+      log.debug(
+          "Temporarily moving ahead to target version {} for resource id: {}",
+          newResource.getMetadata().getResourceVersion(), resourceId);
       putToCache(newResource, resourceId);
     } else {
-      // if something is in cache it's surely obsolete now
-      log.debug("Trying to remove an obsolete resource from cache for id: {}", resourceId);
-      cache.remove(resourceId);
+      if (cache.remove(resourceId) != null) {
+        log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
+      }
     }
   }
 
