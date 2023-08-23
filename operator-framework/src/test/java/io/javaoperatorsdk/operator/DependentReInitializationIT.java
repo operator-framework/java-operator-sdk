@@ -11,7 +11,10 @@ import io.javaoperatorsdk.operator.sample.dependentreinitialization.DependentReI
 
 class DependentReInitializationIT {
 
-
+  /**
+   * In case dependent resource is managed by CDI (like in Quarkus) can be handy that the instance
+   * is reused in tests.
+   */
   @Test
   void dependentCanDeReInitialized() {
     var client = new KubernetesClientBuilder().build();
@@ -25,7 +28,7 @@ class DependentReInitializationIT {
 
   private static void startEndStopOperator(KubernetesClient client,
       ConfigMapDependentResource dependent) {
-    Operator o1 = new Operator(client);
+    Operator o1 = new Operator(client, o -> o.withCloseClientOnStop(false));
     o1.register(new DependentReInitializationReconciler(dependent, client));
     o1.start();
     o1.stop();

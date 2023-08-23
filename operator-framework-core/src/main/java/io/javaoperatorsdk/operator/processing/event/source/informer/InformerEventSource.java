@@ -365,7 +365,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     super.setConfigurationService(configurationService);
 
     cache.addIndexers(indexerBuffer);
-    indexerBuffer = null;
+    indexerBuffer = new HashMap<>(0);
   }
 
   public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
