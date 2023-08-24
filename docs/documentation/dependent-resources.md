@@ -7,11 +7,6 @@ permalink: /docs/dependent-resources
 
 # Dependent Resources
 
-DISCLAIMER: The Dependent Resource support is a relatively new feature, while we strove to cover
-what we anticipate will be the most common use cases, the implementation is not simple and might
-still evolve. As a result, some APIs could be a subject of change in the future. However,
-non-backwards compatible changes are expected to be trivial to migrate to.
-
 ## Motivations and Goals
 
 Most operators need to deal with secondary resources when trying to realize the desired state
