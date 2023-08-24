@@ -13,6 +13,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManag
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -36,29 +38,55 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
-    return getSecondaryResourcesAsStream(expectedType).collect(Collectors.toSet());
+  public <T> Set<T> getSecondaryResources(Class<T> resourceType) {
+    return getSecondaryResourcesAsStream(resourceType).collect(Collectors.toSet());
   }
 
   @Override
-  public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return controller.getEventSourceManager().getResourceEventSourcesFor(expectedType).stream()
+  public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> resourceType) {
+    return controller.getEventSourceManager().getResourceEventSourcesFor(resourceType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
         .flatMap(Set::stream);
   }
 
   @Override
-  public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
+  public <T> Optional<T> getSecondaryResource(Class<T> resourceType, String eventSourceName) {
     return controller
         .getEventSourceManager()
-        .getResourceEventSourceFor(expectedType, eventSourceName)
+        .getResourceEventSourceFor(resourceType, eventSourceName)
         .getSecondaryResource(primaryResource);
   }
 
   @Override
-  public <R> Optional<R> getSecondaryResource(Class<R> expectedType,
+  public <R> Optional<R> getSecondaryResource(Class<R> resourceType,
       ResourceDiscriminator<R, P> discriminator) {
-    return discriminator.distinguish(expectedType, primaryResource, this);
+    return discriminator.distinguish(resourceType, primaryResource, this);
+  }
+
+  @Override
+  public <R extends HasMetadata> Optional<R> getResource(Class<R> resourceType, String name,
+      String namespace) {
+    return controller
+        .getEventSourceManager()
+        .getResourceEventSourcesFor(resourceType).stream()
+        .filter(InformerEventSource.class::isInstance)
+        .map(es -> ((InformerEventSource<R, P>) es).get(new ResourceID(name, namespace)))
+        .flatMap(Optional::stream)
+        .findAny();
+  }
+
+  @Override
+  public <R extends HasMetadata> Optional<R> getResource(Class<R> resourceType,
+      String eventSourceName,
+      String name, String namespace) {
+    var es = controller
+        .getEventSourceManager()
+        .getResourceEventSourceFor(resourceType, eventSourceName);
+    if (es instanceof InformerEventSource) {
+      return ((InformerEventSource<R, P>) es).get(new ResourceID(name, namespace));
+    } else {
+      return Optional.empty();
+    }
   }
 
   @Override

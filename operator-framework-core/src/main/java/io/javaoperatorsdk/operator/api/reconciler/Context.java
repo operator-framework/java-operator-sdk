@@ -15,21 +15,28 @@ public interface Context<P extends HasMetadata> {
 
   Optional<RetryInfo> getRetryInfo();
 
-  default <R> Optional<R> getSecondaryResource(Class<R> expectedType) {
-    return getSecondaryResource(expectedType, (String) null);
+  default <R> Optional<R> getSecondaryResource(Class<R> resourceType) {
+    return getSecondaryResource(resourceType, (String) null);
   }
 
-  <R> Set<R> getSecondaryResources(Class<R> expectedType);
+  <R> Set<R> getSecondaryResources(Class<R> resourceType);
 
-  default <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return getSecondaryResources(expectedType).stream();
+  default <R> Stream<R> getSecondaryResourcesAsStream(Class<R> resourceType) {
+    return getSecondaryResources(resourceType).stream();
   }
 
   @Deprecated(forRemoval = true)
-  <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
+  <R> Optional<R> getSecondaryResource(Class<R> resourceType, String eventSourceName);
 
-  <R> Optional<R> getSecondaryResource(Class<R> expectedType,
+  <R> Optional<R> getSecondaryResource(Class<R> resourceType,
       ResourceDiscriminator<R, P> discriminator);
+
+  <R extends HasMetadata> Optional<R> getResource(Class<R> resourceType, String name,
+      String namespace);
+
+
+  <R extends HasMetadata> Optional<R> getResource(Class<R> resourceType, String eventSourceName,
+      String name, String namespace);
 
   ControllerConfiguration<P> getControllerConfiguration();
 
