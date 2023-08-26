@@ -1,10 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -76,7 +72,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
-  private final InformerConfiguration<R> configuration;
   // always called from a synchronized method
   private final EventRecorder<R> eventRecorder = new EventRecorder<>();
   // we need direct control for the indexer to propagate the just update resource also to the index
@@ -91,8 +86,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
     super(client.resources(configuration.getResourceClass()), configuration);
-    this.configuration = configuration;
-
 
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
@@ -193,7 +186,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private void propagateEvent(R object) {
     var primaryResourceIdSet =
-        configuration.getSecondaryToPrimaryMapper().toPrimaryResourceIDs(object);
+        configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(object);
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
@@ -217,8 +210,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     Set<ResourceID> secondaryIDs;
     if (useSecondaryToPrimaryIndex()) {
       var primaryResourceID = ResourceID.fromResource(primary);
-      secondaryIDs =
-          primaryToSecondaryIndex.getSecondaryResources(primaryResourceID);
+      secondaryIDs = primaryToSecondaryIndex.getSecondaryResources(primaryResourceID);
       log.debug(
           "Using PrimaryToSecondaryIndex to find secondary resources for primary: {}. Found secondary ids: {} ",
           primaryResourceID, secondaryIDs);
@@ -232,8 +224,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         .collect(Collectors.toSet());
   }
 
+  /**
+   * Returns the configuration object for the informer.
+   *
+   * @return the informer configuration object
+   *
+   * @deprecated Use {@link #configuration()} instead
+   */
+  @Deprecated(forRemoval = true)
   public InformerConfiguration<R> getConfiguration() {
-    return configuration;
+    return configuration();
   }
 
   @Override
@@ -334,7 +334,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public boolean allowsNamespaceChanges() {
-    return getConfiguration().followControllerNamespaceChanges();
+    return configuration().followControllerNamespaceChanges();
   }
 
 
@@ -364,7 +364,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void setConfigurationService(ConfigurationService configurationService) {
     super.setConfigurationService(configurationService);
 
-    cache.addIndexers(indexerBuffer);
+    super.addIndexers(indexerBuffer);
     indexerBuffer = new HashMap<>();
   }
 

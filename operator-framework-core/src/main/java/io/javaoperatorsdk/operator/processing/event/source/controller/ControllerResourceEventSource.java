@@ -1,10 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +18,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
-import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateFinalizerNeededAndApplied;
-import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateGenerationAware;
-import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.onUpdateMarkedForDeletion;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>
@@ -136,10 +129,5 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   public void setOnDeleteFilter(OnDeleteFilter<? super T> onDeleteFilter) {
     throw new IllegalStateException(
         "onDeleteFilter is not supported for controller resource event source");
-  }
-
-  @Override
-  public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
-    manager().addIndexers(indexers);
   }
 }

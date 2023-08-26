@@ -23,16 +23,8 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class EventSourceManagerTest {
@@ -166,7 +158,7 @@ class EventSourceManagerTest {
     when(informerConfigurationMock.followControllerNamespaceChanges()).thenReturn(true);
     InformerEventSource informerEventSource = mock(InformerEventSource.class);
     when(informerEventSource.resourceType()).thenReturn(TestCustomResource.class);
-    when(informerEventSource.getConfiguration()).thenReturn(informerConfigurationMock);
+    when(informerEventSource.configuration()).thenReturn(informerConfigurationMock);
     when(informerEventSource.allowsNamespaceChanges()).thenCallRealMethod();
     manager.registerEventSource("ies", informerEventSource);
 
