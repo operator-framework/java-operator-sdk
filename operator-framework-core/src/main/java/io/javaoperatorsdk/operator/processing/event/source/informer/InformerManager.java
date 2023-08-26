@@ -1,11 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -23,7 +18,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
@@ -40,19 +34,21 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);
 
   private final Map<String, InformerWrapper<T>> sources = new ConcurrentHashMap<>();
-  private Cloner cloner;
   private final C configuration;
   private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
   private final ResourceEventHandler<T> eventHandler;
   private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
-  private final ConfigurationService configurationService;
+  private ConfigurationService configurationService;
 
-  public InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
-      C configuration, ConfigurationService configurationService,
+  InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
+      C configuration,
       ResourceEventHandler<T> eventHandler) {
     this.client = client;
     this.configuration = configuration;
     this.eventHandler = eventHandler;
+  }
+
+  void setConfigurationService(ConfigurationService configurationService) {
     this.configurationService = configurationService;
   }
 
@@ -74,7 +70,6 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     if (!sources.isEmpty()) {
       throw new IllegalStateException("Some sources already initialized.");
     }
-    cloner = configurationService.getResourceCloner();
     final var targetNamespaces = configuration.getEffectiveNamespaces(configurationService);
     if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
       var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
@@ -175,7 +170,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   public Optional<T> get(ResourceID resourceID) {
     return getSource(resourceID.getNamespace().orElse(WATCH_ALL_NAMESPACES))
         .flatMap(source -> source.get(resourceID))
-        .map(cloner::clone);
+        .map(r -> configurationService.getResourceCloner().clone(r));
   }
 
   @Override

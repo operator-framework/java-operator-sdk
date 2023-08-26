@@ -36,10 +36,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
+  private final InformerManager<R, C> cache;
 
   protected TemporaryResourceCache<R> temporaryResourceCache;
-  protected InformerManager<R, C> cache;
-  protected C configuration;
   protected MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
 
   protected ManagedInformerEventSource(
@@ -47,7 +46,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     super(configuration.getResourceClass());
     this.client = client;
     temporaryResourceCache = new TemporaryResourceCache<>(this);
-    this.configuration = configuration;
+    this.cache = new InformerManager<>(client, configuration, this);
   }
 
   @Override
@@ -128,7 +127,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     this.temporaryResourceCache = temporaryResourceCache;
   }
 
-  public abstract void addIndexers(Map<String, Function<R, List<String>>> indexers);
+  public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
+    cache.addIndexers(indexers);
+  }
 
   public List<R> byIndex(String indexName, String indexKey) {
     return manager().byIndex(indexName, indexKey);
@@ -156,7 +157,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public ResourceConfiguration<R> getInformerConfiguration() {
-    return configuration;
+    return configuration();
   }
 
   @Override
@@ -167,11 +168,11 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   @Override
   public String toString() {
     return getClass().getSimpleName() + "{" +
-        "resourceClass: " + configuration.getResourceClass().getSimpleName() +
+        "resourceClass: " + configuration().getResourceClass().getSimpleName() +
         "}";
   }
 
   public void setConfigurationService(ConfigurationService configurationService) {
-    cache = new InformerManager<>(client, configuration, configurationService, this);
+    cache.setConfigurationService(configurationService);
   }
 }
