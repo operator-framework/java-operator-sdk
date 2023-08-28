@@ -146,7 +146,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             controllerUnderExecution,
             maybeLatest.isPresent());
         if (maybeLatest.isEmpty()) {
-          log.debug("no custom resource found in cache for resource id: {}", resourceID);
+          log.debug("no primary resource found in cache with resource id: {}", resourceID);
         }
       }
     } finally {
