@@ -146,7 +146,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             controllerUnderExecution,
             maybeLatest.isPresent());
         if (maybeLatest.isEmpty()) {
-          log.debug("no custom resource found in cache for resource id: {}", resourceID);
+          // there can be multiple reasons why the primary resource is not present, one is that the
+          // informer is currently disconnected from k8s api server, but will eventually receive the
+          // resource. Other is that simply there is no primary resource present for an event, this
+          // might indicate issue with the implementation, but could happen also naturally, thus
+          // this is not necessarily a problem.
+          log.debug("no primary resource found in cache with resource id: {}", resourceID);
         }
       }
     } finally {
