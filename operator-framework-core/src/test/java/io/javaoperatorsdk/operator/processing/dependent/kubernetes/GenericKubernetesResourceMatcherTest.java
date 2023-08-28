@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -77,6 +78,15 @@ class GenericKubernetesResourceMatcherTest {
     assertThat(matcher.match(actual, null, context).matched())
         .withFailMessage("Should not have matched because values have changed")
         .isFalse();
+  }
+
+  @Test
+  void ignoreStatus() {
+    actual = createDeployment();
+    actual.setStatus(new DeploymentStatusBuilder().withReadyReplicas(1).build());
+    assertThat(matcher.match(actual, null, context).matched())
+        .withFailMessage("Should ignore status in actual")
+        .isTrue();
   }
 
   @Test
