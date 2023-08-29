@@ -17,7 +17,8 @@ public class StatefulSetDependentResource
   @Override
   protected StatefulSet desired(SSAStatefulSetMatcherIssueCustomResource primary,
       Context<SSAStatefulSetMatcherIssueCustomResource> context) {
-    var template = ReconcilerUtils.loadYaml(StatefulSet.class, getClass(), "statefulset.yaml");
+    var template =
+        ReconcilerUtils.loadYaml(StatefulSet.class, getClass(), "statefulset_fixed_full.yaml");
     template.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName())
         .withNamespace(primary.getMetadata().getNamespace())
