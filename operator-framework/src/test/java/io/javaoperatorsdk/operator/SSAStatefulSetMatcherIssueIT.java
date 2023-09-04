@@ -30,8 +30,6 @@ public class SSAStatefulSetMatcherIssueIT {
       var statefulSet = extension.get(StatefulSet.class, TEST_1);
       assertThat(statefulSet).isNotNull();
     });
-
-    System.out.println("ok");
   }
 
   SSAStatefulSetMatcherIssueCustomResource testResource() {
