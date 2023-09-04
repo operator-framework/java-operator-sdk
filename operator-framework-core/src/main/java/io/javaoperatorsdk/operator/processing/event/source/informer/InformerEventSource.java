@@ -73,7 +73,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
 
-  private final InformerConfiguration<R> configuration;
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
