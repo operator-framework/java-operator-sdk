@@ -103,18 +103,19 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unused")
-  public R create(R target, P primary, Context<P> context) {
+  public R create(R desired, P primary, Context<P> context) {
     if (useSSA(context)) {
       // setting resource version for SSA so only created if it doesn't exist already
       var createIfNotExisting = kubernetesDependentResourceConfig == null
           ? KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA
           : kubernetesDependentResourceConfig.createResourceOnlyIfNotExistingWithSSA();
       if (createIfNotExisting) {
-        target.getMetadata().setResourceVersion("1");
+        desired.getMetadata().setResourceVersion("1");
       }
     }
-    addMetadata(false, null, target, primary);
-    final var resource = prepare(target, primary, "Creating");
+    addMetadata(false, null, desired, primary);
+    sanitizeDesired(desired, null, primary, context);
+    final var resource = prepare(desired, primary, "Creating");
     return useSSA(context)
         ? resource
             .fieldManager(context.getControllerConfiguration().fieldManager())
@@ -123,19 +124,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         : resource.create();
   }
 
-  public R update(R actual, R target, P primary, Context<P> context) {
+  public R update(R actual, R desired, P primary, Context<P> context) {
     if (log.isDebugEnabled()) {
       log.debug("Updating actual resource: {} version: {}", ResourceID.fromResource(actual),
           actual.getMetadata().getResourceVersion());
     }
     R updatedResource;
-    addMetadata(false, actual, target, primary);
+    addMetadata(false, actual, desired, primary);
+    sanitizeDesired(desired, actual, primary, context);
     if (useSSA(context)) {
-      updatedResource = prepare(target, primary, "Updating")
+      updatedResource = prepare(desired, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
           .forceConflicts().serverSideApply();
     } else {
-      var updatedActual = updaterMatcher.updateResource(actual, target, context);
+      var updatedActual = updaterMatcher.updateResource(actual, desired, context);
       updatedResource = prepare(updatedActual, primary, "Updating").update();
     }
     log.debug("Resource version after update: {}",
@@ -146,6 +148,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     final var desired = desired(primary, context);
+    sanitizeDesired(desired, actualResource, primary, context);
     return match(actualResource, desired, primary, updaterMatcher, context);
   }
 
@@ -188,6 +191,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
     addReferenceHandlingMetadata(target, primary);
   }
+
+    protected void sanitizeDesired(R desired, R actual, P primary, Context<P> context) {
+        DesiredResourceSanitizer.sanitizeDesired(desired, actual, primary, context);
+    }
 
   private boolean useSSA(Context<P> context) {
     Optional<Boolean> useSSAConfig =
