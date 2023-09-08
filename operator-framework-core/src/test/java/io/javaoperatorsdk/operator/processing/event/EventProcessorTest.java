@@ -452,6 +452,21 @@ class EventProcessorTest {
         .handleExecution(any());
   }
 
+  @Test
+  void cleansUpForDeleteEventEvenIfProcessorNotStarted() {
+    ResourceID resourceID = new ResourceID("test1", "default");
+
+    eventProcessor =
+        spy(new EventProcessor(controllerConfiguration(null, rateLimiterMock),
+            reconciliationDispatcherMock,
+            eventSourceManagerMock, null));
+
+    eventProcessor.handleEvent(prepareCREvent(resourceID));
+    eventProcessor.handleEvent(new ResourceEvent(ResourceAction.DELETED, resourceID, null));
+    eventProcessor.handleEvent(prepareCREvent(resourceID));
+    // no exception thrown
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
