@@ -97,6 +97,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       metrics.receivedEvent(event, metricsMetadata);
       handleEventMarking(event, state);
       if (!this.running) {
+        if (state.deleteEventPresent()) {
+          cleanupForDeletedEvent(state.getId());
+        }
         // events are received and marked, but will be processed when started, see start() method.
         log.debug("Skipping event: {} because the event processor is not started", event);
         return;
@@ -110,7 +113,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void handleMarkedEventForResource(ResourceState state) {
     if (state.deleteEventPresent()) {
       cleanupForDeletedEvent(state.getId());
-    } else if (!state.processedMarkForDeletionPresent()) {
+    }
+    if (!state.processedMarkForDeletionPresent()) {
       submitReconciliationExecution(state);
     }
   }
