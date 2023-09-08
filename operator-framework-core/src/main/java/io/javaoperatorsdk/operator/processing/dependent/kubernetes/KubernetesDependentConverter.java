@@ -34,6 +34,7 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
     ResourceDiscriminator<?, ?> resourceDiscriminator = null;
+    Boolean useSSA = null;
     if (configAnnotation != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, configAnnotation.namespaces())) {
         namespaces = Set.of(configAnnotation.namespaces());
@@ -58,10 +59,11 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
               context);
       createResourceOnlyIfNotExistingWithSSA =
           configAnnotation.createResourceOnlyIfNotExistingWithSSA();
+      useSSA = configAnnotation.useSSA().asBoolean();
     }
 
     return new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
         createResourceOnlyIfNotExistingWithSSA,
-        resourceDiscriminator, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
+        resourceDiscriminator, useSSA, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
   }
 }
