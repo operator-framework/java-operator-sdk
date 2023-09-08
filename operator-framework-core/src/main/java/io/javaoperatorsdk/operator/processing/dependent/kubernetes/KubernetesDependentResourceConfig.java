@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Optional;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -20,6 +21,7 @@ public class KubernetesDependentResourceConfig<R> {
   private boolean namespacesWereConfigured;
   private boolean createResourceOnlyIfNotExistingWithSSA;
   private ResourceDiscriminator<R, ?> resourceDiscriminator;
+  private Boolean useSSA;
 
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
@@ -37,6 +39,7 @@ public class KubernetesDependentResourceConfig<R> {
       boolean configuredNS,
       boolean createResourceOnlyIfNotExistingWithSSA,
       ResourceDiscriminator<R, ?> resourceDiscriminator,
+      Boolean useSSA,
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
       OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter) {
@@ -49,6 +52,7 @@ public class KubernetesDependentResourceConfig<R> {
     this.onDeleteFilter = onDeleteFilter;
     this.genericFilter = genericFilter;
     this.resourceDiscriminator = resourceDiscriminator;
+    this.useSSA = useSSA;
   }
 
   // use builder instead
@@ -56,7 +60,7 @@ public class KubernetesDependentResourceConfig<R> {
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
     this(namespaces, labelSelector, true, DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
         null, null, null,
-        null, null);
+        null, null, null);
   }
 
   // use builder instead
@@ -109,5 +113,9 @@ public class KubernetesDependentResourceConfig<R> {
     if (!wereNamespacesConfigured() && namespaces != null && !namespaces.isEmpty()) {
       this.namespaces = namespaces;
     }
+  }
+
+  public Optional<Boolean> useSSA() {
+    return Optional.ofNullable(useSSA);
   }
 }
