@@ -113,8 +113,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void handleMarkedEventForResource(ResourceState state) {
     if (state.deleteEventPresent()) {
       cleanupForDeletedEvent(state.getId());
-    }
-    if (!state.processedMarkForDeletionPresent()) {
+    } else if (!state.processedMarkForDeletionPresent()) {
       submitReconciliationExecution(state);
     }
   }
