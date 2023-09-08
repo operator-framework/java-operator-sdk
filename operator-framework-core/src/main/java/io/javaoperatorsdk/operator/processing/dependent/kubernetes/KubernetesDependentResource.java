@@ -190,8 +190,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private boolean useSSA(Context<P> context) {
-    return context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateMatchForDependentResources();
+    Optional<Boolean> useSSAConfig =
+        configuration().flatMap(KubernetesDependentResourceConfig::useSSA);
+    return useSSAConfig.orElse(context.getControllerConfiguration().getConfigurationService()
+        .ssaBasedCreateUpdateMatchForDependentResources());
   }
 
   @Override
@@ -206,6 +208,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     client.resource(resource).delete();
   }
 
+  @SuppressWarnings("unused")
   protected Resource<R> prepare(R desired, P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
