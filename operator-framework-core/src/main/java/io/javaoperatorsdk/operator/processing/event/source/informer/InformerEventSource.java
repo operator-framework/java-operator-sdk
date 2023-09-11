@@ -69,6 +69,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
     implements ResourceEventHandler<R> {
 
+  private static final int MAX_RESOURCE_VERSIONS = 256;
+
   public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
@@ -78,14 +80,31 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private Map<String, Function<R, List<String>>> indexerBuffer = new HashMap<>();
   private final String id = UUID.randomUUID().toString();
+  private final Set<String> knownResourceVersions;
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration, context.getClient());
+    this(configuration, context.getClient(),
+        context.getControllerConfiguration().getConfigurationService().parseResourceVersions());
   }
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
-    super(client.resources(configuration.getResourceClass()), configuration);
+    this(configuration, client, false);
+  }
+
+  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
+      boolean parseResourceVersions) {
+    super(client.resources(configuration.getResourceClass()), configuration, parseResourceVersions);
+    if (parseResourceVersions) {
+      knownResourceVersions = Collections.newSetFromMap(new LinkedHashMap<String, Boolean>() {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, Boolean> eldest) {
+          return size() >= MAX_RESOURCE_VERSIONS;
+        }
+      });
+    } else {
+      knownResourceVersions = null;
+    }
 
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
@@ -169,6 +188,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
+    if (knownResourceVersions != null
+        && knownResourceVersions.contains(newObject.getMetadata().getResourceVersion())) {
+      return true;
+    }
     var res = temporaryResourceCache.getResourceFromCache(resourceID);
     if (res.isEmpty()) {
       return isEventKnownFromAnnotation(newObject, oldObject);
@@ -262,6 +285,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
+    if (knownResourceVersions != null) {
+      knownResourceVersions.add(newResource.getMetadata().getResourceVersion());
+    }
     temporaryResourceCache.putResource(newResource, Optional.ofNullable(oldResource)
         .map(r -> r.getMetadata().getResourceVersion()).orElse(null));
   }
@@ -274,7 +300,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public boolean allowsNamespaceChanges() {
     return configuration().followControllerNamespaceChanges();
   }
-
 
   private boolean eventAcceptedByFilter(Operation operation, R newObject, R oldObject) {
     if (genericFilter != null && !genericFilter.accept(newObject)) {

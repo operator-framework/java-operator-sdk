@@ -62,6 +62,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       return secondaryToPrimaryMapper;
     }
 
+    @Override
     public Optional<OnDeleteFilter<? super R>> onDeleteFilter() {
       return Optional.ofNullable(onDeleteFilter);
     }
@@ -95,12 +96,15 @@ public interface InformerConfiguration<R extends HasMetadata>
    */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
+  @Override
   Optional<OnAddFilter<? super R>> onAddFilter();
 
+  @Override
   Optional<OnUpdateFilter<? super R>> onUpdateFilter();
 
   Optional<OnDeleteFilter<? super R>> onDeleteFilter();
 
+  @Override
   Optional<GenericFilter<? super R>> genericFilter();
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();

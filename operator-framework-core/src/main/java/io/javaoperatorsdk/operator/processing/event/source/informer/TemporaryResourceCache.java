@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -36,13 +37,18 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
+  private final boolean parseResourceVersions;
 
-  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
+  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
+      boolean parseResourceVersions) {
     this.managedInformerEventSource = managedInformerEventSource;
+    this.parseResourceVersions = parseResourceVersions;
   }
 
-  public synchronized Optional<T> removeResourceFromCache(T resource) {
-    return Optional.ofNullable(cache.remove(ResourceID.fromResource(resource)));
+  public synchronized void onEvent(T resource, boolean unknownState) {
+    cache.computeIfPresent(ResourceID.fromResource(resource),
+        (id, cached) -> (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null
+            : cached);
   }
 
   public synchronized void putAddedResource(T newResource) {
@@ -61,18 +67,37 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         .orElse(managedInformerEventSource.get(resourceId).orElse(null));
 
     if ((previousResourceVersion == null && cachedResource == null)
-        || (cachedResource != null && previousResourceVersion != null
-            && cachedResource.getMetadata().getResourceVersion()
-                .equals(previousResourceVersion))) {
+        || (cachedResource != null
+            && (cachedResource.getMetadata().getResourceVersion().equals(previousResourceVersion))
+            || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(), resourceId);
       putToCache(newResource, resourceId);
-    } else {
-      if (cache.remove(resourceId) != null) {
-        log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
-      }
+    } else if (cache.remove(resourceId) != null) {
+      log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
     }
+  }
+
+  /**
+   * @return true if {@link InformerConfiguration#parseResourceVersions()} is enabled and the
+   *         resourceVersion of newResource is numerically greater than cachedResource, otherwise
+   *         false
+   */
+  private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
+    try {
+      if (parseResourceVersions
+          && Long.compare(Long.parseLong(newResource.getMetadata().getResourceVersion()),
+              Long.parseLong(cachedResource.getMetadata().getResourceVersion())) > 0) {
+        return true;
+      }
+    } catch (NumberFormatException e) {
+      log.debug(
+          "Could not compare resourceVersions {} and {} for {}",
+          newResource.getMetadata().getResourceVersion(),
+          cachedResource.getMetadata().getResourceVersion(), resourceId);
+    }
+    return false;
   }
 
   private void putToCache(T resource, ResourceID resourceID) {

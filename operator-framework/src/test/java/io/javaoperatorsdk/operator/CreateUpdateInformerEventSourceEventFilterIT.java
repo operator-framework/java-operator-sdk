@@ -26,28 +26,12 @@ class CreateUpdateInformerEventSourceEventFilterIT {
 
   @Test
   void updateEventNotReceivedAfterCreateOrUpdate() {
-    CreateUpdateEventFilterTestCustomResource resource = prepareTestResource();
+    CreateUpdateEventFilterTestCustomResource resource =
+        CreateUpdateInformerEventSourceEventFilterIT.prepareTestResource();
     var createdResource =
         operator.create(resource);
 
-    await()
-        .atMost(Duration.ofSeconds(1))
-        .until(() -> {
-          var cm = operator.get(ConfigMap.class, createdResource.getMetadata().getName());
-          if (cm == null) {
-            return false;
-          }
-          return cm.getData()
-              .get(CONFIG_MAP_TEST_DATA_KEY)
-              .equals(createdResource.getSpec().getValue());
-        });
-
-    assertThat(
-        ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
-            .getNumberOfExecutions())
-        .isEqualTo(1); // this should be 1 usually but sometimes event is received
-    // faster than added resource added to the cache
-
+    assertData(operator, createdResource, 1);
 
     CreateUpdateEventFilterTestCustomResource actualCreatedResource =
         operator.get(CreateUpdateEventFilterTestCustomResource.class,
@@ -55,26 +39,30 @@ class CreateUpdateInformerEventSourceEventFilterIT {
     actualCreatedResource.getSpec().setValue("2");
     operator.replace(actualCreatedResource);
 
+    assertData(operator, actualCreatedResource, 2);
+  }
 
-    await().atMost(Duration.ofSeconds(1))
+  static void assertData(LocallyRunOperatorExtension operator,
+      CreateUpdateEventFilterTestCustomResource resource, int executions) {
+    await()
+        .atMost(Duration.ofSeconds(1))
         .until(() -> {
-          var cm = operator.get(ConfigMap.class, createdResource.getMetadata().getName());
+          var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
           if (cm == null) {
             return false;
           }
           return cm.getData()
               .get(CONFIG_MAP_TEST_DATA_KEY)
-              .equals(actualCreatedResource.getSpec().getValue());
+              .equals(resource.getSpec().getValue());
         });
 
     assertThat(
         ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
             .getNumberOfExecutions())
-        // same as for previous assert (usually this should be 2)
-        .isEqualTo(2);
+        .isEqualTo(executions);
   }
 
-  private CreateUpdateEventFilterTestCustomResource prepareTestResource() {
+  static CreateUpdateEventFilterTestCustomResource prepareTestResource() {
     CreateUpdateEventFilterTestCustomResource resource =
         new CreateUpdateEventFilterTestCustomResource();
     resource.setMetadata(new ObjectMeta());

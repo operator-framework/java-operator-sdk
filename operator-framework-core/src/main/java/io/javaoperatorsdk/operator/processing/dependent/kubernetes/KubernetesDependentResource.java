@@ -113,7 +113,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         desired.getMetadata().setResourceVersion("1");
       }
     }
-    addMetadata(false, null, desired, primary);
+    addMetadata(false, null, desired, primary, context);
     sanitizeDesired(desired, null, primary, context);
     final var resource = prepare(desired, primary, "Creating");
     return useSSA(context)
@@ -130,7 +130,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
           actual.getMetadata().getResourceVersion());
     }
     R updatedResource;
-    addMetadata(false, actual, desired, primary);
+    addMetadata(false, actual, desired, primary, context);
     sanitizeDesired(desired, actual, primary, context);
     if (useSSA(context)) {
       updatedResource = prepare(desired, primary, "Updating")
@@ -163,7 +163,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public Result<R> match(R actualResource, R desired, P primary, ResourceUpdaterMatcher<R> matcher,
       Context<P> context) {
     final boolean matches;
-    addMetadata(true, actualResource, desired, primary);
+    addMetadata(true, actualResource, desired, primary, context);
     if (useSSA(context)) {
       matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
           .matches(actualResource, desired, context);
@@ -173,8 +173,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return Result.computed(matches, desired);
   }
 
-  protected void addMetadata(boolean forMatch, R actualResource, final R target, P primary) {
-    if (forMatch) { // keep the current
+  protected void addMetadata(boolean forMatch, R actualResource, final R target, P primary,
+      Context<P> context) {
+    if (forMatch) { // keep the current previous annotation
       String actual = actualResource.getMetadata().getAnnotations()
           .get(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       Map<String, String> annotations = target.getMetadata().getAnnotations();
@@ -183,7 +184,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       } else {
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
-    } else { // set a new one
+    } else if (usePreviousAnnotation(context)) { // set a new one
       eventSource().orElseThrow().addPreviousAnnotation(
           Optional.ofNullable(actualResource).map(r -> r.getMetadata().getResourceVersion())
               .orElse(null),
@@ -206,6 +207,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
     return useSSAConfig.orElse(context.getControllerConfiguration().getConfigurationService()
         .ssaBasedCreateUpdateMatchForDependentResources());
+  }
+
+  private boolean usePreviousAnnotation(Context<P> context) {
+    return context.getControllerConfiguration().getConfigurationService()
+        .previousAnnotationForDependentResources();
   }
 
   @Override
