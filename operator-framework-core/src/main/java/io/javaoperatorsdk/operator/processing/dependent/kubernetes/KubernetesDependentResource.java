@@ -41,8 +41,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
   public static final Set<Class<? extends HasMetadata>> DEFAULT_NON_SSA_RESOURCES =
-      Set.of(ConfigMap.class,
-          Secret.class);
+      Set.of(ConfigMap.class, Secret.class);
 
   protected KubernetesClient client;
   private final ResourceUpdaterMatcher<R> updaterMatcher;
