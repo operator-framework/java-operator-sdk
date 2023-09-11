@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
 import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
@@ -347,6 +348,13 @@ public interface ConfigurationService {
     return true;
   }
 
+  /**
+   * There are certain resources where the intention is not use SSA in Kubernetes. Typical are
+   * ConfigMaps or Secrets. For these resources, if {@link KubernetesDependent#useSSA()} is not
+   * explicitly overriden for a dependent resource instance SSA will not be used, event if in
+   * general SSA is used for Dependent Resources, see
+   * {@link #ssaBasedCreateUpdateMatchForDependentResources()}.
+   */
   default Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
     return Set.of(ConfigMap.class, Secret.class);
   }
