@@ -192,22 +192,17 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       }
     }
 
-    final var matched = matchSpec(actualResource, desired, specEquality, context, ignoredPaths);
+    final var matched = matchSpec(actualResource, desired, specEquality, context, ignoreList);
     return Result.computed(matched, desired);
   }
 
   private static <R extends HasMetadata> boolean matchSpec(R actual, R desired, boolean equality,
-      Context<?> context,
-      String[] ignoredPaths) {
-
+      Context<?> context, List<String> ignoreList) {
     final var kubernetesSerialization = context.getClient().getKubernetesSerialization();
     var desiredNode = kubernetesSerialization.convertValue(desired, JsonNode.class);
     var actualNode = kubernetesSerialization.convertValue(actual, JsonNode.class);
     var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
 
-    final List<String> ignoreList =
-        ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
-            : Collections.emptyList();
     // reflection will be replaced by this:
     // https://github.com/fabric8io/kubernetes-client/issues/3816
     var specDiffJsonPatch = getDiffsImpactingPathsWithPrefixes(wholeDiffJsonPatch, SPEC);
@@ -218,15 +213,10 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       return false;
     }
     if (!equality && !ignoreList.isEmpty()) {
-      if (!allDiffsOnIgnoreList(specDiffJsonPatch, ignoreList)) {
-        return false;
-      }
+      return allDiffsOnIgnoreList(specDiffJsonPatch, ignoreList);
     } else {
-      if (!allDiffsAreAddOps(specDiffJsonPatch)) {
-        return false;
-      }
+      return allDiffsAreAddOps(specDiffJsonPatch);
     }
-    return true;
   }
 
   private static boolean allDiffsOnIgnoreList(List<JsonNode> metadataJSonDiffs,
@@ -241,7 +231,6 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       R desired,
       R actualResource,
       boolean labelsAndAnnotationsEquality, Context<P> context) {
-
     if (labelsAndAnnotationsEquality) {
       final var desiredMetadata = desired.getMetadata();
       final var actualMetadata = actualResource.getMetadata();
