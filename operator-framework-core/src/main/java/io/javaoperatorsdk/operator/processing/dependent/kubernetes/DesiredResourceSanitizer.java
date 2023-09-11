@@ -6,15 +6,13 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource.useSSA;
-
 public class DesiredResourceSanitizer {
 
   private DesiredResourceSanitizer() {}
 
   public static <R, P extends HasMetadata> void sanitizeDesired(R desired, R actual, P primary,
-      Context<P> context) {
-    if (useSSA(context)) {
+      Context<P> context, boolean useSSA) {
+    if (useSSA) {
       if (desired instanceof StatefulSet) {
         fillDefaultsOnVolumeClaimTemplate((StatefulSet) desired);
       }

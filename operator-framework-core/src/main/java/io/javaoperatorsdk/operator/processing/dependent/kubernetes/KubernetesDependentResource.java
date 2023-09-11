@@ -7,7 +7,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -37,6 +39,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
+
+  public static final Set<Class<? extends HasMetadata>> DEFAULT_NON_SSA_RESOURCES =
+      Set.of(ConfigMap.class,
+          Secret.class);
 
   protected KubernetesClient client;
   private final ResourceUpdaterMatcher<R> updaterMatcher;
@@ -135,6 +141,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (useSSA(context)) {
       updatedResource = prepare(desired, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
+          .fieldManager(context.getControllerConfiguration().fieldManager())
           .forceConflicts().serverSideApply();
     } else {
       var updatedActual = updaterMatcher.updateResource(actual, desired, context);
@@ -192,13 +199,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     addReferenceHandlingMetadata(target, primary);
   }
 
-    protected void sanitizeDesired(R desired, R actual, P primary, Context<P> context) {
-        DesiredResourceSanitizer.sanitizeDesired(desired, actual, primary, context);
-    }
+  protected void sanitizeDesired(R desired, R actual, P primary, Context<P> context) {
+    DesiredResourceSanitizer.sanitizeDesired(desired, actual, primary, context, useSSA(context));
+  }
 
-  private boolean useSSA(Context<P> context) {
+  protected boolean useSSA(Context<P> context) {
     Optional<Boolean> useSSAConfig =
         configuration().flatMap(KubernetesDependentResourceConfig::useSSA);
+
+    // don't use SSA for certain resources by default, only if explicitly overriden
+    if (useSSAConfig.isEmpty() && DEFAULT_NON_SSA_RESOURCES.contains(resourceType())) {
+      return false;
+    }
     return useSSAConfig.orElse(context.getControllerConfiguration().getConfigurationService()
         .ssaBasedCreateUpdateMatchForDependentResources());
   }
