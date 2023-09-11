@@ -40,9 +40,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
-  public static final Set<Class<? extends HasMetadata>> DEFAULT_NON_SSA_RESOURCES =
-      Set.of(ConfigMap.class, Secret.class);
-
   protected KubernetesClient client;
   private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
@@ -205,9 +202,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected boolean useSSA(Context<P> context) {
     Optional<Boolean> useSSAConfig =
         configuration().flatMap(KubernetesDependentResourceConfig::useSSA);
-
+    var configService = context.getControllerConfiguration().getConfigurationService();
     // don't use SSA for certain resources by default, only if explicitly overriden
-    if (useSSAConfig.isEmpty() && DEFAULT_NON_SSA_RESOURCES.contains(resourceType())) {
+    if (useSSAConfig.isEmpty() && configService.defaultNonSSAResource().contains(resourceType())) {
       return false;
     }
     return useSSAConfig.orElse(context.getControllerConfiguration().getConfigurationService()
