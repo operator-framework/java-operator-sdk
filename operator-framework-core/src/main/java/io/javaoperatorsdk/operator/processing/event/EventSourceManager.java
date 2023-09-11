@@ -231,6 +231,11 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.getEventSources(dependentType);
   }
 
+  @Override
+  public ControllerResourceEventSource<P> controllerResourceEventSource() {
+    return eventSources.controllerResourceEventSource();
+  }
+
   /**
    * @deprecated Use {@link #getResourceEventSourceFor(Class)} instead
    *
