@@ -47,9 +47,9 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  public ConfigMap update(ConfigMap actual, ConfigMap target, WebPage primary,
+  public ConfigMap update(ConfigMap actual, ConfigMap desired, WebPage primary,
       Context<WebPage> context) {
-    var res = super.update(actual, target, primary, context);
+    var res = super.update(actual, desired, primary, context);
     var ns = actual.getMetadata().getNamespace();
     log.info("Restarting pods because HTML has changed in {}",
         ns);
