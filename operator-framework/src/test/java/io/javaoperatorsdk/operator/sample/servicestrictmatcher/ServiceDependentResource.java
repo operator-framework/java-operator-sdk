@@ -53,10 +53,10 @@ public class ServiceDependentResource
   }
 
   @Override
-  public Service update(Service actual, Service target,
+  public Service update(Service actual, Service desired,
       ServiceStrictMatcherTestCustomResource primary,
       Context<ServiceStrictMatcherTestCustomResource> context) {
     updated.addAndGet(1);
-    return super.update(actual, target, primary, context);
+    return super.update(actual, desired, primary, context);
   }
 }
