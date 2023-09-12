@@ -135,7 +135,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (useSSA(context)) {
       updatedResource = prepare(desired, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
-          .fieldManager(context.getControllerConfiguration().fieldManager())
           .forceConflicts().serverSideApply();
     } else {
       var updatedActual = updaterMatcher.updateResource(actual, desired, context);
