@@ -13,6 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManag
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -38,6 +39,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
     return getSecondaryResourcesAsStream(expectedType).collect(Collectors.toSet());
+  }
+
+  @Override
+  public IndexerResourceCache<P> getPrimaryCache() {
+    return controller.getEventSourceManager().getControllerResourceEventSource();
   }
 
   @Override

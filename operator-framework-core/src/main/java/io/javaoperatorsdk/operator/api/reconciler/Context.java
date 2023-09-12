@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 public interface Context<P extends HasMetadata> {
 
@@ -43,4 +44,12 @@ public interface Context<P extends HasMetadata> {
    * ExecutorService initialized by framework for workflows. Used for workflow standalone mode.
    */
   ExecutorService getWorkflowExecutorService();
+
+  /**
+   * Retrieves the primary resource cache.
+   *
+   * @return the {@link IndexerResourceCache} associated with the associated {@link Reconciler} for
+   *         this context
+   */
+  IndexerResourceCache<P> getPrimaryCache();
 }
