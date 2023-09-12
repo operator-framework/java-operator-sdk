@@ -1,14 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -159,7 +152,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       Object managedFieldValue) {
     var emptyMapValue = new HashMap<String, Object>();
     result.put(keyInActual, emptyMapValue);
-    var actualMapValue = actualMap.getOrDefault(keyInActual, Map.of());
+    var actualMapValue = actualMap.getOrDefault(keyInActual, Collections.emptyMap());
     log.debug("key: {} actual map value: {} managedFieldValue: {}", keyInActual,
         actualMapValue, managedFieldValue);
 
