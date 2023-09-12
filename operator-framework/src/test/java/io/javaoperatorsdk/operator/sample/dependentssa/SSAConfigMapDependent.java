@@ -33,10 +33,10 @@ public class SSAConfigMapDependent extends
   }
 
   @Override
-  public ConfigMap update(ConfigMap actual, ConfigMap target,
+  public ConfigMap update(ConfigMap actual, ConfigMap desired,
       DependnetSSACustomResource primary,
       Context<DependnetSSACustomResource> context) {
     NUMBER_OF_UPDATES.incrementAndGet();
-    return super.update(actual, target, primary, context);
+    return super.update(actual, desired, primary, context);
   }
 }
