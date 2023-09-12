@@ -16,22 +16,24 @@ public class KubernetesDependentResourceConfig<R> {
 
   public static final boolean DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA = true;
 
-  private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
-  private String labelSelector = NO_VALUE_SET;
-  private boolean namespacesWereConfigured = false;
-  private boolean createResourceOnlyIfNotExistingWithSSA;
-  private ResourceDiscriminator<R, ?> resourceDiscriminator;
-  private Boolean useSSA;
+  private Set<String> namespaces;
+  private String labelSelector;
+  private final boolean namespacesWereConfigured;
+  private final boolean createResourceOnlyIfNotExistingWithSSA;
+  private final ResourceDiscriminator<R, ?> resourceDiscriminator;
+  private final Boolean useSSA;
 
-  private OnAddFilter<R> onAddFilter;
+  private final OnAddFilter<R> onAddFilter;
+  private final OnUpdateFilter<R> onUpdateFilter;
+  private final OnDeleteFilter<R> onDeleteFilter;
+  private final GenericFilter<R> genericFilter;
 
-  private OnUpdateFilter<R> onUpdateFilter;
-
-  private OnDeleteFilter<R> onDeleteFilter;
-
-  private GenericFilter<R> genericFilter;
-
-  public KubernetesDependentResourceConfig() {}
+  public KubernetesDependentResourceConfig() {
+    this(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET, NO_VALUE_SET, true,
+        DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
+        null, null, null,
+        null, null, null);
+  }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces,
       String labelSelector,
@@ -54,12 +56,16 @@ public class KubernetesDependentResourceConfig<R> {
     this.useSSA = useSSA;
   }
 
+  // use builder instead
+  @Deprecated(forRemoval = true)
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
     this(namespaces, labelSelector, true, DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
         null, null, null,
         null, null, null);
   }
 
+  // use builder instead
+  @Deprecated(forRemoval = true)
   public KubernetesDependentResourceConfig<R> setLabelSelector(String labelSelector) {
     this.labelSelector = labelSelector;
     return this;
