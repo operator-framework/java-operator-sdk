@@ -39,7 +39,6 @@ public class DesiredResourceSanitizer {
           t.setStatus(new PersistentVolumeClaimStatus());
         }
         if (t.getStatus().getPhase() == null) {
-          t.setStatus(new PersistentVolumeClaimStatus());
           t.getStatus().setPhase("pending");
         }
       });
