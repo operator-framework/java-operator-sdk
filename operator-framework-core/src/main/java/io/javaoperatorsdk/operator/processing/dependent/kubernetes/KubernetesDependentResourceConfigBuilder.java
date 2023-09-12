@@ -13,7 +13,9 @@ public final class KubernetesDependentResourceConfigBuilder<R> {
 
   private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
   private String labelSelector;
+  private boolean createResourceOnlyIfNotExistingWithSSA;
   private ResourceDiscriminator<R, ?> resourceDiscriminator;
+  private Boolean useSSA;
   private OnAddFilter<R> onAddFilter;
   private OnUpdateFilter<R> onUpdateFilter;
   private OnDeleteFilter<R> onDeleteFilter;
@@ -35,9 +37,20 @@ public final class KubernetesDependentResourceConfigBuilder<R> {
     return this;
   }
 
+  public KubernetesDependentResourceConfigBuilder<R> withCreateResourceOnlyIfNotExistingWithSSA(
+      boolean createResourceOnlyIfNotExistingWithSSA) {
+    this.createResourceOnlyIfNotExistingWithSSA = createResourceOnlyIfNotExistingWithSSA;
+    return this;
+  }
+
   public KubernetesDependentResourceConfigBuilder<R> withResourceDiscriminator(
       ResourceDiscriminator<R, ?> resourceDiscriminator) {
     this.resourceDiscriminator = resourceDiscriminator;
+    return this;
+  }
+
+  public KubernetesDependentResourceConfigBuilder<R> withUseSSA(Boolean useSSA) {
+    this.useSSA = useSSA;
     return this;
   }
 
@@ -66,7 +79,7 @@ public final class KubernetesDependentResourceConfigBuilder<R> {
 
   public KubernetesDependentResourceConfig<R> build() {
     return new KubernetesDependentResourceConfig<>(namespaces, labelSelector, false,
-        resourceDiscriminator, onAddFilter,
+        createResourceOnlyIfNotExistingWithSSA, resourceDiscriminator, useSSA, onAddFilter,
         onUpdateFilter, onDeleteFilter, genericFilter);
   }
 }
