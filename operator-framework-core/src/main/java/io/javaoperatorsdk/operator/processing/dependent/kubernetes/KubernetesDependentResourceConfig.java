@@ -18,10 +18,10 @@ public class KubernetesDependentResourceConfig<R> {
 
   private Set<String> namespaces;
   private String labelSelector;
-  private boolean namespacesWereConfigured;
-  private boolean createResourceOnlyIfNotExistingWithSSA;
-  private ResourceDiscriminator<R, ?> resourceDiscriminator;
-  private Boolean useSSA;
+  private final boolean namespacesWereConfigured;
+  private final boolean createResourceOnlyIfNotExistingWithSSA;
+  private final ResourceDiscriminator<R, ?> resourceDiscriminator;
+  private final Boolean useSSA;
 
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
@@ -29,8 +29,9 @@ public class KubernetesDependentResourceConfig<R> {
   private final GenericFilter<R> genericFilter;
 
   public KubernetesDependentResourceConfig() {
-    this(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET, NO_VALUE_SET, true,false,
-        null, null,
+    this(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET, NO_VALUE_SET, true,
+        DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
+        null, null, null,
         null, null, null);
   }
 
