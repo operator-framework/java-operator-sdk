@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.dependentresource.ConfigMapDependentResource;
@@ -79,21 +79,19 @@ public class WebPageStandaloneDependentsReconciler
     return handleError(resource, e);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private void createDependentResources(KubernetesClient client) {
     this.configMapDR = new ConfigMapDependentResource();
     this.deploymentDR = new DeploymentDependentResource();
     this.serviceDR = new ServiceDependentResource();
     this.ingressDR = new IngressDependentResource();
 
-
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.setKubernetesClient(client);
-      dr.configureWith(new KubernetesDependentResourceConfig()
-          .setLabelSelector(SELECTOR + "=true"));
+      dr.configureWith(new KubernetesDependentResourceConfigBuilder()
+          .withLabelSelector(SELECTOR + "=true").build());
     });
   }
-
 
 
 }
