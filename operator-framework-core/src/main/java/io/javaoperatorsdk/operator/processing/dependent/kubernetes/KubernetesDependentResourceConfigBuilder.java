@@ -78,7 +78,8 @@ public final class KubernetesDependentResourceConfigBuilder<R> {
   }
 
   public KubernetesDependentResourceConfig<R> build() {
-    return new KubernetesDependentResourceConfig<>(namespaces, labelSelector, false,
+    return new KubernetesDependentResourceConfig<>(namespaces, labelSelector,
+        namespaces != Constants.SAME_AS_CONTROLLER_NAMESPACES_SET,
         createResourceOnlyIfNotExistingWithSSA, resourceDiscriminator, useSSA, onAddFilter,
         onUpdateFilter, onDeleteFilter, genericFilter);
   }
