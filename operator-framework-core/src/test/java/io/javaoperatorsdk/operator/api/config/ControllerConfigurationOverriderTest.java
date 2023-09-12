@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentRes
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -327,7 +328,10 @@ class ControllerConfigurationOverriderTest {
     final var overridden = ControllerConfigurationOverrider.override(configuration)
         .replacingNamedDependentResourceConfig(
             DependentResource.defaultNameFor(ReadOnlyDependent.class),
-            new KubernetesDependentResourceConfig(Set.of(overriddenNS), labelSelector))
+            new KubernetesDependentResourceConfigBuilder<>()
+                .withNamespaces(Set.of(overriddenNS))
+                .withLabelSelector(labelSelector)
+                .build())
         .build();
     dependents = overridden.getDependentResources();
     dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
