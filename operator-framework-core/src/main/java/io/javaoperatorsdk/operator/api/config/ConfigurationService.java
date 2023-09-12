@@ -338,7 +338,7 @@ public interface ConfigurationService {
    * resources are created/updated and match was change to use
    * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
    * Apply</a> (SSA) by default.
-   *
+   * <p>
    * SSA based create/update can be still used with the legacy matching, just overriding the match
    * method of Kubernetes Dependent Resource.
    *
@@ -349,11 +349,16 @@ public interface ConfigurationService {
   }
 
   /**
-   * There are certain resources where the intention is not use SSA in Kubernetes. Typical are
-   * ConfigMaps or Secrets. For these resources, if {@link KubernetesDependent#useSSA()} is not
-   * explicitly overriden for a dependent resource instance SSA will not be used, event if in
-   * general SSA is used for Dependent Resources, see
-   * {@link #ssaBasedCreateUpdateMatchForDependentResources()}.
+   * Returns the set of default resources for which Server-Side Apply (SSA) will not be used, even
+   * if it is the default behavior for dependent resources as specified by
+   * {@link #ssaBasedCreateUpdateMatchForDependentResources()}. The exception to this is in the case
+   * where the use of SSA is explicitly enabled on the dependent resource directly using
+   * {@link KubernetesDependent#useSSA()}.
+   * <p>
+   * By default, SSA is disabled for {@link ConfigMap} and {@link Secret} resources.
+   *
+   * @return The set of resource types for which SSA will not be used
+   * @since 4.4.0
    */
   default Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
     return Set.of(ConfigMap.class, Secret.class);
