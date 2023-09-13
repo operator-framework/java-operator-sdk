@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManag
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
-import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.IndexedResourceCache;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -42,7 +42,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public IndexerResourceCache<P> getPrimaryCache() {
+  public IndexedResourceCache<P> getPrimaryCache() {
     return controller.getEventSourceManager().getControllerResourceEventSource();
   }
 
