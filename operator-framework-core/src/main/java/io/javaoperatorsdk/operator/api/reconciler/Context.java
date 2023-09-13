@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
-import io.javaoperatorsdk.operator.processing.event.source.IndexedResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 public interface Context<P extends HasMetadata> {
