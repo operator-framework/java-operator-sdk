@@ -5,15 +5,13 @@ import java.util.Map;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
 
-public interface IndexerResourceCache<T extends HasMetadata> extends ResourceCache<T> {
+public interface IndexerResourceCache<T extends HasMetadata> extends IndexedResourceCache<T> {
 
   void addIndexers(Map<String, Function<T, List<String>>> indexers);
 
   default void addIndexer(String name, Function<T, List<String>> indexer) {
     addIndexers(Map.of(name, indexer));
   }
-
-  List<T> byIndex(String indexName, String indexKey);
-
 }
