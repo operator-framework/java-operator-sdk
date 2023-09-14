@@ -41,6 +41,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
+  public IndexedResourceCache<P> getPrimaryCache() {
+    return controller.getEventSourceManager().getControllerResourceEventSource();
+  }
+
+  @Override
   public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
     return controller.getEventSourceManager().getResourceEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
