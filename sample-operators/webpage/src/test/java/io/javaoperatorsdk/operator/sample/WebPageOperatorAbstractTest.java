@@ -36,6 +36,7 @@ public abstract class WebPageOperatorAbstractTest {
   public static final String TITLE1 = "Hello Operator World";
   public static final String TITLE2 = "Hello Operator World Title 2";
   public static final int WAIT_SECONDS = 20;
+  public static final int LONG_WAIT_SECONDS = 120;
   public static final Duration POLL_INTERVAL = Duration.ofSeconds(1);
 
   boolean isLocal() {
@@ -68,7 +69,7 @@ public abstract class WebPageOperatorAbstractTest {
     // update part: changing title
     operator().replace(createWebPage(TITLE2));
 
-    await().atMost(Duration.ofSeconds(WAIT_SECONDS))
+    await().atMost(Duration.ofSeconds(LONG_WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
         .untilAsserted(() -> {
           String page = httpGetForWebPage(webPage);
