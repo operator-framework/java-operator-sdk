@@ -153,7 +153,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var emptyMapValue = new HashMap<String, Object>();
     result.put(keyInActual, emptyMapValue);
     var actualMapValue = actualMap.getOrDefault(keyInActual, Collections.emptyMap());
-    log.debug("key: {} actual map value: {} managedFieldValue: {}", keyInActual,
+    log.trace("key: {} actual map value: {} managedFieldValue: {}", keyInActual,
         actualMapValue, managedFieldValue);
 
     keepOnlyManagedFields(emptyMapValue, (Map<String, Object>) actualMapValue,
