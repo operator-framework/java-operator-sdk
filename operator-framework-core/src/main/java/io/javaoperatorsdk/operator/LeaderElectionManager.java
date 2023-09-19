@@ -56,7 +56,6 @@ public class LeaderElectionManager {
       throw new IllegalArgumentException(message);
     }
     final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
-    // releaseOnCancel is not used in the underlying implementation
     leaderElector = new LeaderElectorBuilder(
         configurationService.getKubernetesClient(),
         configurationService.getExecutorServiceManager().cachingExecutorService())
