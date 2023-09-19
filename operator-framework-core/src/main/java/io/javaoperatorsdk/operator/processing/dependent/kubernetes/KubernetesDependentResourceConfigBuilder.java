@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Set;
 
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -10,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 
 public final class KubernetesDependentResourceConfigBuilder<R> {
 
-  private Set<String> namespaces;
+  private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
   private String labelSelector;
   private ResourceDiscriminator<R, ?> resourceDiscriminator;
   private OnAddFilter<R> onAddFilter;
