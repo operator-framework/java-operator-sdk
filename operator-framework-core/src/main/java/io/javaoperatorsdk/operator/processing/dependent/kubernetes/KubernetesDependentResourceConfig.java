@@ -13,12 +13,10 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig<R> {
 
-  private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
-  private String labelSelector = NO_VALUE_SET;
-  private boolean namespacesWereConfigured = false;
+  private Set<String> namespaces;
+  private String labelSelector;
+  private boolean namespacesWereConfigured;
   private ResourceDiscriminator<R, ?> resourceDiscriminator;
-
-  private OnAddFilter<R> onAddFilter;
 
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
@@ -27,7 +25,7 @@ public class KubernetesDependentResourceConfig<R> {
 
   public KubernetesDependentResourceConfig() {
     this(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET, NO_VALUE_SET, true,
-        null, null, null,
+        null, null,
         null, null, null);
   }
 
