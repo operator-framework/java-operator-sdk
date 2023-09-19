@@ -81,6 +81,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
           spec.getReconcileCondition(),
           spec.getDeletePostCondition(),
           spec.getReadyCondition(),
+          spec.getActivationCondition(),
           resolve(spec, client, configuration));
       alreadyResolved.put(node.getName(), node);
       spec.getDependsOn()
