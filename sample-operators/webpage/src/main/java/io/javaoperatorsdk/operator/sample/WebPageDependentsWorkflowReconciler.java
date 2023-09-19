@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -91,8 +91,8 @@ public class WebPageDependentsWorkflowReconciler
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.setKubernetesClient(client);
-      dr.configureWith(new KubernetesDependentResourceConfig()
-          .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
+      dr.configureWith(new KubernetesDependentResourceConfigBuilder()
+          .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR).build());
     });
   }
 

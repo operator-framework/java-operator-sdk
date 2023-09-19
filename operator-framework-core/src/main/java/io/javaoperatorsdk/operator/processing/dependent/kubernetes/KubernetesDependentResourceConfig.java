@@ -13,20 +13,21 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig<R> {
 
-  private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
-  private String labelSelector = NO_VALUE_SET;
-  private boolean namespacesWereConfigured = false;
+  private Set<String> namespaces;
+  private String labelSelector;
+  private boolean namespacesWereConfigured;
   private ResourceDiscriminator<R, ?> resourceDiscriminator;
 
-  private OnAddFilter<R> onAddFilter;
+  private final OnAddFilter<R> onAddFilter;
+  private final OnUpdateFilter<R> onUpdateFilter;
+  private final OnDeleteFilter<R> onDeleteFilter;
+  private final GenericFilter<R> genericFilter;
 
-  private OnUpdateFilter<R> onUpdateFilter;
-
-  private OnDeleteFilter<R> onDeleteFilter;
-
-  private GenericFilter<R> genericFilter;
-
-  public KubernetesDependentResourceConfig() {}
+  public KubernetesDependentResourceConfig() {
+    this(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET, NO_VALUE_SET, true,
+        null, null,
+        null, null, null);
+  }
 
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
       boolean configuredNS, ResourceDiscriminator<R, ?> resourceDiscriminator,
@@ -43,11 +44,15 @@ public class KubernetesDependentResourceConfig<R> {
     this.resourceDiscriminator = resourceDiscriminator;
   }
 
+  // use builder instead
+  @Deprecated(forRemoval = true)
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
     this(namespaces, labelSelector, true, null, null, null,
         null, null);
   }
 
+  // use builder instead
+  @Deprecated(forRemoval = true)
   public KubernetesDependentResourceConfig<R> setLabelSelector(String labelSelector) {
     this.labelSelector = labelSelector;
     return this;
