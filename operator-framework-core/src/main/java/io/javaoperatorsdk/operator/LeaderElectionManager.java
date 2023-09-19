@@ -67,7 +67,9 @@ public class LeaderElectionManager {
                 config.getRenewDeadline(),
                 config.getRetryPeriod(),
                 leaderCallbacks(),
-                true,
+                // this is required to be false to receive stop event in all cases, thus stopLeading
+                // is called always when leadership is lost/cancelled
+                false,
                 config.getLeaseName()))
         .build();
   }
