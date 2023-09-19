@@ -50,7 +50,7 @@ public @interface Dependent {
    */
   Class<? extends Condition> deletePostcondition() default Condition.class;
 
-  Class<? extends Condition> platformCondition() default Condition.class;
+  Class<? extends Condition> activationCondition() default Condition.class;
 
   /**
    * The list of named dependents that need to be reconciled before this one can be.

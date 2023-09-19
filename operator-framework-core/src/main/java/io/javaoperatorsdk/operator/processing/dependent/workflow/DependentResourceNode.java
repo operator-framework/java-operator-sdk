@@ -16,7 +16,7 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   private Condition<R, P> reconcilePrecondition;
   private Condition<R, P> deletePostcondition;
   private Condition<R, P> readyPostcondition;
-  private Condition<R, P> platformCondition;
+  private Condition<R, P> activationCondition;
   private final DependentResource<R, P> dependentResource;
 
   DependentResourceNode(DependentResource<R, P> dependentResource) {
@@ -25,12 +25,12 @@ public class DependentResourceNode<R, P extends HasMetadata> {
 
   public DependentResourceNode(String name, Condition<R, P> reconcilePrecondition,
       Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
-      Condition<R, P> platformCondition, DependentResource<R, P> dependentResource) {
+      Condition<R, P> activationCondition, DependentResource<R, P> dependentResource) {
     this.name = name;
     this.reconcilePrecondition = reconcilePrecondition;
     this.deletePostcondition = deletePostcondition;
     this.readyPostcondition = readyPostcondition;
-    this.platformCondition = platformCondition;
+    this.activationCondition = activationCondition;
     this.dependentResource = dependentResource;
   }
 
