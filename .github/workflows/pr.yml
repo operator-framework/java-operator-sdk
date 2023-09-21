@@ -35,7 +35,7 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        kubernetes: [ 'v1.25.13', 'v1.26.8', 'v1.27.5', 'v1.28.1' ]
+        kubernetes: [ 'v1.25.14', 'v1.26.9', 'v1.27.6', 'v1.28.2' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
       java-version: ${{ matrix.java }}
@@ -48,7 +48,7 @@ jobs:
     uses: ./.github/workflows/integration-tests.yml
     with:
       java-version: 17
-      kube-version: 'v1.28.1'
+      kube-version: 'v1.28.2'
       http-client: ${{ matrix.httpclient }}
       experimental: true
 
