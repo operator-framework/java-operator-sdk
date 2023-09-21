@@ -31,7 +31,7 @@ class CreateUpdateInformerEventSourceEventFilterIT {
     var createdResource =
         operator.create(resource);
 
-    assertData(operator, createdResource, 1);
+    assertData(operator, createdResource, 1, 1);
 
     CreateUpdateEventFilterTestCustomResource actualCreatedResource =
         operator.get(CreateUpdateEventFilterTestCustomResource.class,
@@ -39,11 +39,11 @@ class CreateUpdateInformerEventSourceEventFilterIT {
     actualCreatedResource.getSpec().setValue("2");
     operator.replace(actualCreatedResource);
 
-    assertData(operator, actualCreatedResource, 2);
+    assertData(operator, actualCreatedResource, 2, 2);
   }
 
   static void assertData(LocallyRunOperatorExtension operator,
-      CreateUpdateEventFilterTestCustomResource resource, int executions) {
+      CreateUpdateEventFilterTestCustomResource resource, int minExecutions, int maxExecutions) {
     await()
         .atMost(Duration.ofSeconds(1))
         .until(() -> {
@@ -56,10 +56,10 @@ class CreateUpdateInformerEventSourceEventFilterIT {
               .equals(resource.getSpec().getValue());
         });
 
-    assertThat(
-        ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
-            .getNumberOfExecutions())
-        .isEqualTo(executions);
+    int numberOfExecutions = ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
+        .getNumberOfExecutions();
+    assertThat(numberOfExecutions).isGreaterThanOrEqualTo(minExecutions);
+    assertThat(numberOfExecutions).isLessThanOrEqualTo(maxExecutions);
   }
 
   static CreateUpdateEventFilterTestCustomResource prepareTestResource() {

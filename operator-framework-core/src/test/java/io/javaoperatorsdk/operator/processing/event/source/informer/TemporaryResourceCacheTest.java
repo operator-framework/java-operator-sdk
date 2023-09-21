@@ -91,12 +91,15 @@ class TemporaryResourceCacheTest {
   void resourceVersionParsing() {
     this.temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, true);
 
+    assertThat(temporaryResourceCache.isKnownResourceVersion(testResource())).isFalse();
+
     ConfigMap testResource = propagateTestResourceToCache();
 
     // an event with a newer version will not remove
-    temporaryResourceCache.onEvent(new ConfigMapBuilder(testResource()).editMetadata()
+    temporaryResourceCache.onEvent(new ConfigMapBuilder(testResource).editMetadata()
         .withResourceVersion("1").endMetadata().build(), false);
 
+    assertThat(temporaryResourceCache.isKnownResourceVersion(testResource)).isTrue();
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isPresent();
 

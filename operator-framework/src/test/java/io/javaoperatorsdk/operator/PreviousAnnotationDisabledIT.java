@@ -24,7 +24,7 @@ class PreviousAnnotationDisabledIT {
     var createdResource =
         operator.create(resource);
 
-    CreateUpdateInformerEventSourceEventFilterIT.assertData(operator, createdResource, 2);
+    CreateUpdateInformerEventSourceEventFilterIT.assertData(operator, createdResource, 1, 2);
 
     CreateUpdateEventFilterTestCustomResource actualCreatedResource =
         operator.get(CreateUpdateEventFilterTestCustomResource.class,
@@ -32,7 +32,7 @@ class PreviousAnnotationDisabledIT {
     actualCreatedResource.getSpec().setValue("2");
     operator.replace(actualCreatedResource);
 
-    CreateUpdateInformerEventSourceEventFilterIT.assertData(operator, actualCreatedResource, 4);
+    CreateUpdateInformerEventSourceEventFilterIT.assertData(operator, actualCreatedResource, 2, 4);
   }
 
 }

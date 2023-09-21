@@ -286,17 +286,17 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean previousAnnotationForDependentResources() {
+      public boolean previousAnnotationForDependentResourcesEventFiltering() {
         return previousAnnotationForDependentResources != null
             ? previousAnnotationForDependentResources
-            : super.previousAnnotationForDependentResources();
+            : super.previousAnnotationForDependentResourcesEventFiltering();
       }
 
       @Override
-      public boolean parseResourceVersions() {
+      public boolean parseResourceVersionsForEventFilteringAndCaching() {
         return parseResourceVersions != null
             ? parseResourceVersions
-            : super.parseResourceVersions();
+            : super.parseResourceVersionsForEventFilteringAndCaching();
       }
     };
   }

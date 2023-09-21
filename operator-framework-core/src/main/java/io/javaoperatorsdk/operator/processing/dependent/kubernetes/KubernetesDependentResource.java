@@ -211,7 +211,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private boolean usePreviousAnnotation(Context<P> context) {
     return context.getControllerConfiguration().getConfigurationService()
-        .previousAnnotationForDependentResources();
+        .previousAnnotationForDependentResourcesEventFiltering();
   }
 
   @Override

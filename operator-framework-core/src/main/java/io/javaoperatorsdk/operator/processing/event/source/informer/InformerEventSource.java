@@ -69,8 +69,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
     implements ResourceEventHandler<R> {
 
-  private static final int MAX_RESOURCE_VERSIONS = 256;
-
   public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
 
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
@@ -80,12 +78,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private Map<String, Function<R, List<String>>> indexerBuffer = new HashMap<>();
   private final String id = UUID.randomUUID().toString();
-  private final Set<String> knownResourceVersions;
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
     this(configuration, context.getClient(),
-        context.getControllerConfiguration().getConfigurationService().parseResourceVersions());
+        context.getControllerConfiguration().getConfigurationService()
+            .parseResourceVersionsForEventFilteringAndCaching());
   }
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
@@ -95,17 +93,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
       boolean parseResourceVersions) {
     super(client.resources(configuration.getResourceClass()), configuration, parseResourceVersions);
-    if (parseResourceVersions) {
-      knownResourceVersions = Collections.newSetFromMap(new LinkedHashMap<>() {
-        @Override
-        protected boolean removeEldestEntry(java.util.Map.Entry<String, Boolean> eldest) {
-          return size() >= MAX_RESOURCE_VERSIONS;
-        }
-      });
-    } else {
-      knownResourceVersions = null;
-    }
-
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
@@ -188,8 +175,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
-    if (knownResourceVersions != null
-        && knownResourceVersions.contains(newObject.getMetadata().getResourceVersion())) {
+    if (temporaryResourceCache.isKnownResourceVersion(newObject)) {
       return true;
     }
     var res = temporaryResourceCache.getResourceFromCache(resourceID);
@@ -285,9 +271,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    if (knownResourceVersions != null) {
-      knownResourceVersions.add(newResource.getMetadata().getResourceVersion());
-    }
     temporaryResourceCache.putResource(newResource, Optional.ofNullable(oldResource)
         .map(r -> r.getMetadata().getResourceVersion()).orElse(null));
   }
