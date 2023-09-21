@@ -1,7 +1,7 @@
-# WebServer Operator
+# WebPage Operator
 
 This is a simple example of how a Custom Resource backed by an Operator can serve as
-an abstraction layer. This Operator will use a webserver resource, which mainly contains a
+an abstraction layer. This Operator will use a WebPage resource, which mainly contains a
 static webpage definition and creates an NGINX Deployment backed by a ConfigMap which holds
 the HTML.
 
@@ -22,6 +22,16 @@ spec:
       </body>
     </html>
 ```
+
+
+### Different Flavors
+
+Sample contains three implementation, that are showcasing the different approaches possible with the framework,
+the resulting behavior is almost identical behavior at the end:
+
+- [Low level API](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageDependentsWorkflowReconciler.java)
+- [Using managed dependent resources](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java)
+- [Using standalone Dependent Resources](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java)
 
 ### Try 
 
