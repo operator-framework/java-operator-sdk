@@ -43,11 +43,14 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
+  private boolean usingCustomResourceUpdateMatcher;
+
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
 
-    updaterMatcher = this instanceof ResourceUpdaterMatcher
+    usingCustomResourceUpdateMatcher = this instanceof ResourceUpdaterMatcher;
+    updaterMatcher = usingCustomResourceUpdateMatcher
         ? (ResourceUpdaterMatcher<R>) this
         : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType);
   }
@@ -114,7 +117,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       }
     }
     addMetadata(false, null, desired, primary);
-    sanitizeDesired(desired, null, primary, context);
     final var resource = prepare(desired, primary, "Creating");
     return useSSA(context)
         ? resource
@@ -131,7 +133,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
     R updatedResource;
     addMetadata(false, actual, desired, primary);
-    sanitizeDesired(desired, actual, primary, context);
     if (useSSA(context)) {
       updatedResource = prepare(desired, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
@@ -148,7 +149,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
     final var desired = desired(primary, context);
-    sanitizeDesired(desired, actualResource, primary, context);
     return match(actualResource, desired, primary, updaterMatcher, context);
   }
 
@@ -192,11 +192,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     addReferenceHandlingMetadata(target, primary);
   }
 
-  protected void sanitizeDesired(R desired, R actual, P primary, Context<P> context) {
-    DesiredResourceSanitizer.sanitizeDesired(desired, actual, primary, context, useSSA(context));
-  }
-
   protected boolean useSSA(Context<P> context) {
+    if (usingCustomResourceUpdateMatcher) {
+      return false;
+    }
     Optional<Boolean> useSSAConfig =
         configuration().flatMap(KubernetesDependentResourceConfig::useSSA);
     var configService = context.getControllerConfiguration().getConfigurationService();

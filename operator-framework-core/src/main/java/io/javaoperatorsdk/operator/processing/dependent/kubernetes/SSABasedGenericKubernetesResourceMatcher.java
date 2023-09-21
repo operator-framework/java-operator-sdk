@@ -7,8 +7,10 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -74,6 +76,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var objectMapper = context.getClient().getKubernetesSerialization();
 
     var actualMap = objectMapper.convertValue(actual, Map.class);
+
+    sanitizeState(actual, desired, actualMap);
+
     var desiredMap = objectMapper.convertValue(desired, Map.class);
     if (LoggingUtils.isNotSensitiveResource(desired)) {
       log.trace("Original actual: \n {} \n original desired: \n {} ", actual, desiredMap);
@@ -90,6 +95,35 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
 
     return prunedActual.equals(desiredMap);
+  }
+
+  /**
+   * Correct for known issue with SSA
+   */
+  @SuppressWarnings("unchecked")
+  private void sanitizeState(R actual, R desired, Map<String, Object> actualMap) {
+    if (desired instanceof StatefulSet) {
+      StatefulSet desiredStatefulSet = (StatefulSet) desired;
+      StatefulSet actualStatefulSet = (StatefulSet) actual;
+      int claims = desiredStatefulSet.getSpec().getVolumeClaimTemplates().size();
+      if (claims == actualStatefulSet.getSpec().getVolumeClaimTemplates().size()) {
+        for (int i = 0; i < claims; i++) {
+          if (desiredStatefulSet.getSpec().getVolumeClaimTemplates().get(i).getSpec()
+              .getVolumeMode() == null) {
+            Optional
+                .ofNullable(GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates",
+                    i, "spec"))
+                .map(Map.class::cast).ifPresent(m -> m.remove("volumeMode"));
+          }
+          if (desiredStatefulSet.getSpec().getVolumeClaimTemplates().get(i).getStatus() == null) {
+            Optional
+                .ofNullable(
+                    GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates", i))
+                .map(Map.class::cast).ifPresent(m -> m.remove("status"));
+          }
+        }
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -153,8 +187,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var emptyMapValue = new HashMap<String, Object>();
     result.put(keyInActual, emptyMapValue);
     var actualMapValue = actualMap.getOrDefault(keyInActual, Collections.emptyMap());
-    log.trace("key: {} actual map value: {} managedFieldValue: {}", keyInActual,
-        actualMapValue, managedFieldValue);
+    log.debug("key: {} actual map value: managedFieldValue: {}", keyInActual, managedFieldValue);
 
     keepOnlyManagedFields(emptyMapValue, (Map<String, Object>) actualMapValue,
         (Map<String, Object>) managedFields.get(key), objectMapper);
@@ -282,29 +315,16 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
     if (possibleTargets.isEmpty()) {
       throw new IllegalStateException(
-          "Cannot find list element for key:" + key + ", in map: " + values);
+          "Cannot find list element for key:" + key + ", in map: "
+              + values.stream().map(Map::keySet).collect(Collectors.toList()));
     }
     if (possibleTargets.size() > 1) {
       throw new IllegalStateException(
-          "More targets found in list element for key:" + key + ", in map: " + values);
+          "More targets found in list element for key:" + key + ", in map: "
+              + values.stream().map(Map::keySet).collect(Collectors.toList()));
     }
     final var finalIndex = index;
-    return new Map.Entry<>() {
-      @Override
-      public Integer getKey() {
-        return finalIndex;
-      }
-
-      @Override
-      public Map<String, Object> getValue() {
-        return possibleTargets.get(0);
-      }
-
-      @Override
-      public Map<String, Object> setValue(Map<String, Object> stringObjectMap) {
-        throw new IllegalStateException("should not be called");
-      }
-    };
+    return new AbstractMap.SimpleEntry<>(finalIndex, possibleTargets.get(0));
   }
 
 
@@ -318,14 +338,14 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         .collect(Collectors.toList());
     if (targetManagedFields.isEmpty()) {
       log.debug("No field manager exists for resource {} with name: {} and operation Apply ",
-          actual, actual.getMetadata().getName());
+          actual.getKind(), actual.getMetadata().getName());
       return Optional.empty();
     }
     // this should not happen in theory
     if (targetManagedFields.size() > 1) {
       throw new OperatorException(
           "More than one field manager exists with name: " + fieldManager + "in resource: " +
-              actual + " with name: " + actual.getMetadata().getName());
+              actual.getKind() + " with name: " + actual.getMetadata().getName());
     }
     return Optional.of(targetManagedFields.get(0));
   }
