@@ -87,8 +87,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
     try {
       if (parseResourceVersions
-          && Long.compare(Long.parseLong(newResource.getMetadata().getResourceVersion()),
-              Long.parseLong(cachedResource.getMetadata().getResourceVersion())) > 0) {
+          && Long.parseLong(newResource.getMetadata().getResourceVersion()) >
+              Long.parseLong(cachedResource.getMetadata().getResourceVersion())) {
         return true;
       }
     } catch (NumberFormatException e) {

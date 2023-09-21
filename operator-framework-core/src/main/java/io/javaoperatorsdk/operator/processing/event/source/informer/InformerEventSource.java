@@ -96,11 +96,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       boolean parseResourceVersions) {
     super(client.resources(configuration.getResourceClass()), configuration, parseResourceVersions);
     if (parseResourceVersions) {
-      knownResourceVersions = Collections.newSetFromMap(new LinkedHashMap<String, Boolean>() {
-        @Override
-        protected boolean removeEldestEntry(java.util.Map.Entry<String, Boolean> eldest) {
-          return size() >= MAX_RESOURCE_VERSIONS;
-        }
+      knownResourceVersions = Collections.newSetFromMap(new LinkedHashMap<>() {
+          @Override
+          protected boolean removeEldestEntry(java.util.Map.Entry<String, Boolean> eldest) {
+              return size() >= MAX_RESOURCE_VERSIONS;
+          }
       });
     } else {
       knownResourceVersions = null;
