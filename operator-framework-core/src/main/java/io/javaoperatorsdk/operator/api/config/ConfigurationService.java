@@ -364,4 +364,31 @@ public interface ConfigurationService {
     return Set.of(ConfigMap.class, Secret.class);
   }
 
+  /**
+   * If a javaoperatorsdk.io/previous annotation should be used so that the operator sdk can detect
+   * events from its own updates of dependent resources and then filter them.
+   * <p>
+   * Disable this if you want to react to your own dependent resource updates
+   *
+   * @since 4.5.0
+   */
+  default boolean previousAnnotationForDependentResourcesEventFiltering() {
+    return true;
+  }
+
+  /**
+   * If the event logic should parse the resourceVersion to determine the ordering of dependent
+   * resource events. This is typically not needed.
+   * <p>
+   * Disabled by default as Kubernetes does not support, and discourages, this interpretation of
+   * resourceVersions. Enable only if your api server event processing seems to lag the operator
+   * logic and you want to further minimize the the amount of work done / updates issued by the
+   * operator.
+   *
+   * @since 4.5.0
+   */
+  default boolean parseResourceVersionsForEventFilteringAndCaching() {
+    return false;
+  }
+
 }
