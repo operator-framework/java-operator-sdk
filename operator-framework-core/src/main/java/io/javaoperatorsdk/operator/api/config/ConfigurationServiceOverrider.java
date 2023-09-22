@@ -37,6 +37,8 @@ public class ConfigurationServiceOverrider {
   private ResourceClassResolver resourceClassResolver;
   private Boolean ssaBasedCreateUpdateMatchForDependentResources;
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
+  private Boolean previousAnnotationForDependentResources;
+  private Boolean parseResourceVersions;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -158,6 +160,18 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResources(
+      boolean value) {
+    this.previousAnnotationForDependentResources = value;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider wihtParseResourceVersions(
+      boolean value) {
+    this.parseResourceVersions = value;
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -269,6 +283,20 @@ public class ConfigurationServiceOverrider {
       public Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
         return defaultNonSSAResource != null ? defaultNonSSAResource
             : super.defaultNonSSAResource();
+      }
+
+      @Override
+      public boolean previousAnnotationForDependentResourcesEventFiltering() {
+        return previousAnnotationForDependentResources != null
+            ? previousAnnotationForDependentResources
+            : super.previousAnnotationForDependentResourcesEventFiltering();
+      }
+
+      @Override
+      public boolean parseResourceVersionsForEventFilteringAndCaching() {
+        return parseResourceVersions != null
+            ? parseResourceVersions
+            : super.parseResourceVersionsForEventFilteringAndCaching();
       }
     };
   }
