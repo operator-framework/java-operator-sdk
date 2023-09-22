@@ -81,12 +81,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration, context.getClient());
+    this(configuration, context.getClient(),
+        context.getControllerConfiguration().getConfigurationService()
+            .parseResourceVersionsForEventFilteringAndCaching());
   }
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
-    super(client.resources(configuration.getResourceClass()), configuration);
+    this(configuration, client, false);
+  }
 
+  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
+      boolean parseResourceVersions) {
+    super(client.resources(configuration.getResourceClass()), configuration, parseResourceVersions);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
@@ -169,6 +175,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
+    if (temporaryResourceCache.isKnownResourceVersion(newObject)) {
+      return true;
+    }
     var res = temporaryResourceCache.getResourceFromCache(resourceID);
     if (res.isEmpty()) {
       return isEventKnownFromAnnotation(newObject, oldObject);
@@ -274,7 +283,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public boolean allowsNamespaceChanges() {
     return configuration().followControllerNamespaceChanges();
   }
-
 
   private boolean eventAcceptedByFilter(Operation operation, R newObject, R oldObject) {
     if (genericFilter != null && !genericFilter.accept(newObject)) {

@@ -119,7 +119,7 @@ class InformerEventSourceTest {
     informerEventSource.onUpdate(cachedDeployment, testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(1)).removeResourceFromCache(any());
+    verify(temporaryResourceCacheMock, times(1)).onEvent(testDeployment(), false);
   }
 
   @Test
