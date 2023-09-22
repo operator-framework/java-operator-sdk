@@ -42,26 +42,27 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   protected MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
 
   protected ManagedInformerEventSource(
-      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration) {
+      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration,
+      boolean parseResourceVersions) {
     super(configuration.getResourceClass());
     this.client = client;
-    temporaryResourceCache = new TemporaryResourceCache<>(this);
+    temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
     this.cache = new InformerManager<>(client, configuration, this);
   }
 
   @Override
   public void onAdd(R resource) {
-    temporaryResourceCache.removeResourceFromCache(resource);
+    temporaryResourceCache.onEvent(resource, false);
   }
 
   @Override
   public void onUpdate(R oldObj, R newObj) {
-    temporaryResourceCache.removeResourceFromCache(newObj);
+    temporaryResourceCache.onEvent(newObj, false);
   }
 
   @Override
   public void onDelete(R obj, boolean deletedFinalStateUnknown) {
-    temporaryResourceCache.removeResourceFromCache(obj);
+    temporaryResourceCache.onEvent(obj, deletedFinalStateUnknown);
   }
 
   protected InformerManager<R, C> manager() {
@@ -127,6 +128,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     this.temporaryResourceCache = temporaryResourceCache;
   }
 
+  @Override
   public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
     cache.addIndexers(indexers);
   }
