@@ -84,11 +84,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unchecked")
   private SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
-    if (this instanceof SecondaryToPrimaryMapper && useAnnotationsToIdentifyPrimary()) {
+    if (this instanceof SecondaryToPrimaryMapper && useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return (SecondaryToPrimaryMapper<R>) this;
     } else if (garbageCollected) {
       return Mappers.fromOwnerReference();
-    } else if (useAnnotationsToIdentifyPrimary()) {
+    } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return Mappers.fromDefaultAnnotations();
     } else {
       throw new OperatorException("Provide a SecondaryToPrimaryMapper to associate " +
@@ -238,7 +238,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected void addReferenceHandlingMetadata(R desired, P primary) {
     if (addOwnerReference()) {
       desired.addOwnerReference(primary);
-    } else if (useAnnotationsToIdentifyPrimary()) {
+    } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       addSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
   }
@@ -269,7 +269,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return eventSource().orElseThrow();
   }
 
-  private boolean useAnnotationsToIdentifyPrimary() {
+  private boolean useNonOwnerRefBasedSecondaryToPrimaryMapping() {
     return !garbageCollected && isCreatable();
   }
 
