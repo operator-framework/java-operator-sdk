@@ -40,7 +40,7 @@ class DependentCustomMappingAnnotationIT {
 
     extension.delete(cr);
 
-    await().untilAsserted(()->{
+    await().untilAsserted(() -> {
       var resource = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(resource).isNull();
     });
@@ -51,10 +51,10 @@ class DependentCustomMappingAnnotationIT {
       var resource = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(resource).isNotNull();
       assertThat(resource.getMetadata().getAnnotations())
-              .containsKey(CUSTOM_NAME_KEY)
-              .containsKey(CUSTOM_NAMESPACE_KEY);
+          .containsKey(CUSTOM_NAME_KEY)
+          .containsKey(CUSTOM_NAMESPACE_KEY);
       assertThat(resource.getData()).containsEntry(CustomMappingConfigMapDependentResource.KEY,
-          INITIAL_VALUE);
+          val);
     });
   }
 
