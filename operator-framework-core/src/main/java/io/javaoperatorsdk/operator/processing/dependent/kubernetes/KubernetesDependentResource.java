@@ -84,7 +84,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unchecked")
   private SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
-    if (this instanceof SecondaryToPrimaryMapper && useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
+    if (this instanceof SecondaryToPrimaryMapper
+        && useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return (SecondaryToPrimaryMapper<R>) this;
     } else if (garbageCollected) {
       return Mappers.fromOwnerReference();
