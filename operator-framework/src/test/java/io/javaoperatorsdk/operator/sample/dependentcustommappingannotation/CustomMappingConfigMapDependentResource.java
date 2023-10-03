@@ -16,8 +16,12 @@ public class CustomMappingConfigMapDependentResource
     extends CRUDNoGCKubernetesDependentResource<ConfigMap, DependentCustomMappingCustomResource>
     implements SecondaryToPrimaryMapper<ConfigMap> {
 
+  public static final String CUSTOM_NAME_KEY = "customNameKey";
+  public static final String CUSTOM_NAMESPACE_KEY = "customNamespaceKey";
+  public static final String KEY = "key";
+
   private SecondaryToPrimaryMapper<ConfigMap> mapper =
-      Mappers.fromAnnotation("customNameKey", "customNamespaceKey");
+      Mappers.fromAnnotation(CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY);
 
   public CustomMappingConfigMapDependentResource() {
     super(ConfigMap.class);
@@ -31,12 +35,18 @@ public class CustomMappingConfigMapDependentResource
             .withName(primary.getMetadata().getName())
             .withNamespace(primary.getMetadata().getNamespace())
             .build())
-        .withData(Map.of("key", "val"))
+        .withData(Map.of(KEY, primary.getSpec().getValue()))
         .build();
   }
 
   @Override
   public Set<ResourceID> toPrimaryResourceIDs(ConfigMap resource) {
     return mapper.toPrimaryResourceIDs(resource);
+  }
+
+  @Override
+  protected void addSecondaryToPrimaryMapperAnnotations(ConfigMap desired,
+      DependentCustomMappingCustomResource primary) {
+    addSecondaryToPrimaryMapperAnnotations(desired, primary, CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY);
   }
 }
