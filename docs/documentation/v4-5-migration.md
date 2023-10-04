@@ -16,8 +16,11 @@ This can be turned off by feature a
 [feature flag](https://github.com/java-operator-sdk/java-operator-sdk/blob/73b1d8db926a24502c3a70da34f6bcac4f66b4eb/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L375-L375)
 if causes some issues in your use case.
 
-This functionality by default - in order to cover some corner cases - will also parse resource version. While
-this against of recommendations in Kubernetes, will work. If in some rare circumstances or some special usages
+This functionality by default - in order to cover some corner cases - will also parse resource version.
+While resource version in metadata of a Kubernetes resource should be considered as a string, it is consistently
+a monotonically increasing decimal number in the background.
+While this against of recommendations in Kubernetes helps to cover some corner cases. 
+If in some rare circumstances or some special usages
 of Kubernetes this would cause a problem, it can be turned off by the
 [following feature flag](https://github.com/java-operator-sdk/java-operator-sdk/blob/73b1d8db926a24502c3a70da34f6bcac4f66b4eb/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L390-L390).
 
