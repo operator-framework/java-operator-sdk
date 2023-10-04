@@ -88,7 +88,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       return (SecondaryToPrimaryMapper<R>) this;
     } else if (garbageCollected) {
       return Mappers.fromOwnerReference();
-    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
+    } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return Mappers.fromDefaultAnnotations();
     } else {
       throw new OperatorException("Provide a SecondaryToPrimaryMapper to associate " +
@@ -238,8 +238,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected void addReferenceHandlingMetadata(R desired, P primary) {
     if (addOwnerReference()) {
       desired.addOwnerReference(primary);
-    } else if (useDefaultAnnotationsToIdentifyPrimary()) {
-      addDefaultSecondaryToPrimaryMapperAnnotations(desired, primary);
+    } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
+      addSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
   }
 
@@ -269,17 +269,22 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return eventSource().orElseThrow();
   }
 
-  private boolean useDefaultAnnotationsToIdentifyPrimary() {
-    return !(this instanceof SecondaryToPrimaryMapper) && !garbageCollected && isCreatable();
+  private boolean useNonOwnerRefBasedSecondaryToPrimaryMapping() {
+    return !garbageCollected && isCreatable();
   }
 
-  private void addDefaultSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
+  protected void addSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
+    addSecondaryToPrimaryMapperAnnotations(desired, primary, Mappers.DEFAULT_ANNOTATION_FOR_NAME,
+        Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE);
+  }
+
+  protected void addSecondaryToPrimaryMapperAnnotations(R desired, P primary, String nameKey,
+      String namespaceKey) {
     var annotations = desired.getMetadata().getAnnotations();
-    annotations.put(Mappers.DEFAULT_ANNOTATION_FOR_NAME, primary.getMetadata().getName());
+    annotations.put(nameKey, primary.getMetadata().getName());
     var primaryNamespaces = primary.getMetadata().getNamespace();
     if (primaryNamespaces != null) {
-      annotations.put(
-          Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE, primary.getMetadata().getNamespace());
+      annotations.put(namespaceKey, primary.getMetadata().getNamespace());
     }
   }
 
