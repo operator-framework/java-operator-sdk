@@ -31,8 +31,8 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
     }
 
     @Override
-    public Set<ResourceID> toPrimaryResourceIDs(ConfigMap dependentResource) {
-      return cache.byIndex(CONFIG_MAP_RELATION_INDEXER, dependentResource.getMetadata().getName())
+    public Set<ResourceID> toPrimaryResourceIDs(ConfigMap resource) {
+      return cache.byIndex(CONFIG_MAP_RELATION_INDEXER, resource.getMetadata().getName())
           .stream()
           .map(ResourceID::fromResource)
           .collect(Collectors.toSet());
