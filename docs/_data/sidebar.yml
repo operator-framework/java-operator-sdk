@@ -31,3 +31,5 @@
     url: /docs/v4-3-migration
   - title: Migrating from v4.3 to v4.4
     url: /docs/v4-4-migration
+  - title: Migrating from v4.4 to v4.5
+    url: /docs/v4-5-migration
