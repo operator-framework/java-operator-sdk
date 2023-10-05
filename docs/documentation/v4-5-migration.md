@@ -16,18 +16,11 @@ resources. This can be turned off using a
 [feature flag](https://github.com/java-operator-sdk/java-operator-sdk/blob/73b1d8db926a24502c3a70da34f6bcac4f66b4eb/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L375-L375)
 if causes some issues in your use case.
 
-This functionality by default will also parse field `metadata.resourceVersion` of
-managed resources. Again by default just in case of Dependent Resource are used.
-
-This helps to ensure that in the cache resources are with monotonically increasing resources version,
-with all the additional consistency guarantees that mentioned features above provide.
-In other words (and more precisely) if this is not done, it can happen in rare corner cases that for a
-very short time cache will contain a resource with older version, however there was already a newer
-version present before; so resource in the cache can jump to an older version (again for a short period of time).
-Note that this will eventually resolve, so eventual consistency is guaranteed in all cases.
-
-While Kubernetes resource versions should be considered as opaque and their interpretation discouraged, Kubernetes has,
-at least so far, implemented them as a monotonically increasing integer. As a result, JOSDK will currently use
-this information to support some corner cases. Of course, should this change, JOSDK will revise its implementation.
-Also, if this interpreting of the resource versions causes issues, you can turn the feature off using the
+Using this feature, JOSDK now tracks versions of cached resources. It also uses, by default, that information to prevent
+unneeded reconciliations that could occur when, depending on the timing of operations, an outdated resource would happen
+to be in the cache. This relies on the fact that versions (as recorded by the `metadata.resourceVersion` field) are
+currently implemented as monotonically increasing integers (though they should be considered as opaque and their
+interpretation discouraged). Note that, while this helps preventing unneeded reconciliations, things would eventually
+reach consistency even in the absence of this feature. Also, if this interpreting of the resource versions causes
+issues, you can turn the feature off using the
 [following feature flag](https://github.com/java-operator-sdk/java-operator-sdk/blob/73b1d8db926a24502c3a70da34f6bcac4f66b4eb/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L390-L390).
