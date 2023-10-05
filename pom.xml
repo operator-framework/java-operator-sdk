@@ -85,6 +85,7 @@
         <module>micrometer-support</module>
         <module>sample-operators</module>
         <module>caffeine-bounded-cache-support</module>
+        <module>bootstrapper-maven-plugin</module>
     </modules>
 
 
