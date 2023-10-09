@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.sample;
+package {{groupId}};
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -12,13 +12,12 @@ import java.util.Map;
 import java.util.Optional;
 
 @ControllerConfiguration
-public class MyReconciler implements Reconciler<MyCustomResource>, EventSourceInitializer<MyCustomResource> {
+public class {{artifactClassId}}Reconciler implements Reconciler<{{artifactClassId}}CustomResource>, EventSourceInitializer<{{artifactClassId}}CustomResource> {
 
     public static final String VALUE_KEY = "value";
 
-    public UpdateControl<MyCustomResource> reconcile(MyCustomResource primary,
-                                                     Context<MyCustomResource> context) {
-
+    public UpdateControl<{{artifactClassId}}CustomResource> reconcile({{artifactClassId}}CustomResource primary,
+                                                     Context<{{artifactClassId}}CustomResource> context) {
         Optional<ConfigMap> configMap = context.getSecondaryResource(ConfigMap.class);
         configMap.ifPresentOrElse(actual -> {
             var desired = desiredConfigMap(primary);
@@ -35,7 +34,7 @@ public class MyReconciler implements Reconciler<MyCustomResource>, EventSourceIn
         return actual.getData().equals(desired.getData());
     }
 
-    private ConfigMap desiredConfigMap(MyCustomResource primary) {
+    private ConfigMap desiredConfigMap({{artifactClassId}}CustomResource primary) {
         var cm = new ConfigMapBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(primary.getMetadata().getName())
@@ -48,7 +47,7 @@ public class MyReconciler implements Reconciler<MyCustomResource>, EventSourceIn
     }
 
     @Override
-    public Map<String, EventSource> prepareEventSources(EventSourceContext<MyCustomResource> context) {
+    public Map<String, EventSource> prepareEventSources(EventSourceContext<{{artifactClassId}}CustomResource> context) {
         return EventSourceInitializer.nameEventSources(
                 new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context).build(), context));
 

@@ -1,15 +1,12 @@
-package io.javaoperatorsdk.sample;
+package {{groupId}};
 
 import io.javaoperatorsdk.operator.Operator;
 
-public class MyOperator {
-
+public class Runner {
 
     public static void main(String[] args) {
         Operator operator = new Operator();
-        operator.register(new MyReconciler());
+        operator.register(new {{artifactClassId}}Reconciler());
         operator.start();
-        System.out.println("started");
     }
-
 }

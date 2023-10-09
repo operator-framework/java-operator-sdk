@@ -1,6 +1,6 @@
-package io.javaoperatorsdk.sample;
+package {{groupId}};
 
-public class MySpec {
+public class {{artifactClassId}}Spec {
 
     private String value;
 
@@ -8,7 +8,7 @@ public class MySpec {
         return value;
     }
 
-    public MySpec setValue(String value) {
+    public {{artifactClassId}}Spec setValue(String value) {
         this.value = value;
         return this;
     }

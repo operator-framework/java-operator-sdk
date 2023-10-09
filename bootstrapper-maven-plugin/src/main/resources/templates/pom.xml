@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.javaoperatorsdk</groupId>
-    <artifactId>sample-webpage-operator</artifactId>
+    <groupId>{{groupId}}</groupId>
+    <artifactId>{{artifactId}}</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>sample-webpage-operator</name>
     <packaging>jar</packaging>
@@ -15,6 +15,13 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <jib-maven-plugin.version>3.4.0</jib-maven-plugin.version>
+<!--    todo dynamically update version   -->
+        <josdk.version>4.4.4</josdk.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <junit.version>5.9.2</junit.version>
+        <log4j.version>2.20.0</log4j.version>
+<!--    todo generate version   -->
+        <fabric8-client.version>6.7.2</fabric8-client.version>
     </properties>
 
     <dependencyManagement>
@@ -22,7 +29,7 @@
             <dependency>
                 <groupId>io.javaoperatorsdk</groupId>
                 <artifactId>operator-framework-bom</artifactId>
-                <version>${project.version}</version>
+                <version>${josdk.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -33,24 +40,39 @@
         <dependency>
             <groupId>io.javaoperatorsdk</groupId>
             <artifactId>operator-framework</artifactId>
+            <version>${josdk.version}</version>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-apt</artifactId>
+            <version>${fabric8-client.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.javaoperatorsdk</groupId>
             <artifactId>operator-framework-junit-5</artifactId>
+            <version>${josdk.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -64,8 +86,7 @@
                         <image>gcr.io/distroless/java:11</image>
                     </from>
                     <to>
-<!--                     todo placeholder    -->
-                        <image>webpage-operator</image>
+                        <image>{{artifactId}}</image>
                     </to>
                 </configuration>
             </plugin>
