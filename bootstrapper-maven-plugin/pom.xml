@@ -10,7 +10,8 @@
 
   <artifactId>bootstrapper-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <name>boostrapping-maven-plugin Maven Mojo</name>
+  <name>Operator SDK - Bootstrapper Maven Plugin</name>
+  <description>Operator SDK - Bootstrapper Maven Plugin</description>
 
   <properties>
     <java.version>11</java.version>
@@ -52,6 +53,11 @@
       <groupId>com.github.spullara.mustache.java</groupId>
       <artifactId>compiler</artifactId>
       <version>0.9.10</version>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
