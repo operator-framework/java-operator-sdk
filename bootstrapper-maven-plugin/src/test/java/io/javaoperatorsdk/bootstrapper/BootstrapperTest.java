@@ -1,8 +1,10 @@
-package io.javaoperatorsdk;
+package io.javaoperatorsdk.bootstrapper;
 
 import java.io.File;
 
 import org.junit.jupiter.api.Test;
+
+import io.javaoperatorsdk.boostrapper.Bootstrapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

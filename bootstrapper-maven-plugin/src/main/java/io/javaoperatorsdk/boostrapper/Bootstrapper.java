@@ -1,4 +1,4 @@
-package io.javaoperatorsdk;
+package io.javaoperatorsdk.boostrapper;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -9,11 +9,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.bootstrapper.Versions;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.MustacheFactory;
 
 public class Bootstrapper {
+
+  private static final Logger log = LoggerFactory.getLogger(Bootstrapper.class);
 
   private MustacheFactory mustacheFactory = new DefaultMustacheFactory();
 
@@ -27,11 +33,23 @@ public class Bootstrapper {
 
   public void create(File targetDir, String groupId, String artifactId) {
     try {
+      log.info("Generating project to: {}", targetDir.getPath());
       var projectDir = new File(targetDir, artifactId);
       FileUtils.forceMkdir(projectDir);
       addStaticFiles(projectDir);
       addTemplatedFiles(projectDir, groupId, artifactId);
       addJavaFiles(projectDir, groupId, artifactId);
+      addResourceFiles(projectDir, groupId, artifactId);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void addResourceFiles(File projectDir, String groupId, String artifactId) {
+    try {
+      var target = new File(projectDir, "src/main/resources");
+      FileUtils.forceMkdir(target);
+      addTemplatedFile(target, "log4j2.xml", groupId, artifactId, target, null);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -47,7 +65,7 @@ public class Bootstrapper {
           classFileNamePrefix + f));
 
       addTemplatedFile(projectDir, "Runner.java", groupId, artifactId, targetDir,
-          "Runner.java");
+          null);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -68,7 +86,9 @@ public class Bootstrapper {
       File targetDir, String targetFileName) {
     try {
       var values = Map.of("groupId", groupId, "artifactId", artifactId,
-          "artifactClassId", artifactClassId(artifactId));
+          "artifactClassId", artifactClassId(artifactId),
+          "josdkVersion", Versions.JOSDK,
+          "fabric8Version", Versions.KUBERNETES_CLIENT);
 
       var mustache = mustacheFactory.compile("templates/" + fileName);
       var targetFile = new File(targetDir == null ? projectDir : targetDir,
