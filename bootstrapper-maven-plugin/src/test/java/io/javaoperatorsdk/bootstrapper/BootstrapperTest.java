@@ -39,7 +39,7 @@ class BootstrapperTest {
       Files.setPosixFilePermissions(Path.of(mvnwPath), Set.of(PosixFilePermission.OWNER_READ,
           PosixFilePermission.OWNER_EXECUTE));
       var process = Runtime.getRuntime()
-          .exec(mvnwPath + " clean install -f target/test-project/pom.xml");
+          .exec(mvnwPath + " -X clean install -f target/test-project/pom.xml");
 
       BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
