@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 
 /**
  * Handles external resources where in order to address the resource additional information or
@@ -14,7 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesCl
  * for a resource that extends {@link AbstractExternalDependentResource}.
  */
 public interface DependentResourceWithExplicitState<R, P extends HasMetadata, S extends HasMetadata>
-    extends Creator<R, P>, Deleter<P>, KubernetesClientAware {
+    extends Creator<R, P>, Deleter<P> {
 
   /**
    * Only needs to be implemented if multiple event sources are present for the target resource

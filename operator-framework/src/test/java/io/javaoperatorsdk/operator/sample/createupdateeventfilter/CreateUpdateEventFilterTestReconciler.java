@@ -7,15 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -23,8 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 @ControllerConfiguration
 public class CreateUpdateEventFilterTestReconciler
     implements Reconciler<CreateUpdateEventFilterTestCustomResource>,
-    EventSourceInitializer<CreateUpdateEventFilterTestCustomResource>,
-    KubernetesClientAware {
+    EventSourceInitializer<CreateUpdateEventFilterTestCustomResource> {
 
   private static final class DirectConfigMapDependentResource
       extends
@@ -50,7 +42,6 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   public static final String CONFIG_MAP_TEST_DATA_KEY = "key";
-  private KubernetesClient client;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerEventSource;
   private DirectConfigMapDependentResource configMapDR =
@@ -63,7 +54,7 @@ public class CreateUpdateEventFilterTestReconciler
     numberOfExecutions.incrementAndGet();
 
     ConfigMap configMap =
-        client
+        context.getClient()
             .configMaps()
             .inNamespace(resource.getMetadata().getNamespace())
             .withName(resource.getMetadata().getName())
@@ -103,23 +94,10 @@ public class CreateUpdateEventFilterTestReconciler
         InformerConfiguration.from(ConfigMap.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
-    informerEventSource =
-        new InformerEventSource<>(informerConfiguration, client);
-
-    this.configMapDR.setKubernetesClient(context.getClient());
+    informerEventSource = new InformerEventSource<>(informerConfiguration, context.getClient());
     this.configMapDR.setEventSource(informerEventSource);
 
     return EventSourceInitializer.nameEventSources(informerEventSource);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
   }
 
   public int getNumberOfExecutions() {

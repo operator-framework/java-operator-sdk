@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
@@ -19,7 +18,6 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher.GenericResourceUpdaterMatcher;
@@ -33,17 +31,16 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
     converter = KubernetesDependentConverter.class)
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
-    implements KubernetesClientAware,
-    DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
+    implements DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
-  protected KubernetesClient client;
+  // protected KubernetesClient client;
   private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
-  private boolean usingCustomResourceUpdateMatcher;
+  private final boolean usingCustomResourceUpdateMatcher;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -117,7 +114,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       }
     }
     addMetadata(false, null, desired, primary, context);
-    final var resource = prepare(desired, primary, "Creating");
+    final var resource = prepare(context, desired, primary, "Creating");
     return useSSA(context)
         ? resource
             .fieldManager(context.getControllerConfiguration().fieldManager())
@@ -134,12 +131,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     R updatedResource;
     addMetadata(false, actual, desired, primary, context);
     if (useSSA(context)) {
-      updatedResource = prepare(desired, primary, "Updating")
+      updatedResource = prepare(context, desired, primary, "Updating")
           .fieldManager(context.getControllerConfiguration().fieldManager())
           .forceConflicts().serverSideApply();
     } else {
       var updatedActual = updaterMatcher.updateResource(actual, desired, context);
-      updatedResource = prepare(updatedActual, primary, "Updating").update();
+      updatedResource = prepare(context, updatedActual, primary, "Updating").update();
     }
     log.debug("Resource version after update: {}",
         updatedResource.getMetadata().getResourceVersion());
@@ -216,23 +213,23 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   protected void handleDelete(P primary, R secondary, Context<P> context) {
     if (secondary != null) {
-      client.resource(secondary).delete();
+      context.getClient().resource(secondary).delete();
     }
   }
 
   @SuppressWarnings("unused")
   public void deleteTargetResource(P primary, R resource, String key, Context<P> context) {
-    client.resource(resource).delete();
+    context.getClient().resource(resource).delete();
   }
 
   @SuppressWarnings("unused")
-  protected Resource<R> prepare(R desired, P primary, String actionName) {
+  protected Resource<R> prepare(Context<P> context, R desired, P primary, String actionName) {
     log.debug("{} target resource with type: {}, with id: {}",
         actionName,
         desired.getClass(),
         ResourceID.fromResource(desired));
 
-    return client.resource(desired);
+    return context.getClient().resource(desired);
   }
 
   protected void addReferenceHandlingMetadata(R desired, P primary) {
@@ -290,16 +287,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected boolean addOwnerReference() {
     return garbageCollected;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
   }
 
   @Override

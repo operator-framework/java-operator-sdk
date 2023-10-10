@@ -4,10 +4,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -16,8 +14,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration
 public class MultipleDependentResourceReconciler
     implements Reconciler<MultipleDependentResourceCustomResource>,
-    TestExecutionInfoProvider, EventSourceInitializer<MultipleDependentResourceCustomResource>,
-    KubernetesClientAware {
+    TestExecutionInfoProvider, EventSourceInitializer<MultipleDependentResourceCustomResource> {
 
   public static final int FIRST_CONFIG_MAP_ID = 1;
   public static final int SECOND_CONFIG_MAP_ID = 2;
@@ -25,7 +22,6 @@ public class MultipleDependentResourceReconciler
 
   private final MultipleDependentResourceConfigMap firstDependentResourceConfigMap;
   private final MultipleDependentResourceConfigMap secondDependentResourceConfigMap;
-  private KubernetesClient client;
 
   public MultipleDependentResourceReconciler() {
     firstDependentResourceConfigMap = new MultipleDependentResourceConfigMap(FIRST_CONFIG_MAP_ID);
@@ -69,17 +65,5 @@ public class MultipleDependentResourceReconciler
     secondDependentResourceConfigMap.configureWith(eventSource);
 
     return EventSourceInitializer.nameEventSources(eventSource);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
-    firstDependentResourceConfigMap.setKubernetesClient(kubernetesClient);
-    secondDependentResourceConfigMap.setKubernetesClient(kubernetesClient);
   }
 }

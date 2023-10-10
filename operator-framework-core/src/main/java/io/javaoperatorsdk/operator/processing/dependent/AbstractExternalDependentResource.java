@@ -65,14 +65,13 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   @SuppressWarnings({"unchecked", "unused"})
   private void handleExplicitStateDelete(P primary, R secondary, Context<P> context) {
     var res = dependentResourceWithExplicitState.stateResource(primary, secondary);
-    dependentResourceWithExplicitState.getKubernetesClient().resource(res).delete();
+    context.getClient().resource(res).delete();
   }
 
   @SuppressWarnings({"rawtypes", "unchecked", "unused"})
   protected void handleExplicitStateCreation(P primary, R created, Context<P> context) {
     var resource = dependentResourceWithExplicitState.stateResource(primary, created);
-    var stateResource =
-        dependentResourceWithExplicitState.getKubernetesClient().resource(resource).create();
+    var stateResource = context.getClient().resource(resource).create();
     if (externalStateEventSource != null) {
       ((RecentOperationCacheFiller) externalStateEventSource)
           .handleRecentResourceCreate(ResourceID.fromResource(primary), stateResource);

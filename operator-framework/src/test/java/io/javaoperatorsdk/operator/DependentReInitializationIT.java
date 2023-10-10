@@ -31,7 +31,7 @@ class DependentReInitializationIT {
     Operator o1 = new Operator(o -> o
         .withCloseClientOnStop(false)
         .withKubernetesClient(client));
-    o1.register(new DependentReInitializationReconciler(dependent, client));
+    o1.register(new DependentReInitializationReconciler(dependent));
     o1.start();
     o1.stop();
   }

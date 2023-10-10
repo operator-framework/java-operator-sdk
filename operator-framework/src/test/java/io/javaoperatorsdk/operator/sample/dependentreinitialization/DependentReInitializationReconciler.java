@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample.dependentreinitialization;
 
 import java.util.Map;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -13,10 +12,8 @@ public class DependentReInitializationReconciler
 
   private final ConfigMapDependentResource configMapDependentResource;
 
-  public DependentReInitializationReconciler(ConfigMapDependentResource dependentResource,
-      KubernetesClient client) {
+  public DependentReInitializationReconciler(ConfigMapDependentResource dependentResource) {
     this.configMapDependentResource = dependentResource;
-    this.configMapDependentResource.setKubernetesClient(client);
   }
 
   @Override
