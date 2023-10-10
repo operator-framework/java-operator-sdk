@@ -1,18 +1,12 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.Arrays;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
@@ -31,16 +25,23 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 public class WebPageStandaloneDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(WebPageStandaloneDependentsReconciler.class);
+  private final ConfigMapDependentResource configMapDR;
+  private final DeploymentDependentResource deploymentDR;
+  private final ServiceDependentResource serviceDR;
+  private final IngressDependentResource ingressDR;
+  @SuppressWarnings("rawtypes")
+  public static final KubernetesDependentResourceConfig config =
+      new KubernetesDependentResourceConfigBuilder().withLabelSelector(SELECTOR + "=true").build();
 
-  private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
-  private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
-  private KubernetesDependentResource<Service, WebPage> serviceDR;
-  private KubernetesDependentResource<Ingress, WebPage> ingressDR;
-
-  public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
-    createDependentResources(kubernetesClient);
+  public WebPageStandaloneDependentsReconciler(KubernetesClient client) {
+    this.configMapDR = new ConfigMapDependentResource();
+    configureDR(configMapDR, client);
+    this.deploymentDR = new DeploymentDependentResource();
+    configureDR(deploymentDR, client);
+    this.serviceDR = new ServiceDependentResource();
+    configureDR(serviceDR, client);
+    this.ingressDR = new IngressDependentResource();
+    configureDR(ingressDR, client);
   }
 
   @Override
@@ -58,8 +59,9 @@ public class WebPageStandaloneDependentsReconciler
       return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
     }
 
-    Arrays.asList(configMapDR, deploymentDR, serviceDR)
-        .forEach(dr -> dr.reconcile(webPage, context));
+    configMapDR.reconcile(webPage, context);
+    deploymentDR.reconcile(webPage, context);
+    serviceDR.reconcile(webPage, context);
 
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       ingressDR.reconcile(webPage, context);
@@ -79,19 +81,9 @@ public class WebPageStandaloneDependentsReconciler
     return handleError(resource, e);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private void createDependentResources(KubernetesClient client) {
-    this.configMapDR = new ConfigMapDependentResource();
-    this.deploymentDR = new DeploymentDependentResource();
-    this.serviceDR = new ServiceDependentResource();
-    this.ingressDR = new IngressDependentResource();
-
-    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
-      dr.setKubernetesClient(client);
-      dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-          .withLabelSelector(SELECTOR + "=true").build());
-    });
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private void configureDR(KubernetesDependentResource dr, KubernetesClient client) {
+    dr.configureWith(config);
+    dr.setKubernetesClient(client);
   }
-
-
 }
