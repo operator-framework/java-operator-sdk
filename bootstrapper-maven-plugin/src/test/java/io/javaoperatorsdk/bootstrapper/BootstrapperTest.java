@@ -34,11 +34,6 @@ class BootstrapperTest {
 
   private void assertProjectCompiles() {
     try {
-
-      log.info("files: {}", new File(
-          "/home/runner/.m2/repository/io/javaoperatorsdk/operator-framework-bom/4.5.0-SNAPSHOT")
-          .list());
-
       var mvnwPath = "./target/test-project/mvnw";
 
       Files.setPosixFilePermissions(Path.of(mvnwPath), Set.of(PosixFilePermission.OWNER_READ,
