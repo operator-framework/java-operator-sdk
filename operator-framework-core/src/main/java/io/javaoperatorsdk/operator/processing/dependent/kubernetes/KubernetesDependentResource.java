@@ -34,8 +34,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     implements DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
-
-  // protected KubernetesClient client;
   private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
