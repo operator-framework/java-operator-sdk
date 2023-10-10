@@ -34,12 +34,15 @@ class BootstrapperTest {
 
   private void assertProjectCompiles() {
     try {
+
+      log.info("files: {}", new File("/home/runner/.m2").list());
+
       var mvnwPath = "./target/test-project/mvnw";
 
       Files.setPosixFilePermissions(Path.of(mvnwPath), Set.of(PosixFilePermission.OWNER_READ,
           PosixFilePermission.OWNER_EXECUTE));
       var process = Runtime.getRuntime()
-          .exec(mvnwPath + " -X clean install -f target/test-project/pom.xml");
+          .exec(mvnwPath + "  clean install -f target/test-project/pom.xml");
 
       BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
