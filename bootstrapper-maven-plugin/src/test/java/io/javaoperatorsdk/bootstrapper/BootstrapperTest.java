@@ -41,12 +41,12 @@ class BootstrapperTest {
       var process = Runtime.getRuntime()
           .exec(mvnwPath + " -X clean install -f target/test-project/pom.xml");
 
-      BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getInputStream()));
+      BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
       log.info("Maven output:");
       String logLine;
-      while ((logLine = stdError.readLine()) != null) {
-        System.out.println(logLine);
+      while ((logLine = stdOut.readLine()) != null) {
+        log.info(logLine);
       }
       var res = process.waitFor();
       log.info("exit code: {}", res);
