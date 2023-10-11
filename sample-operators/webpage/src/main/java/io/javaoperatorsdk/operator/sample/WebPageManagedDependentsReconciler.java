@@ -15,7 +15,8 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
  */
 @ControllerConfiguration(
     dependents = {
-        @Dependent(type = ConfigMapDependentResource.class),
+        @Dependent(type = ConfigMapDependentResource.class,
+            name = WebPageManagedDependentsReconciler.CONFIG_MAP_DEPENDENT),
         @Dependent(type = DeploymentDependentResource.class),
         @Dependent(type = ServiceDependentResource.class),
         @Dependent(type = IngressDependentResource.class,
@@ -25,6 +26,7 @@ public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, Cleaner<WebPage> {
 
   public static final String SELECTOR = "managed";
+  public static final String CONFIG_MAP_DEPENDENT = "configMapDependentName";
 
   @Override
   public ErrorStatusUpdateControl<WebPage> updateErrorStatus(WebPage resource,

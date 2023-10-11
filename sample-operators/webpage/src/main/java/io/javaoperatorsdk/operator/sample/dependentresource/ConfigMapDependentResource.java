@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample.dependentresource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,8 +11,14 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
@@ -31,6 +38,7 @@ public class ConfigMapDependentResource
 
   @Override
   protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {
+    log.info("custom value: {}", ((MyConfig) configuration().orElseThrow()).getCustomValue());
     Map<String, String> data = new HashMap<>();
     data.put("index.html", webPage.getSpec().getHtml());
     Map<String, String> labels = new HashMap<>();
@@ -63,4 +71,34 @@ public class ConfigMapDependentResource
         .delete();
     return res;
   }
+
+  public static class MyConfig extends KubernetesDependentResourceConfig<ConfigMap> {
+
+    public MyConfig(String customValue) {
+      this.customValue = customValue;
+    }
+
+    public MyConfig() {}
+
+    public MyConfig(Set<String> namespaces, String labelSelector,
+        boolean configuredNS, ResourceDiscriminator<ConfigMap, ?> resourceDiscriminator,
+        OnAddFilter<ConfigMap> onAddFilter, OnUpdateFilter<ConfigMap> onUpdateFilter,
+        OnDeleteFilter<ConfigMap> onDeleteFilter, GenericFilter<ConfigMap> genericFilter,
+        String customValue) {
+      super(namespaces, labelSelector, configuredNS, resourceDiscriminator, onAddFilter,
+          onUpdateFilter, onDeleteFilter, genericFilter);
+      this.customValue = customValue;
+    }
+
+    private String customValue;
+
+    public String getCustomValue() {
+      return customValue;
+    }
+
+    public void setCustomValue(String customValue) {
+      this.customValue = customValue;
+    }
+  }
+
 }

@@ -9,10 +9,13 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.sample.dependentresource.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
 
 import com.sun.net.httpserver.HttpServer;
+
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.CONFIG_MAP_DEPENDENT;
 
 public class WebPageOperator {
   public static final String WEBPAGE_RECONCILER_ENV = "WEBPAGE_RECONCILER";
@@ -35,7 +38,11 @@ public class WebPageOperator {
       operator.register(new WebPageReconciler(client));
     } else if (WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE
         .equals(reconcilerEnvVar)) {
-      operator.register(new WebPageManagedDependentsReconciler());
+      operator.register(new WebPageManagedDependentsReconciler(), o -> {
+        o.replacingNamedDependentResourceConfig(CONFIG_MAP_DEPENDENT,
+            new ConfigMapDependentResource.MyConfig("customValue"));
+      });
+
     } else {
       operator.register(new WebPageStandaloneDependentsReconciler(client));
     }
