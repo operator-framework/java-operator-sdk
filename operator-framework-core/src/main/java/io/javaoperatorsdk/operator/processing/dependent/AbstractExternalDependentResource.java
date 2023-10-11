@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
@@ -18,7 +17,6 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   @SuppressWarnings("rawtypes")
   private DependentResourceWithExplicitState dependentResourceWithExplicitState;
   private InformerEventSource<?, P> externalStateEventSource;
-  private KubernetesClient kubernetesClient;
 
   @SuppressWarnings("unchecked")
   protected AbstractExternalDependentResource(Class<R> resourceType) {
@@ -83,7 +81,7 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   public void deleteTargetResource(P primary, R resource, String key,
       Context<P> context) {
     if (isDependentResourceWithExplicitState) {
-      getKubernetesClient()
+      context.getClient()
           .resource(dependentResourceWithExplicitState.stateResource(primary, resource))
           .delete();
     }
@@ -98,19 +96,5 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   @SuppressWarnings("rawtypes")
   protected InformerEventSource getExternalStateEventSource() {
     return externalStateEventSource;
-  }
-
-  /**
-   * It's here just to manage the explicit state resource in case the dependent resource implements
-   * {@link RecentOperationCacheFiller}.
-   *
-   * @return kubernetes client.
-   */
-  public KubernetesClient getKubernetesClient() {
-    return kubernetesClient;
-  }
-
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
   }
 }
