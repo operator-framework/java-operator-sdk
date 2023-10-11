@@ -8,7 +8,7 @@ public class {{artifactClassId}}Spec {
         return value;
     }
 
-    public {{artifactClassId}}Spec setValue(String value) {
+    public void setValue(String value) {
         this.value = value;
         return this;
     }

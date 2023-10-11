@@ -14,11 +14,10 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <jib-maven-plugin.version>3.4.0</jib-maven-plugin.version>
         <josdk.version>{{josdkVersion}}</josdk.version>
         <slf4j.version>1.7.36</slf4j.version>
         <junit.version>5.9.2</junit.version>
-        <log4j.version>2.20.0</log4j.version>
+        <log4j.version>2.20.0</log4j.version>t
         <fabric8-client.version>{{fabric8Version}}</fabric8-client.version>
     </properties>
 
@@ -82,19 +81,6 @@
     </dependencies>
     <build>
         <plugins>
-            <plugin>
-                <groupId>com.google.cloud.tools</groupId>
-                <artifactId>jib-maven-plugin</artifactId>
-                <version>${jib-maven-plugin.version}</version>
-                <configuration>
-                    <from>
-                        <image>gcr.io/distroless/java:11</image>
-                    </from>
-                    <to>
-                        <image>{{artifactId}}</image>
-                    </to>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
