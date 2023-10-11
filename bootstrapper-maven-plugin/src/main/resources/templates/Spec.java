@@ -10,6 +10,5 @@ public class {{artifactClassId}}Spec {
 
     public void setValue(String value) {
         this.value = value;
-        return this;
     }
 }
