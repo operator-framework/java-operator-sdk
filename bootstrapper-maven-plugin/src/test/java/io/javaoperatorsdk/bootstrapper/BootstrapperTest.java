@@ -4,10 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -34,12 +30,8 @@ class BootstrapperTest {
 
   private void assertProjectCompiles() {
     try {
-      var mvnwPath = "./target/test-project/mvnw";
-
-      Files.setPosixFilePermissions(Path.of(mvnwPath), Set.of(PosixFilePermission.OWNER_READ,
-          PosixFilePermission.OWNER_EXECUTE));
       var process = Runtime.getRuntime()
-          .exec(mvnwPath + " -X clean install -f target/test-project/pom.xml");
+          .exec("mvn clean install -f target/test-project/pom.xml");
 
       BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
 

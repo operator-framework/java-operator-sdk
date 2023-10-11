@@ -24,9 +24,7 @@ public class Bootstrapper {
   private MustacheFactory mustacheFactory = new DefaultMustacheFactory();
 
   private static final List<String> TOP_LEVEL_STATIC_FILES =
-      List.of(".gitignore", "mvnw", "mvnw.cmd", "README.md");
-  private static final List<String> MVN_WRAPPER_STATIC_FILES =
-      List.of(".gitignore", "maven-wrapper.properties", "MavenWrapperDownloader.java");
+      List.of(".gitignore", "README.md");
   private static final List<String> JAVA_FILES =
       List.of("CustomResource.java", "Reconciler.java",
           "Spec.java", "Status.java");
@@ -104,7 +102,6 @@ public class Bootstrapper {
 
   private void addStaticFiles(File projectDir) {
     TOP_LEVEL_STATIC_FILES.forEach(f -> addStaticFile(projectDir, f));
-    MVN_WRAPPER_STATIC_FILES.forEach(f -> addStaticFile(projectDir, f, ".mvn/wrapper/"));
   }
 
   private void addStaticFile(File targetDir, String fileName) {
