@@ -23,8 +23,8 @@ jobs:
           distribution: temurin
           java-version: 11
           cache: 'maven'
-      - name: Run unit tests
-        run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
+      - name: Build and test project
+        run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml
   release-snapshot:
     runs-on: ubuntu-latest
     needs: test
