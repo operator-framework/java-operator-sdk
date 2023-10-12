@@ -152,10 +152,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         applyCrd(config.getResourceTypeName());
       }
 
-      if (ref.reconciler instanceof KubernetesClientAware) {
-        ((KubernetesClientAware) ref.reconciler).setKubernetesClient(kubernetesClient);
-      }
-
       var registeredController = this.operator.register(ref.reconciler, oconfig.build());
       registeredControllers.put(ref.reconciler, registeredController);
     }

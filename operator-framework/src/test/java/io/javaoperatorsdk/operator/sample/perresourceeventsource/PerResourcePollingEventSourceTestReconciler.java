@@ -6,23 +6,18 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
 @ControllerConfiguration
 public class PerResourcePollingEventSourceTestReconciler
     implements Reconciler<PerResourceEventSourceCustomResource>,
-    EventSourceInitializer<PerResourceEventSourceCustomResource>,
-    KubernetesClientAware {
+    EventSourceInitializer<PerResourceEventSourceCustomResource> {
 
   public static final int POLL_PERIOD = 100;
   private final Map<String, Integer> numberOfExecutions = new ConcurrentHashMap<>();
   private final Map<String, Integer> numberOfFetchExecutions = new ConcurrentHashMap<>();
-
-  private KubernetesClient client;
 
   @Override
   public UpdateControl<PerResourceEventSourceCustomResource> reconcile(
@@ -44,16 +39,6 @@ public class PerResourcePollingEventSourceTestReconciler
         },
             context, Duration.ofMillis(POLL_PERIOD), String.class);
     return EventSourceInitializer.nameEventSources(eventSource);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
   }
 
   public int getNumberOfExecutions(String name) {
