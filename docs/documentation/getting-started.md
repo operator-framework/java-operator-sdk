@@ -25,6 +25,14 @@ You can also refer to the
 [Writing Kubernetes operators using JOSDK blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk)
 .
 
+## Generating Project Skeleton
+
+Project includes a maven plugin to generate a skeleton project:
+
+```shell
+mvn io.javaoperatorsdk:bootstrapper:[version]:create -DprojectGroupId=org.acme -DprojectArtifactId=getting-started
+```
+
 ## Getting Started
 
 The easiest way to get started with SDK is to start
