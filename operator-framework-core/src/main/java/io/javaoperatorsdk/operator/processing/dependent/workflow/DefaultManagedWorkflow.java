@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
@@ -101,6 +102,10 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     final DependentResource<R, P> dependentResource =
         configuration.getConfigurationService().dependentResourceFactory()
             .createFrom(spec, configuration);
+
+    if (dependentResource instanceof KubernetesClientAware) {
+      ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
+    }
 
     spec.getUseEventSourceWithName()
         .ifPresent(esName -> {
