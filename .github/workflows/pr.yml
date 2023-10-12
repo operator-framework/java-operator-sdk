@@ -29,7 +29,7 @@ jobs:
           ./mvnw ${MAVEN_ARGS} formatter:validate -Dconfigfile=$PWD/contributing/eclipse-google-style.xml -pl '!operator-framework-bom' --file pom.xml
           ./mvnw ${MAVEN_ARGS} impsort:check -pl '!operator-framework-bom' --file pom.xml
       - name: Run unit tests
-        run: ./mvnw ${MAVEN_ARGS} -B test --file pom.xml
+        run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml
 
   integration_tests:
     strategy:
