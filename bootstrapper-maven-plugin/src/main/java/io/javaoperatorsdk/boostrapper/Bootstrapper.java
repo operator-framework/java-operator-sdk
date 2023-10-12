@@ -62,8 +62,9 @@ public class Bootstrapper {
       JAVA_FILES.forEach(f -> addTemplatedFile(projectDir, f, groupId, artifactId, targetDir,
           classFileNamePrefix + f));
 
-      addTemplatedFile(projectDir, "Runner.java", groupId, artifactId, targetDir,
-          null);
+      addTemplatedFile(projectDir, "Runner.java", groupId, artifactId, targetDir, null);
+      addTemplatedFile(projectDir, "ConfigMapDependentResource.java", groupId, artifactId,
+          targetDir, null);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
