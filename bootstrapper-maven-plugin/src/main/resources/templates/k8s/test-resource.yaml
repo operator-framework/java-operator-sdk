@@ -1,0 +1,6 @@
+apiVersion: {{groupId}}/v1
+kind: {{artifactClassId}}CustomResource
+metadata:
+  name: test1
+spec:
+  value: test
