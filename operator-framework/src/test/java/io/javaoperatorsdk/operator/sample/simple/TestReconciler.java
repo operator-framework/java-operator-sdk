@@ -10,17 +10,14 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class TestReconciler
     implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
-    TestExecutionInfoProvider,
-    KubernetesClientAware {
+    TestExecutionInfoProvider {
 
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
 
@@ -29,7 +26,6 @@ public class TestReconciler
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
-  private KubernetesClient kubernetesClient;
   private volatile boolean updateStatus;
   private volatile boolean patchStatus;
 
@@ -52,21 +48,11 @@ public class TestReconciler
   }
 
   @Override
-  public KubernetesClient getKubernetesClient() {
-    return kubernetesClient;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
-  }
-
-  @Override
   public DeleteControl cleanup(
       TestCustomResource resource, Context<TestCustomResource> context) {
     numberOfCleanupExecutions.incrementAndGet();
 
-    var statusDetail = kubernetesClient
+    var statusDetail = context.getClient()
         .configMaps()
         .inNamespace(resource.getMetadata().getNamespace())
         .withName(resource.getSpec().getConfigMapName())
@@ -93,7 +79,7 @@ public class TestReconciler
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");
     }
-
+    final var kubernetesClient = context.getClient();
     ConfigMap existingConfigMap =
         kubernetesClient
             .configMaps()

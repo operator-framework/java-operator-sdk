@@ -87,7 +87,6 @@ public class WebPageStandaloneDependentsReconciler
     this.ingressDR = new IngressDependentResource();
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
-      dr.setKubernetesClient(client);
       dr.configureWith(new KubernetesDependentResourceConfigBuilder()
           .withLabelSelector(SELECTOR + "=true").build());
     });

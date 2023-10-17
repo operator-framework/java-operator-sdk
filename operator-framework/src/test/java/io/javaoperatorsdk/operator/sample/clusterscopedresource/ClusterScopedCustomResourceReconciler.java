@@ -5,10 +5,8 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -16,14 +14,12 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 @ControllerConfiguration
 public class ClusterScopedCustomResourceReconciler
     implements Reconciler<ClusterScopedCustomResource>,
-    KubernetesClientAware, EventSourceInitializer<ClusterScopedCustomResource> {
+    EventSourceInitializer<ClusterScopedCustomResource> {
 
   public static final String DATA_KEY = "data-key";
 
   public static final String TEST_LABEL_VALUE = "clusterscopecrtest";
   public static final String TEST_LABEL_KEY = "test";
-
-  private KubernetesClient client;
 
   @Override
   public UpdateControl<ClusterScopedCustomResource> reconcile(
@@ -31,6 +27,7 @@ public class ClusterScopedCustomResourceReconciler
 
     var optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
 
+    final var client = context.getClient();
     optionalConfigMap.ifPresentOrElse(cm -> {
       if (!resource.getSpec().getData().equals(cm.getData().get(DATA_KEY))) {
         client.configMaps().resource(desired(resource)).replace();
@@ -53,16 +50,6 @@ public class ClusterScopedCustomResourceReconciler
         .build();
     cm.addOwnerReference(resource);
     return cm;
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
   }
 
   @Override

@@ -37,7 +37,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
   private final InformerManager<R, C> cache;
-
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
 

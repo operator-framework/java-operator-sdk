@@ -1,14 +1,8 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.restart.RestartTestCustomResource;
 import io.javaoperatorsdk.operator.sample.restart.RestartTestReconciler;
@@ -17,14 +11,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class OperatorRestartIT {
-  private final static KubernetesClient client = new KubernetesClientBuilder().build();
+
   private final static Operator operator = new Operator(o -> o.withCloseClientOnStop(false));
   private final static RestartTestReconciler reconciler = new RestartTestReconciler();
   private static int reconcileNumberBeforeStop = 0;
 
   @BeforeAll
   static void registerReconciler() {
-    LocallyRunOperatorExtension.applyCrd(RestartTestCustomResource.class, client);
+    LocallyRunOperatorExtension.applyCrd(RestartTestCustomResource.class,
+        operator.getKubernetesClient());
     operator.register(reconciler);
   }
 
@@ -41,7 +36,7 @@ class OperatorRestartIT {
   @Test
   @Order(1)
   void createResource() {
-    client.resource(testCustomResource()).createOrReplace();
+    operator.getKubernetesClient().resource(testCustomResource()).createOrReplace();
     await().untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isGreaterThan(0));
     reconcileNumberBeforeStop = reconciler.getNumberOfExecutions();
   }

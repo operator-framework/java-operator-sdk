@@ -7,10 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -19,10 +17,9 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration
 public class MultipleSecondaryEventSourceReconciler
     implements Reconciler<MultipleSecondaryEventSourceCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleSecondaryEventSourceCustomResource>, KubernetesClientAware {
+    EventSourceInitializer<MultipleSecondaryEventSourceCustomResource> {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private KubernetesClient client;
 
   @Override
   public UpdateControl<MultipleSecondaryEventSourceCustomResource> reconcile(
@@ -30,6 +27,7 @@ public class MultipleSecondaryEventSourceReconciler
       Context<MultipleSecondaryEventSourceCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
+    final var client = context.getClient();
     if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
         .withName(getName1(resource)).get() == null) {
       client.configMaps().inNamespace(resource.getMetadata().getNamespace())
@@ -93,15 +91,5 @@ public class MultipleSecondaryEventSourceReconciler
     configMap.getMetadata().setLabels(labels);
     configMap.addOwnerReference(resource);
     return configMap;
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
   }
 }

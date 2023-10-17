@@ -4,9 +4,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
@@ -14,13 +12,11 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration
 public class DependentSSAReconciler
     implements Reconciler<DependnetSSACustomResource>, TestExecutionInfoProvider,
-    KubernetesClientAware,
     EventSourceInitializer<DependnetSSACustomResource> {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   private SSAConfigMapDependent ssaConfigMapDependent = new SSAConfigMapDependent();
-  private KubernetesClient kubernetesClient;
 
   public DependentSSAReconciler() {
     this(true);
@@ -44,17 +40,6 @@ public class DependentSSAReconciler
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return kubernetesClient;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
-    ssaConfigMapDependent.setKubernetesClient(kubernetesClient);
   }
 
   @Override

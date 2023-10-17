@@ -143,10 +143,9 @@ class DependentSSAMigrationIT {
 
   private Operator createOperator(KubernetesClient client, boolean legacyDependentHandling,
       String fieldManager) {
-    Operator operator = new Operator(client,
-        o -> o.withCloseClientOnStop(false));
+    Operator operator =
+        new Operator(o -> o.withKubernetesClient(client).withCloseClientOnStop(false));
     var reconciler = new DependentSSAReconciler(!legacyDependentHandling);
-    reconciler.setKubernetesClient(client);
     operator.register(reconciler, o -> {
       o.settingNamespace(namespace);
       if (fieldManager != null) {

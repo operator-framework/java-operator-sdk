@@ -5,10 +5,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -16,11 +14,10 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 @ControllerConfiguration
 public class ChangeNamespaceTestReconciler
     implements Reconciler<ChangeNamespaceTestCustomResource>,
-    EventSourceInitializer<ChangeNamespaceTestCustomResource>, KubernetesClientAware {
+    EventSourceInitializer<ChangeNamespaceTestCustomResource> {
 
   private final ConcurrentHashMap<ResourceID, Integer> numberOfResourceReconciliations =
       new ConcurrentHashMap<>();
-  private KubernetesClient client;
 
   @Override
   public Map<String, EventSource> prepareEventSources(
@@ -40,7 +37,7 @@ public class ChangeNamespaceTestReconciler
 
     var actualConfigMap = context.getSecondaryResource(ConfigMap.class);
     if (actualConfigMap.isEmpty()) {
-      client.configMaps().inNamespace(primary.getMetadata().getNamespace())
+      context.getClient().configMaps().inNamespace(primary.getMetadata().getNamespace())
           .resource(configMap(primary))
           .create();
     }
@@ -72,15 +69,5 @@ public class ChangeNamespaceTestReconciler
     configMap.setData(Map.of("data", primary.getMetadata().getName()));
     configMap.addOwnerReference(primary);
     return configMap;
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
   }
 }
