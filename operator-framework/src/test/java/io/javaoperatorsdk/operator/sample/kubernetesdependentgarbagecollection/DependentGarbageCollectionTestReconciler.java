@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -18,7 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 public class DependentGarbageCollectionTestReconciler
     implements Reconciler<DependentGarbageCollectionTestCustomResource>,
     EventSourceInitializer<DependentGarbageCollectionTestCustomResource>,
-    KubernetesClientAware, ErrorStatusHandler<DependentGarbageCollectionTestCustomResource> {
+    ErrorStatusHandler<DependentGarbageCollectionTestCustomResource> {
 
   private KubernetesClient kubernetesClient;
   private volatile boolean errorOccurred = false;
@@ -48,17 +47,6 @@ public class DependentGarbageCollectionTestReconciler
     }
 
     return UpdateControl.noUpdate();
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
-    configMapDependent.setKubernetesClient(kubernetesClient);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return this.kubernetesClient;
   }
 
   @Override

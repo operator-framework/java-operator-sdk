@@ -52,7 +52,7 @@ public class ConfigMapDependentResource
     optionalConfigMap.ifPresent((configMap -> {
       if (configMap.getMetadata().getAnnotations() != null
           && configMap.getMetadata().getAnnotations().get(READY_TO_DELETE_ANNOTATION) != null) {
-        client.resource(configMap).delete();
+        context.getClient().resource(configMap).delete();
       }
     }));
   }

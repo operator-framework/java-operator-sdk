@@ -4,19 +4,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.StandaloneDependentResourceIT;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
@@ -24,9 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 public class StandaloneDependentTestReconciler
     implements Reconciler<StandaloneDependentTestCustomResource>,
     EventSourceInitializer<StandaloneDependentTestCustomResource>,
-    KubernetesClientAware, ErrorStatusHandler<StandaloneDependentTestCustomResource> {
-
-  private KubernetesClient kubernetesClient;
+    ErrorStatusHandler<StandaloneDependentTestCustomResource> {
   private volatile boolean errorOccurred = false;
 
   DeploymentDependentResource deploymentDependent;
@@ -57,17 +46,6 @@ public class StandaloneDependentTestReconciler
       throw new IllegalStateException("Something went wrong withe the cache mechanism.");
     }
     return UpdateControl.noUpdate();
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
-    deploymentDependent.setKubernetesClient(kubernetesClient);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return this.kubernetesClient;
   }
 
   @Override

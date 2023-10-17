@@ -5,32 +5,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration(onUpdateFilter = UpdateFilter.class)
 public class FilterTestReconciler
     implements Reconciler<FilterTestCustomResource>,
-    EventSourceInitializer<FilterTestCustomResource>,
-    KubernetesClientAware {
+    EventSourceInitializer<FilterTestCustomResource> {
 
   public static final String CONFIG_MAP_FILTER_VALUE = "config_map_skip_this";
   public static final String CUSTOM_RESOURCE_FILTER_VALUE = "custom_resource_skip_this";
 
   public static final String CM_VALUE_KEY = "value";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private KubernetesClient client;
 
   @Override
   public UpdateControl<FilterTestCustomResource> reconcile(
       FilterTestCustomResource resource,
       Context<FilterTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    client.configMaps().inNamespace(resource.getMetadata().getNamespace())
+    context.getClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
         .resource(createConfigMap(resource))
         .createOrReplace();
     return UpdateControl.noUpdate();
@@ -64,15 +60,5 @@ public class FilterTestReconciler
             .build(), context);
 
     return EventSourceInitializer.nameEventSources(configMapES);
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
   }
 }
