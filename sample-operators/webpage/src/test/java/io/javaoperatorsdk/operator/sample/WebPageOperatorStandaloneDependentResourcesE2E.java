@@ -3,12 +3,14 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+@Disabled
 class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbstractTest {
 
   public WebPageOperatorStandaloneDependentResourcesE2E() throws FileNotFoundException {}

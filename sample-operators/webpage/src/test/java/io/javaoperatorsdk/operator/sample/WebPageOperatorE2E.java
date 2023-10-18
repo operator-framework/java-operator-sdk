@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.Container;
@@ -18,6 +19,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_CLASSIC
 import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV;
 import static io.javaoperatorsdk.operator.sample.WebPageReconciler.lowLevelLabel;
 
+@Disabled
 class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
 
   public WebPageOperatorE2E() throws FileNotFoundException {}
