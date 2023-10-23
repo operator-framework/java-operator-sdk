@@ -123,6 +123,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onUpdate(R oldObject, R newObject) {
+    log.debug("On updated with old: {} \n new: {}", oldObject, newObject);
     if (log.isDebugEnabled()) {
       log.debug(
           "On update event received for resource id: {} type: {} version: {} old version: {} ",

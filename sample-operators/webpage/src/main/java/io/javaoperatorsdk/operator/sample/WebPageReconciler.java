@@ -106,8 +106,9 @@ public class WebPageReconciler
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
+      var res = kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
           .createOrReplace();
+      log.debug("Updated config map: {}", res);
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
@@ -181,10 +182,14 @@ public class WebPageReconciler
   }
 
   private boolean match(ConfigMap desiredHtmlConfigMap, ConfigMap existingConfigMap) {
+    log.debug("Actual config map: {}, desired configMap: {}", existingConfigMap,
+        desiredHtmlConfigMap);
     if (existingConfigMap == null) {
       return false;
     } else {
-      return desiredHtmlConfigMap.getData().equals(existingConfigMap.getData());
+      var matched = desiredHtmlConfigMap.getData().equals(existingConfigMap.getData());
+      log.debug("Matched config map: {}", matched);
+      return matched;
     }
   }
 
