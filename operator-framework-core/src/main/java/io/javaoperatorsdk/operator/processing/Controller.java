@@ -76,6 +76,7 @@ public class Controller<P extends HasMetadata>
   private final GroupVersionKind associatedGVK;
   private final EventProcessor<P> eventProcessor;
   private final ControllerHealthInfo controllerHealthInfo;
+  private final EventSourceContext<P> eventSourceContext;
 
   public Controller(Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
@@ -98,9 +99,9 @@ public class Controller<P extends HasMetadata>
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
-    final var context = new EventSourceContext<>(
+    eventSourceContext = new EventSourceContext<>(
         eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
-    initAndRegisterEventSources(context);
+    initAndRegisterEventSources(eventSourceContext);
     configurationService.getMetrics().controllerRegistered(this);
   }
 
@@ -439,5 +440,9 @@ public class Controller<P extends HasMetadata>
 
   public ExecutorServiceManager getExecutorServiceManager() {
     return getConfiguration().getConfigurationService().getExecutorServiceManager();
+  }
+
+  public EventSourceContext<P> eventSourceContext() {
+    return eventSourceContext;
   }
 }

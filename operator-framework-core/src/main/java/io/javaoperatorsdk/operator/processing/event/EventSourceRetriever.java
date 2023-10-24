@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
@@ -21,4 +22,7 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   void dynamicallyRegisterEventSource(String name, EventSource eventSource);
 
   void dynamicallyDeRegisterEventSource(String name);
+
+  EventSourceContext<P> eventSourceContexForDynamicRegistration();
+
 }
