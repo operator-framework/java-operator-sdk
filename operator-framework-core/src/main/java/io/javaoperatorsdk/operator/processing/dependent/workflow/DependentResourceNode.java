@@ -65,12 +65,20 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(deletePostcondition);
   }
 
+  public Optional<Condition<R, P>> getActivationCondition() {
+    return Optional.ofNullable(activationCondition);
+  }
+
   void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
     this.reconcilePrecondition = reconcilePrecondition;
   }
 
   void setDeletePostcondition(Condition<R, P> cleanupCondition) {
     this.deletePostcondition = cleanupCondition;
+  }
+
+  void setActivationCondition(Condition<R, P> activationCondition) {
+    this.activationCondition = activationCondition;
   }
 
   public Optional<Condition<R, P>> getReadyPostcondition() {

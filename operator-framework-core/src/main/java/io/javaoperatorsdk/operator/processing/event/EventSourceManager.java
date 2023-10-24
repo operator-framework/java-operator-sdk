@@ -231,6 +231,17 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.getEventSources(dependentType);
   }
 
+  @Override
+  public void dynamicallyRegisterEventSource(String name, EventSource eventSource) {
+    // todo not that other thread should wait for syncing (with start() within synchronized this is
+    // automatically ensured)
+  }
+
+  @Override
+  public void dynamicallyDeRegisterEventSource(String name) {
+    // todo
+  }
+
   /**
    * @deprecated Use {@link #getResourceEventSourceFor(Class)} instead
    *
