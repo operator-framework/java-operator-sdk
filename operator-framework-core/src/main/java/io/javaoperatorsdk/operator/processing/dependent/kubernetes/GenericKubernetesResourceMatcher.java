@@ -73,26 +73,26 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @param labelsAndAnnotationsEquality if true labels and annotation match exactly in the actual
    *        and desired state if false, additional elements are allowed in actual annotations.
    *        Considered only if considerLabelsAndAnnotations is true.
-   * @param specEquality if {@code false}, the algorithm checks if the properties in the desired
-   *        resource spec are same as in the actual resource spec. The reason is that admission
-   *        controllers and default Kubernetes controllers might add default values to some
-   *        properties which are not set in the desired resources' spec and comparing it with simple
-   *        equality check would mean that such resource will not match (while conceptually should).
-   *        However, there is an issue with this for example if desired spec contains a list of
-   *        values and a value is removed, this still will match the actual state from previous
-   *        reconciliation. Setting this parameter to {@code true}, will match the resources only if
-   *        all properties and values are equal. This could be implemented also by overriding equals
-   *        method of spec, should be done as an optimization - this implementation does not require
-   *        that.
+   * @param valuesEquality if {@code false}, the algorithm checks if the properties in the desired
+   *        resource spec (or other non metadata value) are same as in the actual resource spec. The
+   *        reason is that admission controllers and default Kubernetes controllers might add
+   *        default values to some properties which are not set in the desired resources' spec and
+   *        comparing it with simple equality check would mean that such resource will not match
+   *        (while conceptually should). However, there is an issue with this for example if desired
+   *        spec contains a list of values and a value is removed, this still will match the actual
+   *        state from previous reconciliation. Setting this parameter to {@code true}, will match
+   *        the resources only if all properties and values are equal. This could be implemented
+   *        also by overriding equals method of spec, should be done as an optimization - this
+   *        implementation does not require that.
    * @param <R> resource
    * @return results of matching
    */
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
       R actualResource,
       boolean considerLabelsAndAnnotations, boolean labelsAndAnnotationsEquality,
-      boolean specEquality, Context<P> context) {
+      boolean valuesEquality, Context<P> context) {
     return match(desired, actualResource, considerLabelsAndAnnotations,
-        labelsAndAnnotationsEquality, specEquality, context, EMPTY_ARRAY);
+        labelsAndAnnotationsEquality, valuesEquality, context, EMPTY_ARRAY);
   }
 
   /**
@@ -171,14 +171,14 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
       R actualResource,
-      boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean equality,
+      boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean valuesEquality,
       Context<P> context,
       String... ignoredPaths) {
     final List<String> ignoreList =
         ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
             : Collections.emptyList();
 
-    if (equality && !ignoreList.isEmpty()) {
+    if (valuesEquality && !ignoreList.isEmpty()) {
       throw new IllegalArgumentException(
           "Equality should be false in case of ignore list provided");
     }
@@ -192,7 +192,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     for (int i = 0; i < wholeDiffJsonPatch.size() && matched; i++) {
       var node = wholeDiffJsonPatch.get(i);
       if (nodeIsChildOf(node, List.of(SPEC))) {
-        matched = match(equality, node, ignoreList);
+        matched = match(valuesEquality, node, ignoreList);
       } else if (nodeIsChildOf(node, List.of(METADATA))) {
         // conditionally consider labels and annotations
         if (considerMetadata
@@ -200,7 +200,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
           matched = match(labelsAndAnnotationsEquality, node, Collections.emptyList());
         }
       } else if (!nodeIsChildOf(node, IGNORED_FIELDS)) {
-        matched = match(equality, node, ignoreList);
+        matched = match(valuesEquality, node, ignoreList);
       }
     }
 
