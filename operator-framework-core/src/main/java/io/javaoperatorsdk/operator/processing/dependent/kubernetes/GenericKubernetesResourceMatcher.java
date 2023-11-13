@@ -171,14 +171,14 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
       R actualResource,
-      boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean specEquality,
+      boolean considerMetadata, boolean labelsAndAnnotationsEquality, boolean equality,
       Context<P> context,
       String... ignoredPaths) {
     final List<String> ignoreList =
         ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
             : Collections.emptyList();
 
-    if (specEquality && !ignoreList.isEmpty()) {
+    if (equality && !ignoreList.isEmpty()) {
       throw new IllegalArgumentException(
           "Equality should be false in case of ignore list provided");
     }
@@ -192,7 +192,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     for (int i = 0; i < wholeDiffJsonPatch.size() && matched; i++) {
       var node = wholeDiffJsonPatch.get(i);
       if (nodeIsChildOf(node, List.of(SPEC))) {
-        matched = match(specEquality, node, ignoreList);
+        matched = match(equality, node, ignoreList);
       } else if (nodeIsChildOf(node, List.of(METADATA))) {
         // conditionally consider labels and annotations
         if (considerMetadata
@@ -200,7 +200,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
           matched = match(labelsAndAnnotationsEquality, node, Collections.emptyList());
         }
       } else if (!nodeIsChildOf(node, IGNORED_FIELDS)) {
-        matched = match(true, node, ignoreList);
+        matched = match(equality, node, ignoreList);
       }
     }
 
