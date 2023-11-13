@@ -143,10 +143,10 @@ class DependentSSAMigrationIT {
 
   private Operator createOperator(KubernetesClient client, boolean legacyDependentHandling,
       String fieldManager) {
-    Operator operator = new Operator(client,
-        o -> o.withSSABasedCreateUpdateMatchForDependentResources(!legacyDependentHandling)
-            .withCloseClientOnStop(false));
-    operator.register(new DependentSSAReconciler(), o -> {
+    Operator operator =
+        new Operator(o -> o.withKubernetesClient(client).withCloseClientOnStop(false));
+    var reconciler = new DependentSSAReconciler(!legacyDependentHandling);
+    operator.register(reconciler, o -> {
       o.settingNamespace(namespace);
       if (fieldManager != null) {
         o.withFieldManager(fieldManager);
@@ -154,7 +154,6 @@ class DependentSSAMigrationIT {
     });
     return operator;
   }
-
 
   public DependnetSSACustomResource testResource() {
     DependnetSSACustomResource resource = new DependnetSSACustomResource();

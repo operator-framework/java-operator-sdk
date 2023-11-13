@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
@@ -35,6 +36,9 @@ public class ConfigurationServiceOverrider {
   private Duration cacheSyncTimeout;
   private ResourceClassResolver resourceClassResolver;
   private Boolean ssaBasedCreateUpdateMatchForDependentResources;
+  private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
+  private Boolean previousAnnotationForDependentResources;
+  private Boolean parseResourceVersions;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -150,6 +154,24 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public ConfigurationServiceOverrider withDefaultNonSSAResource(
+      Set<Class<? extends HasMetadata>> defaultNonSSAResource) {
+    this.defaultNonSSAResource = defaultNonSSAResource;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResources(
+      boolean value) {
+    this.previousAnnotationForDependentResources = value;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider wihtParseResourceVersions(
+      boolean value) {
+    this.parseResourceVersions = value;
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -255,6 +277,26 @@ public class ConfigurationServiceOverrider {
         return ssaBasedCreateUpdateMatchForDependentResources != null
             ? ssaBasedCreateUpdateMatchForDependentResources
             : super.ssaBasedCreateUpdateMatchForDependentResources();
+      }
+
+      @Override
+      public Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
+        return defaultNonSSAResource != null ? defaultNonSSAResource
+            : super.defaultNonSSAResource();
+      }
+
+      @Override
+      public boolean previousAnnotationForDependentResourcesEventFiltering() {
+        return previousAnnotationForDependentResources != null
+            ? previousAnnotationForDependentResources
+            : super.previousAnnotationForDependentResourcesEventFiltering();
+      }
+
+      @Override
+      public boolean parseResourceVersionsForEventFilteringAndCaching() {
+        return parseResourceVersions != null
+            ? parseResourceVersions
+            : super.parseResourceVersionsForEventFilteringAndCaching();
       }
     };
   }

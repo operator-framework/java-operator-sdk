@@ -15,7 +15,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
-import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
@@ -31,6 +30,7 @@ public class ConfigMapDependentResource
 
   @Override
   protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {
+    log.debug("Web page spec: {}", webPage.getSpec().getHtml());
     Map<String, String> data = new HashMap<>();
     data.put("index.html", webPage.getSpec().getHtml());
     Map<String, String> labels = new HashMap<>();
@@ -47,20 +47,13 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  public ConfigMap update(ConfigMap actual, ConfigMap target, WebPage primary,
+  public Result<ConfigMap> match(ConfigMap actualResource, WebPage primary,
       Context<WebPage> context) {
-    var res = super.update(actual, target, primary, context);
-    var ns = actual.getMetadata().getNamespace();
-    log.info("Restarting pods because HTML has changed in {}",
-        ns);
-    // not that this is not necessary, eventually mounted config map would be updated, just this way
-    // is much faster; what is handy for demo purposes.
-    // https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
-    getKubernetesClient()
-        .pods()
-        .inNamespace(ns)
-        .withLabel("app", deploymentName(primary))
-        .delete();
-    return res;
+    var matched = super.match(actualResource, primary, context);
+    log.debug("Match for config map {} res: {}", actualResource.getMetadata().getName(),
+        matched.matched());
+    return matched;
   }
+
+
 }

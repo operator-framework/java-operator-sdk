@@ -6,10 +6,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
@@ -18,8 +16,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class IndexDiscriminatorTestReconciler
     implements Reconciler<IndexDiscriminatorTestCustomResource>,
     Cleaner<IndexDiscriminatorTestCustomResource>,
-    TestExecutionInfoProvider, EventSourceInitializer<IndexDiscriminatorTestCustomResource>,
-    KubernetesClientAware {
+    TestExecutionInfoProvider, EventSourceInitializer<IndexDiscriminatorTestCustomResource> {
 
   public static final String FIRST_CONFIG_MAP_SUFFIX_1 = "-1";
   public static final String FIRST_CONFIG_MAP_SUFFIX_2 = "-2";
@@ -30,7 +27,6 @@ public class IndexDiscriminatorTestReconciler
 
   private final IndexDiscriminatorTestDRConfigMap firstDependentResourceConfigMap;
   private final IndexDiscriminatorTestDRConfigMap secondDependentResourceConfigMap;
-  private KubernetesClient client;
 
   public IndexDiscriminatorTestReconciler() {
     firstDependentResourceConfigMap =
@@ -81,23 +77,11 @@ public class IndexDiscriminatorTestReconciler
 
     firstDependentResourceConfigMap
         .setResourceDiscriminator(
-            new IndexDiscriminator(CONFIG_MAP_INDEX_1, FIRST_CONFIG_MAP_SUFFIX_1));
+            new TestIndexDiscriminator(CONFIG_MAP_INDEX_1, FIRST_CONFIG_MAP_SUFFIX_1));
     secondDependentResourceConfigMap
         .setResourceDiscriminator(
-            new IndexDiscriminator(CONFIG_MAP_INDEX_2, FIRST_CONFIG_MAP_SUFFIX_2));
+            new TestIndexDiscriminator(CONFIG_MAP_INDEX_2, FIRST_CONFIG_MAP_SUFFIX_2));
     return EventSourceInitializer.nameEventSources(eventSource);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
-    firstDependentResourceConfigMap.setKubernetesClient(kubernetesClient);
-    secondDependentResourceConfigMap.setKubernetesClient(kubernetesClient);
   }
 
   public static String configMapKey(ConfigMap configMap) {

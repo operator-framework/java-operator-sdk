@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Optional;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -13,10 +14,14 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig<R> {
 
+  public static final boolean DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA = true;
+
   private Set<String> namespaces;
   private String labelSelector;
-  private boolean namespacesWereConfigured;
-  private ResourceDiscriminator<R, ?> resourceDiscriminator;
+  private final boolean namespacesWereConfigured;
+  private final boolean createResourceOnlyIfNotExistingWithSSA;
+  private final ResourceDiscriminator<R, ?> resourceDiscriminator;
+  private final Boolean useSSA;
 
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
@@ -25,30 +30,38 @@ public class KubernetesDependentResourceConfig<R> {
 
   public KubernetesDependentResourceConfig() {
     this(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET, NO_VALUE_SET, true,
-        null, null,
+        DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
+        null, null, null,
         null, null, null);
   }
 
-  public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
-      boolean configuredNS, ResourceDiscriminator<R, ?> resourceDiscriminator,
+  public KubernetesDependentResourceConfig(Set<String> namespaces,
+      String labelSelector,
+      boolean configuredNS,
+      boolean createResourceOnlyIfNotExistingWithSSA,
+      ResourceDiscriminator<R, ?> resourceDiscriminator,
+      Boolean useSSA,
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
       OnDeleteFilter<R> onDeleteFilter, GenericFilter<R> genericFilter) {
     this.namespaces = namespaces;
     this.labelSelector = labelSelector;
     this.namespacesWereConfigured = configuredNS;
+    this.createResourceOnlyIfNotExistingWithSSA = createResourceOnlyIfNotExistingWithSSA;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
     this.onDeleteFilter = onDeleteFilter;
     this.genericFilter = genericFilter;
     this.resourceDiscriminator = resourceDiscriminator;
+    this.useSSA = useSSA;
   }
 
   // use builder instead
   @Deprecated(forRemoval = true)
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
-    this(namespaces, labelSelector, true, null, null, null,
-        null, null);
+    this(namespaces, labelSelector, true, DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
+        null, null, null,
+        null, null, null);
   }
 
   // use builder instead
@@ -75,6 +88,9 @@ public class KubernetesDependentResourceConfig<R> {
     return onAddFilter;
   }
 
+  public boolean createResourceOnlyIfNotExistingWithSSA() {
+    return createResourceOnlyIfNotExistingWithSSA;
+  }
 
   public OnUpdateFilter<R> onUpdateFilter() {
     return onUpdateFilter;
@@ -98,5 +114,9 @@ public class KubernetesDependentResourceConfig<R> {
     if (!wereNamespacesConfigured() && namespaces != null && !namespaces.isEmpty()) {
       this.namespaces = namespaces;
     }
+  }
+
+  public Optional<Boolean> useSSA() {
+    return Optional.ofNullable(useSSA);
   }
 }

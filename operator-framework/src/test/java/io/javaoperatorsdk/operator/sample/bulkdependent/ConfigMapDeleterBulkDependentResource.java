@@ -55,7 +55,7 @@ public class ConfigMapDeleterBulkDependentResource
         .withLabels(Map.of(LABEL_KEY, LABEL_VALUE))
         .build());
     configMap.setData(
-        Map.of("number", "" + key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
+        Map.of("number", key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
     return configMap;
   }
 

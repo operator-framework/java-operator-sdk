@@ -6,14 +6,15 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.cache.CaffeineBoundedItemStores;
@@ -27,15 +28,12 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
-    implements KubernetesClientAware, Reconciler<P>,
-    EventSourceInitializer<P> {
+    implements Reconciler<P>, EventSourceInitializer<P> {
 
   private static final Logger log =
       LoggerFactory.getLogger(BoundedCacheClusterScopeTestReconciler.class);
 
   public static final String DATA_KEY = "dataKey";
-
-  protected KubernetesClient client;
 
   @Override
   public UpdateControl<P> reconcile(
@@ -43,22 +41,22 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
       Context<P> context) {
     var maybeConfigMap = context.getSecondaryResource(ConfigMap.class);
     maybeConfigMap.ifPresentOrElse(
-        cm -> updateConfigMapIfNeeded(cm, resource),
-        () -> createConfigMap(resource));
+        cm -> updateConfigMapIfNeeded(cm, resource, context),
+        () -> createConfigMap(resource, context));
     ensureStatus(resource);
     log.info("Reconciled: {}", resource.getMetadata().getName());
     return UpdateControl.patchStatus(resource);
   }
 
-  protected void updateConfigMapIfNeeded(ConfigMap cm, P resource) {
+  protected void updateConfigMapIfNeeded(ConfigMap cm, P resource, Context<P> context) {
     var data = cm.getData().get(DATA_KEY);
     if (data == null || data.equals(resource.getSpec().getData())) {
       cm.setData(Map.of(DATA_KEY, resource.getSpec().getData()));
-      client.configMaps().resource(cm).replace();
+      context.getClient().configMaps().resource(cm).replace();
     }
   }
 
-  protected void createConfigMap(P resource) {
+  protected void createConfigMap(P resource, Context<P> context) {
     var cm = new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withName(resource.getMetadata().getName())
@@ -67,17 +65,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
         .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
         .build();
     cm.addOwnerReference(resource);
-    client.configMaps().resource(cm).create();
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
+    context.getClient().configMaps().resource(cm).create();
   }
 
   @Override

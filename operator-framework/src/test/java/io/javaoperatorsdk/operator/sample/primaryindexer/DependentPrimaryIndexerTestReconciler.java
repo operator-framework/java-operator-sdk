@@ -12,8 +12,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration(dependents = @Dependent(
     type = DependentPrimaryIndexerTestReconciler.ReadOnlyConfigMapDependent.class))
@@ -31,15 +31,15 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
     }
 
     @Override
-    public Set<ResourceID> toPrimaryResourceIDs(ConfigMap dependentResource) {
-      return cache.byIndex(CONFIG_MAP_RELATION_INDEXER, dependentResource.getMetadata().getName())
+    public Set<ResourceID> toPrimaryResourceIDs(ConfigMap resource) {
+      return cache.byIndex(CONFIG_MAP_RELATION_INDEXER, resource.getMetadata().getName())
           .stream()
           .map(ResourceID::fromResource)
           .collect(Collectors.toSet());
     }
 
     @Override
-    public Optional<ResourceEventSource<ConfigMap, PrimaryIndexerTestCustomResource>> eventSource(
+    public Optional<InformerEventSource<ConfigMap, PrimaryIndexerTestCustomResource>> eventSource(
         EventSourceContext<PrimaryIndexerTestCustomResource> context) {
       cache = context.getPrimaryCache();
       cache.addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);

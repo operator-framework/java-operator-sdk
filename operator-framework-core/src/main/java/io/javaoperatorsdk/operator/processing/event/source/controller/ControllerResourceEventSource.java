@@ -32,12 +32,12 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerResourceEventSource(Controller<T> controller) {
-    super(controller.getCRClient(), controller.getConfiguration());
+    super(controller.getCRClient(), controller.getConfiguration(), false);
     this.controller = controller;
 
     final var config = controller.getConfiguration();
     OnUpdateFilter internalOnUpdateFilter =
-        (OnUpdateFilter<T>) onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
+        onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
             config.getFinalizerName())
             .or(onUpdateGenerationAware(config.isGenerationAware()))
             .or(onUpdateMarkedForDeletion());

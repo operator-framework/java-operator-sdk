@@ -61,9 +61,9 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   }
 
   @Override
-  public Set<ResourceID> toPrimaryResourceIDs(Secret dependentResource) {
-    String name = dependentResource.getMetadata().getName();
+  public Set<ResourceID> toPrimaryResourceIDs(Secret resource) {
+    String name = resource.getMetadata().getName();
     return Set.of(new ResourceID(name.substring(0, name.length() - SECRET_SUFFIX.length()),
-        dependentResource.getMetadata().getNamespace()));
+        resource.getMetadata().getNamespace()));
   }
 }

@@ -1,13 +1,17 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -33,49 +37,90 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public class TemporaryResourceCache<T extends HasMetadata> {
 
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
+  private static final int MAX_RESOURCE_VERSIONS = 256;
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
+  private final boolean parseResourceVersions;
+  private final Set<String> knownResourceVersions;
 
-  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
+  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
+      boolean parseResourceVersions) {
     this.managedInformerEventSource = managedInformerEventSource;
+    this.parseResourceVersions = parseResourceVersions;
+    if (parseResourceVersions) {
+      knownResourceVersions = Collections.newSetFromMap(new LinkedHashMap<String, Boolean>() {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, Boolean> eldest) {
+          return size() >= MAX_RESOURCE_VERSIONS;
+        }
+      });
+    } else {
+      knownResourceVersions = null;
+    }
   }
 
-  public synchronized void removeResourceFromCache(T resource) {
-    cache.remove(ResourceID.fromResource(resource));
-  }
-
-  public synchronized void unconditionallyCacheResource(T newResource) {
-    putToCache(newResource, null);
+  public synchronized void onEvent(T resource, boolean unknownState) {
+    cache.computeIfPresent(ResourceID.fromResource(resource),
+        (id, cached) -> (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null
+            : cached);
   }
 
   public synchronized void putAddedResource(T newResource) {
-    ResourceID resourceID = ResourceID.fromResource(newResource);
-    if (managedInformerEventSource.get(resourceID).isEmpty()) {
-      log.debug("Putting resource to cache with ID: {}", resourceID);
-      putToCache(newResource, resourceID);
-    } else {
-      log.debug("Won't put resource into cache found already informer cache: {}", resourceID);
+    putResource(newResource, null);
+  }
+
+  /**
+   * put the item into the cache if the previousResourceVersion matches the current state. If not
+   * the currently cached item is removed.
+   *
+   * @param previousResourceVersion null indicates an add
+   */
+  public synchronized void putResource(T newResource, String previousResourceVersion) {
+    if (knownResourceVersions != null) {
+      knownResourceVersions.add(newResource.getMetadata().getResourceVersion());
+    }
+    var resourceId = ResourceID.fromResource(newResource);
+    var cachedResource = getResourceFromCache(resourceId)
+        .orElse(managedInformerEventSource.get(resourceId).orElse(null));
+
+    if ((previousResourceVersion == null && cachedResource == null)
+        || (cachedResource != null
+            && (cachedResource.getMetadata().getResourceVersion().equals(previousResourceVersion))
+            || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
+      log.debug(
+          "Temporarily moving ahead to target version {} for resource id: {}",
+          newResource.getMetadata().getResourceVersion(), resourceId);
+      putToCache(newResource, resourceId);
+    } else if (cache.remove(resourceId) != null) {
+      log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
     }
   }
 
-  public synchronized void putUpdatedResource(T newResource, String previousResourceVersion) {
-    var resourceId = ResourceID.fromResource(newResource);
-    var informerCacheResource = managedInformerEventSource.get(resourceId);
-    if (informerCacheResource.isEmpty()) {
-      log.debug("No cached value present for resource: {}", newResource);
-      return;
+  public boolean isKnownResourceVersion(T resource) {
+    return knownResourceVersions != null
+        && knownResourceVersions.contains(resource.getMetadata().getResourceVersion());
+  }
+
+  /**
+   * @return true if {@link InformerConfiguration#parseResourceVersions()} is enabled and the
+   *         resourceVersion of newResource is numerically greater than cachedResource, otherwise
+   *         false
+   */
+  private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
+    try {
+      if (parseResourceVersions
+          && Long.parseLong(newResource.getMetadata().getResourceVersion()) > Long
+              .parseLong(cachedResource.getMetadata().getResourceVersion())) {
+        return true;
+      }
+    } catch (NumberFormatException e) {
+      log.debug(
+          "Could not compare resourceVersions {} and {} for {}",
+          newResource.getMetadata().getResourceVersion(),
+          cachedResource.getMetadata().getResourceVersion(), resourceId);
     }
-    // if this is not true that means the cache was already updated
-    if (informerCacheResource.get().getMetadata().getResourceVersion()
-        .equals(previousResourceVersion)) {
-      log.debug("Putting resource to temporal cache with id: {}", resourceId);
-      putToCache(newResource, resourceId);
-    } else {
-      // if something is in cache it's surely obsolete now
-      log.debug("Trying to remove an obsolete resource from cache for id: {}", resourceId);
-      cache.remove(resourceId);
-    }
+    return false;
   }
 
   private void putToCache(T resource, ResourceID resourceID) {

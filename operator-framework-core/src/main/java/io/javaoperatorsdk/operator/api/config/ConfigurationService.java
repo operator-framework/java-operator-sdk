@@ -9,7 +9,9 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -19,6 +21,7 @@ import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
 import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
@@ -335,7 +338,7 @@ public interface ConfigurationService {
    * resources are created/updated and match was change to use
    * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
    * Apply</a> (SSA) by default.
-   *
+   * <p>
    * SSA based create/update can be still used with the legacy matching, just overriding the match
    * method of Kubernetes Dependent Resource.
    *
@@ -343,6 +346,49 @@ public interface ConfigurationService {
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
     return true;
+  }
+
+  /**
+   * Returns the set of default resources for which Server-Side Apply (SSA) will not be used, even
+   * if it is the default behavior for dependent resources as specified by
+   * {@link #ssaBasedCreateUpdateMatchForDependentResources()}. The exception to this is in the case
+   * where the use of SSA is explicitly enabled on the dependent resource directly using
+   * {@link KubernetesDependent#useSSA()}.
+   * <p>
+   * By default, SSA is disabled for {@link ConfigMap} and {@link Secret} resources.
+   *
+   * @return The set of resource types for which SSA will not be used
+   * @since 4.4.0
+   */
+  default Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
+    return Set.of(ConfigMap.class, Secret.class);
+  }
+
+  /**
+   * If a javaoperatorsdk.io/previous annotation should be used so that the operator sdk can detect
+   * events from its own updates of dependent resources and then filter them.
+   * <p>
+   * Disable this if you want to react to your own dependent resource updates
+   *
+   * @since 4.5.0
+   */
+  default boolean previousAnnotationForDependentResourcesEventFiltering() {
+    return true;
+  }
+
+  /**
+   * If the event logic should parse the resourceVersion to determine the ordering of dependent
+   * resource events. This is typically not needed.
+   * <p>
+   * Disabled by default as Kubernetes does not support, and discourages, this interpretation of
+   * resourceVersions. Enable only if your api server event processing seems to lag the operator
+   * logic and you want to further minimize the the amount of work done / updates issued by the
+   * operator.
+   *
+   * @since 4.5.0
+   */
+  default boolean parseResourceVersionsForEventFilteringAndCaching() {
+    return false;
   }
 
 }

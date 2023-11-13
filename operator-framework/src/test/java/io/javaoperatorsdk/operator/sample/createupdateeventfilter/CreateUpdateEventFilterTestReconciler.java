@@ -7,29 +7,45 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.junit.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
 public class CreateUpdateEventFilterTestReconciler
     implements Reconciler<CreateUpdateEventFilterTestCustomResource>,
-    EventSourceInitializer<CreateUpdateEventFilterTestCustomResource>,
-    KubernetesClientAware {
+    EventSourceInitializer<CreateUpdateEventFilterTestCustomResource> {
+
+  private static final class DirectConfigMapDependentResource
+      extends
+      CRUDKubernetesDependentResource<ConfigMap, CreateUpdateEventFilterTestCustomResource> {
+
+    private ConfigMap desired;
+
+    private DirectConfigMapDependentResource(Class<ConfigMap> resourceType) {
+      super(resourceType);
+    }
+
+    @Override
+    protected ConfigMap desired(CreateUpdateEventFilterTestCustomResource primary,
+        Context<CreateUpdateEventFilterTestCustomResource> context) {
+      return desired;
+    }
+
+    @Override
+    public void setEventSource(
+        io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> eventSource) {
+      super.setEventSource(eventSource);
+    }
+  }
 
   public static final String CONFIG_MAP_TEST_DATA_KEY = "key";
-  private KubernetesClient client;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerEventSource;
+  private DirectConfigMapDependentResource configMapDR =
+      new DirectConfigMapDependentResource(ConfigMap.class);
 
   @Override
   public UpdateControl<CreateUpdateEventFilterTestCustomResource> reconcile(
@@ -38,49 +54,20 @@ public class CreateUpdateEventFilterTestReconciler
     numberOfExecutions.incrementAndGet();
 
     ConfigMap configMap =
-        client
+        context.getClient()
             .configMaps()
             .inNamespace(resource.getMetadata().getNamespace())
             .withName(resource.getMetadata().getName())
             .get();
     if (configMap == null) {
-      var configMapToCreate = createConfigMap(resource);
-      final var resourceID = ResourceID.fromResource(configMapToCreate);
-      try {
-        informerEventSource.prepareForCreateOrUpdateEventFiltering(resourceID, configMapToCreate);
-        configMap =
-            client
-                .configMaps()
-                .inNamespace(resource.getMetadata().getNamespace())
-                .resource(configMapToCreate)
-                .create();
-        informerEventSource.handleRecentResourceCreate(resourceID, configMap);
-      } catch (RuntimeException e) {
-        informerEventSource
-            .cleanupOnCreateOrUpdateEventFiltering(resourceID);
-        throw e;
-      }
+      configMapDR.desired = createConfigMap(resource);
+      configMapDR.reconcile(resource, context);
     } else {
-      ResourceID resourceID = ResourceID.fromResource(configMap);
       if (!Objects.equals(
           configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY), resource.getSpec().getValue())) {
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
-        try {
-          informerEventSource
-              .prepareForCreateOrUpdateEventFiltering(resourceID, configMap);
-          var newConfigMap =
-              client
-                  .configMaps()
-                  .inNamespace(resource.getMetadata().getNamespace())
-                  .resource(configMap)
-                  .replace();
-          informerEventSource.handleRecentResourceUpdate(resourceID,
-              newConfigMap, configMap);
-        } catch (RuntimeException e) {
-          informerEventSource
-              .cleanupOnCreateOrUpdateEventFiltering(resourceID);
-          throw e;
-        }
+        configMapDR.desired = configMap;
+        configMapDR.reconcile(resource, context);
       }
     }
     return UpdateControl.noUpdate();
@@ -107,19 +94,10 @@ public class CreateUpdateEventFilterTestReconciler
         InformerConfiguration.from(ConfigMap.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
-    informerEventSource =
-        new InformerEventSource<>(informerConfiguration, client);
+    informerEventSource = new InformerEventSource<>(informerConfiguration, context.getClient());
+    this.configMapDR.setEventSource(informerEventSource);
+
     return EventSourceInitializer.nameEventSources(informerEventSource);
-  }
-
-  @Override
-  public KubernetesClient getKubernetesClient() {
-    return client;
-  }
-
-  @Override
-  public void setKubernetesClient(KubernetesClient kubernetesClient) {
-    this.client = kubernetesClient;
   }
 
   public int getNumberOfExecutions() {

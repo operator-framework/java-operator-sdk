@@ -7,7 +7,10 @@ import java.lang.annotation.Target;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
-import io.javaoperatorsdk.operator.processing.event.source.filter.*;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -22,7 +25,7 @@ public @interface KubernetesDependent {
    * namespace is specified then the controller will monitor the namespaces configured for the
    * controller.
    *
-   * @return the list of namespaces this controller monitors
+   * @return the array of namespaces this controller monitors
    */
   String[] namespaces() default {Constants.SAME_AS_CONTROLLER};
 
@@ -69,4 +72,20 @@ public @interface KubernetesDependent {
 
   Class<? extends ResourceDiscriminator> resourceDiscriminator() default ResourceDiscriminator.class;
 
+  /**
+   * Creates the resource only if did not exist before, this applies only if SSA is used.
+   */
+  boolean createResourceOnlyIfNotExistingWithSSA() default KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
+
+  /**
+   * Determines whether to use SSA (Server-Side Apply) for this dependent. If SSA is used, the
+   * dependent resource will only be created if it did not exist before. Default value is
+   * {@link BooleanWithUndefined#UNDEFINED}, which specifies that the behavior with respect to SSA
+   * is inherited from the global configuration.
+   *
+   * @return {@code true} if SSA is enabled, {@code false} if SSA is disabled,
+   *         {@link BooleanWithUndefined#UNDEFINED} if the SSA behavior should be inherited from the
+   *         global configuration
+   */
+  BooleanWithUndefined useSSA() default BooleanWithUndefined.UNDEFINED;
 }
