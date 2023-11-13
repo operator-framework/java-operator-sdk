@@ -191,6 +191,24 @@ class BaseConfigurationServiceTest {
   }
 
   @Test
+  void configuringRateLimitAndGradualRetryViaSuperClassShouldWork() {
+    var config = configFor(new GradualRetryAndRateLimitedOnSuperClass());
+    final var retry = config.getRetry();
+    final var testRetry = assertInstanceOf(GenericRetry.class, retry);
+    assertEquals(
+        BaseClassWithGradualRetryAndRateLimited.RETRY_MAX_ATTEMPTS,
+        testRetry.getMaxAttempts());
+
+    final var rateLimiter = assertInstanceOf(LinearRateLimiter.class, config.getRateLimiter());
+    assertEquals(
+        BaseClassWithGradualRetryAndRateLimited.RATE_LIMITED_MAX_RECONCILIATIONS,
+        rateLimiter.getLimitForPeriod());
+    assertEquals(
+        Duration.ofSeconds(BaseClassWithGradualRetryAndRateLimited.RATE_LIMITED_WITHIN_SECONDS),
+        rateLimiter.getRefreshPeriod());
+  }
+
+  @Test
   void checkingRetryingGraduallyWorks() {
     var config = configFor(new CheckRetryingGraduallyConfiguration());
     final var retry = config.getRetry();
@@ -250,6 +268,7 @@ class BaseConfigurationServiceTest {
   @ControllerConfiguration(
       dependents = @Dependent(type = ReadOnlyDependent.class, name = NamedDepReconciler.NAME))
   private static class NamedDepReconciler implements Reconciler<ConfigMap> {
+
     private static final String NAME = "foo";
 
     @Override
@@ -325,6 +344,7 @@ class BaseConfigurationServiceTest {
   }
 
   public static class TestRetry implements Retry, AnnotationConfigurable<TestRetryConfiguration> {
+
     private int value;
 
     public TestRetry() {}
@@ -347,6 +367,7 @@ class BaseConfigurationServiceTest {
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   private @interface TestRetryConfiguration {
+
     int value() default 42;
   }
 
@@ -382,7 +403,30 @@ class BaseConfigurationServiceTest {
     }
   }
 
+  @ControllerConfiguration
+  private static class GradualRetryAndRateLimitedOnSuperClass
+      extends BaseClassWithGradualRetryAndRateLimited
+      implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
+  }
+
+  @RateLimited(
+      maxReconciliations = BaseClassWithGradualRetryAndRateLimited.RATE_LIMITED_MAX_RECONCILIATIONS,
+      within = BaseClassWithGradualRetryAndRateLimited.RATE_LIMITED_WITHIN_SECONDS)
+  @GradualRetry(maxAttempts = BaseClassWithGradualRetryAndRateLimited.RETRY_MAX_ATTEMPTS)
+  private static class BaseClassWithGradualRetryAndRateLimited {
+
+    public static final int RATE_LIMITED_MAX_RECONCILIATIONS = 7;
+    public static final int RATE_LIMITED_WITHIN_SECONDS = 3;
+    public static final int RETRY_MAX_ATTEMPTS = 3;
+  }
+
   private static class ControllerConfigurationOnSuperClass extends BaseClass {
+
   }
 
   @ControllerConfiguration
@@ -443,10 +487,12 @@ class BaseConfigurationServiceTest {
 
   @Retention(RetentionPolicy.RUNTIME)
   private @interface CustomAnnotation {
+
     int value();
   }
 
   private static class CustomConfig {
+
     private final int value;
 
     private CustomConfig(int value) {
@@ -460,6 +506,7 @@ class BaseConfigurationServiceTest {
 
   private static class CustomConfigConverter
       implements ConfigurationConverter<CustomAnnotation, CustomConfig, CustomAnnotatedDep> {
+
     static final int CONVERTER_PROVIDED_DEFAULT = 7;
 
     @Override
