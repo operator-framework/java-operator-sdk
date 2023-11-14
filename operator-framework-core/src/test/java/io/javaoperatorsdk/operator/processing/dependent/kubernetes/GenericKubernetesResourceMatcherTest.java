@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
@@ -17,6 +16,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher.GenericResourceUpdaterMatcher;
 
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.match;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -55,9 +55,8 @@ class GenericKubernetesResourceMatcherTest {
   @Test
   void matchesWithStrongSpecEquality() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, true, true,
-            true)
+    assertThat(match(dependentResource, actual, null, context, true, true,
+        true)
         .matched())
         .withFailMessage("Adding values should fail matching when strong equality is required")
         .isFalse();
@@ -93,8 +92,7 @@ class GenericKubernetesResourceMatcherTest {
   void doesNotMatchChangedValuesWhenNoIgnoredPathsAreProvided() {
     actual = createDeployment();
     actual.getSpec().setReplicas(2);
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, true).matched())
+    assertThat(match(dependentResource, actual, null, context, true).matched())
         .withFailMessage(
             "Should not have matched because values have changed and no ignored path is provided")
         .isFalse();
@@ -104,8 +102,7 @@ class GenericKubernetesResourceMatcherTest {
   void doesNotAttemptToMatchIgnoredPaths() {
     actual = createDeployment();
     actual.getSpec().setReplicas(2);
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, false, "/spec/replicas").matched())
+    assertThat(match(dependentResource, actual, null, context, false, "/spec/replicas").matched())
         .withFailMessage("Should not have compared ignored paths")
         .isTrue();
   }
@@ -114,8 +111,7 @@ class GenericKubernetesResourceMatcherTest {
   void ignoresWholeSubPath() {
     actual = createDeployment();
     actual.getSpec().getTemplate().getMetadata().getLabels().put("additional-key", "val");
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, false, "/spec/template").matched())
+    assertThat(match(dependentResource, actual, null, context, false, "/spec/template").matched())
         .withFailMessage("Should match when only changes impact ignored sub-paths")
         .isTrue();
   }
@@ -127,18 +123,15 @@ class GenericKubernetesResourceMatcherTest {
         .addToAnnotations("test", "value")
         .endMetadata()
         .build();
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, false).matched())
+    assertThat(match(dependentResource, actual, null, context, false).matched())
         .withFailMessage("Annotations shouldn't matter when metadata is not considered")
         .isTrue();
 
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, true, true, true).matched())
+    assertThat(match(dependentResource, actual, null, context, true, true, true).matched())
         .withFailMessage("Annotations should matter when metadata is considered")
         .isFalse();
 
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource, actual, null, context, true, false).matched())
+    assertThat(match(dependentResource, actual, null, context, true, false).matched())
         .withFailMessage(
             "Should match when strong equality is not considered and only additive changes are made")
         .isTrue();
@@ -155,7 +148,28 @@ class GenericKubernetesResourceMatcherTest {
         .build();
 
     final var matcher = GenericResourceUpdaterMatcher.updaterMatcherFor(ServiceAccount.class);
-    assertThat(matcher.matches(actual, desired, context)).isFalse();
+    assertThat(matcher.matches(actual, desired, context)).isTrue();
+  }
+
+  @Test
+  void matchConfigMap() {
+    var desired = createConfigMap();
+    var actual = createConfigMap();
+    actual.getData().put("key2", "val2");
+
+    var match = GenericKubernetesResourceMatcher.match(desired, actual, true,
+        true, false, context);
+    assertThat(match.matched()).isTrue();
+  }
+
+  ConfigMap createConfigMap() {
+    return new ConfigMapBuilder()
+        .withMetadata(new ObjectMetaBuilder()
+            .withName("tes1")
+            .withNamespace("default")
+            .build())
+        .withData(Map.of("key1", "val1"))
+        .build();
   }
 
   Deployment createDeployment() {
