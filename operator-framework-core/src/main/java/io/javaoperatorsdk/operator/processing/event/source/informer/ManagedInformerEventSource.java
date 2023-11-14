@@ -169,7 +169,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public C configuration() {
-    return manager().configuration();
+    return configuration;
   }
 
   @Override
