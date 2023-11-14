@@ -55,15 +55,16 @@ class InformerEventSourceTest {
     when(informerConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
     informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
-    informerEventSource.setTemporalResourceCache(temporaryResourceCacheMock);
+
     informerEventSource.setEventHandler(eventHandlerMock);
-
-
+    informerEventSource.setConfigurationService(new BaseConfigurationService());
     SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
     when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
         .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
+    informerEventSource.start();
+    informerEventSource.setTemporalResourceCache(temporaryResourceCacheMock);
   }
 
   @Test

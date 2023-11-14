@@ -312,16 +312,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void setConfigurationService(ConfigurationService configurationService) {
     super.setConfigurationService(configurationService);
 
-    super.addIndexers(indexerBuffer);
+    super.addIndexers(indexerBuffer); // todo check
     indexerBuffer = new HashMap<>();
   }
 
   @Override
   public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
-    if (indexerBuffer == null) {
+    if (isRunning()) {
       throw new OperatorException("Cannot add indexers after InformerEventSource started.");
     }
-    indexerBuffer.putAll(indexers);
+    indexerBuffer.putAll(indexers); // todo check
   }
 
   /**

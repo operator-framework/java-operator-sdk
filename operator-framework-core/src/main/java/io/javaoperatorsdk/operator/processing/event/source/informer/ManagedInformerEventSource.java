@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -36,7 +33,11 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
-  private final InformerManager<R, C> cache;
+  private InformerManager<R, C> cache;
+  private boolean parseResourceVersions;
+  private ConfigurationService configurationService;
+  private C configuration;
+  private Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
 
@@ -44,9 +45,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
       MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration,
       boolean parseResourceVersions) {
     super(configuration.getResourceClass());
+    this.parseResourceVersions = parseResourceVersions;
     this.client = client;
-    temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
-    this.cache = new InformerManager<>(client, configuration, this);
+    this.configuration = configuration;
   }
 
   @Override
@@ -77,6 +78,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void start() {
+    temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
+    this.cache = new InformerManager<>(client, configuration, this);
+    cache.setConfigurationService(configurationService);
+    cache.addIndexers(indexers);
     manager().start();
     super.start();
   }
@@ -129,7 +134,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
-    cache.addIndexers(indexers);
+    this.indexers.putAll(indexers);
   }
 
   @Override
@@ -175,6 +180,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   public void setConfigurationService(ConfigurationService configurationService) {
-    cache.setConfigurationService(configurationService);
+    this.configurationService = configurationService;
   }
 }
