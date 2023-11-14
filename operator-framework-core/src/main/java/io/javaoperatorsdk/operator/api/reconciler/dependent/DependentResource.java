@@ -31,6 +31,7 @@ public interface DependentResource<R, P extends HasMetadata> {
    */
   Class<R> resourceType();
 
+  // todo recreate the event source because of re-active use case?
   /**
    * Dependent resources are designed to by default provide event sources. There are cases where
    * they might not:

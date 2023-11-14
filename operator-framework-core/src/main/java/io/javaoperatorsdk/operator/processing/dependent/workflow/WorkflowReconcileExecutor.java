@@ -76,22 +76,23 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     }
   }
 
+  // todo IT test re-registration
   private <R> void registerEventSourceForActivationCondition(boolean activationConditionMet,
       DependentResourceNode<R, P> dependentResourceNode) {
     if (dependentResourceNode.getActivationCondition().isPresent()) {
-      if (activationConditionMet) {
-        // todo create issue for v5 to return name also from DependentResource.eventSource
-        var eventSource =
-            dependentResourceNode.getDependentResource().eventSource(context.eventSourceRetriever()
-                .eventSourceContexForDynamicRegistration());
+      var eventSource =
+          dependentResourceNode.getDependentResource().eventSource(context.eventSourceRetriever()
+              .eventSourceContexForDynamicRegistration());
 
-        eventSource.ifPresent(es -> {
-          // todo check if event source with the name not exists yet, if does do not register.
-          context.eventSourceRetriever()
-              .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
-        });
+      if (activationConditionMet) {
+
+        var es = eventSource.orElseThrow();
+        context.eventSourceRetriever()
+            .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
+
       } else {
-        // todo deregister event source
+        context.eventSourceRetriever()
+            .dynamicallyDeRegisterEventSource(dependentResourceNode.getName());
       }
     }
   }

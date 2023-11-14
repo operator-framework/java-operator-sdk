@@ -19,6 +19,7 @@ public interface EventSourceRetriever<P extends HasMetadata> {
 
   // todo javadocs
   // this will be an idempotent synchronized operation
+  // todo check if event source with the name not exists yet, if does do not register.
   void dynamicallyRegisterEventSource(String name, EventSource eventSource);
 
   void dynamicallyDeRegisterEventSource(String name);
