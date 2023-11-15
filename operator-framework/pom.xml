@@ -64,6 +64,11 @@
       <artifactId>crd-generator-apt</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- This is just here to make some special test using Route, Openshift is actually not used in tests -->
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>openshift-client-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j-impl</artifactId>

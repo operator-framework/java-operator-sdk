@@ -237,7 +237,8 @@ public class Controller<P extends HasMetadata>
     }
 
     // register created event sources
-    final var dependentResourcesByName = managedWorkflow.getDependentResourcesByName();
+    final var dependentResourcesByName =
+        managedWorkflow.getDependentResourcesByNameWithoutActivationCondition();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
       dependentResourcesByName.forEach((key, dependentResource) -> {

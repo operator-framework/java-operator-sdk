@@ -70,22 +70,19 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     registerEventSourceForActivationCondition(activationConditionMet, dependentResourceNode);
 
     if (!reconcileConditionMet || !activationConditionMet) {
-      handleReconcileConditionNotMet(dependentResourceNode);
+      handleReconcileConditionNotMet(dependentResourceNode, !activationConditionMet);
     } else {
       submit(dependentResourceNode, new NodeReconcileExecutor<>(dependentResourceNode), RECONCILE);
     }
   }
 
-  // todo IT test re-registration
   private <R> void registerEventSourceForActivationCondition(boolean activationConditionMet,
       DependentResourceNode<R, P> dependentResourceNode) {
     if (dependentResourceNode.getActivationCondition().isPresent()) {
       var eventSource =
           dependentResourceNode.getDependentResource().eventSource(context.eventSourceRetriever()
               .eventSourceContexForDynamicRegistration());
-
       if (activationConditionMet) {
-
         var es = eventSource.orElseThrow();
         context.eventSourceRetriever()
             .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
@@ -97,7 +94,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     }
   }
 
-  private synchronized void handleDelete(DependentResourceNode dependentResourceNode) {
+  private synchronized void handleDelete(DependentResourceNode dependentResourceNode,
+      boolean activationConditionNotMet) {
     log.debug("Submitting for delete: {}", dependentResourceNode);
 
     if (alreadyVisited(dependentResourceNode)
@@ -109,7 +107,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       return;
     }
 
-    submit(dependentResourceNode, new NodeDeleteExecutor<>(dependentResourceNode), DELETE);
+    submit(dependentResourceNode,
+        new NodeDeleteExecutor<>(dependentResourceNode, activationConditionNotMet), DELETE);
   }
 
   private boolean allDependentsDeletedAlready(DependentResourceNode<?, P> dependentResourceNode) {
@@ -157,8 +156,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
 
   private class NodeDeleteExecutor<R> extends NodeExecutor<R, P> {
 
-    private NodeDeleteExecutor(DependentResourceNode<R, P> dependentResourceNode) {
+    private boolean activationConditionNotMet;
+
+    private NodeDeleteExecutor(DependentResourceNode<R, P> dependentResourceNode,
+        boolean activationConditionNotMet) {
       super(dependentResourceNode, WorkflowReconcileExecutor.this);
+      this.activationConditionNotMet = activationConditionNotMet;
     }
 
     @Override
@@ -170,13 +173,13 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       // GarbageCollected status is irrelevant here, as this method is only called when a
       // precondition does not hold,
       // a deleter should be deleted even if it is otherwise garbage collected
-      if (dependentResource instanceof Deleter) {
+      if (dependentResource instanceof Deleter && !activationConditionNotMet) {
         ((Deleter<P>) dependentResource).delete(primary, context);
       }
       boolean deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
       if (deletePostConditionMet) {
         markAsVisited(dependentResourceNode);
-        handleDependentDeleted(dependentResourceNode);
+        handleDependentDeleted(dependentResourceNode, activationConditionNotMet);
       } else {
         // updating alreadyVisited needs to be the last operation otherwise could lead to a race
         // condition in handleDelete condition checks
@@ -187,11 +190,11 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   }
 
   private synchronized void handleDependentDeleted(
-      DependentResourceNode<?, P> dependentResourceNode) {
+      DependentResourceNode<?, P> dependentResourceNode, boolean activationConditionNotMet) {
     dependentResourceNode.getDependsOn().forEach(dr -> {
       log.debug("Handle deleted for: {} with dependent: {} primaryID: {}", dr,
           dependentResourceNode, primaryID);
-      handleDelete(dr);
+      handleDelete(dr, activationConditionNotMet);
     });
   }
 
@@ -206,10 +209,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   }
 
 
-  private void handleReconcileConditionNotMet(DependentResourceNode<?, P> dependentResourceNode) {
+  private void handleReconcileConditionNotMet(DependentResourceNode<?, P> dependentResourceNode,
+      boolean activationConditionNotMet) {
     Set<DependentResourceNode> bottomNodes = new HashSet<>();
     markDependentsForDelete(dependentResourceNode, bottomNodes);
-    bottomNodes.forEach(this::handleDelete);
+    bottomNodes.forEach(
+        dependentResourceNode1 -> handleDelete(dependentResourceNode1, activationConditionNotMet));
   }
 
   private void markDependentsForDelete(DependentResourceNode<?, P> dependentResourceNode,
