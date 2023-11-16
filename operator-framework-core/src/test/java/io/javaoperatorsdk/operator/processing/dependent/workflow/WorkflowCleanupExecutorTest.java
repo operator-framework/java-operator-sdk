@@ -222,4 +222,16 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
     Assertions.assertThat(res.getPostConditionNotMetDependents()).isEmpty();
   }
 
+  @Test
+  void singleInactiveDependent() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dd1)
+        .withActivationCondition(notMetCondition)
+        .build();
+
+    workflow.cleanup(new TestCustomResource(), mockContext);
+
+    assertThat(executionHistory).notReconciled(dd1);
+  }
+
 }
