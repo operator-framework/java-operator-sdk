@@ -25,8 +25,9 @@ public class WorkflowActivationConditionIT {
           .withReconciler(WorkflowActivationConditionReconciler.class)
           .build();
 
+  // Without activation condition this would fail / there would be errors.
   @Test
-  void routeIsNotCreated() {
+  void reconciledOnVanillaKubernetesDespiteRouteInWorkflow() {
     extension.create(testResource());
 
     await().untilAsserted(() -> {
