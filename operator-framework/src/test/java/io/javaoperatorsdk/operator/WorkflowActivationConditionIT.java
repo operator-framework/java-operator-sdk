@@ -37,8 +37,7 @@ public class WorkflowActivationConditionIT {
     });
   }
 
-  @Test
-  WorkflowActivationConditionCustomResource testResource() {
+  private WorkflowActivationConditionCustomResource testResource() {
     var res = new WorkflowActivationConditionCustomResource();
     res.setMetadata(new ObjectMetaBuilder()
         .withName(TEST_RESOURCE_NAME)
