@@ -18,7 +18,8 @@ import static org.awaitility.Awaitility.await;
 public class WorkflowMultipleActivationIT {
 
   public static final String INITIAL_DATA = "initial data";
-  public static final String TEST_RESOURCE = "test1";
+  public static final String TEST_RESOURCE1 = "test1";
+  public static final String TEST_RESOURCE2 = "test2";
   public static final String CHANGED_VALUE = "changed value";
   public static final int POLL_DELAY = 300;
 
@@ -34,8 +35,8 @@ public class WorkflowMultipleActivationIT {
     var cr1 = extension.create(testResource());
 
     await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE);
-      var secret = extension.get(Secret.class, TEST_RESOURCE);
+      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+      var secret = extension.get(Secret.class, TEST_RESOURCE1);
       assertThat(cm).isNotNull();
       assertThat(secret).isNotNull();
       assertThat(cm.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
@@ -44,7 +45,7 @@ public class WorkflowMultipleActivationIT {
     extension.delete(cr1);
 
     await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE);
+      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
       assertThat(cm).isNull();
     });
 
@@ -52,8 +53,8 @@ public class WorkflowMultipleActivationIT {
     cr1 = extension.create(testResource());
 
     await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE);
-      var secret = extension.get(Secret.class, TEST_RESOURCE);
+      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+      var secret = extension.get(Secret.class, TEST_RESOURCE1);
       assertThat(cm).isNull();
       assertThat(secret).isNotNull();
     });
@@ -63,7 +64,7 @@ public class WorkflowMultipleActivationIT {
     extension.replace(cr1);
 
     await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE);
+      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
       assertThat(cm).isNotNull();
       assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
     });
@@ -73,7 +74,7 @@ public class WorkflowMultipleActivationIT {
     extension.replace(cr1);
 
     await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE);
+      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
       assertThat(cm).isNotNull();
       // data not changed
       assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
@@ -82,7 +83,7 @@ public class WorkflowMultipleActivationIT {
     var numOfReconciliation =
         extension.getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
             .getNumberOfReconciliationExecution();
-    var actualCM = extension.get(ConfigMap.class, TEST_RESOURCE);
+    var actualCM = extension.get(ConfigMap.class, TEST_RESOURCE1);
     actualCM.getData().put("data2", "additionaldata");
     extension.replace(actualCM);
     await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
@@ -94,19 +95,43 @@ public class WorkflowMultipleActivationIT {
 
     extension.delete(cr1);
     await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE);
+      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
       assertThat(cm).isNotNull();
     });
   }
 
-  WorkflowMultipleActivationCustomResource testResource() {
+  WorkflowMultipleActivationCustomResource testResource(String name) {
     var res = new WorkflowMultipleActivationCustomResource();
     res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE)
+        .withName(name)
         .build());
     res.setSpec(new WorkflowMultipleActivationSpec());
     res.getSpec().setValue(INITIAL_DATA);
     return res;
+  }
+
+  WorkflowMultipleActivationCustomResource testResource() {
+    return testResource(TEST_RESOURCE1);
+  }
+
+  WorkflowMultipleActivationCustomResource testResource2() {
+    return testResource(TEST_RESOURCE2);
+  }
+
+  @Test
+  void simpleConcurrencyTest() {
+    ActivationCondition.MET = true;
+    extension.create(testResource());
+    extension.create(testResource2());
+
+    await().untilAsserted(() -> {
+      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+      var cm2 = extension.get(ConfigMap.class, TEST_RESOURCE2);
+      assertThat(cm).isNotNull();
+      assertThat(cm2).isNotNull();
+      assertThat(cm.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
+      assertThat(cm2.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
+    });
   }
 
 }
