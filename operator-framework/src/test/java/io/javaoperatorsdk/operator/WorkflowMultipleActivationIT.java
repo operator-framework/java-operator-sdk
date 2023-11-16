@@ -20,7 +20,7 @@ public class WorkflowMultipleActivationIT {
   public static final String INITIAL_DATA = "initial data";
   public static final String TEST_RESOURCE = "test1";
   public static final String CHANGED_VALUE = "changed value";
-  public static final int POLL_DELAY = 150;
+  public static final int POLL_DELAY = 300;
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =

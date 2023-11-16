@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
@@ -134,6 +135,9 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
+    if (isRunning()) {
+      throw new OperatorException("Cannot add indexers after InformerEventSource started.");
+    }
     this.indexers.putAll(indexers);
   }
 
