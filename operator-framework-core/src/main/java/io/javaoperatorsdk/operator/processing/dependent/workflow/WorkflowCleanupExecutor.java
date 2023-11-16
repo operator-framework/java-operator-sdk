@@ -77,7 +77,6 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
       }
 
       boolean deletePostConditionMet;
-      // todo test
       if (active) {
         deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
       } else {

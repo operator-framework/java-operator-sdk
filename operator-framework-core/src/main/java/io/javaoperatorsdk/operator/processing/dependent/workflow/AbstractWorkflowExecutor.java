@@ -46,12 +46,12 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected synchronized void waitForScheduledExecutionsToRun() {
     while (true) {
       try {
-        this.wait();
         if (noMoreExecutionsScheduled()) {
           break;
         } else {
           logger().warn("Notified but still resources under execution. This should not happen.");
         }
+        this.wait();
       } catch (InterruptedException e) {
         if (noMoreExecutionsScheduled()) {
           logger().debug("interrupted, no more executions for: {}", primaryID);

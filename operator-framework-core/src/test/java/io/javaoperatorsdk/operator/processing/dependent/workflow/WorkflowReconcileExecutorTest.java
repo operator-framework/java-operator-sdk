@@ -9,12 +9,12 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("rawtypes")
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
@@ -23,9 +23,13 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   Context<TestCustomResource> mockContext = mock(Context.class);
   ExecutorService executorService = Executors.newCachedThreadPool();
 
+  TestDependent dr3 = new TestDependent("DR_3");
+  TestDependent dr4 = new TestDependent("DR_4");
+
   @BeforeEach
   void setup() {
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
+    when(mockContext.eventSourceRetriever()).thenReturn(mock(EventSourceRetriever.class));
   }
 
   @Test
@@ -60,7 +64,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void reconciliationWithTwoTheDependsOns() {
-    TestDependent dr3 = new TestDependent("DR_3");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
@@ -80,9 +83,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void diamondShareWorkflowReconcile() {
-    TestDependent dr3 = new TestDependent("DR_3");
-    TestDependent dr4 = new TestDependent("DR_4");
-
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .addDependentResource(dr2).dependsOn(dr1)
@@ -142,7 +142,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void oneBranchErrorsOtherCompletes() {
-    TestDependent dr3 = new TestDependent("DR_3");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
@@ -416,7 +415,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void readyConditionNotMetInOneParent() {
-    TestDependent dr3 = new TestDependent("DR_3");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1).withReadyPostcondition(notMetCondition)
@@ -434,9 +432,6 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void diamondShareWithReadyCondition() {
-    TestDependent dr3 = new TestDependent("DR_3");
-    TestDependent dr4 = new TestDependent("DR_4");
-
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .addDependentResource(dr2).dependsOn(dr1).withReadyPostcondition(notMetCondition)
@@ -479,6 +474,103 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     assertThat(executionHistory).deleted(gcDeleter);
+  }
+
+  @Test
+  void notReconciledIfActivationConditionNotMet() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1)
+        .withActivationCondition(notMetCondition)
+        .addDependentResource(dr2)
+        .build();
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    assertThat(executionHistory).reconciled(dr2).notReconciled(dr1);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+    Assertions.assertThat(res.getReconciledDependents()).contains(dr2);
+  }
+
+  @Test
+  void dependentsOnANonActiveDependentNotReconciled() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1)
+        .withActivationCondition(notMetCondition)
+        .addDependentResource(dr2)
+        .addDependentResource(dr3).dependsOn(dr1)
+        .build();
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    assertThat(executionHistory).reconciled(dr2).notReconciled(dr1, dr3);
+    Assertions.assertThat(res.getErroredDependents()).isEmpty();
+    Assertions.assertThat(res.getReconciledDependents()).contains(dr2);
+  }
+
+  @Test
+  void readyConditionNotCheckedOnNonActiveDependent() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1)
+        .withActivationCondition(notMetCondition)
+        .withReadyPostcondition(notMetCondition)
+        .addDependentResource(dr2)
+        .addDependentResource(dr3).dependsOn(dr1)
+        .build();
+
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    Assertions.assertThat(res.getNotReadyDependents()).isEmpty();
+  }
+
+  @Test
+  void reconcilePreconditionNotCheckedOnNonActiveDependent() {
+    var precondition = mock(Condition.class);
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1)
+        .withActivationCondition(notMetCondition)
+        .withReconcilePrecondition(precondition)
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), mockContext);
+
+    verify(precondition, never()).isMet(any(), any(), any());
+  }
+
+  @Test
+  void deletesDependentsOfNonActiveDependentButNotTheNonActive() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+    TestDeleterDependent drDeleter3 = new TestDeleterDependent("DR_DELETER_2");
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1).withActivationCondition(notMetCondition)
+        .addDependentResource(drDeleter).dependsOn(dr1)
+        .addDependentResource(drDeleter2).dependsOn(drDeleter)
+        .withActivationCondition(notMetCondition)
+        .addDependentResource(drDeleter3).dependsOn(drDeleter2)
+        .build();
+
+    var res = workflow.reconcile(new TestCustomResource(), mockContext);
+
+    Assertions.assertThat(res.getReconciledDependents()).isEmpty();
+    assertThat(executionHistory).deleted(drDeleter, drDeleter3)
+        .notReconciled(dr1,
+            drDeleter2);
+  }
+
+  @Test
+  void activationConditionOnlyCalledOnceOnDeleteDependents() {
+    TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
+    var condition = mock(Condition.class);
+    when(condition.isMet(any(), any(), any())).thenReturn(false);
+
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(drDeleter).withActivationCondition(condition)
+        .addDependentResource(drDeleter2).dependsOn(drDeleter)
+        .build();
+
+    workflow.reconcile(new TestCustomResource(), mockContext);
+
+    assertThat(executionHistory).deleted(drDeleter2);
+    verify(condition, times(1)).isMet(any(), any(), any());
   }
 
 }
