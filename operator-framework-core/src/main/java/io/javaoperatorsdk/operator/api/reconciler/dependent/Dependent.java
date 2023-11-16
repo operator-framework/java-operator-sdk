@@ -50,6 +50,19 @@ public @interface Dependent {
    */
   Class<? extends Condition> deletePostcondition() default Condition.class;
 
+  /**
+   * <p>
+   * If the condition is not met, the dependent resource won't be used. That is, no event sources
+   * will be registered for the dependent, and won't be reconciled or deleted. If other dependents
+   * are still "depend on" this resource, those still will be deleted when needed. Exactly the same
+   * way as for the reconcilePrecondition.
+   * </p>
+   * <p>
+   * This condition is evaluated dynamically, thus on every reconciliation as other conditions. Thus
+   * it's result can change dynamically, therefore the event source that the dependent resource
+   * provides are registered or de-registered dynamically during the reconciliation.
+   * </p>
+   */
   Class<? extends Condition> activationCondition() default Condition.class;
 
   /**
