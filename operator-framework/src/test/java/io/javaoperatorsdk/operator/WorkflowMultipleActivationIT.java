@@ -99,13 +99,6 @@ public class WorkflowMultipleActivationIT {
     });
   }
 
-
-
-  // @Test
-  void simpleConcurrencyTest() {
-    // todo
-  }
-
   WorkflowMultipleActivationCustomResource testResource() {
     var res = new WorkflowMultipleActivationCustomResource();
     res.setMetadata(new ObjectMetaBuilder()
