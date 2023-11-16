@@ -12,8 +12,7 @@ public class isOpenShiftCondition
       DependentResource<Route, WorkflowActivationConditionCustomResource> dependentResource,
       WorkflowActivationConditionCustomResource primary,
       Context<WorkflowActivationConditionCustomResource> context) {
-
-    return context.getClient().getApiGroups().getGroups().stream()
-        .anyMatch(g -> g.getName().equals("route.openshift.io"));
+    // we are testing if the reconciliation still works on Kubernetes, so this always false;
+    return false;
   }
 }
