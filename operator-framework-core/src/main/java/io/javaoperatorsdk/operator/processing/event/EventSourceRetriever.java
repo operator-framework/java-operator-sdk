@@ -18,22 +18,23 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType);
 
   /**
-   * Registers (and starts) event source dynamically during the reconciliation. if there is an event
-   * source registered already with the selected name it will just skip the registration.
+   * Registers (and starts) the specified {@link EventSource} dynamically during the reconciliation.
+   * If an EventSource is already registered with the specified name, the registration will be
+   * ignored.
    * <p>
-   * Normally this is not needed, just in very special cases. Like when you are implementing an
-   * operator that dynamically decides what resource it will watch or not. This is especially
-   * important when the platform might or might not have such resources, and even that decision can
-   * be done when registering event sources using the standard way. In other words, use this as a
-   * last effort.
+   * This is only needed when your operator needs to adapt dynamically based on optional resources
+   * that may or may not be present on the target cluster. Even in this situation, it should be
+   * possible to make these decisions at when the "regular" EventSources are registered so this
+   * method should not typically be called directly but rather by the framework to support
+   * activation conditions of dependents, for example.
    * </p>
    * <p>
-   * This method will block until the event source is synced (in case of InformersEventSource-s
-   * mostly).
+   * This method will block until the event source is synced, if needed (as is the case for
+   * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}).
    * </p>
    * <p>
-   * In case multiple reconciliations will happen concurrently, there will be nore more event
-   * sources with same name registered, always only one.
+   * Should multiple reconciliations happen concurrently, only one EventSource with the specified
+   * name will ever be registered.
    * </p>
    *
    * @param name of the event source
@@ -42,15 +43,16 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   void dynamicallyRegisterEventSource(String name, EventSource eventSource);
 
   /**
-   * De-registers (and stops) an event source dynamically. If there is no event source with the
-   * target name method will just return.
+   * De-registers (and stops) the {@link EventSource} associated with the specified name. If no such
+   * source exists, this method will do nothing.
    * <p>
-   * The method call will block until the event source is de-registered and stopped. If multiple
-   * reconciliations are calling the method concurrently all will be blocked until the event source
-   * if not de-registered.
+   * This method will block until the event source is de-registered and stopped. If multiple
+   * reconciliations happen concurrently, all will be blocked until the event source is
+   * de-registered.
    * </p>
    * <p>
-   * This method is ment only to be used for dynamically registered event sources.
+   * This method is meant only to be used for dynamically registered event sources and should not be
+   * typically called directly.
    * </p>
    *
    * @param name of the event source

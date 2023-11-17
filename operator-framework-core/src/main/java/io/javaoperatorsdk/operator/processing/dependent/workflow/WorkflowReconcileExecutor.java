@@ -219,8 +219,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       boolean activationConditionMet) {
     Set<DependentResourceNode> bottomNodes = new HashSet<>();
     markDependentsForDelete(dependentResourceNode, bottomNodes, activationConditionMet);
-    bottomNodes.forEach(
-        dependentResourceNode1 -> handleDelete(dependentResourceNode1));
+    bottomNodes.forEach(this::handleDelete);
   }
 
   private void markDependentsForDelete(DependentResourceNode<?, P> dependentResourceNode,
