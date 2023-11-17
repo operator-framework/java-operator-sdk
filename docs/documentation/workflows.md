@@ -35,12 +35,14 @@ reconciliation process.
   proceeding until the condition checking whether the DR is ready holds true
 - **Delete postcondition** - is a condition on a given DR to check if the reconciliation of
   dependents can proceed after the DR is supposed to have been deleted
-- **Activation condition** - is a special condition, what is mean to describe if the DR 
-  should be used in the workflow. Typical use-case is, to differentiate if the actual
-  platform is Openshift or vanilla Kubernetes, therefore users can make sure that no 
-  informers are registered for resources witch are platform specific (like Route on Openshift) - 
-  since that would result in an error. But can be used do check like if CertMager is installed or not,
-  and define the behavior based on that.
+- **Activation condition** - is a special condition meant to specify under which condition the DR is used in the
+  workflow. A typical use-case for this feature is to only activate some dependents depending on the presence of
+  optional resources / features on the target cluster. Without this activation condition, JOSDK would attempt to
+  register an informer for these optional resources, which would cause an error in the case where the resource is
+  missing. With this activation condition, you can now conditionally register informers depending on whether the
+  condition holds or not. This is a very useful feature when your operator needs to handle different flavors of the
+  platform (e.g. OpenShift vs plain Kubernetes) and/or change its behavior based on the availability of optional
+  resources / features (e.g. CertManager, a specific Ingress controller, etc.).
 
 ## Defining Workflows
 
@@ -193,12 +195,12 @@ demonstrated using examples:
    `depends-on` relations.
 2. Root nodes, i.e. nodes in the graph that do not depend on other nodes are reconciled first,
    in a parallel manner.
-2. A DR is reconciled if it does not depend on any other DRs, or *ALL* the DRs it depends on are
-   reconciled and ready. If a DR defines a reconcile pre-condition and/or an activationCondition, 
+3. A DR is reconciled if it does not depend on any other DRs, or *ALL* the DRs it depends on are
+   reconciled and ready. If a DR defines a reconcile pre-condition and/or an activation condition, 
    then these condition must become `true` before the DR is reconciled.
-2. A DR is considered *ready* if it got successfully reconciled and any ready post-condition it
+4. A DR is considered *ready* if it got successfully reconciled and any ready post-condition it
    might define is `true`.
-3. If a DR's reconcile pre-condition is not met, this DR is deleted. All the DRs that depend
+5. If a DR's reconcile pre-condition is not met, this DR is deleted. All the DRs that depend
    on the dependent resource are also recursively deleted. This implies that
    DRs are deleted in reverse order compared the one in which they are reconciled. The reason
    for this behavior is (Will make a more detailed blog post about the design decision, much deeper
@@ -209,15 +211,14 @@ demonstrated using examples:
    idempotency (i.e. with the same input state, we should have the same output state), from this
    follows that if the condition doesn't hold `true` anymore, the associated resource needs to
    be deleted because the resource shouldn't exist/have been created.
-4. if a DR's activation condition is not met, it won't be reconciled or deleted. If 
-   other DR's depend on it, those will be recursively deleted in a same way as for reconcile pre-condition.
-   Event sources for a dependent resource with activation condition are registered/de-registered dynamically,
-   thus during the reconciliation.   
-5. For a DR to be deleted by a workflow, it needs to implement the `Deleter` interface, in which
-  case its `delete` method will be called, unless it also implements the `GarbageCollected`
-  interface. If a DR doesn't implement `Deleter` it is considered as automatically deleted. If
-  a delete post-condition exists for this DR, it needs to become `true` for the workflow to
-  consider the DR as successfully deleted.
+6. If a DR's activation condition is not met, it won't be reconciled or deleted. If other DR's depend on it, those will
+   be recursively deleted in a way similar to reconcile pre-conditions. Event sources for a dependent resource with
+   activation condition are registered/de-registered dynamically, thus during the reconciliation.
+7. For a DR to be deleted by a workflow, it needs to implement the `Deleter` interface, in which
+   case its `delete` method will be called, unless it also implements the `GarbageCollected`
+   interface. If a DR doesn't implement `Deleter` it is considered as automatically deleted. If
+   a delete post-condition exists for this DR, it needs to become `true` for the workflow to
+   consider the DR as successfully deleted.
 
 ### Samples
 
