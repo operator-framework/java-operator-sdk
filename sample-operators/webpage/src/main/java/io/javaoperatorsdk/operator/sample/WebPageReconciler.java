@@ -109,7 +109,6 @@ public class WebPageReconciler
           ns);
       var res = kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
           .createOr(Replaceable::update);
-      log.debug("Updated config map: {}", res);
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
@@ -184,14 +183,10 @@ public class WebPageReconciler
   }
 
   private boolean match(ConfigMap desiredHtmlConfigMap, ConfigMap existingConfigMap) {
-    log.debug("Actual config map: {}, desired configMap: {}", existingConfigMap,
-        desiredHtmlConfigMap);
     if (existingConfigMap == null) {
       return false;
     } else {
-      var matched = desiredHtmlConfigMap.getData().equals(existingConfigMap.getData());
-      log.debug("Matched config map: {}", matched);
-      return matched;
+      return desiredHtmlConfigMap.getData().equals(existingConfigMap.getData());
     }
   }
 
