@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -229,6 +230,28 @@ public class EventSourceManager<P extends HasMetadata>
 
   public <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType) {
     return eventSources.getEventSources(dependentType);
+  }
+
+  @Override
+  public synchronized void dynamicallyRegisterEventSource(String name, EventSource eventSource) {
+    if (eventSources.existing(name, eventSource) != null) {
+      return;
+    }
+    registerEventSource(name, eventSource);
+    eventSource.start();
+  }
+
+  @Override
+  public synchronized void dynamicallyDeRegisterEventSource(String name) {
+    EventSource es = eventSources.remove(name);
+    if (es != null) {
+      es.stop();
+    }
+  }
+
+  @Override
+  public EventSourceContext<P> eventSourceContexForDynamicRegistration() {
+    return controller.eventSourceContext();
   }
 
   /**

@@ -25,9 +25,9 @@ public class AbstractWorkflowExecutorTest {
   protected GarbageCollectedDeleter gcDeleter = new GarbageCollectedDeleter("GC_DELETER");
 
   @SuppressWarnings("rawtypes")
-  protected final Condition noMetDeletePostCondition = (primary, secondary, context) -> false;
+  protected final Condition notMetCondition = (primary, secondary, context) -> false;
   @SuppressWarnings("rawtypes")
-  protected final Condition metDeletePostCondition = (primary, secondary, context) -> true;
+  protected final Condition metCondition = (primary, secondary, context) -> true;
 
   protected List<ReconcileRecord> executionHistory =
       Collections.synchronizedList(new ArrayList<>());

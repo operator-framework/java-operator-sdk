@@ -37,7 +37,7 @@ class ControllerResourceEventSourceTest extends
 
   @BeforeEach
   public void setup() {
-    setUpSource(new ControllerResourceEventSource<>(testController), false,
+    setUpSource(new ControllerResourceEventSource<>(testController), true,
         new BaseConfigurationService());
   }
 
