@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class isOpenShiftCondition
+public class IsOpenShiftCondition
     implements Condition<Route, WorkflowActivationConditionCustomResource> {
   @Override
   public boolean isMet(

@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 @ControllerConfiguration(dependents = {
     @Dependent(type = ConfigMapDependentResource.class),
     @Dependent(type = RouteDependentResource.class,
-        activationCondition = isOpenShiftCondition.class)
+        activationCondition = IsOpenShiftCondition.class)
 })
 public class WorkflowActivationConditionReconciler
     implements Reconciler<WorkflowActivationConditionCustomResource> {

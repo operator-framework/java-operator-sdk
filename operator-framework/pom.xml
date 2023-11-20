@@ -68,6 +68,7 @@
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>openshift-client-api</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
