@@ -20,7 +20,8 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   /**
    * Registers (and starts) the specified {@link EventSource} dynamically during the reconciliation.
    * If an EventSource is already registered with the specified name, the registration will be
-   * ignored.
+   * ignored. It is the user's responsibility to handle the naming correctly, thus to not try to
+   * register different event source with same name that is already registered.
    * <p>
    * This is only needed when your operator needs to adapt dynamically based on optional resources
    * that may or may not be present on the target cluster. Even in this situation, it should be
