@@ -167,12 +167,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
         DependentResource<R, P> dependentResource) {
       var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
-      var activationConditionMet = dependentResourceNode.getActivationCondition()
-          .map(c -> c.isMet(dependentResource, primary, context))
-          .orElse(true);
-
       boolean deletePostConditionMet = true;
-      if (Boolean.TRUE.equals(activationConditionMet)) {
+      if (isConditionMet(dependentResourceNode.getActivationCondition(), dependentResource)) {
         // GarbageCollected status is irrelevant here, as this method is only called when a
         // precondition does not hold,
         // a deleter should be deleted even if it is otherwise garbage collected

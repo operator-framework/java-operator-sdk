@@ -46,6 +46,9 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected synchronized void waitForScheduledExecutionsToRun() {
     while (true) {
       try {
+        // in case when workflow just contains non-activated dependents,
+        // it needs to be checked first if there are already no executions
+        // scheduled at the beginning.
         if (noMoreExecutionsScheduled()) {
           break;
         } else {
