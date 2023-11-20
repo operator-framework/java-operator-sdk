@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Replaceable;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -107,7 +108,7 @@ public class WebPageReconciler
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
       var res = kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
-          .createOrReplace();
+          .createOr(Replaceable::update);
       log.debug("Updated config map: {}", res);
     }
 
@@ -118,7 +119,7 @@ public class WebPageReconciler
           desiredDeployment.getMetadata().getName(),
           ns);
       kubernetesClient.apps().deployments().inNamespace(ns).resource(desiredDeployment)
-          .createOrReplace();
+          .createOr(Replaceable::update);
     }
 
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
@@ -127,14 +128,15 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      kubernetesClient.services().inNamespace(ns).resource(desiredService).createOrReplace();
+      kubernetesClient.services().inNamespace(ns).resource(desiredService)
+          .createOr(Replaceable::update);
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
-        kubernetesClient.resource(desiredIngress).inNamespace(ns).createOrReplace();
+        kubernetesClient.resource(desiredIngress).inNamespace(ns).createOr(Replaceable::update);
       }
     } else
       existingIngress.ifPresent(
@@ -150,7 +152,7 @@ public class WebPageReconciler
       kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
     webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
-    return UpdateControl.updateStatus(webPage);
+    return UpdateControl.patchStatus(webPage);
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {
