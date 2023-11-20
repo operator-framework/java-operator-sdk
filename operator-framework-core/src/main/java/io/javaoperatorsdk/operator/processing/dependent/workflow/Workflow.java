@@ -42,4 +42,9 @@ public interface Workflow<P extends HasMetadata> {
   default Map<String, DependentResource> getDependentResourcesByName() {
     return Collections.emptyMap();
   }
+
+  @SuppressWarnings("rawtypes")
+  default Map<String, DependentResource> getDependentResourcesByNameWithoutActivationCondition() {
+    return Collections.emptyMap();
+  }
 }

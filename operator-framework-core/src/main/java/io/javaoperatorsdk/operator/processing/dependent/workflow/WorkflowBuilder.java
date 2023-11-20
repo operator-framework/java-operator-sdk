@@ -58,6 +58,11 @@ public class WorkflowBuilder<P extends HasMetadata> {
     return this;
   }
 
+  public WorkflowBuilder<P> withActivationCondition(Condition activationCondition) {
+    currentNode.setActivationCondition(activationCondition);
+    return this;
+  }
+
   DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
     // first check by name
     final var node =

@@ -75,7 +75,7 @@ class EventSources<R extends HasMetadata> {
     sources.clear();
   }
 
-  private NamedEventSource existing(String name, EventSource source) {
+  public NamedEventSource existing(String name, EventSource source) {
     final var eventSources = sources.get(keyFor(source));
     if (eventSources == null || eventSources.isEmpty()) {
       return null;
@@ -182,5 +182,10 @@ class EventSources<R extends HasMetadata> {
         .filter(ResourceEventSource.class::isInstance)
         .map(es -> (ResourceEventSource<S, R>) es)
         .collect(Collectors.toList());
+  }
+
+  public EventSource remove(String name) {
+    var optionalMap = sources.values().stream().filter(m -> m.containsKey(name)).findFirst();
+    return optionalMap.map(m -> m.remove(name)).orElse(null);
   }
 }

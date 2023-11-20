@@ -68,11 +68,20 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
         DependentResource<R, P> dependentResource) {
       var deletePostCondition = dependentResourceNode.getDeletePostcondition();
 
-      if (dependentResource.isDeletable()) {
+      var active =
+          isConditionMet(dependentResourceNode.getActivationCondition(), dependentResource);
+
+      if (dependentResource.isDeletable() && active) {
         ((Deleter<P>) dependentResource).delete(primary, context);
         deleteCalled.add(dependentResourceNode);
       }
-      boolean deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
+
+      boolean deletePostConditionMet;
+      if (active) {
+        deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
+      } else {
+        deletePostConditionMet = true;
+      }
       if (deletePostConditionMet) {
         markAsVisited(dependentResourceNode);
         handleDependentCleaned(dependentResourceNode);

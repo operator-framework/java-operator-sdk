@@ -16,19 +16,21 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   private Condition<R, P> reconcilePrecondition;
   private Condition<R, P> deletePostcondition;
   private Condition<R, P> readyPostcondition;
+  private Condition<R, P> activationCondition;
   private final DependentResource<R, P> dependentResource;
 
   DependentResourceNode(DependentResource<R, P> dependentResource) {
-    this(getNameFor(dependentResource), null, null, null, dependentResource);
+    this(getNameFor(dependentResource), null, null, null, null, dependentResource);
   }
 
   public DependentResourceNode(String name, Condition<R, P> reconcilePrecondition,
       Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
-      DependentResource<R, P> dependentResource) {
+      Condition<R, P> activationCondition, DependentResource<R, P> dependentResource) {
     this.name = name;
     this.reconcilePrecondition = reconcilePrecondition;
     this.deletePostcondition = deletePostcondition;
     this.readyPostcondition = readyPostcondition;
+    this.activationCondition = activationCondition;
     this.dependentResource = dependentResource;
   }
 
@@ -63,12 +65,20 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(deletePostcondition);
   }
 
+  public Optional<Condition<R, P>> getActivationCondition() {
+    return Optional.ofNullable(activationCondition);
+  }
+
   void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
     this.reconcilePrecondition = reconcilePrecondition;
   }
 
   void setDeletePostcondition(Condition<R, P> cleanupCondition) {
     this.deletePostcondition = cleanupCondition;
+  }
+
+  void setActivationCondition(Condition<R, P> activationCondition) {
+    this.activationCondition = activationCondition;
   }
 
   public Optional<Condition<R, P>> getReadyPostcondition() {
