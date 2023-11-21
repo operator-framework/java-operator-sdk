@@ -75,7 +75,12 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
           .handleRecentResourceCreate(ResourceID.fromResource(primary), stateResource);
     }
   }
-
+  
+  @Override
+  public Matcher.Result<R> match(R resource, P primary, Context<P> context) {
+    var desired = desired(primary, context);
+    return Matcher.Result.computed(resource.equals(desired), desired);
+  }
 
   @SuppressWarnings("unchecked")
   public void deleteTargetResource(P primary, R resource, String key,

@@ -85,9 +85,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     return ReconcileResult.noOperation(actualResource);
   }
 
-  public Result<R> match(R resource, P primary, Context<P> context) {
-    return updater.match(resource, primary, context);
-  }
+  public abstract Result<R> match(R resource, P primary, Context<P> context);
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
