@@ -1,13 +1,22 @@
 package io.javaoperatorsdk.operator;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.sample.generickubernetesdependentstandalone.GenericKubernetesDependentStandaloneReconciler;
 
 public class GenericKubernetesDependentStandaloneIT {
 
+  @RegisterExtension
+  LocallyRunOperatorExtension operator =
+      LocallyRunOperatorExtension.builder()
+          .withConfigurationService(o -> o.withCloseClientOnStop(false))
+          .withReconciler(new GenericKubernetesDependentStandaloneReconciler())
+          .build();
 
   @Test
   void testInformer() {
@@ -35,6 +44,5 @@ public class GenericKubernetesDependentStandaloneIT {
       });
     }
   }
-
 
 }

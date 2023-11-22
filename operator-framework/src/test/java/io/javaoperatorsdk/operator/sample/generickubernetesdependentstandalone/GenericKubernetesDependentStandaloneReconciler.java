@@ -1,28 +1,31 @@
 package io.javaoperatorsdk.operator.sample.generickubernetesdependentstandalone;
 
+import java.util.Map;
+
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.sample.bulkdependent.CRUDConfigMapBulkDependentResource;
-import io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
 public class GenericKubernetesDependentStandaloneReconciler
-    implements Reconciler<GenericKubernetesDependentStandaloneCustomResource> {
+    implements Reconciler<GenericKubernetesDependentStandaloneCustomResource>,
+    EventSourceInitializer<GenericKubernetesDependentStandaloneCustomResource> {
 
+  private final ConfigMapGenericKubernetesDependent dependent =
+      new ConfigMapGenericKubernetesDependent();
 
-  private final ConfigMapDeleterBulkDependentResource dependent;
-
-  public GenericKubernetesDependentStandaloneReconciler() {
-    dependent = new CRUDConfigMapBulkDependentResource();
-  }
+  public GenericKubernetesDependentStandaloneReconciler() {}
 
   @Override
   public UpdateControl<GenericKubernetesDependentStandaloneCustomResource> reconcile(
       GenericKubernetesDependentStandaloneCustomResource resource,
       Context<GenericKubernetesDependentStandaloneCustomResource> context) {
 
-
-
     return UpdateControl.noUpdate();
   }
 
+  @Override
+  public Map<String, EventSource> prepareEventSources(
+      EventSourceContext<GenericKubernetesDependentStandaloneCustomResource> context) {
+    return EventSourceInitializer.nameEventSources(dependent.eventSource(context).orElseThrow());
+  }
 }
