@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Optional;
 import java.util.Set;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -13,6 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 public class DefaultResourceConfiguration<R extends HasMetadata>
     implements ResourceConfiguration<R> {
 
+  public static final String GENERIC_KUBERNETES_RESOURCE = "generickubernetesresource";
   private final Class<R> resourceClass;
   private final String resourceTypeName;
   private final OnAddFilter<? super R> onAddFilter;
@@ -28,7 +30,9 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
       OnUpdateFilter<? super R> onUpdateFilter, GenericFilter<? super R> genericFilter,
       ItemStore<R> itemStore, Long informerListLimit) {
     this.resourceClass = resourceClass;
-    this.resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
+    this.resourceTypeName = resourceClass.isAssignableFrom(GenericKubernetesResource.class)
+        ? GENERIC_KUBERNETES_RESOURCE
+        : ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
     this.genericFilter = genericFilter;

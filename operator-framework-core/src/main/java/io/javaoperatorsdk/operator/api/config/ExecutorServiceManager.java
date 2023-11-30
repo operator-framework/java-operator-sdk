@@ -78,7 +78,7 @@ public class ExecutorServiceManager {
           // to find out any exceptions
           f.get();
         } catch (ExecutionException e) {
-          throw new OperatorException(e.getCause());
+          throw new OperatorException(e);
         } catch (InterruptedException e) {
           log.warn("Interrupted.", e);
           Thread.currentThread().interrupt();

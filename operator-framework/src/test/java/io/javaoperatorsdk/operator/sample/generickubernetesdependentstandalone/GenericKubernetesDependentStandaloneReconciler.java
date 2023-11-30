@@ -20,6 +20,8 @@ public class GenericKubernetesDependentStandaloneReconciler
       GenericKubernetesDependentStandaloneCustomResource resource,
       Context<GenericKubernetesDependentStandaloneCustomResource> context) {
 
+    dependent.reconcile(resource, context);
+
     return UpdateControl.noUpdate();
   }
 

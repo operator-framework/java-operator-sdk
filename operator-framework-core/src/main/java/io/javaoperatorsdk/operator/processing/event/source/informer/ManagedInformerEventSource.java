@@ -9,9 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -40,10 +38,12 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   private C configuration;
   private Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;
-  protected MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
+  protected MixedOperation client;
+
+
 
   protected ManagedInformerEventSource(
-      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client, C configuration,
+      MixedOperation client, C configuration,
       boolean parseResourceVersions) {
     super(configuration.getResourceClass());
     this.parseResourceVersions = parseResourceVersions;
