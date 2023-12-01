@@ -483,6 +483,16 @@ also be created, one per dependent resource.
 See [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/ExternalStateBulkIT.java)
 as a sample.
 
+
+## GenericKubernetesResource based Dependent Resources
+
+In rare circumstances resource handling where there is no class representation or just typeless handling might be needed.
+Fabric8 Client provides [GenericKubernetesResource](https://github.com/fabric8io/kubernetes-client/blob/main/doc/CHEATSHEET.md#resource-typeless-api)
+to support that. 
+
+For dependent resource this is supported by [GenericKubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/GenericKubernetesDependentResource.java#L8-L8)
+. See samples [here](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/generickubernetesresource).
+
 ## Other Dependent Resource Features
 
 ### Caching and Event Handling in [KubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java)
