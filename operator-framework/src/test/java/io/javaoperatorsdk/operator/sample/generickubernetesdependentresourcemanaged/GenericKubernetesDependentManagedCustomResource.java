@@ -10,6 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("gkdm")
 public class GenericKubernetesDependentManagedCustomResource
-    extends CustomResource<GenericKubernetesDependentManagedSpec, Void>
+    extends CustomResource<GenericKubernetesDependentSpec, Void>
     implements Namespaced {
 }

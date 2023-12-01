@@ -5,11 +5,12 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.ShortNames;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.javaoperatorsdk.operator.sample.generickubernetesdependentresourcemanaged.GenericKubernetesDependentSpec;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("gkd")
 public class GenericKubernetesDependentStandaloneCustomResource
-    extends CustomResource<GenericKubernetesDependentStandaloneSpec, Void>
+    extends CustomResource<GenericKubernetesDependentSpec, Void>
     implements Namespaced {
 }
