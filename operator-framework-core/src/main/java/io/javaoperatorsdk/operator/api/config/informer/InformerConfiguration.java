@@ -275,6 +275,9 @@ public interface InformerConfiguration<R extends HasMetadata>
     return new InformerConfigurationBuilder<>(resourceClass);
   }
 
+  /**
+   * * For the case when want to use {@link GenericKubernetesResource}
+   */
   static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
       GroupVersionKind groupVersionKind) {
     return new InformerConfigurationBuilder<>(groupVersionKind);
@@ -295,10 +298,13 @@ public interface InformerConfiguration<R extends HasMetadata>
         .withNamespacesInheritedFromController(eventSourceContext);
   }
 
+  /**
+   * * For the case when want to use {@link GenericKubernetesResource}
+   */
   @SuppressWarnings("unchecked")
-  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
+  static InformerConfigurationBuilder<GenericKubernetesResource> from(
       GroupVersionKind groupVersionKind, EventSourceContext<?> eventSourceContext) {
-    return (InformerConfigurationBuilder<R>) new InformerConfigurationBuilder<>(groupVersionKind)
+    return new InformerConfigurationBuilder<GenericKubernetesResource>(groupVersionKind)
         .withNamespacesInheritedFromController(eventSourceContext);
   }
 

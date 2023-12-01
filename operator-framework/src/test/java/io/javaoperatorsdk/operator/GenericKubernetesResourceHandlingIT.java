@@ -5,16 +5,16 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.generickubernetesresource.GenericKubernetesDependentSpec;
-import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentresourcemanaged.GenericKubernetesDependentManagedCustomResource;
-import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentresourcemanaged.GenericKubernetesDependentManagedReconciler;
+import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesresourcehandling.GenericKubernetesResourceHandlingCustomResource;
+import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesresourcehandling.GenericKubernetesResourceHandlingReconciler;
 
-public class GenericKubernetesDependentManagedIT
-    extends GenericKubernetesDependentTestBase<GenericKubernetesDependentManagedCustomResource> {
+public class GenericKubernetesResourceHandlingIT
+    extends GenericKubernetesDependentTestBase<GenericKubernetesResourceHandlingCustomResource> {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(new GenericKubernetesDependentManagedReconciler())
+          .withReconciler(new GenericKubernetesResourceHandlingReconciler())
           .build();
 
   @Override
@@ -23,8 +23,8 @@ public class GenericKubernetesDependentManagedIT
   }
 
   @Override
-  GenericKubernetesDependentManagedCustomResource testResource(String name, String data) {
-    var resource = new GenericKubernetesDependentManagedCustomResource();
+  GenericKubernetesResourceHandlingCustomResource testResource(String name, String data) {
+    var resource = new GenericKubernetesResourceHandlingCustomResource();
     resource.setMetadata(new ObjectMetaBuilder()
         .withName(name)
         .build());
