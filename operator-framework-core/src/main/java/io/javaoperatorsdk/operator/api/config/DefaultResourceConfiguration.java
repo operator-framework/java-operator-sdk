@@ -14,7 +14,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 public class DefaultResourceConfiguration<R extends HasMetadata>
     implements ResourceConfiguration<R> {
 
-  public static final String GENERIC_KUBERNETES_RESOURCE = "generickubernetesresource";
   private final Class<R> resourceClass;
   private final String resourceTypeName;
   private final OnAddFilter<? super R> onAddFilter;
@@ -33,7 +32,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     this.resourceTypeName = resourceClass.isAssignableFrom(GenericKubernetesResource.class)
         // in general this is irrelevant now for secondary resources it is used just by controller
         // where GenericKubernetesResource now does not apply
-        ? GENERIC_KUBERNETES_RESOURCE
+        ? GenericKubernetesResource.class.getSimpleName()
         : ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
