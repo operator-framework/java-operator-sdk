@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.generickubernetesdependentstandalone;
+package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentstandalone;
 
 import java.io.IOException;
 import java.io.InputStream;

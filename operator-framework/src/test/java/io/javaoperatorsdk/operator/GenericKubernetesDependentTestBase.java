@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.generickubernetesdependentresourcemanaged.GenericKubernetesDependentSpec;
-import io.javaoperatorsdk.operator.sample.generickubernetesdependentstandalone.ConfigMapGenericKubernetesDependent;
+import io.javaoperatorsdk.operator.sample.generickubernetesresource.GenericKubernetesDependentSpec;
+import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentstandalone.ConfigMapGenericKubernetesDependent;
+
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -37,7 +39,7 @@ public abstract class GenericKubernetesDependentTestBase<R extends CustomResourc
 
     extension().delete(resource);
 
-    await().untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(30)).untilAsserted(() -> {
       var cm = extension().get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(cm).isNull();
     });

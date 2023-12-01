@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.generickubernetesdependentresourcemanaged;
+package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentresourcemanaged;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
