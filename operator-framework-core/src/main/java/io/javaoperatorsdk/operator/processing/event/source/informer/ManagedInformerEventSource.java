@@ -33,14 +33,12 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
   private InformerManager<R, C> cache;
-  private boolean parseResourceVersions;
+  private final boolean parseResourceVersions;
   private ConfigurationService configurationService;
-  private C configuration;
+  private final C configuration;
   private Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation client;
-
-
 
   protected ManagedInformerEventSource(
       MixedOperation client, C configuration,

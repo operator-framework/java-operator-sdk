@@ -31,6 +31,7 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
       ItemStore<R> itemStore, Long informerListLimit) {
     this.resourceClass = resourceClass;
     this.resourceTypeName = resourceClass.isAssignableFrom(GenericKubernetesResource.class)
+        // todo better handling?
         ? GENERIC_KUBERNETES_RESOURCE
         : ReconcilerUtils.getResourceTypeName(resourceClass);
     this.onAddFilter = onAddFilter;

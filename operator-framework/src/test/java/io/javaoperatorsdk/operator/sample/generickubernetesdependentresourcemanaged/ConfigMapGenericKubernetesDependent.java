@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.generickubernetesdependentstandalone;
+package io.javaoperatorsdk.operator.sample.generickubernetesdependentresourcemanaged;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,11 +13,11 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
 
 public class ConfigMapGenericKubernetesDependent extends
-    GenericKubernetesDependentResource<GenericKubernetesDependentStandaloneCustomResource>
+    GenericKubernetesDependentResource<GenericKubernetesDependentManagedCustomResource>
     implements
-    Creator<GenericKubernetesResource, GenericKubernetesDependentStandaloneCustomResource>,
-    Updater<GenericKubernetesResource, GenericKubernetesDependentStandaloneCustomResource>,
-    GarbageCollected<GenericKubernetesDependentStandaloneCustomResource> {
+    Creator<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
+    Updater<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
+    GarbageCollected<GenericKubernetesDependentManagedCustomResource> {
 
   public static final String VERSION = "v1";
   public static final String KIND = "ConfigMap";
@@ -29,8 +29,8 @@ public class ConfigMapGenericKubernetesDependent extends
 
   @Override
   protected GenericKubernetesResource desired(
-      GenericKubernetesDependentStandaloneCustomResource primary,
-      Context<GenericKubernetesDependentStandaloneCustomResource> context) {
+      GenericKubernetesDependentManagedCustomResource primary,
+      Context<GenericKubernetesDependentManagedCustomResource> context) {
 
     try (InputStream is = this.getClass().getResourceAsStream("/configmap.yaml")) {
       var res = context.getClient().genericKubernetesResources(VERSION, KIND).load(is).item();

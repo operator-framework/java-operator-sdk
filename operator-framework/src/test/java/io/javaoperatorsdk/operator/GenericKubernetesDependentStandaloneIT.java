@@ -24,10 +24,8 @@ public class GenericKubernetesDependentStandaloneIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withCloseClientOnStop(false))
           .withReconciler(new GenericKubernetesDependentStandaloneReconciler())
           .build();
-
 
   @Test
   void testReconcile() {
