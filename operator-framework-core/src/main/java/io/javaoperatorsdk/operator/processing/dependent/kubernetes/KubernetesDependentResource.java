@@ -76,6 +76,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     configureWith(new InformerEventSource<>(ic, context));
   }
 
+  // just to seamlessly handle GenericKubernetesDependentResource
   protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder() {
     return InformerConfiguration.from(resourceType());
   }

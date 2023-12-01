@@ -114,9 +114,8 @@ class InformerWrapper<T extends HasMetadata>
 
   private String versionedFullResourceName() {
     final var apiTypeClass = informer.getApiTypeClass();
-    // todo better messages handling
     if (apiTypeClass.isAssignableFrom(GenericKubernetesResource.class)) {
-      return "GenericKubernetesResource";
+      return GenericKubernetesResource.class.getSimpleName();
     }
     return ReconcilerUtils.getResourceTypeNameWithVersion(apiTypeClass);
   }
