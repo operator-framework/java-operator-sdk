@@ -3,9 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 public class GenericKubernetesDependentResource<P extends HasMetadata>
     extends KubernetesDependentResource<GenericKubernetesResource, P> {
@@ -17,16 +15,8 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     this.groupVersionKind = groupVersionKind;
   }
 
-  // todo super functionality filters etc
-  @Override
-  protected InformerEventSource<GenericKubernetesResource, P> createEventSource(
-      EventSourceContext<P> context) {
-    var es = new InformerEventSource<>(
-        InformerConfiguration.<GenericKubernetesResource>from(groupVersionKind, context)
-            .build(),
-        context);
-
-    return es;
+  protected InformerConfiguration.InformerConfigurationBuilder<GenericKubernetesResource> informerConfigurationBuilder() {
+    return InformerConfiguration.from(groupVersionKind);
   }
 
   public GroupVersionKind getGroupVersionKind() {
