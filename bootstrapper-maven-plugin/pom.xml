@@ -15,7 +15,7 @@
 
   <properties>
     <maven-plugin-annotations.version>3.10.2</maven-plugin-annotations.version>
-    <maven-plugin-api.version>3.9.5</maven-plugin-api.version>
+    <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
   </properties>
 
   <dependencies>
