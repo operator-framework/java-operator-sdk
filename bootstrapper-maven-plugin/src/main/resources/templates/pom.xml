@@ -40,6 +40,12 @@
             <version>${josdk.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>operator-framework-junit-5</artifactId>
+            <version>${josdk.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-apt</artifactId>
             <version>${fabric8-client.version}</version>
