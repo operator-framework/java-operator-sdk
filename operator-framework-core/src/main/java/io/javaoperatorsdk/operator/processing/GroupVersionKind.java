@@ -7,6 +7,18 @@ public class GroupVersionKind {
   private final String version;
   private final String kind;
 
+  public GroupVersionKind(String apiVersion, String kind) {
+    this.kind = kind;
+    String[] groupAndVersion = apiVersion.split("/");
+    if (groupAndVersion.length == 1) {
+      this.group = null;
+      this.version = groupAndVersion[0];
+    } else {
+      this.group = groupAndVersion[0];
+      this.version = groupAndVersion[1];
+    }
+  }
+
   public GroupVersionKind(String group, String version, String kind) {
     this.group = group;
     this.version = version;
