@@ -63,4 +63,13 @@ public class GroupVersionKind {
   public int hashCode() {
     return Objects.hash(group, version, kind);
   }
+
+  @Override
+  public String toString() {
+    return "GroupVersionKind{" +
+        "group='" + group + '\'' +
+        ", version='" + version + '\'' +
+        ", kind='" + kind + '\'' +
+        '}';
+  }
 }
