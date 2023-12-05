@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Objects;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class GroupVersionKind {
@@ -44,5 +46,21 @@ public class GroupVersionKind {
 
   public String apiVersion() {
     return group == null || group.isBlank() ? version : group + "/" + version;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    GroupVersionKind that = (GroupVersionKind) o;
+    return Objects.equals(group, that.group) && Objects.equals(version, that.version)
+        && Objects.equals(kind, that.kind);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(group, version, kind);
   }
 }
