@@ -17,8 +17,9 @@ class InternalEventFiltersTest {
 
   @Test
   void onUpdateMarkedForDeletion() {
+    var oldRes = TestUtils.testCustomResource();
     var res = markForDeletion(TestUtils.testCustomResource());
-    assertThat(InternalEventFilters.onUpdateMarkedForDeletion().accept(res, res)).isTrue();
+    assertThat(InternalEventFilters.onUpdateMarkedForDeletion().accept(res, oldRes)).isTrue();
   }
 
   @Test

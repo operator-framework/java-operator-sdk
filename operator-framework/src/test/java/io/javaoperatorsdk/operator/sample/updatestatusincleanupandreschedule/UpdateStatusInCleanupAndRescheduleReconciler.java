@@ -38,7 +38,7 @@ public class UpdateStatusInCleanupAndRescheduleReconciler
       resource.getStatus().setCleanupAttempt(currentAttempt + 1);
       if (!Boolean.FALSE.equals(rescheduleDelayWorked)) {
         var diff = ChronoUnit.MILLIS.between(lastCleanupExecution, LocalTime.now());
-        System.out.println("!!Diff: " + diff + " attempt: "+ status.getCleanupAttempt());
+        System.out.println("!!Diff: " + diff + " attempt: " + status.getCleanupAttempt());
         if (diff < DELAY) {
           rescheduleDelayWorked = false;
         } else {
@@ -48,7 +48,7 @@ public class UpdateStatusInCleanupAndRescheduleReconciler
     }
     var res = context.getClient().resource(resource).updateStatus();
 
-    if (resource.getStatus().getCleanupAttempt() > 4) {
+    if (resource.getStatus().getCleanupAttempt() > 5) {
       return DeleteControl.defaultDelete();
     } else {
       return DeleteControl.noFinalizerRemoval().rescheduleAfter(DELAY);
