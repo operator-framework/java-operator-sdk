@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.BasicItemStore;
+import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -130,7 +133,15 @@ class ControllerConfigurationOverriderTest {
     return configurationService.configFor(reconciler);
   }
 
-  @ControllerConfiguration(namespaces = "foo")
+  private static class MyItemStore<T extends HasMetadata> extends BasicItemStore<T> {
+
+    public MyItemStore() {
+      super(Cache::metaNamespaceKeyFunc);
+    }
+
+  }
+
+  @ControllerConfiguration(namespaces = "foo", itemStore = MyItemStore.class)
   private static class WatchCurrentReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -185,6 +196,16 @@ class ControllerConfigurationOverriderTest {
         .build();
     assertTrue(configuration.watchAllNamespaces());
     assertFalse(configuration.watchCurrentNamespace());
+  }
+
+  @Test
+  void itemStorePreserved() {
+    var configuration = createConfiguration(new WatchCurrentReconciler());
+
+    configuration = ControllerConfigurationOverrider.override(configuration)
+        .build();
+
+    assertNotNull(configuration.getItemStore().orElse(null));
   }
 
   @Test

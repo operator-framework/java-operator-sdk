@@ -58,6 +58,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
     this.informerListLimit = original.getInformerListLimit().orElse(null);
+    this.itemStore = original.getItemStore().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
