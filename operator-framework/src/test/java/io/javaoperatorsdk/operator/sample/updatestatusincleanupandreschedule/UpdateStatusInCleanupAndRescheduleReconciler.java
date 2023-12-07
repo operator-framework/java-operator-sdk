@@ -38,7 +38,6 @@ public class UpdateStatusInCleanupAndRescheduleReconciler
       resource.getStatus().setCleanupAttempt(currentAttempt + 1);
       if (!Boolean.FALSE.equals(rescheduleDelayWorked)) {
         var diff = ChronoUnit.MILLIS.between(lastCleanupExecution, LocalTime.now());
-        System.out.println("!!Diff: " + diff + " attempt: " + status.getCleanupAttempt());
         if (diff < DELAY) {
           rescheduleDelayWorked = false;
         } else {
