@@ -16,8 +16,9 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-// todo filters
-@ControllerConfiguration
+// todo label selector needs to added explicitly
+@ControllerConfiguration(onAddFilter = NonMarkedForDeletionAddFilter.class,
+    onUpdateFilter = NonMarkedForDeletionUpdateFilter.class)
 public class NamespaceDeletionRoleReconciler
     implements Reconciler<Role>, Cleaner<Role>, EventSourceInitializer<Role> {
 
