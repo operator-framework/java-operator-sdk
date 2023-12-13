@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.ExceptionHandler;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
@@ -113,6 +114,9 @@ class InformerWrapper<T extends HasMetadata>
 
   private String versionedFullResourceName() {
     final var apiTypeClass = informer.getApiTypeClass();
+    if (apiTypeClass.isAssignableFrom(GenericKubernetesResource.class)) {
+      return GenericKubernetesResource.class.getSimpleName();
+    }
     return ReconcilerUtils.getResourceTypeNameWithVersion(apiTypeClass);
   }
 
