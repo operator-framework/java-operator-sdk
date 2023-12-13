@@ -67,14 +67,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       namespaces = context.getControllerConfiguration().getNamespaces();
     }
 
-    var ic = InformerConfiguration.from(resourceType())
+    var ic = informerConfigurationBuilder()
         .withLabelSelector(labelSelector)
         .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
     configureWith(new InformerEventSource<>(ic, context));
+  }
 
+  // just to seamlessly handle GenericKubernetesDependentResource
+  protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder() {
+    return InformerConfiguration.from(resourceType());
   }
 
   @SuppressWarnings("unchecked")

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -88,7 +89,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
       boolean parseResourceVersions) {
-    super(client.resources(configuration.getResourceClass()), configuration, parseResourceVersions);
+    super(
+        configuration.getGroupVersionKind()
+            .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
+            .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
+        configuration, parseResourceVersions);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {

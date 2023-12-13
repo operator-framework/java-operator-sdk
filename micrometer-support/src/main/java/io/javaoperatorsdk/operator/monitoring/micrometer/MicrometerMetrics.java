@@ -291,9 +291,9 @@ public class MicrometerMetrics implements Metrics {
   }
 
   private static void addGVKTags(GroupVersionKind gvk, List<Tag> tags, boolean prefixed) {
-    addTagOmittingOnEmptyValue(GROUP, gvk.group, tags, prefixed);
-    addTag(VERSION, gvk.version, tags, prefixed);
-    addTag(KIND, gvk.kind, tags, prefixed);
+    addTagOmittingOnEmptyValue(GROUP, gvk.getGroup(), tags, prefixed);
+    addTag(VERSION, gvk.getVersion(), tags, prefixed);
+    addTag(KIND, gvk.getKind(), tags, prefixed);
   }
 
   private void incrementCounter(ResourceID id, String counterName, Map<String, Object> metadata,
