@@ -86,7 +86,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (this instanceof SecondaryToPrimaryMapper) {
       return (SecondaryToPrimaryMapper<R>) this;
     } else if (garbageCollected) {
-      return Mappers.fromOwnerReference();
+      return Mappers.fromOwnerReferences(false);
     } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return Mappers.fromDefaultAnnotations();
     } else {

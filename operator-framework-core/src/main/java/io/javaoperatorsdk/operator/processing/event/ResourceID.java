@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 
 public class ResourceID implements Serializable {
 
@@ -21,11 +22,16 @@ public class ResourceID implements Serializable {
       boolean clusterScoped) {
     var ownerReferences = resource.getMetadata().getOwnerReferences();
     if (!ownerReferences.isEmpty()) {
-      return Optional.of(new ResourceID(ownerReferences.get(0).getName(),
-          clusterScoped ? null : resource.getMetadata().getNamespace()));
+      return Optional.of(fromOwnerReference(resource, ownerReferences.get(0), clusterScoped));
     } else {
       return Optional.empty();
     }
+  }
+
+  public static ResourceID fromOwnerReference(HasMetadata resource, OwnerReference ownerReference,
+      boolean clusterScoped) {
+    return new ResourceID(ownerReference.getName(),
+        clusterScoped ? null : resource.getMetadata().getNamespace());
   }
 
   private final String name;

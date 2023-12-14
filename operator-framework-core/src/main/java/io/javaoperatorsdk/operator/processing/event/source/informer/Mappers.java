@@ -57,6 +57,13 @@ public class Mappers {
         .orElseGet(Collections::emptySet);
   }
 
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
+      boolean clusterScope) {
+    return resource -> resource.getMetadata().getOwnerReferences().stream()
+        .map(or -> ResourceID.fromOwnerReference(resource, or, clusterScope))
+        .collect(Collectors.toSet());
+  }
+
   private static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromMetadata(
       String nameKey, String namespaceKey, boolean isLabel) {
     return resource -> {
