@@ -15,6 +15,8 @@ import {{groupId}}.{{artifactClassId}}CustomResource;
 public class ConfigMapDependentResource
         extends CRUDKubernetesDependentResource<ConfigMap, {{artifactClassId}}CustomResource> {
 
+    public static final String KEY = "key";
+
     public ConfigMapDependentResource() {
         super(ConfigMap.class);
     }
@@ -28,7 +30,7 @@ public class ConfigMapDependentResource
                                 .withName(primary.getMetadata().getName())
                                 .withNamespace(primary.getMetadata().getNamespace())
                                 .build())
-                .withData(Map.of("data", primary.getSpec().getValue()))
+                .withData(Map.of(KEY, primary.getSpec().getValue()))
                 .build();
     }
 }
