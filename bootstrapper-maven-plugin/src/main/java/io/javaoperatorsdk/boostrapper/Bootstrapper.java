@@ -57,6 +57,7 @@ public class Bootstrapper {
     try {
       var packages = groupId.replace(".", File.separator);
       var targetDir = new File(projectDir, "src/main/java/" + packages);
+      var targetTestDir = new File(projectDir, "src/test/java/" + packages);
       FileUtils.forceMkdir(targetDir);
       var classFileNamePrefix = artifactClassId(artifactId);
       JAVA_FILES.forEach(f -> addTemplatedFile(projectDir, f, groupId, artifactId, targetDir,
@@ -65,6 +66,9 @@ public class Bootstrapper {
       addTemplatedFile(projectDir, "Runner.java", groupId, artifactId, targetDir, null);
       addTemplatedFile(projectDir, "ConfigMapDependentResource.java", groupId, artifactId,
           targetDir, null);
+      addTemplatedFile(projectDir, "ReconcilerIntegrationTest.java", groupId,
+          artifactId,
+          targetTestDir, artifactClassId(artifactId) + "ReconcilerIntegrationTest.java");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
