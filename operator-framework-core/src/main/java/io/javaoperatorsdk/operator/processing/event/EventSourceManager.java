@@ -1,10 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -233,24 +229,28 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public synchronized void dynamicallyRegisterEventSource(String name, EventSource eventSource) {
-    if (eventSources.existing(name, eventSource) != null) {
-      return;
+  public synchronized EventSource dynamicallyRegisterEventSource(String name,
+      EventSource eventSource) {
+    var es = eventSources.existing(name, eventSource);
+    if (es != null) {
+      return es;
     }
     registerEventSource(name, eventSource);
     eventSource.start();
+    return eventSource;
   }
 
   @Override
-  public synchronized void dynamicallyDeRegisterEventSource(String name) {
+  public synchronized Optional<EventSource> dynamicallyDeRegisterEventSource(String name) {
     EventSource es = eventSources.remove(name);
     if (es != null) {
       es.stop();
     }
+    return Optional.ofNullable(es);
   }
 
   @Override
-  public EventSourceContext<P> eventSourceContexForDynamicRegistration() {
+  public EventSourceContext<P> eventSourceContextForDynamicRegistration() {
     return controller.eventSourceContext();
   }
 

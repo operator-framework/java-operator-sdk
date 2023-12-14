@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -40,8 +41,9 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    *
    * @param name of the event source
    * @param eventSource to register
+   * @return the actual event source registered. Might not be the same as the parameter.
    */
-  void dynamicallyRegisterEventSource(String name, EventSource eventSource);
+  EventSource dynamicallyRegisterEventSource(String name, EventSource eventSource);
 
   /**
    * De-registers (and stops) the {@link EventSource} associated with the specified name. If no such
@@ -57,9 +59,10 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * </p>
    *
    * @param name of the event source
+   * @return the actual event source deregistered if there is one.
    */
-  void dynamicallyDeRegisterEventSource(String name);
+  Optional<EventSource> dynamicallyDeRegisterEventSource(String name);
 
-  EventSourceContext<P> eventSourceContexForDynamicRegistration();
+  EventSourceContext<P> eventSourceContextForDynamicRegistration();
 
 }
