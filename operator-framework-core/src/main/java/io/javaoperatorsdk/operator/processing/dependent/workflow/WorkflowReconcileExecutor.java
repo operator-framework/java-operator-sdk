@@ -84,7 +84,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       if (activationConditionMet) {
         var eventSource =
             dependentResourceNode.getDependentResource().eventSource(context.eventSourceRetriever()
-                .eventSourceContexForDynamicRegistration());
+                .eventSourceContextForDynamicRegistration());
         var es = eventSource.orElseThrow();
         context.eventSourceRetriever()
             .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
