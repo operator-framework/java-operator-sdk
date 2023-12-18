@@ -19,6 +19,10 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   private Condition<R, P> activationCondition;
   private final DependentResource<R, P> dependentResource;
 
+  DependentResourceNode(String name, DependentResource<R, P> dependentResource) {
+    this(name, null, null, null, null, dependentResource);
+  }
+
   DependentResourceNode(DependentResource<R, P> dependentResource) {
     this(getNameFor(dependentResource), null, null, null, null, dependentResource);
   }
