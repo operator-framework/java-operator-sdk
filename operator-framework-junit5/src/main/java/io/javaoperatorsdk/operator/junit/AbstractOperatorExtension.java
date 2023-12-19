@@ -4,10 +4,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -23,7 +22,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Utils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 
@@ -34,6 +32,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     AfterEachCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractOperatorExtension.class);
+  public static final int MAX_NAMESPACE_NAME_LENGTH = 63;
   public static final int CRD_READY_WAIT = 2000;
   public static final int DEFAULT_NAMESPACE_DELETE_TIMEOUT = 90;
 
@@ -44,6 +43,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   protected final boolean preserveNamespaceOnError;
   protected final boolean waitForNamespaceDeletion;
   protected final int namespaceDeleteTimeout = DEFAULT_NAMESPACE_DELETE_TIMEOUT;
+  protected final Function<ExtensionContext, String> namespaceNameSupplier;
+  protected final Function<ExtensionContext, String> perClassNamespaceNameSupplier;
 
   protected String namespace;
 
@@ -53,7 +54,9 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       boolean oneNamespacePerClass,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
-      KubernetesClient kubernetesClient) {
+      KubernetesClient kubernetesClient,
+      Function<ExtensionContext, String> namespaceNameSupplier,
+      Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
     this.kubernetesClient = kubernetesClient != null ? kubernetesClient
         : new KubernetesClientBuilder().build();
     this.infrastructure = infrastructure;
@@ -61,6 +64,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     this.oneNamespacePerClass = oneNamespacePerClass;
     this.preserveNamespaceOnError = preserveNamespaceOnError;
     this.waitForNamespaceDeletion = waitForNamespaceDeletion;
+    this.namespaceNameSupplier = namespaceNameSupplier;
+    this.perClassNamespaceNameSupplier = perClassNamespaceNameSupplier;
   }
 
 
@@ -132,26 +137,14 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
 
   protected void beforeAllImpl(ExtensionContext context) {
     if (oneNamespacePerClass) {
-      namespace = context.getRequiredTestClass().getSimpleName();
-      namespace += "-";
-      namespace += UUID.randomUUID();
-      namespace = KubernetesResourceUtil.sanitizeName(namespace).toLowerCase(Locale.US);
-      namespace = namespace.substring(0, Math.min(namespace.length(), 63));
-
+      namespace = perClassNamespaceNameSupplier.apply(context);
       before(context);
     }
   }
 
   protected void beforeEachImpl(ExtensionContext context) {
     if (!oneNamespacePerClass) {
-      namespace = context.getRequiredTestClass().getSimpleName();
-      namespace += "-";
-      namespace += context.getRequiredTestMethod().getName();
-      namespace += "-";
-      namespace += UUID.randomUUID();
-      namespace = KubernetesResourceUtil.sanitizeName(namespace).toLowerCase(Locale.US);
-      namespace = namespace.substring(0, Math.min(namespace.length(), 63));
-
+      namespace = namespaceNameSupplier.apply(context);
       before(context);
     }
   }
@@ -219,6 +212,10 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     protected boolean oneNamespacePerClass;
     protected int namespaceDeleteTimeout;
     protected Consumer<ConfigurationServiceOverrider> configurationServiceOverrider;
+    protected Function<ExtensionContext, String> namespaceNameSupplier =
+        new DefaultNamespaceNameSupplier();
+    protected Function<ExtensionContext, String> perClassNamespaceNameSupplier =
+        new DefaultPerClassNamespaceNameSupplier();
 
     protected AbstractBuilder() {
       this.infrastructure = new ArrayList<>();
@@ -279,6 +276,18 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     public T withNamespaceDeleteTimeout(int timeout) {
       this.namespaceDeleteTimeout = timeout;
       return (T) this;
+    }
+
+    public AbstractBuilder<T> withNamespaceNameSupplier(
+        Function<ExtensionContext, String> namespaceNameSupplier) {
+      this.namespaceNameSupplier = namespaceNameSupplier;
+      return this;
+    }
+
+    public AbstractBuilder<T> withPerClassNamespaceNameSupplier(
+        Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
+      this.perClassNamespaceNameSupplier = perClassNamespaceNameSupplier;
+      return this;
     }
   }
 }
