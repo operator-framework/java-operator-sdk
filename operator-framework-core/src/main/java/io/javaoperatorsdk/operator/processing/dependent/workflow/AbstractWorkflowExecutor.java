@@ -44,17 +44,20 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected abstract Logger logger();
 
   protected synchronized void waitForScheduledExecutionsToRun() {
+    // in case when workflow just contains non-activated dependents,
+    // it needs to be checked first if there are already no executions
+    // scheduled at the beginning.
+    if (noMoreExecutionsScheduled()) {
+      return;
+    }
     while (true) {
       try {
-        // in case when workflow just contains non-activated dependents,
-        // it needs to be checked first if there are already no executions
-        // scheduled at the beginning.
+        this.wait();
         if (noMoreExecutionsScheduled()) {
           break;
         } else {
           logger().warn("Notified but still resources under execution. This should not happen.");
         }
-        this.wait();
       } catch (InterruptedException e) {
         if (noMoreExecutionsScheduled()) {
           logger().debug("interrupted, no more executions for: {}", primaryID);
