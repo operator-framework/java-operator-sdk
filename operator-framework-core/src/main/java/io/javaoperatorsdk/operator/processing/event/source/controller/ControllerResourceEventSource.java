@@ -55,7 +55,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void start() {
+  public synchronized void start() {
     try {
       super.start();
     } catch (KubernetesClientException e) {
