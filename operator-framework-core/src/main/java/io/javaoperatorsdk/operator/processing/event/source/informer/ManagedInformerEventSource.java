@@ -76,10 +76,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public synchronized void start() {
-    if (isRunning()) {
-      return;
-    }
+  public void start() {
     temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setConfigurationService(configurationService);
@@ -89,10 +86,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public synchronized void stop() {
-    if (!isRunning()) {
-      return;
-    }
+  public void stop() {
     super.stop();
     manager().stop();
   }
