@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
@@ -37,11 +38,13 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
-      KubernetesClient kubernetesClient) {
+      KubernetesClient kubernetesClient,
+      Function<ExtensionContext, String> namespaceNameSupplier,
+      Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
     super(infrastructure, infrastructureTimeout, oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
-        kubernetesClient);
+        kubernetesClient, namespaceNameSupplier, perClassNamespaceNameSupplier);
     this.operatorDeployment = operatorDeployment;
     this.operatorDeploymentTimeout = operatorDeploymentTimeout;
   }
@@ -152,7 +155,9 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass,
-          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build());
+          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build(),
+          namespaceNameSupplier,
+          perClassNamespaceNameSupplier);
     }
   }
 }

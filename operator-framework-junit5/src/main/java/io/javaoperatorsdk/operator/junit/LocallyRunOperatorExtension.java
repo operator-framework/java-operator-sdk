@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -53,14 +54,18 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
-      Consumer<ConfigurationServiceOverrider> configurationServiceOverrider) {
+      Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
+      Function<ExtensionContext, String> namespaceNameSupplier,
+      Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
     super(
         infrastructure,
         infrastructureTimeout,
         oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
-        kubernetesClient);
+        kubernetesClient,
+        namespaceNameSupplier,
+        perClassNamespaceNameSupplier);
     this.reconcilers = reconcilers;
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
@@ -285,7 +290,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient,
-          configurationServiceOverrider);
+          configurationServiceOverrider, namespaceNameSupplier, perClassNamespaceNameSupplier);
     }
   }
 
