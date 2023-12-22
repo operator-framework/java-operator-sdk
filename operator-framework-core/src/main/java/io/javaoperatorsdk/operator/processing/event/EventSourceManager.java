@@ -230,14 +230,21 @@ public class EventSourceManager<P extends HasMetadata>
 
   @Override
   public synchronized EventSource dynamicallyRegisterEventSource(String name,
-      EventSource eventSource) {
+      EventSource eventSource, boolean start) {
     var es = eventSources.existing(name, eventSource);
     if (es != null) {
       return es;
     }
     registerEventSource(name, eventSource);
-    eventSource.start();
+    if (start) {
+      eventSource.start();
+    }
     return eventSource;
+  }
+
+  public synchronized EventSource dynamicallyRegisterEventSource(String name,
+      EventSource eventSource) {
+    return dynamicallyRegisterEventSource(name, eventSource, true);
   }
 
   @Override
