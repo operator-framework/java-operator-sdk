@@ -79,7 +79,8 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withDependentResourceFactory(DependentResourceFactory dependentResourceFactory) {
+  public ConfigurationServiceOverrider withDependentResourceFactory(
+      DependentResourceFactory dependentResourceFactory) {
     this.dependentResourceFactory = dependentResourceFactory;
     return this;
   }
@@ -193,7 +194,8 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public DependentResourceFactory dependentResourceFactory() {
-        return dependentResourceFactory != null ? dependentResourceFactory : DependentResourceFactory.DEFAULT;
+        return dependentResourceFactory != null ? dependentResourceFactory
+            : DependentResourceFactory.DEFAULT;
       }
 
       @Override
