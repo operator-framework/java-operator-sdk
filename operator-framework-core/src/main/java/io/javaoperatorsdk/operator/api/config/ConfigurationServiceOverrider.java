@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
 @SuppressWarnings("unused")
 public class ConfigurationServiceOverrider {
@@ -39,6 +40,7 @@ public class ConfigurationServiceOverrider {
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean previousAnnotationForDependentResources;
   private Boolean parseResourceVersions;
+  private DependentResourceFactory dependentResourceFactory;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
     this.original = original;
@@ -74,6 +76,12 @@ public class ConfigurationServiceOverrider {
     this.minConcurrentWorkflowExecutorThreads = Utils.ensureValid(threadNumber,
         "minimum workflow execution threads", ExecutorServiceManager.MIN_THREAD_NUMBER,
         original.minConcurrentWorkflowExecutorThreads());
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withDependentResourceFactory(
+      DependentResourceFactory dependentResourceFactory) {
+    this.dependentResourceFactory = dependentResourceFactory;
     return this;
   }
 
@@ -182,6 +190,12 @@ public class ConfigurationServiceOverrider {
       @Override
       public boolean checkCRDAndValidateLocalModel() {
         return checkCR != null ? checkCR : original.checkCRDAndValidateLocalModel();
+      }
+
+      @Override
+      public DependentResourceFactory dependentResourceFactory() {
+        return dependentResourceFactory != null ? dependentResourceFactory
+            : DependentResourceFactory.DEFAULT;
       }
 
       @Override
