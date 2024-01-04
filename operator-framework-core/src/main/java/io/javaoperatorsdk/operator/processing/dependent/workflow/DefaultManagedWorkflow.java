@@ -13,7 +13,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
@@ -78,9 +77,12 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
       ControllerConfiguration<P> configuration) {
     final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
     for (DependentResourceSpec spec : orderedSpecs) {
-
-      var dependentResource = resolve(spec, client, configuration);
-      final var node = dependentResourceNode(spec, dependentResource);
+      final var node = new DependentResourceNode(spec.getName(),
+          spec.getReconcileCondition(),
+          spec.getDeletePostCondition(),
+          spec.getReadyCondition(),
+          spec.getActivationCondition(),
+          resolve(spec, client, configuration));
       alreadyResolved.put(node.getName(), node);
       spec.getDependsOn()
           .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
@@ -92,20 +94,6 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
         topLevelResources.stream().map(alreadyResolved::get).collect(Collectors.toSet());
     return new DefaultWorkflow<>(alreadyResolved, bottom, top,
         THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, hasCleaner);
-  }
-
-  private static DependentResourceNode dependentResourceNode(DependentResourceSpec spec,
-      DependentResource dependentResource) {
-    var finalDeleteCondition = spec.getDeletePostCondition();
-    if (dependentResource instanceof KubernetesDependentResource && finalDeleteCondition == null) {
-      finalDeleteCondition = new KubernetesResourceDeletedCondition();
-    }
-    return new DependentResourceNode(spec.getName(),
-        spec.getReconcileCondition(),
-        finalDeleteCondition,
-        spec.getReadyCondition(),
-        spec.getActivationCondition(),
-        dependentResource);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
