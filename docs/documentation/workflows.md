@@ -324,7 +324,7 @@ For this reason such condition is provided out of the box see
 
 Also, check usage in an [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manageddependentdeletecondition/ManagedDependentDefaultDeleteConditionReconciler.java).
 
-Note that in such case the Kubernetes dependents extend `CRUDNoGCKubernetesDependentResource` and NOT `CRUDKubernetesDependentResource`,
+In such case the Kubernetes dependents extend `CRUDNoGCKubernetesDependentResource` and NOT `CRUDKubernetesDependentResource`,
 since otherwise Kubernetes Garbage Collector would delete the resources.
 
 ## Notes and Caveats
