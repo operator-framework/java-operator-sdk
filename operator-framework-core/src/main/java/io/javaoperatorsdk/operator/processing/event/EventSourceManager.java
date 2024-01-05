@@ -240,8 +240,7 @@ public class EventSourceManager<P extends HasMetadata>
       }
     }
     // The start itself is blocking thus blocking only the threads which are attempt to start the
-    // actual event source.
-    // Think of this as a form of lock striping.
+    // actual event source. Think of this as a form of lock striping.
     eventSource.start();
     return eventSource;
   }
