@@ -45,8 +45,6 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    */
   EventSource dynamicallyRegisterEventSource(String name, EventSource eventSource);
 
-  EventSource dynamicallyRegisterEventSource(String name, EventSource eventSource,
-      boolean startEventSource);
 
   /**
    * De-registers (and stops) the {@link EventSource} associated with the specified name. If no such
