@@ -21,9 +21,6 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 public class DynamicGenericEventSourceRegistrationReconciler
     implements Reconciler<DynamicGenericEventSourceRegistrationCustomResource> {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(DynamicGenericEventSourceRegistrationReconciler.class);
-
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private final AtomicInteger numberOfEventSources = new AtomicInteger();
 
