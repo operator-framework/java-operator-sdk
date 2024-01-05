@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>4.6.2-SNAPSHOT</version>
+    <version>4.6.3-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
