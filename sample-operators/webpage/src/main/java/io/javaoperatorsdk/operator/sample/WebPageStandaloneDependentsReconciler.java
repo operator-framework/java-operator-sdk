@@ -7,19 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
-import io.javaoperatorsdk.operator.sample.dependentresource.ConfigMapDependentResource;
-import io.javaoperatorsdk.operator.sample.dependentresource.DeploymentDependentResource;
-import io.javaoperatorsdk.operator.sample.dependentresource.IngressDependentResource;
-import io.javaoperatorsdk.operator.sample.dependentresource.ServiceDependentResource;
+import io.javaoperatorsdk.operator.sample.dependentresource.*;
 
 import static io.javaoperatorsdk.operator.sample.Utils.*;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
@@ -34,19 +28,15 @@ public class WebPageStandaloneDependentsReconciler
   private static final Logger log =
       LoggerFactory.getLogger(WebPageStandaloneDependentsReconciler.class);
 
-  private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
-  private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
-  private KubernetesDependentResource<Service, WebPage> serviceDR;
-  private KubernetesDependentResource<Ingress, WebPage> ingressDR;
+  private Workflow<WebPage> workflow;
 
-  public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
-    createDependentResources(kubernetesClient);
+  public WebPageStandaloneDependentsReconciler() {
+    workflow = createDependentResourcesAndWorkflow();
   }
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context, configMapDR,
-        deploymentDR, serviceDR, ingressDR);
+    return EventSourceInitializer.eventSourcesFromWorkflow(context, workflow);
   }
 
   @Override
@@ -58,14 +48,7 @@ public class WebPageStandaloneDependentsReconciler
       return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
     }
 
-    Arrays.asList(configMapDR, deploymentDR, serviceDR)
-        .forEach(dr -> dr.reconcile(webPage, context));
-
-    if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
-      ingressDR.reconcile(webPage, context);
-    } else {
-      ingressDR.delete(webPage, context);
-    }
+    workflow.reconcile(webPage, context);
 
     webPage.setStatus(
         createStatus(
@@ -80,16 +63,23 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private void createDependentResources(KubernetesClient client) {
-    this.configMapDR = new ConfigMapDependentResource();
-    this.deploymentDR = new DeploymentDependentResource();
-    this.serviceDR = new ServiceDependentResource();
-    this.ingressDR = new IngressDependentResource();
+  private Workflow<WebPage> createDependentResourcesAndWorkflow() {
+    var configMapDR = new ConfigMapDependentResource();
+    var deploymentDR = new DeploymentDependentResource();
+    var serviceDR = new ServiceDependentResource();
+    var ingressDR = new IngressDependentResource();
 
-    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
-      dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-          .withLabelSelector(SELECTOR + "=true").build());
-    });
+    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
+        .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
+            .withLabelSelector(SELECTOR + "=true").build()));
+
+    return new WorkflowBuilder<WebPage>()
+        .addDependentResource(configMapDR)
+        .addDependentResource(deploymentDR)
+        .addDependentResource(serviceDR)
+        .addDependentResource(ingressDR)
+        .withReconcilePrecondition(new ExposedIngressCondition())
+        .build();
   }
 
 

@@ -37,7 +37,7 @@ public class WebPageOperator {
         .equals(reconcilerEnvVar)) {
       operator.register(new WebPageManagedDependentsReconciler());
     } else {
-      operator.register(new WebPageStandaloneDependentsReconciler(client));
+      operator.register(new WebPageStandaloneDependentsReconciler());
     }
     operator.start();
 

@@ -107,7 +107,7 @@ public class WebPageReconciler
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      var res = kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
+      kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
           .createOr(Replaceable::update);
     }
 

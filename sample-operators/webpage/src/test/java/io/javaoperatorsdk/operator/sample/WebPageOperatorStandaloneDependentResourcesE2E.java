@@ -18,7 +18,7 @@ class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbst
       isLocal()
           ? LocallyRunOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
-              .withReconciler(new WebPageStandaloneDependentsReconciler(client))
+              .withReconciler(new WebPageStandaloneDependentsReconciler())
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
