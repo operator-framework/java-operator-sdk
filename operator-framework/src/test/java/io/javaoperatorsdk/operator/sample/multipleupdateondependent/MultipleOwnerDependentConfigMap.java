@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.sample.multipleupdateondependent;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -9,6 +10,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.BooleanWithUndefined;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
 public class MultipleOwnerDependentConfigMap
@@ -38,5 +41,15 @@ public class MultipleOwnerDependentConfigMap
         .endMetadata()
         .withData(data)
         .build();
+  }
+
+  // need to change this since owner reference is present only for the creator primary resource.
+  @Override
+  public Optional<ConfigMap> getSecondaryResource(MultipleOwnerDependentCustomResource primary,
+      Context<MultipleOwnerDependentCustomResource> context) {
+    InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource> ies =
+        (InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource>) context
+            .eventSourceRetriever().getResourceEventSourceFor(ConfigMap.class);
+    return ies.get(new ResourceID(RESOURCE_NAME, primary.getMetadata().getNamespace()));
   }
 }

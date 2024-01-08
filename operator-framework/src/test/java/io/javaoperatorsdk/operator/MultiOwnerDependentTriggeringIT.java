@@ -20,6 +20,8 @@ class MultiOwnerDependentTriggeringIT {
 
   public static final String VALUE_1 = "value1";
   public static final String VALUE_2 = "value2";
+  public static final String NEW_VALUE_1 = "newValue1";
+  public static final String NEW_VALUE_2 = "newValue2";
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
@@ -31,8 +33,8 @@ class MultiOwnerDependentTriggeringIT {
 
   @Test
   void multiOwnerTriggeringAndManagement() {
-    extension.create(testResource("res1", VALUE_1));
-    extension.create(testResource("res2", VALUE_2));
+    var res1 = extension.create(testResource("res1", VALUE_1));
+    var res2 = extension.create(testResource("res2", VALUE_2));
 
     await().untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
@@ -43,7 +45,27 @@ class MultiOwnerDependentTriggeringIT {
           .containsEntry(VALUE_2, VALUE_2);
       assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
     });
-    // todo triggering
+
+    res1.getSpec().setValue(NEW_VALUE_1);
+    extension.replace(res1);
+
+    await().untilAsserted(() -> {
+      var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
+      assertThat(cm.getData())
+          .containsEntry(NEW_VALUE_1, NEW_VALUE_1)
+          // note that it will still contain the old value too
+          .containsEntry(VALUE_1, VALUE_1);
+      assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
+    });
+
+    res2.getSpec().setValue(NEW_VALUE_2);
+    extension.replace(res2);
+
+    await().untilAsserted(() -> {
+      var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
+      assertThat(cm.getData()).containsEntry(NEW_VALUE_2, NEW_VALUE_2);
+      assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
+    });
   }
 
   MultipleOwnerDependentCustomResource testResource(String name, String value) {
