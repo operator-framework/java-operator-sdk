@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
@@ -43,12 +41,30 @@ public interface EventSourceInitializer<P extends HasMetadata> {
     return eventSourceMap;
   }
 
-  @SuppressWarnings("unchecked,rawtypes")
+  @SuppressWarnings("unchecked")
+  static <K extends HasMetadata> Map<String, EventSource> eventSourcesFromWorkflow(
+      EventSourceContext<K> context,
+      Workflow<K> workflow) {
+    Map<String, EventSource> result = new HashMap<>();
+    for (var e : workflow.getDependentResourcesByNameWithoutActivationCondition().entrySet()) {
+      var eventSource = e.getValue().eventSource(context);
+      eventSource.ifPresent(es -> result.put(e.getKey(), (EventSource) es));
+    }
+    return result;
+  }
+
+  @SuppressWarnings("rawtypes")
   static <K extends HasMetadata> Map<String, EventSource> nameEventSourcesFromDependentResource(
       EventSourceContext<K> context, DependentResource... dependentResources) {
+    return nameEventSourcesFromDependentResource(context, Arrays.asList(dependentResources));
+  }
+
+  @SuppressWarnings("unchecked,rawtypes")
+  static <K extends HasMetadata> Map<String, EventSource> nameEventSourcesFromDependentResource(
+      EventSourceContext<K> context, Collection<DependentResource> dependentResources) {
 
     if (dependentResources != null) {
-      Map<String, EventSource> eventSourceMap = new HashMap<>(dependentResources.length);
+      Map<String, EventSource> eventSourceMap = new HashMap<>(dependentResources.size());
       for (DependentResource dependentResource : dependentResources) {
         Optional<ResourceEventSource> es = dependentResource.eventSource(context);
         es.ifPresent(e -> eventSourceMap.put(generateNameFor(e), e));
