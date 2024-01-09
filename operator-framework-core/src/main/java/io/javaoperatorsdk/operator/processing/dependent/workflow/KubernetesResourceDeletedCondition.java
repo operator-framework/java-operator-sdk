@@ -6,8 +6,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 /**
  * A Delete post-condition, to make sure that the Kubernetes resource is fully deleted. Thus, not
- * just deleted called on it. Makes sure that the resource is either not exists, or does not have
- * finalizers anymore.
+ * just deleted called on it. In other works makes sure that the resource is either not exists
+ * anymore or does not have finalizers anymore.
  */
 public class KubernetesResourceDeletedCondition implements Condition<HasMetadata, HasMetadata> {
 
