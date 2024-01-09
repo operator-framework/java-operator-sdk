@@ -229,13 +229,18 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public synchronized EventSource dynamicallyRegisterEventSource(String name,
+  public EventSource dynamicallyRegisterEventSource(String name,
       EventSource eventSource) {
-    var es = eventSources.existing(name, eventSource);
-    if (es != null) {
-      return es;
+    synchronized (this) {
+      var actual = eventSources.existing(name, eventSource);
+      if (actual != null) {
+        eventSource = actual;
+      } else {
+        registerEventSource(name, eventSource);
+      }
     }
-    registerEventSource(name, eventSource);
+    // The start itself is blocking thus blocking only the threads which are attempt to start the
+    // actual event source. Think of this as a form of lock striping.
     eventSource.start();
     return eventSource;
   }
