@@ -312,7 +312,7 @@ containing all the related exceptions.
 The exceptions can be handled
 by [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/14620657fcacc8254bb96b4293eded84c20ba685/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java)
 
-## Notes on Ordered Kubernetes Resource Cleanups
+## Ordered Kubernetes Resource Cleanups
 
 Let's consider a case when a Kubernetes Dependent Resources (KDR) depends on another resource, on cleanup
 the resources will be deleted in reverse order, thus the KDR will be deleted first. 
