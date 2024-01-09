@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -236,6 +237,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected void addReferenceHandlingMetadata(R desired, P primary) {
     if (addOwnerReference()) {
+      ReconcilerUtils.checkIfCanAddOwnerReference(primary, desired);
       desired.addOwnerReference(primary);
     } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       addSecondaryToPrimaryMapperAnnotations(desired, primary);
