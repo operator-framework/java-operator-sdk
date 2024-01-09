@@ -312,21 +312,26 @@ containing all the related exceptions.
 The exceptions can be handled
 by [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/14620657fcacc8254bb96b4293eded84c20ba685/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java)
 
-## Ordered Kubernetes Resource Cleanups
+## Waiting for the actual deletion of Kubernetes Dependent Resources
 
 Let's consider a case when a Kubernetes Dependent Resources (KDR) depends on another resource, on cleanup
-the resources will be deleted in reverse order, thus the KDR will be deleted first. 
-However, the workflow the implementation currently just calls delete on resource,
-in case KDR uses a finalizer, and the deletion of it is a longer process, the cleanup won't wait by default for the 
-resource to be actually deleted, in other words the finalizer(s) removed and resource removed from the Server.
-To make sure that cleanup does not proceed until the resource is fully removed, a delete post-condition 
-is provided out of the box, and needs to be added to the resource: [`KubernetesResourceDeletedCondition`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/KubernetesResourceDeletedCondition.java)
+the resources will be deleted in reverse order, thus the KDR will be deleted first.
+However, the workflow implementation currently simply asks the Kubernetes API server to delete the resource. This is,
+however, an asynchronous process, meaning that the deletion might not occur immediately, in particular if the resource
+uses finalizers that block the deletion or if the deletion itself takes some time. From the SDK's perspective, though,
+the deletion has been requested and it moves on to other tasks without waiting for the resource to be actually deleted
+from the server (which might never occur if it uses finalizers which are not removed).
+In situations like these, if your logic depends on resources being actually removed from the cluster before a
+cleanup workflow can proceed correctly, you need to block the workflow progression using a delete post-condition that
+checks that the resource is actually removed or that it, at least, doesn't have any finalizers any longer. JOSDK
+provides such a delete post-condition implementation in the form of
+[`KubernetesResourceDeletedCondition`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/KubernetesResourceDeletedCondition.java)
 
 Also, check usage in an [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manageddependentdeletecondition/ManagedDependentDefaultDeleteConditionReconciler.java).
 
 In such cases the Kubernetes Dependent Resource should extend `CRUDNoGCKubernetesDependentResource` 
-and NOT `CRUDKubernetesDependentResource` since otherwise Kubernetes Garbage Collector would delete the resources.
-In other words if a Kubernetes Dependent Resource depends on another dependent resource, should not implement
+and NOT `CRUDKubernetesDependentResource` since otherwise the Kubernetes Garbage Collector would delete the resources.
+In other words if a Kubernetes Dependent Resource depends on another dependent resource, it should not implement
 `GargageCollected` interface, otherwise the deletion order won't be guaranteed. 
 
 ## Notes and Caveats

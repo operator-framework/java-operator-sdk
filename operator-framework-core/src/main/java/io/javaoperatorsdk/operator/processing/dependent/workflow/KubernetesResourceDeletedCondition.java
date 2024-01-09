@@ -5,9 +5,12 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 /**
- * A Delete post-condition, to make sure that the Kubernetes resource is fully deleted. Thus, not
- * just deleted called on it. In other works makes sure that the resource is either not exists
- * anymore or does not have finalizers anymore.
+ * A condition implementation meant to be used as a delete post-condition on Kubernetes dependent
+ * resources to prevent the workflow from proceeding until the associated resource is actually
+ * deleted from the server (or, at least, doesn't have any finalizers anymore). This is needed in
+ * cases where a cleaning process depends on resources being actually removed from the server
+ * because, by default, workflows simply request the deletion but do NOT wait for the resources to
+ * be actually deleted.
  */
 public class KubernetesResourceDeletedCondition implements Condition<HasMetadata, HasMetadata> {
 
