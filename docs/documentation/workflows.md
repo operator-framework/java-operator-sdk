@@ -314,18 +314,20 @@ by [`ErrorStatusHandler`](https://github.com/java-operator-sdk/java-operator-sdk
 
 ## Notes on Ordered Kubernetes Resource Cleanups
 
-In case there are Kubernetes Dependent Resources that are depend on each other, and are ordered -
-like when those represent some external resources and would be nice to have them created and deleted in order -
-on cleanup the resources will be deleted in reverse order. However, the workflow the implementation currently just
-calls delete on resource, in case it uses a finalizer, it should be checked by a `DeletePostCondition` if it
-was actually deleted (not just being in the phase of deletion). 
-For this reason such condition is provided out of the box see 
-[`KubernetesResourceDeletedCondition`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/KubernetesResourceDeletedCondition.java)
+Let's consider a case when a Kubernetes Dependent Resources (KDR) depends on another resource, on cleanup
+the resources will be deleted in reverse order, thus the KDR will be deleted first. 
+However, the workflow the implementation currently just calls delete on resource,
+in case KDR uses a finalizer, and the deletion of it is a longer process, the cleanup won't wait by default for the 
+resource to be actually deleted, in other words the finalizer(s) removed and resource removed from the Server.
+To make sure that cleanup does not proceed until the resource is fully removed, a delete post-condition 
+is provided out of the box, and needs to be added to the resource: [`KubernetesResourceDeletedCondition`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/KubernetesResourceDeletedCondition.java)
 
 Also, check usage in an [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manageddependentdeletecondition/ManagedDependentDefaultDeleteConditionReconciler.java).
 
-In such case the Kubernetes dependents extend `CRUDNoGCKubernetesDependentResource` and NOT `CRUDKubernetesDependentResource`,
-since otherwise Kubernetes Garbage Collector would delete the resources.
+In such cases the Kubernetes Dependent Resource should extend `CRUDNoGCKubernetesDependentResource` 
+and NOT `CRUDKubernetesDependentResource` since otherwise Kubernetes Garbage Collector would delete the resources.
+In other words if a Kubernetes Dependent Resource depends on another dependent resource, should not implement
+`GargageCollected` interface, otherwise the deletion order won't be guaranteed. 
 
 ## Notes and Caveats
 
