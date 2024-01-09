@@ -4,16 +4,12 @@ import java.net.URI;
 
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.http.HttpRequest;
@@ -29,9 +25,7 @@ import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultReconcilerNa
 import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.ReconcilerUtils.isFinalizerValid;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -153,6 +147,46 @@ class ReconcilerUtilsTest {
             "Failure executing: GET at: " + RESOURCE_URI + ". Message: Not Found.",
             null, 404, null, request),
         HasMetadata.getFullResourceName(Tomcat.class)));
+  }
+
+
+  @Test
+  void checksIfOwnerReferenceCanBeAdded() {
+    assertThrows(OperatorException.class,
+        () -> ReconcilerUtils.checkIfCanAddOwnerReference(namespacedResource(),
+            namespacedResourceFromOtherNamespace()));
+
+    assertThrows(OperatorException.class,
+        () -> ReconcilerUtils.checkIfCanAddOwnerReference(namespacedResource(),
+            clusterScopedResource()));
+
+    assertDoesNotThrow(() -> {
+      ReconcilerUtils.checkIfCanAddOwnerReference(clusterScopedResource(), clusterScopedResource());
+      ReconcilerUtils.checkIfCanAddOwnerReference(namespacedResource(), namespacedResource());
+    });
+  }
+
+  private ClusterRole clusterScopedResource() {
+    return new ClusterRoleBuilder()
+        .withMetadata(new ObjectMetaBuilder()
+            .build())
+        .build();
+  }
+
+  private ConfigMap namespacedResource() {
+    return new ConfigMapBuilder()
+        .withMetadata(new ObjectMetaBuilder()
+            .withNamespace("testns1")
+            .build())
+        .build();
+  }
+
+  private ConfigMap namespacedResourceFromOtherNamespace() {
+    return new ConfigMapBuilder()
+        .withMetadata(new ObjectMetaBuilder()
+            .withNamespace("testns2")
+            .build())
+        .build();
   }
 
   @Group("tomcatoperator.io")
