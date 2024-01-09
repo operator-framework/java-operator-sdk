@@ -85,7 +85,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
           resolve(spec, client, configuration));
       alreadyResolved.put(node.getName(), node);
       spec.getDependsOn()
-          .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get((String) depend)));
+          .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
 
     final var bottom =
