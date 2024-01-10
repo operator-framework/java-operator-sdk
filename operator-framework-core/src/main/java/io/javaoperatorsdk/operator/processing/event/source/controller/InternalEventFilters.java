@@ -8,7 +8,11 @@ public class InternalEventFilters {
   private InternalEventFilters() {}
 
   static <T extends HasMetadata> OnUpdateFilter<T> onUpdateMarkedForDeletion() {
-    return (newResource, oldResource) -> newResource.isMarkedForDeletion();
+    // the old resource is checked since in corner cases users might still want to update the status
+    // for a resource that is marked for deletion
+
+    return (newResource, oldResource) -> !oldResource.isMarkedForDeletion()
+        && newResource.isMarkedForDeletion();
   }
 
   static <T extends HasMetadata> OnUpdateFilter<T> onUpdateGenerationAware(
