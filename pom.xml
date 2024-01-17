@@ -57,7 +57,7 @@
         <micrometer-core.version>1.12.2</micrometer-core.version>
         <okhttp.version>4.12.0</okhttp.version>
         <caffeine.version>3.1.8</caffeine.version>
-        <jenvtest.version>0.9.0</jenvtest.version>
+        <jenvtest.version>0.9.6</jenvtest.version>
         <mustache.version>0.9.11</mustache.version>
         <commons.io.version>2.15.1</commons.io.version>
 
