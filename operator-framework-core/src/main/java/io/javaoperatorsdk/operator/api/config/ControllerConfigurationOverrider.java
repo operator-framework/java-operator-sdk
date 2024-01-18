@@ -11,11 +11,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -29,7 +27,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Set<String> namespaces;
   private Retry retry;
   private String labelSelector;
-  private ResourceEventFilter<R> customResourcePredicate;
   private final ControllerConfiguration<R> original;
   private Duration reconciliationMaxInterval;
   private OnAddFilter<? super R> onAddFilter;
@@ -48,7 +45,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.namespaces = new HashSet<>(original.getNamespaces());
     this.retry = original.getRetry();
     this.labelSelector = original.getLabelSelector();
-    this.customResourcePredicate = original.getEventFilter();
     this.reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
     this.onAddFilter = original.onAddFilter().orElse(null);
     this.onUpdateFilter = original.onUpdateFilter().orElse(null);
@@ -110,17 +106,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  /**
-   * @param retry configuration
-   * @return current instance of overrider
-   * @deprecated Use {@link #withRetry(Retry)} instead
-   */
-  @Deprecated(forRemoval = true)
-  public ControllerConfigurationOverrider<R> withRetry(RetryConfiguration retry) {
-    this.retry = GenericRetry.fromConfiguration(retry);
-    return this;
-  }
-
   public ControllerConfigurationOverrider<R> withRetry(Retry retry) {
     this.retry = retry;
     return this;
@@ -133,12 +118,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   public ControllerConfigurationOverrider<R> withLabelSelector(String labelSelector) {
     this.labelSelector = labelSelector;
-    return this;
-  }
-
-  public ControllerConfigurationOverrider<R> withCustomResourcePredicate(
-      ResourceEventFilter<R> customResourcePredicate) {
-    this.customResourcePredicate = customResourcePredicate;
     return this;
   }
 
@@ -210,15 +189,13 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfiguration<R> build() {
-    final var overridden = new ResolvedControllerConfiguration<>(original.getResourceClass(),
+    return new ResolvedControllerConfiguration<>(original.getResourceClass(),
         name,
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
         namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
         original.getConfigurationService(), informerListLimit);
-    overridden.setEventFilter(customResourcePredicate);
-    return overridden;
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
