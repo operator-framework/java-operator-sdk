@@ -166,8 +166,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   private void handleEventMarking(Event event, ResourceState state) {
     final var relatedCustomResourceID = event.getRelatedCustomResourceID();
-    if (event instanceof ResourceEvent) {
-      var resourceEvent = (ResourceEvent) event;
+    if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
         log.debug("Marking delete event received for: {}", relatedCustomResourceID);
         state.markDeleteEventReceived();
@@ -331,8 +330,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void retryAwareErrorLogging(RetryExecution retry, boolean eventPresent,
       Exception exception,
       ExecutionScope<P> executionScope) {
-    if (!eventPresent && !retry.isLastAttempt() && exception instanceof KubernetesClientException) {
-      KubernetesClientException ex = (KubernetesClientException) exception;
+    if (!eventPresent && !retry.isLastAttempt()
+        && exception instanceof KubernetesClientException ex) {
       if (ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
         log.debug("Full client conflict error during event processing {}", executionScope,
             exception);
