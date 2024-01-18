@@ -10,7 +10,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigu
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -34,7 +33,6 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final ConfigurationService configurationService;
   private final String fieldManager;
 
-  private ResourceEventFilter<P> eventFilter;
   private List<DependentResourceSpec> dependentResources;
 
   public ResolvedControllerConfiguration(Class<P> resourceClass, ControllerConfiguration<P> other) {
@@ -164,21 +162,6 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public ConfigurationService getConfigurationService() {
     return configurationService;
-  }
-
-  @Override
-  public ResourceEventFilter<P> getEventFilter() {
-    return eventFilter;
-  }
-
-  /**
-   * @deprecated Use {@link OnAddFilter}, {@link OnUpdateFilter} and {@link GenericFilter} instead
-   *
-   * @param eventFilter generic event filter
-   */
-  @Deprecated(forRemoval = true)
-  protected void setEventFilter(ResourceEventFilter<P> eventFilter) {
-    this.eventFilter = eventFilter;
   }
 
   @Override
