@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentConverter;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
@@ -125,12 +126,12 @@ class DependentResourceConfigurationResolverTest {
     assertEquals(overriddenConverter, converter);
   }
 
-  @ControllerConfiguration(dependents = {
+  @ControllerConfiguration(workflow = @Workflow(dependents = {
       @Dependent(type = CustomAnnotatedDep.class, name = DR_NAME),
       @Dependent(type = ChildCustomAnnotatedDep.class),
       @Dependent(type = ConfigMapDep.class),
       @Dependent(type = ServiceDep.class)
-  })
+  }))
   static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
 
     public static final String DR_NAME = "first";

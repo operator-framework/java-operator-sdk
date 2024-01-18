@@ -7,11 +7,12 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(dependents = {
+@ControllerConfiguration(workflow = @Workflow(dependents = {
     @Dependent(type = MultipleOwnerDependentConfigMap.class)
-})
+}))
 public class MultipleOwnerDependentReconciler
     implements Reconciler<MultipleOwnerDependentCustomResource>,
     TestExecutionInfoProvider {

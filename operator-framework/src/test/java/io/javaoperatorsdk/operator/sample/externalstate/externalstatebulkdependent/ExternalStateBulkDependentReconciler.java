@@ -12,12 +12,14 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
-    dependents = @Dependent(type = BulkDependentResourceExternalWithState.class))
+    workflow = @Workflow(
+        dependents = @Dependent(type = BulkDependentResourceExternalWithState.class)))
 public class ExternalStateBulkDependentReconciler
     implements Reconciler<ExternalStateBulkDependentCustomResource>,
     EventSourceInitializer<ExternalStateBulkDependentCustomResource>,

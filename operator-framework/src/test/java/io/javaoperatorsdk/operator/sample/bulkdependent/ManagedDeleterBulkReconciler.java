@@ -5,9 +5,11 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 
 @ControllerConfiguration(
-    dependents = @Dependent(type = ConfigMapDeleterBulkDependentResource.class))
+    workflow = @Workflow(
+        dependents = @Dependent(type = ConfigMapDeleterBulkDependentResource.class)))
 public class ManagedDeleterBulkReconciler implements Reconciler<BulkDependentTestCustomResource> {
   @Override
   public UpdateControl<BulkDependentTestCustomResource> reconcile(

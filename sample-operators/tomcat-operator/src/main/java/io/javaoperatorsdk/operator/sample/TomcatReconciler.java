@@ -12,16 +12,17 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 
 /**
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
  * creates a Service over which the Pods can be accessed.
  */
 @ControllerConfiguration(
-    dependents = {
+    workflow = @Workflow(dependents = {
         @Dependent(type = DeploymentDependentResource.class),
         @Dependent(type = ServiceDependentResource.class)
-    })
+    }))
 public class TomcatReconciler implements Reconciler<Tomcat> {
 
   private final Logger log = LoggerFactory.getLogger(getClass());

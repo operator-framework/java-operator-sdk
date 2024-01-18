@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.dependentresource.*;
 
@@ -14,13 +15,13 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
  * Shows how to implement a reconciler with managed dependent resources.
  */
 @ControllerConfiguration(
-    dependents = {
+    workflow = @Workflow(dependents = {
         @Dependent(type = ConfigMapDependentResource.class),
         @Dependent(type = DeploymentDependentResource.class),
         @Dependent(type = ServiceDependentResource.class),
         @Dependent(type = IngressDependentResource.class,
             reconcilePrecondition = ExposedIngressCondition.class)
-    })
+    }))
 public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, Cleaner<WebPage> {
 

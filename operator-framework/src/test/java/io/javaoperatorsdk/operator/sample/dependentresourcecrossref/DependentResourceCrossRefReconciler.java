@@ -10,15 +10,16 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 import static io.javaoperatorsdk.operator.sample.dependentresourcecrossref.DependentResourceCrossRefReconciler.SECRET_NAME;
 
-@ControllerConfiguration(dependents = {
+@ControllerConfiguration(workflow = @Workflow(dependents = {
     @Dependent(name = SECRET_NAME,
         type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
     @Dependent(type = DependentResourceCrossRefReconciler.ConfigMapDependentResource.class,
-        dependsOn = SECRET_NAME)})
+        dependsOn = SECRET_NAME)}))
 public class DependentResourceCrossRefReconciler
     implements Reconciler<DependentResourceCrossRefResource>,
     ErrorStatusHandler<DependentResourceCrossRefResource> {

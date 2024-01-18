@@ -7,12 +7,13 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 
-@ControllerConfiguration(dependents = {
+@ControllerConfiguration(workflow = @Workflow(dependents = {
     @Dependent(type = ConfigMapDependentResource.class,
         activationCondition = ActivationCondition.class),
     @Dependent(type = SecretDependentResource.class)
-})
+}))
 public class WorkflowMultipleActivationReconciler
     implements Reconciler<WorkflowMultipleActivationCustomResource> {
 

@@ -7,12 +7,13 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(
-    dependents = @Dependent(type = ExternalWithStateDependentResource.class))
+@ControllerConfiguration(workflow = @Workflow(
+    dependents = @Dependent(type = ExternalWithStateDependentResource.class)))
 public class ExternalStateDependentReconciler
     implements Reconciler<ExternalStateCustomResource>,
     EventSourceInitializer<ExternalStateCustomResource>,

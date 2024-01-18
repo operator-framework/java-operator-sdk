@@ -4,12 +4,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
-    dependents = {
+    workflow = @Workflow(dependents = {
         @Dependent(type = ConfigMapDependentResource.class),
-    })
+    }))
 public class DependentDifferentNamespaceReconciler
     implements Reconciler<DependentDifferentNamespaceCustomResource>,
     TestExecutionInfoProvider {

@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
@@ -20,11 +21,11 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static java.lang.String.format;
 
 @ControllerConfiguration(
-    dependents = {
+    workflow = @Workflow(dependents = {
         @Dependent(type = SecretDependentResource.class, name = SecretDependentResource.NAME),
         @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME,
             dependsOn = SecretDependentResource.NAME)
-    })
+    }))
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
 

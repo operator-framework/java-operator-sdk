@@ -8,13 +8,14 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(dependents = @Dependent(
-    type = DependentAnnotationSecondaryMapperReconciler.ConfigMapDependentResource.class))
+@ControllerConfiguration(workflow = @Workflow(dependents = @Dependent(
+    type = DependentAnnotationSecondaryMapperReconciler.ConfigMapDependentResource.class)))
 public class DependentAnnotationSecondaryMapperReconciler
     implements Reconciler<DependentAnnotationSecondaryMapperResource>, TestExecutionInfoProvider {
 

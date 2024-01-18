@@ -11,14 +11,15 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
     namespaces = Constants.WATCH_CURRENT_NAMESPACE,
-    dependents = {
+    workflow = @Workflow(dependents = {
         @Dependent(type = ConfigMapDependentResource1.class, name = "cm1"),
         @Dependent(type = ConfigMapDependentResource2.class, dependsOn = "cm1")
-    })
+    }))
 public class OrderedManagedDependentTestReconciler
     implements Reconciler<OrderedManagedDependentCustomResource>,
     TestExecutionInfoProvider {

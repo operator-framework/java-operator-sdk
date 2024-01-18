@@ -173,7 +173,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       ControllerConfiguration<?> parent) {
     final var dependents =
         valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::dependents,
+            c -> c.workflow().dependents(),
             new Dependent[] {});
     if (dependents.length == 0) {
       return Collections.emptyList();

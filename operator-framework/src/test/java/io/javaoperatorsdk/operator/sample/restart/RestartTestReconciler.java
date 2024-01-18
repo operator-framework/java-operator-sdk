@@ -7,10 +7,11 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
-    dependents = @Dependent(type = ConfigMapDependentResource.class))
+    workflow = @Workflow(dependents = @Dependent(type = ConfigMapDependentResource.class)))
 public class RestartTestReconciler
     implements Reconciler<RestartTestCustomResource>, TestExecutionInfoProvider {
 

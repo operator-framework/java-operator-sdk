@@ -7,9 +7,10 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 
-@ControllerConfiguration(dependents = {
-    @Dependent(type = ConfigMapDependentResource.class)})
+@ControllerConfiguration(workflow = @Workflow(dependents = {
+    @Dependent(type = ConfigMapDependentResource.class)}))
 public class CreateOnlyIfNotExistingDependentWithSSAReconciler
     implements Reconciler<CreateOnlyIfNotExistingDependentWithSSACustomResource> {
 

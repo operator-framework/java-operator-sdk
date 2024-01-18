@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
@@ -24,11 +25,12 @@ import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.Prim
  * Note that this is usually just used with read only resources. So it has limited usage, one reason
  * to use it is to have nice condition on that resource within a workflow.
  */
-@ControllerConfiguration(dependents = {@Dependent(type = ConfigMapDependent.class,
-    name = CONFIG_MAP,
-    reconcilePrecondition = ConfigMapReconcilePrecondition.class,
-    useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
-    @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)})
+@ControllerConfiguration(workflow = @Workflow(dependents = {
+    @Dependent(type = ConfigMapDependent.class,
+        name = CONFIG_MAP,
+        reconcilePrecondition = ConfigMapReconcilePrecondition.class,
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+    @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)}))
 public class PrimaryToSecondaryDependentReconciler
     implements Reconciler<PrimaryToSecondaryDependentCustomResource>, TestExecutionInfoProvider,
     EventSourceInitializer<PrimaryToSecondaryDependentCustomResource> {

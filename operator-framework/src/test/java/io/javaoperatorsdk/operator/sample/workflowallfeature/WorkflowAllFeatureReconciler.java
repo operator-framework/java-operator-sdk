@@ -4,17 +4,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 
 import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureReconciler.DEPLOYMENT_NAME;
 
-@ControllerConfiguration(dependents = {
+@ControllerConfiguration(workflow = @Workflow(dependents = {
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
         readyPostcondition = DeploymentReadyCondition.class),
     @Dependent(type = ConfigMapDependentResource.class,
         reconcilePrecondition = ConfigMapReconcileCondition.class,
         deletePostcondition = ConfigMapDeletePostCondition.class,
         dependsOn = DEPLOYMENT_NAME)
-})
+}))
 public class WorkflowAllFeatureReconciler
     implements Reconciler<WorkflowAllFeatureCustomResource>,
     Cleaner<WorkflowAllFeatureCustomResource> {

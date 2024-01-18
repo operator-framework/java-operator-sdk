@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.complexdependent.dependent.*;
@@ -17,7 +18,7 @@ import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDepende
 
 @ControllerConfiguration(
     name = "project-operator",
-    dependents = {
+    workflow = @Workflow(dependents = {
         @Dependent(name = "first-svc", type = FirstService.class,
             useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
         @Dependent(name = "second-svc", type = SecondService.class,
@@ -31,7 +32,7 @@ import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDepende
             useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
             dependsOn = {"second-svc", "first"},
             readyPostcondition = StatefulSetReadyCondition.class),
-    })
+    }))
 public class ComplexDependentReconciler implements Reconciler<ComplexDependentCustomResource>,
     EventSourceInitializer<ComplexDependentCustomResource> {
 

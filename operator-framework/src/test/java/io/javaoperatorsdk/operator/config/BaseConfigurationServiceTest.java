@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -254,7 +255,7 @@ class BaseConfigurationServiceTest {
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
-      dependents = @Dependent(type = ReadOnlyDependent.class))
+      workflow = @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class)))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "foo";
@@ -266,7 +267,8 @@ class BaseConfigurationServiceTest {
   }
 
   @ControllerConfiguration(
-      dependents = @Dependent(type = ReadOnlyDependent.class, name = NamedDepReconciler.NAME))
+      workflow = @Workflow(
+          dependents = @Dependent(type = ReadOnlyDependent.class, name = NamedDepReconciler.NAME)))
   private static class NamedDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String NAME = "foo";
@@ -278,10 +280,10 @@ class BaseConfigurationServiceTest {
   }
 
   @ControllerConfiguration(
-      dependents = {
+      workflow = @Workflow(dependents = {
           @Dependent(type = ReadOnlyDependent.class),
           @Dependent(type = ReadOnlyDependent.class)
-      })
+      }))
   private static class DuplicatedDepReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -291,10 +293,10 @@ class BaseConfigurationServiceTest {
   }
 
   @ControllerConfiguration(
-      dependents = {
+      workflow = @Workflow(dependents = {
           @Dependent(type = ReadOnlyDependent.class, name = NamedDuplicatedDepReconciler.NAME),
           @Dependent(type = ReadOnlyDependent.class)
-      })
+      }))
   private static class NamedDuplicatedDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String NAME = "duplicated";
@@ -314,10 +316,10 @@ class BaseConfigurationServiceTest {
     }
   }
 
-  @ControllerConfiguration(dependents = {
+  @ControllerConfiguration(workflow = @Workflow(dependents = {
       @Dependent(type = SelectorReconciler.WithAnnotation.class),
       @Dependent(type = ReadOnlyDependent.class)
-  })
+  }))
   private static class SelectorReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -438,10 +440,10 @@ class BaseConfigurationServiceTest {
     }
   }
 
-  @ControllerConfiguration(dependents = {
+  @ControllerConfiguration(workflow = @Workflow(dependents = {
       @Dependent(type = CustomAnnotatedDep.class),
       @Dependent(type = ChildCustomAnnotatedDep.class)
-  })
+  }))
   private static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
 
     @Override

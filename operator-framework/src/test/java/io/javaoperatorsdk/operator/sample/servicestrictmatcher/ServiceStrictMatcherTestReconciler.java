@@ -7,8 +7,10 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 
-@ControllerConfiguration(dependents = {@Dependent(type = ServiceDependentResource.class)})
+@ControllerConfiguration(
+    workflow = @Workflow(dependents = {@Dependent(type = ServiceDependentResource.class)}))
 public class ServiceStrictMatcherTestReconciler
     implements Reconciler<ServiceStrictMatcherTestCustomResource> {
 

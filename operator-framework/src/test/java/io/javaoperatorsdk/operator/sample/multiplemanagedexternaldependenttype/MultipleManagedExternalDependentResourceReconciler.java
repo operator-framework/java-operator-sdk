@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
@@ -17,12 +18,12 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 
-@ControllerConfiguration(dependents = {
+@ControllerConfiguration(workflow = @Workflow(dependents = {
     @Dependent(type = ExternalDependentResource1.class,
         useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
     @Dependent(type = ExternalDependentResource2.class,
         useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
-})
+}))
 public class MultipleManagedExternalDependentResourceReconciler
     implements Reconciler<MultipleManagedExternalDependentResourceCustomResource>,
     TestExecutionInfoProvider,

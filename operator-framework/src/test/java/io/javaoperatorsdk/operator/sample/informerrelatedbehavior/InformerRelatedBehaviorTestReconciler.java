@@ -11,14 +11,15 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
     name = InformerRelatedBehaviorTestReconciler.INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER,
-    dependents = @Dependent(
+    workflow = @Workflow(dependents = @Dependent(
         name = InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE,
-        type = ConfigMapDependentResource.class))
+        type = ConfigMapDependentResource.class)))
 public class InformerRelatedBehaviorTestReconciler
     implements Reconciler<InformerRelatedBehaviorTestCustomResource>, TestExecutionInfoProvider {
 

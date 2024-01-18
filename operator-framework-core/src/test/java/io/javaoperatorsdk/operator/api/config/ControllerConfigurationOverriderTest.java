@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -68,10 +69,10 @@ class ControllerConfigurationOverriderTest {
     assertEquals(stringConfig, resourceConfig);
   }
 
-  @ControllerConfiguration(dependents = {
+  @ControllerConfiguration(workflow = @Workflow(dependents = {
       @Dependent(type = NamedDependentReconciler.NamedDependentResource.class),
       @Dependent(type = NamedDependentReconciler.ExternalDependentResource.class)
-  })
+  }))
   private static class NamedDependentReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -366,7 +367,8 @@ class ControllerConfigurationOverriderTest {
     assertTrue(dependentSpec.getReadyCondition() instanceof TestCondition);
   }
 
-  @ControllerConfiguration(dependents = @Dependent(type = ReadOnlyDependent.class))
+  @ControllerConfiguration(
+      workflow = @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class)))
   private static class WatchAllNamespacesReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -375,7 +377,8 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @ControllerConfiguration(dependents = @Dependent(type = WatchAllNSDependent.class))
+  @ControllerConfiguration(
+      workflow = @Workflow(dependents = @Dependent(type = WatchAllNSDependent.class)))
   private static class DependentWatchesAllNSReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -395,8 +398,8 @@ class ControllerConfigurationOverriderTest {
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
-      dependents = @Dependent(type = ReadOnlyDependent.class,
-          readyPostcondition = TestCondition.class))
+      workflow = @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class,
+          readyPostcondition = TestCondition.class)))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "foo";
@@ -424,7 +427,7 @@ class ControllerConfigurationOverriderTest {
   }
 
   @ControllerConfiguration(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS,
-      dependents = @Dependent(type = OverriddenNSDependent.class))
+      workflow = @Workflow(dependents = @Dependent(type = OverriddenNSDependent.class)))
   private static class OverriddenNSOnDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "parentNS";
