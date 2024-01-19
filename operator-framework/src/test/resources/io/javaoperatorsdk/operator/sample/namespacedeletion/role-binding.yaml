@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+# This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
+kind: RoleBinding
+metadata:
+  name: namespace-deletion
+subjects:
+  - kind: User
+    name: namespace-deletion-test-user
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: namespace-deletion-test
+  apiGroup: rbac.authorization.k8s.io
