@@ -7,7 +7,6 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 @ControllerConfiguration(dependents = @Dependent(readyPostcondition = SampleBulkCondition.class,
     type = CRUDConfigMapBulkDependentResource.class))
@@ -23,7 +22,8 @@ public class ManagedBulkDependentWithReadyConditionReconciler
     numberOfExecutions.incrementAndGet();
 
     var ready = context.managedDependentResourceContext().getWorkflowReconcileResult()
-        .map(WorkflowReconcileResult::allDependentResourcesReady).orElseThrow();
+        .allDependentResourcesReady();
+
 
     resource.setStatus(new BulkDependentTestStatus());
     resource.getStatus().setReady(ready);
