@@ -13,7 +13,6 @@ import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
@@ -58,22 +57,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
   String getAssociatedReconcilerClassName();
 
   default Retry getRetry() {
-    final var configuration = getRetryConfiguration();
-    return !RetryConfiguration.DEFAULT.equals(configuration)
-        ? GenericRetry.fromConfiguration(configuration)
-        : GenericRetry.DEFAULT; // NOSONAR
-  }
-
-  /**
-   * Use {@link #getRetry()} instead.
-   *
-   * @return configuration for retry.
-   * @deprecated provide your own {@link Retry} implementation or use the {@link GradualRetry}
-   *             annotation instead
-   */
-  @Deprecated(forRemoval = true)
-  default RetryConfiguration getRetryConfiguration() {
-    return RetryConfiguration.DEFAULT;
+    return GenericRetry.DEFAULT;
   }
 
   @SuppressWarnings("rawtypes")
