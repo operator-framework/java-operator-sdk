@@ -52,7 +52,7 @@ public interface ManagedDependentResourceContext {
   @SuppressWarnings("unused")
   <T> T getMandatory(Object key, Class<T> expectedType);
 
-  Optional<WorkflowReconcileResult> getWorkflowReconcileResult();
+  WorkflowReconcileResult getWorkflowReconcileResult();
 
-  Optional<WorkflowCleanupResult> getWorkflowCleanupResult();
+  WorkflowCleanupResult getWorkflowCleanupResult();
 }
