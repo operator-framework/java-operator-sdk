@@ -18,7 +18,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -28,6 +27,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAc
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -135,7 +135,7 @@ class EventProcessorTest {
 
     verify(retryTimerEventSourceMock, times(1))
         .scheduleOnce(eq(ResourceID.fromResource(customResource)),
-            eq(RetryConfiguration.DEFAULT_INITIAL_INTERVAL));
+            eq(GradualRetry.DEFAULT_INITIAL_INTERVAL));
   }
 
   @Test
@@ -167,7 +167,7 @@ class EventProcessorTest {
     assertThat(allValues).hasSize(2);
     verify(retryTimerEventSourceMock, never())
         .scheduleOnce(eq(ResourceID.fromResource(customResource)),
-            eq(RetryConfiguration.DEFAULT_INITIAL_INTERVAL));
+            eq(GradualRetry.DEFAULT_INITIAL_INTERVAL));
   }
 
   @Test
