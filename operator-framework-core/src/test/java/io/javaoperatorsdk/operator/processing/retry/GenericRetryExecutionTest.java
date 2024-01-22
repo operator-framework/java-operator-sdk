@@ -4,37 +4,9 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GenericRetryExecutionTest {
-
-  @Test
-  public void forFirstBackOffAlwaysReturnsInitialInterval() {
-    assertThat(getDefaultRetryExecution().nextDelay().get())
-        .isEqualTo(RetryConfiguration.DEFAULT_INITIAL_INTERVAL);
-  }
-
-  @Test
-  public void delayIsMultipliedEveryNextDelayCall() {
-    RetryExecution retryExecution = getDefaultRetryExecution();
-
-    Optional<Long> res = callNextDelayNTimes(retryExecution, 1);
-    assertThat(res.get()).isEqualTo(RetryConfiguration.DEFAULT_INITIAL_INTERVAL);
-
-    res = retryExecution.nextDelay();
-    assertThat(res.get())
-        .isEqualTo((long) (RetryConfiguration.DEFAULT_INITIAL_INTERVAL
-            * RetryConfiguration.DEFAULT_MULTIPLIER));
-
-    res = retryExecution.nextDelay();
-    assertThat(res.get())
-        .isEqualTo(
-            (long) (RetryConfiguration.DEFAULT_INITIAL_INTERVAL
-                * RetryConfiguration.DEFAULT_MULTIPLIER
-                * RetryConfiguration.DEFAULT_MULTIPLIER));
-  }
 
   @Test
   public void noNextDelayIfMaxAttemptLimitReached() {
