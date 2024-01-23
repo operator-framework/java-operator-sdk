@@ -8,7 +8,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.workflow.Workflow;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 @ControllerConfiguration(
     workflow = @Workflow(dependents = @Dependent(readyPostcondition = SampleBulkCondition.class,
