@@ -234,7 +234,7 @@ public class EventSourceManager<P extends HasMetadata>
     synchronized (this) {
       var actual = eventSources.existing(name, eventSource);
       if (actual != null) {
-        eventSource = actual;
+        eventSource = actual.eventSource();
       } else {
         registerEventSource(name, eventSource);
       }
