@@ -45,8 +45,8 @@ reconciliation process.
   resources / features (e.g. CertManager, a specific Ingress controller, etc.).
  
   Activation condition is semi-experimental at the moment, it is fully supported, but it has its limitations. 
-  For example event sources cannot be shared between multiple managed dependent resources. The intention is
-  to further improve and explore the possibilities with this approach.  
+  For example event sources cannot be shared between multiple managed dependent resources which use activation condition. 
+  The intention is to further improve and explore the possibilities with this approach.  
 
 ## Defining Workflows
 
