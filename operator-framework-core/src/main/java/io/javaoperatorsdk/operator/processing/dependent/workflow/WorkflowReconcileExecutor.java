@@ -88,7 +88,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
         var es = eventSource.orElseThrow();
         context.eventSourceRetriever()
             .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
-
       } else {
         context.eventSourceRetriever()
             .dynamicallyDeRegisterEventSource(dependentResourceNode.getName());
