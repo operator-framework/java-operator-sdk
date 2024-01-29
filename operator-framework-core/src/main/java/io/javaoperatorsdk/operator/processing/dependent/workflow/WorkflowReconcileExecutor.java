@@ -78,24 +78,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     }
   }
 
-  private <R> void registerOrDeregisterEventSourceBasedOnActivation(boolean activationConditionMet,
-      DependentResourceNode<R, P> dependentResourceNode) {
-    if (dependentResourceNode.getActivationCondition().isPresent()) {
-      if (activationConditionMet) {
-        var eventSource =
-            dependentResourceNode.getDependentResource().eventSource(context.eventSourceRetriever()
-                .eventSourceContextForDynamicRegistration());
-        var es = eventSource.orElseThrow();
-        context.eventSourceRetriever()
-            .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
-
-      } else {
-        context.eventSourceRetriever()
-            .dynamicallyDeRegisterEventSource(dependentResourceNode.getName());
-      }
-    }
-  }
-
   private synchronized void handleDelete(DependentResourceNode dependentResourceNode) {
     log.debug("Submitting for delete: {}", dependentResourceNode);
 

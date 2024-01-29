@@ -70,6 +70,7 @@ public class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWork
 
       var active =
           isConditionMet(dependentResourceNode.getActivationCondition(), dependentResource);
+      registerOrDeregisterEventSourceBasedOnActivation(active, dependentResourceNode);
 
       if (dependentResource.isDeletable() && active) {
         ((Deleter<P>) dependentResource).delete(primary, context);
