@@ -7,8 +7,14 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
+import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
@@ -29,7 +35,19 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @BeforeEach
   void setup() {
+    var eventSourceContextMock = mock(EventSourceContext.class);
+    var eventSourceRetrieverMock = mock(EventSourceRetriever.class);
+    var mockControllerConfig = mock(ControllerConfiguration.class);
+    when(eventSourceRetrieverMock.eventSourceContextForDynamicRegistration())
+        .thenReturn(eventSourceContextMock);
+    var client = MockKubernetesClient.client(ConfigMap.class);
+    when(eventSourceContextMock.getClient()).thenReturn(client);
+    when(eventSourceContextMock.getControllerConfiguration()).thenReturn(mockControllerConfig);
+    when(mockControllerConfig.getConfigurationService())
+        .thenReturn(mock(ConfigurationService.class));
+
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
+    when(mockContext.eventSourceRetriever()).thenReturn(eventSourceRetrieverMock);
   }
 
   @Test

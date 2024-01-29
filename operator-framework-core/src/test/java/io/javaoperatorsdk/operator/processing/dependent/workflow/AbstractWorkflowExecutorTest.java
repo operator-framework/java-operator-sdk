@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -55,7 +56,8 @@ public class AbstractWorkflowExecutorTest {
     }
   }
 
-  public class TestDeleterDependent extends TestDependent implements Deleter<TestCustomResource> {
+  public class TestDeleterDependent extends TestDependent
+      implements Creator<ConfigMap, TestCustomResource>, Deleter<TestCustomResource> {
 
     public TestDeleterDependent(String name) {
       super(name);
