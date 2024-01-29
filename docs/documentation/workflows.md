@@ -43,6 +43,10 @@ reconciliation process.
   condition holds or not. This is a very useful feature when your operator needs to handle different flavors of the
   platform (e.g. OpenShift vs plain Kubernetes) and/or change its behavior based on the availability of optional
   resources / features (e.g. CertManager, a specific Ingress controller, etc.).
+ 
+  Activation condition is semi-experimental at the moment, and it has its limitations. 
+  For example event sources cannot be shared between multiple managed dependent resources which use activation condition. 
+  The intention is to further improve and explore the possibilities with this approach.  
 
 ## Defining Workflows
 
