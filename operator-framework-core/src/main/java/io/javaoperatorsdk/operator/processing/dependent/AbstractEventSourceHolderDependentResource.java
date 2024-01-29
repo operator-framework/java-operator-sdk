@@ -34,13 +34,22 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     this.resourceType = resourceType;
   }
 
-  public Optional<T> eventSource(EventSourceContext<P> context) {
+  /**
+   * Method is synchronized since when used in case of dynamic registration (thus for activation
+   * conditions) can be called concurrently to create the target event source. In that case only one
+   * instance should be created, since this also sets the event source, and dynamic registration
+   * will just start one with the same name. So if this would not be synchronized it could happen
+   * that multiple event sources would be created and only one started and registered. Note that
+   * this method does not start the event source, so no blocking IO is involved.
+   */
+  public synchronized Optional<T> eventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
     // before this method is called in the managed case, so only create the event source if it
     // hasn't already been set.
     // The filters are applied automatically only if event source is created automatically. So if an
     // event source
     // is shared between dependent resources this does not override the existing filters.
+
     if (eventSource == null && eventSourceNameToUse == null) {
       setEventSource(createEventSource(context));
       applyFilters();
