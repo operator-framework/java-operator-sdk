@@ -35,7 +35,7 @@ class ExternalStateIT {
     assertResourcesCreated(resource, INITIAL_TEST_DATA);
 
     resource.getSpec().setData(UPDATED_DATA);
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
     assertResourcesCreated(resource, UPDATED_DATA);
 
     operator.delete(resource);

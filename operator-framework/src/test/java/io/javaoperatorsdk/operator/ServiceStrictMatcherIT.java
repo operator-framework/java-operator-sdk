@@ -34,7 +34,7 @@ public class ServiceStrictMatcherIT {
 
     // make an update to spec to reconcile again
     resource.getSpec().setValue(2);
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
       assertThat(operator.getReconcilerOfType(ServiceStrictMatcherTestReconciler.class)

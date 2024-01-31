@@ -39,15 +39,15 @@ class ExternalStateBulkIT {
     assertResources(resource, INITIAL_TEST_DATA, INITIAL_BULK_SIZE);
 
     resource.getSpec().setData(UPDATED_DATA);
-    resource = operator.replace(resource);
+    resource = operator.createOrUpdate(resource);
     assertResources(resource, UPDATED_DATA, INITIAL_BULK_SIZE);
 
     resource.getSpec().setNumber(INCREASED_BULK_SIZE);
-    resource = operator.replace(resource);
+    resource = operator.createOrUpdate(resource);
     assertResources(resource, UPDATED_DATA, INCREASED_BULK_SIZE);
 
     resource.getSpec().setNumber(DECREASED_BULK_SIZE);
-    resource = operator.replace(resource);
+    resource = operator.createOrUpdate(resource);
     assertResources(resource, UPDATED_DATA, DECREASED_BULK_SIZE);
 
     operator.delete(resource);

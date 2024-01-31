@@ -43,7 +43,7 @@ class DependentOperationEventFilterIT {
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_1);
 
     resource.getSpec().setValue(SPEC_VAL_2);
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
 
     await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
         .until(

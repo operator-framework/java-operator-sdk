@@ -57,7 +57,7 @@ public class StandaloneDependentResourceIT {
 
     var clonedCr = cloner().clone(createdCR);
     clonedCr.getSpec().setReplicaCount(2);
-    operator.replace(clonedCr);
+    operator.createOrUpdate(clonedCr);
 
     awaitForDeploymentReadyReplicas(2);
     assertThat(

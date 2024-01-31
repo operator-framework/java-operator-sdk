@@ -45,7 +45,7 @@ public class ManagedDependentDeleteConditionIT {
 
     var secret = extension.get(Secret.class, RESOURCE_NAME);
     secret.getMetadata().getFinalizers().add(CUSTOM_FINALIZER);
-    secret = extension.replace(secret);
+    secret = extension.createOrUpdate(secret);
 
     extension.delete(resource);
 
@@ -58,7 +58,7 @@ public class ManagedDependentDeleteConditionIT {
     });
 
     secret.getMetadata().getFinalizers().clear();
-    extension.replace(secret);
+    extension.createOrUpdate(secret);
 
     await().untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, RESOURCE_NAME);

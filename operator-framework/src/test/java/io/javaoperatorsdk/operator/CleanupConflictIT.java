@@ -39,7 +39,7 @@ class CleanupConflictIT {
     testResource = operator.get(CleanupConflictCustomResource.class, TEST_RESOURCE_NAME);
     testResource.getMetadata().getFinalizers().remove(ADDITIONAL_FINALIZER);
     testResource.getMetadata().setResourceVersion(null);
-    operator.replace(testResource);
+    operator.createOrUpdate(testResource);
 
     await().pollDelay(Duration.ofMillis(WAIT_TIME * 2)).untilAsserted(
         () -> assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)

@@ -47,7 +47,7 @@ class MultiOwnerDependentTriggeringIT {
     });
 
     res1.getSpec().setValue(NEW_VALUE_1);
-    extension.replace(res1);
+    extension.createOrUpdate(res1);
 
     await().untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
@@ -59,7 +59,7 @@ class MultiOwnerDependentTriggeringIT {
     });
 
     res2.getSpec().setValue(NEW_VALUE_2);
-    extension.replace(res2);
+    extension.createOrUpdate(res2);
 
     await().untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);

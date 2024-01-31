@@ -35,7 +35,7 @@ class DependentCustomMappingAnnotationIT {
     assertConfigMapData(INITIAL_VALUE);
 
     cr.getSpec().setValue(CHANGED_VALUE);
-    cr = extension.replace(cr);
+    cr = extension.createOrUpdate(cr);
     assertConfigMapData(CHANGED_VALUE);
 
     extension.delete(cr);

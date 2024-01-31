@@ -38,7 +38,7 @@ class DependentDifferentNamespaceIT {
     });
 
     resource.getSpec().setValue(CHANGED_VALUE);
-    resource = extension.replace(resource);
+    resource = extension.createOrUpdate(resource);
 
     await().untilAsserted(() -> {
       var cm = getDependentConfigMap();

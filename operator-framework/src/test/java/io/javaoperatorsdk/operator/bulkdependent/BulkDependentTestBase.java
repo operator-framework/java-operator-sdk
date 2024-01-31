@@ -88,26 +88,26 @@ public abstract class BulkDependentTestBase {
   private void updateSpecWithNewAdditionalData(String data) {
     var resource = testResource();
     resource.getSpec().setAdditionalData(data);
-    extension().replace(resource);
+    extension().createOrUpdate(resource);
   }
 
   public static void updateSpecWithNewAdditionalData(LocallyRunOperatorExtension extension,
       String data) {
     var resource = testResource();
     resource.getSpec().setAdditionalData(data);
-    extension.replace(resource);
+    extension.createOrUpdate(resource);
   }
 
   private void updateSpecWithNumber(int n) {
     var resource = testResource();
     resource.getSpec().setNumberOfResources(n);
-    extension().replace(resource);
+    extension().createOrUpdate(resource);
   }
 
   public static void updateSpecWithNumber(LocallyRunOperatorExtension extension, int n) {
     var resource = testResource();
     resource.getSpec().setNumberOfResources(n);
-    extension.replace(resource);
+    extension.createOrUpdate(resource);
   }
 
   abstract LocallyRunOperatorExtension extension();

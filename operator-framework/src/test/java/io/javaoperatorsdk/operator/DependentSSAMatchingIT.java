@@ -74,7 +74,7 @@ public class DependentSSAMatchingIT {
     });
 
     resource.getSpec().setValue(CHANGED_VALUE);
-    extension.replace(resource);
+    extension.createOrUpdate(resource);
 
     await().untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);

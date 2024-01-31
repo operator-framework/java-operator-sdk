@@ -37,7 +37,7 @@ class MultipleDependentSameTypeMultiInformerIT {
 
     var updatedResource = testResource();
     updatedResource.getSpec().setValue(UPDATED_SPEC_VALUE);
-    operator.replace(updatedResource);
+    operator.createOrUpdate(updatedResource);
     assertConfigMapsPresent(UPDATED_SPEC_VALUE);
 
     operator.delete(testResource());

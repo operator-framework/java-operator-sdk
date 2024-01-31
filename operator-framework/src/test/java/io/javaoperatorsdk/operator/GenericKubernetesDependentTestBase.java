@@ -30,7 +30,7 @@ public abstract class GenericKubernetesDependentTestBase<R extends CustomResourc
     });
 
     resource.getSpec().setValue(CHANGED_DATA);
-    resource = extension().replace(resource);
+    resource = extension().createOrUpdate(resource);
 
     await().untilAsserted(() -> {
       var cm = extension().get(ConfigMap.class, TEST_RESOURCE_NAME);

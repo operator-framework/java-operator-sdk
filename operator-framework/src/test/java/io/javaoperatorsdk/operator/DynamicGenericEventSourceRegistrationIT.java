@@ -43,7 +43,7 @@ class DynamicGenericEventSourceRegistrationIT {
     var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
     cm.getData().put("key2", "val2");
 
-    extension.replace(cm); // triggers the reconciliation
+    extension.createOrUpdate(cm); // triggers the reconciliation
 
     await().untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions() - executions).isEqualTo(2);

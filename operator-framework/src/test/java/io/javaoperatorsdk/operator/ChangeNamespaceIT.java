@@ -71,7 +71,7 @@ class ChangeNamespaceIT {
 
     ConfigMap firstMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME_1);
     firstMap.setData(Map.of("data", "newdata"));
-    operator.replace(firstMap);
+    operator.createOrUpdate(firstMap);
     assertReconciled(reconciler, defaultNamespaceResource);
   }
 

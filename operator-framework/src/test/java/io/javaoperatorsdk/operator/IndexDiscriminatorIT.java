@@ -39,7 +39,7 @@ class IndexDiscriminatorIT {
     });
 
     res.getSpec().setValue(CHANGED_SPEC_VALUE);
-    res = operator.replace(res);
+    res = operator.createOrUpdate(res);
 
     await().untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2);

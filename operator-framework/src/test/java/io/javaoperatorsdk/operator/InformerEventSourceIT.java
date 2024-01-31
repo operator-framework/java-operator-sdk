@@ -40,7 +40,7 @@ class InformerEventSourceIT {
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
 
     configMap.getData().put(TARGET_CONFIG_MAP_KEY, UPDATE_STATUS_MESSAGE);
-    operator.replace(configMap);
+    operator.createOrUpdate(configMap);
 
     waitForCRStatusValue(UPDATE_STATUS_MESSAGE);
   }

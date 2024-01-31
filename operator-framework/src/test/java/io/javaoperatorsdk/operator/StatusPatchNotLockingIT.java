@@ -31,7 +31,7 @@ class StatusPatchNotLockingIT {
     var resource = operator.create(createResource());
     Thread.sleep(WAIT_TIME / 2);
     resource.getMetadata().setAnnotations(Map.of("key", "value"));
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
 
     await().pollDelay(Duration.ofMillis(WAIT_TIME)).untilAsserted(() -> {
       assertThat(
@@ -59,7 +59,7 @@ class StatusPatchNotLockingIT {
     });
 
     resource.getSpec().setMessageInStatus(false);
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
 
     await().untilAsserted(() -> {
       var actual = operator.get(StatusPatchLockingCustomResource.class,

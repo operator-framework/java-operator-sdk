@@ -30,7 +30,7 @@ class PreviousAnnotationDisabledIT {
         operator.get(CreateUpdateEventFilterTestCustomResource.class,
             resource.getMetadata().getName());
     actualCreatedResource.getSpec().setValue("2");
-    operator.replace(actualCreatedResource);
+    operator.createOrUpdate(actualCreatedResource);
 
     CreateUpdateInformerEventSourceEventFilterIT.assertData(operator, actualCreatedResource, 2, 4);
   }

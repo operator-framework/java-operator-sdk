@@ -69,7 +69,7 @@ public abstract class WebPageOperatorAbstractTest {
     assertThat(httpGetForWebPage(webPage)).contains(TITLE1);
 
     // update part: changing title
-    operator().replace(createWebPage(TITLE2));
+    operator().createOrUpdate(createWebPage(TITLE2));
 
     await().atMost(Duration.ofSeconds(LONG_WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
