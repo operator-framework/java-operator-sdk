@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 class WorkflowResult {
 
+  public static final String NUMBER_DELIMITER = "_";
   private final Map<DependentResource, Exception> erroredDependents;
 
   WorkflowResult(Map<DependentResource, Exception> erroredDependents) {
@@ -43,7 +44,7 @@ class WorkflowResult {
         String name = entry.getKey().getClass().getName();
         var num = numberOfClasses.getOrDefault(name, 0);
         if (num > 0) {
-          exceptionMap.put(name + "_" + num, entry.getValue());
+          exceptionMap.put(name + NUMBER_DELIMITER + num, entry.getValue());
         } else {
           exceptionMap.put(name, entry.getValue());
         }
