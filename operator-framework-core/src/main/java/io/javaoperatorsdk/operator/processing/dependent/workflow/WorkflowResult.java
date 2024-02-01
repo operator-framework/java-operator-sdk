@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -36,9 +36,22 @@ class WorkflowResult {
 
   public void throwAggregateExceptionIfErrorsPresent() {
     if (erroredDependentsExist()) {
+      Map<String, Exception> exceptionMap = new HashMap<>();
+      Map<String, Integer> numberOfClasses = new HashMap<>();
+
+      for (Entry<DependentResource, Exception> entry : erroredDependents.entrySet()) {
+        String name = entry.getKey().getClass().getName();
+        var num = numberOfClasses.getOrDefault(name, 0);
+        if (num > 0) {
+          exceptionMap.put(name + "_" + num, entry.getValue());
+        } else {
+          exceptionMap.put(name, entry.getValue());
+        }
+        numberOfClasses.put(name, num + 1);
+      }
+
       throw new AggregatedOperatorException("Exception(s) during workflow execution.",
-          erroredDependents.entrySet().stream()
-              .collect(Collectors.toMap(e -> e.getKey().getClass().getName(), Entry::getValue)));
+          exceptionMap);
     }
   }
 }
