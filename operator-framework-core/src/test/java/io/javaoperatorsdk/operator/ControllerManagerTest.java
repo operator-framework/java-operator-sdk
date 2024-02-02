@@ -8,66 +8,42 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.sample.simple.DuplicateCRController;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomReconcilerOtherV1;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceOtherV1;
 
+import static io.javaoperatorsdk.operator.ControllerManager.CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ControllerManagerTest {
 
   @Test
-  void shouldNotAddMultipleControllersForSameCustomResource() {
-    final var registered = new TestControllerConfiguration<>(new TestCustomReconciler(null),
-        TestCustomResource.class);
-    final var duplicated =
-        new TestControllerConfiguration<>(new DuplicateCRController(), TestCustomResource.class);
-
-    checkException(registered, duplicated);
-  }
-
-  @Test
-  void addingMultipleControllersForCustomResourcesWithSameVersionsShouldNotWork() {
-    final var registered = new TestControllerConfiguration<>(new TestCustomReconciler(null),
-        TestCustomResource.class);
-    final var duplicated = new TestControllerConfiguration<>(new TestCustomReconcilerOtherV1(),
-        TestCustomResourceOtherV1.class);
-
-    checkException(registered, duplicated);
-  }
-
-  private <T extends HasMetadata, U extends HasMetadata> void checkException(
-      TestControllerConfiguration<T> registered,
-      TestControllerConfiguration<U> duplicated) {
-
+  void addingReconcilerWithSameNameShouldNotWork() {
+    final var controllerConfiguration =
+        new TestControllerConfiguration<>(new TestCustomReconciler(null),
+            TestCustomResource.class);
+    var controller = new Controller<>(controllerConfiguration.reconciler, controllerConfiguration,
+        MockKubernetesClient.client(controllerConfiguration.getResourceClass()));
     ConfigurationService configurationService = new BaseConfigurationService();
+    final var controllerManager =
+        new ControllerManager(configurationService.getExecutorServiceManager());
+    controllerManager.add(controller);
 
-    final var exception = assertThrows(OperatorException.class, () -> {
-      final var controllerManager =
-          new ControllerManager(configurationService.getExecutorServiceManager());
-      controllerManager.add(new Controller<>(registered.controller, registered,
-          MockKubernetesClient.client(registered.getResourceClass())));
-      controllerManager.add(new Controller<>(duplicated.controller, duplicated,
-          MockKubernetesClient.client(duplicated.getResourceClass())));
+    var ex = assertThrows(OperatorException.class, () -> {
+      controllerManager.add(controller);
     });
-    final var msg = exception.getMessage();
     assertTrue(
-        msg.contains("Cannot register controller '" + duplicated.getName() + "'")
-            && msg.contains(registered.getName())
-            && msg.contains(registered.getResourceTypeName()));
+        ex.getMessage().contains(CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE));
   }
 
   private static class TestControllerConfiguration<R extends HasMetadata>
       extends ResolvedControllerConfiguration<R> {
-    private final Reconciler<R> controller;
+    private final Reconciler<R> reconciler;
 
-    public TestControllerConfiguration(Reconciler<R> controller, Class<R> crClass) {
-      super(crClass, getControllerName(controller), controller.getClass(),
+    public TestControllerConfiguration(Reconciler<R> reconciler, Class<R> crClass) {
+      super(crClass, getControllerName(reconciler), reconciler.getClass(),
           new BaseConfigurationService());
-      this.controller = controller;
+      this.reconciler = reconciler;
     }
 
     static <R extends HasMetadata> String getControllerName(
