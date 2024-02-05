@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.net.HttpURLConnection;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -224,6 +226,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         postExecutionControl);
     unsetUnderExecution(resourceID);
 
+    logErrorIfNoRetryConfigured(executionScope, postExecutionControl);
     // If a delete event present at this phase, it was received during reconciliation.
     // So we either removed the finalizer during reconciliation or we don't use finalizers.
     // Either way we don't want to retry.
@@ -258,6 +261,17 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       } else {
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
       }
+    }
+  }
+
+  /**
+   * In case retry is configured more complex error logging takes place, see handleRetryOnException
+   */
+  private void logErrorIfNoRetryConfigured(ExecutionScope<P> executionScope,
+      PostExecutionControl<P> postExecutionControl) {
+    if (!isRetryConfigured() && postExecutionControl.exceptionDuringExecution()) {
+      log.error("Error during event processing {}", executionScope,
+          postExecutionControl.getRuntimeException().orElseThrow());
     }
   }
 
@@ -302,6 +316,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     boolean eventPresent = state.eventPresent();
     state.markEventReceived();
 
+    retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
     if (eventPresent) {
       log.debug("New events exists for for resource id: {}", resourceID);
       submitReconciliationExecution(state);
@@ -319,9 +334,27 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           retryEventSource().scheduleOnce(resourceID, delay);
         },
         () -> {
-          log.error("Exhausted retries for {}", executionScope);
+          log.error("Exhausted retries for scope {}.", executionScope);
           scheduleExecutionForMaxReconciliationInterval(executionScope.getResource());
         });
+  }
+
+  private void retryAwareErrorLogging(RetryExecution retry, boolean eventPresent,
+      Exception exception,
+      ExecutionScope<P> executionScope) {
+    if (!eventPresent && !retry.isLastAttempt() && exception instanceof KubernetesClientException) {
+      KubernetesClientException ex = (KubernetesClientException) exception;
+      if (ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
+        log.debug("Full client conflict error during event processing {}", executionScope,
+            exception);
+        log.warn(
+            "Resource Kubernetes Resource Creator/Update Conflict during reconciliation. Message: {} Resource name: {}",
+            ex.getMessage(), ex.getFullResourceName());
+        return;
+      }
+    }
+    log.error("Error during event processing {}", executionScope,
+        exception);
   }
 
   private void cleanupOnSuccessfulExecution(ExecutionScope<P> executionScope) {

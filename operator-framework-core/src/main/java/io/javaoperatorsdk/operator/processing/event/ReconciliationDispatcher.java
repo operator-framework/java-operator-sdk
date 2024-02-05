@@ -63,7 +63,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     try {
       return handleDispatch(executionScope);
     } catch (Exception e) {
-      log.error("Error during event processing {} failed.", executionScope, e);
       return PostExecutionControl.exceptionDuringExecution(e);
     }
   }
