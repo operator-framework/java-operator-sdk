@@ -544,5 +544,6 @@ several benefits:
 - if dependents are already used in a controller, it makes sense to unify the handling of all
   secondary resources as dependents from a code organization perspective
 - dependent resources can also interact with the workflow feature, thus allowing the read-only
-  resource to participate in conditions, in particular to decide whether or not the primary
-  resource needs/can be reconciled using reconcile pre-conditions
+  resource to participate in conditions, in particular to decide whether the primary
+  resource needs/can be reconciled using reconcile pre-conditions, and ready post-conditions
+  can be added to read-only dependents and depend on them with other dependents.
