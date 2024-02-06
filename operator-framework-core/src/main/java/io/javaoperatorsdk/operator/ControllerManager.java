@@ -64,14 +64,13 @@ class ControllerManager {
     }, c -> "Event processor starter for: " + c.getConfiguration().getName());
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings("rawtypes")
   synchronized void add(Controller controller) {
     final var configuration = controller.getConfiguration();
     final var name = configuration.getName();
-    final var existing = controllers.get(name);
-    if (existing != null) {
+    if (controllers.containsKey(name)) {
       throw new OperatorException(
-          CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE + configuration.getName());
+          CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE + name);
     }
     controllers.put(name, controller);
   }
