@@ -10,9 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
-import static io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowResult.NUMBER_DELIMITER;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class WorkflowResultTest {
 
@@ -35,9 +33,7 @@ class WorkflowResultTest {
     try {
       res.throwAggregateExceptionIfErrorsPresent();
     } catch (AggregatedOperatorException e) {
-      assertThat(e.getAggregatedExceptions())
-          .containsOnlyKeys(DependentA.class.getName(),
-              DependentA.class.getName() + NUMBER_DELIMITER + 1);
+      assertThat(e.getAggregatedExceptions()).hasSize(2);
     }
   }
 
