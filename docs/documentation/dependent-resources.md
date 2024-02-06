@@ -370,7 +370,13 @@ server. To bypass the matching feature completely, simply override the `match` m
 return `false`, thus telling JOSDK that the actual state never matches the desired one, making 
 it always update the resources using SSA.
 
-WARNING: Older versions of Kubernetes before 1.25 would create an additional resource version for every SSA update performed with certain resources - even though there were no actual changes in the stored resource - leading to infinite reconciliations. This behavior was seen with Secrets using `stringData`, Ingresses using empty string fields, and StatefulSets using volume claim templates.  The operator framework has added built-in handling for the StatefulSet issue.  If you encounter this issue on an older Kubernetes version, consider changing your desired state, turning off SSA for that resource, or even upgrading your Kubernetes version.  If you encounter it on a newer Kubernetes version, please log an issue with the JOSDK and with upstream Kubernetes.
+WARNING: Older versions of Kubernetes before 1.25 would create an additional resource version for every SSA update
+performed with certain resources - even though there were no actual changes in the stored resource - leading to infinite
+reconciliations. This behavior was seen with Secrets using `stringData`, Ingresses using empty string fields, and
+StatefulSets using volume claim templates. The operator framework has added built-in handling for the StatefulSet issue.
+If you encounter this issue on an older Kubernetes version, consider changing your desired state, turning off SSA for
+that resource, or even upgrading your Kubernetes version. If you encounter it on a newer Kubernetes version, please log
+an issue with the JOSDK and with upstream Kubernetes.
 
 ## Telling JOSDK how to find which secondary resources are associated with a given primary resource
 
@@ -545,5 +551,6 @@ several benefits:
   secondary resources as dependents from a code organization perspective
 - dependent resources can also interact with the workflow feature, thus allowing the read-only
   resource to participate in conditions, in particular to decide whether the primary
-  resource needs/can be reconciled using reconcile pre-conditions, and ready post-conditions
-  can be added to read-only dependents and depend on them with other dependents.
+  resource needs/can be reconciled using reconcile pre-conditions, block the progression of the workflow altogether with
+  ready post-conditions or have other dependents depend on them, in essence, read-only dependents can participate in
+  workflows just as any other dependents.
