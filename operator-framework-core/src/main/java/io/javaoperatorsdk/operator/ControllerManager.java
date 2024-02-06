@@ -17,6 +17,8 @@ import io.javaoperatorsdk.operator.processing.Controller;
  */
 class ControllerManager {
 
+  public static final String CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE =
+      "Cannot register multiple controllers with same name: ";
   private static final Logger log = LoggerFactory.getLogger(ControllerManager.class);
 
   @SuppressWarnings("rawtypes")
@@ -62,25 +64,20 @@ class ControllerManager {
     }, c -> "Event processor starter for: " + c.getConfiguration().getName());
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings("rawtypes")
   synchronized void add(Controller controller) {
     final var configuration = controller.getConfiguration();
-    final var resourceTypeName = ReconcilerUtils
-        .getResourceTypeNameWithVersion(configuration.getResourceClass());
-    final var existing = controllers.get(resourceTypeName);
-    if (existing != null) {
-      throw new OperatorException("Cannot register controller '" + configuration.getName()
-          + "': another controller named '" + existing.getConfiguration().getName()
-          + "' is already registered for resource '" + resourceTypeName + "'");
+    final var name = configuration.getName();
+    if (controllers.containsKey(name)) {
+      throw new OperatorException(
+          CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE + name);
     }
-    controllers.put(resourceTypeName, controller);
+    controllers.put(name, controller);
   }
 
   @SuppressWarnings("rawtypes")
   synchronized Optional<Controller> get(String name) {
-    return controllers().stream()
-        .filter(c -> name.equals(c.getConfiguration().getName()))
-        .findFirst();
+    return Optional.ofNullable(controllers.get(name));
   }
 
   @SuppressWarnings("rawtypes")
