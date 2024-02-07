@@ -29,8 +29,8 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/java-operator-sdk/java-operator-sdk.git</connection>
-        <developerConnection>scm:git:git@github.com/java-operator-sdk/java-operator-sdk.git</developerConnection>
+        <connection>scm:git:git://github.com/operator-framework/java-operator-sdk.git</connection>
+        <developerConnection>scm:git:git@github.com/operator-framework/java-operator-sdk.git</developerConnection>
         <url>https://github.com/operator-framework/java-operator-sdk/tree/main</url>
     </scm>
 
