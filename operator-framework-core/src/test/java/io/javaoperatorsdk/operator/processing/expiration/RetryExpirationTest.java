@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.processing.expiration;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class RetryExpirationTest {
 

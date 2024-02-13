@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,17 +13,30 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.expiration.Expiration;
+import io.javaoperatorsdk.operator.processing.expiration.RetryExpiration;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public class CRDPresentActivationCondition implements Condition<HasMetadata, HasMetadata> {
 
+  public static Retry DEFAULT_EXPIRATION_RETRY = new GenericRetry().setInitialInterval(1000)
+      .setMaxInterval(1000 * 60 * 60)
+      .setIntervalMultiplier(2);
+
   private static final Logger log = LoggerFactory.getLogger(CRDPresentActivationCondition.class);
 
-  private static final Map<GroupVersionKind, Boolean> crdPresenceCache = new ConcurrentHashMap<>();
-  private static final Map<GroupVersionKind, LocalDateTime> crdPresenceLastRefresh =
-      new ConcurrentHashMap<>();
+  private final Map<GroupVersionKind, CRDCheckState> crdPresenceCache = new ConcurrentHashMap<>();
 
-  // todo configurable, enhanced behavior (exp backoff etc)
-  private int cacheRefreshInterval = 5000;
+  private final Retry expirationRetry;
+
+  public CRDPresentActivationCondition() {
+    this(DEFAULT_EXPIRATION_RETRY);
+  }
+
+  public CRDPresentActivationCondition(Retry expirationRetry) {
+    this.expirationRetry = expirationRetry;
+  }
 
   @Override
   public boolean isMet(DependentResource<HasMetadata, HasMetadata> dependentResource,
@@ -50,22 +61,54 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
               && crd.getSpec().getGroup().equals(gvk.getGroup()))
           .findAny().isPresent();
     } else {
-      if (crdPresenceCache.get(gvk) == null ||
-          crdPresenceLastRefresh.get(gvk)
-              .isBefore(LocalDateTime.now().minus(cacheRefreshInterval, ChronoUnit.MILLIS))) {
-        refreshCache(gvk, context.getClient());
+      var crdCheckState = crdPresenceCache.computeIfAbsent(gvk,
+          g -> new CRDCheckState(new RetryExpiration(expirationRetry.initExecution())));
+      // in case of parallel execution it is only refreshed once
+      synchronized (crdCheckState) {
+        if (crdCheckState.getExpiration().isExpired()) {
+          refreshCache(gvk, context.getClient());
+        }
       }
-      return crdPresenceCache.get(gvk);
+      return crdPresenceCache.get(gvk).getCrdPresent();
     }
   }
 
   private void refreshCache(GroupVersionKind gvk, KubernetesClient client) {
+    var state = crdPresenceCache.computeIfAbsent(gvk,
+        g -> new CRDCheckState(new RetryExpiration(expirationRetry.initExecution())));
+
     boolean found = client.resources(CustomResourceDefinition.class).list().getItems()
         .stream().anyMatch(crd -> crd.getSpec().getNames().getKind().equals(gvk.getKind())
             && crd.getSpec().getGroup().equals(gvk.getGroup()));
-    crdPresenceCache.put(gvk, found);
-    crdPresenceLastRefresh.put(gvk, LocalDateTime.now());
+
+    state.setCrdPresent(found);
+    state.getExpiration().refreshed();
   }
 
+  static class CRDCheckState {
 
+    public CRDCheckState(Expiration expiration) {
+      this.expiration = expiration;
+    }
+
+    private Expiration expiration;
+
+    private Boolean crdPresent;
+
+    public Expiration getExpiration() {
+      return expiration;
+    }
+
+    public void setExpiration(Expiration expiration) {
+      this.expiration = expiration;
+    }
+
+    public Boolean getCrdPresent() {
+      return crdPresent;
+    }
+
+    public void setCrdPresent(Boolean crdPresent) {
+      this.crdPresent = crdPresent;
+    }
+  }
 }
