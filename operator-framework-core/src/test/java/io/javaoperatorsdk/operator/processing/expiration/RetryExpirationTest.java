@@ -12,7 +12,6 @@ public class RetryExpirationTest {
   public static final int INITIAL_INTERVAL = 25;
   public static final int INITIAL_INTERVAL_PLUS_SLACK = INITIAL_INTERVAL + 10;
 
-  public static final int SLACK = 50;
   RetryExpiration expiration = new RetryExpiration(new GenericRetry()
       .setInitialInterval(INITIAL_INTERVAL)
       .setMaxAttempts(2)
