@@ -224,7 +224,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
           Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
           Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
           Utils.instantiate(dependent.activationCondition(), Condition.class, context),
-          eventSourceName);
+          eventSourceName, dependent.optional());
+
       specsMap.put(dependentName, spec);
     }
     return specsMap.values().stream().toList();

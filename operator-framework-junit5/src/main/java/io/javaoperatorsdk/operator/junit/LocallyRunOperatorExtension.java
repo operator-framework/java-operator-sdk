@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.junit;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -19,9 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.LocalPortForward;
+import io.fabric8.kubernetes.client.dsl.NonDeletingOperation;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.RegisteredController;
@@ -176,7 +179,21 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     applyCrd(ReconcilerUtils.getResourceTypeName(resourceClass), client);
   }
 
-  public static void applyCrd(String resourceTypeName, KubernetesClient client) {
+  public static void deleteCrd(Class<? extends HasMetadata> resourceClass,
+      KubernetesClient client) {
+    try {
+      var crd = loadCRD(ReconcilerUtils.getResourceTypeName(resourceClass), client);
+      client.resource(crd).delete();
+
+      Thread.sleep(CRD_READY_WAIT);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+
+  private static CustomResourceDefinition loadCRD(String resourceTypeName,
+      KubernetesClient client) {
     String path = "/META-INF/fabric8/" + resourceTypeName + "-v1.yml";
     try (InputStream is = LocallyRunOperatorExtension.class.getResourceAsStream(path)) {
       if (is == null) {
@@ -184,15 +201,24 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       }
       var crdString = new String(is.readAllBytes(), StandardCharsets.UTF_8);
       LOGGER.debug("Applying CRD: {}", crdString);
-      final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
-      crd.createOrReplace();
+      final var resources = client.load(new ByteArrayInputStream(crdString.getBytes()));
+      return (CustomResourceDefinition) resources.items().get(0);
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  public static void applyCrd(String resourceTypeName, KubernetesClient client) {
+    try {
+      var crd = loadCRD(resourceTypeName, client);
+      client.resource(crd).createOr(NonDeletingOperation::update);
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
-      LOGGER.debug("Applied CRD with path: {}", path);
+      LOGGER.debug("Applied CRD for type {}", resourceTypeName);
     } catch (InterruptedException ex) {
       LOGGER.error("Interrupted.", ex);
       Thread.currentThread().interrupt();
     } catch (Exception ex) {
-      throw new IllegalStateException("Cannot apply CRD yaml: " + path, ex);
+      throw new IllegalStateException("Cannot apply CRD for type: " + resourceTypeName, ex);
     }
   }
 

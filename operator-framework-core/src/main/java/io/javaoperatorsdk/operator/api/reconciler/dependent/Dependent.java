@@ -86,4 +86,6 @@ public @interface Dependent {
    * @return event source name (if any) provided by the dependent resource should be used.
    */
   String useEventSourceWithName() default NO_VALUE_SET;
+
+  boolean optional() default false;
 }

@@ -26,10 +26,12 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
 
   private final String useEventSourceWithName;
 
+  private final boolean optional;
+
   public DependentResourceSpec(Class<? extends DependentResource<R, P>> dependentResourceClass,
       String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
       Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition,
-      Condition<?, ?> activationCondition, String useEventSourceWithName) {
+      Condition<?, ?> activationCondition, String useEventSourceWithName, boolean optional) {
     this.dependentResourceClass = dependentResourceClass;
     this.name = name;
     this.dependsOn = dependsOn;
@@ -38,6 +40,13 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
     this.deletePostCondition = deletePostCondition;
     this.activationCondition = activationCondition;
     this.useEventSourceWithName = useEventSourceWithName;
+    this.optional = optional;
+
+    if (this.optional && activationCondition != null) {
+      throw new IllegalArgumentException(
+          "Dependent resource cannot be both optional and contain activation condition. Dependent resource name: "
+              + name + " class: " + dependentResourceClass);
+    }
   }
 
   public Class<? extends DependentResource<R, P>> getDependentResourceClass() {
@@ -97,5 +106,9 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
 
   public Optional<String> getUseEventSourceWithName() {
     return Optional.ofNullable(useEventSourceWithName);
+  }
+
+  public boolean isOptional() {
+    return optional;
   }
 }

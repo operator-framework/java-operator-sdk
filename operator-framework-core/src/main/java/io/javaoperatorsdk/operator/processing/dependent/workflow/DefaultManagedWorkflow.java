@@ -76,14 +76,19 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   public Workflow<P> resolve(KubernetesClient client,
       ControllerConfiguration<P> configuration) {
     final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
+
+    // sharing the activation condition so no parallel requests are done for the same CRD
+    CRDPresentActivationCondition crdPresentActivationCondition =
+        new CRDPresentActivationCondition();
+
     for (DependentResourceSpec spec : orderedSpecs) {
       final var dependentResource = resolve(spec, client, configuration);
       final var node = new DependentResourceNode(
           spec.getReconcileCondition(),
           spec.getDeletePostCondition(),
           spec.getReadyCondition(),
-          spec.getActivationCondition(),
-          dependentResource);
+          spec.isOptional() ? crdPresentActivationCondition : spec.getActivationCondition(),
+          resolve(spec, client, configuration));
       alreadyResolved.put(dependentResource.name(), node);
       spec.getDependsOn()
           .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
