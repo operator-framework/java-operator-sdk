@@ -52,7 +52,7 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
       crdInformer = (InformerEventSource<CustomResourceDefinition, HasMetadata>) context
           .eventSourceRetriever().getResourceEventSourceFor(CustomResourceDefinition.class);
     } catch (IllegalArgumentException e) {
-      log.debug("Error when finding event source for CustomResourceDefinitions", e);
+      log.trace("Error when finding event source for CustomResourceDefinitions", e);
     }
 
     if (crdInformer != null) {
