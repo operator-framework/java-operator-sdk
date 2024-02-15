@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public class CRDPresentActivationCondition implements Condition<HasMetadata, HasMetadata> {
 
-  public static Retry DEFAULT_EXPIRATION_RETRY = new GenericRetry().setInitialInterval(1000)
+  public static Retry DEFAULT_EXPIRATION_RETRY = new GenericRetry().setInitialInterval(2000)
       .setMaxInterval(1000 * 60 * 60)
       .setIntervalMultiplier(2);
 
