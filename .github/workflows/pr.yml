@@ -48,7 +48,7 @@ jobs:
     uses: ./.github/workflows/integration-tests.yml
     with:
       java-version: 17
-      kube-version: 'v1.28.2'
+      kube-version: 'v1.29.1'
       http-client: ${{ matrix.httpclient }}
       experimental: true
 
