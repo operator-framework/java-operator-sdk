@@ -17,6 +17,10 @@ on:
         type: boolean
         required: false
         default: false
+      checkout-ref:
+        type: string
+        required: false
+        default: ''
 
 jobs:
   integration_tests:
@@ -27,6 +31,8 @@ jobs:
       - name: Output test information
         run: echo "Running ITs with ${{ inputs.http-client }}, ${{ inputs.kube-version }}, ${{ inputs.java-version }}"
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.checkout-ref }}
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
         with:
