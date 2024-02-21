@@ -33,9 +33,13 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
     primaryResources.forEach(
         primaryResource -> {
           var secondaryResources = index.get(primaryResource);
-          secondaryResources.remove(ResourceID.fromResource(resource));
-          if (secondaryResources.isEmpty()) {
-            index.remove(primaryResource);
+          // this can be null in just very special cases, like when the secondaryToPrimaryMapper is
+          // changing dynamically
+          if (secondaryResources != null) {
+            secondaryResources.remove(ResourceID.fromResource(resource));
+            if (secondaryResources.isEmpty()) {
+              index.remove(primaryResource);
+            }
           }
         });
   }
