@@ -17,8 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("rawtypes")
 class WorkflowTest {
@@ -27,9 +26,9 @@ class WorkflowTest {
 
   @Test
   void zeroTopLevelDRShouldThrowException() {
-    var dr1 = mock(DependentResource.class);
-    var dr2 = mock(DependentResource.class);
-    var dr3 = mock(DependentResource.class);
+    var dr1 = mockDependent("dr1");
+    var dr2 = mockDependent("dr2");
+    var dr3 = mockDependent("dr3");
 
     var cyclicWorkflowBuilderSetup = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1).dependsOn()
@@ -43,9 +42,9 @@ class WorkflowTest {
 
   @Test
   void calculatesTopLevelResources() {
-    var dr1 = mock(DependentResource.class);
-    var dr2 = mock(DependentResource.class);
-    var independentDR = mock(DependentResource.class);
+    var dr1 = mockDependent("dr1");
+    var dr2 = mockDependent("dr2");
+    var independentDR = mockDependent("independentDR");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
@@ -63,9 +62,9 @@ class WorkflowTest {
 
   @Test
   void calculatesBottomLevelResources() {
-    var dr1 = mock(DependentResource.class);
-    var dr2 = mock(DependentResource.class);
-    var independentDR = mock(DependentResource.class);
+    var dr1 = mockDependent("dr1");
+    var dr2 = mockDependent("dr2");
+    var independentDR = mockDependent("independentDR");
 
     Workflow<TestCustomResource> workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
@@ -100,4 +99,11 @@ class WorkflowTest {
         GarbageCollected.class));
     assertFalse(DefaultWorkflow.isDeletable(dr.getClass()));
   }
+
+  static DependentResource mockDependent(String name) {
+    var res = mock(DependentResource.class);
+    when(res.getName()).thenReturn(name);
+    return res;
+  }
+
 }

@@ -104,6 +104,14 @@ class ControllerConfigurationOverriderTest {
       }
 
       @Override
+      public String getName() {
+        return null;
+      }
+
+      @Override
+      public void setName(String name) {}
+
+      @Override
       public void configureWith(String config) {
         this.config = config;
       }

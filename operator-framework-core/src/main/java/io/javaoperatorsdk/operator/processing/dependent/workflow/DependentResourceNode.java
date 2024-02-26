@@ -12,25 +12,20 @@ public class DependentResourceNode<R, P extends HasMetadata> {
 
   private final List<DependentResourceNode> dependsOn = new LinkedList<>();
   private final List<DependentResourceNode> parents = new LinkedList<>();
-  private final String name;
+
   private Condition<R, P> reconcilePrecondition;
   private Condition<R, P> deletePostcondition;
   private Condition<R, P> readyPostcondition;
   private Condition<R, P> activationCondition;
   private final DependentResource<R, P> dependentResource;
 
-  DependentResourceNode(String name, DependentResource<R, P> dependentResource) {
-    this(name, null, null, null, null, dependentResource);
-  }
-
   DependentResourceNode(DependentResource<R, P> dependentResource) {
-    this(getNameFor(dependentResource), null, null, null, null, dependentResource);
+    this(null, null, null, null, dependentResource);
   }
 
-  public DependentResourceNode(String name, Condition<R, P> reconcilePrecondition,
+  public DependentResourceNode(Condition<R, P> reconcilePrecondition,
       Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
       Condition<R, P> activationCondition, DependentResource<R, P> dependentResource) {
-    this.name = name;
     this.reconcilePrecondition = reconcilePrecondition;
     this.deletePostcondition = deletePostcondition;
     this.readyPostcondition = readyPostcondition;
@@ -54,11 +49,6 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   public List<DependentResourceNode> getParents() {
     return parents;
   }
-
-  public String getName() {
-    return name;
-  }
-
 
   public Optional<Condition<R, P>> getReconcilePrecondition() {
     return Optional.ofNullable(reconcilePrecondition);
@@ -106,12 +96,12 @@ public class DependentResourceNode<R, P extends HasMetadata> {
       return false;
     }
     DependentResourceNode<?, ?> that = (DependentResourceNode<?, ?>) o;
-    return name.equals(that.name);
+    return this.getDependentResource().getName().equals(that.getDependentResource().getName());
   }
 
   @Override
   public int hashCode() {
-    return name.hashCode();
+    return this.getDependentResource().getName().hashCode();
   }
 
   @SuppressWarnings("rawtypes")
