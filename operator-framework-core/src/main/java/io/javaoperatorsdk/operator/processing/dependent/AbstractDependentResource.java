@@ -29,6 +29,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private ResourceDiscriminator<R, P> resourceDiscriminator;
   private final DependentResourceReconciler<R, P> dependentResourceReconciler;
 
+  protected String name = DependentResource.defaultNameFor(this.getClass());
+
   @SuppressWarnings({"unchecked"})
   protected AbstractDependentResource() {
     creator = creatable ? (Creator<R, P>) this : null;
@@ -175,5 +177,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @Override
   public boolean isDeletable() {
     return deletable;
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 }

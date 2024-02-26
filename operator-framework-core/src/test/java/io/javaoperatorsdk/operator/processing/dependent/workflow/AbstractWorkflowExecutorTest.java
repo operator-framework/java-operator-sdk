@@ -35,11 +35,10 @@ public class AbstractWorkflowExecutorTest {
 
   public class TestDependent extends KubernetesDependentResource<ConfigMap, TestCustomResource> {
 
-    private final String name;
-
     public TestDependent(String name) {
       super(ConfigMap.class);
-      this.name = name;
+      setName(name);
+
     }
 
     @Override
@@ -92,7 +91,7 @@ public class AbstractWorkflowExecutorTest {
   }
 
   public class TestErrorDependent implements DependentResource<String, TestCustomResource> {
-    private final String name;
+    private String name;
 
     public TestErrorDependent(String name) {
       this.name = name;
@@ -108,6 +107,16 @@ public class AbstractWorkflowExecutorTest {
     @Override
     public Class<String> resourceType() {
       return String.class;
+    }
+
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public void setName(String name) {
+      this.name = name;
     }
 
     @Override
