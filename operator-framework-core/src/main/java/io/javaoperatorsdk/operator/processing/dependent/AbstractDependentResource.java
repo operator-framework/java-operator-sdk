@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,8 +99,26 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-    return resourceDiscriminator == null ? context.getSecondaryResource(resourceType())
-        : resourceDiscriminator.distinguish(resourceType(), primary, context);
+    if (resourceDiscriminator != null) {
+      return resourceDiscriminator.distinguish(resourceType(), primary, context);
+    } else {
+      var secondaryResources = context.getSecondaryResources(resourceType());
+      if (secondaryResources.size() > 1) {
+        return selectSecondaryBasedOnDesiredState(secondaryResources, desired(primary, context));
+      } else {
+        return secondaryResources.isEmpty() ? Optional.empty()
+            : Optional.of(secondaryResources.iterator().next());
+      }
+    }
+  }
+
+  protected Optional<R> selectSecondaryBasedOnDesiredState(Set<R> secondaryResources, R desired) {
+    var targetResources =
+        secondaryResources.stream().filter(r -> r.equals(desired)).collect(Collectors.toList());
+    if (targetResources.size() > 1) {
+      throw new IllegalStateException("More than 1 secondary resource related to primary");
+    }
+    return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
   }
 
   private void throwIfNull(R desired, P primary, String descriptor) {

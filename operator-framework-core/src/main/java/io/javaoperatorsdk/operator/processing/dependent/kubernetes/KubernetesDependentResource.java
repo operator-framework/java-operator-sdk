@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -292,6 +293,14 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (primaryNamespaces != null) {
       annotations.put(namespaceKey, primary.getMetadata().getNamespace());
     }
+  }
+
+  @Override
+  protected Optional<R> selectSecondaryBasedOnDesiredState(Set<R> secondaryResources, R desired) {
+    return secondaryResources.stream()
+        .filter(r -> r.getMetadata().getName().equals(desired.getMetadata().getName()) &&
+            Objects.equals(r.getMetadata().getNamespace(), desired.getMetadata().getNamespace()))
+        .findFirst();
   }
 
   protected boolean addOwnerReference() {
