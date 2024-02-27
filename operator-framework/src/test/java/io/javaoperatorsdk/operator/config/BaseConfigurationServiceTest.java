@@ -471,12 +471,9 @@ class BaseConfigurationServiceTest {
     }
 
     @Override
-    public String getName() {
+    public String name() {
       return null;
     }
-
-    @Override
-    public void setName(String name) {}
 
     @Override
     public void configureWith(CustomConfig config) {

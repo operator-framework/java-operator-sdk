@@ -23,11 +23,10 @@ public class EmptyTestDependentResource
   }
 
   @Override
-  public String getName() {
+  public String name() {
     return name;
   }
 
-  @Override
   public void setName(String name) {
     this.name = name;
   }
