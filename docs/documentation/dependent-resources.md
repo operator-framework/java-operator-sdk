@@ -302,9 +302,12 @@ tests [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/op
 When dealing with multiple dependent resources of same type, the dependent resource implementation
 needs to know which specific resource should be targeted when reconciling a given dependent
 resource, since there will be multiple instances of that type which could possibly be used, each
-associated with the same primary resource. In order to do this, JOSDK relies on the
+associated with the same primary resource. The target resource is computed and selected based on 
+desired state automatically.
+
+Formally there were resource discriminators used for:
 [resource discriminator](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
-concept. Resource discriminators uniquely identify the target resource of a dependent resource.
+Resource discriminators uniquely identify the target resource of a dependent resource.
 In the managed Kubernetes dependent resources case, the discriminator can be declaratively set
 using the `@KubernetesDependent` annotation:
 
@@ -315,6 +318,8 @@ public class MultipleManagedDependentResourceConfigMap1 {
 //...
 }
 ```
+Resource discriminators still can be used. But might be removed in the future releases.
+
 
 Dependent resources usually also provide event sources. When dealing with multiple dependents of
 the same type, one needs to decide whether these dependent resources should track the same
