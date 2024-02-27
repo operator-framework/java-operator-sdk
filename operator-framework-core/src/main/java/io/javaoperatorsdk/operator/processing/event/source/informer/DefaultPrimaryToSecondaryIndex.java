@@ -34,7 +34,8 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
         primaryResource -> {
           var secondaryResources = index.get(primaryResource);
           // this can be null in just very special cases, like when the secondaryToPrimaryMapper is
-          // changing dynamically
+          // changing dynamically. Like if a list of ResourceIDs mapped dynamically extended in the
+          // mapper between the onAddOrUpdate and onDelete is called.
           if (secondaryResources != null) {
             secondaryResources.remove(ResourceID.fromResource(resource));
             if (secondaryResources.isEmpty()) {
