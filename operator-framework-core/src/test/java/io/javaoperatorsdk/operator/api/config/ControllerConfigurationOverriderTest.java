@@ -75,8 +75,7 @@ class ControllerConfigurationOverriderTest {
   private static class NamedDependentReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
 
@@ -104,12 +103,9 @@ class ControllerConfigurationOverriderTest {
       }
 
       @Override
-      public String getName() {
+      public String name() {
         return null;
       }
-
-      @Override
-      public void setName(String name) {}
 
       @Override
       public void configureWith(String config) {

@@ -69,7 +69,6 @@ public interface DependentResource<R, P extends HasMetadata> {
     return this instanceof Deleter;
   }
 
-  String getName();
+  String name();
 
-  void setName(String name);
 }

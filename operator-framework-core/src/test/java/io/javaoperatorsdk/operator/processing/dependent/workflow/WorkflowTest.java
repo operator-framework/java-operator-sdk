@@ -102,7 +102,7 @@ class WorkflowTest {
 
   static DependentResource mockDependent(String name) {
     var res = mock(DependentResource.class);
-    when(res.getName()).thenReturn(name);
+    when(res.name()).thenReturn(name);
     return res;
   }
 

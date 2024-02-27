@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
@@ -84,7 +85,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
           spec.getReadyCondition(),
           spec.getActivationCondition(),
           resolve(spec, client, configuration));
-      alreadyResolved.put(node.getDependentResource().getName(), node);
+      alreadyResolved.put(node.getDependentResource().name(), node);
       spec.getDependsOn()
           .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
@@ -105,8 +106,9 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
         configuration.getConfigurationService().dependentResourceFactory()
             .createFrom(spec, configuration);
 
-    if (spec.getName() != null && !spec.getName().equals(NO_VALUE_SET)) {
-      dependentResource.setName(spec.getName());
+    if (spec.getName() != null && !spec.getName().equals(NO_VALUE_SET)
+        && dependentResource instanceof NameSetter) {
+      ((NameSetter) dependentResource).setName(spec.getName());
     }
 
     if (dependentResource instanceof KubernetesClientAware) {

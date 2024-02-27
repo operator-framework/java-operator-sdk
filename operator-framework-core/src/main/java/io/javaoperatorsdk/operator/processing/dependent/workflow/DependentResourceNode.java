@@ -96,12 +96,12 @@ public class DependentResourceNode<R, P extends HasMetadata> {
       return false;
     }
     DependentResourceNode<?, ?> that = (DependentResourceNode<?, ?>) o;
-    return this.getDependentResource().getName().equals(that.getDependentResource().getName());
+    return this.getDependentResource().name().equals(that.getDependentResource().name());
   }
 
   @Override
   public int hashCode() {
-    return this.getDependentResource().getName().hashCode();
+    return this.getDependentResource().name().hashCode();
   }
 
   @SuppressWarnings("rawtypes")
