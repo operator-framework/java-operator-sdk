@@ -10,10 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("mdr")
 public class MultipleDependentResourceCustomResource
-    extends CustomResource<Void, MultipleDependentResourceStatus>
+    extends CustomResource<MultipleDependentResourceSpec, MultipleDependentResourceStatus>
     implements Namespaced {
-
-  public String getConfigMapName(int id) {
-    return "configmap" + id;
-  }
 }

@@ -344,7 +344,7 @@ would look as follows:
 A sample is provided as an integration test both:
 for [managed](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentNoDiscriminatorIT.java)
 
-For [standalone](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
+For [standalone](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
 cases.
 
 ## Bulk Dependent Resources

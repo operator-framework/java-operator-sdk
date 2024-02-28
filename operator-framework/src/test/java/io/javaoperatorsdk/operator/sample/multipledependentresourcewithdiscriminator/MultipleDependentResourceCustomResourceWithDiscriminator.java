@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@ShortNames("mdr")
+@ShortNames("mdwd")
 public class MultipleDependentResourceCustomResourceWithDiscriminator
     extends CustomResource<Void, MultipleDependentResourceWithDiscriminatorStatus>
     implements Namespaced {

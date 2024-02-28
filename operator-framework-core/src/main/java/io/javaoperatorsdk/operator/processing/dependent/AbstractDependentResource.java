@@ -103,11 +103,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       return resourceDiscriminator.distinguish(resourceType(), primary, context);
     } else {
       var secondaryResources = context.getSecondaryResources(resourceType());
-      if (secondaryResources.size() > 1) {
-        return selectSecondaryBasedOnDesiredState(secondaryResources, desired(primary, context));
+      if (secondaryResources.isEmpty()) {
+        return Optional.empty();
       } else {
-        return secondaryResources.isEmpty() ? Optional.empty()
-            : Optional.of(secondaryResources.iterator().next());
+        return selectSecondaryBasedOnDesiredState(secondaryResources, desired(primary, context));
       }
     }
   }
