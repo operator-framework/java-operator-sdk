@@ -85,7 +85,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
           spec.getReadyCondition(),
           spec.getActivationCondition(),
           resolve(spec, client, configuration));
-      alreadyResolved.put(node.getDependentResource().name(), node);
+      alreadyResolved.put(node.getName(), node);
       spec.getDependsOn()
           .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
@@ -106,9 +106,9 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
         configuration.getConfigurationService().dependentResourceFactory()
             .createFrom(spec, configuration);
 
-    if (spec.getName() != null && !spec.getName().equals(NO_VALUE_SET)
-        && dependentResource instanceof NameSetter) {
-      ((NameSetter) dependentResource).setName(spec.getName());
+    final var name = spec.getName();
+    if (name != null && !NO_VALUE_SET.equals(name) && dependentResource instanceof NameSetter) {
+      ((NameSetter) dependentResource).setName(name);
     }
 
     if (dependentResource instanceof KubernetesClientAware) {

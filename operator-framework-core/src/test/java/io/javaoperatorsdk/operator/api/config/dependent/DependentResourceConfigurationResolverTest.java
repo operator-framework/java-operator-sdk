@@ -24,10 +24,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 import static io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolverTest.CustomAnnotationReconciler.DR_NAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class DependentResourceConfigurationResolverTest {
 
@@ -173,11 +170,6 @@ class DependentResourceConfigurationResolverTest {
     @Override
     public Class<ConfigMap> resourceType() {
       return ConfigMap.class;
-    }
-
-    @Override
-    public String name() {
-      return null;
     }
 
     @Override

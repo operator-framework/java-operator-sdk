@@ -77,7 +77,7 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
           bottomLevelResource.remove(dependsOn);
         }
       }
-      map.put(node.getDependentResource().name(), node);
+      map.put(node.getName(), node);
     }
     if (topLevelResources.size() == 0) {
       throw new IllegalStateException(

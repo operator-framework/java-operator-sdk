@@ -26,11 +26,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerConfigurationOverriderTest {
   private final BaseConfigurationService configurationService = new BaseConfigurationService();
@@ -100,11 +96,6 @@ class ControllerConfigurationOverriderTest {
       @Override
       public Class<Object> resourceType() {
         return Object.class;
-      }
-
-      @Override
-      public String name() {
-        return null;
       }
 
       @Override

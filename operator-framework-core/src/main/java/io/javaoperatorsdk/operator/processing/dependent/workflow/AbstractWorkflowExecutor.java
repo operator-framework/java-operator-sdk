@@ -139,13 +139,11 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
                 .eventSourceContextForDynamicRegistration());
         var es = eventSource.orElseThrow();
         context.eventSourceRetriever()
-            .dynamicallyRegisterEventSource(dependentResourceNode.getDependentResource().name(),
-                es);
+            .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
 
       } else {
         context.eventSourceRetriever()
-            .dynamicallyDeRegisterEventSource(
-                dependentResourceNode.getDependentResource().name());
+            .dynamicallyDeRegisterEventSource(dependentResourceNode.getName());
       }
     }
   }
