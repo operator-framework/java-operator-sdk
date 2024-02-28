@@ -112,11 +112,25 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     }
   }
 
+  /**
+   * Selects the actual secondary resource matching the desired state derived from the primary
+   * resource when several resources of the same type are found in the context. This method allows
+   * for optimized implementations in subclasses since this default implementation will check each
+   * secondary candidates for equality with the specified desired state, which might end up costly.
+   *
+   * @param secondaryResources a Set of potential candidates of the looked for resource type
+   * @param desired the desired state that the matching secondary resource must have to match the
+   *        primary resource
+   * @return the matching secondary resource or {@link Optional#empty()} if none matches
+   * @throws IllegalStateException if more than one candidate is found, in which case some other
+   *         mechanism might be necessary to distinguish between candidate secondary resources
+   */
   protected Optional<R> selectSecondaryBasedOnDesiredState(Set<R> secondaryResources, R desired) {
     var targetResources =
         secondaryResources.stream().filter(r -> r.equals(desired)).collect(Collectors.toList());
     if (targetResources.size() > 1) {
-      throw new IllegalStateException("More than 1 secondary resource related to primary");
+      throw new IllegalStateException(
+          "More than one secondary resource related to primary: " + targetResources);
     }
     return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
   }
@@ -186,8 +200,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         "handleDelete method must be implemented if Deleter trait is supported");
   }
 
-  public void setResourceDiscriminator(
-      ResourceDiscriminator<R, P> resourceDiscriminator) {
+  public void setResourceDiscriminator(ResourceDiscriminator<R, P> resourceDiscriminator) {
     this.resourceDiscriminator = resourceDiscriminator;
   }
 

@@ -301,11 +301,14 @@ tests [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/op
 
 When dealing with multiple dependent resources of same type, the dependent resource implementation
 needs to know which specific resource should be targeted when reconciling a given dependent
-resource, since there will be multiple instances of that type which could possibly be used, each
-associated with the same primary resource. The target resource is computed and selected based on 
-desired state automatically.
+resource, since there could be multiple instances of that type which could possibly be used, each
+associated with the same primary resource. In this situation, JOSDK automatically selects the appropriate secondary
+resource which matches the desired state associated with the primary resource. This makes sense because the desired
+state computation already needs to be able to discriminate among multiple related secondary resources to tell JOSDK how
+they should be reconciled.
 
-Formally there were resource discriminators used for this purpose, still present for backwards compatibility:
+However, it is also possible to be more explicit about how JOSDK should identify the proper secondary resource by using
+a
 [resource discriminator](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
 Resource discriminators uniquely identify the target resource of a dependent resource.
 In the managed Kubernetes dependent resources case, the discriminator can be declaratively set
@@ -318,7 +321,9 @@ public class MultipleManagedDependentResourceConfigMap1 {
 //...
 }
 ```
-Resource discriminators still can be used. But might be removed in the future releases.
+
+While using the automated mechanism should work well in most cases, resource discriminators might make sense for
+optimization purposes, especially when computing the desired state is costly.
 
 ### Sharing an Event Source Between Dependent Resources
 
