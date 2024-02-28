@@ -305,7 +305,7 @@ resource, since there will be multiple instances of that type which could possib
 associated with the same primary resource. The target resource is computed and selected based on 
 desired state automatically.
 
-Formally there were resource discriminators used for:
+Formally there were resource discriminators used for this purpose, still present for backwards compatibility:
 [resource discriminator](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
 Resource discriminators uniquely identify the target resource of a dependent resource.
 In the managed Kubernetes dependent resources case, the discriminator can be declaratively set
@@ -320,6 +320,7 @@ public class MultipleManagedDependentResourceConfigMap1 {
 ```
 Resource discriminators still can be used. But might be removed in the future releases.
 
+### Sharing an Event Source Between Dependent Resources
 
 Dependent resources usually also provide event sources. When dealing with multiple dependents of
 the same type, one needs to decide whether these dependent resources should track the same
@@ -335,10 +336,10 @@ would look as follows:
    useEventSourceWithName = "configMapSource")
 ```
 
-A sample is provided as an integration test both
-for [managed](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentSameTypeIT.java)
-and
-for [standalone](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
+A sample is provided as an integration test both:
+for [managed](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentNoDiscriminatorIT.java)
+
+For [standalone](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
 cases.
 
 ## Bulk Dependent Resources

@@ -9,9 +9,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceConfigMap;
-import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceCustomResource;
-import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceReconciler;
+import io.javaoperatorsdk.operator.sample.multipledependentresourcewithdiscriminator.MultipleDependentResourceConfigMap;
+import io.javaoperatorsdk.operator.sample.multipledependentresourcewithdiscriminator.MultipleDependentResourceCustomResourceWithDiscriminator;
+import io.javaoperatorsdk.operator.sample.multipledependentresourcewithdiscriminator.MultipleDependentResourceWithDiscriminatorReconciler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -22,22 +22,25 @@ class MultipleDependentResourceIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(MultipleDependentResourceReconciler.class)
+          .withReconciler(MultipleDependentResourceWithDiscriminatorReconciler.class)
           .waitForNamespaceDeletion(true)
           .build();
 
   @Test
   void twoConfigMapsHaveBeenCreated() {
-    MultipleDependentResourceCustomResource customResource = createTestCustomResource();
+    MultipleDependentResourceCustomResourceWithDiscriminator customResource =
+        createTestCustomResource();
     operator.create(customResource);
 
-    var reconciler = operator.getReconcilerOfType(MultipleDependentResourceReconciler.class);
+    var reconciler =
+        operator.getReconcilerOfType(MultipleDependentResourceWithDiscriminatorReconciler.class);
 
     await().pollDelay(Duration.ofMillis(300))
         .until(() -> reconciler.getNumberOfExecutions() <= 1);
 
-    IntStream.of(MultipleDependentResourceReconciler.FIRST_CONFIG_MAP_ID,
-        MultipleDependentResourceReconciler.SECOND_CONFIG_MAP_ID).forEach(configMapId -> {
+    IntStream.of(MultipleDependentResourceWithDiscriminatorReconciler.FIRST_CONFIG_MAP_ID,
+        MultipleDependentResourceWithDiscriminatorReconciler.SECOND_CONFIG_MAP_ID)
+        .forEach(configMapId -> {
           ConfigMap configMap =
               operator.get(ConfigMap.class, customResource.getConfigMapName(configMapId));
           assertThat(configMap).isNotNull();
@@ -48,9 +51,9 @@ class MultipleDependentResourceIT {
         });
   }
 
-  public MultipleDependentResourceCustomResource createTestCustomResource() {
-    MultipleDependentResourceCustomResource resource =
-        new MultipleDependentResourceCustomResource();
+  public MultipleDependentResourceCustomResourceWithDiscriminator createTestCustomResource() {
+    MultipleDependentResourceCustomResourceWithDiscriminator resource =
+        new MultipleDependentResourceCustomResourceWithDiscriminator();
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName(TEST_RESOURCE_NAME)

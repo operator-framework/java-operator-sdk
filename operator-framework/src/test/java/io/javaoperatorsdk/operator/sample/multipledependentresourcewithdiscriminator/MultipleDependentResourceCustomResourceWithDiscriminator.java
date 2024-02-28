@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.multipledependentresource;
+package io.javaoperatorsdk.operator.sample.multipledependentresourcewithdiscriminator;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("mdr")
-public class MultipleDependentResourceCustomResource
-    extends CustomResource<Void, MultipleDependentResourceStatus>
+public class MultipleDependentResourceCustomResourceWithDiscriminator
+    extends CustomResource<Void, MultipleDependentResourceWithDiscriminatorStatus>
     implements Namespaced {
 
   public String getConfigMapName(int id) {
