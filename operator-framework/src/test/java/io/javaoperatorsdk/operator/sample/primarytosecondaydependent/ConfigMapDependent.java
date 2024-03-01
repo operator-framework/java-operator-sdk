@@ -16,12 +16,13 @@ public class ConfigMapDependent extends
   }
 
   @Override
-  protected ConfigMap desired(PrimaryToSecondaryDependentCustomResource primary, Context<PrimaryToSecondaryDependentCustomResource> context) {
+  protected ConfigMap desired(PrimaryToSecondaryDependentCustomResource primary,
+      Context<PrimaryToSecondaryDependentCustomResource> context) {
     return new ConfigMapBuilder()
-            .withMetadata(new ObjectMetaBuilder()
-                    .withName(TEST_CONFIG_MAP_NAME)
-                    .withNamespace(primary.getMetadata().getName())
-                    .build())
-            .build();
+        .withMetadata(new ObjectMetaBuilder()
+            .withName(TEST_CONFIG_MAP_NAME)
+            .withNamespace(primary.getMetadata().getName())
+            .build())
+        .build();
   }
 }

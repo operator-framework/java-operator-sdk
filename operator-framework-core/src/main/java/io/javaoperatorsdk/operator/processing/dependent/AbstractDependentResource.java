@@ -106,7 +106,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
       if (secondaryResources.isEmpty()) {
         return Optional.empty();
       } else {
-        return selectSecondaryBasedOnDesiredState(secondaryResources, desired(primary, context));
+        return selectManagedResource(secondaryResources, primary, context);
       }
     }
   }
@@ -117,14 +117,15 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * for optimized implementations in subclasses since this default implementation will check each
    * secondary candidates for equality with the specified desired state, which might end up costly.
    *
-   * @param secondaryResources a Set of potential candidates of the looked for resource type
-   * @param desired the desired state that the matching secondary resource must have to match the
-   *        primary resource
+   * @param secondaryResources to select the target resource from
+   *
    * @return the matching secondary resource or {@link Optional#empty()} if none matches
    * @throws IllegalStateException if more than one candidate is found, in which case some other
    *         mechanism might be necessary to distinguish between candidate secondary resources
    */
-  protected Optional<R> selectSecondaryBasedOnDesiredState(Set<R> secondaryResources, R desired) {
+  protected Optional<R> selectManagedResource(Set<R> secondaryResources, P primary,
+      Context<P> context) {
+    R desired = desired(primary, context);
     var targetResources =
         secondaryResources.stream().filter(r -> r.equals(desired)).collect(Collectors.toList());
     if (targetResources.size() > 1) {

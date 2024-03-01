@@ -296,11 +296,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected Optional<R> selectSecondaryBasedOnDesiredState(Set<R> secondaryResources, R desired) {
+  protected Optional<R> selectManagedResource(Set<R> secondaryResources, P primary,
+      Context<P> context) {
+    ResourceID managedResourceID = managedResourceID(primary, context);
     return secondaryResources.stream()
-        .filter(r -> r.getMetadata().getName().equals(desired.getMetadata().getName()) &&
-            Objects.equals(r.getMetadata().getNamespace(), desired.getMetadata().getNamespace()))
+        .filter(r -> r.getMetadata().getName().equals(managedResourceID.getName()) &&
+            Objects.equals(r.getMetadata().getNamespace(),
+                managedResourceID.getNamespace().orElse(null)))
         .findFirst();
+  }
+
+  protected ResourceID managedResourceID(P primary, Context<P> context) {
+    return ResourceID.fromResource(desired(primary, context));
   }
 
   protected boolean addOwnerReference() {
