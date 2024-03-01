@@ -54,10 +54,6 @@ class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(reconcilePrecondition);
   }
 
-  public String getName() {
-    return dependentResource.name();
-  }
-
   public Optional<Condition<R, P>> getDeletePostcondition() {
     return Optional.ofNullable(deletePostcondition);
   }

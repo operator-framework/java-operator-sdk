@@ -79,13 +79,14 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
       ControllerConfiguration<P> configuration) {
     final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
     for (DependentResourceSpec spec : orderedSpecs) {
+      final var dependentResource = resolve(spec, client, configuration);
       final var node = new DependentResourceNode(
           spec.getReconcileCondition(),
           spec.getDeletePostCondition(),
           spec.getReadyCondition(),
           spec.getActivationCondition(),
-          resolve(spec, client, configuration));
-      alreadyResolved.put(node.getName(), node);
+          dependentResource);
+      alreadyResolved.put(dependentResource.name(), node);
       spec.getDependsOn()
           .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
