@@ -107,12 +107,6 @@ class DependentResourceNode<R, P extends HasMetadata> {
     return this.getDependentResource().name().hashCode();
   }
 
-  @SuppressWarnings("rawtypes")
-  static String getNameFor(DependentResource dependentResource) {
-    return DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
-        + dependentResource.hashCode();
-  }
-
   @Override
   public String toString() {
     return "DependentResourceNode{" + getDependentResource() + '}';
