@@ -7,8 +7,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
 public class DependentReInitializationReconciler
-    implements Reconciler<DependentReInitializationCustomResource>,
-    EventSourceInitializer<DependentReInitializationCustomResource> {
+    implements Reconciler<DependentReInitializationCustomResource> {
 
   private final ConfigMapDependentResource configMapDependentResource;
 
@@ -27,7 +26,7 @@ public class DependentReInitializationReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<DependentReInitializationCustomResource> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
+    return Reconciler.nameEventSourcesFromDependentResource(context,
         configMapDependentResource);
   }
 

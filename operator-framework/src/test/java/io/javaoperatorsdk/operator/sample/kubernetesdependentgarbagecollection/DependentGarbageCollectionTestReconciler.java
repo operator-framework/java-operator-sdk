@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 @ControllerConfiguration
 public class DependentGarbageCollectionTestReconciler
     implements Reconciler<DependentGarbageCollectionTestCustomResource>,
-    EventSourceInitializer<DependentGarbageCollectionTestCustomResource>,
     ErrorStatusHandler<DependentGarbageCollectionTestCustomResource> {
 
   private KubernetesClient kubernetesClient;
@@ -31,7 +30,7 @@ public class DependentGarbageCollectionTestReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<DependentGarbageCollectionTestCustomResource> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
+    return Reconciler.nameEventSourcesFromDependentResource(context,
         configMapDependent);
   }
 

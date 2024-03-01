@@ -7,8 +7,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
 public class GenericKubernetesDependentStandaloneReconciler
-    implements Reconciler<GenericKubernetesDependentStandaloneCustomResource>,
-    EventSourceInitializer<GenericKubernetesDependentStandaloneCustomResource> {
+    implements Reconciler<GenericKubernetesDependentStandaloneCustomResource> {
 
   private final ConfigMapGenericKubernetesDependent dependent =
       new ConfigMapGenericKubernetesDependent();
@@ -28,6 +27,6 @@ public class GenericKubernetesDependentStandaloneReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<GenericKubernetesDependentStandaloneCustomResource> context) {
-    return EventSourceInitializer.nameEventSources(dependent.eventSource(context).orElseThrow());
+    return Reconciler.nameEventSources(dependent.eventSource(context).orElseThrow());
   }
 }

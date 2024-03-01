@@ -14,8 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration
 public class GenericKubernetesResourceHandlingReconciler
-    implements Reconciler<GenericKubernetesResourceHandlingCustomResource>,
-    EventSourceInitializer<GenericKubernetesResourceHandlingCustomResource> {
+    implements Reconciler<GenericKubernetesResourceHandlingCustomResource> {
 
 
   public static final String VERSION = "v1";
@@ -72,6 +71,6 @@ public class GenericKubernetesResourceHandlingReconciler
         new GroupVersionKind("", VERSION, KIND), context).build(),
         context);
 
-    return EventSourceInitializer.nameEventSources(informerEventSource);
+    return Reconciler.nameEventSources(informerEventSource);
   }
 }

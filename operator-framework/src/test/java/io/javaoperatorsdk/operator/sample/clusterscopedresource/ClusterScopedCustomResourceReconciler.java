@@ -13,8 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 @ControllerConfiguration
 public class ClusterScopedCustomResourceReconciler
-    implements Reconciler<ClusterScopedCustomResource>,
-    EventSourceInitializer<ClusterScopedCustomResource> {
+    implements Reconciler<ClusterScopedCustomResource> {
 
   public static final String DATA_KEY = "data-key";
 
@@ -59,6 +58,6 @@ public class ClusterScopedCustomResourceReconciler
         .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference(true))
         .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
         .build(), context);
-    return EventSourceInitializer.nameEventSources(ies);
+    return Reconciler.nameEventSources(ies);
   }
 }

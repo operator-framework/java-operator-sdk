@@ -13,8 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration
 public class ChangeNamespaceTestReconciler
-    implements Reconciler<ChangeNamespaceTestCustomResource>,
-    EventSourceInitializer<ChangeNamespaceTestCustomResource> {
+    implements Reconciler<ChangeNamespaceTestCustomResource> {
 
   private final ConcurrentHashMap<ResourceID, Integer> numberOfResourceReconciliations =
       new ConcurrentHashMap<>();
@@ -27,7 +26,7 @@ public class ChangeNamespaceTestReconciler
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .build(), context);
 
-    return EventSourceInitializer.nameEventSources(configMapES);
+    return Reconciler.nameEventSources(configMapES);
   }
 
   @Override
