@@ -68,4 +68,9 @@ public interface DependentResource<R, P extends HasMetadata> {
   default boolean isDeletable() {
     return this instanceof Deleter;
   }
+
+  default String name() {
+    return defaultNameFor(getClass());
+  }
+
 }
