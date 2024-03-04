@@ -285,11 +285,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   private PostExecutionControl<P> handleCleanup(P resource,
       Context<P> context) {
-    log.debug(
-        "Executing delete for resource: {} with version: {}",
-        getName(resource),
-        getVersion(resource));
-
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Executing delete for resource: {} with version: {}",
+          ResourceID.fromResource(resource),
+          getVersion(resource));
+    }
     DeleteControl deleteControl = controller.cleanup(resource, context);
     final var useFinalizer = controller.useFinalizer();
     if (useFinalizer) {
@@ -345,7 +346,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   public P conflictRetryingUpdate(P resource, Function<P, Boolean> modificationFunction) {
     if (log.isDebugEnabled()) {
-      log.debug("Removing finalizer on resource: {}", ResourceID.fromResource(resource));
+      log.debug("Conflict retying update for: {}", ResourceID.fromResource(resource));
     }
     int retryIndex = 0;
     while (true) {
@@ -393,10 +394,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     public R updateResource(R resource) {
-      log.debug(
-          "Trying to replace resource {}, version: {}",
-          getName(resource),
-          resource.getMetadata().getResourceVersion());
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Trying to replace resource {}, version: {}",
+            ResourceID.fromResource(resource),
+            resource.getMetadata().getResourceVersion());
+      }
       return resource(resource).lockResourceVersion(resource.getMetadata().getResourceVersion())
           .update();
     }
