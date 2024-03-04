@@ -31,6 +31,11 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   protected String eventSourceNameToUse;
 
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
+    this(resourceType, null);
+  }
+
+  protected AbstractEventSourceHolderDependentResource(Class<R> resourceType, String name) {
+    super(name);
     this.resourceType = resourceType;
   }
 
