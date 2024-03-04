@@ -71,6 +71,6 @@ public class GenericKubernetesResourceHandlingReconciler
         new GroupVersionKind("", VERSION, KIND), context).build(),
         context);
 
-    return Reconciler.nameEventSources(informerEventSource);
+    return EventSourceUtils.nameEventSources(informerEventSource);
   }
 }

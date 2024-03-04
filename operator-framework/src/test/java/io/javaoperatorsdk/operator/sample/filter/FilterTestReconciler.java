@@ -58,6 +58,6 @@ public class FilterTestReconciler
                 .equals(CONFIG_MAP_FILTER_VALUE))
             .build(), context);
 
-    return Reconciler.nameEventSources(configMapES);
+    return EventSourceUtils.nameEventSources(configMapES);
   }
 }

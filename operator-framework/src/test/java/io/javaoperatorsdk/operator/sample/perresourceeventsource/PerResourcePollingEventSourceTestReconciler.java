@@ -37,7 +37,7 @@ public class PerResourcePollingEventSourceTestReconciler
           return Set.of(UUID.randomUUID().toString());
         },
             context, Duration.ofMillis(POLL_PERIOD), String.class);
-    return Reconciler.nameEventSources(eventSource);
+    return EventSourceUtils.nameEventSources(eventSource);
   }
 
   public int getNumberOfExecutions(String name) {

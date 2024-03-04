@@ -37,7 +37,7 @@ public class ExternalStateBulkDependentReconciler
       EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
         InformerConfiguration.from(ConfigMap.class, context).build(), context);
-    return Reconciler.nameEventSources(configMapEventSource);
+    return EventSourceUtils.nameEventSources(configMapEventSource);
   }
 
 }

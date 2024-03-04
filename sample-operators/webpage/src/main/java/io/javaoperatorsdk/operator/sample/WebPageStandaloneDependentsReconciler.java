@@ -36,7 +36,7 @@ public class WebPageStandaloneDependentsReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return Reconciler.eventSourcesFromWorkflow(context, workflow);
+    return EventSourceUtils.eventSourcesFromWorkflow(context, workflow);
   }
 
   @Override

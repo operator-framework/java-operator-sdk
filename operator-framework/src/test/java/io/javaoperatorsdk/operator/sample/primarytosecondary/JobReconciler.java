@@ -79,7 +79,7 @@ public class JobReconciler
               primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
     }
 
-    return Reconciler
+    return EventSourceUtils
         .nameEventSources(new InformerEventSource<>(informerConfiguration.build(), context));
   }
 

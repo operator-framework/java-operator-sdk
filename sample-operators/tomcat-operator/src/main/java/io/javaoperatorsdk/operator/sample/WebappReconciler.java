@@ -59,7 +59,7 @@ public class WebappReconciler
                 (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
                     primary.getMetadata().getNamespace())))
             .build();
-    return Reconciler
+    return EventSourceUtils
         .nameEventSources(new InformerEventSource<>(configuration, context));
   }
 

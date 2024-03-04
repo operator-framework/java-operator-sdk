@@ -64,6 +64,6 @@ public class MultipleDependentResourceReconciler
     firstDependentResourceConfigMap.configureWith(eventSource);
     secondDependentResourceConfigMap.configureWith(eventSource);
 
-    return Reconciler.nameEventSources(eventSource);
+    return EventSourceUtils.nameEventSources(eventSource);
   }
 }

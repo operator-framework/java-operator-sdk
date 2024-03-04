@@ -115,7 +115,7 @@ public class ExternalStateReconciler
       return externalResource.map(Set::of).orElseGet(Collections::emptySet);
     }, context, Duration.ofMillis(300L), ExternalResource.class);
 
-    return Reconciler.nameEventSources(configMapEventSource,
+    return EventSourceUtils.nameEventSources(configMapEventSource,
         externalResourceEventSource);
   }
 }

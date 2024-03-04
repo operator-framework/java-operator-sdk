@@ -27,7 +27,7 @@ public class StandaloneDependentTestReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return Reconciler.nameEventSourcesFromDependentResource(context,
+    return EventSourceUtils.nameEventSourcesFromDependentResource(context,
         deploymentDependent);
   }
 

@@ -96,7 +96,7 @@ public class CreateUpdateEventFilterTestReconciler
     informerEventSource = new InformerEventSource<>(informerConfiguration, context.getClient());
     this.configMapDR.setEventSource(informerEventSource);
 
-    return Reconciler.nameEventSources(informerEventSource);
+    return EventSourceUtils.nameEventSources(informerEventSource);
   }
 
   public int getNumberOfExecutions() {

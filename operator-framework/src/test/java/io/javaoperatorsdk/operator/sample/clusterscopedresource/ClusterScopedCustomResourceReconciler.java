@@ -58,6 +58,6 @@ public class ClusterScopedCustomResourceReconciler
         .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference(true))
         .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
         .build(), context);
-    return Reconciler.nameEventSources(ies);
+    return EventSourceUtils.nameEventSources(ies);
   }
 }

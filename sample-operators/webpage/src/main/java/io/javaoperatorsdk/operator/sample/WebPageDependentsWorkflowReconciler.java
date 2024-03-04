@@ -49,7 +49,7 @@ public class WebPageDependentsWorkflowReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return Reconciler.nameEventSourcesFromDependentResource(context, configMapDR,
+    return EventSourceUtils.nameEventSourcesFromDependentResource(context, configMapDR,
         deploymentDR, serviceDR,
         ingressDR);
   }

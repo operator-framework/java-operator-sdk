@@ -82,7 +82,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
             Mappers.fromOwnerReference(this instanceof BoundedCacheClusterScopeTestReconciler))
         .build(), context);
 
-    return Reconciler.nameEventSources(es);
+    return EventSourceUtils.nameEventSources(es);
   }
 
   private void ensureStatus(P resource) {

@@ -37,7 +37,7 @@ public class StandaloneBulkDependentReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<BulkDependentTestCustomResource> context) {
-    return Reconciler
+    return EventSourceUtils
         .nameEventSources(dependent.initEventSource(context));
   }
 }

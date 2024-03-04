@@ -26,7 +26,7 @@ public class DependentReInitializationReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<DependentReInitializationCustomResource> context) {
-    return Reconciler.nameEventSourcesFromDependentResource(context,
+    return EventSourceUtils.nameEventSourcesFromDependentResource(context,
         configMapDependentResource);
   }
 

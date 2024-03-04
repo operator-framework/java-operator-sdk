@@ -27,6 +27,6 @@ public class GenericKubernetesDependentStandaloneReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<GenericKubernetesDependentStandaloneCustomResource> context) {
-    return Reconciler.nameEventSources(dependent.eventSource(context).orElseThrow());
+    return EventSourceUtils.nameEventSources(dependent.eventSource(context).orElseThrow());
   }
 }

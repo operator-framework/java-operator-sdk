@@ -26,7 +26,7 @@ public class ChangeNamespaceTestReconciler
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .build(), context);
 
-    return Reconciler.nameEventSources(configMapES);
+    return EventSourceUtils.nameEventSources(configMapES);
   }
 
   @Override
