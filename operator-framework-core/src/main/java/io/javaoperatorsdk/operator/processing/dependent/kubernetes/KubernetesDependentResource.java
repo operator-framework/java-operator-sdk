@@ -43,7 +43,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
-    super(resourceType);
+    this(resourceType, null);
+  }
+
+  @SuppressWarnings("unchecked")
+  public KubernetesDependentResource(Class<R> resourceType, String name) {
+    super(resourceType, name);
 
     usingCustomResourceUpdateMatcher = this instanceof ResourceUpdaterMatcher;
     updaterMatcher = usingCustomResourceUpdateMatcher
