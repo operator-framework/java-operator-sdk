@@ -11,13 +11,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @Ignore
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
-    implements DependentResource<R, P> {
+    implements DependentResource<R, P>, NameSetter {
   private static final Logger log = LoggerFactory.getLogger(AbstractDependentResource.class);
 
   private final boolean creatable = this instanceof Creator;
@@ -29,14 +30,21 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private ResourceDiscriminator<R, P> resourceDiscriminator;
   private final DependentResourceReconciler<R, P> dependentResourceReconciler;
 
+  protected String name;
+
   @SuppressWarnings({"unchecked"})
   protected AbstractDependentResource() {
+    this(null);
+  }
+
+  protected AbstractDependentResource(String name) {
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
 
     dependentResourceReconciler = this instanceof BulkDependentResource
         ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
         : new SingleDependentResourceReconciler<>(this);
+    this.name = name == null ? DependentResource.defaultNameFor(this.getClass()) : name;
   }
 
   /**
@@ -182,5 +190,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @Override
   public boolean isDeletable() {
     return deletable;
+  }
+
+  @Override
+  public String name() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 }

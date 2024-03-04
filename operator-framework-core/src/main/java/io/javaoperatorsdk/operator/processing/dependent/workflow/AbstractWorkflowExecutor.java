@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings("rawtypes")
-public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
+abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
   protected final Workflow<P> workflow;
   protected final P primary;
@@ -133,17 +133,16 @@ public abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
       boolean activationConditionMet,
       DependentResourceNode<R, P> dependentResourceNode) {
     if (dependentResourceNode.getActivationCondition().isPresent()) {
+      final var dr = dependentResourceNode.getDependentResource();
+      final var eventSourceRetriever = context.eventSourceRetriever();
       if (activationConditionMet) {
         var eventSource =
-            dependentResourceNode.getDependentResource().eventSource(context.eventSourceRetriever()
-                .eventSourceContextForDynamicRegistration());
+            dr.eventSource(eventSourceRetriever.eventSourceContextForDynamicRegistration());
         var es = eventSource.orElseThrow();
-        context.eventSourceRetriever()
-            .dynamicallyRegisterEventSource(dependentResourceNode.getName(), es);
+        eventSourceRetriever.dynamicallyRegisterEventSource(dr.name(), es);
 
       } else {
-        context.eventSourceRetriever()
-            .dynamicallyDeRegisterEventSource(dependentResourceNode.getName());
+        eventSourceRetriever.dynamicallyDeRegisterEventSource(dr.name());
       }
     }
   }
