@@ -346,7 +346,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   public P conflictRetryingUpdate(P resource, Function<P, Boolean> modificationFunction) {
     if (log.isDebugEnabled()) {
-      log.debug("Conflict retying update for: {}", ResourceID.fromResource(resource));
+      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
     }
     int retryIndex = 0;
     while (true) {
