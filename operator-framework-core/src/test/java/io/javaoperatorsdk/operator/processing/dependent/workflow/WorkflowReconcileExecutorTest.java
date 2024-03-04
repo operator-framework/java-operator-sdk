@@ -539,7 +539,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   @Test
   void deletesDependentsOfNonActiveDependentButNotTheNonActive() {
     TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
-    TestDeleterDependent drDeleter3 = new TestDeleterDependent("DR_DELETER_2");
+    TestDeleterDependent drDeleter3 = new TestDeleterDependent("DR_DELETER_3");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1).withActivationCondition(notMetCondition)

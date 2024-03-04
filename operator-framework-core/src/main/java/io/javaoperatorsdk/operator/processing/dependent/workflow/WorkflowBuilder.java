@@ -20,14 +20,9 @@ public class WorkflowBuilder<P extends HasMetadata> {
   private boolean isCleaner = false;
 
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
-    return addDependentResource(dependentResource, null);
-  }
-
-  public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource, String name) {
-    currentNode = name == null ? new DependentResourceNode<>(dependentResource)
-        : new DependentResourceNode<>(name, dependentResource);
+    currentNode = new DependentResourceNode<>(dependentResource);
     isCleaner = isCleaner || dependentResource.isDeletable();
-    final var actualName = currentNode.getName();
+    final var actualName = dependentResource.name();
     dependentResourceNodes.put(actualName, currentNode);
     return this;
   }
@@ -69,8 +64,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
     // first check by name
-    final var node =
-        dependentResourceNodes.get(DependentResourceNode.getNameFor(dependentResource));
+    final var node = dependentResourceNodes.get(dependentResource.name());
     if (node != null) {
       return node;
     } else {
