@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
  * @param <P> primary resource
  */
 @SuppressWarnings("rawtypes")
-public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
+class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
 
   private final Map<String, DependentResourceNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources;
@@ -78,7 +78,7 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
           bottomLevelResource.remove(dependsOn);
         }
       }
-      map.put(node.getName(), node);
+      map.put(node.getDependentResource().name(), node);
     }
     if (topLevelResources.isEmpty()) {
       throw new IllegalStateException(
