@@ -13,8 +13,10 @@ class WorkflowBuilderTest {
   @Test
   void workflowIsCleanerIfAtLeastOneDRIsCleaner() {
     var dr = mock(DependentResource.class);
+    when(dr.name()).thenReturn("dr");
     var deleter = mock(DependentResource.class);
     when(deleter.isDeletable()).thenReturn(true);
+    when(deleter.name()).thenReturn("deleter");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(deleter)
