@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
  * @param <P> primary resource
  */
 @SuppressWarnings("rawtypes")
-public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
+class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
 
   private final Map<String, DependentResourceNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources;
@@ -79,7 +79,7 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
       }
       map.put(node.getDependentResource().name(), node);
     }
-    if (topLevelResources.size() == 0) {
+    if (topLevelResources.isEmpty()) {
       throw new IllegalStateException(
           "No top-level dependent resources found. This might indicate a cyclic Set of DependentResourceNode has been provided.");
     }

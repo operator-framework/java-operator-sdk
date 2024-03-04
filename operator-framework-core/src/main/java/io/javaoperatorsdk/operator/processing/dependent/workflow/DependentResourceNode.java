@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public class DependentResourceNode<R, P extends HasMetadata> {
+class DependentResourceNode<R, P extends HasMetadata> {
 
   private final List<DependentResourceNode> dependsOn = new LinkedList<>();
   private final List<DependentResourceNode> parents = new LinkedList<>();
@@ -53,7 +53,6 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   public Optional<Condition<R, P>> getReconcilePrecondition() {
     return Optional.ofNullable(reconcilePrecondition);
   }
-
 
   public Optional<Condition<R, P>> getDeletePostcondition() {
     return Optional.ofNullable(deletePostcondition);
@@ -102,12 +101,6 @@ public class DependentResourceNode<R, P extends HasMetadata> {
   @Override
   public int hashCode() {
     return this.getDependentResource().name().hashCode();
-  }
-
-  @SuppressWarnings("rawtypes")
-  static String getNameFor(DependentResource dependentResource) {
-    return DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
-        + dependentResource.hashCode();
   }
 
   @Override

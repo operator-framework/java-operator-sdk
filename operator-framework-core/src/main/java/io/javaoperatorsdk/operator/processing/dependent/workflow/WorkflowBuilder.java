@@ -65,8 +65,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
 
   DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
     // first check by name
-    final var node =
-        dependentResourceNodes.get(dependentResource.name());
+    final var node = dependentResourceNodes.get(dependentResource.name());
     if (node != null) {
       return node;
     } else {

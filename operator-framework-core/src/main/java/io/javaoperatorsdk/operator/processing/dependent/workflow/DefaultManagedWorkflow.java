@@ -79,13 +79,14 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
       ControllerConfiguration<P> configuration) {
     final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
     for (DependentResourceSpec spec : orderedSpecs) {
+      final var dependentResource = resolve(spec, client, configuration);
       final var node = new DependentResourceNode(
           spec.getReconcileCondition(),
           spec.getDeletePostCondition(),
           spec.getReadyCondition(),
           spec.getActivationCondition(),
-          resolve(spec, client, configuration));
-      alreadyResolved.put(node.getDependentResource().name(), node);
+          dependentResource);
+      alreadyResolved.put(dependentResource.name(), node);
       spec.getDependsOn()
           .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
@@ -106,9 +107,9 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
         configuration.getConfigurationService().dependentResourceFactory()
             .createFrom(spec, configuration);
 
-    if (spec.getName() != null && !spec.getName().equals(NO_VALUE_SET)
-        && dependentResource instanceof NameSetter) {
-      ((NameSetter) dependentResource).setName(spec.getName());
+    final var name = spec.getName();
+    if (name != null && !NO_VALUE_SET.equals(name) && dependentResource instanceof NameSetter) {
+      ((NameSetter) dependentResource).setName(name);
     }
 
     if (dependentResource instanceof KubernetesClientAware) {
