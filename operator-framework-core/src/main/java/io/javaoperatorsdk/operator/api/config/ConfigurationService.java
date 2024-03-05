@@ -192,12 +192,10 @@ public interface ConfigurationService {
 
   /**
    * Use to provide custom executor service.<br/>
-   * By default, a
-   * {@link java.util.concurrent.ThreadPoolExecutor} is used, that honors the values of
-   * concurrentReconciliationThreads and minConcurrentReconciliationThreads. When a controller
+   * By default, a {@link java.util.concurrent.ThreadPoolExecutor} is used, that honors the values
+   * of concurrentReconciliationThreads and minConcurrentReconciliationThreads. When a controller
    * starts, all the resources are reconciled, therefore there is a natural and expected burst on
-   * startup. According to this there are multiple options, using the ThreadPoolExecutor.
-   * Either:
+   * startup. According to this there are multiple options, using the ThreadPoolExecutor. Either:
    * <ul>
    * <li>Use a very high upper bound thread limit with
    * {@link java.util.concurrent.SynchronousQueue}. This is the default approach.</li>
