@@ -8,8 +8,7 @@ public class MultipleDependentResourceSpec {
     return value;
   }
 
-  public MultipleDependentResourceSpec setValue(String value) {
+  public void setValue(String value) {
     this.value = value;
-    return this;
   }
 }
