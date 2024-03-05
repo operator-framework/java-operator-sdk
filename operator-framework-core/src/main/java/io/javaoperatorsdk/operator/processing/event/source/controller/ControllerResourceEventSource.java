@@ -66,7 +66,12 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   public void eventReceived(ResourceAction action, T resource, T oldResource) {
     try {
-      log.debug("Event received for resource: {}", getName(resource));
+      if (log.isDebugEnabled()) {
+        log.debug("Event received for resource: {} version: {} uuid: {} action: {}",
+            ResourceID.fromResource(resource),
+            getVersion(resource), resource.getMetadata().getUid(), action);
+        log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
+      }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
       if ((legacyFilters == null ||
@@ -75,8 +80,8 @@ public class ControllerResourceEventSource<T extends HasMetadata>
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {
-        log.debug("Skipping event handling resource {} with version: {}", getUID(resource),
-            getVersion(resource));
+        log.debug("Skipping event handling resource {}",
+            ResourceID.fromResource(resource));
       }
     } finally {
       MDCUtils.removeResourceInfo();
