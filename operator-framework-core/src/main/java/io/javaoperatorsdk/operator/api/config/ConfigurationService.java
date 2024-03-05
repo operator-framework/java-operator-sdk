@@ -127,7 +127,7 @@ public interface ConfigurationService {
     return false;
   }
 
-  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 200;
+  int DEFAULT_RECONCILIATION_THREADS_NUMBER = Integer.MAX_VALUE;
   int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
 
   /**
@@ -190,6 +190,22 @@ public interface ConfigurationService {
     return Metrics.NOOP;
   }
 
+  /**
+   * Use to provide custom executor service. By default, a
+   * {@link java.util.concurrent.ThreadPoolExecutor} is provided, that honors the values of
+   * concurrentReconciliationThreads and minConcurrentReconciliationThreads. When a controller
+   * starts, all the resources are reconciled, therefore there is a natural and expected burst on
+   * startup in general. According to this there are multiple options, using the ThreadPoolExecutor.
+   * Either:
+   * <ul>
+   * <li>Use a very high upper bound thread limit with
+   * {@link java.util.concurrent.SynchronousQueue}. This is the default approach.</li>
+   * <li>Use fixed number of threads with infinite queue, lik
+   * {@link java.util.concurrent.LinkedBlockingDeque}.</li>
+   * <li>In addition to that, could be further fine tuned using the
+   * {@link java.util.concurrent.ArrayBlockingQueue}.</li>
+   * </ul>
+   */
   default ExecutorService getExecutorService() {
     return newThreadPoolExecutor(minConcurrentReconciliationThreads(),
         concurrentReconciliationThreads());
