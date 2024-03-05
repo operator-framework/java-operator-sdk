@@ -461,7 +461,7 @@ reschedule reconciliations.
 
 There are few interesting points here:
 
-The `CustomResourceEvenSource` event source is a special one, responsible for handling events
+The `CustomResourceEventSource` event source is a special one, responsible for handling events
 pertaining to changes affecting our primary resources. This `EventSource` is always registered
 for every controller automatically by the SDK. It is important to note that events always relate
 to a given primary resource. Concurrency is still handled for you, even in the presence of
@@ -493,7 +493,7 @@ related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/mai
 
 To register event sources, your `Reconciler` has to implement the
 [`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
-interface and initiliaze a list of event sources to register. One way to see this in action is
+interface and initialize a list of event sources to register. One way to see this in action is
 to look at the
 [tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/TomcatReconciler.java)
 (irrelevant details omitted):
