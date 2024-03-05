@@ -21,7 +21,7 @@ public class ConfigMapDependent extends
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withName(TEST_CONFIG_MAP_NAME)
-            .withNamespace(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace())
             .build())
         .build();
   }
