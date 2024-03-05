@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -56,7 +58,7 @@ public class MultipleDependentResourceIT {
 
     extension.delete(res);
 
-    await().untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(20)).untilAsserted(() -> {
       var cm1 = extension.get(ConfigMap.class, getConfigMapName(FIRST_CONFIG_MAP_ID));
       var cm2 = extension.get(ConfigMap.class, getConfigMapName(SECOND_CONFIG_MAP_ID));
 
