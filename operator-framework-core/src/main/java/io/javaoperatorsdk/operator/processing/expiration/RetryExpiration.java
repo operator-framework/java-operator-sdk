@@ -1,39 +1,17 @@
 package io.javaoperatorsdk.operator.processing.expiration;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Objects;
-
-import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public class RetryExpiration implements Expiration {
 
-  public static final long NO_MORE_EXPIRATION = -1L;
+    private final Retry retry;
 
-  private LocalDateTime lastRefreshTime;
-  private Long delayUntilExpiration;
-  private final RetryExecution retryExecution;
-
-  public RetryExpiration(RetryExecution retryExecution) {
-    this.retryExecution = retryExecution;
-  }
-
-  @Override
-  public boolean isExpired() {
-    if (lastRefreshTime == null) {
-      return true;
+    public RetryExpiration(Retry retry) {
+        this.retry = retry;
     }
-    if (Objects.equals(delayUntilExpiration, NO_MORE_EXPIRATION)) {
-      return false;
-    } else {
-      return LocalDateTime.now()
-          .isAfter(lastRefreshTime.plus(delayUntilExpiration, ChronoUnit.MILLIS));
-    }
-  }
 
-  @Override
-  public void refreshed() {
-    lastRefreshTime = LocalDateTime.now();
-    delayUntilExpiration = retryExecution.nextDelay().orElse(NO_MORE_EXPIRATION);
-  }
+    @Override
+    public ExpirationExecution initExecution() {
+        return new RetryExpirationExecution(retry.initExecution());
+    }
 }

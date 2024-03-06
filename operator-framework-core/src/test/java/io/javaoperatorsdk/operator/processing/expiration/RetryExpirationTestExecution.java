@@ -6,12 +6,12 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RetryExpirationTest {
+public class RetryExpirationTestExecution {
 
   public static final int INITIAL_INTERVAL = 25;
   public static final int INITIAL_INTERVAL_PLUS_SLACK = INITIAL_INTERVAL + 10;
 
-  RetryExpiration expiration = new RetryExpiration(new GenericRetry()
+  RetryExpirationExecution expiration = new RetryExpirationExecution(new GenericRetry()
       .setInitialInterval(INITIAL_INTERVAL)
       .setMaxAttempts(2)
       .initExecution());
