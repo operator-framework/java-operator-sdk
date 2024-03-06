@@ -3,8 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.javaoperatorsdk.operator.processing.expiration.Expiration;
-import io.javaoperatorsdk.operator.processing.expiration.RetryExpiration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +12,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
+import io.javaoperatorsdk.operator.processing.expiration.Expiration;
 import io.javaoperatorsdk.operator.processing.expiration.ExpirationExecution;
+import io.javaoperatorsdk.operator.processing.expiration.RetryExpiration;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -22,12 +22,19 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
 
   private static final Logger log = LoggerFactory.getLogger(CRDPresentActivationCondition.class);
 
+  public static final int DEFAULT_EXPIRATION_INITIAL_INTERVAL = 1000;
+  public static final int DEFAULT_EXPIRATION_INTERVAL_MULTIPLIER = 4;
+  public static final int DEFAULT_EXPIRATION_MAX_RETRY_ATTEMPTS = 10;
+
   /**
-   *
-   * */
-  public static Retry DEFAULT_EXPIRATION_RETRY = new GenericRetry().setInitialInterval(2000)
-      .setIntervalMultiplier(2)
-      .setMaxAttempts(10);
+   * The idea behind default expiration is that on cluster start there might be different phases
+   * when CRDs and controllers are added. For a few times it will be checked if the target CRD is
+   * not present, after it will just use the cached state.
+   */
+  public static Retry DEFAULT_EXPIRATION_RETRY =
+      new GenericRetry().setInitialInterval(DEFAULT_EXPIRATION_INITIAL_INTERVAL)
+          .setIntervalMultiplier(DEFAULT_EXPIRATION_INTERVAL_MULTIPLIER)
+          .setMaxAttempts(DEFAULT_EXPIRATION_MAX_RETRY_ATTEMPTS);
 
   private final Map<GroupVersionKind, CRDCheckState> crdPresenceCache = new ConcurrentHashMap<>();
 
@@ -55,14 +62,15 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
     // in case of parallel execution it is only refreshed once
     synchronized (crdCheckState) {
       if (crdCheckState.getExpiration().isExpired()) {
-        refreshCache(crdCheckState,gvk, context.getClient());
+        refreshCache(crdCheckState, gvk, context.getClient());
       }
     }
     return crdPresenceCache.get(gvk).getCrdPresent();
   }
 
-  private void refreshCache(CRDCheckState crdCheckState, GroupVersionKind gvk, KubernetesClient client) {
-
+  private void refreshCache(CRDCheckState crdCheckState, GroupVersionKind gvk,
+      KubernetesClient client) {
+    log.debug("Refreshing cache for gvk: {}", gvk);
     boolean found = client.resources(CustomResourceDefinition.class).list().getItems()
         .stream().anyMatch(crd -> crd.getSpec().getNames().getKind().equals(gvk.getKind())
             && crd.getSpec().getGroup().equals(gvk.getGroup()));
