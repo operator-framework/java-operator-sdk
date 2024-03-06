@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.optionaldependent.OptionalDependentCustomResource;
 import io.javaoperatorsdk.operator.sample.optionaldependent.OptionalDependentReconciler;
@@ -29,7 +30,7 @@ public class OptionalDependentIT {
   }
 
   @Test
-  void activatesResourceAfterCRDApplied() {
+  void activatesResourceAfterCRDApplied() throws InterruptedException {
     var r = extension.create(testResource());
 
     await().pollDelay(Duration.ofMillis(200)).untilAsserted(() -> {
@@ -40,6 +41,12 @@ public class OptionalDependentIT {
     LocallyRunOperatorExtension.applyCrd(OptionalDependentSecondaryCustomResource.class,
         extension.getKubernetesClient());
 
+    await().untilAsserted(() -> {
+      assertThat(extension.getKubernetesClient().resources(CustomResourceDefinition.class)
+          .withName("optionaldependentsecondarycustomresources.sample.javaoperatorsdk").get())
+          .isNotNull();
+    });
+
     // triggering reconciliation explicitly
     r.getMetadata().getAnnotations().put("trigger", "true");
     extension.replace(r);
@@ -48,6 +55,14 @@ public class OptionalDependentIT {
       var secondary =
           extension.get(OptionalDependentSecondaryCustomResource.class, r.getMetadata().getName());
       assertThat(secondary).isNotNull();
+    });
+
+    extension.delete(r);
+
+    await().untilAsserted(() -> {
+      var secondary =
+          extension.get(OptionalDependentSecondaryCustomResource.class, r.getMetadata().getName());
+      assertThat(secondary).isNull();
     });
   }
 

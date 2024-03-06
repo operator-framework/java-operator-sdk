@@ -4,7 +4,6 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 @ControllerConfiguration(
-
     generationAwareEventProcessing = false, // to easily trigger reconciliation with metadata update
     namespaces = Constants.WATCH_CURRENT_NAMESPACE,
     dependents = {
