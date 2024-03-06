@@ -434,7 +434,6 @@ class EventProcessorTest {
         new BaseConfigurationService(),
         o -> {
           o.withConcurrentReconciliationThreads(1);
-          o.withMinConcurrentReconciliationThreads(1);
         });
     eventProcessor =
             spy(new EventProcessor(controllerConfiguration(null, rateLimiterMock, configurationService),

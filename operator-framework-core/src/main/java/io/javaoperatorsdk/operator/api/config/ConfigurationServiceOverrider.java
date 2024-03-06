@@ -218,6 +218,7 @@ public class ConfigurationServiceOverrider {
             original.concurrentWorkflowExecutorThreads());
       }
 
+      @Deprecated(forRemoval = true)
       @Override
       public int minConcurrentReconciliationThreads() {
         return minConcurrentReconciliationThreads != null ? minConcurrentReconciliationThreads
@@ -225,6 +226,7 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
+      @Deprecated(forRemoval = true)
       public int minConcurrentWorkflowExecutorThreads() {
         return minConcurrentWorkflowExecutorThreads != null ? minConcurrentWorkflowExecutorThreads
             : original.minConcurrentWorkflowExecutorThreads();
