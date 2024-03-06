@@ -491,9 +491,8 @@ related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/mai
 
 ### Registering Event Sources
 
-To register event sources, your `Reconciler` has to implement the
-[`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
-interface and initialize a list of event sources to register. One way to see this in action is
+To register event sources, your `Reconciler` has to override the `prepareEventSources` and return 
+list of event sources to register. One way to see this in action is
 to look at the
 [tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/TomcatReconciler.java)
 (irrelevant details omitted):
@@ -501,8 +500,10 @@ to look at the
 ```java
 
 @ControllerConfiguration
-public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
+public class TomcatReconciler implements Reconciler<Tomcat> {
 
+   // omitted code  
+    
    @Override
    public List<EventSource> prepareEventSources(EventSourceContext<Tomcat> context) {
       var configMapEventSource =
@@ -511,9 +512,9 @@ public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitiali
                       .withSecondaryToPrimaryMapper(
                               Mappers.fromAnnotation(ANNOTATION_NAME, ANNOTATION_NAMESPACE)
                                       .build(), context));
-      return EventSourceInitializer.nameEventSources(configMapEventSource);
+      return EventSourceUtils.nameEventSources(configMapEventSource);
    }
-  ...
+  
 }
 ```
 
@@ -678,7 +679,7 @@ configured appropriately so that the `followControllerNamespaceChanges` method r
 
 @ControllerConfiguration
 public class MyReconciler
-        implements Reconciler<TestCustomResource>, EventSourceInitializer<TestCustomResource> {
+        implements Reconciler<TestCustomResource> {
 
    @Override
    public Map<String, EventSource> prepareEventSources(
@@ -689,7 +690,7 @@ public class MyReconciler
             .withNamespacesInheritedFromController(context)
             .build(), context);
 
-    return EventSourceInitializer.nameEventSources(configMapES);
+    return EventSourceUtils.nameEventSources(configMapES);
   }
 
 }

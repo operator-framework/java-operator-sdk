@@ -12,3 +12,7 @@ permalink: /docs/v5-0-migration
 1. [Result of managed dependent resources](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/dependent/managed/ManagedDependentResourceContext.java#L55-L57)
    is not `Optional` anymore. In case you use this result, simply use the result
    objects directly.
+2. `EventSourceInitializer` is not a separate interface anymore. It is part of the `Reconciler` interface with a
+   default implementation. You can simply remove this interface from your reconciler. The
+   [`EventSourceUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceUtils.java#L11-L11)
+   contains all the utility classes for naming that was in the interface before.

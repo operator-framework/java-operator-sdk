@@ -239,8 +239,7 @@ conditionally creating an `Ingress`:
 
 @ControllerConfiguration
 public class WebPageStandaloneDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>,
-    EventSourceInitializer<WebPage> {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
   private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
   private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
@@ -307,16 +306,12 @@ public class WebPageStandaloneDependentsReconciler
 There are multiple things happening here:
 
 1. Dependent resources are explicitly created and can be access later by reference.
-2. Event sources are produced by the dependent resources, but needs to be explicitly registered in
-   this case by implementing
-   the [`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
-   interface.
-3. The input html is validated, and error message is set in case it is invalid.
-4. Reconciliation of dependent resources is called explicitly, but here the workflow
+2. The input html is validated, and error message is set in case it is invalid.
+3. Reconciliation of dependent resources is called explicitly, but here the workflow
    customization is fully in the hand of the developer.
-5. An `Ingress` is created but only in case `exposed` flag set to true on custom resource. Tries to
+4. An `Ingress` is created but only in case `exposed` flag set to true on custom resource. Tries to
    delete it if not.
-6. Status is set in a different way, this is just an alternative way to show, that the actual state
+5. Status is set in a different way, this is just an alternative way to show, that the actual state
    can be read using the reference. This could be written in a same way as in the managed example.
 
 See the full source code of
