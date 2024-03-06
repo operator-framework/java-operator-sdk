@@ -307,9 +307,30 @@ resource which matches the desired state associated with the primary resource. T
 state computation already needs to be able to discriminate among multiple related secondary resources to tell JOSDK how
 they should be reconciled.
 
-However, it is also possible to be more explicit about how JOSDK should identify the proper secondary resource by using
+Note that the mechanism of selecting the target resource can be further tuned by overriding the whole mechanism.
+
+Typically, if some reason it would be a problem to call the `desired` method on when reading the secondary resource
+for dependent resources that extends the `KubernetesDependentResource` is enough to override the following method:
+
+```java
+protected ResourceID managedSecondaryResourceID(P primary, Context<P> context) {
+    return ResourceID.fromResource(desired(primary, context)); // can be replaced by a static ResourceID
+  }
+```
+
+and just return the `name` and `namespace` of the target resource.
+
+In general however the whole mechanism can be overridden and optimized. See the related base implementation
+in [`AbstractDependetResource`](https://github.com/operator-framework/java-operator-sdk/blob/6cd0f884a7c9b60c81bd2d52da54adbd64d6e118/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractDependentResource.java#L126-L136)
+
+See also example of selection for external resource [here](https://github.com/operator-framework/java-operator-sdk/blob/6cd0f884a7c9b60c81bd2d52da54adbd64d6e118/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/externalstate/ExternalWithStateDependentResource.java#L43-L49).
+
+### Resource Discriminators
+
+It is also possible to be more explicit about how JOSDK should identify the proper secondary resource by using
 a
 [resource discriminator](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
+This is a former approach, that was the default before v5. It is NOT the preferred way anymore.  
 Resource discriminators uniquely identify the target resource of a dependent resource.
 In the managed Kubernetes dependent resources case, the discriminator can be declaratively set
 using the `@KubernetesDependent` annotation:
