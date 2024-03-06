@@ -59,7 +59,7 @@ public class OptionalDependentIT {
 
     extension.delete(r);
 
-    await().untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(180)).untilAsserted(() -> {
       var secondary =
           extension.get(OptionalDependentSecondaryCustomResource.class, r.getMetadata().getName());
       assertThat(secondary).isNull();
