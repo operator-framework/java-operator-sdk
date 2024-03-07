@@ -29,6 +29,7 @@ public class ExecutorServiceManager {
   private ExecutorService workflowExecutor;
   private ExecutorService cachingExecutorService;
   private boolean started;
+  private ConfigurationService configurationService;
 
   ExecutorServiceManager(ConfigurationService configurationService) {
     start(configurationService);
@@ -95,7 +96,15 @@ public class ExecutorServiceManager {
   }
 
   public ExecutorService workflowExecutorService() {
+    lazyInitWorkflowExecutorService();
     return workflowExecutor;
+  }
+
+  private synchronized void lazyInitWorkflowExecutorService() {
+    if (workflowExecutor == null) {
+      workflowExecutor =
+          new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
+    }
   }
 
   public ExecutorService cachingExecutorService() {
@@ -104,21 +113,21 @@ public class ExecutorServiceManager {
 
   public void start(ConfigurationService configurationService) {
     if (!started) {
+      this.configurationService = configurationService; // used to lazy init workflow executor
       this.cachingExecutorService = Executors.newCachedThreadPool();
       this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
-      this.workflowExecutor =
-          new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
       started = true;
     }
   }
 
   public void stop(Duration gracefulShutdownTimeout) {
     try {
-      var parallelExec = Executors.newFixedThreadPool(3);
       log.debug("Closing executor");
+      var parallelExec = Executors.newFixedThreadPool(3);
       parallelExec.invokeAll(List.of(shutdown(executor, gracefulShutdownTimeout),
           shutdown(workflowExecutor, gracefulShutdownTimeout),
           shutdown(cachingExecutorService, gracefulShutdownTimeout)));
+      workflowExecutor = null;
       parallelExec.shutdownNow();
       started = false;
     } catch (InterruptedException e) {
@@ -130,6 +139,10 @@ public class ExecutorServiceManager {
   private static Callable<Void> shutdown(ExecutorService executorService,
       Duration gracefulShutdownTimeout) {
     return () -> {
+      // workflow executor can be null
+      if (executorService == null) {
+        return null;
+      }
       executorService.shutdown();
       if (!executorService.awaitTermination(gracefulShutdownTimeout.toMillis(),
           TimeUnit.MILLISECONDS)) {
