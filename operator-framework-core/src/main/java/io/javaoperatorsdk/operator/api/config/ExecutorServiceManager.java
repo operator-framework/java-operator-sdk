@@ -121,8 +121,9 @@ public class ExecutorServiceManager {
   }
 
   public void stop(Duration gracefulShutdownTimeout) {
-    try (var parallelExec = Executors.newFixedThreadPool(3)) {
+    try {
       log.debug("Closing executor");
+      var parallelExec = Executors.newFixedThreadPool(3);
       parallelExec.invokeAll(List.of(shutdown(executor, gracefulShutdownTimeout),
           shutdown(workflowExecutor, gracefulShutdownTimeout),
           shutdown(cachingExecutorService, gracefulShutdownTimeout)));
