@@ -128,6 +128,7 @@ public class ExecutorServiceManager {
       parallelExec.invokeAll(List.of(shutdown(executor, gracefulShutdownTimeout),
           shutdown(workflowExecutor, gracefulShutdownTimeout),
           shutdown(cachingExecutorService, gracefulShutdownTimeout)));
+      workflowExecutor = null;
       parallelExec.shutdownNow();
       started = false;
     } catch (InterruptedException e) {
