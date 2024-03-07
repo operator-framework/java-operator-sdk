@@ -102,7 +102,7 @@ public class ExecutorServiceManager {
 
   private synchronized void lazyInitWorkflowExecutorService() {
     if (workflowExecutor == null) {
-      this.workflowExecutor =
+      workflowExecutor =
           new InstrumentedExecutorService(configurationService.getWorkflowExecutorService());
     }
   }
@@ -113,17 +113,15 @@ public class ExecutorServiceManager {
 
   public void start(ConfigurationService configurationService) {
     if (!started) {
-      this.configurationService = configurationService; // used to lazy workflow executor
+      this.configurationService = configurationService; // used to lazy init workflow executor
       this.cachingExecutorService = Executors.newCachedThreadPool();
-      this.executor =
-          new InstrumentedExecutorService(this.configurationService.getExecutorService());
+      this.executor = new InstrumentedExecutorService(configurationService.getExecutorService());
       started = true;
     }
   }
 
   public void stop(Duration gracefulShutdownTimeout) {
-    try {
-      var parallelExec = Executors.newFixedThreadPool(3);
+    try (var parallelExec = Executors.newFixedThreadPool(3)) {
       log.debug("Closing executor");
       parallelExec.invokeAll(List.of(shutdown(executor, gracefulShutdownTimeout),
           shutdown(workflowExecutor, gracefulShutdownTimeout),
