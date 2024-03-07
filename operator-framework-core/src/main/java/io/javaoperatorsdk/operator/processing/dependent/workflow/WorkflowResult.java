@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -38,9 +37,9 @@ class WorkflowResult {
 
   public void throwAggregateExceptionIfErrorsPresent() {
     if (erroredDependentsExist()) {
-       throw new AggregatedOperatorException("Exception(s) during workflow execution.",
-           erroredDependents.entrySet().stream()
-               .collect(Collectors.toMap(e -> e.getKey().name(), Entry::getValue)));
+      throw new AggregatedOperatorException("Exception(s) during workflow execution.",
+          erroredDependents.entrySet().stream()
+              .collect(Collectors.toMap(e -> e.getKey().name(), Entry::getValue)));
     }
   }
 }
