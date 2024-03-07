@@ -200,11 +200,11 @@ public interface ConfigurationService {
   }
 
   default ExecutorService getExecutorService() {
-    return Executors.newFixedThreadPool(DEFAULT_RECONCILIATION_THREADS_NUMBER);
+    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
   }
 
   default ExecutorService getWorkflowExecutorService() {
-    return Executors.newFixedThreadPool(DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
+    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
   }
 
   default boolean closeClientOnStop() {
