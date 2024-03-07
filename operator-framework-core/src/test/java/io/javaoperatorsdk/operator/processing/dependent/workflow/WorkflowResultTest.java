@@ -28,8 +28,8 @@ class WorkflowResultTest {
 
   @Test
   void numbersDependentClassNamesIfMoreOfSameType() {
-    var res = new WorkflowResult(Map.of(new DependentA(), new RuntimeException(),
-        new DependentA(), new RuntimeException()));
+    var res = new WorkflowResult(Map.of(new DependentA("name1"), new RuntimeException(),
+        new DependentA("name2"), new RuntimeException()));
     try {
       res.throwAggregateExceptionIfErrorsPresent();
     } catch (AggregatedOperatorException e) {
@@ -39,6 +39,25 @@ class WorkflowResultTest {
 
   @SuppressWarnings("rawtypes")
   static class DependentA implements DependentResource {
+
+    private final String name;
+
+    public DependentA() {
+      this(null);
+    }
+
+    public DependentA(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String name() {
+      if (name == null) {
+        return DependentResource.super.name();
+      }
+      return name;
+    }
+
     @Override
     public ReconcileResult reconcile(HasMetadata primary, Context context) {
       return null;
