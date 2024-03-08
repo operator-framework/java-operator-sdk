@@ -7,7 +7,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
@@ -92,16 +91,6 @@ public @interface ControllerConfiguration {
    */
   MaxReconciliationInterval maxReconciliationInterval() default @MaxReconciliationInterval(
       interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
-
-
-  // todo remove
-  /**
-   * Optional list of {@link Dependent} configurations which associate a resource type to a
-   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
-   *
-   * @return the array of {@link Dependent} configurations
-   */
-  Dependent[] dependents() default {};
 
   /**
    * Optional {@link Retry} implementation for the associated controller to use.

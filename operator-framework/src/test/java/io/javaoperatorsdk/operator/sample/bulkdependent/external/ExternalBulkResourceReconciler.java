@@ -1,13 +1,11 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent.external;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
 
-@ControllerConfiguration(dependents = @Dependent(type = ExternalBulkDependentResource.class))
+@Workflow(dependents = @Dependent(type = ExternalBulkDependentResource.class))
+@ControllerConfiguration()
 public class ExternalBulkResourceReconciler implements Reconciler<BulkDependentTestCustomResource> {
 
   @Override

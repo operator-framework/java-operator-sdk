@@ -63,7 +63,6 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return DEFAULT_RATE_LIMITER;
   }
 
-  // todo might be better with Optional?
   default Optional<WorkflowSpec> getWorkflowSpec() {
     return Optional.empty();
   }
