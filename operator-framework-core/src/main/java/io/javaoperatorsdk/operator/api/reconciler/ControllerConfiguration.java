@@ -94,6 +94,7 @@ public @interface ControllerConfiguration {
       interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
 
 
+  // todo remove
   /**
    * Optional list of {@link Dependent} configurations which associate a resource type to a
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation

@@ -1,14 +1,12 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -65,9 +63,9 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return DEFAULT_RATE_LIMITER;
   }
 
-  @SuppressWarnings("rawtypes")
-  default List<DependentResourceSpec> getDependentResources() {
-    return Collections.emptyList();
+  // todo might be better with Optional?
+  default Optional<WorkflowSpec> getWorkflowSpec() {
+    return Optional.empty();
   }
 
   default Optional<Duration> maxReconciliationInterval() {
