@@ -30,16 +30,18 @@ public class NextReconciliationImminentIT {
 
     var reconciler = extension.getReconcilerOfType(NextReconciliationImminentReconciler.class);
     await().untilAsserted(() -> assertThat(reconciler.isReconciliationWaiting()).isTrue());
-    resource.getMetadata().getAnnotations().put("trigger", "" + System.currentTimeMillis());
     Thread.sleep(WAIT_FOR_EVENT);
+
+    resource.getMetadata().getAnnotations().put("trigger", "" + System.currentTimeMillis());
     extension.replace(resource);
+
     reconciler.allowReconciliationToProceed();
     Thread.sleep(WAIT_FOR_EVENT);
     // second event arrived
     await().untilAsserted(() -> assertThat(reconciler.isReconciliationWaiting()).isTrue());
     reconciler.allowReconciliationToProceed();
 
-    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
+    await().pollDelay(Duration.ofMillis(WAIT_FOR_EVENT)).untilAsserted(() -> {
       assertThat(extension.get(NextReconciliationImminentCustomResource.class, TEST_RESOURCE_NAME)
           .getStatus().getUpdateNumber()).isEqualTo(1);
     });

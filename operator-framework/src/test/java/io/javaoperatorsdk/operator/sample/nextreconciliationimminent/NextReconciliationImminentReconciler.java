@@ -28,7 +28,7 @@ public class NextReconciliationImminentReconciler
 
     reconciliationWaiting = true;
     // wait long enough to get manually allowed
-    queue.poll(30, TimeUnit.SECONDS);
+    queue.poll(120, TimeUnit.SECONDS);
     log.info("Continue after wait");
     reconciliationWaiting = false;
 
