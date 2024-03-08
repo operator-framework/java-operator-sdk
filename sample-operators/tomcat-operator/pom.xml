@@ -100,7 +100,7 @@
                 <version>${jib-maven-plugin.version}</version>
                 <configuration>
                     <from>
-                        <image>gcr.io/distroless/java:11</image>
+                        <image>gcr.io/distroless/java17-debian11</image>
                     </from>
                     <to>
                         <image>tomcat-operator</image>
