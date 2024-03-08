@@ -25,7 +25,7 @@ public class NextReconciliationImminentReconciler
   public UpdateControl<NextReconciliationImminentCustomResource> reconcile(
       NextReconciliationImminentCustomResource resource,
       Context<NextReconciliationImminentCustomResource> context) throws InterruptedException {
-
+    log.info("started reconciliation");
     reconciliationWaiting = true;
     // wait long enough to get manually allowed
     queue.poll(120, TimeUnit.SECONDS);
@@ -39,6 +39,7 @@ public class NextReconciliationImminentReconciler
         resource.setStatus(new NextReconciliationImminentStatus());
       }
       resource.getStatus().setUpdateNumber(resource.getStatus().getUpdateNumber() + 1);
+      log.info("Patching status");
       return UpdateControl.patchStatus(resource);
     }
   }

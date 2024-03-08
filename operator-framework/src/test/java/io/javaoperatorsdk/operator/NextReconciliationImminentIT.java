@@ -4,6 +4,8 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
@@ -14,6 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 public class NextReconciliationImminentIT {
+
+  private static final Logger log =
+      LoggerFactory.getLogger(NextReconciliationImminentIT.class);
 
   public static final int WAIT_FOR_EVENT = 300;
   public static final String TEST_RESOURCE_NAME = "test1";
@@ -34,6 +39,8 @@ public class NextReconciliationImminentIT {
 
     resource.getMetadata().getAnnotations().put("trigger", "" + System.currentTimeMillis());
     extension.replace(resource);
+    Thread.sleep(WAIT_FOR_EVENT);
+    log.info("Made change to trigger event");
 
     reconciler.allowReconciliationToProceed();
     Thread.sleep(WAIT_FOR_EVENT);
