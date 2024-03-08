@@ -128,7 +128,7 @@ public interface ConfigurationService {
 
   int DEFAULT_RECONCILIATION_THREADS_NUMBER = 50;
   /**
-   * Not used anymore with default implementation
+   * @deprecated Not used anymore in the default implementation
    */
   @Deprecated(forRemoval = true)
   int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
@@ -155,6 +155,9 @@ public interface ConfigurationService {
   }
 
   int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  /**
+   * @deprecated Not used anymore in the default implementation
+   */
   @Deprecated(forRemoval = true)
   int MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
 
