@@ -55,8 +55,7 @@ class GenericKubernetesResourceMatcherTest {
   @Test
   void matchesWithStrongSpecEquality() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
-    assertThat(match(dependentResource, actual, null, context, true, true,
-        true)
+    assertThat(match(desired, actual, true, true, context)
         .matched())
         .withFailMessage("Adding values should fail matching when strong equality is required")
         .isFalse();
@@ -127,11 +126,11 @@ class GenericKubernetesResourceMatcherTest {
         .withFailMessage("Annotations shouldn't matter when metadata is not considered")
         .isTrue();
 
-    assertThat(match(dependentResource, actual, null, context, true, true, true).matched())
+    assertThat(match(desired, actual, true, true, context).matched())
         .withFailMessage("Annotations should matter when metadata is considered")
         .isFalse();
 
-    assertThat(match(dependentResource, actual, null, context, true, false).matched())
+    assertThat(match(desired, actual, false, false, context).matched())
         .withFailMessage(
             "Should match when strong equality is not considered and only additive changes are made")
         .isTrue();
@@ -157,7 +156,7 @@ class GenericKubernetesResourceMatcherTest {
     var actual = createConfigMap();
     actual.getData().put("key2", "val2");
 
-    var match = GenericKubernetesResourceMatcher.match(desired, actual, true,
+    var match = GenericKubernetesResourceMatcher.match(desired, actual,
         true, false, context);
     assertThat(match.matched()).isTrue();
   }
