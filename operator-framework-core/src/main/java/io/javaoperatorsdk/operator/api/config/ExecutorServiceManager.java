@@ -8,8 +8,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -33,14 +31,6 @@ public class ExecutorServiceManager {
 
   ExecutorServiceManager(ConfigurationService configurationService) {
     start(configurationService);
-  }
-
-  public static ExecutorService newThreadPoolExecutor(int minThreads, int maxThreads) {
-    minThreads = Utils.ensureValid(minThreads, "minimum number of threads", MIN_THREAD_NUMBER);
-    maxThreads = Utils.ensureValid(maxThreads, "maximum number of threads", minThreads + 1);
-
-    return new ThreadPoolExecutor(minThreads, maxThreads, 1, TimeUnit.MINUTES,
-        new LinkedBlockingDeque<>());
   }
 
   /**

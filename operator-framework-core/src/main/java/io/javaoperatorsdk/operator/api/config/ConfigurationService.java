@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -23,8 +24,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
-
-import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -127,14 +126,18 @@ public interface ConfigurationService {
     return false;
   }
 
-  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 200;
+  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 50;
+  /**
+   * @deprecated Not used anymore in the default implementation
+   */
+  @Deprecated(forRemoval = true)
   int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
 
   /**
-   * The maximum number of threads the operator can spin out to dispatch reconciliation requests to
-   * reconcilers
+   * The number of threads the operator can spin out to dispatch reconciliation requests to
+   * reconcilers with the default executors
    *
-   * @return the maximum number of concurrent reconciliation threads
+   * @return the number of concurrent reconciliation threads
    */
   default int concurrentReconciliationThreads() {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
@@ -143,17 +146,24 @@ public interface ConfigurationService {
   /**
    * The minimum number of threads the operator starts in the thread pool for reconciliations.
    *
+   * @deprecated not used anymore by default executor implementation
    * @return the minimum number of concurrent reconciliation threads
    */
+  @Deprecated(forRemoval = true)
   default int minConcurrentReconciliationThreads() {
     return MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
 
   int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+  /**
+   * @deprecated Not used anymore in the default implementation
+   */
+  @Deprecated(forRemoval = true)
   int MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
 
   /**
-   * Retrieves the maximum number of threads the operator can spin out to be used in the workflows.
+   * Number of threads the operator can spin out to be used in the workflows with the default
+   * executor.
    *
    * @return the maximum number of concurrent workflow threads
    */
@@ -164,8 +174,10 @@ public interface ConfigurationService {
   /**
    * The minimum number of threads the operator starts in the thread pool for workflows.
    *
+   * @deprecated not used anymore by default executor implementation
    * @return the minimum number of concurrent workflow threads
    */
+  @Deprecated(forRemoval = true)
   default int minConcurrentWorkflowExecutorThreads() {
     return MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
   }
@@ -191,13 +203,11 @@ public interface ConfigurationService {
   }
 
   default ExecutorService getExecutorService() {
-    return newThreadPoolExecutor(minConcurrentReconciliationThreads(),
-        concurrentReconciliationThreads());
+    return Executors.newFixedThreadPool(concurrentReconciliationThreads());
   }
 
   default ExecutorService getWorkflowExecutorService() {
-    return newThreadPoolExecutor(minConcurrentWorkflowExecutorThreads(),
-        concurrentWorkflowExecutorThreads());
+    return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
   }
 
   default boolean closeClientOnStop() {
