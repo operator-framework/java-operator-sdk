@@ -77,6 +77,7 @@
         <formatter-maven-plugin.version>2.23.0</formatter-maven-plugin.version>
         <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
         <impsort-maven-plugin.version>1.9.0</impsort-maven-plugin.version>
+        <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
     </properties>
 
     <modules>
