@@ -15,12 +15,6 @@
     <description>Provisions Schemas in a MySQL database</description>
     <packaging>jar</packaging>
 
-    <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
