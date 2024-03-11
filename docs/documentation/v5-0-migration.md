@@ -15,4 +15,5 @@ permalink: /docs/v5-0-migration
 2. `EventSourceInitializer` is not a separate interface anymore. It is part of the `Reconciler` interface with a
    default implementation. You can simply remove this interface from your reconciler. The
    [`EventSourceUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceUtils.java#L11-L11)
-   contains all the utility classes for naming that was in the interface before.
+   now contains all the utility methods used for event sources naming that were previously defined in
+   the `EventSourceInitializer` interface.
