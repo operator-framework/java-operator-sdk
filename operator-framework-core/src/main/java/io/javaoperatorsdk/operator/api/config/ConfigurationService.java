@@ -392,7 +392,10 @@ public interface ConfigurationService {
   }
 
   /**
-   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patchStatus
+   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patchStatus can either use
+   * simple update or SSA for status subresource patching.
+   *
+   * @return true by default
    */
   default boolean useSSAForResourceStatusPatch() {
     return true;
