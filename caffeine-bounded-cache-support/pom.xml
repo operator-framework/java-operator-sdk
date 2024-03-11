@@ -12,11 +12,6 @@
   <artifactId>caffeine-bounded-cache-support</artifactId>
   <name>Operator SDK - Caffeine Bounded Cache Support</name>
 
-  <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
