@@ -19,8 +19,10 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
@@ -97,6 +99,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   protected <P extends HasMetadata> ControllerConfiguration<P> configFor(Reconciler<P> reconciler) {
     final var annotation = reconciler.getClass().getAnnotation(
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class);
+
     if (annotation == null) {
       throw new OperatorException(
           "Missing mandatory @"
@@ -161,21 +164,26 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         Utils.instantiate(annotation.itemStore(), ItemStore.class, context), dependentFieldManager,
         this, informerListLimit);
 
-    List<DependentResourceSpec> specs = dependentResources(annotation, config);
-    config.setDependentResources(specs);
+
+    final var workflowAnnotation = reconciler.getClass().getAnnotation(
+        io.javaoperatorsdk.operator.api.reconciler.Workflow.class);
+    if (workflowAnnotation != null) {
+      List<DependentResourceSpec> specs = dependentResources(workflowAnnotation, config);
+      WorkflowSpec workflowSpec = new WorkflowSpec(specs);
+      config.setWorkflowSpec(workflowSpec);
+    }
 
     return config;
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static List<DependentResourceSpec> dependentResources(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation,
+      Workflow annotation,
       ControllerConfiguration<?> parent) {
-    final var dependents =
-        valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::dependents,
-            new Dependent[] {});
-    if (dependents.length == 0) {
+    final var dependents = annotation.dependents();
+
+
+    if (dependents == null || dependents.length == 0) {
       return Collections.emptyList();
     }
 

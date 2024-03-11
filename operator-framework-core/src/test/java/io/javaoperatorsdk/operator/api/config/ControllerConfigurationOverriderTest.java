@@ -11,11 +11,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.BasicItemStore;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -42,7 +39,8 @@ class ControllerConfigurationOverriderTest {
     var configuration = createConfiguration(new NamedDependentReconciler());
 
     // check that we have the proper number of dependent configs
-    var dependentResources = configuration.getDependentResources();
+    var dependentResources =
+        configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
     assertEquals(2, dependentResources.size());
 
     // override the NS
@@ -57,57 +55,11 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(namespace), configuration.getNamespaces());
 
     // check that we still have the proper number of dependent configs
-    dependentResources = configuration.getDependentResources();
+    dependentResources = configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
     assertEquals(2, dependentResources.size());
     final var resourceConfig = extractDependentKubernetesResourceConfig(
         configuration, 1);
     assertEquals(stringConfig, resourceConfig);
-  }
-
-  @ControllerConfiguration(dependents = {
-      @Dependent(type = NamedDependentReconciler.NamedDependentResource.class),
-      @Dependent(type = NamedDependentReconciler.ExternalDependentResource.class)
-  })
-  private static class NamedDependentReconciler implements Reconciler<ConfigMap> {
-
-    @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
-      return null;
-    }
-
-    private static class NamedDependentResource
-        extends KubernetesDependentResource<ConfigMap, ConfigMap> {
-
-      public NamedDependentResource() {
-        super(ConfigMap.class);
-      }
-    }
-
-    private static class ExternalDependentResource implements DependentResource<Object, ConfigMap>,
-        DependentResourceConfigurator<String> {
-
-      private String config = "UNSET";
-
-      @Override
-      public ReconcileResult<Object> reconcile(ConfigMap primary, Context<ConfigMap> context) {
-        return null;
-      }
-
-      @Override
-      public Class<Object> resourceType() {
-        return Object.class;
-      }
-
-      @Override
-      public void configureWith(String config) {
-        this.config = config;
-      }
-
-      @Override
-      public Optional<String> configuration() {
-        return Optional.of(config);
-      }
-    }
   }
 
   @SuppressWarnings("rawtypes")
@@ -119,7 +71,8 @@ class ControllerConfigurationOverriderTest {
 
   private Object extractDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
-    final var spec = configuration.getDependentResources().get(index);
+    final var spec =
+        configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
     return DependentResourceConfigurationResolver.configurationFor(spec, configuration);
   }
 
@@ -316,7 +269,7 @@ class ControllerConfigurationOverriderTest {
   @Test
   void replaceNamedDependentResourceConfigShouldWork() {
     var configuration = createConfiguration(new OneDepReconciler());
-    var dependents = configuration.getDependentResources();
+    var dependents = configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
     assertFalse(dependents.isEmpty());
     assertEquals(1, dependents.size());
 
@@ -349,7 +302,7 @@ class ControllerConfigurationOverriderTest {
                 .withLabelSelector(labelSelector)
                 .build())
         .build();
-    dependents = overridden.getDependentResources();
+    dependents = overridden.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
     dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
         .findFirst().orElseThrow();
     config = (KubernetesDependentResourceConfig) DependentResourceConfigurationResolver
@@ -361,7 +314,8 @@ class ControllerConfigurationOverriderTest {
     assertTrue(dependentSpec.getReadyCondition() instanceof TestCondition);
   }
 
-  @ControllerConfiguration(dependents = @Dependent(type = ReadOnlyDependent.class))
+  @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class))
+  @ControllerConfiguration
   private static class WatchAllNamespacesReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -370,7 +324,8 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @ControllerConfiguration(dependents = @Dependent(type = WatchAllNSDependent.class))
+  @Workflow(dependents = @Dependent(type = WatchAllNSDependent.class))
+  @ControllerConfiguration
   private static class DependentWatchesAllNSReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -389,9 +344,9 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
-      dependents = @Dependent(type = ReadOnlyDependent.class,
-          readyPostcondition = TestCondition.class))
+  @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class,
+      readyPostcondition = TestCondition.class))
+  @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS)
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "foo";
@@ -418,8 +373,8 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @ControllerConfiguration(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS,
-      dependents = @Dependent(type = OverriddenNSDependent.class))
+  @Workflow(dependents = @Dependent(type = OverriddenNSDependent.class))
+  @ControllerConfiguration(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS)
   private static class OverriddenNSOnDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "parentNS";
@@ -438,6 +393,53 @@ class ControllerConfigurationOverriderTest {
 
     public OverriddenNSDependent() {
       super(ConfigMap.class);
+    }
+  }
+
+  @Workflow(dependents = {
+      @Dependent(type = NamedDependentReconciler.NamedDependentResource.class),
+      @Dependent(type = NamedDependentReconciler.ExternalDependentResource.class)
+  })
+  @ControllerConfiguration
+  private static class NamedDependentReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
+
+    private static class NamedDependentResource
+        extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+
+      public NamedDependentResource() {
+        super(ConfigMap.class);
+      }
+    }
+
+    private static class ExternalDependentResource implements DependentResource<Object, ConfigMap>,
+        DependentResourceConfigurator<String> {
+
+      private String config = "UNSET";
+
+      @Override
+      public ReconcileResult<Object> reconcile(ConfigMap primary, Context<ConfigMap> context) {
+        return null;
+      }
+
+      @Override
+      public Class<Object> resourceType() {
+        return Object.class;
+      }
+
+      @Override
+      public void configureWith(String config) {
+        this.config = config;
+      }
+
+      @Override
+      public Optional<String> configuration() {
+        return Optional.of(config);
+      }
     }
   }
 }
