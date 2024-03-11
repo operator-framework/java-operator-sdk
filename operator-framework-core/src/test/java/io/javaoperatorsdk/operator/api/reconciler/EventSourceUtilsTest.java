@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventS
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EventSourceInitializerTest {
+class EventSourceUtilsTest {
 
   @Test
   @SuppressWarnings({"rawtypes", "unchecked"})

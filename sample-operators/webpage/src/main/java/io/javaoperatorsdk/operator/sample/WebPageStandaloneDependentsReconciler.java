@@ -3,17 +3,25 @@ package io.javaoperatorsdk.operator.sample;
 import java.util.Arrays;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
-import io.javaoperatorsdk.operator.sample.dependentresource.*;
+import io.javaoperatorsdk.operator.sample.dependentresource.ConfigMapDependentResource;
+import io.javaoperatorsdk.operator.sample.dependentresource.DeploymentDependentResource;
+import io.javaoperatorsdk.operator.sample.dependentresource.ExposedIngressCondition;
+import io.javaoperatorsdk.operator.sample.dependentresource.IngressDependentResource;
+import io.javaoperatorsdk.operator.sample.dependentresource.ServiceDependentResource;
 
 import static io.javaoperatorsdk.operator.sample.Utils.*;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
@@ -23,12 +31,9 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
  */
 @ControllerConfiguration
 public class WebPageStandaloneDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(WebPageStandaloneDependentsReconciler.class);
-
-  private Workflow<WebPage> workflow;
+  private final Workflow<WebPage> workflow;
 
   public WebPageStandaloneDependentsReconciler() {
     workflow = createDependentResourcesAndWorkflow();
@@ -81,6 +86,4 @@ public class WebPageStandaloneDependentsReconciler
         .withReconcilePrecondition(new ExposedIngressCondition())
         .build();
   }
-
-
 }
