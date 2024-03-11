@@ -10,6 +10,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -38,6 +39,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String name;
   private String fieldManager;
   private Long informerListLimit;
+  private WorkflowSpec workflowSpec;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -55,6 +57,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.fieldManager = original.fieldManager();
     this.informerListLimit = original.getInformerListLimit().orElse(null);
     this.itemStore = original.getItemStore().orElse(null);
+    this.workflowSpec = original.getWorkflowSpec().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -175,7 +178,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
       Object dependentResourceConfig) {
 
-    final var specs = original.getDependentResources();
+    final var specs = original.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
     final var spec = specs.stream()
         .filter(drs -> drs.getName().equals(name)).findFirst()
         .orElseThrow(
@@ -193,9 +196,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         name,
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
-        original.getDependentResources(),
         namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        original.getConfigurationService(), informerListLimit);
+        original.getConfigurationService(), informerListLimit,
+        original.getWorkflowSpec().orElse(null));
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(
