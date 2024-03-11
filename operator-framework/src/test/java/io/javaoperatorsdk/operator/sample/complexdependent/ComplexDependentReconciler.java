@@ -15,23 +15,22 @@ import io.javaoperatorsdk.operator.sample.complexdependent.dependent.*;
 import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.SERVICE_EVENT_SOURCE_NAME;
 import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.STATEFUL_SET_EVENT_SOURCE_NAME;
 
-@ControllerConfiguration(
-    name = "project-operator",
-    dependents = {
-        @Dependent(name = "first-svc", type = FirstService.class,
-            useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
-        @Dependent(name = "second-svc", type = SecondService.class,
-            useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
-        @Dependent(name = "first", type = FirstStatefulSet.class,
-            useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
-            dependsOn = {"first-svc"},
-            readyPostcondition = StatefulSetReadyCondition.class),
-        @Dependent(name = "second",
-            type = SecondStatefulSet.class,
-            useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
-            dependsOn = {"second-svc", "first"},
-            readyPostcondition = StatefulSetReadyCondition.class),
-    })
+@Workflow(dependents = {
+    @Dependent(name = "first-svc", type = FirstService.class,
+        useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
+    @Dependent(name = "second-svc", type = SecondService.class,
+        useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
+    @Dependent(name = "first", type = FirstStatefulSet.class,
+        useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
+        dependsOn = {"first-svc"},
+        readyPostcondition = StatefulSetReadyCondition.class),
+    @Dependent(name = "second",
+        type = SecondStatefulSet.class,
+        useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
+        dependsOn = {"second-svc", "first"},
+        readyPostcondition = StatefulSetReadyCondition.class),
+})
+@ControllerConfiguration(name = "project-operator")
 public class ComplexDependentReconciler implements Reconciler<ComplexDependentCustomResource>,
     EventSourceInitializer<ComplexDependentCustomResource> {
 
