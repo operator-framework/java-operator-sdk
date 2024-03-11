@@ -51,5 +51,18 @@ public interface Context<P extends HasMetadata> {
    * @return the {@link IndexerResourceCache} associated with the associated {@link Reconciler} for
    *         this context
    */
+  @SuppressWarnings("unused")
   IndexedResourceCache<P> getPrimaryCache();
+
+  /**
+   * Determines whether a new reconciliation will be triggered right after the current
+   * reconciliation is finished. This allows to optimize certain situations, helping avoid unneeded
+   * API calls. A reconciler might, for example, skip updating the status when it's known another
+   * reconciliation is already scheduled, which would in turn trigger another status update, thus
+   * rendering the current one moot.
+   *
+   * @return {@code true} is another reconciliation is already scheduled, {@code false} otherwise
+   **/
+  boolean isNextReconciliationImminent();
+
 }
