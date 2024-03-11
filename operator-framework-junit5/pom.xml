@@ -12,11 +12,6 @@
   <artifactId>operator-framework-junit-5</artifactId>
   <name>Operator SDK - Framework - JUnit 5 extension</name>
 
-  <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
