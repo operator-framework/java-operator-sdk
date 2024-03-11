@@ -14,10 +14,6 @@
     <name>Operator SDK - Samples</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <jib-maven-plugin.version>3.1.4</jib-maven-plugin.version>
-    </properties>
-
     <modules>
         <module>tomcat-operator</module>
         <module>webpage</module>
