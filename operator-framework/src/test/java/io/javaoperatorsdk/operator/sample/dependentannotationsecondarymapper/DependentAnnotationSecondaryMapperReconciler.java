@@ -13,8 +13,9 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(dependents = @Dependent(
+@Workflow(dependents = @Dependent(
     type = DependentAnnotationSecondaryMapperReconciler.ConfigMapDependentResource.class))
+@ControllerConfiguration
 public class DependentAnnotationSecondaryMapperReconciler
     implements Reconciler<DependentAnnotationSecondaryMapperResource>, TestExecutionInfoProvider {
 

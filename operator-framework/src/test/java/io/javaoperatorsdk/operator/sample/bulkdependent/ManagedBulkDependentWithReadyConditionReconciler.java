@@ -2,14 +2,12 @@ package io.javaoperatorsdk.operator.sample.bulkdependent;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(dependents = @Dependent(readyPostcondition = SampleBulkCondition.class,
+@Workflow(dependents = @Dependent(readyPostcondition = SampleBulkCondition.class,
     type = CRUDConfigMapBulkDependentResource.class))
+@ControllerConfiguration()
 public class ManagedBulkDependentWithReadyConditionReconciler
     implements Reconciler<BulkDependentTestCustomResource> {
 

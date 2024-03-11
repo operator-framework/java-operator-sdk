@@ -13,14 +13,14 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 /**
  * Shows how to implement a reconciler with managed dependent resources.
  */
-@ControllerConfiguration(
-    dependents = {
-        @Dependent(type = ConfigMapDependentResource.class),
-        @Dependent(type = DeploymentDependentResource.class),
-        @Dependent(type = ServiceDependentResource.class),
-        @Dependent(type = IngressDependentResource.class,
-            reconcilePrecondition = ExposedIngressCondition.class)
-    })
+@Workflow(dependents = {
+    @Dependent(type = ConfigMapDependentResource.class),
+    @Dependent(type = DeploymentDependentResource.class),
+    @Dependent(type = ServiceDependentResource.class),
+    @Dependent(type = IngressDependentResource.class,
+        reconcilePrecondition = ExposedIngressCondition.class)
+})
+@ControllerConfiguration
 public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, Cleaner<WebPage> {
 

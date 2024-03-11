@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.sample.dependentcustommappingannotation;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(
-    dependents = {@Dependent(type = CustomMappingConfigMapDependentResource.class)})
+@Workflow(dependents = {@Dependent(type = CustomMappingConfigMapDependentResource.class)})
+@ControllerConfiguration
 public class DependentCustomMappingReconciler
     implements Reconciler<DependentCustomMappingCustomResource> {
 
