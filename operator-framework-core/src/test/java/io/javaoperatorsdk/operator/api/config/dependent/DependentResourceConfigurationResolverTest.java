@@ -12,10 +12,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -57,7 +54,7 @@ class DependentResourceConfigurationResolverTest {
     final var overridden = ControllerConfigurationOverrider.override(cfg)
         .replacingNamedDependentResourceConfig(DR_NAME, newConfig)
         .build();
-    final var spec = cfg.getDependentResources().stream()
+    final var spec = cfg.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().stream()
         .filter(s -> DR_NAME.equals(s.getName()))
         .findFirst()
         .orElseThrow();
@@ -122,12 +119,13 @@ class DependentResourceConfigurationResolverTest {
     assertEquals(overriddenConverter, converter);
   }
 
-  @ControllerConfiguration(dependents = {
+  @Workflow(dependents = {
       @Dependent(type = CustomAnnotatedDep.class, name = DR_NAME),
       @Dependent(type = ChildCustomAnnotatedDep.class),
       @Dependent(type = ConfigMapDep.class),
       @Dependent(type = ServiceDep.class)
   })
+  @ControllerConfiguration
   static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
 
     public static final String DR_NAME = "first";

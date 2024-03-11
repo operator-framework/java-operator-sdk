@@ -4,12 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
@@ -19,12 +14,12 @@ import static io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResour
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
-@ControllerConfiguration(
-    dependents = {
-        @Dependent(type = SecretDependentResource.class, name = SecretDependentResource.NAME),
-        @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME,
-            dependsOn = SecretDependentResource.NAME)
-    })
+@Workflow(dependents = {
+    @Dependent(type = SecretDependentResource.class, name = SecretDependentResource.NAME),
+    @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME,
+        dependsOn = SecretDependentResource.NAME)
+})
+@ControllerConfiguration
 public class MySQLSchemaReconciler
     implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
 

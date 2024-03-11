@@ -2,13 +2,11 @@ package io.javaoperatorsdk.operator.sample.unmodifiabledependentpart;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(dependents = {@Dependent(type = UnmodifiablePartConfigMapDependent.class)})
+@Workflow(dependents = {@Dependent(type = UnmodifiablePartConfigMapDependent.class)})
+@ControllerConfiguration
 public class UnmodifiableDependentPartReconciler
     implements Reconciler<UnmodifiableDependentPartCustomResource> {
 
