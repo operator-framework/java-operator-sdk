@@ -2,14 +2,12 @@ package io.javaoperatorsdk.operator.sample.createonlyifnotexistsdependentwithssa
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(dependents = {
+@Workflow(dependents = {
     @Dependent(type = ConfigMapDependentResource.class)})
+@ControllerConfiguration()
 public class CreateOnlyIfNotExistingDependentWithSSAReconciler
     implements Reconciler<CreateOnlyIfNotExistingDependentWithSSACustomResource> {
 
