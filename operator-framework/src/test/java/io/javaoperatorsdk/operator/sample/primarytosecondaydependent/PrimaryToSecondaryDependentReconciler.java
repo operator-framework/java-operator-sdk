@@ -24,11 +24,12 @@ import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.Prim
  * Note that this is usually just used with read only resources. So it has limited usage, one reason
  * to use it is to have nice condition on that resource within a workflow.
  */
-@ControllerConfiguration(dependents = {@Dependent(type = ConfigMapDependent.class,
+@Workflow(dependents = {@Dependent(type = ConfigMapDependent.class,
     name = CONFIG_MAP,
     reconcilePrecondition = ConfigMapReconcilePrecondition.class,
     useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
     @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)})
+@ControllerConfiguration()
 public class PrimaryToSecondaryDependentReconciler
     implements Reconciler<PrimaryToSecondaryDependentCustomResource>, TestExecutionInfoProvider,
     EventSourceInitializer<PrimaryToSecondaryDependentCustomResource> {
