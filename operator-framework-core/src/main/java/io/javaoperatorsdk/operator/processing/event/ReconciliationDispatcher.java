@@ -151,10 +151,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     // check if status also needs to be updated
-    final var updateObservedGeneration = updateControl.isNoUpdate() ?
-            shouldUpdateObservedGenerationAutomatically(resourceForExecution) :
-            shouldUpdateObservedGenerationAutomatically(updatedCustomResource);
-    if (updateControl.isUpdateResourceAndStatus() || updateControl.isUpdateStatus() || updateObservedGeneration) {
+    final var updateObservedGeneration = updateControl.isNoUpdate()
+        ? shouldUpdateObservedGenerationAutomatically(resourceForExecution)
+        : shouldUpdateObservedGenerationAutomatically(updatedCustomResource);
+    if (updateControl.isUpdateResourceAndStatus() || updateControl.isUpdateStatus()
+        || updateObservedGeneration) {
       updatedCustomResource =
           updateStatusGenerationAware(toUpdate, originalResource, updateControl.isPatchStatus());
     }
