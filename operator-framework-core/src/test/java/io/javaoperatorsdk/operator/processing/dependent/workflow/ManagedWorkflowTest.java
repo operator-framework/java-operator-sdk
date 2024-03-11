@@ -1,12 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 
@@ -62,7 +64,9 @@ class ManagedWorkflowTest {
     final var configuration = mock(ControllerConfiguration.class);
     final var specList = List.of(specs);
 
-    when(configuration.getDependentResources()).thenReturn(specList);
+    var ws = new WorkflowSpec(specList);
+    when(configuration.getWorkflowSpec()).thenReturn(Optional.of(ws));
+
     return new BaseConfigurationService().getWorkflowFactory()
         .workflowFor(configuration);
   }

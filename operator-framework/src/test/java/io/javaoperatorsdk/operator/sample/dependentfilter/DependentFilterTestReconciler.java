@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(onUpdateFilter = UpdateFilter.class,
-    dependents = {@Dependent(type = FilteredDependentConfigMap.class)})
+@Workflow(dependents = {@Dependent(type = FilteredDependentConfigMap.class)})
+@ControllerConfiguration(onUpdateFilter = UpdateFilter.class)
 public class DependentFilterTestReconciler
     implements Reconciler<DependentFilterTestCustomResource> {
 

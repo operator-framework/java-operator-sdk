@@ -11,13 +11,15 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import java.util.Map;
 import java.util.Optional;
 
-@ControllerConfiguration(dependents = {@Dependent(type = ConfigMapDependentResource.class)})
+@Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class)})
+@ControllerConfiguration
 public class {{artifactClassId}}Reconciler implements Reconciler<{{artifactClassId}}CustomResource> {
 
     public UpdateControl<{{artifactClassId}}CustomResource> reconcile({{artifactClassId}}CustomResource primary,
