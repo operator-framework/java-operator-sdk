@@ -48,7 +48,7 @@ class StatusPatchNotLockingIT {
 
   // see https://github.com/fabric8io/kubernetes-client/issues/4158
   @Test
-  void valuesAreDeletedIfSetToNull() {
+  void valuesAreDeletedIfSetToNull() throws InterruptedException {
     var resource = operator.create(createResource());
 
     await().untilAsserted(() -> {
@@ -58,10 +58,12 @@ class StatusPatchNotLockingIT {
       assertThat(actual.getStatus().getMessage()).isEqualTo(MESSAGE);
     });
 
+    // resource needs to be read again to we don't replace the with wrong managed fields
+    resource = operator.get(StatusPatchLockingCustomResource.class, TEST_RESOURCE_NAME);
     resource.getSpec().setMessageInStatus(false);
     operator.replace(resource);
 
-    await().untilAsserted(() -> {
+    await().timeout(Duration.ofMinutes(3)).untilAsserted(() -> {
       var actual = operator.get(StatusPatchLockingCustomResource.class,
           TEST_RESOURCE_NAME);
       assertThat(actual.getStatus()).isNotNull();
