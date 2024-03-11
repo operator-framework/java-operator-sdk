@@ -43,19 +43,9 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
 import static io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.MAX_UPDATE_RETRY;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 class ReconciliationDispatcherTest {
@@ -158,7 +148,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any(), any());
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(customResourceFacade, never()).updateResource(any());
   }
 
@@ -184,7 +174,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any(), any());
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(customResourceFacade, never()).updateStatus(any());
     verify(customResourceFacade, never()).updateResource(any());
   }
@@ -456,7 +446,7 @@ class ReconciliationDispatcherTest {
 
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.patchStatus(observedGenResource));
-    when(facade.patchStatus(eq(observedGenResource), any(), any())).thenReturn(observedGenResource);
+    when(facade.patchStatus(eq(observedGenResource), any())).thenReturn(observedGenResource);
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
@@ -609,7 +599,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
 
-    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any(), any());
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
   }
