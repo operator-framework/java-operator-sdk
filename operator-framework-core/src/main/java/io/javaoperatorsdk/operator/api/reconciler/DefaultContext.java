@@ -54,6 +54,12 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
+  public boolean isNextReconciliationImminent() {
+    return controller.getEventProcessor()
+        .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
+  }
+
+  @Override
   public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
     return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
