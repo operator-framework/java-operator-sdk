@@ -11,12 +11,7 @@
 
   <artifactId>micrometer-support</artifactId>
   <name>Operator SDK - Micrometer Support</name>
-
-  <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-  </properties>
-
+  
   <dependencies>
     <dependency>
       <groupId>io.micrometer</groupId>
