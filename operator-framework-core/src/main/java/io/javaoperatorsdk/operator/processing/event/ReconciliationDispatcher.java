@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Collections;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -424,13 +425,22 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       originalResource.getMetadata().setResourceVersion(null);
       resource.getMetadata().setResourceVersion(null);
       try {
-        var res = resource(originalResource);
         if (useSSA) {
-          return res.subresource("status").patch(new PatchContext.Builder()
-              .withFieldManager(context.getControllerConfiguration().fieldManager())
-              .withPatchType(PatchType.SERVER_SIDE_APPLY)
-              .build());
+          var managedFields = resource.getMetadata().getManagedFields();
+          try {
+
+            resource.getMetadata().setManagedFields(Collections.emptyList());
+            var res = resource(resource);
+            return res.subresource("status").patch(new PatchContext.Builder()
+                .withFieldManager(context.getControllerConfiguration().fieldManager())
+                .withForce(true)
+                .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                .build());
+          } finally {
+            resource.getMetadata().setManagedFields(managedFields);
+          }
         } else {
+          var res = resource(originalResource);
           return res.editStatus(r -> resource);
         }
       } finally {
