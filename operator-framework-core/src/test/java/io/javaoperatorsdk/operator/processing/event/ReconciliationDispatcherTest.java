@@ -158,7 +158,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any(), any());
     verify(customResourceFacade, never()).updateResource(any());
   }
 
@@ -184,7 +184,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any(), any());
     verify(customResourceFacade, never()).updateStatus(any());
     verify(customResourceFacade, never()).updateResource(any());
   }
@@ -456,7 +456,7 @@ class ReconciliationDispatcherTest {
 
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.patchStatus(observedGenResource));
-    when(facade.patchStatus(eq(observedGenResource), any())).thenReturn(observedGenResource);
+    when(facade.patchStatus(eq(observedGenResource), any(), any())).thenReturn(observedGenResource);
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
@@ -609,7 +609,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
 
-    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any(), any());
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
   }

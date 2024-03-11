@@ -391,4 +391,11 @@ public interface ConfigurationService {
     return false;
   }
 
+  /**
+   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patchStatus
+   */
+  default boolean useSSAForResourceStatusPatch() {
+    return true;
+  }
+
 }

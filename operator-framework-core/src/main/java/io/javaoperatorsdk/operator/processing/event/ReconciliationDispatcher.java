@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.Cloner;
@@ -147,24 +149,24 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
       updatedCustomResource =
           updateStatusGenerationAware(updateControl.getResource(), originalResource,
-              updateControl.isPatchStatus());
+              updateControl.isPatchStatus(), context);
     } else if (updateControl.isUpdateStatus()) {
       updatedCustomResource =
           updateStatusGenerationAware(updateControl.getResource(), originalResource,
-              updateControl.isPatchStatus());
+              updateControl.isPatchStatus(), context);
     } else if (updateControl.isUpdateResource()) {
       updatedCustomResource =
           updateCustomResource(updateControl.getResource());
       if (shouldUpdateObservedGenerationAutomatically(updatedCustomResource)) {
         updatedCustomResource =
             updateStatusGenerationAware(updateControl.getResource(), originalResource,
-                updateControl.isPatchStatus());
+                updateControl.isPatchStatus(), context);
       }
     } else if (updateControl.isNoUpdate()
         && shouldUpdateObservedGenerationAutomatically(resourceForExecution)) {
       updatedCustomResource =
           updateStatusGenerationAware(originalResource, originalResource,
-              updateControl.isPatchStatus());
+              updateControl.isPatchStatus(), context);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -195,7 +197,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         P updatedResource = null;
         if (errorStatusUpdateControl.getResource().isPresent()) {
           updatedResource = errorStatusUpdateControl.isPatch() ? customResourceFacade
-              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource)
+              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource,
+                  context)
               : customResourceFacade
                   .updateStatus(errorStatusUpdateControl.getResource().orElseThrow());
         }
@@ -223,10 +226,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
-  private P updateStatusGenerationAware(P resource, P originalResource, boolean patch) {
+  private P updateStatusGenerationAware(P resource, P originalResource, boolean patch,
+      Context<P> context) {
     updateStatusObservedGenerationIfRequired(resource);
     if (patch) {
-      return customResourceFacade.patchStatus(resource, originalResource);
+      return customResourceFacade.patchStatus(resource, originalResource, context);
     } else {
       return customResourceFacade.updateStatus(resource);
     }
@@ -411,15 +415,24 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           .updateStatus();
     }
 
-    public R patchStatus(R resource, R originalResource) {
-      log.trace("Updating status for resource: {}", resource);
+    public R patchStatus(R resource, R originalResource, Context<?> context) {
+      var useSSA = context.getControllerConfiguration().getConfigurationService()
+          .useSSAForResourceStatusPatch();
+      log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // don't do optimistic locking on patch
       originalResource.getMetadata().setResourceVersion(null);
       resource.getMetadata().setResourceVersion(null);
       try {
-        return resource(originalResource)
-            .editStatus(r -> resource);
+        var res = resource(originalResource);
+        if (useSSA) {
+          return res.subresource("status").patch(new PatchContext.Builder()
+              .withFieldManager(context.getControllerConfiguration().fieldManager())
+              .withPatchType(PatchType.SERVER_SIDE_APPLY)
+              .build());
+        } else {
+          return res.editStatus(r -> resource);
+        }
       } finally {
         // restore initial resource version
         originalResource.getMetadata().setResourceVersion(resourceVersion);
