@@ -6,7 +6,8 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(dependents = {@Dependent(type = ConfigMapDependentResource.class)})
+@Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class)})
+@ControllerConfiguration
 public class CleanerForManagedDependentTestReconciler
     implements Reconciler<CleanerForManagedDependentCustomResource>,
     TestExecutionInfoProvider {
