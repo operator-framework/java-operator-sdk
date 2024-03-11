@@ -408,6 +408,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     handleAlreadyMarkedEvents();
   }
 
+  public boolean isNextReconciliationImminent(ResourceID resourceID) {
+    return resourceStateManager.getOrCreate(resourceID).eventPresent();
+  }
+
   private void handleAlreadyMarkedEvents() {
     for (var state : resourceStateManager.resourcesWithEventPresent()) {
       handleMarkedEventForResource(state);
