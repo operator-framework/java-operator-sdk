@@ -2,17 +2,15 @@ package io.javaoperatorsdk.operator.sample.workflowmultipleactivation;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(dependents = {
+@Workflow(dependents = {
     @Dependent(type = ConfigMapDependentResource.class,
         activationCondition = ActivationCondition.class),
     @Dependent(type = SecretDependentResource.class)
 })
+@ControllerConfiguration
 public class WorkflowMultipleActivationReconciler
     implements Reconciler<WorkflowMultipleActivationCustomResource> {
 

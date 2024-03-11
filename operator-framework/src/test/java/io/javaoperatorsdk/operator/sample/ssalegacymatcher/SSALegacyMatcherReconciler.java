@@ -2,13 +2,11 @@ package io.javaoperatorsdk.operator.sample.ssalegacymatcher;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(dependents = {@Dependent(type = ServiceDependentResource.class)})
+@Workflow(dependents = {@Dependent(type = ServiceDependentResource.class)})
+@ControllerConfiguration
 public class SSALegacyMatcherReconciler
     implements Reconciler<SSALegacyMatcherCustomResource> {
 
