@@ -31,8 +31,7 @@ import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.Prim
     @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)})
 @ControllerConfiguration()
 public class PrimaryToSecondaryDependentReconciler
-    implements Reconciler<PrimaryToSecondaryDependentCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<PrimaryToSecondaryDependentCustomResource> {
+    implements Reconciler<PrimaryToSecondaryDependentCustomResource>, TestExecutionInfoProvider {
 
   public static final String DATA_KEY = "data";
   public static final String CONFIG_MAP = "ConfigMap";
