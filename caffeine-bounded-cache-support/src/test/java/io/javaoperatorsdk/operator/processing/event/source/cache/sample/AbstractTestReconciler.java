@@ -28,7 +28,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
-    implements Reconciler<P>, EventSourceInitializer<P> {
+    implements Reconciler<P> {
 
   private static final Logger log =
       LoggerFactory.getLogger(BoundedCacheClusterScopeTestReconciler.class);
@@ -82,7 +82,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
             Mappers.fromOwnerReference(this instanceof BoundedCacheClusterScopeTestReconciler))
         .build(), context);
 
-    return EventSourceInitializer.nameEventSources(es);
+    return EventSourceUtils.nameEventSources(es);
   }
 
   private void ensureStatus(P resource) {

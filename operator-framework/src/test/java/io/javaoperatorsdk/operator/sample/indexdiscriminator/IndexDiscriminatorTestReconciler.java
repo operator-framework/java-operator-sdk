@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class IndexDiscriminatorTestReconciler
     implements Reconciler<IndexDiscriminatorTestCustomResource>,
     Cleaner<IndexDiscriminatorTestCustomResource>,
-    TestExecutionInfoProvider, EventSourceInitializer<IndexDiscriminatorTestCustomResource> {
+    TestExecutionInfoProvider {
 
   public static final String FIRST_CONFIG_MAP_SUFFIX_1 = "-1";
   public static final String FIRST_CONFIG_MAP_SUFFIX_2 = "-2";
@@ -81,7 +81,7 @@ public class IndexDiscriminatorTestReconciler
     secondDependentResourceConfigMap
         .setResourceDiscriminator(
             new TestIndexDiscriminator(CONFIG_MAP_INDEX_2, FIRST_CONFIG_MAP_SUFFIX_2));
-    return EventSourceInitializer.nameEventSources(eventSource);
+    return EventSourceUtils.nameEventSources(eventSource);
   }
 
   public static String configMapKey(ConfigMap configMap) {
