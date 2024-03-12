@@ -66,7 +66,8 @@ and/or re-schedule a reconciliation with a desired time delay:
   @Override
   public UpdateControl<MyCustomResource> reconcile(
      EventSourceTestCustomResource resource, Context context) {
-    ...
+    // omitted code
+    
     return UpdateControl.patchStatus(resource).rescheduleAfter(10, TimeUnit.SECONDS);
   }
 ```
@@ -77,7 +78,8 @@ without an update:
   @Override
   public UpdateControl<MyCustomResource> reconcile(
      EventSourceTestCustomResource resource, Context context) {
-    ...
+    // omitted code
+    
     return UpdateControl.<MyCustomResource>noUpdate().rescheduleAfter(10, TimeUnit.SECONDS);
   }
 ```
@@ -108,7 +110,8 @@ resource are cleaned up in `cleanup` implementation.
 ```java
 
 public DeleteControl cleanup(MyCustomResource customResource,Context context){
-        ...
+        // omitted code
+    
         return DeleteControl.defaultDelete();
         }
 
@@ -192,10 +195,7 @@ the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blo
 
 ```java
 public class WebPageStatus extends ObservedGenerationAwareStatus {
-
-   private String htmlConfigMap;
-  
-  ...
+ // omitted code
 }
 ```
 
@@ -247,11 +247,12 @@ for reconciling deployments.
 public class DeploymentReconciler
     implements Reconciler<Deployment>, TestExecutionInfoProvider {
 
-  @Override
-  public UpdateControl<Deployment> reconcile(
-      Deployment resource, Context context) {
-  ...
-  }
+    @Override
+    public UpdateControl<Deployment> reconcile(
+            Deployment resource, Context context) {
+        // omitted code
+    }
+}
 ```
 
 ## Max Interval Between Reconciliations
@@ -269,6 +270,7 @@ standard annotation:
 @ControllerConfiguration(maxReconciliationInterval = @MaxReconciliationInterval(
                 interval = 50,
                 timeUnit = TimeUnit.MILLISECONDS))
+public class MyReconciler implements Reconciler<HasMetadata> {}
 ```
 
 The event is not propagated at a fixed rate, rather it's scheduled after each reconciliation. So the
@@ -658,15 +660,15 @@ registering an associated `Informer` and then calling the `changeNamespaces` met
 
 ```java
 
-public static void main(String[]args)throws IOException{
-        KubernetesClient client=new DefaultKubernetesClient();
-        Operator operator=new Operator(client);
-        RegisteredController registeredController=operator.register(new WebPageReconciler(client));
-        operator.installShutdownHook();
-        operator.start();
+public static void main(String[] args) {
+    KubernetesClient client = new DefaultKubernetesClient();
+    Operator operator = new Operator(client);
+    RegisteredController registeredController = operator.register(new WebPageReconciler(client));
+    operator.installShutdownHook();
+    operator.start();
 
-        // call registeredController further while operator is running
-        }
+    // call registeredController further while operator is running
+}
 
 ```
 
@@ -678,8 +680,7 @@ configured appropriately so that the `followControllerNamespaceChanges` method r
 ```java
 
 @ControllerConfiguration
-public class MyReconciler
-        implements Reconciler<TestCustomResource> {
+public class MyReconciler implements Reconciler<TestCustomResource> {
 
    @Override
    public Map<String, EventSource> prepareEventSources(
@@ -769,8 +770,8 @@ You can use a different implementation by overriding the default one provided by
 follows:
 
 ```java
-Metrics metrics= …;
-Operator operator = new Operator(client, o -> o.withMetrics());
+Metrics metrics; // initialize your metrics implementation
+Operator operator = new Operator(client, o -> o.withMetrics(metrics));
 ```
 
 ### Micrometer implementation
@@ -786,8 +787,8 @@ To create a `MicrometerMetrics` implementation that behaves how it has historica
 instance via:
 
 ```java
-MeterRegistry registry= …;
-Metrics metrics=new MicrometerMetrics(registry)
+MeterRegistry registry; // initialize your registry implementation
+Metrics metrics = new MicrometerMetrics(registry);
 ```
 
 Note, however, that this constructor is deprecated and we encourage you to use the factory methods instead, which either
@@ -803,7 +804,7 @@ basis, deleting the associated meters after 5 seconds when a resource is deleted
 MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
         .withCleanUpDelayInSeconds(5)
         .withCleaningThreadNumber(2)
-        .build()
+        .build();
 ```
 
 The micrometer implementation records the following metrics:

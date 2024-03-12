@@ -101,13 +101,13 @@ and labels, which are ignored by default:
 
 ```java
 public class MyDependentResource extends KubernetesDependentResource<MyDependent, MyPrimary>
-    implements Matcher<MyDependent, MyPrimary> {
-  // your implementation
+        implements Matcher<MyDependent, MyPrimary> {
+    // your implementation
 
-  public Result<MyDependent> match(MyDependent actualResource, MyPrimary primary,
-      Context<MyPrimary> context) {
-    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, true);
-  }
+    public Result<MyDependent> match(MyDependent actualResource, MyPrimary primary,
+                                     Context<MyPrimary> context) {
+        return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, true);
+    }
 }
 ```
 
@@ -141,24 +141,24 @@ Deleted (or set to be garbage collected). The following example shows how to cre
 @KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
 class DeploymentDependentResource extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 
-  public DeploymentDependentResource() {
-    super(Deployment.class);
-  }
+    public DeploymentDependentResource() {
+        super(Deployment.class);
+    }
 
-  @Override
-  protected Deployment desired(WebPage webPage, Context<WebPage> context) {
-    var deploymentName = deploymentName(webPage);
-    Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
-    deployment.getMetadata().setName(deploymentName);
-    deployment.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
-    deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
+    @Override
+    protected Deployment desired(WebPage webPage, Context<WebPage> context) {
+        var deploymentName = deploymentName(webPage);
+        Deployment deployment = loadYaml(Deployment.class, getClass(), "deployment.yaml");
+        deployment.getMetadata().setName(deploymentName);
+        deployment.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
+        deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
 
-    deployment.getSpec().getTemplate().getMetadata().getLabels()
-        .put("app", deploymentName);
-    deployment.getSpec().getTemplate().getSpec().getVolumes().get(0)
-        .setConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
-    return deployment;
-  }
+        deployment.getSpec().getTemplate().getMetadata().getLabels()
+                .put("app", deploymentName);
+        deployment.getSpec().getTemplate().getSpec().getVolumes().get(0)
+                .setConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
+        return deployment;
+    }
 }
 ```
 
@@ -194,25 +194,25 @@ instances are managed by JOSDK, an example of which can be seen below:
 ```java
 
 @ControllerConfiguration(
-    labelSelector = SELECTOR,
-    dependents = {
-        @Dependent(type = ConfigMapDependentResource.class),
-        @Dependent(type = DeploymentDependentResource.class),
-        @Dependent(type = ServiceDependentResource.class)
-    })
+        labelSelector = SELECTOR,
+        dependents = {
+                @Dependent(type = ConfigMapDependentResource.class),
+                @Dependent(type = DeploymentDependentResource.class),
+                @Dependent(type = ServiceDependentResource.class)
+        })
 public class WebPageManagedDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+        implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
-  // omitted code
+    // omitted code
 
-  @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+    @Override
+    public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
 
-    final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
-        .getMetadata().getName();
-    webPage.setStatus(createStatus(name));
-    return UpdateControl.patchStatus(webPage);
-  }
+        final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
+                .getMetadata().getName();
+        webPage.setStatus(createStatus(name));
+        return UpdateControl.patchStatus(webPage);
+    }
 
 }
 ```
@@ -227,99 +227,11 @@ It is also possible to wire dependent resources programmatically. In practice th
 developer is responsible for initializing and managing the dependent resources as well as calling
 their `reconcile` method. However, this makes it possible for developers to fully customize the
 reconciliation process. Standalone dependent resources should be used in cases when the managed use
-case does not fit.
+case does not fit. You can, of course, also use [Workflows](https://javaoperatorsdk.io/docs/workflows) when managing
+resources programmatically.
 
-Note that [Workflows](https://javaoperatorsdk.io/docs/workflows) also can be invoked from standalone
-resources.
-
-The following sample is similar to the one above, simply performing additional checks, and
-conditionally creating an `Ingress`:
-
-```java
-
-@ControllerConfiguration
-public class WebPageStandaloneDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
-
-  private KubernetesDependentResource<ConfigMap, WebPage> configMapDR;
-  private KubernetesDependentResource<Deployment, WebPage> deploymentDR;
-  private KubernetesDependentResource<Service, WebPage> serviceDR;
-  private KubernetesDependentResource<Service, WebPage> ingressDR;
-
-  public WebPageStandaloneDependentsReconciler(KubernetesClient kubernetesClient) {
-    // 1.
-    createDependentResources(kubernetesClient);
-  }
-
-  @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    // 2.  
-    return List.of(
-        configMapDR.initEventSource(context),
-        deploymentDR.initEventSource(context),
-        serviceDR.initEventSource(context));
-  }
-
-  @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
-
-    // 3.
-    if (!isValidHtml(webPage.getHtml())) {
-      return UpdateControl.patchStatus(setInvalidHtmlErrorMessage(webPage));
-    }
-
-    // 4.  
-    configMapDR.reconcile(webPage, context);
-    deploymentDR.reconcile(webPage, context);
-    serviceDR.reconcile(webPage, context);
-
-    // 5.
-    if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
-      ingressDR.reconcile(webPage, context);
-    } else {
-      ingressDR.delete(webPage, context);
-    }
-
-    // 6.
-    webPage.setStatus(
-        createStatus(configMapDR.getResource(webPage).orElseThrow().getMetadata().getName()));
-    return UpdateControl.patchStatus(webPage);
-  }
-
-  private void createDependentResources(KubernetesClient client) {
-    this.configMapDR = new ConfigMapDependentResource();
-    this.deploymentDR = new DeploymentDependentResource();
-    this.serviceDR = new ServiceDependentResource();
-    this.ingressDR = new IngressDependentResource();
-
-    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
-      dr.setKubernetesClient(client);
-      dr.configureWith(new KubernetesDependentResourceConfig()
-          .setLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR));
-    });
-  }
-
-  // omitted code
-}
-```
-
-There are multiple things happening here:
-
-1. Dependent resources are explicitly created and can be access later by reference.
-2. The input html is validated, and error message is set in case it is invalid.
-3. Reconciliation of dependent resources is called explicitly, but here the workflow
-   customization is fully in the hand of the developer.
-4. An `Ingress` is created but only in case `exposed` flag set to true on custom resource. Tries to
-   delete it if not.
-5. Status is set in a different way, this is just an alternative way to show, that the actual state
-   can be read using the reference. This could be written in a same way as in the managed example.
-
-See the full source code of
-sample [here](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java)
-.
-
-Note also the Workflows feature makes it possible to also support this conditional creation use
-case in managed dependent resources.
+You can see a commented example of how to do
+so [here](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStandaloneDependentsReconciler.java).
 
 ## Creating/Updating Kubernetes Resources
 
@@ -352,17 +264,17 @@ Since SSA is a complex feature, JOSDK implements a feature flag allowing users t
 these implementations. See
 in [ConfigurationService](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L332-L358).
 
-It is, however, important to note that these implementations are default, generic 
-implementations that the framework can provide expected behavior out of the box. In many 
-situations, these will work just fine but it is also possible to provide matching algorithms 
+It is, however, important to note that these implementations are default, generic
+implementations that the framework can provide expected behavior out of the box. In many
+situations, these will work just fine but it is also possible to provide matching algorithms
 optimized for specific use cases. This is easily done by simply overriding
-the `match(...)` [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/e16559fd41bbb8bef6ce9d1f47bffa212a941b09/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L156-L156). 
+the `match(...)` [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/e16559fd41bbb8bef6ce9d1f47bffa212a941b09/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L156-L156).
 
-It is also possible to bypass the matching logic altogether to simply rely on the server-side 
+It is also possible to bypass the matching logic altogether to simply rely on the server-side
 apply mechanism if always sending potentially unchanged resources to the cluster is not an issue.
 JOSDK's matching mechanism allows to spare some potentially useless calls to the Kubernetes API
-server. To bypass the matching feature completely, simply override the `match` method to always 
-return `false`, thus telling JOSDK that the actual state never matches the desired one, making 
+server. To bypass the matching feature completely, simply override the `match` method to always
+return `false`, thus telling JOSDK that the actual state never matches the desired one, making
 it always update the resources using SSA.
 
 WARNING: Older versions of Kubernetes before 1.25 would create an additional resource version for every SSA update
@@ -484,15 +396,18 @@ also be created, one per dependent resource.
 See [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/ExternalStateBulkIT.java)
 as a sample.
 
-
 ## GenericKubernetesResource based Dependent Resources
 
-In rare circumstances resource handling where there is no class representation or just typeless handling might be needed.
-Fabric8 Client provides [GenericKubernetesResource](https://github.com/fabric8io/kubernetes-client/blob/main/doc/CHEATSHEET.md#resource-typeless-api)
-to support that. 
+In rare circumstances resource handling where there is no class representation or just typeless handling might be
+needed.
+Fabric8 Client
+provides [GenericKubernetesResource](https://github.com/fabric8io/kubernetes-client/blob/main/doc/CHEATSHEET.md#resource-typeless-api)
+to support that.
 
-For dependent resource this is supported by [GenericKubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/GenericKubernetesDependentResource.java#L8-L8)
-. See samples [here](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/generickubernetesresource).
+For dependent resource this is supported
+by [GenericKubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/GenericKubernetesDependentResource.java#L8-L8)
+. See
+samples [here](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/generickubernetesresource).
 
 ## Other Dependent Resource Features
 
