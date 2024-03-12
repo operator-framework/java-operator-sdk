@@ -22,8 +22,7 @@ import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametyp
 @ControllerConfiguration
 public class MultipleManagedDependentResourceReconciler
     implements Reconciler<MultipleManagedDependentResourceCustomResource>,
-    TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleManagedDependentResourceCustomResource> {
+    TestExecutionInfoProvider {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
   public static final String DATA_KEY = "key";
