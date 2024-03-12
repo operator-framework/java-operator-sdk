@@ -11,8 +11,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class DependentSSAReconciler
-    implements Reconciler<DependentSSACustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<DependentSSACustomResource> {
+    implements Reconciler<DependentSSACustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -55,7 +54,7 @@ public class DependentSSAReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<DependentSSACustomResource> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
+    return EventSourceUtils.nameEventSourcesFromDependentResource(context,
         ssaConfigMapDependent);
   }
 }
