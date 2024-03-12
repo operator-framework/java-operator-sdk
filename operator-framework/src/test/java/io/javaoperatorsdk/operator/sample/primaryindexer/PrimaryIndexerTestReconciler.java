@@ -7,15 +7,14 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
 public class PrimaryIndexerTestReconciler
-    extends AbstractPrimaryIndexerTestReconciler implements
-    EventSourceInitializer<PrimaryIndexerTestCustomResource> {
+    extends AbstractPrimaryIndexerTestReconciler {
 
   @Override
   public Map<String, EventSource> prepareEventSources(
@@ -36,7 +35,7 @@ public class PrimaryIndexerTestReconciler
                     .collect(Collectors.toSet()))
             .build();
 
-    return EventSourceInitializer
+    return EventSourceUtils
         .nameEventSources(new InformerEventSource<>(informerConfiguration, context));
   }
 }
