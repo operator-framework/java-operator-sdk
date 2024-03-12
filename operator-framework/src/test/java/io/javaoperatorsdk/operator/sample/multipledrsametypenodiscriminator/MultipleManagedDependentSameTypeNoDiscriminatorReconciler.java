@@ -13,16 +13,16 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 
-@ControllerConfiguration(dependents = {
+@Workflow(dependents = {
     @Dependent(type = MultipleManagedDependentNoDiscriminatorConfigMap1.class,
         useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
     @Dependent(type = MultipleManagedDependentNoDiscriminatorConfigMap2.class,
         useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
 })
+@ControllerConfiguration
 public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
     implements Reconciler<MultipleManagedDependentNoDiscriminatorCustomResource>,
-    TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleManagedDependentNoDiscriminatorCustomResource> {
+    TestExecutionInfoProvider {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
   public static final String DATA_KEY = "key";

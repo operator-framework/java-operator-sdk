@@ -14,8 +14,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration
 public class MultipleDependentResourceWithDiscriminatorReconciler
     implements Reconciler<MultipleDependentResourceCustomResourceWithDiscriminator>,
-    TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleDependentResourceCustomResourceWithDiscriminator> {
+    TestExecutionInfoProvider {
 
   public static final int FIRST_CONFIG_MAP_ID = 1;
   public static final int SECOND_CONFIG_MAP_ID = 2;
@@ -64,6 +63,6 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
     firstDependentResourceConfigMap.configureWith(eventSource);
     secondDependentResourceConfigMap.configureWith(eventSource);
 
-    return EventSourceInitializer.nameEventSources(eventSource);
+    return EventSourceUtils.nameEventSources(eventSource);
   }
 }
