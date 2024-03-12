@@ -15,7 +15,6 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration
 public class ExternalStateBulkDependentReconciler
     implements Reconciler<ExternalStateBulkDependentCustomResource>,
-    EventSourceInitializer<ExternalStateBulkDependentCustomResource>,
     TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -38,7 +37,7 @@ public class ExternalStateBulkDependentReconciler
       EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
         InformerConfiguration.from(ConfigMap.class, context).build(), context);
-    return EventSourceInitializer.nameEventSources(configMapEventSource);
+    return EventSourceUtils.nameEventSources(configMapEventSource);
   }
 
 }

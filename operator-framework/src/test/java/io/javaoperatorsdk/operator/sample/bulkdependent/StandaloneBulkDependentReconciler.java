@@ -9,8 +9,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class StandaloneBulkDependentReconciler
-    implements Reconciler<BulkDependentTestCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<BulkDependentTestCustomResource> {
+    implements Reconciler<BulkDependentTestCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -38,7 +37,7 @@ public class StandaloneBulkDependentReconciler
   @Override
   public Map<String, EventSource> prepareEventSources(
       EventSourceContext<BulkDependentTestCustomResource> context) {
-    return EventSourceInitializer
+    return EventSourceUtils
         .nameEventSources(dependent.initEventSource(context));
   }
 }

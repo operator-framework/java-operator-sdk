@@ -31,8 +31,7 @@ import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDepende
         readyPostcondition = StatefulSetReadyCondition.class),
 })
 @ControllerConfiguration(name = "project-operator")
-public class ComplexDependentReconciler implements Reconciler<ComplexDependentCustomResource>,
-    EventSourceInitializer<ComplexDependentCustomResource> {
+public class ComplexDependentReconciler implements Reconciler<ComplexDependentCustomResource> {
 
   public static final String SERVICE_EVENT_SOURCE_NAME = "serviceEventSource";
   public static final String STATEFUL_SET_EVENT_SOURCE_NAME = "statefulSetEventSource";
