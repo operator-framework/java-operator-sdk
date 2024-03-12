@@ -48,7 +48,7 @@ class StatusPatchNotLockingIT {
 
   // see https://github.com/fabric8io/kubernetes-client/issues/4158
   @Test
-  void valuesAreDeletedIfSetToNull() throws InterruptedException {
+  void valuesAreDeletedIfSetToNull() {
     var resource = operator.create(createResource());
 
     await().untilAsserted(() -> {
