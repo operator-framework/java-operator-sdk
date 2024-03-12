@@ -6,8 +6,9 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
 /**
- * Creates an event source to trigger your reconciler. EventSource is generalized concept of
- * Informer to cover also external resources.
+ * Creates an event source to trigger your reconciler whenever something happens to a secondary or
+ * external resource that should cause a reconciliation of the primary resource. EventSource
+ * generalizes the concept of Informers and extends it to external (i.e. non Kubernetes) resources.
  */
 public interface EventSource extends LifecycleAware, EventSourceHealthIndicator {
 
