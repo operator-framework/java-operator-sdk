@@ -9,12 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -25,8 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
  */
 @ControllerConfiguration
 public class InformerEventSourceTestCustomReconciler
-    implements Reconciler<InformerEventSourceTestCustomResource>,
-    EventSourceInitializer<InformerEventSourceTestCustomResource> {
+    implements Reconciler<InformerEventSourceTestCustomResource> {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(InformerEventSourceTestCustomReconciler.class);
@@ -46,7 +40,7 @@ public class InformerEventSourceTestCustomReconciler
             .withSecondaryToPrimaryMapper(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
             .build();
 
-    return EventSourceInitializer
+    return EventSourceUtils
         .nameEventSources(new InformerEventSource<>(config, context));
   }
 

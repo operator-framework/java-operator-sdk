@@ -26,8 +26,7 @@ import static io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependen
 @ControllerConfiguration()
 public class MultipleManagedExternalDependentResourceReconciler
     implements Reconciler<MultipleManagedExternalDependentResourceCustomResource>,
-    TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleManagedExternalDependentResourceCustomResource> {
+    TestExecutionInfoProvider {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
   protected ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
