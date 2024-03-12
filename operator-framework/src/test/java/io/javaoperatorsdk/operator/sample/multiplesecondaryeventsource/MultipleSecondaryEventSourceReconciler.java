@@ -16,8 +16,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class MultipleSecondaryEventSourceReconciler
-    implements Reconciler<MultipleSecondaryEventSourceCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleSecondaryEventSourceCustomResource> {
+    implements Reconciler<MultipleSecondaryEventSourceCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -76,7 +75,7 @@ public class MultipleSecondaryEventSourceReconciler
         }).build();
     InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource> configMapEventSource =
         new InformerEventSource<>(config, context);
-    return EventSourceInitializer.nameEventSources(configMapEventSource);
+    return EventSourceUtils.nameEventSources(configMapEventSource);
   }
 
   ConfigMap configMap(String name, MultipleSecondaryEventSourceCustomResource resource) {
