@@ -33,11 +33,8 @@ public class Utils {
    * via the {@code git-commit-id-plugin} maven plugin.
    *
    * @return a {@link Version} object encapsulating the version information
-   * @deprecated use {@link #VERSION} instead, as this method will be made internal in a future
-   *             release
    */
-  @Deprecated
-  public static Version loadFromProperties() {
+  private static Version loadFromProperties() {
     final var is =
         Thread.currentThread().getContextClassLoader().getResourceAsStream("version.properties");
 
@@ -79,9 +76,8 @@ public class Utils {
         throw new IllegalArgumentException(
             "Default value for " + description + " must be greater than " + minValue);
       }
-      log.warn("Requested " + description + " should be greater than " + minValue + ". Requested: "
-          + value + ", using " + defaultValue + (defaultValue == minValue ? "" : " (default)") +
-          " instead");
+      log.warn("Requested {} should be greater than {}. Requested: {}, using {}{} instead",
+          description, minValue, value, defaultValue, defaultValue == minValue ? "" : " (default)");
       value = defaultValue;
     }
     return value;
