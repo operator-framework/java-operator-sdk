@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -292,6 +293,29 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (primaryNamespaces != null) {
       annotations.put(namespaceKey, primary.getMetadata().getNamespace());
     }
+  }
+
+  @Override
+  protected Optional<R> selectManagedSecondaryResource(Set<R> secondaryResources, P primary,
+      Context<P> context) {
+    ResourceID managedResourceID = managedSecondaryResourceID(primary, context);
+    return secondaryResources.stream()
+        .filter(r -> r.getMetadata().getName().equals(managedResourceID.getName()) &&
+            Objects.equals(r.getMetadata().getNamespace(),
+                managedResourceID.getNamespace().orElse(null)))
+        .findFirst();
+  }
+
+  /**
+   * Override this method in order to optimize and not compute the desired when selecting the target
+   * secondary resource. Simply, a static ResourceID can be returned.
+   *
+   * @param primary resource
+   * @param context of current reconciliation
+   * @return id of the target managed resource
+   */
+  protected ResourceID managedSecondaryResourceID(P primary, Context<P> context) {
+    return ResourceID.fromResource(desired(primary, context));
   }
 
   protected boolean addOwnerReference() {
