@@ -3,15 +3,30 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 @SuppressWarnings("rawtypes")
-public class DefaultManagedDependentResourceContext implements ManagedDependentResourceContext {
+public class DefaultManagedDependentResourceContext<P extends HasMetadata>
+    implements ManagedDependentResourceContext {
 
+  private final ConcurrentHashMap attributes = new ConcurrentHashMap();
+  private final Controller<P> controller;
+  private final P primaryResource;
+  private final Context<P> context;
   private WorkflowReconcileResult workflowReconcileResult;
   private WorkflowCleanupResult workflowCleanupResult;
-  private final ConcurrentHashMap attributes = new ConcurrentHashMap();
+
+  public DefaultManagedDependentResourceContext(Controller<P> controller,
+      P primaryResource,
+      Context<P> context) {
+    this.controller = controller;
+    this.primaryResource = primaryResource;
+    this.context = context;
+  }
 
   @Override
   public <T> Optional<T> get(Object key, Class<T> expectedType) {
@@ -58,4 +73,10 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
   public WorkflowCleanupResult getWorkflowCleanupResult() {
     return workflowCleanupResult;
   }
+
+  @Override
+  public void invokeWorkflow() {
+    controller.invokeManagedWorkflow(primaryResource, context);
+  }
+
 }

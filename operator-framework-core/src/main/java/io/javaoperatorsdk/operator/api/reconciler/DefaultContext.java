@@ -21,14 +21,15 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final Controller<P> controller;
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
-  private final DefaultManagedDependentResourceContext defaultManagedDependentResourceContext;
+  private final DefaultManagedDependentResourceContext<P> defaultManagedDependentResourceContext;
 
   public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
     this.retryInfo = retryInfo;
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
-    this.defaultManagedDependentResourceContext = new DefaultManagedDependentResourceContext();
+    this.defaultManagedDependentResourceContext =
+        new DefaultManagedDependentResourceContext<>(controller, primaryResource, this);
   }
 
   @Override

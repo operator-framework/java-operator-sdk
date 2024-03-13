@@ -55,4 +55,7 @@ public interface ManagedDependentResourceContext {
   WorkflowReconcileResult getWorkflowReconcileResult();
 
   WorkflowCleanupResult getWorkflowCleanupResult();
+
+  void invokeWorkflow();
+
 }

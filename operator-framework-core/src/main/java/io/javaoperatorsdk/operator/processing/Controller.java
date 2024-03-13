@@ -130,12 +130,11 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            if (!managedWorkflow.isEmpty()) {
-              var res = managedWorkflow.reconcile(resource, context);
-              ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
-                  .setWorkflowExecutionResult(res);
-              res.throwAggregateExceptionIfErrorsPresent();
-            }
+            configuration.getWorkflowSpec().ifPresent(ws -> {
+              if (!ws.isExplicitInvocation()) {
+                invokeManagedWorkflow(resource, context);
+              }
+            });
             return reconciler.reconcile(resource, context);
           }
         });
@@ -428,5 +427,14 @@ public class Controller<P extends HasMetadata>
 
   public EventSourceContext<P> eventSourceContext() {
     return eventSourceContext;
+  }
+
+  public void invokeManagedWorkflow(P primary, Context<P> context) {
+    if (!managedWorkflow.isEmpty()) {
+      var res = managedWorkflow.reconcile(primary, context);
+      ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
+          .setWorkflowExecutionResult(res);
+      res.throwAggregateExceptionIfErrorsPresent();
+    }
   }
 }
