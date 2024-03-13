@@ -13,12 +13,13 @@ import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestCusto
 import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.primaryindexer.PrimaryIndexerTestReconciler;
 
+import static io.javaoperatorsdk.operator.sample.primaryindexer.AbstractPrimaryIndexerTestReconciler.CONFIG_MAP_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 class PrimaryIndexerIT {
 
-  public static final String CONFIG_MAP_NAME = "common-config-map";
+
   public static final String RESOURCE_NAME1 = "test1";
   public static final String RESOURCE_NAME2 = "test2";
 
