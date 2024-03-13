@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,8 +125,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected Optional<R> selectManagedSecondaryResource(Set<R> secondaryResources, P primary,
       Context<P> context) {
     R desired = desired(primary, context);
-    var targetResources =
-        secondaryResources.stream().filter(r -> r.equals(desired)).collect(Collectors.toList());
+    var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
           "More than one secondary resource related to primary: " + targetResources);
