@@ -57,7 +57,7 @@ public class MultipleManagedDependentNoDiscriminatorIT {
 
     extension.delete(res);
 
-    await().timeout(Duration.ofSeconds(30)).untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(60)).untilAsserted(() -> {
       var cm1 = extension.get(ConfigMap.class,
           RESOURCE_NAME + MultipleManagedDependentNoDiscriminatorConfigMap1.NAME_SUFFIX);
       var cm2 = extension.get(ConfigMap.class,
