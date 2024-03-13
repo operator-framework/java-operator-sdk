@@ -21,7 +21,7 @@ public class UnmodifiablePartConfigMapDependent
   @Override
   protected ConfigMap desired(UnmodifiableDependentPartCustomResource primary,
       Context<UnmodifiableDependentPartCustomResource> context) {
-    var actual = getSecondaryResource(primary, context);
+    var actual = context.getSecondaryResource(ConfigMap.class);
     ConfigMap res = new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withName(primary.getMetadata().getName())
