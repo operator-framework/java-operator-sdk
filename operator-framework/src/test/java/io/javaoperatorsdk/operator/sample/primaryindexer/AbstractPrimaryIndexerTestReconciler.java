@@ -15,6 +15,8 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 public class AbstractPrimaryIndexerTestReconciler implements
     Reconciler<PrimaryIndexerTestCustomResource> {
 
+  public static final String CONFIG_MAP_NAME = "common-config-map";
+
   private final Map<String, AtomicInteger> numberOfExecutions = new ConcurrentHashMap<>();
 
   protected static final String CONFIG_MAP_RELATION_INDEXER = "cm-indexer";
