@@ -28,7 +28,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
 
   private final Controller<T> controller;
-  private final ResourceEventFilter<T> legacyFilters;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerResourceEventSource(Controller<T> controller) {
@@ -41,8 +40,6 @@ public class ControllerResourceEventSource<T extends HasMetadata>
             config.getFinalizerName())
             .or(onUpdateGenerationAware(config.isGenerationAware()))
             .or(onUpdateMarkedForDeletion());
-
-    legacyFilters = config.getEventFilter();
 
     // by default the on add should be processed in all cases regarding internal filters
     config.onAddFilter().ifPresent(this::setOnAddFilter);
@@ -74,9 +71,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if ((legacyFilters == null ||
-          legacyFilters.acceptChange(controller, oldResource, resource))
-          && isAcceptedByFilters(action, resource, oldResource)) {
+      if (isAcceptedByFilters(action, resource, oldResource)) {
         getEventHandler().handleEvent(
             new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {

@@ -15,8 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration
 public class CreateUpdateEventFilterTestReconciler
-    implements Reconciler<CreateUpdateEventFilterTestCustomResource>,
-    EventSourceInitializer<CreateUpdateEventFilterTestCustomResource> {
+    implements Reconciler<CreateUpdateEventFilterTestCustomResource> {
 
   private static final class DirectConfigMapDependentResource
       extends
@@ -97,7 +96,7 @@ public class CreateUpdateEventFilterTestReconciler
     informerEventSource = new InformerEventSource<>(informerConfiguration, context.getClient());
     this.configMapDR.setEventSource(informerEventSource);
 
-    return EventSourceInitializer.nameEventSources(informerEventSource);
+    return EventSourceUtils.nameEventSources(informerEventSource);
   }
 
   public int getNumberOfExecutions() {

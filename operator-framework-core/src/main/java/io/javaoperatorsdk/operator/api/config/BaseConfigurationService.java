@@ -19,14 +19,14 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -99,6 +99,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   protected <P extends HasMetadata> ControllerConfiguration<P> configFor(Reconciler<P> reconciler) {
     final var annotation = reconciler.getClass().getAnnotation(
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class);
+
     if (annotation == null) {
       throw new OperatorException(
           "Missing mandatory @"
@@ -163,49 +164,26 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         Utils.instantiate(annotation.itemStore(), ItemStore.class, context), dependentFieldManager,
         this, informerListLimit);
 
-    ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
-    config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());
 
-    List<DependentResourceSpec> specs = dependentResources(annotation, config);
-    config.setDependentResources(specs);
+    final var workflowAnnotation = reconciler.getClass().getAnnotation(
+        io.javaoperatorsdk.operator.api.reconciler.Workflow.class);
+    if (workflowAnnotation != null) {
+      List<DependentResourceSpec> specs = dependentResources(workflowAnnotation, config);
+      WorkflowSpec workflowSpec = new WorkflowSpec(specs);
+      config.setWorkflowSpec(workflowSpec);
+    }
 
     return config;
   }
 
-  @SuppressWarnings("unchecked")
-  private static <P extends HasMetadata> ResourceEventFilter<P> deprecatedEventFilter(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation) {
-    ResourceEventFilter<P> answer = null;
-
-    Class<ResourceEventFilter<P>>[] filterTypes =
-        (Class<ResourceEventFilter<P>>[]) valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::eventFilters,
-            new Object[] {});
-    for (var filterType : filterTypes) {
-      try {
-        ResourceEventFilter<P> filter = filterType.getConstructor().newInstance();
-
-        if (answer == null) {
-          answer = filter;
-        } else {
-          answer = answer.and(filter);
-        }
-      } catch (Exception e) {
-        throw new IllegalArgumentException(e);
-      }
-    }
-    return answer;
-  }
-
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static List<DependentResourceSpec> dependentResources(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation,
+      Workflow annotation,
       ControllerConfiguration<?> parent) {
-    final var dependents =
-        valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::dependents,
-            new Dependent[] {});
-    if (dependents.length == 0) {
+    final var dependents = annotation.dependents();
+
+
+    if (dependents == null || dependents.length == 0) {
       return Collections.emptyList();
     }
 

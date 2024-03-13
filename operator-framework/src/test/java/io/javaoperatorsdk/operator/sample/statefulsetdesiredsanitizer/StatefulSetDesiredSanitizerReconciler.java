@@ -1,13 +1,10 @@
 package io.javaoperatorsdk.operator.sample.statefulsetdesiredsanitizer;
 
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(
-    dependents = {@Dependent(type = StatefulSetDesiredSanitizerDependentResource.class)})
+@Workflow(dependents = {@Dependent(type = StatefulSetDesiredSanitizerDependentResource.class)})
+@ControllerConfiguration
 public class StatefulSetDesiredSanitizerReconciler
     implements Reconciler<StatefulSetDesiredSanitizerCustomResource> {
 

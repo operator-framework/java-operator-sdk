@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -150,7 +150,7 @@ public class EventSourceManager<P extends HasMetadata>
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
       if (name == null || name.isBlank()) {
-        name = EventSourceInitializer.generateNameFor(eventSource);
+        name = EventSourceUtils.generateNameFor(eventSource);
       }
       if (eventSource instanceof ManagedInformerEventSource) {
         var managedInformerEventSource = ((ManagedInformerEventSource) eventSource);

@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickube
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@ControllerConfiguration(
-    dependents = {@Dependent(type = ConfigMapGenericKubernetesDependent.class)})
+@Workflow(dependents = {@Dependent(type = ConfigMapGenericKubernetesDependent.class)})
+@ControllerConfiguration
 public class GenericKubernetesDependentManagedReconciler
     implements Reconciler<GenericKubernetesDependentManagedCustomResource> {
 

@@ -122,7 +122,7 @@ page sample):
 @ControllerConfiguration(
     labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 public class WebPageDependentsWorkflowReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
   private static final Logger log =
@@ -147,7 +147,7 @@ public class WebPageDependentsWorkflowReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceInitializer.nameEventSources(
+    return EventSourceUtils.nameEventSources(
         configMapDR.initEventSource(context),
         deploymentDR.initEventSource(context),
         serviceDR.initEventSource(context),

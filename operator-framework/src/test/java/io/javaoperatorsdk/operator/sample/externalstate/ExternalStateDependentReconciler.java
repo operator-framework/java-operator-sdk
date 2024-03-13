@@ -11,11 +11,10 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(
-    dependents = @Dependent(type = ExternalWithStateDependentResource.class))
+@Workflow(dependents = @Dependent(type = ExternalWithStateDependentResource.class))
+@ControllerConfiguration
 public class ExternalStateDependentReconciler
     implements Reconciler<ExternalStateCustomResource>,
-    EventSourceInitializer<ExternalStateCustomResource>,
     TestExecutionInfoProvider {
 
   public static final String ID_KEY = "id";
@@ -39,7 +38,7 @@ public class ExternalStateDependentReconciler
       EventSourceContext<ExternalStateCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
         InformerConfiguration.from(ConfigMap.class, context).build(), context);
-    return EventSourceInitializer.nameEventSources(configMapEventSource);
+    return EventSourceUtils.nameEventSources(configMapEventSource);
   }
 
 }

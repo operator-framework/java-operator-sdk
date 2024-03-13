@@ -20,10 +20,9 @@ import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration()
+@ControllerConfiguration
 public class ExternalStateReconciler
     implements Reconciler<ExternalStateCustomResource>, Cleaner<ExternalStateCustomResource>,
-    EventSourceInitializer<ExternalStateCustomResource>,
     TestExecutionInfoProvider {
 
   public static final String ID_KEY = "id";
@@ -116,7 +115,7 @@ public class ExternalStateReconciler
       return externalResource.map(Set::of).orElseGet(Collections::emptySet);
     }, context, Duration.ofMillis(300L), ExternalResource.class);
 
-    return EventSourceInitializer.nameEventSources(configMapEventSource,
+    return EventSourceUtils.nameEventSources(configMapEventSource,
         externalResourceEventSource);
   }
 }

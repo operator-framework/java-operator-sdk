@@ -41,7 +41,7 @@ public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
 
   @Override
   public boolean matches(R actual, R desired, Context<?> context) {
-    return GenericKubernetesResourceMatcher.match(desired, actual, true,
+    return GenericKubernetesResourceMatcher.match(desired, actual,
         false, false, context).matched();
   }
 

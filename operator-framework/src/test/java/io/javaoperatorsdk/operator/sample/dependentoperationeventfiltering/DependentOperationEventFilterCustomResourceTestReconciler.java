@@ -6,11 +6,10 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(
-    namespaces = Constants.WATCH_CURRENT_NAMESPACE,
-    dependents = {
-        @Dependent(type = ConfigMapDependentResource.class),
-    })
+@Workflow(dependents = {
+    @Dependent(type = ConfigMapDependentResource.class)
+})
+@ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE)
 public class DependentOperationEventFilterCustomResourceTestReconciler
     implements Reconciler<DependentOperationEventFilterCustomResource>,
     TestExecutionInfoProvider {

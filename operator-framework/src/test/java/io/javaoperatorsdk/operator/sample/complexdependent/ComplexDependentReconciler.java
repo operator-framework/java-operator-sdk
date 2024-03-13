@@ -15,25 +15,23 @@ import io.javaoperatorsdk.operator.sample.complexdependent.dependent.*;
 import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.SERVICE_EVENT_SOURCE_NAME;
 import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.STATEFUL_SET_EVENT_SOURCE_NAME;
 
-@ControllerConfiguration(
-    name = "project-operator",
-    dependents = {
-        @Dependent(name = "first-svc", type = FirstService.class,
-            useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
-        @Dependent(name = "second-svc", type = SecondService.class,
-            useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
-        @Dependent(name = "first", type = FirstStatefulSet.class,
-            useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
-            dependsOn = {"first-svc"},
-            readyPostcondition = StatefulSetReadyCondition.class),
-        @Dependent(name = "second",
-            type = SecondStatefulSet.class,
-            useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
-            dependsOn = {"second-svc", "first"},
-            readyPostcondition = StatefulSetReadyCondition.class),
-    })
-public class ComplexDependentReconciler implements Reconciler<ComplexDependentCustomResource>,
-    EventSourceInitializer<ComplexDependentCustomResource> {
+@Workflow(dependents = {
+    @Dependent(name = "first-svc", type = FirstService.class,
+        useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
+    @Dependent(name = "second-svc", type = SecondService.class,
+        useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
+    @Dependent(name = "first", type = FirstStatefulSet.class,
+        useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
+        dependsOn = {"first-svc"},
+        readyPostcondition = StatefulSetReadyCondition.class),
+    @Dependent(name = "second",
+        type = SecondStatefulSet.class,
+        useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
+        dependsOn = {"second-svc", "first"},
+        readyPostcondition = StatefulSetReadyCondition.class),
+})
+@ControllerConfiguration(name = "project-operator")
+public class ComplexDependentReconciler implements Reconciler<ComplexDependentCustomResource> {
 
   public static final String SERVICE_EVENT_SOURCE_NAME = "serviceEventSource";
   public static final String STATEFUL_SET_EVENT_SOURCE_NAME = "statefulSetEventSource";
@@ -43,7 +41,7 @@ public class ComplexDependentReconciler implements Reconciler<ComplexDependentCu
       ComplexDependentCustomResource resource,
       Context<ComplexDependentCustomResource> context) throws Exception {
     var ready = context.managedDependentResourceContext().getWorkflowReconcileResult()
-        .orElseThrow().allDependentResourcesReady();
+        .allDependentResourcesReady();
 
     var status = Objects.requireNonNullElseGet(resource.getStatus(), ComplexDependentStatus::new);
     status.setStatus(ready ? RECONCILE_STATUS.READY : RECONCILE_STATUS.NOT_READY);

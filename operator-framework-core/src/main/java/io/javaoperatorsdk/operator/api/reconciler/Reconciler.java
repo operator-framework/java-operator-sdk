@@ -1,8 +1,11 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import java.util.*;
 
-public interface Reconciler<R extends HasMetadata> {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+
+public interface Reconciler<P extends HasMetadata> {
 
   /**
    * The implementation of this operation is required to be idempotent. Always use the UpdateControl
@@ -14,6 +17,19 @@ public interface Reconciler<R extends HasMetadata> {
    * @return UpdateControl to manage updates on the custom resource (usually the status) after
    *         reconciliation.
    */
-  UpdateControl<R> reconcile(R resource, Context<R> context) throws Exception;
+  UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception;
+
+
+  /**
+   * Prepares a map of {@link EventSource} implementations keyed by the name with which they need to
+   * be registered by the SDK.
+   *
+   * @param context a {@link EventSourceContext} providing access to information useful to event
+   *        sources
+   * @return a map of event sources to register
+   */
+  default Map<String, EventSource> prepareEventSources(EventSourceContext<P> context) {
+    return Map.of();
+  }
 
 }

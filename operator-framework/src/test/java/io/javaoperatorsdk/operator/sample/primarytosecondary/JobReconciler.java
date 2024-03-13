@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
  */
 @ControllerConfiguration()
 public class JobReconciler
-    implements Reconciler<Job>, EventSourceInitializer<Job>, ErrorStatusHandler<Job> {
+    implements Reconciler<Job>, ErrorStatusHandler<Job> {
 
   private static final String JOB_CLUSTER_INDEX = "job-cluster-index";
 
@@ -79,7 +79,7 @@ public class JobReconciler
               primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
     }
 
-    return EventSourceInitializer
+    return EventSourceUtils
         .nameEventSources(new InformerEventSource<>(informerConfiguration.build(), context));
   }
 

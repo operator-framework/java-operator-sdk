@@ -12,8 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration(onUpdateFilter = UpdateFilter.class)
 public class FilterTestReconciler
-    implements Reconciler<FilterTestCustomResource>,
-    EventSourceInitializer<FilterTestCustomResource> {
+    implements Reconciler<FilterTestCustomResource> {
 
   public static final String CONFIG_MAP_FILTER_VALUE = "config_map_skip_this";
   public static final String CUSTOM_RESOURCE_FILTER_VALUE = "custom_resource_skip_this";
@@ -59,6 +58,6 @@ public class FilterTestReconciler
                 .equals(CONFIG_MAP_FILTER_VALUE))
             .build(), context);
 
-    return EventSourceInitializer.nameEventSources(configMapES);
+    return EventSourceUtils.nameEventSources(configMapES);
   }
 }

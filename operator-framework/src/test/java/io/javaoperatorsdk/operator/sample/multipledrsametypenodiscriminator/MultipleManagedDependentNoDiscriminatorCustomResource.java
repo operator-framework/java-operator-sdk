@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.customfilter;
+package io.javaoperatorsdk.operator.sample.multipledrsametypenodiscriminator;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -8,8 +8,9 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@ShortNames("cft")
-public class CustomFilteringTestResource
-    extends CustomResource<CustomFilteringTestResourceSpec, Void>
+@ShortNames("mnd")
+public class MultipleManagedDependentNoDiscriminatorCustomResource
+    extends CustomResource<MultipleManagedDependentNoDiscriminatorSpec, Void>
     implements Namespaced {
+
 }

@@ -7,19 +7,13 @@
     <parent>
         <groupId>io.javaoperatorsdk</groupId>
         <artifactId>sample-operators</artifactId>
-        <version>4.8.1-SNAPSHOT</version>
+        <version>5.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>sample-webpage-operator</artifactId>
     <name>Operator SDK - Samples - WebPage</name>
     <description>Provisions an nginx Webserver based on a CRD with give html</description>
     <packaging>jar</packaging>
-
-    <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
-    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -71,7 +65,7 @@
                 <version>${jib-maven-plugin.version}</version>
                 <configuration>
                     <from>
-                        <image>gcr.io/distroless/java:11</image>
+                        <image>gcr.io/distroless/java17-debian11</image>
                     </from>
                     <to>
                         <image>webpage-operator</image>

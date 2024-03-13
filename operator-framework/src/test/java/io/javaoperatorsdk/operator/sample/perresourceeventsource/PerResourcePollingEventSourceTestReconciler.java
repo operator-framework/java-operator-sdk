@@ -12,8 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePo
 
 @ControllerConfiguration
 public class PerResourcePollingEventSourceTestReconciler
-    implements Reconciler<PerResourceEventSourceCustomResource>,
-    EventSourceInitializer<PerResourceEventSourceCustomResource> {
+    implements Reconciler<PerResourceEventSourceCustomResource> {
 
   public static final int POLL_PERIOD = 100;
   private final Map<String, Integer> numberOfExecutions = new ConcurrentHashMap<>();
@@ -38,7 +37,7 @@ public class PerResourcePollingEventSourceTestReconciler
           return Set.of(UUID.randomUUID().toString());
         },
             context, Duration.ofMillis(POLL_PERIOD), String.class);
-    return EventSourceInitializer.nameEventSources(eventSource);
+    return EventSourceUtils.nameEventSources(eventSource);
   }
 
   public int getNumberOfExecutions(String name) {

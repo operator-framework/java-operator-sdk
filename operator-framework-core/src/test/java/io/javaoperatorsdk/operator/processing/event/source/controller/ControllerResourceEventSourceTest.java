@@ -11,6 +11,8 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
@@ -152,18 +154,21 @@ class ControllerResourceEventSourceTest extends
   @SuppressWarnings("unchecked")
   private static class TestController extends Controller<TestCustomResource> {
 
+    private static final Reconciler<TestCustomResource> reconciler =
+        (resource, context) -> UpdateControl.noUpdate();
+
     private final EventSourceManager<TestCustomResource> eventSourceManager =
         mock(EventSourceManager.class);
 
     public TestController(OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
         GenericFilter<TestCustomResource> genericFilter) {
-      super(null, new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
+      super(reconciler, new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
     public TestController(boolean generationAware) {
-      super(null, new TestConfiguration(generationAware, null, null, null),
+      super(reconciler, new TestConfiguration(generationAware, null, null, null),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 

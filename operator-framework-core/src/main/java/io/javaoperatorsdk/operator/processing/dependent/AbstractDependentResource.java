@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,13 +12,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @Ignore
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
-    implements DependentResource<R, P> {
+    implements DependentResource<R, P>, NameSetter {
   private static final Logger log = LoggerFactory.getLogger(AbstractDependentResource.class);
 
   private final boolean creatable = this instanceof Creator;
@@ -29,14 +31,21 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private ResourceDiscriminator<R, P> resourceDiscriminator;
   private final DependentResourceReconciler<R, P> dependentResourceReconciler;
 
+  protected String name;
+
   @SuppressWarnings({"unchecked"})
   protected AbstractDependentResource() {
+    this(null);
+  }
+
+  protected AbstractDependentResource(String name) {
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
 
     dependentResourceReconciler = this instanceof BulkDependentResource
         ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
         : new SingleDependentResourceReconciler<>(this);
+    this.name = name == null ? DependentResource.defaultNameFor(this.getClass()) : name;
   }
 
   /**
@@ -89,8 +98,39 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-    return resourceDiscriminator == null ? context.getSecondaryResource(resourceType())
-        : resourceDiscriminator.distinguish(resourceType(), primary, context);
+    if (resourceDiscriminator != null) {
+      return resourceDiscriminator.distinguish(resourceType(), primary, context);
+    } else {
+      var secondaryResources = context.getSecondaryResources(resourceType());
+      if (secondaryResources.isEmpty()) {
+        return Optional.empty();
+      } else {
+        return selectManagedSecondaryResource(secondaryResources, primary, context);
+      }
+    }
+  }
+
+  /**
+   * Selects the actual secondary resource matching the desired state derived from the primary
+   * resource when several resources of the same type are found in the context. This method allows
+   * for optimized implementations in subclasses since this default implementation will check each
+   * secondary candidates for equality with the specified desired state, which might end up costly.
+   *
+   * @param secondaryResources to select the target resource from
+   *
+   * @return the matching secondary resource or {@link Optional#empty()} if none matches
+   * @throws IllegalStateException if more than one candidate is found, in which case some other
+   *         mechanism might be necessary to distinguish between candidate secondary resources
+   */
+  protected Optional<R> selectManagedSecondaryResource(Set<R> secondaryResources, P primary,
+      Context<P> context) {
+    R desired = desired(primary, context);
+    var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
+    if (targetResources.size() > 1) {
+      throw new IllegalStateException(
+          "More than one secondary resource related to primary: " + targetResources);
+    }
+    return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
   }
 
   private void throwIfNull(R desired, P primary, String descriptor) {
@@ -158,8 +198,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         "handleDelete method must be implemented if Deleter trait is supported");
   }
 
-  public void setResourceDiscriminator(
-      ResourceDiscriminator<R, P> resourceDiscriminator) {
+  public void setResourceDiscriminator(ResourceDiscriminator<R, P> resourceDiscriminator) {
     this.resourceDiscriminator = resourceDiscriminator;
   }
 
@@ -175,5 +214,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @Override
   public boolean isDeletable() {
     return deletable;
+  }
+
+  @Override
+  public String name() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 }

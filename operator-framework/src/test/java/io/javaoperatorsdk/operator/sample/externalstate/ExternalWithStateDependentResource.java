@@ -34,14 +34,24 @@ public class ExternalWithStateDependentResource extends
   @SuppressWarnings("unchecked")
   public Set<ExternalResource> fetchResources(
       ExternalStateCustomResource primaryResource) {
-    Optional<ConfigMap> configMapOptional =
-        getExternalStateEventSource().getSecondaryResource(primaryResource);
-
-    return configMapOptional.map(configMap -> {
-      var id = configMap.getData().get(ID_KEY);
+    return getResourceID(primaryResource).map(id -> {
       var externalResource = externalService.read(id);
       return externalResource.map(Set::of).orElseGet(Collections::emptySet);
     }).orElseGet(Collections::emptySet);
+  }
+
+  @Override
+  protected Optional<ExternalResource> selectManagedSecondaryResource(
+      Set<ExternalResource> secondaryResources,
+      ExternalStateCustomResource primary, Context<ExternalStateCustomResource> context) {
+    var id = getResourceID(primary);
+    return id.flatMap(k -> secondaryResources.stream().filter(e -> e.getId().equals(k)).findAny());
+  }
+
+  private Optional<String> getResourceID(ExternalStateCustomResource primaryResource) {
+    Optional<ConfigMap> configMapOptional =
+        getExternalStateEventSource().getSecondaryResource(primaryResource);
+    return configMapOptional.map(cm -> cm.getData().get(ID_KEY));
   }
 
   @Override

@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSe
 import io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler;
 import io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentSpec;
 
+import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.ConfigMapDependent.TEST_CONFIG_MAP_NAME;
 import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.ConfigMapReconcilePrecondition.DO_NOT_RECONCILE;
 import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,7 +22,7 @@ import static org.awaitility.Awaitility.await;
 
 class PrimaryToSecondaryDependentIT {
 
-  public static final String TEST_CONFIG_MAP_NAME = "testconfigmap";
+
   public static final String TEST_CR_NAME = "test1";
   public static final String TEST_DATA = "testData";
   public

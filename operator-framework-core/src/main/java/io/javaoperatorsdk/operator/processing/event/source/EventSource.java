@@ -7,10 +7,8 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 
 /**
  * Creates an event source to trigger your reconciler whenever something happens to a secondary or
- * external resource that would not normally trigger your reconciler (as the primary resources are
- * not changed). To register EventSources with so that your reconciler is triggered, please make
- * your reconciler implement
- * {@link io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer}.
+ * external resource that should cause a reconciliation of the primary resource. EventSource
+ * generalizes the concept of Informers and extends it to external (i.e. non Kubernetes) resources.
  */
 public interface EventSource extends LifecycleAware, EventSourceHealthIndicator {
 
