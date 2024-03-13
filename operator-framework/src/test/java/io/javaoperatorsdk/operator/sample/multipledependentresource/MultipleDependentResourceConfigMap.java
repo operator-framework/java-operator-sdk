@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample.multipledependentresource;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -12,9 +11,9 @@ public class MultipleDependentResourceConfigMap
     extends CRUDKubernetesDependentResource<ConfigMap, MultipleDependentResourceCustomResource> {
 
   public static final String DATA_KEY = "key";
-  private final int value;
+  private final String value;
 
-  public MultipleDependentResourceConfigMap(int value) {
+  public MultipleDependentResourceConfigMap(String value) {
     super(ConfigMap.class);
     this.value = value;
   }
@@ -22,15 +21,17 @@ public class MultipleDependentResourceConfigMap
   @Override
   protected ConfigMap desired(MultipleDependentResourceCustomResource primary,
       Context<MultipleDependentResourceCustomResource> context) {
-    Map<String, String> data = new HashMap<>();
-    data.put(DATA_KEY, String.valueOf(value));
 
     return new ConfigMapBuilder()
         .withNewMetadata()
-        .withName(primary.getConfigMapName(value))
+        .withName(getConfigMapName(value))
         .withNamespace(primary.getMetadata().getNamespace())
         .endMetadata()
-        .withData(data)
+        .withData(Map.of(DATA_KEY, primary.getSpec().getValue()))
         .build();
+  }
+
+  public static String getConfigMapName(String id) {
+    return "configmap" + id;
   }
 }
