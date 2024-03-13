@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration()
+@ControllerConfiguration
 public class ExternalStateReconciler
     implements Reconciler<ExternalStateCustomResource>, Cleaner<ExternalStateCustomResource>,
     TestExecutionInfoProvider {
