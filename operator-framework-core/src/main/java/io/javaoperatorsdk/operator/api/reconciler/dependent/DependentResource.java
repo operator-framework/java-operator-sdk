@@ -49,6 +49,16 @@ public interface DependentResource<R, P extends HasMetadata> {
     return Optional.empty();
   }
 
+  /**
+   * Retrieves the secondary resource (if it exists) associated with the specified primary resource
+   * for this DependentResource.
+   *
+   * @param primary the primary resource for which we want to retrieve the secondary resource
+   *        associated with this DependentResource
+   * @param context the current {@link Context} in which the operation is called
+   * @return the secondary resource or {@link Optional#empty()} if it doesn't exist
+   * @throws IllegalStateException if more than one secondary is found to match the primary resource
+   */
   default Optional<R> getSecondaryResource(P primary, Context<P> context) {
     return Optional.empty();
   }
