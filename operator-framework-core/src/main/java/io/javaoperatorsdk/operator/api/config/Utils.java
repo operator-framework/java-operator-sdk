@@ -6,7 +6,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
@@ -57,9 +56,7 @@ public class Utils {
     try {
       String time = properties.getProperty("git.build.time");
       if (time != null) {
-        builtTime =
-            // RFC 822 date is the default format used by git-commit-id-plugin
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(time);
+        builtTime = Date.from(Instant.parse(time));
       } else {
         builtTime = Date.from(Instant.EPOCH);
       }
