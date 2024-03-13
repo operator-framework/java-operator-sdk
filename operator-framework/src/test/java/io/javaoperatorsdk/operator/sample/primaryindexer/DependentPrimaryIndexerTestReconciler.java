@@ -5,6 +5,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -30,6 +33,17 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
 
     public ReadOnlyConfigMapDependent() {
       super(ConfigMap.class);
+    }
+
+    @Override
+    protected ConfigMap desired(PrimaryIndexerTestCustomResource primary,
+        Context<PrimaryIndexerTestCustomResource> context) {
+      return new ConfigMapBuilder()
+          .withMetadata(new ObjectMetaBuilder()
+              .withName(CONFIG_MAP_NAME)
+              .withNamespace(primary.getMetadata().getNamespace())
+              .build())
+          .build();
     }
 
     @Override

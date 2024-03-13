@@ -301,20 +301,31 @@ tests [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/op
 
 When dealing with multiple dependent resources of same type, the dependent resource implementation
 needs to know which specific resource should be targeted when reconciling a given dependent
-resource, since there will be multiple instances of that type which could possibly be used, each
-associated with the same primary resource. In order to do this, JOSDK relies on the
-[resource discriminator](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
-concept. Resource discriminators uniquely identify the target resource of a dependent resource.
-In the managed Kubernetes dependent resources case, the discriminator can be declaratively set
-using the `@KubernetesDependent` annotation:
+resource, since there could be multiple instances of that type which could possibly be used, each
+associated with the same primary resource. In this situation, JOSDK automatically selects the appropriate secondary
+resource matching the desired state associated with the primary resource. This makes sense because the desired
+state computation already needs to be able to discriminate among multiple related secondary resources to tell JOSDK how
+they should be reconciled.
 
-```java
+There might be casees, though, where it might be problematic to call the `desired` method several times (for example, because it is costly to do so), it is always possible to override this automated discrimination using several means:
 
-@KubernetesDependent(resourceDiscriminator = ConfigMap1Discriminator.class)
-public class MultipleManagedDependentResourceConfigMap1 {
-//...
-}
-```
+- Implement your own `getSecondaryResource` method on your `DependentResource` implementation from scratch.
+- Override the `selectManagedSecondaryResource` method, if your `DependentResource` extends `AbstractDependentResource`.
+  This should be relatively simple to override this method to optimize the matching to your needs. You can see an
+  example of such an implementation in
+  the [`ExternalWithStateDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/6cd0f884a7c9b60c81bd2d52da54adbd64d6e118/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/externalstate/ExternalWithStateDependentResource.java#L43-L49)
+  class.
+- Override the `managedSecondaryResourceID` method, if your `DependentResource` extends `KubernetesDependentResource`,
+  where it's very often possible to easily determine the `ResourceID` of the secondary resource. This would probably be
+  the easiest solution if you're working with Kubernetes resources.
+- Configure
+  a [`ResourceDiscriminator`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
+  implementation for your `DependentResource`. This was the approach that was used before JOSDK v5 but should not be
+  needed anymore as it is simpler and more efficient to override one the methods above instead of creating a separate
+  class. Discriminators can be declaratively set when using managed Kubernetes dependent resources via
+  the `resourceDiscriminator` field of the `@KubernetesDependent` annotation.
+
+### Sharing an Event Source Between Dependent Resources
 
 Dependent resources usually also provide event sources. When dealing with multiple dependents of
 the same type, one needs to decide whether these dependent resources should track the same
@@ -330,10 +341,10 @@ would look as follows:
    useEventSourceWithName = "configMapSource")
 ```
 
-A sample is provided as an integration test both
-for [managed](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentSameTypeIT.java)
-and
-for [standalone](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
+A sample is provided as an integration test both:
+for [managed](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentNoDiscriminatorIT.java)
+
+For [standalone](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
 cases.
 
 ## Bulk Dependent Resources
