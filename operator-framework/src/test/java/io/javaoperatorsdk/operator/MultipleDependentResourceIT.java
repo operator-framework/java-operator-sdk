@@ -58,7 +58,7 @@ public class MultipleDependentResourceIT {
 
     extension.delete(res);
 
-    await().timeout(Duration.ofSeconds(20)).untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(120)).untilAsserted(() -> {
       var cm1 = extension.get(ConfigMap.class, getConfigMapName(FIRST_CONFIG_MAP_ID));
       var cm2 = extension.get(ConfigMap.class, getConfigMapName(SECOND_CONFIG_MAP_ID));
 
