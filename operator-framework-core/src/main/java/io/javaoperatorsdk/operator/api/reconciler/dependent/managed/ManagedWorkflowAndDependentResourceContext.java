@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconci
  * Contextual information related to {@link DependentResource} either to retrieve the actual
  * implementations to interact with them or to pass information between them and/or the reconciler
  */
-public interface ManagedDependentResourceContext {
+public interface ManagedWorkflowAndDependentResourceContext {
 
   /**
    * Retrieve a contextual object, if it exists and is of the specified expected type, associated
@@ -56,6 +56,8 @@ public interface ManagedDependentResourceContext {
 
   WorkflowCleanupResult getWorkflowCleanupResult();
 
-  void invokeWorkflow();
+  void reconcileManagedWorkflow();
+
+  void cleanupManageWorkflow();
 
 }

@@ -12,7 +12,6 @@ public @interface Workflow {
 
   Dependent[] dependents();
 
-  // todo maybe better naming? "explicitReconciliation" ?
   /**
    * If true, managed workflow should be explicitly invoked within the reconciler implementation. If
    * false workflow is invoked just before the {@link Reconciler#reconcile(HasMetadata, Context)}

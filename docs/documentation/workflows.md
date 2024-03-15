@@ -338,6 +338,40 @@ and NOT `CRUDKubernetesDependentResource` since otherwise the Kubernetes Garbage
 In other words if a Kubernetes Dependent Resource depends on another dependent resource, it should not implement
 `GargageCollected` interface, otherwise the deletion order won't be guaranteed. 
 
+
+## Explicit Managed Workflow Invocation
+
+Managed workflow is execution before the `reconcile(Resource,Context)` is called. There are certain situations however
+when before the invocation there is additional validation or other logic needs to be executed or in some cases
+event the workflow execution skipped. For this reason managed workflow explicit invocation is possible.
+
+```java
+
+@Workflow(explicitInvocation = true,
+    dependents = @Dependent(type = ConfigMapDependent.class))
+@ControllerConfiguration
+public class WorkflowExplicitInvocationReconciler
+    implements Reconciler<WorkflowExplicitInvocationCustomResource> {
+    
+  @Override
+  public UpdateControl<WorkflowExplicitInvocationCustomResource> reconcile(
+      WorkflowExplicitInvocationCustomResource resource,
+      Context<WorkflowExplicitInvocationCustomResource> context) {
+    
+     // additional logic before the workflow is executed
+      
+     context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
+     
+    return UpdateControl.noUpdate();
+  }
+
+```
+
+For `cleanup`, if the `Cleaner` interface is implemented, the `cleanupManageWorkflow()` needs to be called explicitly.
+However, if `Cleaner` interface is not implemented, it will be called implicitly. 
+
+Nothing prevents calling the workflow multiple times in a reconciler, however it is meant to be called at most once.
+
 ## Notes and Caveats
 
 - Delete is almost always called on every resource during the cleanup. However, it might be the case

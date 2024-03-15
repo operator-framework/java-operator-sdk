@@ -18,13 +18,14 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
@@ -131,8 +132,8 @@ public class Controller<P extends HasMetadata>
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             configuration.getWorkflowSpec().ifPresent(ws -> {
-              if (!ws.isExplicitInvocation()) {
-                invokeManagedWorkflow(resource, context);
+              if (!isWorkflowExplicitInvocation()) {
+                reconcileManagedWorkflow(resource, context);
               }
             });
             return reconciler.reconcile(resource, context);
@@ -174,12 +175,14 @@ public class Controller<P extends HasMetadata>
             public DeleteControl execute() {
               initContextIfNeeded(resource, context);
               WorkflowCleanupResult workflowCleanupResult = null;
-              if (managedWorkflow.hasCleaner()) {
-                workflowCleanupResult = managedWorkflow.cleanup(resource, context);
-                ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
-                    .setWorkflowCleanupResult(workflowCleanupResult);
-                workflowCleanupResult.throwAggregateExceptionIfErrorsPresent();
+
+              // The cleanup is called also when explicit invocation is true, but the cleaner is not
+              // implemented
+              if (!isCleaner
+                  || !isWorkflowExplicitInvocation()) {
+                workflowCleanupResult = cleanupManagedWorkflow(resource, context);
               }
+
               if (isCleaner) {
                 var cleanupResult = ((Cleaner<P>) reconciler).cleanup(resource, context);
                 if (!cleanupResult.isRemoveFinalizer()) {
@@ -429,12 +432,31 @@ public class Controller<P extends HasMetadata>
     return eventSourceContext;
   }
 
-  public void invokeManagedWorkflow(P primary, Context<P> context) {
+  public void reconcileManagedWorkflow(P primary, Context<P> context) {
     if (!managedWorkflow.isEmpty()) {
       var res = managedWorkflow.reconcile(primary, context);
-      ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
+      ((DefaultManagedWorkflowAndDependentResourceContext) context
+          .managedWorkflowAndDependentResourceContext())
           .setWorkflowExecutionResult(res);
       res.throwAggregateExceptionIfErrorsPresent();
     }
+  }
+
+  public WorkflowCleanupResult cleanupManagedWorkflow(P resource, Context<P> context) {
+    if (managedWorkflow.hasCleaner()) {
+      var workflowCleanupResult = managedWorkflow.cleanup(resource, context);
+      ((DefaultManagedWorkflowAndDependentResourceContext) context
+          .managedWorkflowAndDependentResourceContext())
+          .setWorkflowCleanupResult(workflowCleanupResult);
+      workflowCleanupResult.throwAggregateExceptionIfErrorsPresent();
+      return workflowCleanupResult;
+    } else {
+      return null;
+    }
+  }
+
+  public boolean isWorkflowExplicitInvocation() {
+    return configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
+        .orElse(false);
   }
 }

@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanup
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 @SuppressWarnings("rawtypes")
-public class DefaultManagedDependentResourceContext<P extends HasMetadata>
-    implements ManagedDependentResourceContext {
+public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMetadata>
+    implements ManagedWorkflowAndDependentResourceContext {
 
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
   private final Controller<P> controller;
@@ -20,7 +20,7 @@ public class DefaultManagedDependentResourceContext<P extends HasMetadata>
   private WorkflowReconcileResult workflowReconcileResult;
   private WorkflowCleanupResult workflowCleanupResult;
 
-  public DefaultManagedDependentResourceContext(Controller<P> controller,
+  public DefaultManagedWorkflowAndDependentResourceContext(Controller<P> controller,
       P primaryResource,
       Context<P> context) {
     this.controller = controller;
@@ -52,13 +52,13 @@ public class DefaultManagedDependentResourceContext<P extends HasMetadata>
             + ") is missing or not of the expected type"));
   }
 
-  public DefaultManagedDependentResourceContext setWorkflowExecutionResult(
+  public DefaultManagedWorkflowAndDependentResourceContext setWorkflowExecutionResult(
       WorkflowReconcileResult workflowReconcileResult) {
     this.workflowReconcileResult = workflowReconcileResult;
     return this;
   }
 
-  public DefaultManagedDependentResourceContext setWorkflowCleanupResult(
+  public DefaultManagedWorkflowAndDependentResourceContext setWorkflowCleanupResult(
       WorkflowCleanupResult workflowCleanupResult) {
     this.workflowCleanupResult = workflowCleanupResult;
     return this;
@@ -75,8 +75,19 @@ public class DefaultManagedDependentResourceContext<P extends HasMetadata>
   }
 
   @Override
-  public void invokeWorkflow() {
-    controller.invokeManagedWorkflow(primaryResource, context);
+  public void reconcileManagedWorkflow() {
+    if (!controller.isWorkflowExplicitInvocation()) {
+      throw new IllegalStateException("Workflow explicit invocation is not set.");
+    }
+    controller.reconcileManagedWorkflow(primaryResource, context);
+  }
+
+  @Override
+  public void cleanupManageWorkflow() {
+    if (!controller.isWorkflowExplicitInvocation()) {
+      throw new IllegalStateException("Workflow explicit invocation is not set.");
+    }
+    controller.cleanupManagedWorkflow(primaryResource, context);
   }
 
 }

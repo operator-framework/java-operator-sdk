@@ -9,8 +9,8 @@ import java.util.stream.Stream;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -21,7 +21,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final Controller<P> controller;
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
-  private final DefaultManagedDependentResourceContext<P> defaultManagedDependentResourceContext;
+  private final DefaultManagedWorkflowAndDependentResourceContext<P> defaultManagedDependentResourceContext;
 
   public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
     this.retryInfo = retryInfo;
@@ -29,7 +29,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
     this.defaultManagedDependentResourceContext =
-        new DefaultManagedDependentResourceContext<>(controller, primaryResource, this);
+        new DefaultManagedWorkflowAndDependentResourceContext<>(controller, primaryResource, this);
   }
 
   @Override
@@ -80,7 +80,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public ManagedDependentResourceContext managedDependentResourceContext() {
+  public ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext() {
     return defaultManagedDependentResourceContext;
   }
 
