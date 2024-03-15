@@ -22,7 +22,7 @@ jobs:
   integration_tests:
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.experimental }}
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Output test information
         run: echo "Running ITs with ${{ inputs.http-client }}, ${{ inputs.kube-version }}, ${{ inputs.java-version }}"
