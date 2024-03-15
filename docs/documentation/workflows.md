@@ -366,9 +366,12 @@ public class WorkflowExplicitInvocationReconciler
   }
 
 ```
+See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitInvocationIT.java).
+
 
 For `cleanup`, if the `Cleaner` interface is implemented, the `cleanupManageWorkflow()` needs to be called explicitly.
-However, if `Cleaner` interface is not implemented, it will be called implicitly. 
+However, if `Cleaner` interface is not implemented, it will be called implicitly.
+See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitCleanupIT.java).
 
 Nothing prevents calling the workflow multiple times in a reconciler, however it is meant to be called at most once.
 
