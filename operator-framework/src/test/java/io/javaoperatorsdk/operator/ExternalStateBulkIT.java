@@ -4,6 +4,7 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.parallel.Execution;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
@@ -14,7 +15,9 @@ import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
+@Execution(SAME_THREAD)
 class ExternalStateBulkIT {
 
   private static final String TEST_RESOURCE_NAME = "test1";
