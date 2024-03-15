@@ -6,10 +6,10 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
 public class ConfigMapDependent extends
-    CRUDKubernetesDependentResource<ConfigMap, WorkflowExplicitInvocationCustomResource> {
+    CRUDNoGCKubernetesDependentResource<ConfigMap, WorkflowExplicitInvocationCustomResource> {
 
   public ConfigMapDependent() {
     super(ConfigMap.class);
