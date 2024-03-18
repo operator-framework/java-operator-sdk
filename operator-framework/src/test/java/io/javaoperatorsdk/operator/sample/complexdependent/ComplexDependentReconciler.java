@@ -40,7 +40,7 @@ public class ComplexDependentReconciler implements Reconciler<ComplexDependentCu
   public UpdateControl<ComplexDependentCustomResource> reconcile(
       ComplexDependentCustomResource resource,
       Context<ComplexDependentCustomResource> context) throws Exception {
-    var ready = context.managedDependentResourceContext().getWorkflowReconcileResult()
+    var ready = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
         .allDependentResourcesReady();
 
     var status = Objects.requireNonNullElseGet(resource.getStatus(), ComplexDependentStatus::new);
