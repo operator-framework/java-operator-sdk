@@ -341,39 +341,30 @@ In other words if a Kubernetes Dependent Resource depends on another dependent r
 
 ## Explicit Managed Workflow Invocation
 
-Managed workflow is execution before the `reconcile(Resource,Context)` is called. There are certain situations however
-when before the invocation there is additional validation or other logic needs to be executed or in some cases
-event the workflow execution skipped. For this reason managed workflow explicit invocation is possible.
+Managed workflows, i.e. ones that are declared via annotations and therefore completely managed by JOSDK, are reconciled
+before the primary resource. Each dependent resource that can be reconciled (according to the workflow configuration)
+will therefore be reconciled before the primary reconciler is called to reconcile the primary resource. There are,
+however, situations where it would be be useful to perform additional steps before the workflow is reconciled, for
+example to validate the current state, execute arbitrary logic or even skip reconciliation altogether. Explicit
+invocation of managed workflow was therefore introduced to solve these issues.
 
-```java
+To use this feature, you need to set the `explicitInvocation` field to `true` on the `@Workflow` annotation and then
+call the `reconcileManagedWorkflow` method from the `
+ManagedWorkflowAndDependentResourceContext` retrieved from the reconciliation `Context` provided as part of your primary
+resource reconciler `reconcile` method arguments.
 
-@Workflow(explicitInvocation = true,
-    dependents = @Dependent(type = ConfigMapDependent.class))
-@ControllerConfiguration
-public class WorkflowExplicitInvocationReconciler
-    implements Reconciler<WorkflowExplicitInvocationCustomResource> {
-    
-  @Override
-  public UpdateControl<WorkflowExplicitInvocationCustomResource> reconcile(
-      WorkflowExplicitInvocationCustomResource resource,
-      Context<WorkflowExplicitInvocationCustomResource> context) {
-    
-     // additional logic before the workflow is executed
-      
-     context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
-     
-    return UpdateControl.noUpdate();
-  }
-
-```
-See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitInvocationIT.java).
-
+See
+related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitInvocationIT.java)
+for more details.
 
 For `cleanup`, if the `Cleaner` interface is implemented, the `cleanupManageWorkflow()` needs to be called explicitly.
 However, if `Cleaner` interface is not implemented, it will be called implicitly.
-See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitCleanupIT.java).
+See
+related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitCleanupIT.java).
 
-Nothing prevents calling the workflow multiple times in a reconciler, however it is meant to be called at most once.
+While nothing prevents calling the workflow multiple times in a reconciler, it isn't typical or even recommended to do
+so. Conversely, if explicit invocation is requested but `reconcileManagedWorkflow` is not called in the primary resource
+reconciler, the workflow won't be reconciled at all.
 
 ## Notes and Caveats
 

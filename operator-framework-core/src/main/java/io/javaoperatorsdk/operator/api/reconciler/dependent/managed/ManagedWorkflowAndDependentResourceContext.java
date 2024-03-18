@@ -37,7 +37,6 @@ public interface ManagedWorkflowAndDependentResourceContext {
    * @return an Optional containing the previous value associated with the key or
    *         {@link Optional#empty()} if none existed
    */
-  @SuppressWarnings("unchecked")
   <T> T put(Object key, T value);
 
   /**
@@ -54,10 +53,25 @@ public interface ManagedWorkflowAndDependentResourceContext {
 
   WorkflowReconcileResult getWorkflowReconcileResult();
 
+  @SuppressWarnings("unused")
   WorkflowCleanupResult getWorkflowCleanupResult();
 
+  /**
+   * Explicitly reconcile the declared workflow for the associated
+   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}
+   * 
+   * @throws IllegalStateException if called when explicit invocation is not requested
+   */
   void reconcileManagedWorkflow();
 
+  /**
+   * Explicitly clean-up dependent resources in the declared workflow for the associated
+   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}. Note that calling this method is
+   * only needed if the associated reconciler implements the
+   * {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner} interface.
+   * 
+   * @throws IllegalStateException if called when explicit invocation is not requested
+   */
   void cleanupManageWorkflow();
 
 }
