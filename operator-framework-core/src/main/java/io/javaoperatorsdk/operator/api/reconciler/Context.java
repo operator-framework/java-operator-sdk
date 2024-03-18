@@ -38,7 +38,7 @@ public interface Context<P extends HasMetadata> {
    * Retrieve the {@link ManagedWorkflowAndDependentResourceContext} used to interact with
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource}s and associated
    * {@link io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow}
-   * 
+   *
    * @return the {@link ManagedWorkflowAndDependentResourceContext}
    */
   ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext();
