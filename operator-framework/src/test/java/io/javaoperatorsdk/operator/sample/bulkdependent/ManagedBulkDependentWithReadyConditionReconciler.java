@@ -19,7 +19,7 @@ public class ManagedBulkDependentWithReadyConditionReconciler
       Context<BulkDependentTestCustomResource> context) throws Exception {
     numberOfExecutions.incrementAndGet();
 
-    var ready = context.managedDependentResourceContext().getWorkflowReconcileResult()
+    var ready = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
         .allDependentResourcesReady();
 
 
