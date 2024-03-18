@@ -169,7 +169,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         io.javaoperatorsdk.operator.api.reconciler.Workflow.class);
     if (workflowAnnotation != null) {
       List<DependentResourceSpec> specs = dependentResources(workflowAnnotation, config);
-      WorkflowSpec workflowSpec = new WorkflowSpec(specs);
+      WorkflowSpec workflowSpec = new WorkflowSpec(specs, workflowAnnotation.explicitInvocation());
       config.setWorkflowSpec(workflowSpec);
     }
 

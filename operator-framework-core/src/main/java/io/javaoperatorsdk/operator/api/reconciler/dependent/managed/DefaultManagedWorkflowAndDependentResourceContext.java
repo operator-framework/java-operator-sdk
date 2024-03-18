@@ -3,15 +3,30 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 @SuppressWarnings("rawtypes")
-public class DefaultManagedDependentResourceContext implements ManagedDependentResourceContext {
+public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMetadata>
+    implements ManagedWorkflowAndDependentResourceContext {
 
+  private final ConcurrentHashMap attributes = new ConcurrentHashMap();
+  private final Controller<P> controller;
+  private final P primaryResource;
+  private final Context<P> context;
   private WorkflowReconcileResult workflowReconcileResult;
   private WorkflowCleanupResult workflowCleanupResult;
-  private final ConcurrentHashMap attributes = new ConcurrentHashMap();
+
+  public DefaultManagedWorkflowAndDependentResourceContext(Controller<P> controller,
+      P primaryResource,
+      Context<P> context) {
+    this.controller = controller;
+    this.primaryResource = primaryResource;
+    this.context = context;
+  }
 
   @Override
   public <T> Optional<T> get(Object key, Class<T> expectedType) {
@@ -37,13 +52,13 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
             + ") is missing or not of the expected type"));
   }
 
-  public DefaultManagedDependentResourceContext setWorkflowExecutionResult(
+  public DefaultManagedWorkflowAndDependentResourceContext setWorkflowExecutionResult(
       WorkflowReconcileResult workflowReconcileResult) {
     this.workflowReconcileResult = workflowReconcileResult;
     return this;
   }
 
-  public DefaultManagedDependentResourceContext setWorkflowCleanupResult(
+  public DefaultManagedWorkflowAndDependentResourceContext setWorkflowCleanupResult(
       WorkflowCleanupResult workflowCleanupResult) {
     this.workflowCleanupResult = workflowCleanupResult;
     return this;
@@ -58,4 +73,21 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
   public WorkflowCleanupResult getWorkflowCleanupResult() {
     return workflowCleanupResult;
   }
+
+  @Override
+  public void reconcileManagedWorkflow() {
+    if (!controller.isWorkflowExplicitInvocation()) {
+      throw new IllegalStateException("Workflow explicit invocation is not set.");
+    }
+    controller.reconcileManagedWorkflow(primaryResource, context);
+  }
+
+  @Override
+  public void cleanupManageWorkflow() {
+    if (!controller.isWorkflowExplicitInvocation()) {
+      throw new IllegalStateException("Workflow explicit invocation is not set.");
+    }
+    controller.cleanupManagedWorkflow(primaryResource, context);
+  }
+
 }
