@@ -35,7 +35,7 @@ public class WorkflowAllFeatureReconciler
     }
     resource.getStatus()
         .setReady(
-            context.managedDependentResourceContext()
+            context.managedWorkflowAndDependentResourceContext()
                 .getWorkflowReconcileResult()
                 .allDependentResourcesReady());
     return UpdateControl.patchStatus(resource);
