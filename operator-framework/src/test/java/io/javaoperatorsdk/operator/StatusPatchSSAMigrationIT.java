@@ -45,8 +45,9 @@ public class StatusPatchSSAMigrationIT {
     client.close();
   }
 
+
   @Test
-  void testMigratingFromNonSSAToSSA() {
+  void testMigratingToSSA() {
     var operator = startOperator(false);
     var testResource = client.resource(testResource()).create();
 
@@ -74,11 +75,55 @@ public class StatusPatchSSAMigrationIT {
     await().untilAsserted(() -> {
       var res = client.resource(testResource).get();
       assertThat(res.getStatus()).isNotNull();
+      // !!! This is wrong, the message should be null,
+      // see issue in Kubernetes: https://github.com/kubernetes/kubernetes/issues/99003
+      assertThat(res.getStatus().getMessage()).isNotNull();
+      assertThat(res.getStatus().getValue()).isEqualTo(3);
+    });
+
+    client.resource(testResource()).delete();
+    operator.stop();
+  }
+
+  @Test
+  void workaroundMigratingFromToSSA() {
+    var operator = startOperator(false);
+    var testResource = client.resource(testResource()).create();
+
+    await().untilAsserted(() -> {
+      var res = client.resource(testResource).get();
+      assertThat(res.getStatus()).isNotNull();
+      assertThat(res.getStatus().getMessage()).isEqualTo(StatusPatchLockingReconciler.MESSAGE);
+      assertThat(res.getStatus().getValue()).isEqualTo(1);
+    });
+    operator.stop();
+
+    // start operator with SSA
+    operator = startOperator(true);
+    await().untilAsserted(() -> {
+      var res = client.resource(testResource).get();
+      assertThat(res.getStatus()).isNotNull();
+      assertThat(res.getStatus().getMessage()).isEqualTo(StatusPatchLockingReconciler.MESSAGE);
+      assertThat(res.getStatus().getValue()).isEqualTo(2);
+    });
+
+    var actualResource = client.resource(testResource()).get();
+    actualResource.getSpec().setMessageInStatus(false);
+    // removing the managed field entry for former method works
+    actualResource.getMetadata().setManagedFields(actualResource.getMetadata().getManagedFields()
+        .stream().filter(r -> !r.getOperation().equals("Update") && r.getSubresource() != null)
+        .toList());
+    client.resource(actualResource).update();
+
+    await().untilAsserted(() -> {
+      var res = client.resource(testResource).get();
+      assertThat(res.getStatus()).isNotNull();
       assertThat(res.getStatus().getMessage()).isNull();
       assertThat(res.getStatus().getValue()).isEqualTo(3);
     });
 
     client.resource(testResource()).delete();
+    operator.stop();
   }
 
 
