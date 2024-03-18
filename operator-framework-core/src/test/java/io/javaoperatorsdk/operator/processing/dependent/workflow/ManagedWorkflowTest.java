@@ -64,7 +64,7 @@ class ManagedWorkflowTest {
     final var configuration = mock(ControllerConfiguration.class);
     final var specList = List.of(specs);
 
-    var ws = new WorkflowSpec(specList);
+    var ws = new WorkflowSpec(specList, false);
     when(configuration.getWorkflowSpec()).thenReturn(Optional.of(ws));
 
     return new BaseConfigurationService().getWorkflowFactory()

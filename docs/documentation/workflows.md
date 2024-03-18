@@ -338,6 +338,34 @@ and NOT `CRUDKubernetesDependentResource` since otherwise the Kubernetes Garbage
 In other words if a Kubernetes Dependent Resource depends on another dependent resource, it should not implement
 `GargageCollected` interface, otherwise the deletion order won't be guaranteed. 
 
+
+## Explicit Managed Workflow Invocation
+
+Managed workflows, i.e. ones that are declared via annotations and therefore completely managed by JOSDK, are reconciled
+before the primary resource. Each dependent resource that can be reconciled (according to the workflow configuration)
+will therefore be reconciled before the primary reconciler is called to reconcile the primary resource. There are,
+however, situations where it would be be useful to perform additional steps before the workflow is reconciled, for
+example to validate the current state, execute arbitrary logic or even skip reconciliation altogether. Explicit
+invocation of managed workflow was therefore introduced to solve these issues.
+
+To use this feature, you need to set the `explicitInvocation` field to `true` on the `@Workflow` annotation and then
+call the `reconcileManagedWorkflow` method from the `
+ManagedWorkflowAndDependentResourceContext` retrieved from the reconciliation `Context` provided as part of your primary
+resource reconciler `reconcile` method arguments.
+
+See
+related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitInvocationIT.java)
+for more details.
+
+For `cleanup`, if the `Cleaner` interface is implemented, the `cleanupManageWorkflow()` needs to be called explicitly.
+However, if `Cleaner` interface is not implemented, it will be called implicitly.
+See
+related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitCleanupIT.java).
+
+While nothing prevents calling the workflow multiple times in a reconciler, it isn't typical or even recommended to do
+so. Conversely, if explicit invocation is requested but `reconcileManagedWorkflow` is not called in the primary resource
+reconciler, the workflow won't be reconciled at all.
+
 ## Notes and Caveats
 
 - Delete is almost always called on every resource during the cleanup. However, it might be the case

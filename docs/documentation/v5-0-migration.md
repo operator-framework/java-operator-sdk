@@ -17,3 +17,5 @@ permalink: /docs/v5-0-migration
    [`EventSourceUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceUtils.java#L11-L11)
    now contains all the utility methods used for event sources naming that were previously defined in
    the `EventSourceInitializer` interface.
+3. `ManagedDependentResourceContext` has been renamed to `ManagedWorkflowAndDependentResourceContext` and is accessed
+   via the accordingly renamed `managedWorkflowAndDependentResourceContext` method.
