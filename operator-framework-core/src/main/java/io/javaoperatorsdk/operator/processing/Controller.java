@@ -1,6 +1,11 @@
 package io.javaoperatorsdk.operator.processing;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +23,18 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
@@ -129,9 +143,11 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            if (!managedWorkflow.isEmpty()) {
-              managedWorkflow.reconcile(resource, context);
-            }
+            configuration.getWorkflowSpec().ifPresent(ws -> {
+              if (!managedWorkflow.isEmpty() && !isWorkflowExplicitInvocation()) {
+                  managedWorkflow.reconcile(resource, context);
+              }
+            });
             return reconciler.reconcile(resource, context);
           }
         });
@@ -171,9 +187,12 @@ public class Controller<P extends HasMetadata>
             public DeleteControl execute() {
               initContextIfNeeded(resource, context);
               WorkflowCleanupResult workflowCleanupResult = null;
-              if (managedWorkflow.hasCleaner()) {
+
+              // The cleanup is called also when explicit invocation is true, but the cleaner is not implemented
+              if (managedWorkflow.hasCleaner() || !isWorkflowExplicitInvocation()) {
                 workflowCleanupResult = managedWorkflow.cleanup(resource, context);
               }
+
               if (isCleaner) {
                 var cleanupResult = ((Cleaner<P>) reconciler).cleanup(resource, context);
                 if (!cleanupResult.isRemoveFinalizer()) {
@@ -429,5 +448,33 @@ public class Controller<P extends HasMetadata>
 
   public EventSourceContext<P> eventSourceContext() {
     return eventSourceContext;
+  }
+
+  public void reconcileManagedWorkflow(P primary, Context<P> context) {
+    if (!managedWorkflow.isEmpty()) {
+      var res = managedWorkflow.reconcile(primary, context);
+      ((DefaultManagedWorkflowAndDependentResourceContext) context
+          .managedWorkflowAndDependentResourceContext())
+          .setWorkflowExecutionResult(res);
+      res.throwAggregateExceptionIfErrorsPresent();
+    }
+  }
+
+  public WorkflowCleanupResult cleanupManagedWorkflow(P resource, Context<P> context) {
+    if (managedWorkflow.hasCleaner()) {
+      var workflowCleanupResult = managedWorkflow.cleanup(resource, context);
+      ((DefaultManagedWorkflowAndDependentResourceContext) context
+          .managedWorkflowAndDependentResourceContext())
+          .setWorkflowCleanupResult(workflowCleanupResult);
+      workflowCleanupResult.throwAggregateExceptionIfErrorsPresent();
+      return workflowCleanupResult;
+    } else {
+      return null;
+    }
+  }
+
+  public boolean isWorkflowExplicitInvocation() {
+    return configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
+        .orElse(false);
   }
 }
