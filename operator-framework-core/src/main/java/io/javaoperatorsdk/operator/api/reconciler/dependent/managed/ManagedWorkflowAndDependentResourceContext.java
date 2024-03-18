@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconci
  * Contextual information related to {@link DependentResource} either to retrieve the actual
  * implementations to interact with them or to pass information between them and/or the reconciler
  */
-public interface ManagedDependentResourceContext {
+public interface ManagedWorkflowAndDependentResourceContext {
 
   /**
    * Retrieve a contextual object, if it exists and is of the specified expected type, associated
@@ -63,5 +63,25 @@ public interface ManagedDependentResourceContext {
 
   WorkflowReconcileResult getWorkflowReconcileResult();
 
+  @SuppressWarnings("unused")
   WorkflowCleanupResult getWorkflowCleanupResult();
+
+  /**
+   * Explicitly reconcile the declared workflow for the associated
+   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}
+   *
+   * @throws IllegalStateException if called when explicit invocation is not requested
+   */
+  void reconcileManagedWorkflow();
+
+  /**
+   * Explicitly clean-up dependent resources in the declared workflow for the associated
+   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}. Note that calling this method is
+   * only needed if the associated reconciler implements the
+   * {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner} interface.
+   *
+   * @throws IllegalStateException if called when explicit invocation is not requested
+   */
+  void cleanupManageWorkflow();
+
 }
