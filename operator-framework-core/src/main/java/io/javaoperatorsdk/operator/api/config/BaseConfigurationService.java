@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -168,8 +167,18 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     final var workflowAnnotation = reconciler.getClass().getAnnotation(
         io.javaoperatorsdk.operator.api.reconciler.Workflow.class);
     if (workflowAnnotation != null) {
-      List<DependentResourceSpec> specs = dependentResources(workflowAnnotation, config);
-      WorkflowSpec workflowSpec = new WorkflowSpec(specs, workflowAnnotation.explicitInvocation());
+      final var specs = dependentResources(workflowAnnotation, config);
+      WorkflowSpec workflowSpec = new WorkflowSpec() {
+        @Override
+        public List<DependentResourceSpec> getDependentResourceSpecs() {
+          return specs;
+        }
+
+        @Override
+        public boolean isExplicitInvocation() {
+          return workflowAnnotation.explicitInvocation();
+        }
+      };
       config.setWorkflowSpec(workflowSpec);
     }
 
@@ -212,7 +221,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
           eventSourceName);
       specsMap.put(dependentName, spec);
     }
-    return specsMap.values().stream().collect(Collectors.toUnmodifiableList());
+    return specsMap.values().stream().toList();
   }
 
   protected boolean createIfNeeded() {
