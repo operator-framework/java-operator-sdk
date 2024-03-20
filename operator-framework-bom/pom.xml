@@ -83,7 +83,7 @@
           <pom>
             <includes>
               <include>pom.xml</include>
-              <inclide>./**/pom.xml</inclide>
+              <include>./**/pom.xml</include>
             </includes>
             <sortPom></sortPom>
           </pom>
