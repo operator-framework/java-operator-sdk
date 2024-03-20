@@ -39,9 +39,7 @@ class ManagedWorkflowSupport {
     }
   }
 
-  public <P extends HasMetadata> ManagedWorkflow<P> createWorkflow(
-      WorkflowSpec workflowSpec) {
-
+  public <P extends HasMetadata> ManagedWorkflow<P> createWorkflow(WorkflowSpec workflowSpec) {
     return createAsDefault(workflowSpec.getDependentResourceSpecs());
   }
 
