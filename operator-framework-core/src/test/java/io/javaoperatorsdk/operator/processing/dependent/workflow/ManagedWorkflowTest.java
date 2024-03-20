@@ -62,9 +62,18 @@ class ManagedWorkflowTest {
   @SuppressWarnings("unchecked")
   ManagedWorkflow managedWorkflow(DependentResourceSpec... specs) {
     final var configuration = mock(ControllerConfiguration.class);
-    final var specList = List.of(specs);
 
-    var ws = new WorkflowSpec(specList, false);
+    var ws = new WorkflowSpec() {
+      @Override
+      public List<DependentResourceSpec> getDependentResourceSpecs() {
+        return List.of(specs);
+      }
+
+      @Override
+      public boolean isExplicitInvocation() {
+        return false;
+      }
+    };
     when(configuration.getWorkflowSpec()).thenReturn(Optional.of(ws));
 
     return new BaseConfigurationService().getWorkflowFactory()
