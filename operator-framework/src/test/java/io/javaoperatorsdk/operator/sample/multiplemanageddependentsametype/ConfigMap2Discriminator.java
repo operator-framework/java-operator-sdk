@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype;
 
-import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceConfigMap2.NAME_SUFFIX;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import java.util.Optional;
+
+import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceConfigMap2.NAME_SUFFIX;
 
 public class ConfigMap2Discriminator
     implements ResourceDiscriminator<ConfigMap, MultipleManagedDependentResourceCustomResource> {

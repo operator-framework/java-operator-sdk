@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.rate;
 
-import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 
 /**
  * A simple rate limiter that limits the number of permission for a time interval.

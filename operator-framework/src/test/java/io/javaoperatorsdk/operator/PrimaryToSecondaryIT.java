@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
@@ -9,9 +11,9 @@ import io.javaoperatorsdk.operator.sample.primarytosecondary.Cluster;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.Job;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.JobReconciler;
 import io.javaoperatorsdk.operator.sample.primarytosecondary.JobSpec;
-import java.time.Duration;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class PrimaryToSecondaryIT {
 

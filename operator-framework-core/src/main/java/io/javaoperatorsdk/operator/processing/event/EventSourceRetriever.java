@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.List;
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import java.util.List;
-import java.util.Optional;
 
 public interface EventSourceRetriever<P extends HasMetadata> {
 

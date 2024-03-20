@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.sample.dependentdifferentnamespace;
 
+import java.util.HashMap;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
-import java.util.HashMap;
 
 public class ConfigMapDependentResource extends
     CRUDNoGCKubernetesDependentResource<ConfigMap, DependentDifferentNamespaceCustomResource> {

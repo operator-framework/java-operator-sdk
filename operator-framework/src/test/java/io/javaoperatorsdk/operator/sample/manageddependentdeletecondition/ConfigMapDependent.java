@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.sample.manageddependentdeletecondition;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
-import java.util.Map;
 
 public class ConfigMapDependent extends
     CRUDNoGCKubernetesDependentResource<ConfigMap, ManagedDependentDefaultDeleteConditionCustomResource> {

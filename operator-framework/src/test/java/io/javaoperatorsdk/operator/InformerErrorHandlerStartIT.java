@@ -1,5 +1,10 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -8,9 +13,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import java.time.Duration;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 class InformerErrorHandlerStartIT {
   /**

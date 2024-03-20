@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.sample.filter;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @ControllerConfiguration(onUpdateFilter = UpdateFilter.class)
 public class FilterTestReconciler

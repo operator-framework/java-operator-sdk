@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.sample.workflowmultipleactivation;
 
+import java.util.Base64;
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import java.util.Base64;
-import java.util.Map;
 
 public class SecretDependentResource
     extends CRUDKubernetesDependentResource<Secret, WorkflowMultipleActivationCustomResource> {

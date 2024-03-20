@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.dependentresource;
 
-import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
-import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -10,8 +10,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
-import java.util.HashMap;
-import java.util.Map;
+
+import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(labelSelector = SELECTOR)

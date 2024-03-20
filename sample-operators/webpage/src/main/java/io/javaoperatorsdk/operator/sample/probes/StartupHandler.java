@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator.sample.probes;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import io.javaoperatorsdk.operator.Operator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+
+import io.javaoperatorsdk.operator.Operator;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 public class StartupHandler implements HttpHandler {
 

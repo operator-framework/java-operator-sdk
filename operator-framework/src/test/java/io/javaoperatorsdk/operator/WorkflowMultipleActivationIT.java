@@ -1,17 +1,19 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.sample.workflowactivationcondition.ConfigMapDependentResource.DATA_KEY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.workflowmultipleactivation.*;
-import java.time.Duration;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static io.javaoperatorsdk.operator.sample.workflowactivationcondition.ConfigMapDependentResource.DATA_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public class WorkflowMultipleActivationIT {
 

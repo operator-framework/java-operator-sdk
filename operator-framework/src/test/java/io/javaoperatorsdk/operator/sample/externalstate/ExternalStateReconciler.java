@@ -1,5 +1,11 @@
 package io.javaoperatorsdk.operator.sample.externalstate;
 
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -13,11 +19,6 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePo
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @ControllerConfiguration
 public class ExternalStateReconciler

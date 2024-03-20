@@ -1,15 +1,18 @@
 package io.javaoperatorsdk.operator.sample;
 
-import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.sun.net.httpserver.HttpServer;
 
 public class WebPageOperator {
   public static final String WEBPAGE_RECONCILER_ENV = "WEBPAGE_RECONCILER";

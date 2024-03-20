@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -10,9 +14,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class AbstractWorkflowExecutorTest {
   public static final String VALUE = "value";

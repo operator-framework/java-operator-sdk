@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.sample.labelselector;
 
-import static io.javaoperatorsdk.operator.sample.labelselector.LabelSelectorTestReconciler.LABEL_KEY;
-import static io.javaoperatorsdk.operator.sample.labelselector.LabelSelectorTestReconciler.LABEL_VALUE;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.javaoperatorsdk.operator.sample.labelselector.LabelSelectorTestReconciler.LABEL_KEY;
+import static io.javaoperatorsdk.operator.sample.labelselector.LabelSelectorTestReconciler.LABEL_VALUE;
 
 @ControllerConfiguration(labelSelector = LABEL_KEY + "=" + LABEL_VALUE)
 public class LabelSelectorTestReconciler

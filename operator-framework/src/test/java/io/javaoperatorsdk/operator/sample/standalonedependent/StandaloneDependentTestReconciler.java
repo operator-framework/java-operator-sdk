@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.sample.standalonedependent;
 
+import java.util.Map;
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -14,8 +17,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import java.util.Map;
-import java.util.Optional;
 
 @ControllerConfiguration
 public class StandaloneDependentTestReconciler

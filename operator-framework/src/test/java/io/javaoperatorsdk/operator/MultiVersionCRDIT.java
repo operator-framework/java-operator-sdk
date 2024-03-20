@@ -1,9 +1,13 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import java.util.HashMap;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.WatcherException;
@@ -17,12 +21,11 @@ import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCus
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestCustomResourceSpec2;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler1;
 import io.javaoperatorsdk.operator.sample.multiversioncrd.MultiVersionCRDTestReconciler2;
-import java.time.Duration;
-import java.util.HashMap;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class MultiVersionCRDIT {
 

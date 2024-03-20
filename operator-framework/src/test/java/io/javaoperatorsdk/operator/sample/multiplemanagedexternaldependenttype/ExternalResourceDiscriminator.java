@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype;
 
+import java.util.Optional;
+
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.support.ExternalResource;
-import java.util.Optional;
 
 public class ExternalResourceDiscriminator implements
     ResourceDiscriminator<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> {

@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.sample.multipledependentresource;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import java.util.Map;
 
 @ControllerConfiguration
 public class MultipleDependentResourceReconciler

@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import java.util.Optional;
 
 /**
  * An interface to implement and provide dependent resource support.

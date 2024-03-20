@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class ReconcileResult<R> {
 

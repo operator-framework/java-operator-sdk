@@ -1,13 +1,15 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
-import io.javaoperatorsdk.operator.processing.Controller;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.processing.Controller;
 
 /**
  * Not to be confused with the controller manager concept from Go's controller-runtime project. In
@@ -87,4 +89,3 @@ class ControllerManager {
     return controllers.size();
   }
 }
-

@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+
+import org.junit.jupiter.api.extension.RegisterExtension;
+
 import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbstractTest {
 

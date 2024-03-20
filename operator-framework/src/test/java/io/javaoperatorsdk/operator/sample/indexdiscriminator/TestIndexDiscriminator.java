@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.sample.indexdiscriminator;
 
-import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestReconciler.configMapKeyFromPrimary;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.IndexDiscriminator;
+
+import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestReconciler.configMapKeyFromPrimary;
 
 public class TestIndexDiscriminator
     extends IndexDiscriminator<ConfigMap, IndexDiscriminatorTestCustomResource> {

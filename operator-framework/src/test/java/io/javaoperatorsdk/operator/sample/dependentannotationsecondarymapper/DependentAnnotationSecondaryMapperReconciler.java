@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.sample.dependentannotationsecondarymapper;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -9,8 +12,6 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = @Dependent(
     type = DependentAnnotationSecondaryMapperReconciler.ConfigMapDependentResource.class))

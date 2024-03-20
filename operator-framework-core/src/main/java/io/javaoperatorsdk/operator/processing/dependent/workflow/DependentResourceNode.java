@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 class DependentResourceNode<R, P extends HasMetadata> {

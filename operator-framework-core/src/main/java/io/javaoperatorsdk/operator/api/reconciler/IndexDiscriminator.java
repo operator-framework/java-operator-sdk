@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import java.util.Optional;
 import java.util.function.Function;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 /**
  * Uses a custom index of {@link InformerEventSource} to access the target resource. The index needs

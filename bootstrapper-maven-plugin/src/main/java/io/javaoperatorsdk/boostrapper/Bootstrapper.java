@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.boostrapper;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.MustacheFactory;
-import io.javaoperatorsdk.bootstrapper.Versions;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,9 +7,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.bootstrapper.Versions;
+
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.MustacheFactory;
 
 public class Bootstrapper {
 

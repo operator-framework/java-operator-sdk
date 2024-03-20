@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.bulkdependent;
 
+import org.junit.jupiter.api.extension.RegisterExtension;
+
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.bulkdependent.ManagedBulkDependentReconciler;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 class ManagedBulkDependentIT extends BulkDependentTestBase {
 

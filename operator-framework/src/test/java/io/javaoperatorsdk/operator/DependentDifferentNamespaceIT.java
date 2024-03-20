@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.sample.dependentdifferentnamespace.ConfigMapDependentResource.KEY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -11,8 +10,10 @@ import io.javaoperatorsdk.operator.sample.dependentdifferentnamespace.ConfigMapD
 import io.javaoperatorsdk.operator.sample.dependentdifferentnamespace.DependentDifferentNamespaceCustomResource;
 import io.javaoperatorsdk.operator.sample.dependentdifferentnamespace.DependentDifferentNamespaceReconciler;
 import io.javaoperatorsdk.operator.sample.dependentdifferentnamespace.DependentDifferentNamespaceSpec;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static io.javaoperatorsdk.operator.sample.dependentdifferentnamespace.ConfigMapDependentResource.KEY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class DependentDifferentNamespaceIT {
 

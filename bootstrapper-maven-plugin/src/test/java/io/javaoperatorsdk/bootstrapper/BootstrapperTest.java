@@ -1,15 +1,17 @@
 package io.javaoperatorsdk.bootstrapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import io.javaoperatorsdk.boostrapper.Bootstrapper;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.boostrapper.Bootstrapper;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class BootstrapperTest {
 

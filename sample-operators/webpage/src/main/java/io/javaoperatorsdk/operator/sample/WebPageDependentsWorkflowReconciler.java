@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
-import static io.javaoperatorsdk.operator.sample.Utils.*;
+import java.util.Arrays;
+import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
@@ -15,8 +16,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.dependentresource.*;
-import java.util.Arrays;
-import java.util.Map;
+
+import static io.javaoperatorsdk.operator.sample.Utils.*;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources.

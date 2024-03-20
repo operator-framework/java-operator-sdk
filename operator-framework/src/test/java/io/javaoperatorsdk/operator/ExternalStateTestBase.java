@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateReconciler.ID_KEY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -10,7 +8,10 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.externalstate.ExternalStateCustomResource;
 import io.javaoperatorsdk.operator.sample.externalstate.ExternalStateSpec;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
-import org.junit.jupiter.api.Test;
+
+import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateReconciler.ID_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public abstract class ExternalStateTestBase {
 

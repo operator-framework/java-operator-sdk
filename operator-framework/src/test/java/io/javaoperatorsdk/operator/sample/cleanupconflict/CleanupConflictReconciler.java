@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator.sample.cleanupconflict;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import io.javaoperatorsdk.operator.api.reconciler.*;
 
 @ControllerConfiguration
 public class CleanupConflictReconciler

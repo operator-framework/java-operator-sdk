@@ -1,8 +1,15 @@
 package io.javaoperatorsdk.operator.sample.dependent;
 
-import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_PASSWORD;
-import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
-import static java.lang.String.format;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -18,15 +25,10 @@ import io.javaoperatorsdk.operator.sample.MySQLSchema;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource.ResourcePollerConfigConverter;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
 import io.javaoperatorsdk.operator.sample.schema.SchemaService;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_PASSWORD;
+import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
+import static java.lang.String.format;
 
 @SchemaConfig(pollPeriod = 700, host = "127.0.0.1",
     port = SchemaDependentResource.LOCAL_PORT,

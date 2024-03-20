@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
-import java.util.Map;
 
 public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
     ResourceUpdaterMatcher<R> {

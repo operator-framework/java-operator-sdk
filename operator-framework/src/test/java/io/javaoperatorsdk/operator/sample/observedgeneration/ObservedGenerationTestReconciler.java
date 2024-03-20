@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.sample.observedgeneration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ControllerConfiguration
 public class ObservedGenerationTestReconciler

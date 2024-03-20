@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.junit;
 
+import java.lang.reflect.Method;
+
+import org.junit.jupiter.api.extension.ExtensionContext;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Method;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class NamespaceNamingTestUtils {
 

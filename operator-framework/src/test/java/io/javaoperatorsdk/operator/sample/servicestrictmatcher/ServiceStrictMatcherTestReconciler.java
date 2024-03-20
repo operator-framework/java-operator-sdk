@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.sample.servicestrictmatcher;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = {@Dependent(type = ServiceDependentResource.class)})
 @ControllerConfiguration

@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample.clusterscopedresource;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -8,7 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-import java.util.Map;
 
 @ControllerConfiguration
 public class ClusterScopedCustomResourceReconciler

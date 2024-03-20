@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.sample.dependentresourcecrossref;
 
-import static io.javaoperatorsdk.operator.sample.dependentresourcecrossref.DependentResourceCrossRefReconciler.SECRET_NAME;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -8,10 +11,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.javaoperatorsdk.operator.sample.dependentresourcecrossref.DependentResourceCrossRefReconciler.SECRET_NAME;
 
 @Workflow(dependents = {
     @Dependent(name = SECRET_NAME,

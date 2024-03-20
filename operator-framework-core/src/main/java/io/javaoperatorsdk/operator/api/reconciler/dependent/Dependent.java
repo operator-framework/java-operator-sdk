@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
-
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 /**
  * The annotation used to create managed {@link DependentResource} associated with a given

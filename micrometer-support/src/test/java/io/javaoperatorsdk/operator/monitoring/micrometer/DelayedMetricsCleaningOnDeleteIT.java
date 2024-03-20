@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.time.Duration;
+import java.util.Set;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.Meter;
-import java.time.Duration;
-import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class DelayedMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixture {
 

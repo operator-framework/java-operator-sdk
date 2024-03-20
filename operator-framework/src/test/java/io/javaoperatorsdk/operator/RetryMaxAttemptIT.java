@@ -1,14 +1,15 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.RetryIT.createTestCustomResource;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.retry.RetryTestCustomResource;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static io.javaoperatorsdk.operator.RetryIT.createTestCustomResource;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class RetryMaxAttemptIT {
 

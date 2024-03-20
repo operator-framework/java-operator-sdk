@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
-import static io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource.decode;
-import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
-import static java.lang.String.format;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -10,8 +9,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
 import io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource;
 import io.javaoperatorsdk.operator.sample.schema.Schema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource.decode;
+import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
+import static java.lang.String.format;
 
 @Workflow(dependents = {
     @Dependent(type = SecretDependentResource.class, name = SecretDependentResource.NAME),

@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -14,10 +16,9 @@ import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSAReconciler;
 import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSASpec;
 import io.javaoperatorsdk.operator.sample.dependentssa.DependnetSSACustomResource;
 import io.javaoperatorsdk.operator.sample.dependentssa.SSAConfigMapDependent;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class DependentSSAMigrationIT {
 

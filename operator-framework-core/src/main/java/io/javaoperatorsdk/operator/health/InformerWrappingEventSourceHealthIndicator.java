@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.health;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
-import java.util.Map;
 
 public interface InformerWrappingEventSourceHealthIndicator<R extends HasMetadata>
     extends EventSourceHealthIndicator {

@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
 
 @SuppressWarnings("unchecked")
 public interface ResourceCache<T extends HasMetadata> extends Cache<T> {

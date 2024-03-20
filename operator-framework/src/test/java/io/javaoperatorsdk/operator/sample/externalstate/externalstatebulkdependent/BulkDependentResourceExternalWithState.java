@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent;
 
-import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -13,11 +17,8 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+
+import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
 
 public class BulkDependentResourceExternalWithState extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>

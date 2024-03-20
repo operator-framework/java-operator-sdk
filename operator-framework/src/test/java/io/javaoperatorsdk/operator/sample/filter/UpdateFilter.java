@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.sample.filter;
 
-import static io.javaoperatorsdk.operator.sample.filter.FilterTestReconciler.CUSTOM_RESOURCE_FILTER_VALUE;
-
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+
+import static io.javaoperatorsdk.operator.sample.filter.FilterTestReconciler.CUSTOM_RESOURCE_FILTER_VALUE;
 
 public class UpdateFilter
     implements OnUpdateFilter<FilterTestCustomResource> {

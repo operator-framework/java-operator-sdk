@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.sample.dependentcustommappingannotation;
 
+import java.util.Map;
+import java.util.Set;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -8,8 +11,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKuber
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-import java.util.Map;
-import java.util.Set;
 
 public class CustomMappingConfigMapDependentResource
     extends CRUDNoGCKubernetesDependentResource<ConfigMap, DependentCustomMappingCustomResource>

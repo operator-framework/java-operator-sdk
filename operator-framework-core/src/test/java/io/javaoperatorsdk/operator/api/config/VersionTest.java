@@ -1,8 +1,8 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.jupiter.api.Test;
+
+import static org.junit.Assert.assertEquals;
 
 class VersionTest {
 

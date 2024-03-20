@@ -1,12 +1,14 @@
 package io.javaoperatorsdk.operator.sample.schema;
 
-import static java.lang.String.format;
-
-import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
 import java.sql.*;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
+
+import static java.lang.String.format;
 
 public class SchemaService {
 

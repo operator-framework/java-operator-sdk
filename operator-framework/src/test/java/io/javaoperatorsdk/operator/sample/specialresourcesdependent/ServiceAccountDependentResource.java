@@ -1,12 +1,12 @@
 package io.javaoperatorsdk.operator.sample.specialresourcesdependent;
 
-import static io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceSpec.INITIAL_VALUE;
-
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+
+import static io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceSpec.INITIAL_VALUE;
 
 @KubernetesDependent
 public class ServiceAccountDependentResource extends

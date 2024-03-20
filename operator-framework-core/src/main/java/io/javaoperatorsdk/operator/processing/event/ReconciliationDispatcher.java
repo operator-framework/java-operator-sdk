@@ -1,6 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
+import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -23,9 +26,8 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
-import java.util.function.Function;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 
 /**
  * Handles calls and results of a Reconciler and finalizer related logic

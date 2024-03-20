@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
+import java.util.Objects;
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import java.util.Objects;
-import java.util.Optional;
 
 public class ResourceEvent extends Event {
 

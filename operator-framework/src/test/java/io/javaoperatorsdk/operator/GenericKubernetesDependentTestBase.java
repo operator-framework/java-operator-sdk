@@ -1,15 +1,17 @@
 package io.javaoperatorsdk.operator;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+
+import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.generickubernetesresource.GenericKubernetesDependentSpec;
 import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentstandalone.ConfigMapGenericKubernetesDependent;
-import java.time.Duration;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public abstract class GenericKubernetesDependentTestBase<R extends CustomResource<GenericKubernetesDependentSpec, Void>> {
 

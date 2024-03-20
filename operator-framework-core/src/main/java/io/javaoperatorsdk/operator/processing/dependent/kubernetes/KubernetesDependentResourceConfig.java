@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
+import java.util.Optional;
+import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
@@ -8,8 +9,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import java.util.Optional;
-import java.util.Set;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 public class KubernetesDependentResourceConfig<R> {
 

@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryToSecondaryIndex<R> {
 

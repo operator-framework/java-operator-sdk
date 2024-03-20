@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.api.monitoring;
 
+import java.util.Collections;
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * An interface that metrics providers can implement and that the SDK will call at different times

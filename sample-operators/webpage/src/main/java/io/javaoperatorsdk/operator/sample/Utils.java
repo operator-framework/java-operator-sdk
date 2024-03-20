@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.sample;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
-
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.customresource.WebPageStatus;
+
+import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 
 public class Utils {
 

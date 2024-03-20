@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.sample.perresourceeventsource;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
 @ControllerConfiguration
 public class PerResourcePollingEventSourceTestReconciler

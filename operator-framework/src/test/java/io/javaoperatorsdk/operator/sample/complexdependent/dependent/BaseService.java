@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.sample.complexdependent.dependent;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentCustomResource;
-import java.util.Map;
 
 public abstract class BaseService extends BaseDependentResource<Service> {
 

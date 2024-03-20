@@ -1,12 +1,13 @@
 package io.javaoperatorsdk.operator.sample.dependentssa;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SSAConfigMapDependent extends
     CRUDKubernetesDependentResource<ConfigMap, DependnetSSACustomResource> {

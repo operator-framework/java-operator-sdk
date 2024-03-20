@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -10,7 +12,6 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import java.util.Map;
 
 @ControllerConfiguration
 public class DependentGarbageCollectionTestReconciler

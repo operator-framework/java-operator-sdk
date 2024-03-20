@@ -1,8 +1,10 @@
 package io.javaoperatorsdk.operator.sample;
 
-import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE;
-import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV;
-import static io.javaoperatorsdk.operator.sample.WebPageReconciler.lowLevelLabel;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -11,10 +13,10 @@ import io.javaoperatorsdk.operator.junit.AbstractOperatorExtension;
 import io.javaoperatorsdk.operator.junit.ClusterDeployedOperatorExtension;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE;
+import static io.javaoperatorsdk.operator.sample.WebPageOperator.WEBPAGE_RECONCILER_ENV;
+import static io.javaoperatorsdk.operator.sample.WebPageReconciler.lowLevelLabel;
 
 class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
 

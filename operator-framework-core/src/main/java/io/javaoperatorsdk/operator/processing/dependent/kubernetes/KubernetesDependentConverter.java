@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
+import java.util.Arrays;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -12,8 +13,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import java.util.Arrays;
-import java.util.Set;
+
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
 
 public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMetadata> implements
     ConfigurationConverter<KubernetesDependent, KubernetesDependentResourceConfig<R>, KubernetesDependentResource<R, P>> {

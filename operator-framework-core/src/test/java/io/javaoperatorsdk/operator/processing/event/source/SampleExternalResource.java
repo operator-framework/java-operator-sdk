@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import java.io.Serializable;
 import java.util.Objects;
+
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class SampleExternalResource implements Serializable {
 

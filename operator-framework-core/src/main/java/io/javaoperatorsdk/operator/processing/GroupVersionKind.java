@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator.processing;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import java.util.Objects;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class GroupVersionKind {
   private final String group;

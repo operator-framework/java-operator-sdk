@@ -1,12 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import java.util.Optional;
+import java.util.Set;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import java.util.Optional;
-import java.util.Set;
 
 public interface ResourceEventSource<R, P extends HasMetadata> extends EventSource {
 

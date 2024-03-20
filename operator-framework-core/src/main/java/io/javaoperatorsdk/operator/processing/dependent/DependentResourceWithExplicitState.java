@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import java.util.Optional;
 
 /**
  * Handles external resources where in order to address the resource additional information or

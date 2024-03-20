@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.config.runtime;
 
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class RuntimeControllerMetadata {

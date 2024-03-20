@@ -1,14 +1,16 @@
 package io.javaoperatorsdk.operator.junit;
 
-import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.MAX_NAMESPACE_NAME_LENGTH;
-import static io.javaoperatorsdk.operator.junit.DefaultNamespaceNameSupplier.DELIMITER;
-import static io.javaoperatorsdk.operator.junit.DefaultNamespaceNameSupplier.RANDOM_SUFFIX_LENGTH;
-
-import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.function.Function;
+
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+
+import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.MAX_NAMESPACE_NAME_LENGTH;
+import static io.javaoperatorsdk.operator.junit.DefaultNamespaceNameSupplier.DELIMITER;
+import static io.javaoperatorsdk.operator.junit.DefaultNamespaceNameSupplier.RANDOM_SUFFIX_LENGTH;
 
 public class DefaultPerClassNamespaceNameSupplier implements Function<ExtensionContext, String> {
 

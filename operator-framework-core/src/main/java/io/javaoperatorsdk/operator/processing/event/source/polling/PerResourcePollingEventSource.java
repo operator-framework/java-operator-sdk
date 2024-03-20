@@ -1,13 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.Cache;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
-import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,8 +12,18 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
 /**
  *

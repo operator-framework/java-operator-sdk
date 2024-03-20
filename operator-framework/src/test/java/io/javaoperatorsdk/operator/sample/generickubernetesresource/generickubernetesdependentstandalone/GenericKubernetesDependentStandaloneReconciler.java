@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentstandalone;
 
+import java.util.Map;
+
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import java.util.Map;
 
 @ControllerConfiguration
 public class GenericKubernetesDependentStandaloneReconciler

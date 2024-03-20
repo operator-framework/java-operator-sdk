@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.createupdateeventfilter.CreateUpdateEventFilterTestCustomResource;
 import io.javaoperatorsdk.operator.sample.createupdateeventfilter.CreateUpdateEventFilterTestReconciler;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 class PreviousAnnotationDisabledIT {
 

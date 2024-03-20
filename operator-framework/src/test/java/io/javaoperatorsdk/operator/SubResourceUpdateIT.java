@@ -1,8 +1,10 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus.State.SUCCESS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
@@ -10,10 +12,10 @@ import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomRecon
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResource;
 import io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.support.TestUtils;
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static io.javaoperatorsdk.operator.sample.subresource.SubResourceTestCustomResourceStatus.State.SUCCESS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class SubResourceUpdateIT {
 

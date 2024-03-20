@@ -1,11 +1,13 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import java.util.Collections;
 import java.util.Set;
+
 import org.junit.jupiter.api.Test;
+
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class ResourceConfigurationTest {
 

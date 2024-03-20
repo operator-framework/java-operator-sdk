@@ -1,13 +1,14 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.Objects;
+import java.util.Optional;
+
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.processing.event.source.Configurable;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import java.util.Objects;
-import java.util.Optional;
 
 class NamedEventSource implements EventSource, EventSourceMetadata {
 

@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import java.util.Set;
+
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @FunctionalInterface
 public interface SecondaryToPrimaryMapper<R> {

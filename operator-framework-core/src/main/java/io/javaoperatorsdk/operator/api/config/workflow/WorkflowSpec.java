@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator.api.config.workflow;
 
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import java.util.List;
+
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 
 public interface WorkflowSpec {
 

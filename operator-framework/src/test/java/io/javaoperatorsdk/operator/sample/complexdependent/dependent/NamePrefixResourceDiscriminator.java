@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.sample.complexdependent.dependent;
 
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentCustomResource;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public abstract class NamePrefixResourceDiscriminator<R extends HasMetadata>
     implements ResourceDiscriminator<R, ComplexDependentCustomResource> {

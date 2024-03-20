@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator;
 
-import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
-import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
+import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 
 /**
  * RuntimeInfo in general is available when operator is fully started. You can use "isStarted" to

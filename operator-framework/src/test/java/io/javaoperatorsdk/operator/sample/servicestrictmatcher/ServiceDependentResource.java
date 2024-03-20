@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.sample.servicestrictmatcher;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.ServiceStrictMatcherIT;
@@ -9,9 +11,8 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 
 @KubernetesDependent
 public class ServiceDependentResource

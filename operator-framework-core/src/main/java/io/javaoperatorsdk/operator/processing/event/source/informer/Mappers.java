@@ -1,11 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
 public class Mappers {
 

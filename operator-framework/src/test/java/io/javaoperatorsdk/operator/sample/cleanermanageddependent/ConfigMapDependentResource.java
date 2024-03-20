@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.sample.cleanermanageddependent;
 
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -7,8 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConfigMapDependentResource extends
     KubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource>

@@ -1,14 +1,8 @@
 package io.javaoperatorsdk.operator;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultFinalizerName;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultNameFor;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultReconcilerName;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.isFinalizerValid;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.net.URI;
+
+import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -24,8 +18,16 @@ import io.fabric8.kubernetes.model.annotation.ShortNames;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import java.net.URI;
-import org.junit.jupiter.api.Test;
+
+import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultFinalizerName;
+import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultNameFor;
+import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultReconcilerName;
+import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
+import static io.javaoperatorsdk.operator.ReconcilerUtils.isFinalizerValid;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ReconcilerUtilsTest {
 

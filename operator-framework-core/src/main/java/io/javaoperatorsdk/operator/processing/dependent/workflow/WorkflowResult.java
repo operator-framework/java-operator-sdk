@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import io.javaoperatorsdk.operator.AggregatedOperatorException;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import io.javaoperatorsdk.operator.AggregatedOperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 class WorkflowResult {

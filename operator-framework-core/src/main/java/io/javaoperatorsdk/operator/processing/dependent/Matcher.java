@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import java.util.Optional;
 
 /**
  * Implement this interface to provide custom matching logic when determining whether secondary

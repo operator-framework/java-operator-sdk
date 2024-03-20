@@ -1,8 +1,9 @@
 package io.javaoperatorsdk.operator.sample.dependentfilter;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = {@Dependent(type = FilteredDependentConfigMap.class)})
 @ControllerConfiguration(onUpdateFilter = UpdateFilter.class)

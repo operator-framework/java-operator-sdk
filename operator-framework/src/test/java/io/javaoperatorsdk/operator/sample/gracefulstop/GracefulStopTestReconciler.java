@@ -1,10 +1,11 @@
 package io.javaoperatorsdk.operator.sample.gracefulstop;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @ControllerConfiguration
 public class GracefulStopTestReconciler
