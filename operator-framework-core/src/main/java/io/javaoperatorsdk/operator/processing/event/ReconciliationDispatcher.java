@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -316,6 +318,19 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return postExecutionControl;
   }
 
+  @SuppressWarnings("unchecked")
+  private P addFinalizerWithSSA(P originalResource) {
+    log.debug(
+            "Adding finalizer (using SSA) for resource: {} version: {}",
+            getUID(originalResource),getVersion(originalResource));
+      try {
+          P resource = (P) originalResource.getClass().getConstructor().newInstance();
+          return customResourceFacade.patchResourceWithSSA(resource);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+          throw new RuntimeException(e);
+      }
+  }
+
   private P updateCustomResourceWithFinalizer(P resourceForExecution, P originalResource) {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
@@ -438,6 +453,19 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         // restore initial resource version
         originalResource.getMetadata().setResourceVersion(resourceVersion);
         resource.getMetadata().setResourceVersion(resourceVersion);
+      }
+    }
+
+    public R patchResourceWithSSA(R resource) {
+      var managedFields = resource.getMetadata().getManagedFields();
+      try {
+        return resource(resource).patch(new PatchContext.Builder()
+                        .withFieldManager(fieldManager)
+                        .withForce(true)
+                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                .build());
+      } finally {
+        resource.getMetadata().setManagedFields(managedFields);
       }
     }
 
