@@ -75,12 +75,6 @@ public class IndexDiscriminatorTestReconciler
     firstDependentResourceConfigMap.configureWith(eventSource);
     secondDependentResourceConfigMap.configureWith(eventSource);
 
-    firstDependentResourceConfigMap
-        .setResourceDiscriminator(
-            new TestIndexDiscriminator(CONFIG_MAP_INDEX_1, FIRST_CONFIG_MAP_SUFFIX_1));
-    secondDependentResourceConfigMap
-        .setResourceDiscriminator(
-            new TestIndexDiscriminator(CONFIG_MAP_INDEX_2, FIRST_CONFIG_MAP_SUFFIX_2));
     return EventSourceUtils.nameEventSources(eventSource);
   }
 
