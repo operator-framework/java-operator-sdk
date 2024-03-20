@@ -1,9 +1,15 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.COORDINATION_GROUP;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.LEASES_RESOURCE;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.UNIVERSAL_VERB;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.nullable;
+import static org.mockito.Mockito.when;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -17,17 +23,10 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
-
-import static io.javaoperatorsdk.operator.LeaderElectionManager.COORDINATION_GROUP;
-import static io.javaoperatorsdk.operator.LeaderElectionManager.LEASES_RESOURCE;
-import static io.javaoperatorsdk.operator.LeaderElectionManager.UNIVERSAL_VERB;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.nullable;
-import static org.mockito.Mockito.when;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 public class MockKubernetesClient {
 

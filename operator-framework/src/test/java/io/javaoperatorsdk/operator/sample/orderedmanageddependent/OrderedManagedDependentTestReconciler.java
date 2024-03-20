@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.sample.orderedmanageddependent;
 
+import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @Workflow(dependents = {
     @Dependent(type = ConfigMapDependentResource1.class, name = "cm1"),

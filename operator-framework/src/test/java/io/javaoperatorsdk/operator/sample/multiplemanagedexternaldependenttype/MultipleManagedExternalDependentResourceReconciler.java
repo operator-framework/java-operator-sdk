@@ -1,10 +1,6 @@
 package io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import static io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
@@ -14,8 +10,11 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventS
 import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
-
-import static io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = {
     @Dependent(type = ExternalDependentResource1.class,

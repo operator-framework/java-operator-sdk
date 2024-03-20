@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -10,9 +10,8 @@ import io.javaoperatorsdk.operator.sample.ssalegacymatcher.SSALegacyMatcherCusto
 import io.javaoperatorsdk.operator.sample.ssalegacymatcher.SSALegacyMatcherReconciler;
 import io.javaoperatorsdk.operator.sample.ssalegacymatcher.SSALegacyMatcherSpec;
 import io.javaoperatorsdk.operator.sample.ssalegacymatcher.ServiceDependentResource;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class SSAWithLegacyMatcherIT {
 

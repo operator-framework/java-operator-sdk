@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.time.Duration;
-import java.util.Optional;
-import java.util.Set;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
@@ -12,6 +8,9 @@ import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.Set;
 
 public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
 

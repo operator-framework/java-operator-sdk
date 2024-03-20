@@ -1,15 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
+import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.TestUtils;
-
-import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 class InternalEventFiltersTest {
 

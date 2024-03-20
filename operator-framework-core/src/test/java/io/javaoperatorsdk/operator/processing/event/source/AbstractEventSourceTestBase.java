@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import org.junit.jupiter.api.AfterEach;
+import static org.mockito.Mockito.mock;
 
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
-
-import static org.mockito.Mockito.mock;
+import org.junit.jupiter.api.AfterEach;
 
 public class AbstractEventSourceTestBase<S extends EventSource, T extends EventHandler> {
   protected T eventHandler;

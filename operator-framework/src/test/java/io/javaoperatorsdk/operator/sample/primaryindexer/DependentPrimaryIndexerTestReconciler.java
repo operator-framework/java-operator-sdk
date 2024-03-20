@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.sample.primaryindexer;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -18,6 +14,9 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Workflow(dependents = @Dependent(
     type = DependentPrimaryIndexerTestReconciler.ReadOnlyConfigMapDependent.class))

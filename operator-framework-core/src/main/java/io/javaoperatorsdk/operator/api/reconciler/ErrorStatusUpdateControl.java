@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import java.time.Duration;
 import java.util.Optional;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class ErrorStatusUpdateControl<P extends HasMetadata>
     extends BaseControl<ErrorStatusUpdateControl<P>> {

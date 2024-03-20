@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.Cache;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 
 public class TransformingItemStore<R extends HasMetadata> implements ItemStore<R> {
 

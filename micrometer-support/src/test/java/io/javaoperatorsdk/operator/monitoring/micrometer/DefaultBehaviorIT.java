@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
-import java.util.Collections;
-import java.util.Set;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.Meter;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Collections;
+import java.util.Set;
 
 public class DefaultBehaviorIT extends AbstractMicrometerMetricsTestFixture {
   @Override

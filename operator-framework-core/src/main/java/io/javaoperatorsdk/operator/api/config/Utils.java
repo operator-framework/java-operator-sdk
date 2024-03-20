@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -11,12 +13,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Properties;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public class Utils {
 

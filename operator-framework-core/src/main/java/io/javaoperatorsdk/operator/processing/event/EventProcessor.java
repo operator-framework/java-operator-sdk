@@ -1,14 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.net.HttpURLConnection;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -27,8 +19,14 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
-
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getName;
+import java.net.HttpURLConnection;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EventProcessor<P extends HasMetadata> implements EventHandler, LifecycleAware {
 

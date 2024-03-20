@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMetadata>

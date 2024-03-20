@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.processing;
 
-import org.slf4j.MDC;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import org.slf4j.MDC;
 
 public class MDCUtils {
 

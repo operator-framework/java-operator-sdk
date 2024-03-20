@@ -1,13 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.time.Duration;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -23,8 +16,13 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
-
-import static io.javaoperatorsdk.operator.api.config.ExecutorServiceManager.newThreadPoolExecutor;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {

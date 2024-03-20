@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.sample.unmodifiabledependentpart;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = {@Dependent(type = UnmodifiablePartConfigMapDependent.class)})
 @ControllerConfiguration

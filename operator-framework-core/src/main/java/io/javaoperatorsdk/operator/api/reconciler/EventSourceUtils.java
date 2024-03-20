@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.*;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import java.util.*;
 
 public class EventSourceUtils {
   /**

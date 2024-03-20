@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.sample.updatestatusincleanupandreschedule;
 
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-
-import io.javaoperatorsdk.operator.api.reconciler.*;
 
 @ControllerConfiguration
 public class UpdateStatusInCleanupAndRescheduleReconciler

@@ -1,9 +1,7 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -12,9 +10,9 @@ import io.javaoperatorsdk.operator.sample.multipleupdateondependent.MultipleOwne
 import io.javaoperatorsdk.operator.sample.multipleupdateondependent.MultipleOwnerDependentCustomResource;
 import io.javaoperatorsdk.operator.sample.multipleupdateondependent.MultipleOwnerDependentReconciler;
 import io.javaoperatorsdk.operator.sample.multipleupdateondependent.MultipleOwnerDependentSpec;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MultiOwnerDependentTriggeringIT {
 

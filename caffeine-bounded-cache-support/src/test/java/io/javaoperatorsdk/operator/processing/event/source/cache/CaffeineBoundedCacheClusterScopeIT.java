@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
-import java.time.Duration;
-
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.boundedItemStore;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -10,8 +8,8 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusterscope.BoundedCacheClusterScopeTestCustomResource;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.clusterscope.BoundedCacheClusterScopeTestReconciler;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
-
-import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.boundedItemStore;
+import java.time.Duration;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class CaffeineBoundedCacheClusterScopeIT
     extends BoundedCacheTestBase<BoundedCacheClusterScopeTestCustomResource> {

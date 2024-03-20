@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.sample.ssalegacymatcher;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.SSAWithLegacyMatcherIT;
@@ -10,8 +8,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-
-import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @KubernetesDependent
 public class ServiceDependentResource

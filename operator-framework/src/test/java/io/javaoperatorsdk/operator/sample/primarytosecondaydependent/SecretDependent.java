@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.sample.primarytosecondaydependent;
 
-import java.util.Map;
+import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.DATA_KEY;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-
-import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.DATA_KEY;
+import java.util.Map;
 
 public class SecretDependent
     extends CRUDKubernetesDependentResource<Secret, PrimaryToSecondaryDependentCustomResource> {

@@ -1,13 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.cache.Cache;
-import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-
 import static io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore.namespaceKeyFunc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -16,6 +8,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.Cache;
+import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class BoundedItemStoreTest {
 

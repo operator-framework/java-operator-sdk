@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.sample.externalstate;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -15,8 +12,10 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
-
-import static io.javaoperatorsdk.operator.sample.externalstate.ExternalStateDependentReconciler.ID_KEY;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public class ExternalWithStateDependentResource extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateCustomResource>

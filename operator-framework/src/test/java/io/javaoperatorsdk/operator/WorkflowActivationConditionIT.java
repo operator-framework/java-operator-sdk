@@ -1,7 +1,8 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.sample.workflowactivationcondition.ConfigMapDependentResource.DATA_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -9,10 +10,8 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.workflowactivationcondition.WorkflowActivationConditionCustomResource;
 import io.javaoperatorsdk.operator.sample.workflowactivationcondition.WorkflowActivationConditionReconciler;
 import io.javaoperatorsdk.operator.sample.workflowactivationcondition.WorkflowActivationConditionSpec;
-
-import static io.javaoperatorsdk.operator.sample.workflowactivationcondition.ConfigMapDependentResource.DATA_KEY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class WorkflowActivationConditionIT {
 

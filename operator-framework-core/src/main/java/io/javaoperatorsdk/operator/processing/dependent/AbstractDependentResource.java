@@ -1,11 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.util.Optional;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -16,6 +10,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import java.util.Optional;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Ignore
 public abstract class AbstractDependentResource<R, P extends HasMetadata>

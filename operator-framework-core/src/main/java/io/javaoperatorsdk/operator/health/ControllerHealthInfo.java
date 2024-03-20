@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.health;
 
+import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 
 @SuppressWarnings("rawtypes")
 public class ControllerHealthInfo {

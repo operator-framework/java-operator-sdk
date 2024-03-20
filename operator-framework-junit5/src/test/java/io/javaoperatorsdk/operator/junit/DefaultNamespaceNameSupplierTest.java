@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.junit;
 
-import org.junit.jupiter.api.Test;
-
 import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.MAX_NAMESPACE_NAME_LENGTH;
 import static io.javaoperatorsdk.operator.junit.DefaultNamespaceNameSupplier.*;
 import static io.javaoperatorsdk.operator.junit.NamespaceNamingTestUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
 
 class DefaultNamespaceNameSupplierTest {
 

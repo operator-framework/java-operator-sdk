@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
-import java.time.Duration;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import java.time.Duration;
 
 /**
  * A factory for <a href="https://github.com/ben-manes/caffeine">Caffeine</a>-backed

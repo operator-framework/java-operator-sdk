@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.sample.orderedmanageddependent;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -11,6 +8,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import java.util.HashMap;
+import java.util.Map;
 
 @KubernetesDependent(labelSelector = "dependent = cm2",
     resourceDiscriminator = ConfigMapDependentResource2.CM2ResourceDiscriminator.class)

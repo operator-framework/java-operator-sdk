@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -8,11 +12,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class ManagedWorkflowSupport {

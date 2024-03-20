@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.sample.multipleupdateondependent;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -12,6 +8,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 
 @KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
 public class MultipleOwnerDependentConfigMap

@@ -1,16 +1,15 @@
 package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesresourcehandling;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 @ControllerConfiguration
 public class GenericKubernetesResourceHandlingReconciler

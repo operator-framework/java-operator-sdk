@@ -1,12 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Arrays;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReviewSpecBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
@@ -16,6 +9,11 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
+import java.util.Arrays;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LeaderElectionManager {
 

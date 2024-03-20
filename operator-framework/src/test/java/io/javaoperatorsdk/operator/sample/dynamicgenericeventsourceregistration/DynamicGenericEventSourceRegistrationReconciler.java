@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.sample.dynamicgenericeventsourceregistration;
 
-import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.dsl.NonDeletingOperation;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -13,6 +9,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @ControllerConfiguration
 public class DynamicGenericEventSourceRegistrationReconciler

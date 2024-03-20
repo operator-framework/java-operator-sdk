@@ -1,17 +1,15 @@
 package io.javaoperatorsdk.operator.sample.subresource;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static io.javaoperatorsdk.operator.support.TestUtils.waitXms;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
-
-import static io.javaoperatorsdk.operator.support.TestUtils.waitXms;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class SubResourceTestCustomReconciler

@@ -1,18 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source.inbound;
 
-import java.util.Set;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import io.javaoperatorsdk.operator.TestUtils;
-import io.javaoperatorsdk.operator.processing.event.EventHandler;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
-import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,6 +8,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.processing.event.EventHandler;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class CachingInboundEventSourceTest extends
     AbstractEventSourceTestBase<CachingInboundEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {

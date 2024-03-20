@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.util.Arrays;
-import java.util.Map;
+import static io.javaoperatorsdk.operator.sample.Utils.*;
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -22,9 +22,8 @@ import io.javaoperatorsdk.operator.sample.dependentresource.DeploymentDependentR
 import io.javaoperatorsdk.operator.sample.dependentresource.ExposedIngressCondition;
 import io.javaoperatorsdk.operator.sample.dependentresource.IngressDependentResource;
 import io.javaoperatorsdk.operator.sample.dependentresource.ServiceDependentResource;
-
-import static io.javaoperatorsdk.operator.sample.Utils.*;
-import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Shows how to implement reconciler using standalone dependent resources and workflows.

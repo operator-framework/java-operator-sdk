@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.HashMap;
-
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.HashMap;
+import org.junit.jupiter.api.Test;
 
 class EventSourceUtilsTest {
 

@@ -1,10 +1,8 @@
 package io.javaoperatorsdk.operator;
 
-import java.time.Duration;
-import java.util.HashMap;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.sample.workflowallfeature.ConfigMapDependentResource.READY_TO_DELETE_ANNOTATION;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -13,10 +11,10 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureCustomResource;
 import io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureReconciler;
 import io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureSpec;
-
-import static io.javaoperatorsdk.operator.sample.workflowallfeature.ConfigMapDependentResource.READY_TO_DELETE_ANNOTATION;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import java.util.HashMap;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class WorkflowAllFeatureIT {
 

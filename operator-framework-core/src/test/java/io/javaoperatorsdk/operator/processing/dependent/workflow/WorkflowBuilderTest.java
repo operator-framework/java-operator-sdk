@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Test;
 
 class WorkflowBuilderTest {
 

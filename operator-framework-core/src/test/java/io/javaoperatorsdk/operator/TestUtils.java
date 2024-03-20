@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.HashMap;
-import java.util.UUID;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
@@ -10,6 +7,8 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
+import java.util.HashMap;
+import java.util.UUID;
 
 public class TestUtils {
 

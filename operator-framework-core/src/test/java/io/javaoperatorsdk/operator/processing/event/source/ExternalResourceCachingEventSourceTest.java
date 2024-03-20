@@ -1,17 +1,15 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import java.util.Set;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
-
-import static io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class ExternalResourceCachingEventSourceTest extends
     AbstractEventSourceTestBase<ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {

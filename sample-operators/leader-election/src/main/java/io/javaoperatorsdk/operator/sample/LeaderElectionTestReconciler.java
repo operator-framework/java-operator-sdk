@@ -1,13 +1,11 @@
 package io.javaoperatorsdk.operator.sample;
 
-import java.time.Duration;
-import java.util.ArrayList;
-
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-
+import java.time.Duration;
+import java.util.ArrayList;
 import javaoperatorsdk.sample.v1.LeaderElection;
 import javaoperatorsdk.sample.v1.LeaderElectionStatus;
 

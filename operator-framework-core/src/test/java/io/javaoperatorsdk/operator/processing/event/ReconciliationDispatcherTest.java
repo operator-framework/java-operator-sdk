@@ -1,18 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
-import org.mockito.ArgumentMatchers;
-import org.mockito.stubbing.Answer;
+import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
+import static io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.MAX_UPDATE_RETRY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.*;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -39,13 +32,18 @@ import io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.Cus
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.sample.observedgeneration.ObservedGenCustomResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-
-import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
-import static io.javaoperatorsdk.operator.processing.event.ReconciliationDispatcher.MAX_UPDATE_RETRY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
+import org.mockito.ArgumentMatchers;
+import org.mockito.stubbing.Answer;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 class ReconciliationDispatcherTest {

@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -12,9 +13,7 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.workflowactivationcleanup.WorkflowActivationCleanupCustomResource;
 import io.javaoperatorsdk.operator.sample.workflowactivationcleanup.WorkflowActivationCleanupReconciler;
 import io.javaoperatorsdk.operator.sample.workflowactivationcleanup.WorkflowActivationCleanupSpec;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.*;
 
 public class WorkflowActivationCleanupIT {
 

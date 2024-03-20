@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.complexdependent;
 
-import java.util.Map;
-import java.util.Objects;
+import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.SERVICE_EVENT_SOURCE_NAME;
+import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.STATEFUL_SET_EVENT_SOURCE_NAME;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -11,9 +11,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.complexdependent.dependent.*;
-
-import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.SERVICE_EVENT_SOURCE_NAME;
-import static io.javaoperatorsdk.operator.sample.complexdependent.ComplexDependentReconciler.STATEFUL_SET_EVENT_SOURCE_NAME;
+import java.util.Map;
+import java.util.Objects;
 
 @Workflow(dependents = {
     @Dependent(name = "first-svc", type = FirstService.class,

@@ -1,18 +1,16 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.assertj.core.data.Index;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowTestUtils.createDRS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-
-import static io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowTestUtils.createDRS;
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.assertj.core.data.Index;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class ManagedWorkflowSupportTest {
 

@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.sample.workflowactivationcleanup;
 
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
+import java.util.Map;
 
 public class ConfigMapDependentResource
     extends

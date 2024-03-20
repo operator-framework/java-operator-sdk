@@ -1,5 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -8,14 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @SuppressWarnings("rawtypes")
 abstract class AbstractWorkflowExecutor<P extends HasMetadata> {

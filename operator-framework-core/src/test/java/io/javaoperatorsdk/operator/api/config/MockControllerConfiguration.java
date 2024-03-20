@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class MockControllerConfiguration {
 

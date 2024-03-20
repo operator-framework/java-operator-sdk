@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.inbound;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleInboundEventSource extends AbstractEventSource {
 

@@ -1,21 +1,19 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache;
 
-import java.time.Duration;
-import java.util.stream.IntStream;
-
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.DATA_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestSpec;
 import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespacescope.BoundedCacheTestStatus;
-
-import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.AbstractTestReconciler.DATA_KEY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import java.util.stream.IntStream;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>> {
 

@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.Optional;
-
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
+import java.util.Optional;
 
 public interface ManagedWorkflowFactory<C extends ControllerConfiguration<?>> {
 

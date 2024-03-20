@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.sample.multiplereconcilersametype;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @ControllerConfiguration(labelSelector = "reconciler != 1")
 public class MultipleReconcilerSameTypeReconciler2

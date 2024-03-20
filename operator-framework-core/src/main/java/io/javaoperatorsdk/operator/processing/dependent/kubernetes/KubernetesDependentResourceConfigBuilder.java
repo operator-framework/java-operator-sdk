@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Set;
-
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import java.util.Set;
 
 public final class KubernetesDependentResourceConfigBuilder<R> {
 

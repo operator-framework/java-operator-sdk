@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.assertj.core.api.AbstractAssert;
-
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 public class ExecutionAssert
     extends AbstractAssert<ExecutionAssert, List<ReconcileRecord>> {

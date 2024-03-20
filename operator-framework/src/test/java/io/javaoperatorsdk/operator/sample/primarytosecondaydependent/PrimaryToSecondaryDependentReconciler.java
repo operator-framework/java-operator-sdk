@@ -1,10 +1,7 @@
 package io.javaoperatorsdk.operator.sample.primarytosecondaydependent;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.CONFIG_MAP;
+import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.CONFIG_MAP_EVENT_SOURCE;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -15,9 +12,11 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
-
-import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.CONFIG_MAP;
-import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.CONFIG_MAP_EVENT_SOURCE;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * Sample showcases how it is possible to do a primary to secondary mapper for a dependent resource.

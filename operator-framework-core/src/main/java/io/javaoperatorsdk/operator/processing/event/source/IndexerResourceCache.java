@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
 
 public interface IndexerResourceCache<T extends HasMetadata> extends IndexedResourceCache<T> {
 

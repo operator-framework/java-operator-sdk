@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.support;
 
-import java.util.Objects;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import java.util.Objects;
 
 public class ExternalResource {
 

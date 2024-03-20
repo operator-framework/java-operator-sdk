@@ -1,14 +1,12 @@
 package io.javaoperatorsdk.operator.sample.maxintervalafterretry;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @GradualRetry(maxAttempts = 1, initialInterval = 100)
 @ControllerConfiguration(maxReconciliationInterval = @MaxReconciliationInterval(interval = 50,

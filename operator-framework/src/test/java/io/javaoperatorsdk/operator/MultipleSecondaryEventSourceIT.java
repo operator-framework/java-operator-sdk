@@ -1,17 +1,15 @@
 package io.javaoperatorsdk.operator;
 
-import java.time.Duration;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource.MultipleSecondaryEventSourceCustomResource;
 import io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource.MultipleSecondaryEventSourceReconciler;
-
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MultipleSecondaryEventSourceIT {
 

@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
+import static io.javaoperatorsdk.operator.ControllerManager.CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
@@ -10,10 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-
-import static io.javaoperatorsdk.operator.ControllerManager.CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 class ControllerManagerTest {
 

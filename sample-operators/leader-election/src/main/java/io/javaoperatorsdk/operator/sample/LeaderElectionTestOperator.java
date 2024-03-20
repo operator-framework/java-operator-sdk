@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.sample;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LeaderElectionTestOperator {
 

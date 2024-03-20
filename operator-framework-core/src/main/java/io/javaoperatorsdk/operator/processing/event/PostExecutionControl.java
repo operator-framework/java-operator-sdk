@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import java.util.Optional;
 
 final class PostExecutionControl<R extends HasMetadata> {
 

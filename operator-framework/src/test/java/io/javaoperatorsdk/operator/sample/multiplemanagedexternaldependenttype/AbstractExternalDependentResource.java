@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype;
 
-import java.util.Map;
-import java.util.Set;
-
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
@@ -12,6 +9,8 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependen
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractExternalDependentResource extends
     PollingDependentResource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>

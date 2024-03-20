@@ -74,10 +74,8 @@
         <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
         <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
         <git-commit-id-maven-plugin.version>8.0.0</git-commit-id-maven-plugin.version>
-        <formatter-maven-plugin.version>2.23.0</formatter-maven-plugin.version>
-        <directory-maven-plugin.version>1.0</directory-maven-plugin.version>
-        <impsort-maven-plugin.version>1.9.0</impsort-maven-plugin.version>
         <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
+        <spotless.version>2.43.0</spotless.version>
     </properties>
 
     <modules>
@@ -312,44 +310,34 @@
                     <version>${maven-install-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>net.revelc.code.formatter</groupId>
-                    <artifactId>formatter-maven-plugin</artifactId>
-                    <version>${formatter-maven-plugin.version}</version>
-                    <configuration>
-                        <cachedir>.cache</cachedir>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>net.revelc.code</groupId>
-                    <artifactId>impsort-maven-plugin</artifactId>
-                    <version>${impsort-maven-plugin.version}</version>
-                    <configuration>
-                        <cachedir>.cache</cachedir>
-                        <groups>java.,javax.,org.,io.,com.</groups>
-                        <staticGroups>*</staticGroups>
-                        <staticAfter>true</staticAfter>
-                        <removeUnused>true</removeUnused>
-                    </configuration>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
-                <artifactId>directory-maven-plugin</artifactId>
-                <version>${directory-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>directories</id>
-                        <goals>
-                            <goal>highest-basedir</goal>
-                        </goals>
-                        <phase>initialize</phase>
-                        <configuration>
-                            <property>josdk.project.root</property>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <configuration>
+                    <pom>
+                        <includes>
+                            <include>pom.xml</include>
+                            <inclide>./**/pom.xml</inclide>
+                        </includes>
+                        <sortPom></sortPom>
+                    </pom>
+                    <java>
+                        <eclipse>
+                            <file>contributing/eclipse-google-style.xml</file>
+                        </eclipse>
+                        <importOrder>
+                            <file>contributing/eclipse.importorder</file>
+                        </importOrder>
+                        <removeUnusedImports></removeUnusedImports>
+                    </java>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -364,33 +352,6 @@
                     </excludes>
                     <excludedGroups>WatchPermissionAwareTest</excludedGroups>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>net.revelc.code.formatter</groupId>
-                <artifactId>formatter-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>format</goal>
-                        </goals>
-                        <configuration>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <configFile>${josdk.project.root}/contributing/eclipse-google-style.xml</configFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>net.revelc.code</groupId>
-                <artifactId>impsort-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>sort</id>
-                        <goals>
-                            <goal>sort</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

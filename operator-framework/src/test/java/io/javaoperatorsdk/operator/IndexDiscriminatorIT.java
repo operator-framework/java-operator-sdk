@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestDRConfigMap.DATA_KEY;
+import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestReconciler.FIRST_CONFIG_MAP_SUFFIX_1;
+import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestReconciler.FIRST_CONFIG_MAP_SUFFIX_2;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -9,12 +12,8 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestReconciler;
 import io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestSpec;
-
-import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestDRConfigMap.DATA_KEY;
-import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestReconciler.FIRST_CONFIG_MAP_SUFFIX_1;
-import static io.javaoperatorsdk.operator.sample.indexdiscriminator.IndexDiscriminatorTestReconciler.FIRST_CONFIG_MAP_SUFFIX_2;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class IndexDiscriminatorIT {
 

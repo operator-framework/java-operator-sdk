@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import java.util.List;
 import java.util.Map;
-
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowCleanupResult extends WorkflowResult {

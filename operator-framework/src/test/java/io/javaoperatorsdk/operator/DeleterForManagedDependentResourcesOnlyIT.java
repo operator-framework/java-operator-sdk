@@ -1,16 +1,15 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.cleanermanageddependent.CleanerForManagedDependentCustomResource;
 import io.javaoperatorsdk.operator.sample.cleanermanageddependent.CleanerForManagedDependentTestReconciler;
 import io.javaoperatorsdk.operator.sample.cleanermanageddependent.ConfigMapDependentResource;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class DeleterForManagedDependentResourcesOnlyIT {
 

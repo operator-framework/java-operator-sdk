@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.authorization.v1.*;
@@ -14,10 +16,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-
-import static io.javaoperatorsdk.operator.LeaderElectionManager.NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 class LeaderElectionPermissionIT {
 

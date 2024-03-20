@@ -1,12 +1,10 @@
 package io.javaoperatorsdk.operator.sample.builtinresourcecleaner;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ControllerConfiguration(labelSelector = "builtintest=true")
 public class ObservedGenerationTestReconciler

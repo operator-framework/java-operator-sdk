@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 public interface Workflow<P extends HasMetadata> {
 

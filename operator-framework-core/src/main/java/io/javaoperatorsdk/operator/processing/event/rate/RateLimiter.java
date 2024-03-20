@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.rate;
 
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import java.time.Duration;
 import java.util.Optional;
-
-import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 
 public interface RateLimiter<S extends RateLimitState> {
   interface RateLimitState {

@@ -1,19 +1,17 @@
 package io.javaoperatorsdk.operator.bulkdependent;
 
-import java.time.Duration;
-
-import org.junit.jupiter.api.Test;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_KEY;
+import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_VALUE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestSpec;
 import io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource;
-
-import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_KEY;
-import static io.javaoperatorsdk.operator.sample.bulkdependent.ConfigMapDeleterBulkDependentResource.LABEL_VALUE;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import org.junit.jupiter.api.Test;
 
 public abstract class BulkDependentTestBase {
 

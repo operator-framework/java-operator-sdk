@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.sample.primaryindexer;
 
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -11,6 +8,8 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @ControllerConfiguration
 public class PrimaryIndexerTestReconciler

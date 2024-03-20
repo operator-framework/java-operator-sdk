@@ -1,10 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
-import java.util.Optional;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
+import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -16,10 +14,10 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
-
-import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
-import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
+import java.util.Optional;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ControllerResourceEventSource<T extends HasMetadata>
     extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>

@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.util.Optional;
-import java.util.Set;
-
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
@@ -10,6 +7,8 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import java.util.Optional;
+import java.util.Set;
 
 public class DefaultResourceConfiguration<R extends HasMetadata>
     implements ResourceConfiguration<R> {

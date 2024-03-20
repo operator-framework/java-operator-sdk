@@ -1,9 +1,5 @@
 package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentstandalone;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
@@ -11,6 +7,9 @@ import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 public class ConfigMapGenericKubernetesDependent extends
     GenericKubernetesDependentResource<GenericKubernetesDependentStandaloneCustomResource>

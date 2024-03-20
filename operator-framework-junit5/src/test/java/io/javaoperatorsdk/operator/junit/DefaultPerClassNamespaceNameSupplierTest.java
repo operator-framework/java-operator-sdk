@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.junit;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
-
 import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.MAX_NAMESPACE_NAME_LENGTH;
 import static io.javaoperatorsdk.operator.junit.DefaultNamespaceNameSupplier.DELIMITER;
 import static io.javaoperatorsdk.operator.junit.DefaultNamespaceNameSupplier.RANDOM_SUFFIX_LENGTH;
@@ -10,6 +7,9 @@ import static io.javaoperatorsdk.operator.junit.DefaultPerClassNamespaceNameSupp
 import static io.javaoperatorsdk.operator.junit.NamespaceNamingTestUtils.SHORT_CLASS_NAME;
 import static io.javaoperatorsdk.operator.junit.NamespaceNamingTestUtils.VERY_LONG_CLASS_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 class DefaultPerClassNamespaceNameSupplierTest {
 

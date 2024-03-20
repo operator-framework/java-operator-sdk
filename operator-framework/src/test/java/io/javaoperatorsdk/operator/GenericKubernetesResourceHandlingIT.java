@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.extension.RegisterExtension;
-
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.generickubernetesresource.GenericKubernetesDependentSpec;
 import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesresourcehandling.GenericKubernetesResourceHandlingCustomResource;
 import io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesresourcehandling.GenericKubernetesResourceHandlingReconciler;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class GenericKubernetesResourceHandlingIT
     extends GenericKubernetesDependentTestBase<GenericKubernetesResourceHandlingCustomResource> {

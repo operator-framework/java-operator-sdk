@@ -1,9 +1,7 @@
 package io.javaoperatorsdk.operator;
 
-import java.time.Duration;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -12,9 +10,9 @@ import io.javaoperatorsdk.operator.sample.statefulsetdesiredsanitizer.StatefulSe
 import io.javaoperatorsdk.operator.sample.statefulsetdesiredsanitizer.StatefulSetDesiredSanitizerDependentResource;
 import io.javaoperatorsdk.operator.sample.statefulsetdesiredsanitizer.StatefulSetDesiredSanitizerReconciler;
 import io.javaoperatorsdk.operator.sample.statefulsetdesiredsanitizer.StatefulSetDesiredSanitizerSpec;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class StatefulSetDesiredSanitizerIT {
 

@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceSpec.CHANGED_VALUE;
+import static io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceSpec.INITIAL_VALUE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -9,11 +11,8 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceCustomResource;
 import io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceSpec;
 import io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceTestReconciler;
-
-import static io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceSpec.CHANGED_VALUE;
-import static io.javaoperatorsdk.operator.sample.specialresourcesdependent.SpecialResourceSpec.INITIAL_VALUE;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /*
  * Test for resources that are somehow special, currently mostly to cover the approach to handle

@@ -1,11 +1,5 @@
 package io.javaoperatorsdk.operator.sample.deployment;
 
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
@@ -14,6 +8,10 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ControllerConfiguration(labelSelector = "test=KubernetesResourceStatusUpdateIT")
 public class DeploymentReconciler

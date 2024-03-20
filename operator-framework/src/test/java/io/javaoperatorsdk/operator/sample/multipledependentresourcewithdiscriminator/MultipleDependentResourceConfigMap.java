@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.sample.multipledependentresourcewithdiscriminator;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MultipleDependentResourceConfigMap
     extends

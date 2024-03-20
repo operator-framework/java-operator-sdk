@@ -1,10 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
+import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -14,9 +11,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
-
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
-import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {

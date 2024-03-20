@@ -1,15 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-
-import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {

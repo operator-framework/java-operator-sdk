@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.sample.multipledependentresourcewithdiscriminator;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -10,6 +7,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @ControllerConfiguration
 public class MultipleDependentResourceWithDiscriminatorReconciler

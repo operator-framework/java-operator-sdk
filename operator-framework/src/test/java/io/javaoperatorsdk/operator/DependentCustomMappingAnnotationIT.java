@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.CustomMappingConfigMapDependentResource.CUSTOM_NAMESPACE_KEY;
+import static io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.CustomMappingConfigMapDependentResource.CUSTOM_NAME_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -10,11 +12,8 @@ import io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.Custo
 import io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.DependentCustomMappingCustomResource;
 import io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.DependentCustomMappingReconciler;
 import io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.DependentCustomMappingSpec;
-
-import static io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.CustomMappingConfigMapDependentResource.CUSTOM_NAMESPACE_KEY;
-import static io.javaoperatorsdk.operator.sample.dependentcustommappingannotation.CustomMappingConfigMapDependentResource.CUSTOM_NAME_KEY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class DependentCustomMappingAnnotationIT {
 

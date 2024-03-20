@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Objects;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
+import java.util.Objects;
 
 public class ResourceComparators {
 

@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.sample.dependentoperationeventfiltering;
 
-import java.util.HashMap;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import java.util.HashMap;
 
 public class ConfigMapDependentResource extends
     CRUDKubernetesDependentResource<ConfigMap, DependentOperationEventFilterCustomResource> {

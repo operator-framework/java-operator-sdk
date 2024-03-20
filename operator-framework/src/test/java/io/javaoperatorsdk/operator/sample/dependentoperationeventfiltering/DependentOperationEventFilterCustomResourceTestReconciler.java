@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.sample.dependentoperationeventfiltering;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = {
     @Dependent(type = ConfigMapDependentResource.class)

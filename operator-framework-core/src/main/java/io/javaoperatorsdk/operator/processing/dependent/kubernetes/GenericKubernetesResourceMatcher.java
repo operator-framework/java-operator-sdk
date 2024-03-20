@@ -1,17 +1,15 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
     implements Matcher<R, P> {

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import io.javaoperatorsdk.operator.OperatorException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -15,11 +16,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.javaoperatorsdk.operator.OperatorException;
 
 public class ExecutorServiceManager {
 

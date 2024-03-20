@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.junit;
 
-import java.util.UUID;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.awaitility.Awaitility.await;
+import java.util.UUID;
 
 public class InClusterCurl {
 

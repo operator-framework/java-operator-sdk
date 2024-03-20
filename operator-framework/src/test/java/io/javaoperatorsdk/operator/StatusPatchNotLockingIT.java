@@ -1,21 +1,19 @@
 package io.javaoperatorsdk.operator;
 
-import java.time.Duration;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler.MESSAGE;
+import static io.javaoperatorsdk.operator.sample.statusupdatelocking.StatusUpdateLockingReconciler.WAIT_TIME;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResource;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler;
-
-import static io.javaoperatorsdk.operator.sample.statuspatchnonlocking.StatusPatchLockingReconciler.MESSAGE;
-import static io.javaoperatorsdk.operator.sample.statusupdatelocking.StatusUpdateLockingReconciler.WAIT_TIME;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import java.time.Duration;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class StatusPatchNotLockingIT {
 

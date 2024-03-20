@@ -1,16 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 class WorkflowResultTest {
 

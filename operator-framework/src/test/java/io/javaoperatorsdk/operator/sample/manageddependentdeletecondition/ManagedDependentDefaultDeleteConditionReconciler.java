@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.sample.manageddependentdeletecondition;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.KubernetesResourceDeletedCondition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Workflow(dependents = {
     @Dependent(name = "ConfigMap", type = ConfigMapDependent.class),

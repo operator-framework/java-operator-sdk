@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.time.Duration;
+import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration.*;
 
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
-
-import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration.*;
+import java.time.Duration;
 
 public final class LeaderElectionConfigurationBuilder {
 

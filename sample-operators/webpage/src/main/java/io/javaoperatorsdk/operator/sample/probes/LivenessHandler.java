@@ -1,13 +1,11 @@
 package io.javaoperatorsdk.operator.sample.probes;
 
-import java.io.IOException;
-
-import io.javaoperatorsdk.operator.Operator;
+import static io.javaoperatorsdk.operator.sample.probes.StartupHandler.sendMessage;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-
-import static io.javaoperatorsdk.operator.sample.probes.StartupHandler.sendMessage;
+import io.javaoperatorsdk.operator.Operator;
+import java.io.IOException;
 
 public class LivenessHandler implements HttpHandler {
 

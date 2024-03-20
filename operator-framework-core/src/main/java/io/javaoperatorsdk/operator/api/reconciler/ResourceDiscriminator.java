@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import java.util.Optional;
 
 public interface ResourceDiscriminator<R, P extends HasMetadata> {
 

@@ -1,37 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.internal.stubbing.answers.AnswersWithDelay;
-import org.mockito.internal.stubbing.answers.Returns;
-import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
-import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
-import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
-import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
-import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-
 import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +18,36 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
+import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.internal.stubbing.answers.AnswersWithDelay;
+import org.mockito.internal.stubbing.answers.Returns;
+import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class EventProcessorTest {

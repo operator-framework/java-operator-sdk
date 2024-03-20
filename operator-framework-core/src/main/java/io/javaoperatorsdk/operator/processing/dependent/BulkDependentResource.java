@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
+import java.util.Map;
 
 /**
  * Manages dynamic number of resources created for a primary resource. Since the point of a bulk

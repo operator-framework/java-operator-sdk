@@ -1,14 +1,14 @@
 package io.javaoperatorsdk.operator.sample;
 
+import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
+import static io.javaoperatorsdk.operator.sample.Utils.handleError;
+import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.dependentresource.*;
-
-import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
-import static io.javaoperatorsdk.operator.sample.Utils.handleError;
-import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
 
 /**
  * Shows how to implement a reconciler with managed dependent resources.

@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.lang.annotation.*;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import java.lang.annotation.*;
 
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)

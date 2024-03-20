@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.Optional;
-import java.util.function.Function;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
+import java.util.Optional;
+import java.util.function.Function;
 
 public class ResourceIDMatcherDiscriminator<R extends HasMetadata, P extends HasMetadata>
     implements ResourceDiscriminator<R, P> {

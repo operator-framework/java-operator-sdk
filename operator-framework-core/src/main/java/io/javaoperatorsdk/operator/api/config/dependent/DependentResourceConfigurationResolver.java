@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.api.config.dependent;
 
-import java.lang.annotation.Annotation;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import java.lang.annotation.Annotation;
+import java.util.HashMap;
+import java.util.Map;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class DependentResourceConfigurationResolver {

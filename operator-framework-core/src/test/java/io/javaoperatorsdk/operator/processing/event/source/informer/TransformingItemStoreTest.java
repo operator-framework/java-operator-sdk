@@ -1,14 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
+import static io.fabric8.kubernetes.client.informers.cache.Cache.metaNamespaceKeyFunc;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-
-import static io.fabric8.kubernetes.client.informers.cache.Cache.metaNamespaceKeyFunc;
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 class TransformingItemStoreTest {
 

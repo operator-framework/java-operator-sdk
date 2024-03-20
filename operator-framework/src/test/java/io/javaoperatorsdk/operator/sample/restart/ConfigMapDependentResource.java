@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.sample.restart;
 
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import java.util.Map;
 
 @KubernetesDependent(labelSelector = "app=restart-test")
 public class ConfigMapDependentResource

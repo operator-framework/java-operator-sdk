@@ -1,10 +1,5 @@
 package io.javaoperatorsdk.operator.sample.dependent;
 
-import java.util.Base64;
-import java.util.Set;
-
-import org.apache.commons.lang3.RandomStringUtils;
-
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -14,6 +9,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.MySQLSchema;
+import java.util.Base64;
+import java.util.Set;
+import org.apache.commons.lang3.RandomStringUtils;
 
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
     implements Creator<Secret, MySQLSchema>, SecondaryToPrimaryMapper<Secret> {

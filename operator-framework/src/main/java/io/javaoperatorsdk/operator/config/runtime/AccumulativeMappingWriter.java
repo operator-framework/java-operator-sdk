@@ -7,7 +7,6 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.tools.StandardLocation;
 

@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.sample.primarytosecondaydependent;
 
+import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.DATA_KEY;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-
-import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.DATA_KEY;
 
 public class ConfigMapReconcilePrecondition
     implements Condition<ConfigMap, PrimaryToSecondaryDependentCustomResource> {

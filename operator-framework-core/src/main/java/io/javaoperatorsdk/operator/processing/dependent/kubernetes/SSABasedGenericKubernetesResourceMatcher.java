@@ -1,12 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
@@ -15,6 +8,11 @@ import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LoggingUtils;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.

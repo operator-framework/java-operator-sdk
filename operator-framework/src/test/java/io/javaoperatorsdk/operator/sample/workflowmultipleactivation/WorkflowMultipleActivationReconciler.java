@@ -1,9 +1,8 @@
 package io.javaoperatorsdk.operator.sample.workflowmultipleactivation;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = {
     @Dependent(type = ConfigMapDependentResource.class,

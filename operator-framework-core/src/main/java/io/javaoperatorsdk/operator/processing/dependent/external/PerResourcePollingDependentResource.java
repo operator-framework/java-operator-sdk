@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.processing.dependent.external;
 
-import java.time.Duration;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
+import java.time.Duration;
 
 @Ignore
 public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata>

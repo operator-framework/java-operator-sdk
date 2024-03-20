@@ -1,10 +1,9 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
-import java.util.Optional;
-
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
+import java.util.Optional;
 
 /**
  * Contextual information related to {@link DependentResource} either to retrieve the actual

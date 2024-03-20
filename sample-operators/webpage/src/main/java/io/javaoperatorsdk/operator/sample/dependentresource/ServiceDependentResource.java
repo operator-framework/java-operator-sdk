@@ -1,18 +1,17 @@
 package io.javaoperatorsdk.operator.sample.dependentresource;
 
-import java.util.HashMap;
-import java.util.Map;
+import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
+import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
+import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
+import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.sample.Utils;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
-
-import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
-import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
-import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
-import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
+import java.util.HashMap;
+import java.util.Map;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(labelSelector = SELECTOR)

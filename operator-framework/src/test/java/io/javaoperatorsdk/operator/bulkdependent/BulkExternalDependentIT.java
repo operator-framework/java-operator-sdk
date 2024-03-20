@@ -1,15 +1,14 @@
 package io.javaoperatorsdk.operator.bulkdependent;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import static io.javaoperatorsdk.operator.bulkdependent.BulkDependentTestBase.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.sample.bulkdependent.external.ExternalBulkResourceReconciler;
 import io.javaoperatorsdk.operator.sample.bulkdependent.external.ExternalServiceMock;
-
-import static io.javaoperatorsdk.operator.bulkdependent.BulkDependentTestBase.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 class BulkExternalDependentIT {
 

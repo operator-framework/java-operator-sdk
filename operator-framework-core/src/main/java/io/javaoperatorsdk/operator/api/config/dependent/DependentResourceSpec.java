@@ -1,12 +1,11 @@
 package io.javaoperatorsdk.operator.api.config.dependent;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 public class DependentResourceSpec<R, P extends HasMetadata> {
 

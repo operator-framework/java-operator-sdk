@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -19,8 +17,9 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {

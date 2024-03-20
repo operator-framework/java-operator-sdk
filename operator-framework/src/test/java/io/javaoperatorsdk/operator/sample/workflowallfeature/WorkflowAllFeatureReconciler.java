@@ -1,11 +1,10 @@
 package io.javaoperatorsdk.operator.sample.workflowallfeature;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureReconciler.DEPLOYMENT_NAME;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-
-import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureReconciler.DEPLOYMENT_NAME;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Workflow(dependents = {
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,

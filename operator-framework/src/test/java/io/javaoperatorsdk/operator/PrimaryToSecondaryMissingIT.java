@@ -1,16 +1,15 @@
 package io.javaoperatorsdk.operator;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
-
-import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.primarytosecondary.Cluster;
-import io.javaoperatorsdk.operator.sample.primarytosecondary.JobReconciler;
-
 import static io.javaoperatorsdk.operator.PrimaryToSecondaryIT.cluster;
 import static io.javaoperatorsdk.operator.PrimaryToSecondaryIT.job;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+
+import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.sample.primarytosecondary.Cluster;
+import io.javaoperatorsdk.operator.sample.primarytosecondary.JobReconciler;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * The intention with this IT is to show the use cases why the PrimaryToSecondary Mapper is needed,

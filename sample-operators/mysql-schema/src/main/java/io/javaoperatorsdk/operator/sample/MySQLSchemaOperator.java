@@ -1,19 +1,17 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
+import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
+import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
+import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.takes.facets.fork.FkRegex;
 import org.takes.facets.fork.TkFork;
 import org.takes.http.Exit;
 import org.takes.http.FtBasic;
-
-import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
-import io.javaoperatorsdk.operator.sample.dependent.ResourcePollerConfig;
-import io.javaoperatorsdk.operator.sample.dependent.SchemaDependentResource;
-import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 
 public class MySQLSchemaOperator {
 

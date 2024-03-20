@@ -1,8 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.rate;
 
-import java.time.LocalDateTime;
-
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
+import java.time.LocalDateTime;
 
 class RateState implements RateLimitState {
 

@@ -1,13 +1,12 @@
 package io.javaoperatorsdk.operator.sample.manageddependentdeletecondition;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Map;
-
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Map;
 
 public class SecretDependent
     extends

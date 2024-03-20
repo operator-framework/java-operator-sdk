@@ -1,19 +1,17 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-import java.util.Arrays;
-import java.util.Set;
-
-import org.mockito.Mockito;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
+import java.util.Arrays;
+import java.util.Set;
+import org.mockito.Mockito;
 
 @SuppressWarnings("rawtypes")
 public class ManagedWorkflowTestUtils {
