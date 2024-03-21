@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-class ManagedWorkflowSupport {
+public class ManagedWorkflowSupport {
 
   public void checkForNameDuplication(List<DependentResourceSpec> dependentResourceSpecs) {
     if (dependentResourceSpecs == null) {
