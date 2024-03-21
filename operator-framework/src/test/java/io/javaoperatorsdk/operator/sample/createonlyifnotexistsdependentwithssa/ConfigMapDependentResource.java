@@ -26,5 +26,3 @@ public class ConfigMapDependentResource extends
     return configMap;
   }
 }
-
-
