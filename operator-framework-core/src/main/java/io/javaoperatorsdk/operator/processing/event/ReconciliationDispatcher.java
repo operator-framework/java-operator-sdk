@@ -46,7 +46,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   // Usually for testing purposes.
   private final boolean retryConfigurationHasZeroAttempts;
   private final Cloner cloner;
-  private final boolean useSSAForPrimaryResourceNonStatusPatch;
+  private final boolean useSSA;
 
   ReconciliationDispatcher(Controller<P> controller, CustomResourceFacade<P> customResourceFacade) {
     this.controller = controller;
@@ -55,7 +55,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     var retry = controller.getConfiguration().getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
-    useSSAForPrimaryResourceNonStatusPatch = controller.getConfiguration()
+    useSSA = controller.getConfiguration()
         // todo rename flag more generic
         .getConfigurationService().useSSAForResourceStatusPatch();
   }
@@ -119,7 +119,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
        * finalizer.
        */
       P updatedResource;
-      if (useSSAForPrimaryResourceNonStatusPatch) {
+      if (useSSA) {
         updatedResource = addFinalizerWithSSA(originalResource);
       } else {
         updatedResource =
@@ -149,15 +149,17 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     UpdateControl<P> updateControl = controller.reconcile(resourceForExecution, context);
     P updatedCustomResource = null;
+    // todo this needs to be refactored, SSA will always use the resource from UpdateControl
+    // except when noUpdate but there is observed generation update supported
     final var toUpdate =
         updateControl.isNoUpdate() ? originalResource : updateControl.getResource();
     if (updateControl.isPatchResourceAndStatus()) {
-      updatedCustomResource = updateCustomResource(toUpdate);
+      updatedCustomResource = patchResource(toUpdate);
       toUpdate
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
     } else if (updateControl.isPatchResource()) {
-      updatedCustomResource = updateCustomResource(toUpdate);
+      updatedCustomResource = patchResource(toUpdate);
     }
 
     // check if status also needs to be updated
@@ -167,7 +169,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     if (updateControl.isPatchResourceAndStatus() || updateControl.isPatchStatus()
         || updateObservedGeneration) {
       updatedCustomResource =
-          updateStatusGenerationAware(toUpdate, originalResource, updateControl.isPatchStatus());
+          patchStatusGenerationAware(toUpdate, originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -223,13 +225,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return controller.getReconciler() instanceof ErrorStatusHandler;
   }
 
-  private P updateStatusGenerationAware(P resource, P originalResource, boolean patch) {
+  private P patchStatusGenerationAware(P resource, P originalResource) {
     updateStatusObservedGenerationIfRequired(resource);
-    if (patch) {
-      return customResourceFacade.patchStatus(resource, originalResource);
-    } else {
-      return customResourceFacade.updateStatus(resource);
-    }
+    return customResourceFacade.patchStatus(resource, originalResource);
   }
 
   @SuppressWarnings("rawtypes")
@@ -347,12 +345,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
-  private P updateCustomResource(P resource) {
+  private P patchResource(P resource) {
     log.debug("Updating resource: {} with version: {}", getUID(resource),
         getVersion(resource));
     log.trace("Resource before update: {}", resource);
 
-    return customResourceFacade.updateResource(resource);
+    return customResourceFacade.patchResource(resource);
   }
 
   ControllerConfiguration<P> configuration() {
@@ -370,7 +368,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (Boolean.FALSE.equals(modified)) {
           return resource;
         }
-        return customResourceFacade.updateResource(resource);
+        return customResourceFacade.patchResource(resource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -394,14 +392,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   static class CustomResourceFacade<R extends HasMetadata> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
-    private final boolean useSSAToUpdateStatus;
+    private final boolean useSSA;
     private final String fieldManager;
 
     public CustomResourceFacade(
         MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
         ControllerConfiguration<R> configuration) {
       this.resourceOperation = resourceOperation;
-      this.useSSAToUpdateStatus =
+      this.useSSA =
           configuration.getConfigurationService().useSSAForResourceStatusPatch();
       this.fieldManager = configuration.fieldManager();
     }
@@ -425,21 +423,24 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           .update();
     }
 
-    public R updateStatus(R resource) {
-      log.trace("Updating status for resource: {}", resource);
-      return resource(resource)
-          .lockResourceVersion()
-          .updateStatus();
+    public R patchResource(R resource) {
+      if (log.isDebugEnabled()) {
+        log.debug(
+                "Trying to replace resource {}, version: {}",
+                ResourceID.fromResource(resource),
+                resource.getMetadata().getResourceVersion());
+      }
+      return resource(resource).patch();
     }
 
     public R patchStatus(R resource, R originalResource) {
-      log.trace("Patching status for resource: {} with ssa: {}", resource, useSSAToUpdateStatus);
+      log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // don't do optimistic locking on patch
       originalResource.getMetadata().setResourceVersion(null);
       resource.getMetadata().setResourceVersion(null);
       try {
-        if (useSSAToUpdateStatus) {
+        if (useSSA) {
           var managedFields = resource.getMetadata().getManagedFields();
           try {
 
