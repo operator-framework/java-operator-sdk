@@ -78,21 +78,21 @@
     <mustache.version>0.9.11</mustache.version>
     <commons.io.version>2.16.1</commons.io.version>
 
-    <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
-    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
-    <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
+      <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
+      <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
     <maven-javadoc-plugin.version>3.8.0</maven-javadoc-plugin.version>
-    <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-    <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
-    <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
-    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
-    <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
-    <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+      <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+      <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+        <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
+      <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
+      <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
+      <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
+      <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
     <git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
-    <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
-    <spotless.version>2.43.0</spotless.version>
+      <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
+      <spotless.version>2.43.0</spotless.version>
   </properties>
 
   <dependencyManagement>
