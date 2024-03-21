@@ -385,14 +385,4 @@ public interface ConfigurationService {
     return true;
   }
 
-  /**
-   * If SSA should be used to add finalizer and for patching the resource spec or metadata or other
-   * fields excluding the status subresource.
-   *
-   * @return true by default
-   */
-  default boolean useSSAForPrimaryResourceNonStatusPath() {
-    return true;
-  }
-
 }

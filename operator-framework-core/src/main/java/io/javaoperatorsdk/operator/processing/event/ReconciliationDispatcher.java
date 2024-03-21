@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.processing.event;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +46,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   // Usually for testing purposes.
   private final boolean retryConfigurationHasZeroAttempts;
   private final Cloner cloner;
+  private final boolean useSSAForPrimaryResourceNonStatusPatch;
 
   ReconciliationDispatcher(Controller<P> controller, CustomResourceFacade<P> customResourceFacade) {
     this.controller = controller;
@@ -54,6 +55,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     var retry = controller.getConfiguration().getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
+    useSSAForPrimaryResourceNonStatusPatch = controller.getConfiguration()
+            // todo rename flag more generic
+            .getConfigurationService().useSSAForResourceStatusPatch();
   }
 
   public ReconciliationDispatcher(Controller<P> controller) {
@@ -114,8 +118,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
        * finalizer add. This will make sure that the resources are not created before there is a
        * finalizer.
        */
-      var updatedResource =
-          updateCustomResourceWithFinalizer(resourceForExecution, originalResource);
+      P updatedResource;
+      if (useSSAForPrimaryResourceNonStatusPatch) {
+        updatedResource = addFinalizerWithSSA(originalResource);
+      } else {
+        updatedResource =
+                updateCustomResourceWithFinalizer(resourceForExecution, originalResource);
+      }
       return PostExecutionControl.onlyFinalizerAdded(updatedResource);
     } else {
       try {
@@ -325,6 +334,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             getUID(originalResource),getVersion(originalResource));
       try {
           P resource = (P) originalResource.getClass().getConstructor().newInstance();
+          ObjectMeta objectMeta = new ObjectMeta();
+          objectMeta.setName(originalResource.getMetadata().getName());
+          objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
+          resource.setMetadata(objectMeta);
+          objectMeta.getFinalizers().add(configuration().getFinalizerName());
           return customResourceFacade.patchResourceWithSSA(resource);
       } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
           throw new RuntimeException(e);
