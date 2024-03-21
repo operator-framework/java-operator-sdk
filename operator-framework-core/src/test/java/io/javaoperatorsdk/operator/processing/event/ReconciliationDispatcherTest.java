@@ -78,8 +78,7 @@ class ReconciliationDispatcherTest {
                     return object;
                   }
                 })
-               .withUseSSAForResourceStatusPatch(false)
-        );
+                .withUseSSAForResourceStatusPatch(false));
   }
 
   @BeforeEach
@@ -180,7 +179,7 @@ class ReconciliationDispatcherTest {
     verify(customResourceFacade, never()).updateStatus(any());
     verify(customResourceFacade, never()).updateResource(any());
   }
-  
+
   @Test
   void callCreateOrUpdateOnModifiedResourceIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
