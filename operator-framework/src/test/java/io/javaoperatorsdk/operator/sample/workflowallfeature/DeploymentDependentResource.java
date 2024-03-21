@@ -25,5 +25,3 @@ public class DeploymentDependentResource extends
     return deployment;
   }
 }
-
-
