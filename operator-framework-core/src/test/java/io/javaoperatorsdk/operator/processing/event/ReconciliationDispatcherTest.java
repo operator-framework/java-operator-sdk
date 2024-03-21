@@ -77,7 +77,9 @@ class ReconciliationDispatcherTest {
                   public <R extends HasMetadata> R clone(R object) {
                     return object;
                   }
-                }));
+                })
+               .withUseSSAForResourceStatusPatch(false)
+        );
   }
 
   @BeforeEach
@@ -178,7 +180,7 @@ class ReconciliationDispatcherTest {
     verify(customResourceFacade, never()).updateStatus(any());
     verify(customResourceFacade, never()).updateResource(any());
   }
-
+  
   @Test
   void callCreateOrUpdateOnModifiedResourceIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
