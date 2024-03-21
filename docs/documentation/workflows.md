@@ -76,7 +76,7 @@ will only consider the `ConfigMap` deleted until that post-condition becomes `tr
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
         readyPostcondition = DeploymentReadyCondition.class),
     @Dependent(type = ConfigMapDependentResource.class,
-        reconcilePrecondition = ConfigMapCondition.class,
+        condition = ConfigMapCondition.class,
         deletePostcondition = ConfigMapDeletePostCondition.class,
         activationCondition = ConfigMapActivationCondition.class,
         dependsOn = DEPLOYMENT_NAME)
@@ -252,7 +252,7 @@ stateDiagram-v2
 - If `2`'s reconciliation resulted in an error, `4` would not be reconciled, but `3`
   would be (and `1` as well, of course).
 
-#### Sample with Reconcile Precondition
+#### Sample with Condition
 
 <div class="mermaid" markdown="0"> 
 

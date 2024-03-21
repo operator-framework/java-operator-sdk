@@ -68,7 +68,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
 
     boolean condition = true;
     if (activationConditionMet) {
-      condition = isConditionMet(dependentResourceNode.getReconcilePrecondition(),
+      condition = isConditionMet(dependentResourceNode.getCondition(),
           dependentResourceNode.getDependentResource());
     }
     if (!condition || !activationConditionMet) {

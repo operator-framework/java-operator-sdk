@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  * {@link io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource}
  * to express that the resource deletion is handled by the controller during
  * {@link DependentResource#reconcile(HasMetadata, Context)}. This takes effect during a
- * reconciliation workflow, but not during a cleanup workflow, when a {@code reconcilePrecondition}
+ * reconciliation workflow, but not during a cleanup workflow, when a {@code condition}
  * is not met for the resource. In this case, {@link #delete(HasMetadata, Context)} is called.
  * During a cleanup workflow, however, {@link #delete(HasMetadata, Context)} is not called, letting
  * the Kubernetes garbage collector do its work instead (using owner references).

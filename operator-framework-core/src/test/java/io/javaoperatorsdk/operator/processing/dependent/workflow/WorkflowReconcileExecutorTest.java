@@ -452,7 +452,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  void garbageCollectedResourceIsDeletedIfReconcilePreconditionDoesNotHold() {
+  void garbageCollectedResourceIsDeletedIfConditionDoesNotHold() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(gcDeleter).withCondition(notMetCondition)
         .build();
@@ -464,7 +464,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  void garbageCollectedDeepResourceIsDeletedIfReconcilePreconditionDoesNotHold() {
+  void garbageCollectedDeepResourceIsDeletedIfConditionDoesNotHold() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1).withCondition(notMetCondition)
         .addDependentResource(gcDeleter).dependsOn(dr1)
@@ -521,18 +521,18 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  void reconcilePreconditionNotCheckedOnNonActiveDependent() {
-    var precondition = mock(Condition.class);
+  void conditionNotCheckedOnNonActiveDependent() {
+    var condition = mock(Condition.class);
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .withActivationCondition(notMetCondition)
-        .withCondition(precondition)
+        .withCondition(condition)
         .build();
 
     workflow.reconcile(new TestCustomResource(), mockContext);
 
-    verify(precondition, never()).isMet(any(), any(), any());
+    verify(condition, never()).isMet(any(), any(), any());
   }
 
   @Test

@@ -23,7 +23,7 @@ class BulkDependentWithConditionIT {
           .build();
 
   @Test
-  void handlesBulkDependentWithPrecondition() {
+  void handlesBulkDependentWithCondition() {
     var resource = testResource();
     extension.create(resource);
 

@@ -13,7 +13,7 @@ class DependentResourceNode<R, P extends HasMetadata> {
   private final List<DependentResourceNode> dependsOn = new LinkedList<>();
   private final List<DependentResourceNode> parents = new LinkedList<>();
 
-  private Condition<R, P> reconcilePrecondition;
+  private Condition<R, P> condition;
   private Condition<R, P> deletePostcondition;
   private Condition<R, P> readyPostcondition;
   private Condition<R, P> activationCondition;
@@ -23,10 +23,10 @@ class DependentResourceNode<R, P extends HasMetadata> {
     this(null, null, null, null, dependentResource);
   }
 
-  public DependentResourceNode(Condition<R, P> reconcilePrecondition,
+  public DependentResourceNode(Condition<R, P> condition,
       Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
       Condition<R, P> activationCondition, DependentResource<R, P> dependentResource) {
-    this.reconcilePrecondition = reconcilePrecondition;
+    this.condition = condition;
     this.deletePostcondition = deletePostcondition;
     this.readyPostcondition = readyPostcondition;
     this.activationCondition = activationCondition;
@@ -50,8 +50,8 @@ class DependentResourceNode<R, P extends HasMetadata> {
     return parents;
   }
 
-  public Optional<Condition<R, P>> getReconcilePrecondition() {
-    return Optional.ofNullable(reconcilePrecondition);
+  public Optional<Condition<R, P>> getCondition() {
+    return Optional.ofNullable(condition);
   }
 
   public Optional<Condition<R, P>> getDeletePostcondition() {
@@ -62,8 +62,8 @@ class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(activationCondition);
   }
 
-  void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
-    this.reconcilePrecondition = reconcilePrecondition;
+  void setCondition(Condition<R, P> condition) {
+    this.condition = condition;
   }
 
   void setDeletePostcondition(Condition<R, P> cleanupCondition) {

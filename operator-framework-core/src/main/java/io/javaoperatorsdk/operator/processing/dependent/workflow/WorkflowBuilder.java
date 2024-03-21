@@ -43,8 +43,8 @@ public class WorkflowBuilder<P extends HasMetadata> {
     return this;
   }
 
-  public WorkflowBuilder<P> withCondition(Condition reconcilePrecondition) {
-    currentNode.setReconcilePrecondition(reconcilePrecondition);
+  public WorkflowBuilder<P> withCondition(Condition condition) {
+    currentNode.setCondition(condition);
     return this;
   }
 

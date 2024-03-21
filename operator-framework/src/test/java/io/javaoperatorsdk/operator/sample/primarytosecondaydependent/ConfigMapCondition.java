@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.PrimaryToSecondaryDependentReconciler.DATA_KEY;
 
-public class ConfigMapReconcilePrecondition
+public class ConfigMapCondition
     implements Condition<ConfigMap, PrimaryToSecondaryDependentCustomResource> {
 
   public static final String DO_NOT_RECONCILE = "doNotReconcile";
