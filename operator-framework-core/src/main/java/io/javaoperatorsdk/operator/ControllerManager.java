@@ -89,4 +89,3 @@ class ControllerManager {
     return controllers.size();
   }
 }
-
