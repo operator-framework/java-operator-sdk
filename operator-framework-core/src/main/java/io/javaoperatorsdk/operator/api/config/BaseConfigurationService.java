@@ -215,7 +215,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       spec = new DependentResourceSpec(dependentType, dependentName,
           Set.of(dependent.dependsOn()),
           Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
-          Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
+          Utils.instantiate(dependent.condition(), Condition.class, context),
           Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
           Utils.instantiate(dependent.activationCondition(), Condition.class, context),
           eventSourceName);

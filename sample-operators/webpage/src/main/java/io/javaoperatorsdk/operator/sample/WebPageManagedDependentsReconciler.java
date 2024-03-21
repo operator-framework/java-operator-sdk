@@ -18,7 +18,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
     @Dependent(type = DeploymentDependentResource.class),
     @Dependent(type = ServiceDependentResource.class),
     @Dependent(type = IngressDependentResource.class,
-        reconcilePrecondition = ExposedIngressCondition.class)
+        condition = ExposedIngressCondition.class)
 })
 @ControllerConfiguration
 public class WebPageManagedDependentsReconciler

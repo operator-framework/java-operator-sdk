@@ -66,12 +66,12 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
         dependentResourceNode.getDependentResource());
     registerOrDeregisterEventSourceBasedOnActivation(activationConditionMet, dependentResourceNode);
 
-    boolean reconcileConditionMet = true;
+    boolean condition = true;
     if (activationConditionMet) {
-      reconcileConditionMet = isConditionMet(dependentResourceNode.getReconcilePrecondition(),
+      condition = isConditionMet(dependentResourceNode.getReconcilePrecondition(),
           dependentResourceNode.getDependentResource());
     }
-    if (!reconcileConditionMet || !activationConditionMet) {
+    if (!condition || !activationConditionMet) {
       handleReconcileOrActivationConditionNotMet(dependentResourceNode, activationConditionMet);
     } else {
       submit(dependentResourceNode, new NodeReconcileExecutor<>(dependentResourceNode), RECONCILE);

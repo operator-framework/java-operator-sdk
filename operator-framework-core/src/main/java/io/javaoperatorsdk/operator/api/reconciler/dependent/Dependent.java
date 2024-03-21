@@ -33,12 +33,12 @@ public @interface Dependent {
   /**
    * The condition (if it exists) that needs to become true before the associated
    * {@link DependentResource} is reconciled. Note that if this condition is set and the condition
-   * doesn't hold true, the associated secondary will be deleted.
+   * doesn't hold true, the associated secondary will be deleted (if exists).
    *
    * @return a {@link Condition} implementation, defaulting to the interface itself if no value is
    *         set
    */
-  Class<? extends Condition> reconcilePrecondition() default Condition.class;
+  Class<? extends Condition> condition() default Condition.class;
 
   /**
    * The condition (if it exists) that needs to become true before further reconciliation of

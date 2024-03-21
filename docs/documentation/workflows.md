@@ -28,7 +28,7 @@ reconciliation process.
 - **Dependent resource** (DR) - are the resources being managed in a given reconciliation logic.
 - **Depends-on relation** - a `B` DR depends on another `A` DR if `B` needs to be reconciled
   after `A`.
-- **Reconcile precondition** - is a condition on a given DR that needs to be become true before the
+- **Condition** - is a condition on a given DR that needs to be become true before the
   DR is reconciled. This also allows to define optional resources that would, for example, only be
   created if a flag in a custom resource `.spec` has some specific value.
 - **Ready postcondition** - is a condition on a given DR to prevent the workflow from
@@ -76,7 +76,7 @@ will only consider the `ConfigMap` deleted until that post-condition becomes `tr
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
         readyPostcondition = DeploymentReadyCondition.class),
     @Dependent(type = ConfigMapDependentResource.class,
-        reconcilePrecondition = ConfigMapReconcileCondition.class,
+        reconcilePrecondition = ConfigMapCondition.class,
         deletePostcondition = ConfigMapDeletePostCondition.class,
         activationCondition = ConfigMapActivationCondition.class,
         dependsOn = DEPLOYMENT_NAME)

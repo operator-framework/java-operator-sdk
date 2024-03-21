@@ -26,7 +26,7 @@ import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.Prim
  */
 @Workflow(dependents = {@Dependent(type = ConfigMapDependent.class,
     name = CONFIG_MAP,
-    reconcilePrecondition = ConfigMapReconcilePrecondition.class,
+    condition = ConfigMapReconcilePrecondition.class,
     useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
     @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)})
 @ControllerConfiguration()

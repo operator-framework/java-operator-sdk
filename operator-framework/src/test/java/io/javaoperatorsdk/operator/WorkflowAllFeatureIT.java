@@ -56,7 +56,7 @@ public class WorkflowAllFeatureIT {
 
 
   @Test
-  void configMapNotReconciledIfReconcileConditionNotMet() {
+  void configMapNotReconciledIfConditionNotMet() {
     var resource = operator.create(customResource(false));
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {

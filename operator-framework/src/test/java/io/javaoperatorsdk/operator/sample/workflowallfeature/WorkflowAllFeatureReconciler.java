@@ -11,7 +11,7 @@ import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllF
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
         readyPostcondition = DeploymentReadyCondition.class),
     @Dependent(type = ConfigMapDependentResource.class,
-        reconcilePrecondition = ConfigMapReconcileCondition.class,
+        condition = ConfigMapCondition.class,
         deletePostcondition = ConfigMapDeletePostCondition.class,
         dependsOn = DEPLOYMENT_NAME)
 })

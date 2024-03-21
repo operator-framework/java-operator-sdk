@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class ConfigMapReconcileCondition
+public class ConfigMapCondition
     implements Condition<ConfigMap, WorkflowAllFeatureCustomResource> {
 
   @Override

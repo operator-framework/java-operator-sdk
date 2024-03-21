@@ -81,7 +81,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     for (DependentResourceSpec spec : orderedSpecs) {
       final var dependentResource = resolve(spec, client, configuration);
       final var node = new DependentResourceNode(
-          spec.getReconcileCondition(),
+          spec.getCondition(),
           spec.getDeletePostCondition(),
           spec.getReadyCondition(),
           spec.getActivationCondition(),

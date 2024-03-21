@@ -18,7 +18,7 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
 
   private final Condition<?, ?> readyCondition;
 
-  private final Condition<?, ?> reconcileCondition;
+  private final Condition<?, ?> condition;
 
   private final Condition<?, ?> deletePostCondition;
 
@@ -27,14 +27,14 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
   private final String useEventSourceWithName;
 
   public DependentResourceSpec(Class<? extends DependentResource<R, P>> dependentResourceClass,
-      String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
-      Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition,
-      Condition<?, ?> activationCondition, String useEventSourceWithName) {
+                               String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
+                               Condition<?, ?> condition, Condition<?, ?> deletePostCondition,
+                               Condition<?, ?> activationCondition, String useEventSourceWithName) {
     this.dependentResourceClass = dependentResourceClass;
     this.name = name;
     this.dependsOn = dependsOn;
     this.readyCondition = readyCondition;
-    this.reconcileCondition = reconcileCondition;
+    this.condition = condition;
     this.deletePostCondition = deletePostCondition;
     this.activationCondition = activationCondition;
     this.useEventSourceWithName = useEventSourceWithName;
@@ -81,8 +81,8 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
   }
 
   @SuppressWarnings("rawtypes")
-  public Condition getReconcileCondition() {
-    return reconcileCondition;
+  public Condition getCondition() {
+    return condition;
   }
 
   @SuppressWarnings("rawtypes")
