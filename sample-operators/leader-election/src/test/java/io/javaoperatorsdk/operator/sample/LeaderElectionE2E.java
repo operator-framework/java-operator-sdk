@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import javaoperatorsdk.sample.v1.LeaderElection;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
