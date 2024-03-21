@@ -3,13 +3,13 @@ package io.javaoperatorsdk.operator.processing.event;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespaced;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -56,8 +56,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     var retry = controller.getConfiguration().getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
     useSSAForPrimaryResourceNonStatusPatch = controller.getConfiguration()
-            // todo rename flag more generic
-            .getConfigurationService().useSSAForResourceStatusPatch();
+        // todo rename flag more generic
+        .getConfigurationService().useSSAForResourceStatusPatch();
   }
 
   public ReconciliationDispatcher(Controller<P> controller) {
@@ -123,7 +123,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         updatedResource = addFinalizerWithSSA(originalResource);
       } else {
         updatedResource =
-                updateCustomResourceWithFinalizer(resourceForExecution, originalResource);
+            updateCustomResourceWithFinalizer(resourceForExecution, originalResource);
       }
       return PostExecutionControl.onlyFinalizerAdded(updatedResource);
     } else {
@@ -330,19 +330,20 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private P addFinalizerWithSSA(P originalResource) {
     log.debug(
-            "Adding finalizer (using SSA) for resource: {} version: {}",
-            getUID(originalResource),getVersion(originalResource));
-      try {
-          P resource = (P) originalResource.getClass().getConstructor().newInstance();
-          ObjectMeta objectMeta = new ObjectMeta();
-          objectMeta.setName(originalResource.getMetadata().getName());
-          objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
-          resource.setMetadata(objectMeta);
-          objectMeta.getFinalizers().add(configuration().getFinalizerName());
-          return customResourceFacade.patchResourceWithSSA(resource);
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-          throw new RuntimeException(e);
-      }
+        "Adding finalizer (using SSA) for resource: {} version: {}",
+        getUID(originalResource), getVersion(originalResource));
+    try {
+      P resource = (P) originalResource.getClass().getConstructor().newInstance();
+      ObjectMeta objectMeta = new ObjectMeta();
+      objectMeta.setName(originalResource.getMetadata().getName());
+      objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
+      resource.setMetadata(objectMeta);
+      objectMeta.getFinalizers().add(configuration().getFinalizerName());
+      return customResourceFacade.patchResourceWithSSA(resource);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private P updateCustomResourceWithFinalizer(P resourceForExecution, P originalResource) {
@@ -474,10 +475,10 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       var managedFields = resource.getMetadata().getManagedFields();
       try {
         return resource(resource).patch(new PatchContext.Builder()
-                        .withFieldManager(fieldManager)
-                        .withForce(true)
-                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                .build());
+            .withFieldManager(fieldManager)
+            .withForce(true)
+            .withPatchType(PatchType.SERVER_SIDE_APPLY)
+            .build());
       } finally {
         resource.getMetadata().setManagedFields(managedFields);
       }
