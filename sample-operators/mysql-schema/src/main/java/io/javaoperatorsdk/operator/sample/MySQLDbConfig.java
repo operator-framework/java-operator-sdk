@@ -43,4 +43,3 @@ public class MySQLDbConfig {
     return password;
   }
 }
-
