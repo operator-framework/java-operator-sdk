@@ -20,4 +20,3 @@ public interface ManagedWorkflowFactory<C extends ControllerConfiguration<?>> {
   @SuppressWarnings("rawtypes")
   ManagedWorkflow workflowFor(C configuration);
 }
-
