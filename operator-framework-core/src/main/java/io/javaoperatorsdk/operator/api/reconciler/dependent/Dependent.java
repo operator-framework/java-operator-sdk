@@ -54,12 +54,11 @@ public @interface Dependent {
    * <p>
    * A condition that needs to become true for the dependent to even be considered as part of the
    * workflow. This is useful for dependents that represent optional resources on the cluster and
-   * might not be present. In this case, a condition is not enough because in that
-   * situation, the associated informer will still be registered. With this activation condition,
-   * the associated event source will only be registered if the condition is met. Otherwise, this
-   * behaves like a reconcile pre-condition in the sense that dependents, that depend on this one,
-   * will only get created if the condition is met and will get deleted if the condition becomes
-   * false.
+   * might not be present. In this case, a condition is not enough because in that situation, the
+   * associated informer will still be registered. With this activation condition, the associated
+   * event source will only be registered if the condition is met. Otherwise, this behaves like a
+   * reconcile pre-condition in the sense that dependents, that depend on this one, will only get
+   * created if the condition is met and will get deleted if the condition becomes false.
    * </p>
    * <p>
    * As other conditions, this gets evaluated at the beginning of every reconciliation, which means

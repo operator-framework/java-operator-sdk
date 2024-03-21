@@ -27,9 +27,9 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
   private final String useEventSourceWithName;
 
   public DependentResourceSpec(Class<? extends DependentResource<R, P>> dependentResourceClass,
-                               String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
-                               Condition<?, ?> condition, Condition<?, ?> deletePostCondition,
-                               Condition<?, ?> activationCondition, String useEventSourceWithName) {
+      String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
+      Condition<?, ?> condition, Condition<?, ?> deletePostCondition,
+      Condition<?, ?> activationCondition, String useEventSourceWithName) {
     this.dependentResourceClass = dependentResourceClass;
     this.name = name;
     this.dependsOn = dependsOn;
