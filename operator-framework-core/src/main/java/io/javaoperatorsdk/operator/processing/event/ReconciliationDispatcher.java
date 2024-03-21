@@ -151,12 +151,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     P updatedCustomResource = null;
     final var toUpdate =
         updateControl.isNoUpdate() ? originalResource : updateControl.getResource();
-    if (updateControl.isUpdateResourceAndStatus()) {
+    if (updateControl.isPatchResourceAndStatus()) {
       updatedCustomResource = updateCustomResource(toUpdate);
       toUpdate
           .getMetadata()
           .setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
-    } else if (updateControl.isUpdateResource()) {
+    } else if (updateControl.isPatchResource()) {
       updatedCustomResource = updateCustomResource(toUpdate);
     }
 
@@ -164,7 +164,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     final var updateObservedGeneration = updateControl.isNoUpdate()
         ? shouldUpdateObservedGenerationAutomatically(resourceForExecution)
         : shouldUpdateObservedGenerationAutomatically(updatedCustomResource);
-    if (updateControl.isUpdateResourceAndStatus() || updateControl.isUpdateStatus()
+    if (updateControl.isPatchResourceAndStatus() || updateControl.isPatchStatus()
         || updateObservedGeneration) {
       updatedCustomResource =
           updateStatusGenerationAware(toUpdate, originalResource, updateControl.isPatchStatus());
@@ -197,17 +197,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
         P updatedResource = null;
         if (errorStatusUpdateControl.getResource().isPresent()) {
-          updatedResource = errorStatusUpdateControl.isPatch() ? customResourceFacade
-              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource)
-              : customResourceFacade
-                  .updateStatus(errorStatusUpdateControl.getResource().orElseThrow());
+          updatedResource = customResourceFacade
+              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
+
         }
         if (errorStatusUpdateControl.isNoRetry()) {
           PostExecutionControl<P> postExecutionControl;
           if (updatedResource != null) {
-            postExecutionControl = errorStatusUpdateControl.isPatch()
-                ? PostExecutionControl.customResourceStatusPatched(updatedResource)
-                : PostExecutionControl.customResourceUpdated(updatedResource);
+            postExecutionControl = PostExecutionControl.customResourceStatusPatched(updatedResource);
           } else {
             postExecutionControl = PostExecutionControl.defaultDispatch();
           }
@@ -267,12 +264,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       UpdateControl<P> updateControl) {
     PostExecutionControl<P> postExecutionControl;
     if (updatedCustomResource != null) {
-      if (updateControl.isUpdateStatus() && updateControl.isPatchStatus()) {
         postExecutionControl =
             PostExecutionControl.customResourceStatusPatched(updatedCustomResource);
-      } else {
-        postExecutionControl = PostExecutionControl.customResourceUpdated(updatedCustomResource);
-      }
     } else {
       postExecutionControl = PostExecutionControl.defaultDispatch();
     }

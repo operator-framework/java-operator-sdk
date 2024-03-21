@@ -125,7 +125,7 @@ public class Controller<P extends HasMetadata>
             if (result.isUpdateStatus()) {
               successType = STATUS;
             }
-            if (result.isUpdateResourceAndStatus()) {
+            if (result.isPatchResourceAndStatus()) {
               successType = BOTH;
             }
             return successType;

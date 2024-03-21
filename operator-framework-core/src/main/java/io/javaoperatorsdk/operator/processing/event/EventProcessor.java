@@ -249,6 +249,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           .getUpdatedCustomResource()
           .ifPresent(
               p -> {
+                // todo check
                 if (!postExecutionControl.updateIsStatusPatch()) {
                   eventSourceManager
                       .getControllerResourceEventSource()
