@@ -41,6 +41,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   public static final String APPLY_OPERATION = "Apply";
   public static final String DOT_KEY = ".";
 
+  private static final List<String> IGNORED_METADATA = Arrays.asList("creationTimestamp", "deletionTimestamp", "generation",
+      "selfLink", "uid");
+
   @SuppressWarnings("unchecked")
   public static <L extends HasMetadata> SSABasedGenericKubernetesResourceMatcher<L> getInstance() {
     return INSTANCE;
@@ -131,6 +134,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var metadata = (Map<String, Object>) desiredMap.get(METADATA_KEY);
     metadata.remove(NAME_KEY);
     metadata.remove(NAMESPACE_KEY);
+    IGNORED_METADATA.forEach(metadata::remove);
     if (metadata.isEmpty()) {
       desiredMap.remove(METADATA_KEY);
     }
