@@ -10,7 +10,6 @@ import java.util.Locale;
 import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.stream.IntStream;
-import javaoperatorsdk.sample.v1.LeaderElection;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +26,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.javaoperatorsdk.operator.sample.v1.LeaderElection;
 
 import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.CRD_READY_WAIT;
 import static org.assertj.core.api.Assertions.assertThat;
