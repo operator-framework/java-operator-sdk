@@ -50,7 +50,7 @@ rules:
     verbs:
       - '*'
   - apiGroups:
-      - "sample.javaoperatorsdk"
+      - "sample.operator.javaoperatorsdk.io"
     resources:
       - leaderelections
       - leaderelections/status
