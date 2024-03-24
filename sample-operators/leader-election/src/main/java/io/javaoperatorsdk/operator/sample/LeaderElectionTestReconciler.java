@@ -2,13 +2,13 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import javaoperatorsdk.sample.v1.LeaderElection;
-import javaoperatorsdk.sample.v1.LeaderElectionStatus;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.sample.v1.LeaderElection;
+import io.javaoperatorsdk.operator.sample.v1.LeaderElectionStatus;
 
 @ControllerConfiguration()
 public class LeaderElectionTestReconciler
