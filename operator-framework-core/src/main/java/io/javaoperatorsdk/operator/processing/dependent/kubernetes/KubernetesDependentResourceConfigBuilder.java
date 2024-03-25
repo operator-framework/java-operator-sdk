@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
@@ -14,7 +13,6 @@ public final class KubernetesDependentResourceConfigBuilder<R> {
   private Set<String> namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
   private String labelSelector;
   private boolean createResourceOnlyIfNotExistingWithSSA;
-  private ResourceDiscriminator<R, ?> resourceDiscriminator;
   private Boolean useSSA;
   private OnAddFilter<R> onAddFilter;
   private OnUpdateFilter<R> onUpdateFilter;
@@ -40,12 +38,6 @@ public final class KubernetesDependentResourceConfigBuilder<R> {
   public KubernetesDependentResourceConfigBuilder<R> withCreateResourceOnlyIfNotExistingWithSSA(
       boolean createResourceOnlyIfNotExistingWithSSA) {
     this.createResourceOnlyIfNotExistingWithSSA = createResourceOnlyIfNotExistingWithSSA;
-    return this;
-  }
-
-  public KubernetesDependentResourceConfigBuilder<R> withResourceDiscriminator(
-      ResourceDiscriminator<R, ?> resourceDiscriminator) {
-    this.resourceDiscriminator = resourceDiscriminator;
     return this;
   }
 
@@ -80,7 +72,7 @@ public final class KubernetesDependentResourceConfigBuilder<R> {
   public KubernetesDependentResourceConfig<R> build() {
     return new KubernetesDependentResourceConfig<>(namespaces, labelSelector,
         namespaces != Constants.SAME_AS_CONTROLLER_NAMESPACES_SET,
-        createResourceOnlyIfNotExistingWithSSA, resourceDiscriminator, useSSA, onAddFilter,
+        createResourceOnlyIfNotExistingWithSSA, useSSA, onAddFilter,
         onUpdateFilter, onDeleteFilter, genericFilter);
   }
 }
