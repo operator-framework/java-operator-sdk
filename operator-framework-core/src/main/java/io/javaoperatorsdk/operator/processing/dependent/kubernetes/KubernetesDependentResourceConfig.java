@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
@@ -20,7 +19,6 @@ public class KubernetesDependentResourceConfig<R> {
   private String labelSelector;
   private final boolean namespacesWereConfigured;
   private final boolean createResourceOnlyIfNotExistingWithSSA;
-  private final ResourceDiscriminator<R, ?> resourceDiscriminator;
   private final Boolean useSSA;
 
   private final OnAddFilter<R> onAddFilter;
@@ -31,7 +29,7 @@ public class KubernetesDependentResourceConfig<R> {
   public KubernetesDependentResourceConfig() {
     this(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET, NO_VALUE_SET, true,
         DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
-        null, null, null,
+        null, null,
         null, null, null);
   }
 
@@ -39,7 +37,6 @@ public class KubernetesDependentResourceConfig<R> {
       String labelSelector,
       boolean configuredNS,
       boolean createResourceOnlyIfNotExistingWithSSA,
-      ResourceDiscriminator<R, ?> resourceDiscriminator,
       Boolean useSSA,
       OnAddFilter<R> onAddFilter,
       OnUpdateFilter<R> onUpdateFilter,
@@ -52,7 +49,6 @@ public class KubernetesDependentResourceConfig<R> {
     this.onUpdateFilter = onUpdateFilter;
     this.onDeleteFilter = onDeleteFilter;
     this.genericFilter = genericFilter;
-    this.resourceDiscriminator = resourceDiscriminator;
     this.useSSA = useSSA;
   }
 
@@ -60,7 +56,7 @@ public class KubernetesDependentResourceConfig<R> {
   @Deprecated(forRemoval = true)
   public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
     this(namespaces, labelSelector, true, DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
-        null, null, null,
+        null, null,
         null, null, null);
   }
 
@@ -102,11 +98,6 @@ public class KubernetesDependentResourceConfig<R> {
 
   public GenericFilter<R> genericFilter() {
     return genericFilter;
-  }
-
-  @SuppressWarnings("rawtypes")
-  public ResourceDiscriminator getResourceDiscriminator() {
-    return resourceDiscriminator;
   }
 
   @SuppressWarnings("unused")
