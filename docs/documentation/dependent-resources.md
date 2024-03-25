@@ -318,12 +318,6 @@ There might be casees, though, where it might be problematic to call the `desire
 - Override the `managedSecondaryResourceID` method, if your `DependentResource` extends `KubernetesDependentResource`,
   where it's very often possible to easily determine the `ResourceID` of the secondary resource. This would probably be
   the easiest solution if you're working with Kubernetes resources.
-- Configure
-  a [`ResourceDiscriminator`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ResourceDiscriminator.java)
-  implementation for your `DependentResource`. This was the approach that was used before JOSDK v5 but should not be
-  needed anymore as it is simpler and more efficient to override one the methods above instead of creating a separate
-  class. Discriminators can be declaratively set when using managed Kubernetes dependent resources via
-  the `resourceDiscriminator` field of the `@KubernetesDependent` annotation.
 
 ### Sharing an Event Source Between Dependent Resources
 
