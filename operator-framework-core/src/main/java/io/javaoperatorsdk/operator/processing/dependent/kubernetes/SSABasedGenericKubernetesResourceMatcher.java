@@ -41,6 +41,10 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   public static final String APPLY_OPERATION = "Apply";
   public static final String DOT_KEY = ".";
 
+  private static final List<String> IGNORED_METADATA =
+      Arrays.asList("creationTimestamp", "deletionTimestamp",
+          "generation", "selfLink", "uid");
+
   @SuppressWarnings("unchecked")
   public static <L extends HasMetadata> SSABasedGenericKubernetesResourceMatcher<L> getInstance() {
     return INSTANCE;
@@ -58,11 +62,10 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   private static final Logger log =
       LoggerFactory.getLogger(SSABasedGenericKubernetesResourceMatcher.class);
 
-
   @SuppressWarnings("unchecked")
   public boolean matches(R actual, R desired, Context<?> context) {
-    var optionalManagedFieldsEntry =
-        checkIfFieldManagerExists(actual, context.getControllerConfiguration().fieldManager());
+    var optionalManagedFieldsEntry = checkIfFieldManagerExists(actual,
+        context.getControllerConfiguration().fieldManager());
     // If no field is managed by our controller, that means the controller hasn't touched the
     // resource yet and the resource probably doesn't match the desired state. Not matching here
     // means that the resource will need to be updated and since this will be done using SSA, the
@@ -86,7 +89,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     var prunedActual = new HashMap<String, Object>(actualMap.size());
     keepOnlyManagedFields(prunedActual, actualMap,
-        managedFieldsEntry.getFieldsV1().getAdditionalProperties(), objectMapper);
+        managedFieldsEntry.getFieldsV1().getAdditionalProperties(),
+        objectMapper);
 
     removeIrrelevantValues(desiredMap);
 
@@ -110,9 +114,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         for (int i = 0; i < claims; i++) {
           if (desiredStatefulSet.getSpec().getVolumeClaimTemplates().get(i).getSpec()
               .getVolumeMode() == null) {
-            Optional
-                .ofNullable(GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates",
-                    i, "spec"))
+            Optional.ofNullable(
+                GenericKubernetesResource.get(actualMap, "spec", "volumeClaimTemplates", i, "spec"))
                 .map(Map.class::cast).ifPresent(m -> m.remove("volumeMode"));
           }
           if (desiredStatefulSet.getSpec().getVolumeClaimTemplates().get(i).getStatus() == null) {
@@ -131,6 +134,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var metadata = (Map<String, Object>) desiredMap.get(METADATA_KEY);
     metadata.remove(NAME_KEY);
     metadata.remove(NAMESPACE_KEY);
+    IGNORED_METADATA.forEach(metadata::remove);
     if (metadata.isEmpty()) {
       desiredMap.remove(METADATA_KEY);
     }
@@ -163,7 +167,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           } else {
             // basically if we should traverse further
             fillResultsAndTraverseFurther(result, actualMap, managedFields, objectMapper, key,
-                keyInActual, managedFieldValue);
+                keyInActual,
+                managedFieldValue);
           }
         } else {
           // this should handle the case when the value is complex in the actual map (not just a
@@ -181,8 +186,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   private static void fillResultsAndTraverseFurther(Map<String, Object> result,
-      Map<String, Object> actualMap, Map<String, Object> managedFields,
-      KubernetesSerialization objectMapper, String key, String keyInActual,
+      Map<String, Object> actualMap,
+      Map<String, Object> managedFields, KubernetesSerialization objectMapper, String key,
+      String keyInActual,
       Object managedFieldValue) {
     var emptyMapValue = new HashMap<String, Object>();
     result.put(keyInActual, emptyMapValue);
@@ -223,8 +229,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       if (DOT_KEY.equals(listEntry.getKey())) {
         continue;
       }
-      var actualListEntry = selectListEntryBasedOnKey(keyWithoutPrefix(listEntry.getKey()),
-          actualValueList, objectMapper);
+      var actualListEntry =
+          selectListEntryBasedOnKey(keyWithoutPrefix(listEntry.getKey()), actualValueList,
+              objectMapper);
       targetValuesByIndex.put(actualListEntry.getKey(), actualListEntry.getValue());
       managedEntryByIndex.put(actualListEntry.getKey(), (Map<String, Object>) listEntry.getValue());
     }
@@ -301,8 +308,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   @SuppressWarnings("unchecked")
   private static java.util.Map.Entry<Integer, Map<String, Object>> selectListEntryBasedOnKey(
       String key,
-      List<Map<String, Object>> values,
-      KubernetesSerialization objectMapper) {
+      List<Map<String, Object>> values, KubernetesSerialization objectMapper) {
     Map<String, Object> ids = objectMapper.unmarshal(key, Map.class);
     List<Map<String, Object>> possibleTargets = new ArrayList<>(1);
     int index = -1;
@@ -314,9 +320,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       }
     }
     if (possibleTargets.isEmpty()) {
-      throw new IllegalStateException(
-          "Cannot find list element for key:" + key + ", in map: "
-              + values.stream().map(Map::keySet).collect(Collectors.toList()));
+      throw new IllegalStateException("Cannot find list element for key:" + key + ", in map: "
+          + values.stream().map(Map::keySet).collect(Collectors.toList()));
     }
     if (possibleTargets.size() > 1) {
       throw new IllegalStateException(
@@ -326,7 +331,6 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     final var finalIndex = index;
     return new AbstractMap.SimpleEntry<>(finalIndex, possibleTargets.get(0));
   }
-
 
   private Optional<ManagedFieldsEntry> checkIfFieldManagerExists(R actual, String fieldManager) {
     var targetManagedFields = actual.getMetadata().getManagedFields().stream()
@@ -338,14 +342,14 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         .collect(Collectors.toList());
     if (targetManagedFields.isEmpty()) {
       log.debug("No field manager exists for resource {} with name: {} and operation Apply ",
-          actual.getKind(), actual.getMetadata().getName());
+          actual.getKind(),
+          actual.getMetadata().getName());
       return Optional.empty();
     }
     // this should not happen in theory
     if (targetManagedFields.size() > 1) {
-      throw new OperatorException(
-          "More than one field manager exists with name: " + fieldManager + "in resource: " +
-              actual.getKind() + " with name: " + actual.getMetadata().getName());
+      throw new OperatorException("More than one field manager exists with name: " + fieldManager
+          + "in resource: " + actual.getKind() + " with name: " + actual.getMetadata().getName());
     }
     return Optional.of(targetManagedFields.get(0));
   }
