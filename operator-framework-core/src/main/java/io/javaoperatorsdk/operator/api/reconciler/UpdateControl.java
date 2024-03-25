@@ -3,6 +3,8 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 
+import java.util.Optional;
+
 public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateControl<P>> {
 
   private final P resource;
@@ -55,8 +57,8 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
     return new UpdateControl<>(null, false, false);
   }
 
-  public P getResource() {
-    return resource;
+  public Optional<P> getResource() {
+    return Optional.ofNullable(resource);
   }
 
   public boolean isPatchResource() {
