@@ -61,10 +61,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
-    var discriminator = kubernetesDependentResourceConfig.getResourceDiscriminator();
-    if (discriminator != null) {
-      setResourceDiscriminator(discriminator);
-    }
   }
 
   private void configureWith(String labelSelector, Set<String> namespaces,
@@ -259,10 +255,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
       onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
       genericFilter = kubernetesDependentResourceConfig.genericFilter();
-      var discriminator = kubernetesDependentResourceConfig.getResourceDiscriminator();
-      if (discriminator != null) {
-        setResourceDiscriminator(discriminator);
-      }
       configureWith(kubernetesDependentResourceConfig.labelSelector(),
           kubernetesDependentResourceConfig.namespaces(),
           !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);
