@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -38,11 +39,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
   private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
+  private final boolean clustered;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
   private final boolean usingCustomResourceUpdateMatcher;
 
-  @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }
@@ -55,6 +56,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     updaterMatcher = usingCustomResourceUpdateMatcher
         ? (ResourceUpdaterMatcher<R>) this
         : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType);
+    clustered = !Namespaced.class.isAssignableFrom(resourceType);
   }
 
   @SuppressWarnings("unchecked")
@@ -93,7 +95,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (this instanceof SecondaryToPrimaryMapper) {
       return (SecondaryToPrimaryMapper<R>) this;
     } else if (garbageCollected) {
-      return Mappers.fromOwnerReferences(false);
+      return Mappers.fromOwnerReferences(clustered);
     } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return Mappers.fromDefaultAnnotations();
     } else {
