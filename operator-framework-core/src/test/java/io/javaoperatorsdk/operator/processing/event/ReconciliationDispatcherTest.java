@@ -78,7 +78,7 @@ class ReconciliationDispatcherTest {
                     return object;
                   }
                 })
-                .withUseSSAForResourceStatusPatch(false));
+                .withUseSSAToPatchPrimaryResource(false));
   }
 
   @BeforeEach
@@ -337,7 +337,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(customResourceFacade, never()).patchResource(any());
-    verify(customResourceFacade, never()).updateStatus(testCustomResource);
+    verify(customResourceFacade, never()).patchStatus(testCustomResource);
   }
 
   @Test

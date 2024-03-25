@@ -376,12 +376,13 @@ public interface ConfigurationService {
   }
 
   /**
-   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patchStatus can either use
-   * simple update or SSA for status subresource patching.
+   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patch resource or status can either use
+   * simple patches or SSA. Setting this to true, controller will use SSA for adding finalizers,
+   * managing observed generation, patching resources and status.
    *
    * @return true by default
    */
-  default boolean useSSAForResourceStatusPatch() {
+  default boolean useSSAToPatchPrimaryResource() {
     return true;
   }
 
