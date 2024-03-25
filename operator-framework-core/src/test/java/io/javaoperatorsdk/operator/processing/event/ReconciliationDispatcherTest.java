@@ -453,7 +453,7 @@ class ReconciliationDispatcherTest {
     when(config.isGenerationAware()).thenReturn(true);
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.noUpdate());
-    when(facade.patchResource(eq(observedGenResource),any())).thenReturn(observedGenResource);
+    when(facade.patchStatus(any(),any())).thenReturn(observedGenResource);
     var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
@@ -464,7 +464,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void pacchObservedGenerationOnCustomResourceUpdate() throws Exception {
+  void patchObservedGenerationOnCustomResourceUpdate() throws Exception {
     var observedGenResource = createObservedGenCustomResource();
 
     Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
