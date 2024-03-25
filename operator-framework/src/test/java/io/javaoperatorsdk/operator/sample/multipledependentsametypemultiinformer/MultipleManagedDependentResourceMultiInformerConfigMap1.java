@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler;
 
-@KubernetesDependent(resourceDiscriminator = ConfigMap1MultiInformerDiscriminator.class)
+@KubernetesDependent
 public class MultipleManagedDependentResourceMultiInformerConfigMap1
     extends
     CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentResourceMultiInformerCustomResource> {
