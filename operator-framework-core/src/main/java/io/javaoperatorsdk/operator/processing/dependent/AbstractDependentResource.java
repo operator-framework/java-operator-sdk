@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
@@ -28,7 +27,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  private ResourceDiscriminator<R, P> resourceDiscriminator;
   private final DependentResourceReconciler<R, P> dependentResourceReconciler;
 
   protected String name;
@@ -105,16 +103,14 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-    if (resourceDiscriminator != null) {
-      return resourceDiscriminator.distinguish(resourceType(), primary, context);
+
+    var secondaryResources = context.getSecondaryResources(resourceType());
+    if (secondaryResources.isEmpty()) {
+      return Optional.empty();
     } else {
-      var secondaryResources = context.getSecondaryResources(resourceType());
-      if (secondaryResources.isEmpty()) {
-        return Optional.empty();
-      } else {
-        return selectManagedSecondaryResource(secondaryResources, primary, context);
-      }
+      return selectManagedSecondaryResource(secondaryResources, primary, context);
     }
+
   }
 
   /**
@@ -203,10 +199,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected void handleDelete(P primary, R secondary, Context<P> context) {
     throw new IllegalStateException(
         "handleDelete method must be implemented if Deleter trait is supported");
-  }
-
-  public void setResourceDiscriminator(ResourceDiscriminator<R, P> resourceDiscriminator) {
-    this.resourceDiscriminator = resourceDiscriminator;
   }
 
   protected boolean isCreatable() {
