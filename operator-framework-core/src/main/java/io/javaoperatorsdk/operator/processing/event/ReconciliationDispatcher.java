@@ -90,7 +90,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     Context<P> context =
         new DefaultContext<>(executionScope.getRetryInfo(), controller, originalResource);
     if (markedForDeletion) {
-      return handleCleanup(resourceForExecution, context);
+      return handleCleanup(resourceForExecution, originalResource,context);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
     }
@@ -161,7 +161,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     if (updateControl.isPatchResource()) {
-      updatedCustomResource = patchResource(toUpdate);
+      updatedCustomResource = patchResource(toUpdate, originalResource);
       if (!useSSA) {
         toUpdate.getMetadata().setResourceVersion(updatedCustomResource.getMetadata().getResourceVersion());
       }
@@ -283,7 +283,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private PostExecutionControl<P> handleCleanup(P resource,
-      Context<P> context) {
+                                                P originalResource, Context<P> context) {
     if (log.isDebugEnabled()) {
       log.debug(
           "Executing delete for resource: {} with version: {}",
@@ -297,7 +297,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = conflictRetryingUpdate(resource, r -> {
+        P customResource = conflictRetryingPatch(resource,originalResource, r -> {
           // the operator might not be allowed to retrieve the resource on a retry, e.g. when its
           // permissions are removed by deleting the namespace concurrently
           if (r == null) {
@@ -334,7 +334,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       objectMeta.setName(originalResource.getMetadata().getName());
       objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
       resource.setMetadata(objectMeta);
-      objectMeta.getFinalizers().add(configuration().getFinalizerName());
+      resource.addFinalizer(configuration().getFinalizerName());
       return customResourceFacade.patchResourceWithSSA(resource);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
         | NoSuchMethodException e) {
@@ -346,11 +346,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     log.debug(
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
         getVersion(originalResource));
-    return conflictRetryingUpdate(resourceForExecution,
+    return conflictRetryingPatch(resourceForExecution,originalResource,
         r -> r.addFinalizer(configuration().getFinalizerName()));
   }
 
-  private P patchResource(P resource) {
+  private P patchResource(P resource, P originalResource) {
     log.debug("Updating resource: {} with version: {}", getUID(resource),
         getVersion(resource));
     log.trace("Resource before update: {}", resource);
@@ -361,14 +361,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         resource.getMetadata().getFinalizers().add(configuration().getFinalizerName());
     }
 
-    return customResourceFacade.patchResource(resource);
+    return customResourceFacade.patchResource(resource,originalResource);
   }
 
   ControllerConfiguration<P> configuration() {
     return controller.getConfiguration();
   }
 
-  public P conflictRetryingUpdate(P resource, Function<P, Boolean> modificationFunction) {
+  public P conflictRetryingPatch(P resource, P originalResource, Function<P, Boolean> modificationFunction) {
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
     }
@@ -379,7 +379,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (Boolean.FALSE.equals(modified)) {
           return resource;
         }
-        return customResourceFacade.patchResource(resource);
+        return customResourceFacade.patchResource(resource,originalResource);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -423,7 +423,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-    public R patchResource(R resource) {
+    public R patchResource(R resource, R originalResource) {
       if (log.isDebugEnabled()) {
         log.debug(
                 "Trying to replace resource {}, version: {}",
@@ -433,7 +433,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       if (useSSA) {
         return patchResourceWithSSA(resource);
       } else {
-        return resource(resource).patch();
+        return resource(originalResource).edit(r->resource);
       }
     }
 
@@ -447,7 +447,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (useSSA) {
           var managedFields = resource.getMetadata().getManagedFields();
           try {
-
             resource.getMetadata().setManagedFields(null);
             var res = resource(resource);
             return res.subresource("status").patch(new PatchContext.Builder()
