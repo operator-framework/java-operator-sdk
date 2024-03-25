@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
@@ -26,17 +25,6 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
   public MultipleDependentResourceWithDiscriminatorReconciler() {
     firstDependentResourceConfigMap = new MultipleDependentResourceConfigMap(FIRST_CONFIG_MAP_ID);
     secondDependentResourceConfigMap = new MultipleDependentResourceConfigMap(SECOND_CONFIG_MAP_ID);
-
-    firstDependentResourceConfigMap
-        .setResourceDiscriminator(
-            new ResourceIDMatcherDiscriminator<>(
-                p -> new ResourceID(p.getConfigMapName(FIRST_CONFIG_MAP_ID),
-                    p.getMetadata().getNamespace())));
-    secondDependentResourceConfigMap
-        .setResourceDiscriminator(
-            new ResourceIDMatcherDiscriminator<>(
-                p -> new ResourceID(p.getConfigMapName(SECOND_CONFIG_MAP_ID),
-                    p.getMetadata().getNamespace())));
   }
 
   @Override
