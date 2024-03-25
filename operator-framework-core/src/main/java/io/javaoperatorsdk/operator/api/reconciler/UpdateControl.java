@@ -37,7 +37,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @return UpdateControl instance
    */
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
-    return new UpdateControl<>(customResource, false, false);
+    return new UpdateControl<>(customResource, false, true);
   }
 
   public static <T extends HasMetadata> UpdateControl<T> patchResource(T customResource) {

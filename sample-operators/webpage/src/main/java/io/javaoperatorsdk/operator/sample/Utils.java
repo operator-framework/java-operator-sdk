@@ -33,7 +33,7 @@ public class Utils {
 
   public static ErrorStatusUpdateControl<WebPage> handleError(WebPage resource, Exception e) {
     resource.getStatus().setErrorMessage("Error: " + e.getMessage());
-    return ErrorStatusUpdateControl.updateStatus(resource);
+    return ErrorStatusUpdateControl.patchStatus(resource);
   }
 
   public static void simulateErrorIfRequested(WebPage webPage) throws ErrorSimulationException {
