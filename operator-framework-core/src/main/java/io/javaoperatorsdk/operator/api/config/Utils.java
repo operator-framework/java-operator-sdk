@@ -119,9 +119,13 @@ public class Utils {
   }
 
   public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
+    return getTypeArgumentFromExtendedClassByIndex(clazz, 0);
+  }
+
+  public static Class<?> getTypeArgumentFromExtendedClassByIndex(Class<?> clazz, int index) {
     try {
       Type type = clazz.getGenericSuperclass();
-      return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+      return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[index];
     } catch (Exception e) {
       throw new RuntimeException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
           + clazz.getSimpleName()
@@ -190,27 +194,31 @@ public class Utils {
 
   public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
       Class<?> expectedImplementedInterface) {
+    return getTypeArgumentFromSuperClassOrInterfaceByIndex(clazz, expectedImplementedInterface, 0);
+  }
+
+  public static Class<?> getTypeArgumentFromSuperClassOrInterfaceByIndex(Class<?> clazz,
+      Class<?> expectedImplementedInterface, int index) {
     // first check super class if it exists
     try {
       final Class<?> superclass = clazz.getSuperclass();
       if (!superclass.equals(Object.class)) {
         try {
-          return getFirstTypeArgumentFromExtendedClass(clazz);
+          return getTypeArgumentFromExtendedClassByIndex(clazz, index);
         } catch (Exception e) {
           // try interfaces
           try {
-            return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+            return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, index);
           } catch (Exception ex) {
             // try on the parent
-            return getFirstTypeArgumentFromSuperClassOrInterface(superclass,
-                expectedImplementedInterface);
+            return getTypeArgumentFromSuperClassOrInterfaceByIndex(superclass,
+                expectedImplementedInterface, index);
           }
         }
       }
-      return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+      return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, index);
     } catch (Exception e) {
-      throw new OperatorException(
-          GENERIC_PARAMETER_TYPE_ERROR_PREFIX + clazz.getSimpleName(), e);
+      throw new OperatorException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX + clazz.getSimpleName(), e);
     }
   }
 
