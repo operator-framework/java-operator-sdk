@@ -26,3 +26,5 @@ permalink: /docs/v5-0-migration
    Also, the related part of a [workaround](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L110-L116).
 4. `ManagedDependentResourceContext` has been renamed to `ManagedWorkflowAndDependentResourceContext` and is accessed
    via the accordingly renamed `managedWorkflowAndDependentResourceContext` method.
+5. `ResourceDiscriminator` was removed. In most of the cases you can just delete the discriminator, everything should
+    work without it by default. To optimize and handle special cases see the relevant section in [Dependent Resource documentation](/docs/dependent-resources#multiple-dependent-resources-of-same-type).

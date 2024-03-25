@@ -8,7 +8,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
@@ -33,7 +32,6 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     OnUpdateFilter<? extends HasMetadata> onUpdateFilter = null;
     OnDeleteFilter<? extends HasMetadata> onDeleteFilter = null;
     GenericFilter<? extends HasMetadata> genericFilter = null;
-    ResourceDiscriminator<?, ?> resourceDiscriminator = null;
     Boolean useSSA = null;
     if (configAnnotation != null) {
       if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, configAnnotation.namespaces())) {
@@ -54,9 +52,6 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
       genericFilter =
           Utils.instantiate(configAnnotation.genericFilter(), GenericFilter.class, context);
 
-      resourceDiscriminator =
-          Utils.instantiate(configAnnotation.resourceDiscriminator(), ResourceDiscriminator.class,
-              context);
       createResourceOnlyIfNotExistingWithSSA =
           configAnnotation.createResourceOnlyIfNotExistingWithSSA();
       useSSA = configAnnotation.useSSA().asBoolean();
@@ -64,6 +59,6 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
 
     return new KubernetesDependentResourceConfig(namespaces, labelSelector, configuredNS,
         createResourceOnlyIfNotExistingWithSSA,
-        resourceDiscriminator, useSSA, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
+        useSSA, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
   }
 }
