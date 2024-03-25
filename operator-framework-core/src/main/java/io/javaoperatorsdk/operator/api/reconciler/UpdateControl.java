@@ -1,9 +1,9 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-
-import java.util.Optional;
 
 public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateControl<P>> {
 
@@ -12,7 +12,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean patchStatus;
 
   private UpdateControl(
-          P resource, boolean patchResource, boolean patchStatus) {
+      P resource, boolean patchResource, boolean patchStatus) {
     if ((patchResource || patchStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
