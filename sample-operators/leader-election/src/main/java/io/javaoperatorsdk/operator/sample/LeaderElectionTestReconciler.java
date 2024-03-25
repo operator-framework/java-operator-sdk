@@ -34,7 +34,7 @@ public class LeaderElectionTestReconciler
 
     resource.getStatus().getReconciledBy().add(reconcilerName);
     // update status is with optimistic locking
-    return UpdateControl.updateStatus(resource).rescheduleAfter(Duration.ofSeconds(1));
+    return UpdateControl.patchStatus(resource).rescheduleAfter(Duration.ofSeconds(1));
   }
 
 }
