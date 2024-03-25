@@ -51,17 +51,17 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public void onAdd(R resource) {
-    temporaryResourceCache.onEvent(resource, false);
+    temporaryResourceCache.onAddOrUpdateEvent(resource);
   }
 
   @Override
   public void onUpdate(R oldObj, R newObj) {
-    temporaryResourceCache.onEvent(newObj, false);
+    temporaryResourceCache.onAddOrUpdateEvent(newObj);
   }
 
   @Override
   public void onDelete(R obj, boolean deletedFinalStateUnknown) {
-    temporaryResourceCache.onEvent(obj, deletedFinalStateUnknown);
+    temporaryResourceCache.onDeleteEvent(obj, deletedFinalStateUnknown);
   }
 
   protected InformerManager<R, C> manager() {

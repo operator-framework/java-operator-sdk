@@ -1,10 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -18,8 +16,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 /**
  * <p>
  * Temporal cache is used to solve the problem for {@link KubernetesDependentResource} that is, when
- * a create or update is executed the subsequent getResource opeeration might not return the
- * up-to-date resource from informer cache, since it is not received yet by webhook.
+ * a create or update is executed the subsequent getResource operation might not return the
+ * up-to-date resource from informer cache, since it is not received yet.
  * </p>
  * <p>
  * The idea of the solution is, that since an update (for create is simpler) was done successfully,
@@ -36,31 +34,78 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public class TemporaryResourceCache<T extends HasMetadata> {
 
+  static class ExpirationCache<K> {
+    private final LinkedHashMap<K, Long> cache;
+    private final int ttlMs;
+
+    public ExpirationCache(int maxEntries, int ttlMs) {
+      this.ttlMs = ttlMs;
+      this.cache = new LinkedHashMap<>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K, Long> eldest) {
+          return size() > maxEntries;
+        }
+      };
+    }
+
+    public void add(K key) {
+      clean();
+      cache.putIfAbsent(key, System.currentTimeMillis());
+    }
+
+    public boolean contains(K key) {
+      clean();
+      return cache.get(key) != null;
+    }
+
+    void clean() {
+      if (!cache.isEmpty()) {
+        long currentTimeMillis = System.currentTimeMillis();
+        var iter = cache.entrySet().iterator();
+        // the order will already be from oldest to newest, clean a fixed number of entries to
+        // amortize the cost amongst multiple calls
+        for (int i = 0; i < 10 && iter.hasNext(); i++) {
+          var entry = iter.next();
+          if (currentTimeMillis - entry.getValue() > ttlMs) {
+            iter.remove();
+          }
+        }
+      }
+    }
+  }
+
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
-  private static final int MAX_RESOURCE_VERSIONS = 256;
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+
+  // keep up to the last million deletions for up to 10 minutes
+  private final ExpirationCache<String> tombstones = new ExpirationCache<>(1000000, 1200000);
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
   private final boolean parseResourceVersions;
-  private final Set<String> knownResourceVersions;
+  private final ExpirationCache<String> knownResourceVersions;
 
   public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
       boolean parseResourceVersions) {
     this.managedInformerEventSource = managedInformerEventSource;
     this.parseResourceVersions = parseResourceVersions;
     if (parseResourceVersions) {
-      knownResourceVersions = Collections.newSetFromMap(new LinkedHashMap<String, Boolean>() {
-        @Override
-        protected boolean removeEldestEntry(java.util.Map.Entry<String, Boolean> eldest) {
-          return size() >= MAX_RESOURCE_VERSIONS;
-        }
-      });
+      // keep up to the 50000 add/updates for up to 5 minutes
+      knownResourceVersions = new ExpirationCache<>(50000, 600000);
     } else {
       knownResourceVersions = null;
     }
   }
 
-  public synchronized void onEvent(T resource, boolean unknownState) {
+  public synchronized void onDeleteEvent(T resource, boolean unknownState) {
+    tombstones.add(resource.getMetadata().getUid());
+    onEvent(resource, unknownState);
+  }
+
+  public synchronized void onAddOrUpdateEvent(T resource) {
+    onEvent(resource, false);
+  }
+
+  synchronized void onEvent(T resource, boolean unknownState) {
     cache.computeIfPresent(ResourceID.fromResource(resource),
         (id, cached) -> (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null
             : cached);
@@ -84,20 +129,33 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId)
         .orElse(managedInformerEventSource.get(resourceId).orElse(null));
 
-    if ((previousResourceVersion == null && cachedResource == null)
+    boolean moveAhead = false;
+    if (previousResourceVersion == null && cachedResource == null) {
+      if (tombstones.contains(newResource.getMetadata().getUid())) {
+        log.debug(
+            "Won't resurrect uid {} for resource id: {}",
+            newResource.getMetadata().getUid(), resourceId);
+        return;
+      }
+      // we can skip further checks as this is a simple add and there's no previous entry to
+      // consider
+      moveAhead = true;
+    }
+
+    if (moveAhead
         || (cachedResource != null
             && (cachedResource.getMetadata().getResourceVersion().equals(previousResourceVersion))
             || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(), resourceId);
-      putToCache(newResource, resourceId);
+      cache.put(resourceId, newResource);
     } else if (cache.remove(resourceId) != null) {
       log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
     }
   }
 
-  public boolean isKnownResourceVersion(T resource) {
+  public synchronized boolean isKnownResourceVersion(T resource) {
     return knownResourceVersions != null
         && knownResourceVersions.contains(resource.getMetadata().getResourceVersion());
   }
@@ -121,10 +179,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           cachedResource.getMetadata().getResourceVersion(), resourceId);
     }
     return false;
-  }
-
-  private void putToCache(T resource, ResourceID resourceID) {
-    cache.put(resourceID == null ? ResourceID.fromResource(resource) : resourceID, resource);
   }
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
