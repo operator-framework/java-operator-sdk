@@ -35,8 +35,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
     converter = KubernetesDependentConverter.class)
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
-    implements DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
-
+    implements DependentResourceConfigurator<KubernetesDependentResourceConfig<R>>,
+    DependentResource<R, P> {
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private final boolean usingCustomResourceUpdateMatcher = this instanceof ResourceUpdaterMatcher;
@@ -47,18 +47,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean clustered;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
-
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
-    final var primaryResourceType =
-        Utils.getTypeArgumentFromSuperClassOrInterfaceByIndex(getClass(), DependentResource.class,
-            1);
+    final var primaryResourceType = getPrimaryResourceType();
     clustered = !Namespaced.class.isAssignableFrom(primaryResourceType);
   }
 
   protected KubernetesDependentResource(Class<R> resourceType, boolean primaryIsClustered) {
     super(resourceType);
     clustered = primaryIsClustered;
+  }
+
+  @SuppressWarnings("unchecked")
+  protected Class<P> getPrimaryResourceType() {
+    return (Class<P>) Utils.getTypeArgumentFromExtendedClassByIndex(getClass(), 1);
   }
 
   @SuppressWarnings("unchecked")
