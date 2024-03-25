@@ -17,7 +17,7 @@ public interface Context<P extends HasMetadata> {
   Optional<RetryInfo> getRetryInfo();
 
   default <R> Optional<R> getSecondaryResource(Class<R> expectedType) {
-    return getSecondaryResource(expectedType, (String) null);
+    return getSecondaryResource(expectedType, null);
   }
 
   <R> Set<R> getSecondaryResources(Class<R> expectedType);
@@ -28,9 +28,6 @@ public interface Context<P extends HasMetadata> {
 
   @Deprecated(forRemoval = true)
   <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
-
-  <R> Optional<R> getSecondaryResource(Class<R> expectedType,
-      ResourceDiscriminator<R, P> discriminator);
 
   ControllerConfiguration<P> getControllerConfiguration();
 
