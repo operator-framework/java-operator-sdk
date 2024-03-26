@@ -35,4 +35,12 @@ public class Schema implements Serializable {
   public int hashCode() {
     return Objects.hash(name, characterSet);
   }
+
+  @Override
+  public String toString() {
+    return "Schema{" +
+        "name='" + name + '\'' +
+        ", characterSet='" + characterSet + '\'' +
+        '}';
+  }
 }
