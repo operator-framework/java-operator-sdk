@@ -312,7 +312,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             return false;
           }
           return r.removeFinalizer(finalizerName);
-        });
+        },true);
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -351,7 +351,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         "Adding finalizer for resource: {} version: {}", getUID(originalResource),
         getVersion(originalResource));
     return conflictRetryingPatch(resourceForExecution, originalResource,
-        r -> r.addFinalizer(configuration().getFinalizerName()));
+        r -> r.addFinalizer(configuration().getFinalizerName()), false);
   }
 
   private P patchResource(P resource, P originalResource) {
@@ -373,7 +373,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   public P conflictRetryingPatch(P resource, P originalResource,
-      Function<P, Boolean> modificationFunction) {
+      Function<P, Boolean> modificationFunction, boolean forceNotUseSSA) {
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
     }
@@ -384,7 +384,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (Boolean.FALSE.equals(modified)) {
           return resource;
         }
-        return customResourceFacade.patchResource(resource, originalResource);
+        if (forceNotUseSSA) {
+          return customResourceFacade.patchResourceWithoutSSA(resource,originalResource);
+        } else {
+          return customResourceFacade.patchResource(resource, originalResource);
+        }
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -426,6 +430,10 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } else {
         return resourceOperation.withName(name).get();
       }
+    }
+
+    public R patchResourceWithoutSSA(R resource, R originalResource) {
+      return resource(originalResource).edit(r -> resource);
     }
 
     public R patchResource(R resource, R originalResource) {
@@ -475,6 +483,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     public R patchResourceWithSSA(R resource) {
       var managedFields = resource.getMetadata().getManagedFields();
+      resource.getMetadata().setManagedFields(null);
       try {
         return resource(resource).patch(new PatchContext.Builder()
             .withFieldManager(fieldManager)

@@ -197,7 +197,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(1)).patchResource(eq(testCustomResource), any());
+    verify(customResourceFacade, times(1)).patchResourceWithoutSSA(eq(testCustomResource), any());
   }
 
   @Test
@@ -206,7 +206,7 @@ class ReconciliationDispatcherTest {
     markForDeletion(testCustomResource);
     var resourceWithFinalizer = TestUtils.testCustomResource();
     resourceWithFinalizer.addFinalizer(DEFAULT_FINALIZER);
-    when(customResourceFacade.patchResource(eq(testCustomResource), any()))
+    when(customResourceFacade.patchResourceWithoutSSA(eq(testCustomResource), any()))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any())).thenReturn(resourceWithFinalizer);
@@ -215,7 +215,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(2)).patchResource(any(), any());
+    verify(customResourceFacade, times(2)).patchResourceWithoutSSA(any(), any());
     verify(customResourceFacade, times(1)).getResource(any(), any());
   }
 
@@ -225,7 +225,7 @@ class ReconciliationDispatcherTest {
     // of the finalizer removal
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.patchResource(any(), any()))
+    when(customResourceFacade.patchResourceWithoutSSA(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null));
     when(customResourceFacade.getResource(any(), any())).thenReturn(null);
 
@@ -233,7 +233,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(1)).patchResource(eq(testCustomResource), any());
+    verify(customResourceFacade, times(1)).patchResourceWithoutSSA(eq(testCustomResource), any());
     verify(customResourceFacade, times(1)).getResource(any(), any());
   }
 
@@ -241,7 +241,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalRetryExceeded() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.patchResource(any(), any()))
+    when(customResourceFacade.patchResourceWithoutSSA(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null));
     when(customResourceFacade.getResource(any(), any()))
         .thenAnswer((Answer<TestCustomResource>) invocationOnMock -> createResourceWithFinalizer());
@@ -253,7 +253,7 @@ class ReconciliationDispatcherTest {
     assertThat(postExecControl.getRuntimeException()).isPresent();
     assertThat(postExecControl.getRuntimeException().get())
         .isInstanceOf(OperatorException.class);
-    verify(customResourceFacade, times(MAX_UPDATE_RETRY)).patchResource(any(), any());
+    verify(customResourceFacade, times(MAX_UPDATE_RETRY)).patchResourceWithoutSSA(any(), any());
     verify(customResourceFacade, times(MAX_UPDATE_RETRY - 1)).getResource(any(),
         any());
   }
@@ -262,7 +262,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalClientExceptionIsNotConflict() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.patchResource(any(), any()))
+    when(customResourceFacade.patchResourceWithoutSSA(any(), any()))
         .thenThrow(new KubernetesClientException(null, 400, null));
 
     var res =
@@ -270,7 +270,7 @@ class ReconciliationDispatcherTest {
 
     assertThat(res.getRuntimeException()).isPresent();
     assertThat(res.getRuntimeException().get()).isInstanceOf(KubernetesClientException.class);
-    verify(customResourceFacade, times(1)).patchResource(any(), any());
+    verify(customResourceFacade, times(1)).patchResourceWithoutSSA(any(), any());
     verify(customResourceFacade, never()).getResource(any(), any());
   }
 
