@@ -26,7 +26,6 @@ public class ConfigurationServiceOverrider {
   private Integer concurrentWorkflowExecutorThreads;
   private Integer minConcurrentWorkflowExecutorThreads;
   private Cloner cloner;
-  private Integer timeoutSeconds;
   private Boolean closeClientOnStop;
   private KubernetesClient client;
   private ExecutorService executorService;
@@ -88,11 +87,6 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withResourceCloner(Cloner cloner) {
     this.cloner = cloner;
-    return this;
-  }
-
-  public ConfigurationServiceOverrider withTerminationTimeoutSeconds(int timeoutSeconds) {
-    this.timeoutSeconds = timeoutSeconds;
     return this;
   }
 
@@ -242,11 +236,6 @@ public class ConfigurationServiceOverrider {
       public int minConcurrentWorkflowExecutorThreads() {
         return minConcurrentWorkflowExecutorThreads != null ? minConcurrentWorkflowExecutorThreads
             : original.minConcurrentWorkflowExecutorThreads();
-      }
-
-      @Override
-      public int getTerminationTimeoutSeconds() {
-        return timeoutSeconds != null ? timeoutSeconds : original.getTerminationTimeoutSeconds();
       }
 
       @Override

@@ -99,17 +99,6 @@ public class Operator implements LifecycleAware {
   }
 
   /**
-   * Uses {@link ConfigurationService#getTerminationTimeoutSeconds()} for graceful shutdown timeout
-   *
-   * @deprecated use the overloaded version with graceful shutdown timeout parameter.
-   *
-   */
-  @Deprecated(forRemoval = true)
-  public void installShutdownHook() {
-    installShutdownHook(Duration.ofSeconds(configurationService.getTerminationTimeoutSeconds()));
-  }
-
-  /**
    * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. Note
    * that graceful shutdown is usually not needed, but some {@link Reconciler} implementations might
    * require it.
@@ -120,6 +109,7 @@ public class Operator implements LifecycleAware {
    * @param gracefulShutdownTimeout timeout to wait for executor threads to complete actual
    *        reconciliations
    */
+  @SuppressWarnings("unused")
   public void installShutdownHook(Duration gracefulShutdownTimeout) {
     if (!leaderElectionManager.isLeaderElectionEnabled()) {
       Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(gracefulShutdownTimeout)));
