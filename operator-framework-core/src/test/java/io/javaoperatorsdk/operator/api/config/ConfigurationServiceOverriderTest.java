@@ -60,7 +60,6 @@ class ConfigurationServiceOverriderTest {
           }
         })
         .withConcurrentReconciliationThreads(25)
-        .withTerminationTimeoutSeconds(100)
         .withMetrics(new Metrics() {})
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("newLease", "newLeaseNS"))
         .withInformerStoppedHandler((informer, ex) -> {
@@ -72,8 +71,6 @@ class ConfigurationServiceOverriderTest {
         overridden.checkCRDAndValidateLocalModel());
     assertNotEquals(config.concurrentReconciliationThreads(),
         overridden.concurrentReconciliationThreads());
-    assertNotEquals(config.getTerminationTimeoutSeconds(),
-        overridden.getTerminationTimeoutSeconds());
     assertNotEquals(config.getExecutorService(), overridden.getExecutorService());
     assertNotEquals(config.getWorkflowExecutorService(), overridden.getWorkflowExecutorService());
     assertNotEquals(config.getMetrics(), overridden.getMetrics());
