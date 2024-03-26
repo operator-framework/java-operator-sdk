@@ -18,13 +18,18 @@ permalink: /docs/v5-0-migration
    now contains all the utility methods used for event sources naming that were previously defined in
    the `EventSourceInitializer` interface.
 3. Patching status through `UpdateControl` like the `patchStatus` method now by default
-   uses Server Side Apply instead of simple patch. To use the former approach, use the feature flag 
+   uses Server Side Apply instead of simple patch. To use the former approach, use the feature flag
    in [`ConfigurationService`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L400-L400)
    !!! IMPORTANT !!!
-   Migration from a non-SSA based controller to SSA based controller can cause problems, due to known issues. 
-   See the following [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L71-L82) where it is demonstrated.
-   Also, the related part of a [workaround](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L110-L116).
+   Migration from a non-SSA based controller to SSA based controller can cause problems, due to known issues.
+   See the
+   following [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L71-L82)
+   where it is demonstrated. Also, the related part of
+   a [workaround](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L110-L116).
 4. `ManagedDependentResourceContext` has been renamed to `ManagedWorkflowAndDependentResourceContext` and is accessed
    via the accordingly renamed `managedWorkflowAndDependentResourceContext` method.
 5. `ResourceDiscriminator` was removed. In most of the cases you can just delete the discriminator, everything should
     work without it by default. To optimize and handle special cases see the relevant section in [Dependent Resource documentation](/docs/dependent-resources#multiple-dependent-resources-of-same-type).
+6. `ConfigurationService.getTerminationTimeoutSeconds` and associated overriding mechanism have been removed,
+   use `Operator.stop(Duration)` instead.
+7. `Operator.installShutdownHook()` has been removed, use `Operator.installShutdownHook(Duration)` instead
