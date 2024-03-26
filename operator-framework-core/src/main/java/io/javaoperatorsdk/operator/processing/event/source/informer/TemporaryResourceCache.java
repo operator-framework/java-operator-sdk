@@ -1,7 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +42,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final int MAX_RESOURCE_VERSIONS = 256;
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+
+  private final Map<ResourceID, List<String>> tombstones =
+      new ConcurrentHashMap<ResourceID, List<String>>();
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
   private final boolean parseResourceVersions;
   private final Set<String> knownResourceVersions;
@@ -51,13 +56,29 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (parseResourceVersions) {
       knownResourceVersions = Collections.newSetFromMap(new LinkedHashMap<String, Boolean>() {
         @Override
-        protected boolean removeEldestEntry(java.util.Map.Entry<String, Boolean> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
           return size() >= MAX_RESOURCE_VERSIONS;
         }
       });
     } else {
       knownResourceVersions = null;
     }
+  }
+
+  public void prepareForAddOrUpdate(ResourceID id) {
+    tombstones.put(id, new ArrayList<>());
+  }
+
+  public void finshedAddOrUpdate(ResourceID id) {
+    tombstones.remove(id);
+  }
+
+  public synchronized void onDeleteEvent(T resource, boolean unknownState) {
+    tombstones.computeIfPresent(ResourceID.fromResource(resource), (k, v) -> {
+      v.add(resource.getMetadata().getUid());
+      return v;
+    });
+    onEvent(resource, unknownState);
   }
 
   public synchronized void onEvent(T resource, boolean unknownState) {
@@ -84,14 +105,27 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId)
         .orElse(managedInformerEventSource.get(resourceId).orElse(null));
 
-    if ((previousResourceVersion == null && cachedResource == null)
+    boolean moveAhead = false;
+    if (previousResourceVersion == null && cachedResource == null) {
+      if (Optional.ofNullable(tombstones.get(resourceId))
+          .filter(list -> list.contains(newResource.getMetadata().getUid())).isPresent()) {
+        log.debug(
+            "Won't resurrect uid {} for resource id: {}",
+            newResource.getMetadata().getUid(), resourceId);
+        return;
+      }
+      // we can skip further checks as this is a simple add and there's no previous entry to consider
+      moveAhead = true;
+    }
+
+    if (moveAhead
         || (cachedResource != null
             && (cachedResource.getMetadata().getResourceVersion().equals(previousResourceVersion))
             || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(), resourceId);
-      putToCache(newResource, resourceId);
+      cache.put(resourceId, newResource);
     } else if (cache.remove(resourceId) != null) {
       log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
     }
@@ -121,10 +155,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           cachedResource.getMetadata().getResourceVersion(), resourceId);
     }
     return false;
-  }
-
-  private void putToCache(T resource, ResourceID resourceID) {
-    cache.put(resourceID == null ? ResourceID.fromResource(resource) : resourceID, resource);
   }
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {

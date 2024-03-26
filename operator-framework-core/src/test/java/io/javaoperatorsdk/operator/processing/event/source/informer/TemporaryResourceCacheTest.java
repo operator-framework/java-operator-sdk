@@ -110,6 +110,22 @@ class TemporaryResourceCacheTest {
         .isNotPresent();
   }
 
+  @Test
+  void rapidDeletion() {
+    var testResource = testResource();
+    ResourceID id = ResourceID.fromResource(testResource);
+    temporaryResourceCache.prepareForAddOrUpdate(id);
+    temporaryResourceCache.onEvent(testResource, false); // create
+    temporaryResourceCache.onDeleteEvent(new ConfigMapBuilder(testResource).editMetadata()
+        .withResourceVersion("3").endMetadata().build(), false);
+
+    // put should be rejected
+    temporaryResourceCache.putAddedResource(testResource);
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+  }
+
   private ConfigMap propagateTestResourceToCache() {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.empty());
@@ -127,6 +143,7 @@ class TemporaryResourceCacheTest {
     configMap.getMetadata().setName("test");
     configMap.getMetadata().setNamespace("default");
     configMap.getMetadata().setResourceVersion(RESOURCE_VERSION);
+    configMap.getMetadata().setUid("test-uid");
     return configMap;
   }
 

@@ -270,6 +270,14 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     handleRecentCreateOrUpdate(Operation.ADD, resource, null);
   }
 
+  public void prepareForAddOrUpdate(ResourceID id) {
+    this.temporaryResourceCache.prepareForAddOrUpdate(id);
+  }
+
+  public void finishAddOrUpdate(ResourceID id) {
+    this.temporaryResourceCache.finshedAddOrUpdate(id);
+  }
+
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     temporaryResourceCache.putResource(newResource, Optional.ofNullable(oldResource)

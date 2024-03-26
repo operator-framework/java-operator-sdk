@@ -214,6 +214,28 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
+  protected R handleCreate(R desired, P primary, Context<P> context) {
+    var id = ResourceID.fromResource(desired);
+    try {
+      eventSource().orElseThrow().prepareForAddOrUpdate(id);
+      return super.handleCreate(desired, primary, context);
+    } finally {
+      eventSource().orElseThrow().finishAddOrUpdate(id);
+    }
+  }
+
+  @Override
+  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
+    var id = ResourceID.fromResource(desired);
+    try {
+      eventSource().orElseThrow().prepareForAddOrUpdate(id);
+      return super.handleUpdate(actual, desired, primary, context);
+    } finally {
+      eventSource().orElseThrow().finishAddOrUpdate(id);
+    }
+  }
+
+  @Override
   protected void handleDelete(P primary, R secondary, Context<P> context) {
     if (secondary != null) {
       context.getClient().resource(secondary).delete();

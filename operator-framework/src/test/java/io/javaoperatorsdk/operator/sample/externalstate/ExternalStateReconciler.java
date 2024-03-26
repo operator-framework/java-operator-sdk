@@ -10,7 +10,14 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
@@ -64,24 +71,29 @@ public class ExternalStateReconciler
 
   private void createExternalResource(ExternalStateCustomResource resource,
       Context<ExternalStateCustomResource> context) {
-    var createdResource =
-        externalService.create(new ExternalResource(resource.getSpec().getData()));
-    var configMap = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(resource.getMetadata().getName())
-            .withNamespace(resource.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(ID_KEY, createdResource.getId()))
-        .build();
-    configMap.addOwnerReference(resource);
-    context.getClient().configMaps().resource(configMap).create();
-
     var primaryID = ResourceID.fromResource(resource);
-    // Making sure that the created resources are in the cache for the next reconciliation.
-    // This is critical in this case, since on next reconciliation if it would not be in the cache
-    // it would be created again.
-    configMapEventSource.handleRecentResourceCreate(primaryID, configMap);
-    externalResourceEventSource.handleRecentResourceCreate(primaryID, createdResource);
+    try {
+      var createdResource =
+          externalService.create(new ExternalResource(resource.getSpec().getData()));
+      var configMap = new ConfigMapBuilder()
+          .withMetadata(new ObjectMetaBuilder()
+              .withName(resource.getMetadata().getName())
+              .withNamespace(resource.getMetadata().getNamespace())
+              .build())
+          .withData(Map.of(ID_KEY, createdResource.getId()))
+          .build();
+      configMap.addOwnerReference(resource);
+      configMapEventSource.prepareForAddOrUpdate(primaryID);
+      context.getClient().configMaps().resource(configMap).create();
+
+      // Making sure that the created resources are in the cache for the next reconciliation.
+      // This is critical in this case, since on next reconciliation if it would not be in the cache
+      // it would be created again.
+      configMapEventSource.handleRecentResourceCreate(primaryID, configMap);
+      externalResourceEventSource.handleRecentResourceCreate(primaryID, createdResource);
+    } finally {
+      configMapEventSource.finishAddOrUpdate(primaryID);
+    }
   }
 
   @Override
@@ -94,6 +106,7 @@ public class ExternalStateReconciler
     return DeleteControl.defaultDelete();
   }
 
+  @Override
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
