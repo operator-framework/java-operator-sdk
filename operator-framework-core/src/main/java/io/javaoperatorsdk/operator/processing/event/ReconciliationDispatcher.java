@@ -312,7 +312,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             return false;
           }
           return r.removeFinalizer(finalizerName);
-        },true);
+        }, true);
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -385,7 +385,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           return resource;
         }
         if (forceNotUseSSA) {
-          return customResourceFacade.patchResourceWithoutSSA(resource,originalResource);
+          return customResourceFacade.patchResourceWithoutSSA(resource, originalResource);
         } else {
           return customResourceFacade.patchResource(resource, originalResource);
         }
