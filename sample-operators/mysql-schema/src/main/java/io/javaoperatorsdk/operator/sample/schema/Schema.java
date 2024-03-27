@@ -28,11 +28,19 @@ public class Schema implements Serializable {
     if (o == null || getClass() != o.getClass())
       return false;
     Schema schema = (Schema) o;
-    return Objects.equals(name, schema.name) && Objects.equals(characterSet, schema.characterSet);
+    return Objects.equals(name, schema.name);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(name, characterSet);
+  }
+
+  @Override
+  public String toString() {
+    return "Schema{" +
+        "name='" + name + '\'' +
+        ", characterSet='" + characterSet + '\'' +
+        '}';
   }
 }
