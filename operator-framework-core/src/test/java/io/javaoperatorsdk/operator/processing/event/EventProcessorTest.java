@@ -286,7 +286,7 @@ class EventProcessorTest {
     verify(reconciliationDispatcherMock, timeout(100).times(1)).handleExecution(any());
     verify(metricsMock, times(1)).reconcileCustomResource(any(HasMetadata.class), isNull(), any());
   }
-  
+
   @Test
   void notUpdatesEventSourceHandlerIfResourceUpdated() {
     TestCustomResource customResource = testCustomResource();
