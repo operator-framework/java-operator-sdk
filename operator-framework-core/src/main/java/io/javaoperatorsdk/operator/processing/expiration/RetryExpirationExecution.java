@@ -11,7 +11,7 @@ public class RetryExpirationExecution implements ExpirationExecution {
   public static final long NO_MORE_EXPIRATION = -1L;
 
   private LocalDateTime lastRefreshTime;
-  private Long delayUntilExpiration;
+  private long delayUntilExpiration;
   private final RetryExecution retryExecution;
 
   public RetryExpirationExecution(RetryExecution retryExecution) {

@@ -8,10 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.expiration.Expiration;
 import io.javaoperatorsdk.operator.processing.expiration.ExpirationExecution;
 import io.javaoperatorsdk.operator.processing.expiration.RetryExpiration;
@@ -36,7 +34,7 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
           .setIntervalMultiplier(DEFAULT_EXPIRATION_INTERVAL_MULTIPLIER)
           .setMaxAttempts(DEFAULT_EXPIRATION_MAX_RETRY_ATTEMPTS);
 
-  private final Map<GroupVersionKind, CRDCheckState> crdPresenceCache = new ConcurrentHashMap<>();
+  private final Map<String, CRDCheckState> crdPresenceCache = new ConcurrentHashMap<>();
 
   private final Expiration expiration;
 
@@ -53,56 +51,40 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
       HasMetadata primary, Context<HasMetadata> context) {
 
     var resourceClass = dependentResource.resourceType();
-    var apiVersion = HasMetadata.getApiVersion(resourceClass);
-    var kind = HasMetadata.getKind(resourceClass);
-    var gvk = new GroupVersionKind(apiVersion, kind);
+    final var crdName = HasMetadata.getFullResourceName(resourceClass);
 
-    var crdCheckState = crdPresenceCache.computeIfAbsent(gvk,
+    var crdCheckState = crdPresenceCache.computeIfAbsent(crdName,
         g -> new CRDCheckState(expiration.initExecution()));
     // in case of parallel execution it is only refreshed once
     synchronized (crdCheckState) {
-      if (crdCheckState.getExpiration().isExpired()) {
-        refreshCache(crdCheckState, gvk, context.getClient());
+      if (crdCheckState.isExpired()) {
+        log.debug("Refreshing cache for resource: {}", crdName);
+        final var found = context.getClient().resources(CustomResourceDefinition.class).withName(crdName).get() != null;
+        crdCheckState.refresh(found);
       }
     }
-    return crdPresenceCache.get(gvk).getCrdPresent();
-  }
-
-  private void refreshCache(CRDCheckState crdCheckState, GroupVersionKind gvk,
-      KubernetesClient client) {
-    log.debug("Refreshing cache for gvk: {}", gvk);
-    boolean found = client.resources(CustomResourceDefinition.class).list().getItems()
-        .stream().anyMatch(crd -> crd.getSpec().getNames().getKind().equals(gvk.getKind())
-            && crd.getSpec().getGroup().equals(gvk.getGroup()));
-
-    crdCheckState.setCrdPresent(found);
-    crdCheckState.getExpiration().refreshed();
+    return crdPresenceCache.get(crdName).isCrdPresent();
   }
 
   static class CRDCheckState {
-
+    private final ExpirationExecution expirationExecution;
+    private boolean crdPresent;
+    
     public CRDCheckState(ExpirationExecution expirationExecution) {
       this.expirationExecution = expirationExecution;
     }
 
-    private ExpirationExecution expirationExecution;
-
-    private Boolean crdPresent;
-
-    public ExpirationExecution getExpiration() {
-      return expirationExecution;
+    void refresh(boolean found) {
+      crdPresent = found;
+      expirationExecution.refreshed();
     }
 
-    public void setExpiration(ExpirationExecution expirationExecution) {
-      this.expirationExecution = expirationExecution;
+    boolean isExpired() {
+      return expirationExecution.isExpired();
     }
 
-    public Boolean getCrdPresent() {
+    public boolean isCrdPresent() {
       return crdPresent;
-    }
-
-    public void setCrdPresent(Boolean crdPresent) {
-      this.crdPresent = crdPresent;
     }
   }
 }
