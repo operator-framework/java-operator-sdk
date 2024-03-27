@@ -2,7 +2,9 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.ExpirationCache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -81,7 +84,7 @@ class TemporaryResourceCacheTest {
   void removesResourceFromCache() {
     ConfigMap testResource = propagateTestResourceToCache();
 
-    temporaryResourceCache.onEvent(testResource(), false);
+    temporaryResourceCache.onAddOrUpdateEvent(testResource());
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isNotPresent();
@@ -96,18 +99,57 @@ class TemporaryResourceCacheTest {
     ConfigMap testResource = propagateTestResourceToCache();
 
     // an event with a newer version will not remove
-    temporaryResourceCache.onEvent(new ConfigMapBuilder(testResource).editMetadata()
-        .withResourceVersion("1").endMetadata().build(), false);
+    temporaryResourceCache.onAddOrUpdateEvent(new ConfigMapBuilder(testResource).editMetadata()
+        .withResourceVersion("1").endMetadata().build());
 
     assertThat(temporaryResourceCache.isKnownResourceVersion(testResource)).isTrue();
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isPresent();
 
     // anything else will remove
-    temporaryResourceCache.onEvent(testResource(), false);
+    temporaryResourceCache.onAddOrUpdateEvent(testResource());
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isNotPresent();
+  }
+
+  @Test
+  void rapidDeletion() {
+    var testResource = testResource();
+
+    temporaryResourceCache.onAddOrUpdateEvent(testResource);
+    temporaryResourceCache.onDeleteEvent(new ConfigMapBuilder(testResource).editMetadata()
+        .withResourceVersion("3").endMetadata().build(), false);
+    temporaryResourceCache.putAddedResource(testResource);
+
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+  }
+
+  @Test
+  void expirationCacheMax() {
+    ExpirationCache<Integer> cache = new ExpirationCache<>(2, Integer.MAX_VALUE);
+
+    cache.add(1);
+    cache.add(2);
+    cache.add(3);
+
+    assertThat(cache.contains(1)).isFalse();
+    assertThat(cache.contains(2)).isTrue();
+    assertThat(cache.contains(3)).isTrue();
+  }
+
+  @Test
+  void expirationCacheTtl() {
+    ExpirationCache<Integer> cache = new ExpirationCache<>(2, 1);
+
+    cache.add(1);
+    cache.add(2);
+
+    Awaitility.await().atMost(1, TimeUnit.SECONDS).untilAsserted(() -> {
+      assertThat(cache.contains(1)).isFalse();
+      assertThat(cache.contains(2)).isFalse();
+    });
   }
 
   private ConfigMap propagateTestResourceToCache() {
@@ -127,6 +169,7 @@ class TemporaryResourceCacheTest {
     configMap.getMetadata().setName("test");
     configMap.getMetadata().setNamespace("default");
     configMap.getMetadata().setResourceVersion(RESOURCE_VERSION);
+    configMap.getMetadata().setUid("test-uid");
     return configMap;
   }
 
