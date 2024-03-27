@@ -59,7 +59,8 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
     synchronized (crdCheckState) {
       if (crdCheckState.isExpired()) {
         log.debug("Refreshing cache for resource: {}", crdName);
-        final var found = context.getClient().resources(CustomResourceDefinition.class).withName(crdName).get() != null;
+        final var found = context.getClient().resources(CustomResourceDefinition.class)
+            .withName(crdName).get() != null;
         crdCheckState.refresh(found);
       }
     }
@@ -69,7 +70,7 @@ public class CRDPresentActivationCondition implements Condition<HasMetadata, Has
   static class CRDCheckState {
     private final ExpirationExecution expirationExecution;
     private boolean crdPresent;
-    
+
     public CRDCheckState(ExpirationExecution expirationExecution) {
       this.expirationExecution = expirationExecution;
     }
