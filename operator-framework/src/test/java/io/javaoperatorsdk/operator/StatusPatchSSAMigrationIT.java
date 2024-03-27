@@ -129,7 +129,7 @@ public class StatusPatchSSAMigrationIT {
 
   private Operator startOperator(boolean patchStatusWithSSA) {
     var operator = new Operator(o -> o.withCloseClientOnStop(false)
-        .withUseSSAForResourceStatusPatch(patchStatusWithSSA));
+        .withUseSSAToPatchPrimaryResource(patchStatusWithSSA));
     operator.register(new StatusPatchLockingReconciler(),
         o -> o.settingNamespaces(testNamespace));
 

@@ -288,21 +288,6 @@ class EventProcessorTest {
   }
 
   @Test
-  void updatesEventSourceHandlerIfResourceUpdated() {
-    TestCustomResource customResource = testCustomResource();
-    ExecutionScope executionScope =
-        new ExecutionScope(null).setResource(customResource);
-    PostExecutionControl postExecutionControl =
-        PostExecutionControl.customResourceUpdated(customResource);
-
-    eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
-
-
-    verify(controllerResourceEventSourceMock, times(1)).handleRecentResourceUpdate(any(), any(),
-        any());
-  }
-
-  @Test
   void notUpdatesEventSourceHandlerIfResourceUpdated() {
     TestCustomResource customResource = testCustomResource();
     ExecutionScope executionScope =

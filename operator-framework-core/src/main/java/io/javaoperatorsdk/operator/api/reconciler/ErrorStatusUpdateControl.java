@@ -9,24 +9,18 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
     extends BaseControl<ErrorStatusUpdateControl<P>> {
 
   private final P resource;
-  private final boolean patch;
   private boolean noRetry = false;
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatus(T resource) {
-    return new ErrorStatusUpdateControl<>(resource, true);
-  }
-
-  public static <T extends HasMetadata> ErrorStatusUpdateControl<T> updateStatus(T resource) {
-    return new ErrorStatusUpdateControl<>(resource, false);
+    return new ErrorStatusUpdateControl<>(resource);
   }
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> noStatusUpdate() {
-    return new ErrorStatusUpdateControl<>(null, true);
+    return new ErrorStatusUpdateControl<>(null);
   }
 
-  private ErrorStatusUpdateControl(P resource, boolean patch) {
+  private ErrorStatusUpdateControl(P resource) {
     this.resource = resource;
-    this.patch = patch;
   }
 
   /**
@@ -45,10 +39,6 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
 
   public boolean isNoRetry() {
     return noRetry;
-  }
-
-  public boolean isPatch() {
-    return patch;
   }
 
   /**

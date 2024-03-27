@@ -51,6 +51,6 @@ public class ErrorStatusHandlerTestReconciler
     ensureStatusExists(resource);
     resource.getStatus().getMessages()
         .add(ERROR_STATUS_MESSAGE + context.getRetryInfo().orElseThrow().getAttemptCount());
-    return ErrorStatusUpdateControl.updateStatus(resource);
+    return ErrorStatusUpdateControl.patchStatus(resource);
   }
 }

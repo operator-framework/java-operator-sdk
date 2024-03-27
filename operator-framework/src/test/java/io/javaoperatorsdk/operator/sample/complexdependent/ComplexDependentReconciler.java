@@ -47,7 +47,7 @@ public class ComplexDependentReconciler implements Reconciler<ComplexDependentCu
     status.setStatus(ready ? RECONCILE_STATUS.READY : RECONCILE_STATUS.NOT_READY);
     resource.setStatus(status);
 
-    return UpdateControl.updateStatus(resource);
+    return UpdateControl.patchStatus(resource);
   }
 
   @Override

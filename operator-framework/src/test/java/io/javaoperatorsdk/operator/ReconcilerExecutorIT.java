@@ -35,7 +35,6 @@ class ReconcilerExecutorIT {
 
   @Test
   void patchesStatusForTestCustomResource() {
-    operator.getReconcilerOfType(TestReconciler.class).setPatchStatus(true);
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
