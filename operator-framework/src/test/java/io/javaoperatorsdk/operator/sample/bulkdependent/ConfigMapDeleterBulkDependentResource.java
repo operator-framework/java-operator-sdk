@@ -35,19 +35,23 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
+  protected Class<BulkDependentTestCustomResource> getPrimaryResourceType() {
+    return BulkDependentTestCustomResource.class;
+  }
+
+  @Override
   public Map<String, ConfigMap> desiredResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
     Map<String, ConfigMap> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
       var key = Integer.toString(i);
-      res.put(key, desired(primary, key, context));
+      res.put(key, desired(primary, key));
     }
     return res;
   }
 
-  public ConfigMap desired(BulkDependentTestCustomResource primary, String key,
-      Context<BulkDependentTestCustomResource> context) {
+  public ConfigMap desired(BulkDependentTestCustomResource primary, String key) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName() + INDEX_DELIMITER + key)
