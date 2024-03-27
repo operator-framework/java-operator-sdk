@@ -46,7 +46,7 @@ class DependentAnnotationSecondaryMapperIT {
     assertThat(configMap.getMetadata().getOwnerReferences()).isEmpty();
 
     configMap.getData().put("additional_data", "data");
-    operator.replace(configMap);
+    operator.createOrUpdate(configMap);
 
     await().pollDelay(Duration.ofMillis(150))
         .untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2));

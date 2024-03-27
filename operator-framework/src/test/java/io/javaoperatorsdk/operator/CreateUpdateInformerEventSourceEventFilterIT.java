@@ -37,7 +37,7 @@ class CreateUpdateInformerEventSourceEventFilterIT {
         operator.get(CreateUpdateEventFilterTestCustomResource.class,
             resource.getMetadata().getName());
     actualCreatedResource.getSpec().setValue("2");
-    operator.replace(actualCreatedResource);
+    operator.createOrUpdate(actualCreatedResource);
 
     assertData(operator, actualCreatedResource, 2, 2);
   }

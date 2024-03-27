@@ -28,7 +28,7 @@ public abstract class ExternalStateTestBase {
     assertResourcesCreated(resource, INITIAL_TEST_DATA);
 
     resource.getSpec().setData(UPDATED_DATA);
-    extension().replace(resource);
+    extension().createOrUpdate(resource);
     assertResourcesCreated(resource, UPDATED_DATA);
 
     extension().delete(resource);

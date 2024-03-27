@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.dsl.NonDeletingOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Utils;
@@ -107,6 +108,16 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     return kubernetesClient.resources(type).inNamespace(namespace).withName(name).get();
   }
 
+  public <T extends HasMetadata> T createOr(T resource,
+      Function<NonDeletingOperation<T>, T> conflictAction) {
+    return kubernetesClient.resource(resource).inNamespace(namespace).createOr(conflictAction);
+  }
+
+  public <T extends HasMetadata> T createOrUpdate(T resource) {
+    return kubernetesClient.resource(resource).inNamespace(namespace)
+        .createOr(NonDeletingOperation::update);
+  }
+
   public <T extends HasMetadata> T create(T resource) {
     return kubernetesClient.resource(resource).inNamespace(namespace).create();
   }
@@ -116,6 +127,10 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     return create(resource);
   }
 
+  /**
+   * Use createOrUpdate instead.
+   */
+  @Deprecated(forRemoval = true)
   public <T extends HasMetadata> T replace(T resource) {
     return kubernetesClient.resource(resource).inNamespace(namespace).replace();
   }
