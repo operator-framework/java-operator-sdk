@@ -453,7 +453,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     public R patchStatus(R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
       String resourceVersion = resource.getMetadata().getResourceVersion();
-      // don't do optimistic locking on patch
       originalResource.getMetadata().setResourceVersion(null);
       resource.getMetadata().setResourceVersion(null);
       try {

@@ -104,12 +104,16 @@ public class TestReconciler
           .createOrReplace();
     }
     if (updateStatus) {
-      if (resource.getStatus() == null) {
-        resource.setStatus(new TestCustomResourceStatus());
-      }
+      var statusUpdateResource = new TestCustomResource();
+      statusUpdateResource.setMetadata(new ObjectMetaBuilder()
+          .withName(resource.getMetadata().getName())
+          .withNamespace(resource.getMetadata().getNamespace())
+          .build());
+      resource.setStatus(new TestCustomResourceStatus());
       resource.getStatus().setConfigMapStatus("ConfigMap Ready");
+      return UpdateControl.patchStatus(resource);
     }
-    return UpdateControl.patchStatus(resource);
+    return UpdateControl.noUpdate();
   }
 
   private Map<String, String> configMapData(TestCustomResource resource) {
