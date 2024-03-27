@@ -9,9 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -36,28 +38,36 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     implements DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
-  private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
+  private final boolean usingCustomResourceUpdateMatcher = this instanceof ResourceUpdaterMatcher;
+  @SuppressWarnings("unchecked")
+  private final ResourceUpdaterMatcher<R> updaterMatcher = usingCustomResourceUpdateMatcher
+      ? (ResourceUpdaterMatcher<R>) this
+      : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType());
+  private final boolean clustered;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
-  private final boolean usingCustomResourceUpdateMatcher;
-
-  @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }
 
-  @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType, String name) {
     super(resourceType, name);
+    final var primaryResourceType = getPrimaryResourceType();
+    clustered = !Namespaced.class.isAssignableFrom(primaryResourceType);
+  }
 
-    usingCustomResourceUpdateMatcher = this instanceof ResourceUpdaterMatcher;
-    updaterMatcher = usingCustomResourceUpdateMatcher
-        ? (ResourceUpdaterMatcher<R>) this
-        : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType);
+  protected KubernetesDependentResource(Class<R> resourceType, String name,
+      boolean primaryIsClustered) {
+    super(resourceType, name);
+    clustered = primaryIsClustered;
   }
 
   @SuppressWarnings("unchecked")
+  protected Class<P> getPrimaryResourceType() {
+    return (Class<P>) Utils.getTypeArgumentFromExtendedClassByIndex(getClass(), 1);
+  }
+
   @Override
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
@@ -89,7 +99,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (this instanceof SecondaryToPrimaryMapper) {
       return (SecondaryToPrimaryMapper<R>) this;
     } else if (garbageCollected) {
-      return Mappers.fromOwnerReferences(false);
+      return Mappers.fromOwnerReferences(clustered);
     } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return Mappers.fromDefaultAnnotations();
     } else {
