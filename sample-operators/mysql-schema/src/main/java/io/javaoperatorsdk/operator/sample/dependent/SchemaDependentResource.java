@@ -30,7 +30,7 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
-@SchemaConfig(pollPeriod = 700, host = "127.0.0.1",
+@SchemaConfig(pollPeriod = 400, host = "127.0.0.1",
     port = SchemaDependentResource.LOCAL_PORT,
     user = "root", password = "password") // NOSONAR: password is only used locally, example only
 @Configured(by = SchemaConfig.class, with = ResourcePollerConfig.class,
@@ -63,7 +63,9 @@ public class SchemaDependentResource
 
   @Override
   public Schema desired(MySQLSchema primary, Context<MySQLSchema> context) {
-    return new Schema(primary.getMetadata().getName(), primary.getSpec().getEncoding());
+    var desired = new Schema(primary.getMetadata().getName(), primary.getSpec().getEncoding());
+    log.debug("Desired schema: {}", desired);
+    return desired;
   }
 
   @Override
@@ -72,6 +74,7 @@ public class SchemaDependentResource
       Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
       var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
       var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
+      log.debug("Creating schema: {}", target);
       return SchemaService.createSchemaAndRelatedUser(
           connection,
           target.getName(),
@@ -107,8 +110,10 @@ public class SchemaDependentResource
   @Override
   public Set<Schema> fetchResources(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
-      return SchemaService.getSchema(connection, primaryResource.getMetadata().getName())
+      var schema = SchemaService.getSchema(connection, primaryResource.getMetadata().getName())
           .map(Set::of).orElseGet(Collections::emptySet);
+      log.debug("Fetched schema: {}", schema);
+      return schema;
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying read Schema", e);
     }
