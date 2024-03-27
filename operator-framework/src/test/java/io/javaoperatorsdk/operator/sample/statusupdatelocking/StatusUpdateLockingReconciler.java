@@ -18,6 +18,7 @@ public class StatusUpdateLockingReconciler
       throws InterruptedException {
     numberOfExecutions.addAndGet(1);
     Thread.sleep(WAIT_TIME);
+    resource.setStatus(new StatusUpdateLockingCustomResourceStatus());
     resource.getStatus().setValue(resource.getStatus().getValue() + 1);
     return UpdateControl.patchStatus(resource);
   }
