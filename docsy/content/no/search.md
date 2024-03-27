@@ -1,0 +1,4 @@
+---
+title: Søkeresultat
+layout: search
+---
