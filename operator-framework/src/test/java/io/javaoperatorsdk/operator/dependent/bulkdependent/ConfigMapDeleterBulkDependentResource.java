@@ -29,6 +29,11 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
+  protected Class<BulkDependentTestCustomResource> getPrimaryResourceType() {
+    return BulkDependentTestCustomResource.class;
+  }
+
+  @Override
   public Map<String, ConfigMap> desiredResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
