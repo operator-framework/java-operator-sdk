@@ -16,6 +16,11 @@ public abstract class BaseDependentResource<R extends HasMetadata>
     this.component = component;
   }
 
+  @Override
+  protected Class<ComplexDependentCustomResource> getPrimaryResourceType() {
+    return ComplexDependentCustomResource.class;
+  }
+
   protected String name(ComplexDependentCustomResource primary) {
     return String.format("%s-%s", component, primary.getSpec().getProjectId());
   }
