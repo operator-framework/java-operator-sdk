@@ -3,6 +3,9 @@ name: Parameterized Integration Tests
 on:
   workflow_call:
     inputs:
+      branch-name:
+        type: string
+        required: true
       java-version:
         type: string
         required: true
@@ -27,6 +30,8 @@ jobs:
       - name: Output test information
         run: echo "Running ITs with ${{ inputs.http-client }}, ${{ inputs.kube-version }}, ${{ inputs.java-version }}"
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch-name }}
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
         with:
