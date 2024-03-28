@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -60,30 +59,9 @@ class ReconciliationDispatcherTest {
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
   private static ConfigurationService configurationService;
 
-  @BeforeAll
-  static void classSetup() {
-    /*
-     * We need this for mock reconcilers to properly generate the expected UpdateControl: without
-     * this, calls such as `when(reconciler.reconcile(eq(testCustomResource),
-     * any())).thenReturn(UpdateControl.updateStatus(testCustomResource))` will return null because
-     * equals will fail on the two equal but NOT identical TestCustomResources because equals is not
-     * implemented on TestCustomResourceSpec or TestCustomResourceStatus
-     */
-    initConfigService(true);
-    // configurationService =
-    // ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
-    // overrider -> overrider.checkingCRDAndValidateLocalModel(false)
-    // .withResourceCloner(new Cloner() {
-    // @Override
-    // public <R extends HasMetadata> R clone(R object) {
-    // return object;
-    // }
-    // })
-    // .withUseSSAToPatchPrimaryResource(false));
-  }
-
   @BeforeEach
   void setup() {
+    initConfigService(true);
     testCustomResource = TestUtils.testCustomResource();
     reconciler = spy(new TestReconciler());
     reconciliationDispatcher =
@@ -91,6 +69,13 @@ class ReconciliationDispatcherTest {
   }
 
   static void initConfigService(boolean useSSA) {
+    /*
+     * We need this for mock reconcilers to properly generate the expected UpdateControl: without
+     * this, calls such as `when(reconciler.reconcile(eq(testCustomResource),
+     * any())).thenReturn(UpdateControl.updateStatus(testCustomResource))` will return null because
+     * equals will fail on the two equal but NOT identical TestCustomResources because equals is not
+     * implemented on TestCustomResourceSpec or TestCustomResourceStatus
+     */
     configurationService =
         ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
             overrider -> overrider.checkingCRDAndValidateLocalModel(false)
@@ -139,6 +124,21 @@ class ReconciliationDispatcherTest {
   void addFinalizerOnNewResource() {
     assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    verify(reconciler, never())
+        .reconcile(ArgumentMatchers.eq(testCustomResource), any());
+    verify(customResourceFacade, times(1))
+        .patchResourceWithSSA(
+            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)));
+  }
+
+  @Test
+  void addFinalizerOnNewResourceWithoutSSA() {
+    initConfigService(false);
+    final ReconciliationDispatcher<TestCustomResource> dispatcher =
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
+
+    assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
+    dispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(reconciler, never())
         .reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
@@ -346,14 +346,14 @@ class ReconciliationDispatcherTest {
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.patchResource(any(), any()))
+    when(customResourceFacade.patchResourceWithSSA(any()))
         .thenReturn(testCustomResource);
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, times(1)).patchResource(any(), any());
+    verify(customResourceFacade, times(1))
+        .patchResourceWithSSA(argThat(a -> !a.getMetadata().getFinalizers().isEmpty()));
     assertThat(postExecControl.updateIsStatusPatch()).isFalse();
     assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }
@@ -509,12 +509,12 @@ class ReconciliationDispatcherTest {
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.patchResource(observedGenResource));
     when(facade.patchResource(any(), any())).thenReturn(observedGenResource);
-    when(facade.patchStatus(eq(observedGenResource), any())).thenReturn(observedGenResource);
-    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
+    var dispatcher = init(observedGenResource, reconciler, config, facade, false);
 
-    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
+    dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource()).isEmpty();
+
+    verify(facade, never()).patchStatus(any(), any());
   }
 
   @Test
@@ -667,7 +667,11 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void retriesAddingFinalizer() {
+  void retriesAddingFinalizerWithoutSSA() {
+    initConfigService(false);
+    reconciliationDispatcher =
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
+
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
     when(customResourceFacade.patchResource(any(), any()))
