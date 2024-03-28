@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.doubleupdate;
+package io.javaoperatorsdk.operator.sample.patchresourceandstatusnossa;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("DoubleUpdateSample")
 @ShortNames("du")
-public class DoubleUpdateTestCustomResource
-    extends CustomResource<DoubleUpdateTestCustomResourceSpec, DoubleUpdateTestCustomResourceStatus>
+public class PatchResourceAndStatusNoSSACustomResource
+    extends CustomResource<PatchResourceAndStatusNoSSASpec, PatchResourceAndStatusNoSSAStatus>
     implements Namespaced {
 }
