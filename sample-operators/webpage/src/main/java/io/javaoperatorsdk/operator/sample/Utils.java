@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
@@ -10,6 +11,16 @@ import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
 public class Utils {
 
   private Utils() {}
+
+  public static WebPage createWebPageForStatusUpdate(WebPage webPage, String configMapName) {
+    WebPage res = new WebPage();
+    res.setMetadata(new ObjectMetaBuilder()
+        .withName(webPage.getMetadata().getName())
+        .withNamespace(webPage.getMetadata().getNamespace())
+        .build());
+    res.setStatus(createStatus(configMapName));
+    return res;
+  }
 
   public static WebPageStatus createStatus(String configMapName) {
     WebPageStatus status = new WebPageStatus();
