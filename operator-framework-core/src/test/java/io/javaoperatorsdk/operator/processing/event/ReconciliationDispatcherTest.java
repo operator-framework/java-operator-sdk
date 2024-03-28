@@ -69,6 +69,28 @@ class ReconciliationDispatcherTest {
      * equals will fail on the two equal but NOT identical TestCustomResources because equals is not
      * implemented on TestCustomResourceSpec or TestCustomResourceStatus
      */
+    initConfigService(true);
+    // configurationService =
+    // ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
+    // overrider -> overrider.checkingCRDAndValidateLocalModel(false)
+    // .withResourceCloner(new Cloner() {
+    // @Override
+    // public <R extends HasMetadata> R clone(R object) {
+    // return object;
+    // }
+    // })
+    // .withUseSSAToPatchPrimaryResource(false));
+  }
+
+  @BeforeEach
+  void setup() {
+    testCustomResource = TestUtils.testCustomResource();
+    reconciler = spy(new TestReconciler());
+    reconciliationDispatcher =
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
+  }
+
+  static void initConfigService(boolean useSSA) {
     configurationService =
         ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
             overrider -> overrider.checkingCRDAndValidateLocalModel(false)
@@ -78,15 +100,7 @@ class ReconciliationDispatcherTest {
                     return object;
                   }
                 })
-                .withUseSSAToPatchPrimaryResource(false));
-  }
-
-  @BeforeEach
-  void setup() {
-    testCustomResource = TestUtils.testCustomResource();
-    reconciler = spy(new TestReconciler());
-    reconciliationDispatcher =
-        init(testCustomResource, reconciler, null, customResourceFacade, true);
+                .withUseSSAToPatchPrimaryResource(useSSA));
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
@@ -445,7 +459,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void updatesObservedGenerationOnNoUpdateUpdateControl() throws Exception {
+  void doesNotUpdatesObservedGenerationIfStatusIsNotPatchedWhenUsingSSA() throws Exception {
     var observedGenResource = createObservedGenCustomResource();
 
     Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
@@ -459,13 +473,33 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
+    assertThat(control.getUpdatedCustomResource()).isEmpty();
+  }
+
+  @Test
+  void patchObservedGenerationOnCustomResourcePatchIfNoSSA() throws Exception {
+    var observedGenResource = createObservedGenCustomResource();
+
+    Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
+    final var config = MockControllerConfiguration.forResource(ObservedGenCustomResource.class);
+    CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
+    when(config.isGenerationAware()).thenReturn(true);
+    when(reconciler.reconcile(any(), any()))
+        .thenReturn(UpdateControl.patchResource(observedGenResource));
+    when(facade.patchResource(any(), any())).thenReturn(observedGenResource);
+    when(facade.patchStatus(eq(observedGenResource), any())).thenReturn(observedGenResource);
+    initConfigService(false);
+    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
+
+    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
+        executionScopeWithCREvent(observedGenResource));
     assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
         .getStatus().getObservedGeneration())
         .isEqualTo(1L);
   }
 
   @Test
-  void patchObservedGenerationOnCustomResourceUpdate() throws Exception {
+  void doesNotPatchObservedGenerationOnCustomResourcePatch() throws Exception {
     var observedGenResource = createObservedGenCustomResource();
 
     Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
@@ -480,9 +514,7 @@ class ReconciliationDispatcherTest {
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
-        .getStatus().getObservedGeneration())
-        .isEqualTo(1L);
+    assertThat(control.getUpdatedCustomResource()).isEmpty();
   }
 
   @Test
@@ -669,6 +701,12 @@ class ReconciliationDispatcherTest {
     assertThat(res.getReScheduleDelay()).contains(delay);
     assertThat(res.getRuntimeException()).isEmpty();
   }
+
+  @Test
+  void addsFinalizerToPatchWithSSA() {
+
+  }
+
 
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();

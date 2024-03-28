@@ -33,3 +33,5 @@ permalink: /docs/v5-0-migration
 6. `ConfigurationService.getTerminationTimeoutSeconds` and associated overriding mechanism have been removed,
    use `Operator.stop(Duration)` instead.
 7. `Operator.installShutdownHook()` has been removed, use `Operator.installShutdownHook(Duration)` instead
+8. SSA for patch finalizer etc
+   TODO: explain usage, observed generation change handling etc - with SSA only for patch resources. 
