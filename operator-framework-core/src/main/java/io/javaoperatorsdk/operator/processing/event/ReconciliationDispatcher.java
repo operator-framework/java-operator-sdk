@@ -481,17 +481,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     public R patchResourceWithSSA(R resource) {
-      var managedFields = resource.getMetadata().getManagedFields();
-      resource.getMetadata().setManagedFields(null);
-      try {
-        return resource(resource).patch(new PatchContext.Builder()
-            .withFieldManager(fieldManager)
-            .withForce(true)
-            .withPatchType(PatchType.SERVER_SIDE_APPLY)
-            .build());
-      } finally {
-        resource.getMetadata().setManagedFields(managedFields);
-      }
+      return resource(resource).patch(new PatchContext.Builder()
+          .withFieldManager(fieldManager)
+          .withForce(true)
+          .withPatchType(PatchType.SERVER_SIDE_APPLY)
+          .build());
     }
 
     private Resource<R> resource(R resource) {
