@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -29,18 +28,13 @@ public class DoubleUpdateTestCustomReconciler
     numberOfExecutions.addAndGet(1);
 
     log.info("Value: " + resource.getSpec().getValue());
-    DoubleUpdateTestCustomResource res = new DoubleUpdateTestCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(resource.getMetadata().getName())
-        .withNamespace(resource.getMetadata().getNamespace())
-        .build());
 
-    res.getMetadata().setAnnotations(new HashMap<>());
-    res.getMetadata().getAnnotations().put(TEST_ANNOTATION, TEST_ANNOTATION_VALUE);
-    ensureStatusExists(res);
-    res.getStatus().setState(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
+    resource.getMetadata().setAnnotations(new HashMap<>());
+    resource.getMetadata().getAnnotations().put(TEST_ANNOTATION, TEST_ANNOTATION_VALUE);
+    ensureStatusExists(resource);
+    resource.getStatus().setState(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
 
-    return UpdateControl.patchResourceAndStatus(res);
+    return UpdateControl.patchResourceAndStatus(resource);
   }
 
   private void ensureStatusExists(DoubleUpdateTestCustomResource resource) {

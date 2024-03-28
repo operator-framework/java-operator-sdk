@@ -19,7 +19,10 @@ import static org.awaitility.Awaitility.await;
 class UpdatingResAndSubResIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(DoubleUpdateTestCustomReconciler.class)
+
+      LocallyRunOperatorExtension.builder()
+          .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
+          .withReconciler(DoubleUpdateTestCustomReconciler.class)
           .build();
 
   @Test
