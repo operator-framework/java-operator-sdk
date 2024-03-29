@@ -59,7 +59,7 @@
         <caffeine.version>3.1.8</caffeine.version>
         <jenvtest.version>0.9.6</jenvtest.version>
         <mustache.version>0.9.11</mustache.version>
-        <commons.io.version>2.15.1</commons.io.version>
+        <commons.io.version>2.16.0</commons.io.version>
 
         <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
         <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
