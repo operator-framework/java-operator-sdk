@@ -401,7 +401,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   @Override
   public synchronized void start() throws OperatorException {
-    log.debug("Stating event processor: {}", this);
+    log.debug("Starting event processor: {}", this);
     // on restart new executor service is created and needs to be set here
     executor = controllerConfiguration.getConfigurationService().getExecutorServiceManager()
         .reconcileExecutorService();
