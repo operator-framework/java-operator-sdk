@@ -400,7 +400,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   @Override
-  public void start() throws OperatorException {
+  public synchronized void start() throws OperatorException {
+    log.debug("Starting event processor: {}", this);
     // on restart new executor service is created and needs to be set here
     executor = controllerConfiguration.getConfigurationService().getExecutorServiceManager()
         .reconcileExecutorService();
@@ -410,6 +411,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   private void handleAlreadyMarkedEvents() {
     for (var state : resourceStateManager.resourcesWithEventPresent()) {
+      log.debug("Handling already marked event on start. State: {}", state);
       handleMarkedEventForResource(state);
     }
   }
