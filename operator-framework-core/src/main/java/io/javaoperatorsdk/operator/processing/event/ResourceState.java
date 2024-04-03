@@ -111,4 +111,15 @@ class ResourceState {
         break;
     }
   }
+
+  @Override
+  public String toString() {
+    return "ResourceState{" +
+        "id=" + id +
+        ", underProcessing=" + underProcessing +
+        ", retry=" + retry +
+        ", eventing=" + eventing +
+        ", rateLimit=" + rateLimit +
+        '}';
+  }
 }

@@ -71,7 +71,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       throws Exception {
     P originalResource = executionScope.getResource();
     var resourceForExecution = cloneResource(originalResource);
-    log.debug("Handling dispatch for resource {}", getName(originalResource));
+    log.debug("Handling dispatch for resource name: {} namespace: {}", getName(originalResource),
+        originalResource.getMetadata().getNamespace());
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
     if (markedForDeletion && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
