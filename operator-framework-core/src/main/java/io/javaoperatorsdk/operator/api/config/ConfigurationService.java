@@ -377,10 +377,12 @@ public interface ConfigurationService {
 
   /**
    * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patch resource or status can
-   * either use simple patches or SSA. Setting this to true, controller will use SSA for adding
+   * either use simple patches or SSA. Setting this to {@code true}, controllers will use SSA for adding
    * finalizers, managing observed generation, patching resources and status.
    *
-   * @return true by default
+   * @return {@code true} by default
+   * @since 5.0.0
+   * @see ConfigurationServiceOverrider#withUseSSAToPatchPrimaryResource(boolean)
    */
   default boolean useSSAToPatchPrimaryResource() {
     return true;

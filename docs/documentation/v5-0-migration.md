@@ -17,10 +17,8 @@ permalink: /docs/v5-0-migration
    [`EventSourceUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceUtils.java#L11-L11)
    now contains all the utility methods used for event sources naming that were previously defined in
    the `EventSourceInitializer` interface.
-3. Updates through `UpdateControl` are by default now use SSA, this is true for adding finalizer and all
-   the patch operations in `UpdateControl`. The update operations were removed. Migrating to SSA can be tricky
-   in order to use non-SSA based patch you can use feature flag: 
-   [`ConfigurationService.useSSAToPatchPrimaryResource()]`(https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385) to false.
+3. Updates through `UpdateControl` now use [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/) by default to add the finalizer and for all
+   the patch operations in `UpdateControl`. The update operations were removed. If you do not wish to use SSA, you can deactivate the feature using `ConfigurationService.useSSAToPatchPrimaryResource` and related `ConfigurationServiceOverrider.withUseSSAToPatchPrimaryResource`.
 
    !!! IMPORTANT !!!
 
@@ -28,12 +26,6 @@ permalink: /docs/v5-0-migration
    [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L71-L82)
    where it is demonstrated. Also, the related part of
    a [workaround](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L110-L116).
-   
-   SSA vs non-SSA resource handling required different approach for handling resource.    
-   For SSA you send the "fully specified intent", what is a partial object that only includes the fields and values for which the user has an opinion.
-   That mean that usually resource are created from scratch. 
-   See SSA sample [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourcewithssa/PatchResourceWithSSAReconciler.java#L7-L7).
-   See non-SSA sample [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java#L16-L16).    
 
    Related automatic observed generation handling changes: 
    Automated Observed Generation (see features in docs), is automatically handled for non-SSA, even if

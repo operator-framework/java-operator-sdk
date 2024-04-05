@@ -91,22 +91,31 @@ Those are the typical use cases of resource updates, however in some cases there
 the controller wants to update the resource itself (for example to add annotations) or not perform
 any updates, which is also supported.
 
-It is also possible to update both the status and the resource with the
-`patchResourceAndStatus` method. In this case, the resource is updated first followed by the
-status, using two separate requests to the Kubernetes API.
+It is also possible to update both the status and the resource with the `patchResourceAndStatus` method. In this case,
+the resource is updated first followed by the status, using two separate requests to the Kubernetes API.
 
-From v5 `UpdateControl` only supports patching the resources, by default using [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
-It is important to understand how SSA works in Kubernetes. Mainly that the resource sent with an SSA patch
-should contain only the fields that we care about, thus usually using a resource created from scratch, see sample [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourcewithssa/PatchResourceWithSSAReconciler.java#L18-L22).
+From v5 `UpdateControl` only supports patching the resources, by default
+using [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
+It is important to understand how SSA works in Kubernetes. Mainly, resources applied using SSA
+should contain only the fields identifying the resource and those the user is interested in (a 'fully specified intent'
+in Kubernetes parlance), thus usually using a resource created from scratch, see
+[sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourcewithssa/PatchResourceWithSSAReconciler.java#L18-L22).
+To contrast, see the same sample, this time [without SSA](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java#L16-L16).
 
 Non-SSA based patch is still supported.  
-See turning off an on the SSA based patching at [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385). 
-Related Integration test can be found [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java).
+You can control whether or not to use SSA
+using [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385)
+and the related `ConfigurationServiceOverrider.withUseSSAToPatchPrimaryResource` method.
+Related integration test can be
+found [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java).
 
-It is completely fine to manage the resource using directly the client and not use `UpdateControl`, however it
-is safer to start with `UpdateControl` also advised to use in general, since makes sure that operations are handled correctly. 
-Especially when a resource is patched (`UpdateControl.patchResource` - not the status) makes sure that the finalizer 
-is also send with SSA patch request thus not removing the finalizer unintentionally from the resource.
+Handling resources directly using the client, instead of delegating these updates operations to JOSDK by returning
+an `UpdateControl` at the end of your reconciliation, should work appropriately. However, we do recommend to
+use `UpdateControl` instead since JOSDK makes sure that the operations are handled properly, since there are subtleties
+to be aware of. For example, if you are using a finalizer, JOSDK makes sure to include it in your fully specified intent
+so that it is not unintentionally removed from the resource (which would happen if you omit it, since your controller is
+the designated manager for that field and Kubernetes interprets the finalizer being gone from the specified intent as a
+request for removal).
 
 [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java)
 typically instructs the framework to remove the finalizer after the dependent
