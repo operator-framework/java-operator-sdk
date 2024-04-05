@@ -51,12 +51,12 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   ReconciliationDispatcher(Controller<P> controller, CustomResourceFacade<P> customResourceFacade) {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
-    this.cloner = controller.getConfiguration().getConfigurationService().getResourceCloner();
+    final var configuration = controller.getConfiguration();
+    this.cloner = configuration.getConfigurationService().getResourceCloner();
 
-    var retry = controller.getConfiguration().getRetry();
+    var retry = configuration.getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
-    useSSA = controller.getConfiguration()
-        .getConfigurationService().useSSAToPatchPrimaryResource();
+    useSSA = configuration.getConfigurationService().useSSAToPatchPrimaryResource();
   }
 
   public ReconciliationDispatcher(Controller<P> controller) {
@@ -174,10 +174,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         ? shouldUpdateObservedGenerationAutomatically(resourceForExecution)
         : shouldUpdateObservedGenerationAutomatically(updatedCustomResource);
     // if using SSA the observed generation is updated only if user instructs patching the status
-    if (updateControl.isPatchStatus()
-        || (updateObservedGeneration && !useSSA)) {
-      updatedCustomResource =
-          patchStatusGenerationAware(toUpdate, originalResource);
+    if (updateControl.isPatchStatus() || (updateObservedGeneration && !useSSA)) {
+      updatedCustomResource = patchStatusGenerationAware(toUpdate, originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -360,11 +358,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     log.trace("Resource before update: {}", resource);
 
     // todo unit test
-    if (useSSA && controller.useFinalizer() &&
-        !resource.getMetadata().getFinalizers().contains(configuration().getFinalizerName())) {
-      resource.getMetadata().getFinalizers().add(configuration().getFinalizerName());
+    final var finalizerName = configuration().getFinalizerName();
+    if (useSSA && controller.useFinalizer()) {
+      // addFinalizer already prevents adding an already present finalizer so no need to check
+      resource.addFinalizer(finalizerName);
     }
-
     return customResourceFacade.patchResource(resource, originalResource);
   }
 
