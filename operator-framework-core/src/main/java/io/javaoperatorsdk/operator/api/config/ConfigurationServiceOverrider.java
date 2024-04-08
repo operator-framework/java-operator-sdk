@@ -40,7 +40,7 @@ public class ConfigurationServiceOverrider {
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean previousAnnotationForDependentResources;
   private Boolean parseResourceVersions;
-  private Boolean useSSAForResourceStatusPatch;
+  private Boolean useSSAToPatchPrimaryResource;
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
 
@@ -198,8 +198,8 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withUseSSAForResourceStatusPatch(boolean value) {
-    this.useSSAForResourceStatusPatch = value;
+  public ConfigurationServiceOverrider withUseSSAToPatchPrimaryResource(boolean value) {
+    this.useSSAToPatchPrimaryResource = value;
     return this;
   }
 
@@ -341,10 +341,10 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean useSSAForResourceStatusPatch() {
-        return useSSAForResourceStatusPatch != null
-            ? useSSAForResourceStatusPatch
-            : super.useSSAForResourceStatusPatch();
+      public boolean useSSAToPatchPrimaryResource() {
+        return useSSAToPatchPrimaryResource != null
+            ? useSSAToPatchPrimaryResource
+            : super.useSSAToPatchPrimaryResource();
 
       }
     };

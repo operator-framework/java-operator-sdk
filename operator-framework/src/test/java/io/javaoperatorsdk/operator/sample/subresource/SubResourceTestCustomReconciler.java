@@ -33,7 +33,7 @@ public class SubResourceTestCustomReconciler
     ensureStatusExists(resource);
     resource.getStatus().setState(SubResourceTestCustomResourceStatus.State.SUCCESS);
     waitXms(RECONCILER_MIN_EXEC_TIME);
-    return UpdateControl.updateStatus(resource);
+    return UpdateControl.patchStatus(resource);
   }
 
   private void ensureStatusExists(SubResourceTestCustomResource resource) {
