@@ -366,6 +366,8 @@ public interface ConfigurationService {
    *
    * @return if SSA should be used for dependent resources
    * @since 4.4.0
+   *
+   * @return if SSA should be used for dependent resources
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
     return true;
@@ -395,6 +397,8 @@ public interface ConfigurationService {
    *
    * @return if special annotation should be used for dependent resource to filter events
    * @since 4.5.0
+   *
+   * @return if special annotation should be used for dependent resource to filter events
    */
   default boolean previousAnnotationForDependentResourcesEventFiltering() {
     return true;
@@ -411,6 +415,8 @@ public interface ConfigurationService {
    *
    * @return if resource version should be parsed (as integer)
    * @since 4.5.0
+   *
+   * @return if resource version should be parsed (as integer)
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
     return false;
