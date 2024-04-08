@@ -61,10 +61,10 @@ public class WebPageDependentsWorkflowReconciler
 
     workflow.reconcile(webPage, context);
 
-    webPage.setStatus(
-        createStatus(
-            context.getSecondaryResource(ConfigMap.class).orElseThrow().getMetadata().getName()));
-    return UpdateControl.patchStatus(webPage);
+    return UpdateControl
+        .patchStatus(
+            createWebPageForStatusUpdate(webPage, context.getSecondaryResource(ConfigMap.class)
+                .orElseThrow().getMetadata().getName()));
   }
 
   @Override
