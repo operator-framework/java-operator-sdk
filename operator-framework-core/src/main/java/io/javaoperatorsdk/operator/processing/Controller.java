@@ -121,10 +121,10 @@ public class Controller<P extends HasMetadata>
           @Override
           public String successTypeName(UpdateControl<P> result) {
             String successType = RESOURCE;
-            if (result.isUpdateStatus()) {
+            if (result.isPatchStatus()) {
               successType = STATUS;
             }
-            if (result.isUpdateResourceAndStatus()) {
+            if (result.isPatchResourceAndStatus()) {
               successType = BOTH;
             }
             return successType;
