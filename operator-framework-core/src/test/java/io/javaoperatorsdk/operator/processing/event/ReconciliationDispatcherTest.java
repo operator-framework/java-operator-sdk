@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -60,8 +59,16 @@ class ReconciliationDispatcherTest {
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
   private static ConfigurationService configurationService;
 
-  @BeforeAll
-  static void classSetup() {
+  @BeforeEach
+  void setup() {
+    initConfigService(true);
+    testCustomResource = TestUtils.testCustomResource();
+    reconciler = spy(new TestReconciler());
+    reconciliationDispatcher =
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
+  }
+
+  static void initConfigService(boolean useSSA) {
     /*
      * We need this for mock reconcilers to properly generate the expected UpdateControl: without
      * this, calls such as `when(reconciler.reconcile(eq(testCustomResource),
@@ -77,15 +84,8 @@ class ReconciliationDispatcherTest {
                   public <R extends HasMetadata> R clone(R object) {
                     return object;
                   }
-                }));
-  }
-
-  @BeforeEach
-  void setup() {
-    testCustomResource = TestUtils.testCustomResource();
-    reconciler = spy(new TestReconciler());
-    reconciliationDispatcher =
-        init(testCustomResource, reconciler, null, customResourceFacade, true);
+                })
+                .withUseSSAToPatchPrimaryResource(useSSA));
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
@@ -127,8 +127,24 @@ class ReconciliationDispatcherTest {
     verify(reconciler, never())
         .reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
-        .updateResource(
+        .patchResourceWithSSA(
             argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)));
+  }
+
+  @Test
+  void addFinalizerOnNewResourceWithoutSSA() {
+    initConfigService(false);
+    final ReconciliationDispatcher<TestCustomResource> dispatcher =
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
+
+    assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
+    dispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    verify(reconciler, never())
+        .reconcile(ArgumentMatchers.eq(testCustomResource), any());
+    verify(customResourceFacade, times(1))
+        .patchResource(
+            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)),
+            any());
     assertThat(testCustomResource.hasFinalizer(DEFAULT_FINALIZER)).isTrue();
   }
 
@@ -141,29 +157,17 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void updatesOnlyStatusSubResourceIfFinalizerSet() {
+  void patchesBothResourceAndStatusIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    reconciler.reconcile = (r, c) -> UpdateControl.patchStatus(testCustomResource);
-
-    reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-
-    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
-    verify(customResourceFacade, never()).updateResource(any());
-  }
-
-  @Test
-  void updatesBothResourceAndStatusIfFinalizerSet() {
-    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
-
-    reconciler.reconcile = (r, c) -> UpdateControl.updateResourceAndStatus(testCustomResource);
-    when(customResourceFacade.updateResource(testCustomResource))
+    reconciler.reconcile = (r, c) -> UpdateControl.patchResourceAndStatus(testCustomResource);
+    when(customResourceFacade.patchResource(eq(testCustomResource), any()))
         .thenReturn(testCustomResource);
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(1)).updateResource(testCustomResource);
-    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    verify(customResourceFacade, times(1)).patchResource(eq(testCustomResource), any());
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
   }
 
   @Test
@@ -175,8 +179,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
-    verify(customResourceFacade, never()).updateStatus(any());
-    verify(customResourceFacade, never()).updateResource(any());
+    verify(customResourceFacade, never()).patchResource(any(), any());
   }
 
   @Test
@@ -208,7 +211,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(1)).updateResource(testCustomResource);
+    verify(customResourceFacade, times(1)).patchResourceWithoutSSA(eq(testCustomResource), any());
   }
 
   @Test
@@ -217,7 +220,7 @@ class ReconciliationDispatcherTest {
     markForDeletion(testCustomResource);
     var resourceWithFinalizer = TestUtils.testCustomResource();
     resourceWithFinalizer.addFinalizer(DEFAULT_FINALIZER);
-    when(customResourceFacade.updateResource(testCustomResource))
+    when(customResourceFacade.patchResourceWithoutSSA(eq(testCustomResource), any()))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any())).thenReturn(resourceWithFinalizer);
@@ -226,7 +229,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(2)).updateResource(any());
+    verify(customResourceFacade, times(2)).patchResourceWithoutSSA(any(), any());
     verify(customResourceFacade, times(1)).getResource(any(), any());
   }
 
@@ -236,7 +239,7 @@ class ReconciliationDispatcherTest {
     // of the finalizer removal
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.updateResource(any()))
+    when(customResourceFacade.patchResourceWithoutSSA(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null));
     when(customResourceFacade.getResource(any(), any())).thenReturn(null);
 
@@ -244,7 +247,7 @@ class ReconciliationDispatcherTest {
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-    verify(customResourceFacade, times(1)).updateResource(testCustomResource);
+    verify(customResourceFacade, times(1)).patchResourceWithoutSSA(eq(testCustomResource), any());
     verify(customResourceFacade, times(1)).getResource(any(), any());
   }
 
@@ -252,7 +255,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalRetryExceeded() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.updateResource(any()))
+    when(customResourceFacade.patchResourceWithoutSSA(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null));
     when(customResourceFacade.getResource(any(), any()))
         .thenAnswer((Answer<TestCustomResource>) invocationOnMock -> createResourceWithFinalizer());
@@ -264,7 +267,7 @@ class ReconciliationDispatcherTest {
     assertThat(postExecControl.getRuntimeException()).isPresent();
     assertThat(postExecControl.getRuntimeException().get())
         .isInstanceOf(OperatorException.class);
-    verify(customResourceFacade, times(MAX_UPDATE_RETRY)).updateResource(any());
+    verify(customResourceFacade, times(MAX_UPDATE_RETRY)).patchResourceWithoutSSA(any(), any());
     verify(customResourceFacade, times(MAX_UPDATE_RETRY - 1)).getResource(any(),
         any());
   }
@@ -273,7 +276,7 @@ class ReconciliationDispatcherTest {
   void throwsExceptionIfFinalizerRemovalClientExceptionIsNotConflict() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
     markForDeletion(testCustomResource);
-    when(customResourceFacade.updateResource(any()))
+    when(customResourceFacade.patchResourceWithoutSSA(any(), any()))
         .thenThrow(new KubernetesClientException(null, 400, null));
 
     var res =
@@ -281,7 +284,7 @@ class ReconciliationDispatcherTest {
 
     assertThat(res.getRuntimeException()).isPresent();
     assertThat(res.getRuntimeException().get()).isInstanceOf(KubernetesClientException.class);
-    verify(customResourceFacade, times(1)).updateResource(any());
+    verify(customResourceFacade, times(1)).patchResourceWithoutSSA(any(), any());
     verify(customResourceFacade, never()).getResource(any(), any());
   }
 
@@ -325,7 +328,7 @@ class ReconciliationDispatcherTest {
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, never()).updateResource(any());
+    verify(customResourceFacade, never()).patchResource(any(), any());
   }
 
   @Test
@@ -335,22 +338,22 @@ class ReconciliationDispatcherTest {
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-    verify(customResourceFacade, never()).updateResource(any());
-    verify(customResourceFacade, never()).updateStatus(testCustomResource);
+    verify(customResourceFacade, never()).patchResource(any(), any());
+    verify(customResourceFacade, never()).patchStatus(eq(testCustomResource), any());
   }
 
   @Test
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.updateResource(any()))
+    when(customResourceFacade.patchResourceWithSSA(any()))
         .thenReturn(testCustomResource);
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    assertEquals(1, testCustomResource.getMetadata().getFinalizers().size());
-    verify(customResourceFacade, times(1)).updateResource(any());
+    verify(customResourceFacade, times(1))
+        .patchResourceWithSSA(argThat(a -> !a.getMetadata().getFinalizers().isEmpty()));
     assertThat(postExecControl.updateIsStatusPatch()).isFalse();
     assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }
@@ -362,7 +365,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, never()).updateResource(any());
+    verify(customResourceFacade, never()).patchResource(any(), any());
     verify(reconciler, never()).cleanup(eq(testCustomResource), any());
   }
 
@@ -456,7 +459,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void updatesObservedGenerationOnNoUpdateUpdateControl() throws Exception {
+  void doesNotUpdatesObservedGenerationIfStatusIsNotPatchedWhenUsingSSA() throws Exception {
     var observedGenResource = createObservedGenCustomResource();
 
     Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
@@ -465,7 +468,27 @@ class ReconciliationDispatcherTest {
     when(config.isGenerationAware()).thenReturn(true);
     when(reconciler.reconcile(any(), any()))
         .thenReturn(UpdateControl.noUpdate());
-    when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
+    when(facade.patchStatus(any(), any())).thenReturn(observedGenResource);
+    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
+
+    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
+        executionScopeWithCREvent(observedGenResource));
+    assertThat(control.getUpdatedCustomResource()).isEmpty();
+  }
+
+  @Test
+  void patchObservedGenerationOnCustomResourcePatchIfNoSSA() throws Exception {
+    var observedGenResource = createObservedGenCustomResource();
+
+    Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
+    final var config = MockControllerConfiguration.forResource(ObservedGenCustomResource.class);
+    CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
+    when(config.isGenerationAware()).thenReturn(true);
+    when(reconciler.reconcile(any(), any()))
+        .thenReturn(UpdateControl.patchResource(observedGenResource));
+    when(facade.patchResource(any(), any())).thenReturn(observedGenResource);
+    when(facade.patchStatus(eq(observedGenResource), any())).thenReturn(observedGenResource);
+    initConfigService(false);
     var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
@@ -476,7 +499,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void updateObservedGenerationOnCustomResourceUpdate() throws Exception {
+  void doesNotPatchObservedGenerationOnCustomResourcePatch() throws Exception {
     var observedGenResource = createObservedGenCustomResource();
 
     Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
@@ -484,16 +507,14 @@ class ReconciliationDispatcherTest {
     CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
     when(config.isGenerationAware()).thenReturn(true);
     when(reconciler.reconcile(any(), any()))
-        .thenReturn(UpdateControl.updateResource(observedGenResource));
-    when(facade.updateResource(any())).thenReturn(observedGenResource);
-    when(facade.updateStatus(observedGenResource)).thenReturn(observedGenResource);
-    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
+        .thenReturn(UpdateControl.patchResource(observedGenResource));
+    when(facade.patchResource(any(), any())).thenReturn(observedGenResource);
+    var dispatcher = init(observedGenResource, reconciler, config, facade, false);
 
-    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
+    dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
-        .getStatus().getObservedGeneration())
-        .isEqualTo(1L);
+
+    verify(facade, never()).patchStatus(any(), any());
   }
 
   @Test
@@ -505,7 +526,7 @@ class ReconciliationDispatcherTest {
     };
     reconciler.errorHandler = (r, ri, e) -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
-      return ErrorStatusUpdateControl.updateStatus(testCustomResource);
+      return ErrorStatusUpdateControl.patchStatus(testCustomResource);
     };
 
     reconciliationDispatcher.handleExecution(
@@ -522,7 +543,7 @@ class ReconciliationDispatcherTest {
               }
             }).setResource(testCustomResource));
 
-    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
   }
@@ -536,12 +557,12 @@ class ReconciliationDispatcherTest {
     };
     reconciler.errorHandler = (r, ri, e) -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
-      return ErrorStatusUpdateControl.updateStatus(testCustomResource);
+      return ErrorStatusUpdateControl.patchStatus(testCustomResource);
     };
 
     var postExecControl = reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
-    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
     assertThat(postExecControl.exceptionDuringExecution()).isTrue();
@@ -555,7 +576,7 @@ class ReconciliationDispatcherTest {
     };
     reconciler.errorHandler = (r, ri, e) -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
-      return ErrorStatusUpdateControl.updateStatus(testCustomResource).withNoRetry();
+      return ErrorStatusUpdateControl.patchStatus(testCustomResource).withNoRetry();
     };
 
     var postExecControl = reconciliationDispatcher.handleExecution(
@@ -563,7 +584,7 @@ class ReconciliationDispatcherTest {
 
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
-    verify(customResourceFacade, times(1)).updateStatus(testCustomResource);
+    verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     assertThat(postExecControl.exceptionDuringExecution()).isFalse();
   }
 
@@ -583,7 +604,7 @@ class ReconciliationDispatcherTest {
 
     verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
-    verify(customResourceFacade, times(0)).updateStatus(testCustomResource);
+    verify(customResourceFacade, times(0)).patchStatus(eq(testCustomResource), any());
     assertThat(postExecControl.exceptionDuringExecution()).isFalse();
   }
 
@@ -646,10 +667,14 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void retriesAddingFinalizer() {
+  void retriesAddingFinalizerWithoutSSA() {
+    initConfigService(false);
+    reconciliationDispatcher =
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
+
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.updateResource(any()))
+    when(customResourceFacade.patchResource(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any()))
@@ -660,7 +685,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(2)).updateResource(any());
+    verify(customResourceFacade, times(2)).patchResource(any(), any());
   }
 
   @Test
@@ -680,6 +705,12 @@ class ReconciliationDispatcherTest {
     assertThat(res.getReScheduleDelay()).contains(delay);
     assertThat(res.getRuntimeException()).isEmpty();
   }
+
+  @Test
+  void addsFinalizerToPatchWithSSA() {
+
+  }
+
 
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();
