@@ -132,8 +132,9 @@ public class WebPageReconciler
       log.info("Restarting pods because HTML has changed in {}", ns);
       kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
-    webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
-    return UpdateControl.patchStatus(webPage);
+
+    return UpdateControl.patchStatus(
+        createWebPageForStatusUpdate(webPage, desiredHtmlConfigMap.getMetadata().getName()));
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {

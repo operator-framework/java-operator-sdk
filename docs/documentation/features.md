@@ -91,17 +91,31 @@ Those are the typical use cases of resource updates, however in some cases there
 the controller wants to update the resource itself (for example to add annotations) or not perform
 any updates, which is also supported.
 
-It is also possible to update both the status and the resource with the
-`updateResourceAndStatus` method. In this case, the resource is updated first followed by the
-status, using two separate requests to the Kubernetes API.
+It is also possible to update both the status and the resource with the `patchResourceAndStatus` method. In this case,
+the resource is updated first followed by the status, using two separate requests to the Kubernetes API.
 
-You should always state your intent using `UpdateControl` and let the SDK deal with the actual
-updates instead of performing these updates yourself using the actual Kubernetes client so that
-the SDK can update its internal state accordingly.
+From v5 `UpdateControl` only supports patching the resources, by default
+using [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
+It is important to understand how SSA works in Kubernetes. Mainly, resources applied using SSA
+should contain only the fields identifying the resource and those the user is interested in (a 'fully specified intent'
+in Kubernetes parlance), thus usually using a resource created from scratch, see
+[sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourcewithssa/PatchResourceWithSSAReconciler.java#L18-L22).
+To contrast, see the same sample, this time [without SSA](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java#L16-L16).
 
-Resource updates are protected using optimistic version control, to make sure that other updates
-that might have occurred in the mean time on the server are not overwritten. This is ensured by
-setting the `resourceVersion` field on the processed resources.
+Non-SSA based patch is still supported.  
+You can control whether or not to use SSA
+using [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385)
+and the related `ConfigurationServiceOverrider.withUseSSAToPatchPrimaryResource` method.
+Related integration test can be
+found [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java).
+
+Handling resources directly using the client, instead of delegating these updates operations to JOSDK by returning
+an `UpdateControl` at the end of your reconciliation, should work appropriately. However, we do recommend to
+use `UpdateControl` instead since JOSDK makes sure that the operations are handled properly, since there are subtleties
+to be aware of. For example, if you are using a finalizer, JOSDK makes sure to include it in your fully specified intent
+so that it is not unintentionally removed from the resource (which would happen if you omit it, since your controller is
+the designated manager for that field and Kubernetes interprets the finalizer being gone from the specified intent as a
+request for removal).
 
 [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java)
 typically instructs the framework to remove the finalizer after the dependent
@@ -170,6 +184,8 @@ You can specify the name of the finalizer to use for your `Reconciler` using the
 [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 annotation. If you do not specify a finalizer name, one will be automatically generated for you.
 
+From v5 by default finalizer is added using Served Side Apply. See also UpdateControl in docs.
+
 ## Automatic Observed Generation Handling
 
 Having an `.observedGeneration` value on your resources' status is a best practice to
@@ -187,11 +203,14 @@ In order to have this feature working:
   So the status should be instantiated when the object is returned using the `UpdateControl`.
 
 If these conditions are fulfilled and generation awareness is activated, the observed generation
-is automatically set by the framework after the `reconcile` method is called. Note that the
-observed generation is also updated even when `UpdateControl.noUpdate()` is returned from the
-reconciler. See this feature at work in
-the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5)
-.
+is automatically set by the framework after the `reconcile` method is called. 
+
+When using SSA based patches, the observed generation is only updated when `UpdateControl.patchStatus` or
+`UpdateControl.patchResourceAndStatus` is returned. In case the of non-SSA based patches
+the observed generation is also updated even when `UpdateControl.noUpdate()` is returned from the
+reconciler. 
+See this feature at work in the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5).
+See turning off an on the SSA based patching at [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385).
 
 ```java
 public class WebPageStatus extends ObservedGenerationAwareStatus {

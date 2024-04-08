@@ -245,17 +245,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       state.markProcessedMarkForDeletion();
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
-      postExecutionControl
-          .getUpdatedCustomResource()
-          .ifPresent(
-              p -> {
-                if (!postExecutionControl.updateIsStatusPatch()) {
-                  eventSourceManager
-                      .getControllerResourceEventSource()
-                      .handleRecentResourceUpdate(
-                          ResourceID.fromResource(p), p, executionScope.getResource());
-                }
-              });
       if (state.eventPresent()) {
         submitReconciliationExecution(state);
       } else {
