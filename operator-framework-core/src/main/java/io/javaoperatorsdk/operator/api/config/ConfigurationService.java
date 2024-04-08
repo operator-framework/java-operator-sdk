@@ -327,6 +327,8 @@ public interface ConfigurationService {
    * method of Kubernetes Dependent Resource.
    *
    * @since 4.4.0
+   *
+   * @return if SSA should be used for dependent resources
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
     return true;
@@ -355,6 +357,8 @@ public interface ConfigurationService {
    * Disable this if you want to react to your own dependent resource updates
    *
    * @since 4.5.0
+   *
+   * @return if special annotation should be used for dependent resource to filter events
    */
   default boolean previousAnnotationForDependentResourcesEventFiltering() {
     return true;
@@ -366,10 +370,12 @@ public interface ConfigurationService {
    * <p>
    * Disabled by default as Kubernetes does not support, and discourages, this interpretation of
    * resourceVersions. Enable only if your api server event processing seems to lag the operator
-   * logic and you want to further minimize the the amount of work done / updates issued by the
+   * logic, and you want to further minimize the amount of work done / updates issued by the
    * operator.
    *
    * @since 4.5.0
+   *
+   * @return if resource version should be parsed (as integer)
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
     return false;

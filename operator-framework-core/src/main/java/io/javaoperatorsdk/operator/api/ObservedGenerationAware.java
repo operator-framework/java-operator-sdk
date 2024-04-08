@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 /**
@@ -11,10 +12,11 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
  * In order for this automatic handling to work the status object returned by
  * {@link CustomResource#getStatus()} should not be null.
  * <p>
- * The observed generation is updated even when {@link UpdateControl#noUpdate()} or
- * {@link UpdateControl#updateResource(HasMetadata)} is called. Although those results call normally
- * does not result in a status update, there will be a subsequent status update Kubernetes API call
- * in this case.
+ * The observed generation is updated with SSA mode only if
+ * {@link UpdateControl#patchStatus(HasMetadata)} or
+ * {@link UpdateControl#patchResourceAndStatus(HasMetadata)} is called. In non-SSA mode (see
+ * {@link ConfigurationService#useSSAToPatchPrimaryResource()}) observed generation is update even
+ * if patch is not called.
  *
  * @see ObservedGenerationAwareStatus
  */
