@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.statusupdatelocking;
+package io.javaoperatorsdk.operator.sample.patchresourceandstatusnossa;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -9,10 +9,9 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@Kind("StatusUpdateLockingCustomResource")
-@ShortNames("sul")
-public class StatusUpdateLockingCustomResource
-    extends CustomResource<Void, StatusUpdateLockingCustomResourceStatus>
+@Kind("DoubleUpdateSample")
+@ShortNames("du")
+public class PatchResourceAndStatusNoSSACustomResource
+    extends CustomResource<PatchResourceAndStatusNoSSASpec, PatchResourceAndStatusNoSSAStatus>
     implements Namespaced {
-
 }
