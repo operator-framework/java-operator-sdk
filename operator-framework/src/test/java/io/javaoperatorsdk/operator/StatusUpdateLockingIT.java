@@ -21,23 +21,27 @@ class StatusUpdateLockingIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(StatusUpdateLockingReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
+          .withReconciler(StatusUpdateLockingReconciler.class)
           .build();
 
   @Test
-  void optimisticLockingDoneOnStatusUpdate() throws InterruptedException {
+  void noOptimisticLockingDoneOnStatusPatch() throws InterruptedException {
     var resource = operator.create(createResource());
     Thread.sleep(WAIT_TIME / 2);
     resource.getMetadata().setAnnotations(Map.of("key", "value"));
     operator.replace(resource);
 
-    await().pollDelay(Duration.ofMillis(WAIT_TIME)).untilAsserted(() -> {
-      assertThat(
-          operator.getReconcilerOfType(StatusUpdateLockingReconciler.class).getNumberOfExecutions())
-          .isEqualTo(2);
-      assertThat(operator.get(StatusUpdateLockingCustomResource.class, TEST_RESOURCE_NAME)
-          .getStatus().getValue()).isEqualTo(1);
-    });
+    await().pollDelay(Duration.ofMillis(WAIT_TIME)).timeout(Duration.ofSeconds(460))
+        .untilAsserted(() -> {
+          assertThat(
+              operator.getReconcilerOfType(StatusUpdateLockingReconciler.class)
+                  .getNumberOfExecutions())
+              .isEqualTo(1);
+          assertThat(operator.get(StatusUpdateLockingCustomResource.class, TEST_RESOURCE_NAME)
+              .getStatus().getValue()).isEqualTo(1);
+        });
   }
 
   StatusUpdateLockingCustomResource createResource() {

@@ -6,9 +6,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.dependentresource.*;
 
-import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
-import static io.javaoperatorsdk.operator.sample.Utils.handleError;
-import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
+import static io.javaoperatorsdk.operator.sample.Utils.*;
 
 /**
  * Shows how to implement a reconciler with managed dependent resources.
@@ -39,8 +37,7 @@ public class WebPageManagedDependentsReconciler
 
     final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
         .getMetadata().getName();
-    webPage.setStatus(createStatus(name));
-    return UpdateControl.patchStatus(webPage);
+    return UpdateControl.patchStatus(createWebPageForStatusUpdate(webPage, name));
   }
 
   @Override
