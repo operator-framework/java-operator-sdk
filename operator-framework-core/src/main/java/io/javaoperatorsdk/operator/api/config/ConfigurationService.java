@@ -369,6 +369,8 @@ public interface ConfigurationService {
    *
    * @return {@code true} if SSA should be used for dependent resources, {@code false} otherwise
    * @since 4.4.0
+   *
+   * @return if SSA should be used for dependent resources
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
     return true;
