@@ -340,7 +340,10 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       return customResourceFacade.patchResourceWithSSA(resource);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
         | NoSuchMethodException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Issue with creating custom resource instance with reflection." +
+          " Custom Resources must provide a no-arg constructor. Class: "
+          + originalResource.getClass().getName(),
+          e);
     }
   }
 
