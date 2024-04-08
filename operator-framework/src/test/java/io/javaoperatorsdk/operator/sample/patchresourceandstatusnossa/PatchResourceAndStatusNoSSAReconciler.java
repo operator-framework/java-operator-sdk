@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.sample.doubleupdate;
+package io.javaoperatorsdk.operator.sample.patchresourceandstatusnossa;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,18 +13,19 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
-public class DoubleUpdateTestCustomReconciler
-    implements Reconciler<DoubleUpdateTestCustomResource>, TestExecutionInfoProvider {
+public class PatchResourceAndStatusNoSSAReconciler
+    implements Reconciler<PatchResourceAndStatusNoSSACustomResource>, TestExecutionInfoProvider {
 
   private static final Logger log =
-      LoggerFactory.getLogger(DoubleUpdateTestCustomReconciler.class);
+      LoggerFactory.getLogger(PatchResourceAndStatusNoSSAReconciler.class);
   public static final String TEST_ANNOTATION = "TestAnnotation";
   public static final String TEST_ANNOTATION_VALUE = "TestAnnotationValue";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<DoubleUpdateTestCustomResource> reconcile(
-      DoubleUpdateTestCustomResource resource, Context<DoubleUpdateTestCustomResource> context) {
+  public UpdateControl<PatchResourceAndStatusNoSSACustomResource> reconcile(
+      PatchResourceAndStatusNoSSACustomResource resource,
+      Context<PatchResourceAndStatusNoSSACustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
     log.info("Value: " + resource.getSpec().getValue());
@@ -32,15 +33,15 @@ public class DoubleUpdateTestCustomReconciler
     resource.getMetadata().setAnnotations(new HashMap<>());
     resource.getMetadata().getAnnotations().put(TEST_ANNOTATION, TEST_ANNOTATION_VALUE);
     ensureStatusExists(resource);
-    resource.getStatus().setState(DoubleUpdateTestCustomResourceStatus.State.SUCCESS);
+    resource.getStatus().setState(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
 
-    return UpdateControl.updateResourceAndStatus(resource);
+    return UpdateControl.patchResourceAndStatus(resource);
   }
 
-  private void ensureStatusExists(DoubleUpdateTestCustomResource resource) {
-    DoubleUpdateTestCustomResourceStatus status = resource.getStatus();
+  private void ensureStatusExists(PatchResourceAndStatusNoSSACustomResource resource) {
+    PatchResourceAndStatusNoSSAStatus status = resource.getStatus();
     if (status == null) {
-      status = new DoubleUpdateTestCustomResourceStatus();
+      status = new PatchResourceAndStatusNoSSAStatus();
       resource.setStatus(status);
     }
   }
