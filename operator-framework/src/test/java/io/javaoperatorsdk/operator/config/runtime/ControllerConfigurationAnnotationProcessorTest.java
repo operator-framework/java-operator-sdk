@@ -33,7 +33,7 @@ class ControllerConfigurationAnnotationProcessorTest {
   }
 
   @Test
-  public void generateDoneableClasswithMultilevelHierarchy() {
+  public void generateDoneableClassWithMultilevelHierarchy() {
     Compilation compilation =
         Compiler.javac()
             .withProcessors(new ControllerConfigurationAnnotationProcessor())
