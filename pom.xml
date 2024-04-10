@@ -61,38 +61,38 @@
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
 
     <junit.version>5.10.1</junit.version>
-    <fabric8-client.version>6.13.1</fabric8-client.version>
+      <fabric8-client.version>6.13.1</fabric8-client.version>
     <slf4j.version>2.0.12</slf4j.version>
     <log4j.version>2.23.1</log4j.version>
     <mokito.version>5.12.0</mokito.version>
     <commons-lang3.version>3.16.0</commons-lang3.version>
     <compile-testing.version>0.21.0</compile-testing.version>
     <javapoet.version>1.13.0</javapoet.version>
-    <assertj.version>3.26.3</assertj.version>
+        <assertj.version>3.26.3</assertj.version>
     <awaitility.version>4.2.0</awaitility.version>
     <spring-boot.version>2.7.3</spring-boot.version>
-    <micrometer-core.version>1.13.2</micrometer-core.version>
+      <micrometer-core.version>1.13.2</micrometer-core.version>
     <okhttp.version>4.12.0</okhttp.version>
     <caffeine.version>3.1.8</caffeine.version>
     <jenvtest.version>0.9.6</jenvtest.version>
     <mustache.version>0.9.11</mustache.version>
     <commons.io.version>2.16.1</commons.io.version>
 
-      <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
-      <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+    <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
+    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
     <maven-javadoc-plugin.version>3.8.0</maven-javadoc-plugin.version>
-      <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-      <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+    <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
         <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
-      <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
-      <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
-      <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
-      <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+    <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
+    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
+    <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
+    <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
     <git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
-      <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
-      <spotless.version>2.43.0</spotless.version>
+    <jib-maven-plugin.version>3.4.1</jib-maven-plugin.version>
+    <spotless.version>2.43.0</spotless.version>
   </properties>
 
   <dependencyManagement>
