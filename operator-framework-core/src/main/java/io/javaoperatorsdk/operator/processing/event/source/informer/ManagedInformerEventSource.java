@@ -9,7 +9,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.javaoperatorsdk.operator.processing.event.source.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +24,7 @@ import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.*;
 
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
@@ -201,8 +201,8 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     if (!this.getClass().equals(es.getClass())) {
       return false;
     }
-    var managedEventSource = (ManagedInformerEventSource)es;
+    var managedEventSource = (ManagedInformerEventSource) es;
     return this.getInformerConfiguration()
-            .equals(managedEventSource.getInformerConfiguration());
+        .equals(managedEventSource.getInformerConfiguration());
   }
 }

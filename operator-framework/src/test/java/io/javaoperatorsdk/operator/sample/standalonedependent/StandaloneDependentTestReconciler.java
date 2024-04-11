@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.standalonedependent;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;

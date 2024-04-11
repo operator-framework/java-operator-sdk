@@ -149,7 +149,8 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   }
 
   public List<DependentResource> getDependentResourcesByNameWithoutActivationCondition() {
-    return dependentResourceNodes.values().stream().filter(n->n.getActivationCondition().isEmpty())
-            .map(DependentResourceNode::getDependentResource).toList();
+    return dependentResourceNodes.values().stream()
+        .filter(n -> n.getActivationCondition().isEmpty())
+        .map(DependentResourceNode::getDependentResource).toList();
   }
 }

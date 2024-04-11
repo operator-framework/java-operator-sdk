@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.dependentreinitialization;
 
 import java.util.List;
-import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;

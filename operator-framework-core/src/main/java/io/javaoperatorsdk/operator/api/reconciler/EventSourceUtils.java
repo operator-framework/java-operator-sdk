@@ -5,18 +5,17 @@ import java.util.*;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
-import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 // todo cleanup / delete
 public class EventSourceUtils {
 
   @SuppressWarnings("unchecked")
-  public static  <R extends HasMetadata> List<EventSource> dependentEventSources(EventSourceContext<R> eventSourceContext,DependentResource... dependentResources) {
-      return Arrays.stream(dependentResources)
-              .flatMap(dr-> dr.eventSource(eventSourceContext).stream()).toList();
+  public static <R extends HasMetadata> List<EventSource> dependentEventSources(
+      EventSourceContext<R> eventSourceContext, DependentResource... dependentResources) {
+    return Arrays.stream(dependentResources)
+        .flatMap(dr -> dr.eventSource(eventSourceContext).stream()).toList();
   }
 
   /**
@@ -39,7 +38,7 @@ public class EventSourceUtils {
       EventSourceContext<K> context,
       Workflow<K> workflow) {
     return workflow.getDependentResourcesByNameWithoutActivationCondition().stream()
-            .flatMap(dr->dr.eventSource(context).stream()).toList();
+        .flatMap(dr -> dr.eventSource(context).stream()).toList();
   }
 
   @SuppressWarnings("rawtypes")

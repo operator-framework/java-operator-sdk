@@ -49,7 +49,7 @@ public class MultipleManagedExternalDependentResourceReconciler
       EventSourceContext<MultipleManagedExternalDependentResourceCustomResource> context) {
 
     PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
-        new PollingEventSource<>(CONFIG_MAP_EVENT_SOURCE,() -> {
+        new PollingEventSource<>(CONFIG_MAP_EVENT_SOURCE, () -> {
           var lists = externalServiceMock.listResources();
           Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
           lists.forEach(er -> {

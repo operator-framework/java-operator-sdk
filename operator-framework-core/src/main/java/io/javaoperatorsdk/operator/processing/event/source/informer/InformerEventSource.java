@@ -77,24 +77,25 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(String name,
-          InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(name,configuration, context.getClient(),
-            context.getControllerConfiguration().getConfigurationService()
-                    .parseResourceVersionsForEventFilteringAndCaching());
+      InformerConfiguration<R> configuration, EventSourceContext<P> context) {
+    this(name, configuration, context.getClient(),
+        context.getControllerConfiguration().getConfigurationService()
+            .parseResourceVersionsForEventFilteringAndCaching());
   }
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(null,configuration, context.getClient(),
+    this(null, configuration, context.getClient(),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
-    this(null,configuration, client, false);
+    this(null, configuration, client, false);
   }
 
-  public InformerEventSource(String name,InformerConfiguration<R> configuration, KubernetesClient client,
+  public InformerEventSource(String name, InformerConfiguration<R> configuration,
+      KubernetesClient client,
       boolean parseResourceVersions) {
     super(name,
         configuration.getGroupVersionKind()

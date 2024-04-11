@@ -32,7 +32,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerResourceEventSource(Controller<T> controller) {
-    super(NAME,controller.getCRClient(), controller.getConfiguration(), false);
+    super(NAME, controller.getCRClient(), controller.getConfiguration(), false);
     this.controller = controller;
 
     final var config = controller.getConfiguration();

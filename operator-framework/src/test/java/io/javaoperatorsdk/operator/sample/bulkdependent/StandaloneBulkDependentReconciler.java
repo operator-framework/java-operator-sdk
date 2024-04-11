@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;

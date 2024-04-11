@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;

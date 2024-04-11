@@ -19,7 +19,7 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
   private final String name;
 
   protected AbstractResourceEventSource(Class<R> resourceClass) {
-    this(resourceClass,resourceClass.getName());
+    this(resourceClass, resourceClass.getName());
   }
 
   protected AbstractResourceEventSource(Class<R> resourceClass, String name) {

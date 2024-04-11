@@ -114,6 +114,6 @@ public class ExternalStateReconciler
     }, context, Duration.ofMillis(300L), ExternalResource.class);
 
     return Arrays.asList(configMapEventSource,
-            externalResourceEventSource);
+        externalResourceEventSource);
   }
 }

@@ -31,7 +31,7 @@ public class DependentGarbageCollectionTestReconciler
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<DependentGarbageCollectionTestCustomResource> context) {
-    return EventSourceUtils.dependentEventSources(context,configMapDependent);
+    return EventSourceUtils.dependentEventSources(context, configMapDependent);
   }
 
   @Override

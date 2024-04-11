@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.multipledependentresource;
 
 import java.util.List;
-import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;

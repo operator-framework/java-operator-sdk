@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
