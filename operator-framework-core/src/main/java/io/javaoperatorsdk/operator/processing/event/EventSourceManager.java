@@ -144,29 +144,23 @@ public class EventSourceManager<P extends HasMetadata>
     return null;
   }
 
-  public final void registerEventSource(EventSource eventSource) throws OperatorException {
-    registerEventSource(null, eventSource);
-  }
-
   @SuppressWarnings("rawtypes")
-  public final synchronized void registerEventSource(String name, EventSource eventSource)
+  public final synchronized void registerEventSource(EventSource eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
-      if (name == null || name.isBlank()) {
-        name = EventSourceUtils.generateNameFor(eventSource);
-      }
       if (eventSource instanceof ManagedInformerEventSource managedInformerEventSource) {
+
         managedInformerEventSource.setConfigurationService(
             controller.getConfiguration().getConfigurationService());
       }
-      final var named = new NamedEventSource(eventSource, name);
+      final var named = new NamedEventSource(eventSource, eventSource.name());
       eventSources.add(named);
       named.setEventHandler(controller.getEventProcessor());
     } catch (IllegalStateException | MissingCRDException e) {
       throw e; // leave untouched
     } catch (Exception e) {
-      throw new OperatorException("Couldn't register event source: " + name + " for "
+      throw new OperatorException("Couldn't register event source: " + eventSource.name() + " for "
           + controller.getConfiguration().getName() + " controller", e);
     }
   }
@@ -232,14 +226,13 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public EventSource dynamicallyRegisterEventSource(String name,
-      EventSource eventSource) {
+  public EventSource dynamicallyRegisterEventSource(EventSource eventSource) {
     synchronized (this) {
-      var actual = eventSources.existing(name, eventSource);
+      var actual = eventSources.existing(eventSource.name(), eventSource);
       if (actual != null) {
         eventSource = actual.eventSource();
       } else {
-        registerEventSource(name, eventSource);
+        registerEventSource(eventSource);
       }
     }
     // The start itself is blocking thus blocking only the threads which are attempt to start the

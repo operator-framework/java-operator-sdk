@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample.createupdateeventfilter;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -91,7 +92,7 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap> informerConfiguration =
         InformerConfiguration.from(ConfigMap.class)
@@ -102,7 +103,7 @@ public class CreateUpdateEventFilterTestReconciler
             informerConfiguration, context.getClient());
     this.configMapDR.setEventSource(informerEventSource);
 
-    return EventSourceUtils.nameEventSources(informerEventSource);
+    return List.of(informerEventSource);
   }
 
   public int getNumberOfExecutions() {

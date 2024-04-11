@@ -238,19 +238,19 @@ public class Controller<P extends HasMetadata>
         managedWorkflow.getDependentResourcesByNameWithoutActivationCondition();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
-      dependentResourcesByName.forEach((key, dependentResource) -> {
+      dependentResourcesByName.forEach(dependentResource -> {
         if (dependentResource instanceof EventSourceProvider provider) {
           final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(key, source);
+          eventSourceManager.registerEventSource(source);
         } else {
           Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
-          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es));
+          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(es));
         }
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
       final Map<String, List<EventSourceReferencer>> unresolvable = new HashMap<>(size);
-      dependentResourcesByName.values().stream()
+      dependentResourcesByName.stream()
           .filter(EventSourceReferencer.class::isInstance)
           .map(EventSourceReferencer.class::cast)
           .forEach(dr -> {

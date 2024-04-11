@@ -87,7 +87,7 @@ class EventSources<R extends HasMetadata> {
     final var name = eventSource.name();
     final var original = eventSource.original();
     final var existing = existing(name, original);
-    if (existing != null && !eventSource.equals(existing)) {
+    if (existing != null && !eventSource.scopeEquals(existing)) {
       throw new IllegalArgumentException("Event source " + existing.original()
           + " is already registered for the "
           + keyAsString(getResourceType(original), name)

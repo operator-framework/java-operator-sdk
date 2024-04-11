@@ -1,9 +1,7 @@
 package io.javaoperatorsdk.operator.sample.externalstate;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -98,7 +96,7 @@ public class ExternalStateReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<ExternalStateCustomResource> context) {
 
     configMapEventSource = new InformerEventSource<>(
@@ -115,7 +113,7 @@ public class ExternalStateReconciler
       return externalResource.map(Set::of).orElseGet(Collections::emptySet);
     }, context, Duration.ofMillis(300L), ExternalResource.class);
 
-    return EventSourceUtils.nameEventSources(configMapEventSource,
-        externalResourceEventSource);
+    return Arrays.asList(configMapEventSource,
+            externalResourceEventSource);
   }
 }

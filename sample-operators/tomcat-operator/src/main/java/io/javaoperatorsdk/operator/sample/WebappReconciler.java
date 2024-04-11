@@ -46,7 +46,7 @@ public class WebappReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
     /*
      * To create an event to a related WebApp resource and trigger the reconciliation we need to
      * find which WebApp this Tomcat custom resource is related to. To find the related
@@ -66,8 +66,7 @@ public class WebappReconciler
                 (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
                     primary.getMetadata().getNamespace())))
             .build();
-    return EventSourceUtils
-        .nameEventSources(new InformerEventSource<>(configuration, context));
+    return List.of(new InformerEventSource<>(configuration, context));
   }
 
   /**

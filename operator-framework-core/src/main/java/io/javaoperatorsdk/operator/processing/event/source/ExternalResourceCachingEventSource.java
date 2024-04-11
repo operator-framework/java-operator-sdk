@@ -50,8 +50,13 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   protected Map<ResourceID, Map<String, R>> cache = new ConcurrentHashMap<>();
 
   protected ExternalResourceCachingEventSource(Class<R> resourceClass,
+                                               CacheKeyMapper<R> cacheKeyMapper) {
+    this(null,resourceClass,cacheKeyMapper);
+  }
+
+  protected ExternalResourceCachingEventSource(String name,Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
-    super(resourceClass);
+    super(resourceClass,name);
     this.cacheKeyMapper = cacheKeyMapper;
   }
 

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.standalonedependent;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,9 +32,9 @@ public class StandaloneDependentTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return EventSourceUtils.nameEventSourcesFromDependentResource(context,
+    return EventSourceUtils.dependentEventSources(context,
         deploymentDependent);
   }
 

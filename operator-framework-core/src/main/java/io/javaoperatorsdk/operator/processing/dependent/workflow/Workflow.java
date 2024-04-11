@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,7 +45,7 @@ public interface Workflow<P extends HasMetadata> {
   }
 
   @SuppressWarnings("rawtypes")
-  default Map<String, DependentResource> getDependentResourcesByNameWithoutActivationCondition() {
-    return Collections.emptyMap();
+  default List<DependentResource> getDependentResourcesByNameWithoutActivationCondition() {
+    return Collections.emptyList();
   }
 }

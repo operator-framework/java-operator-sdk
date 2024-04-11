@@ -1,9 +1,6 @@
 package io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -48,11 +45,11 @@ public class MultipleManagedExternalDependentResourceReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleManagedExternalDependentResourceCustomResource> context) {
 
     PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
-        new PollingEventSource<>(() -> {
+        new PollingEventSource<>(CONFIG_MAP_EVENT_SOURCE,() -> {
           var lists = externalServiceMock.listResources();
           Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
           lists.forEach(er -> {
@@ -63,6 +60,6 @@ public class MultipleManagedExternalDependentResourceReconciler
           return res;
         }, 1000L, ExternalResource.class, ExternalResource::getId);
 
-    return Map.of(CONFIG_MAP_EVENT_SOURCE, pollingEventSource);
+    return List.of(pollingEventSource);
   }
 }

@@ -49,21 +49,35 @@ public class PollingEventSource<R, P extends HasMetadata>
   private final long period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
 
-  public PollingEventSource(
+  public PollingEventSource(GenericResourceFetcher<R> supplier,
+                            long period,
+                            Class<R> resourceClass) {
+    this(null,supplier,period,resourceClass);
+  }
+
+  public PollingEventSource(String name,
       GenericResourceFetcher<R> supplier,
       long period,
       Class<R> resourceClass) {
-    super(resourceClass, CacheKeyMapper.singleResourceCacheKeyMapper());
+    super(name,resourceClass, CacheKeyMapper.singleResourceCacheKeyMapper());
     this.genericResourceFetcher = supplier;
     this.period = period;
   }
 
   public PollingEventSource(
+          GenericResourceFetcher<R> supplier,
+          long period,
+          Class<R> resourceClass,
+          CacheKeyMapper<R> cacheKeyMapper) {
+   this(null,supplier,period,resourceClass,cacheKeyMapper);
+  }
+
+  public PollingEventSource(String name,
       GenericResourceFetcher<R> supplier,
       long period,
       Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
-    super(resourceClass, cacheKeyMapper);
+    super(name,resourceClass, cacheKeyMapper);
     this.genericResourceFetcher = supplier;
     this.period = period;
   }

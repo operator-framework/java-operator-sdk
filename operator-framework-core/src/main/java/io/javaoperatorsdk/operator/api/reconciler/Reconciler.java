@@ -19,17 +19,17 @@ public interface Reconciler<P extends HasMetadata> {
    */
   UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception;
 
-
   /**
    * Prepares a map of {@link EventSource} implementations keyed by the name with which they need to
    * be registered by the SDK.
    *
    * @param context a {@link EventSourceContext} providing access to information useful to event
    *        sources
-   * @return a map of event sources to register
+   * @return a list of event sources
    */
-  default Map<String, EventSource> prepareEventSources(EventSourceContext<P> context) {
-    return Map.of();
+  // todo should be ? extends EventSource
+  default List<EventSource> prepareEventSources(EventSourceContext<P> context) {
+    return Collections.emptyList();
   }
 
 }

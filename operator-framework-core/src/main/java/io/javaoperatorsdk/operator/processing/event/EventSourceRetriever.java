@@ -39,11 +39,10 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * name will ever be registered.
    * </p>
    *
-   * @param name of the event source
    * @param eventSource to register
    * @return the actual event source registered. Might not be the same as the parameter.
    */
-  EventSource dynamicallyRegisterEventSource(String name, EventSource eventSource);
+  EventSource dynamicallyRegisterEventSource(EventSource eventSource);
 
 
   /**

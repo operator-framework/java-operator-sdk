@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,9 +62,8 @@ public class MultipleSecondaryEventSourceReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleSecondaryEventSourceCustomResource> context) {
-
 
     var config = InformerConfiguration.from(ConfigMap.class)
         .withNamespaces(context.getControllerConfiguration().getNamespaces())
@@ -75,7 +75,7 @@ public class MultipleSecondaryEventSourceReconciler
         }).build();
     InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource> configMapEventSource =
         new InformerEventSource<>(config, context);
-    return EventSourceUtils.nameEventSources(configMapEventSource);
+    return List.of(configMapEventSource);
   }
 
   ConfigMap configMap(String name, MultipleSecondaryEventSourceCustomResource resource) {

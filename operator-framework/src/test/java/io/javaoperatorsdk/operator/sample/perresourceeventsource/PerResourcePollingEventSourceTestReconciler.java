@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample.perresourceeventsource;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +29,7 @@ public class PerResourcePollingEventSourceTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<PerResourceEventSourceCustomResource> context) {
     PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource =
         new PerResourcePollingEventSource<>(resource -> {
@@ -37,7 +38,7 @@ public class PerResourcePollingEventSourceTestReconciler
           return Set.of(UUID.randomUUID().toString());
         },
             context, Duration.ofMillis(POLL_PERIOD), String.class);
-    return EventSourceUtils.nameEventSources(eventSource);
+    return List.of(eventSource);
   }
 
   public int getNumberOfExecutions(String name) {

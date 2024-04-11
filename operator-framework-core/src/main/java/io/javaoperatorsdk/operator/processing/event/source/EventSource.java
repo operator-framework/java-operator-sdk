@@ -28,4 +28,14 @@ public interface EventSource extends LifecycleAware, EventSourceHealthIndicator 
   default Status getStatus() {
     return Status.UNKNOWN;
   }
+
+  default String name() {
+    return getClass().getSimpleName();
+  }
+
+  // todo maybe different special method name?
+  default boolean scopeEquals(EventSource es) {
+    return this == es;
+  }
+
 }

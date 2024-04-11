@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,9 +36,8 @@ public class StandaloneBulkDependentReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<BulkDependentTestCustomResource> context) {
-    return EventSourceUtils
-        .nameEventSources(dependent.initEventSource(context));
+    return List.of(dependent.initEventSource(context));
   }
 }

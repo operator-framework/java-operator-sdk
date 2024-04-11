@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.multipledependentresourcewithdiscriminator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,7 +44,7 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResourceWithDiscriminator> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResourceWithDiscriminator> eventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
@@ -51,6 +52,6 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
     firstDependentResourceConfigMap.configureWith(eventSource);
     secondDependentResourceConfigMap.configureWith(eventSource);
 
-    return EventSourceUtils.nameEventSources(eventSource);
+    return List.of(eventSource);
   }
 }

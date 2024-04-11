@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.multipledependentresource;
 
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -33,7 +34,7 @@ public class MultipleDependentResourceReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResource> eventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
@@ -41,6 +42,6 @@ public class MultipleDependentResourceReconciler
     firstDependentResourceConfigMap.configureWith(eventSource);
     secondDependentResourceConfigMap.configureWith(eventSource);
 
-    return EventSourceUtils.nameEventSources(eventSource);
+    return List.of(eventSource);
   }
 }

@@ -5,10 +5,20 @@ import java.util.*;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
+import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
+// todo cleanup / delete
 public class EventSourceUtils {
+
+  @SuppressWarnings("unchecked")
+  public static  <R extends HasMetadata> List<EventSource> dependentEventSources(EventSourceContext<R> eventSourceContext,DependentResource... dependentResources) {
+      return Arrays.stream(dependentResources)
+              .flatMap(dr-> dr.eventSource(eventSourceContext).stream()).toList();
+  }
+
   /**
    * Utility method to easily create map with generated name for event sources. This is for the use
    * case when the event sources are not access explicitly by name in the reconciler.
@@ -25,15 +35,11 @@ public class EventSourceUtils {
   }
 
   @SuppressWarnings("unchecked")
-  public static <K extends HasMetadata> Map<String, EventSource> eventSourcesFromWorkflow(
+  public static <K extends HasMetadata> List<EventSource> eventSourcesFromWorkflow(
       EventSourceContext<K> context,
       Workflow<K> workflow) {
-    Map<String, EventSource> result = new HashMap<>();
-    for (var e : workflow.getDependentResourcesByNameWithoutActivationCondition().entrySet()) {
-      var eventSource = e.getValue().eventSource(context);
-      eventSource.ifPresent(es -> result.put(e.getKey(), (EventSource) es));
-    }
-    return result;
+    return workflow.getDependentResourcesByNameWithoutActivationCondition().stream()
+            .flatMap(dr->dr.eventSource(context).stream()).toList();
   }
 
   @SuppressWarnings("rawtypes")

@@ -26,12 +26,13 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     implements ResourceEventHandler<T> {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
+  public static final String NAME = "ControllerResourceEventSource";
 
   private final Controller<T> controller;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerResourceEventSource(Controller<T> controller) {
-    super(controller.getCRClient(), controller.getConfiguration(), false);
+    super(NAME,controller.getCRClient(), controller.getConfiguration(), false);
     this.controller = controller;
 
     final var config = controller.getConfiguration();

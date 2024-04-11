@@ -1,8 +1,5 @@
 package io.javaoperatorsdk.operator.sample.multipledrsametypenodiscriminator;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -10,6 +7,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 
@@ -46,12 +46,12 @@ public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> ies =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+        new InformerEventSource<>(CONFIG_MAP_EVENT_SOURCE,InformerConfiguration.from(ConfigMap.class, context)
             .build(), context);
 
-    return Map.of(CONFIG_MAP_EVENT_SOURCE, ies);
+    return List.of(ies);
   }
 }
