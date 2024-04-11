@@ -199,15 +199,6 @@
                 <artifactId>operator-framework</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!--
-                  regarding the okhttp explicit version
-                  see https://github.com/fabric8io/kubernetes-client/issues/4290
-                  -->
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>logging-interceptor</artifactId>
@@ -230,6 +221,7 @@
                 <scope>test</scope>
             </dependency>
             <!-- Kubernetes client HTTP client implementations -->
+      <!-- Default implementation is controlled by fabric8-httpclient-impl.name property -->
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-httpclient-okhttp</artifactId>
@@ -240,7 +232,6 @@
                 <artifactId>kubernetes-httpclient-vertx</artifactId>
                 <version>${fabric8-client.version}</version>
             </dependency>
-            <!--            We currently only recommend using the legacy okhttp client and the vert.x-based implementation -->
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-httpclient-jdk</artifactId>
