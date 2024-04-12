@@ -1,6 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -104,8 +109,7 @@ public class EventSourceManager<P extends HasMetadata>
   @SuppressWarnings("rawtypes")
   private void logEventSourceEvent(NamedEventSource eventSource, String event) {
     if (log.isDebugEnabled()) {
-      if (eventSource.original() instanceof ResourceEventSource) {
-        ResourceEventSource source = (ResourceEventSource) eventSource.original();
+      if (eventSource.original() instanceof ResourceEventSource source) {
         log.debug("{} event source {} for {}", event,
             eventSource.isNameSet() ? eventSource.name() : eventSource,
             source.resourceType());
@@ -152,8 +156,7 @@ public class EventSourceManager<P extends HasMetadata>
       if (name == null || name.isBlank()) {
         name = EventSourceUtils.generateNameFor(eventSource);
       }
-      if (eventSource instanceof ManagedInformerEventSource) {
-        var managedInformerEventSource = ((ManagedInformerEventSource) eventSource);
+      if (eventSource instanceof ManagedInformerEventSource managedInformerEventSource) {
         managedInformerEventSource.setConfigurationService(
             controller.getConfiguration().getConfigurationService());
       }
