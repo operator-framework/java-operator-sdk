@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -105,7 +108,6 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.finalizer =
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
     this.fieldManager = fieldManager;
-    this.workflowSpec = workflowSpec;
   }
 
   protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,

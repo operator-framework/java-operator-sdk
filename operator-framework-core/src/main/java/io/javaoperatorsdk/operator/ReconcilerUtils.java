@@ -9,7 +9,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.builder.Builder;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
@@ -126,8 +125,7 @@ public class ReconcilerUtils {
   // will be replaced with: https://github.com/fabric8io/kubernetes-client/issues/3816
   public static Object getSpec(HasMetadata resource) {
     // optimize CustomResource case
-    if (resource instanceof CustomResource) {
-      CustomResource cr = (CustomResource) resource;
+    if (resource instanceof CustomResource cr) {
       return cr.getSpec();
     }
 
@@ -142,8 +140,7 @@ public class ReconcilerUtils {
   @SuppressWarnings("unchecked")
   public static Object setSpec(HasMetadata resource, Object spec) {
     // optimize CustomResource case
-    if (resource instanceof CustomResource) {
-      CustomResource cr = (CustomResource) resource;
+    if (resource instanceof CustomResource cr) {
       cr.setSpec(spec);
       return null;
     }
@@ -191,8 +188,7 @@ public class ReconcilerUtils {
       throw ((MissingCRDException) e);
     }
 
-    if (e instanceof KubernetesClientException) {
-      KubernetesClientException ke = (KubernetesClientException) e;
+    if (e instanceof KubernetesClientException ke) {
       // only throw MissingCRDException if the 404 error occurs on the target CRD
       if (404 == ke.getCode() &&
           (resourceTypeName.equals(ke.getFullResourceName())
@@ -217,7 +213,7 @@ public class ReconcilerUtils {
           group = group.substring(0, group.length() - 1);
         }
         final var segments = Arrays.stream(group.split("/")).filter(Predicate.not(String::isEmpty))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
         if (segments.size() != 3) {
           return false;
         }
