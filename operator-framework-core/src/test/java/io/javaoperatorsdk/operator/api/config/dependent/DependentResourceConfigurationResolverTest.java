@@ -12,7 +12,11 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -48,7 +52,7 @@ class DependentResourceConfigurationResolverTest {
     final var cfg = configFor(new CustomAnnotationReconciler());
     final var customConfig = DependentResourceConfigurationResolver
         .extractConfigurationFromConfigured(CustomAnnotatedDep.class, cfg);
-    assertTrue(customConfig instanceof CustomConfig);
+    assertInstanceOf(CustomConfig.class, customConfig);
     assertEquals(CustomAnnotatedDep.PROVIDED_VALUE, ((CustomConfig) customConfig).getValue());
     final var newConfig = new CustomConfig(72);
     final var overridden = ControllerConfigurationOverrider.override(cfg)
@@ -96,7 +100,7 @@ class DependentResourceConfigurationResolverTest {
     DependentResourceConfigurationResolver.extractConfigurationFromConfigured(ConfigMapDep.class,
         cfg);
     converter = DependentResourceConfigurationResolver.getConverter(ConfigMapDep.class);
-    assertTrue(converter instanceof KubernetesDependentConverter);
+    assertInstanceOf(KubernetesDependentConverter.class, converter);
     final var overriddenConverter = new ConfigurationConverter() {
       @Override
       public Object configFrom(Annotation configAnnotation,
@@ -110,7 +114,7 @@ class DependentResourceConfigurationResolverTest {
 
     // already resolved converters are kept unchanged
     converter = DependentResourceConfigurationResolver.getConverter(ConfigMapDep.class);
-    assertTrue(converter instanceof KubernetesDependentConverter);
+    assertInstanceOf(KubernetesDependentConverter.class, converter);
 
     // but new converters should use the overridden version
     DependentResourceConfigurationResolver.extractConfigurationFromConfigured(ServiceDep.class,
