@@ -368,7 +368,7 @@ public class Controller<P extends HasMetadata>
     }
   }
 
-  public void changeNamespaces(Set<String> namespaces) {
+  public synchronized void changeNamespaces(Set<String> namespaces) {
     if (namespaces.contains(WATCH_CURRENT_NAMESPACE)) {
       throw new OperatorException("Unexpected value in target namespaces: " + namespaces);
     }
@@ -376,9 +376,17 @@ public class Controller<P extends HasMetadata>
       throw new OperatorException(
           "Watching all namespaces, but additional specific namespace is present");
     }
-    eventProcessor.stop();
+    // if the processor was not running, for example because the controller
+    // was not leading in a HA setup, we don't want to stop and
+    // mainly start the processor on namespace change.
+    boolean eventProcessorWasRunning = eventProcessor.isRunning();
+    if (eventProcessorWasRunning) {
+      eventProcessor.stop();
+    }
     eventSourceManager.changeNamespaces(namespaces);
-    eventProcessor.start();
+    if (eventProcessorWasRunning) {
+      eventProcessor.start();
+    }
   }
 
   public synchronized void startEventProcessing() {

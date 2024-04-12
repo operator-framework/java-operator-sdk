@@ -473,4 +473,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   public synchronized boolean isUnderProcessing(ResourceID resourceID) {
     return isControllerUnderExecution(resourceStateManager.getOrCreate(resourceID));
   }
+
+  public synchronized boolean isRunning() {
+    return running;
+  }
 }
