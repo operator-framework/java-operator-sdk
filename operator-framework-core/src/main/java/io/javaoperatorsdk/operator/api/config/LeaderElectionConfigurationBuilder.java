@@ -6,9 +6,10 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 
 import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration.*;
 
+@SuppressWarnings("unused")
 public final class LeaderElectionConfigurationBuilder {
 
-  private String leaseName;
+  private final String leaseName;
   private String leaseNamespace;
   private String identity;
   private Duration leaseDuration = LEASE_DURATION_DEFAULT_VALUE;

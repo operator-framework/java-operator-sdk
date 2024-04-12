@@ -2,7 +2,12 @@ package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickube
 
 import java.util.Map;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
@@ -21,7 +26,7 @@ public class GenericKubernetesDependentStandaloneReconciler
 
     dependent.reconcile(resource, context);
 
-    return UpdateControl.<GenericKubernetesDependentStandaloneCustomResource>noUpdate();
+    return UpdateControl.noUpdate();
   }
 
   @Override
