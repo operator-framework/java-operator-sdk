@@ -19,7 +19,7 @@ jobs:
   sample_operators_tests:
     strategy:
       matrix:
-        sample_dir:
+        sample:
           - "sample-operators/mysql-schema"
           - "sample-operators/tomcat-operator"
           - "sample-operators/webpage"
@@ -48,12 +48,10 @@ jobs:
         run: mvn install -DskipTests
 
       - name: Run integration tests in local mode
-        working-directory: ${{ matrix.sample_dir }}
         run: |
-          mvn test -P end-to-end-tests
+          mvn test -P end-to-end-tests -pl ${{ matrix.sample }}
 
       - name: Run E2E tests as a deployment
-        working-directory: ${{ matrix.sample_dir }}
         run: |
           eval $(minikube -p minikube docker-env)
-          mvn jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote
+          mvn jib:dockerBuild test -P end-to-end-tests -Dtest.deployment=remote -pl ${{ matrix.sample }}
