@@ -60,8 +60,7 @@ class MultiVersionCRDIT {
     @Override
     @SuppressWarnings("rawtypes")
     public void onStop(SharedIndexInformer informer, Throwable ex) {
-      if (ex instanceof WatcherException) {
-        WatcherException watcherEx = (WatcherException) ex;
+      if (ex instanceof WatcherException watcherEx) {
         watcherEx.getRawWatchMessage().ifPresent(raw -> {
           try {
             // extract the resource at which the version is attempted to be created (i.e. the stored
