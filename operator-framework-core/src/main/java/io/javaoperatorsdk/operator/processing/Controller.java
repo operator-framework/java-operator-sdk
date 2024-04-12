@@ -237,8 +237,7 @@ public class Controller<P extends HasMetadata>
     final var size = dependentResourcesByName.size();
     if (size > 0) {
       dependentResourcesByName.forEach((key, dependentResource) -> {
-        if (dependentResource instanceof EventSourceProvider) {
-          final var provider = (EventSourceProvider) dependentResource;
+        if (dependentResource instanceof EventSourceProvider provider) {
           final var source = provider.initEventSource(context);
           eventSourceManager.registerEventSource(key, source);
         } else {
