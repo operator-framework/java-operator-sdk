@@ -22,7 +22,12 @@ import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -97,7 +102,7 @@ class BaseConfigurationServiceTest {
     var maybeConfig =
         DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
     assertNotNull(maybeConfig);
-    assertTrue(maybeConfig instanceof KubernetesDependentResourceConfig);
+    assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
     final var config = (KubernetesDependentResourceConfig) maybeConfig;
     // check that the DependentResource inherits the controller's configuration if applicable
     assertEquals(1, config.namespaces().size());
@@ -112,7 +117,7 @@ class BaseConfigurationServiceTest {
     maybeConfig = DependentResourceConfigurationResolver.configurationFor(dependentSpec,
         configuration);
     assertNotNull(maybeConfig);
-    assertTrue(maybeConfig instanceof KubernetesDependentResourceConfig);
+    assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
   }
 
   @Test
@@ -240,8 +245,7 @@ class BaseConfigurationServiceTest {
   private static class MaxIntervalReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
   }
@@ -315,8 +319,7 @@ class BaseConfigurationServiceTest {
   private static class SelectorReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
 
@@ -371,8 +374,7 @@ class BaseConfigurationServiceTest {
   private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return UpdateControl.noUpdate();
     }
   }
@@ -391,8 +393,7 @@ class BaseConfigurationServiceTest {
     public static final int MAX_INTERVAL = 60000;
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return UpdateControl.noUpdate();
     }
   }
@@ -440,8 +441,7 @@ class BaseConfigurationServiceTest {
   private static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
   }

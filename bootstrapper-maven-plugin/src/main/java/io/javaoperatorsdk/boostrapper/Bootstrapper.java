@@ -21,7 +21,7 @@ public class Bootstrapper {
 
   private static final Logger log = LoggerFactory.getLogger(Bootstrapper.class);
 
-  private MustacheFactory mustacheFactory = new DefaultMustacheFactory();
+  private final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
 
   private static final List<String> TOP_LEVEL_STATIC_FILES =
       List.of(".gitignore", "README.md");

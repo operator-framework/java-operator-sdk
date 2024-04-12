@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -12,22 +12,21 @@ import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SubjectRulesReviewStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.*;
+import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.fabric8.kubernetes.client.dsl.Informable;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 
-import static io.javaoperatorsdk.operator.LeaderElectionManager.COORDINATION_GROUP;
-import static io.javaoperatorsdk.operator.LeaderElectionManager.LEASES_RESOURCE;
-import static io.javaoperatorsdk.operator.LeaderElectionManager.UNIVERSAL_VERB;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.nullable;
-import static org.mockito.Mockito.when;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.*;
+import static org.mockito.Mockito.*;
 
 public class MockKubernetesClient {
 
@@ -105,10 +104,10 @@ public class MockKubernetesClient {
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setStatus(new SubjectRulesReviewStatus());
     var resourceRule = new ResourceRule();
-    resourceRule.setApiGroups(Arrays.asList(COORDINATION_GROUP));
-    resourceRule.setResources(Arrays.asList(LEASES_RESOURCE));
-    resourceRule.setVerbs(Arrays.asList(UNIVERSAL_VERB));
-    review.getStatus().setResourceRules(Arrays.asList(resourceRule));
+    resourceRule.setApiGroups(List.of(COORDINATION_GROUP));
+    resourceRule.setResources(List.of(LEASES_RESOURCE));
+    resourceRule.setVerbs(List.of(UNIVERSAL_VERB));
+    review.getStatus().setResourceRules(List.of(resourceRule));
     return review;
   }
 }

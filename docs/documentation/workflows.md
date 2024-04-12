@@ -133,7 +133,7 @@ public class WebPageDependentsWorkflowReconciler
   private KubernetesDependentResource<Service, WebPage> serviceDR;
   private KubernetesDependentResource<Ingress, WebPage> ingressDR;
 
-  private Workflow<WebPage> workflow;
+  private final Workflow<WebPage> workflow;
 
   public WebPageDependentsWorkflowReconciler(KubernetesClient kubernetesClient) {
     initDependentResources(kubernetesClient);
