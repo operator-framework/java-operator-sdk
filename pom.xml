@@ -313,9 +313,11 @@
                     <pom>
                         <includes>
                             <include>pom.xml</include>
-                            <include>./**/pom.xml</include>
+              <include>./**/pom.xml</include>
                         </includes>
-                        <sortPom></sortPom>
+            <sortPom>
+              <expandEmptyElements>false</expandEmptyElements>
+            </sortPom>
                     </pom>
                     <java>
                         <eclipse>
@@ -324,9 +326,17 @@
                         <importOrder>
                             <file>contributing/eclipse.importorder</file>
                         </importOrder>
-                        <removeUnusedImports></removeUnusedImports>
+            <removeUnusedImports/>
                     </java>
                 </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>apply</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+        </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
