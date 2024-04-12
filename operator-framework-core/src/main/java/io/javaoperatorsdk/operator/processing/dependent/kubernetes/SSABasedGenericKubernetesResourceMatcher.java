@@ -11,7 +11,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -332,12 +335,12 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
     if (possibleTargets.isEmpty()) {
       throw new IllegalStateException("Cannot find list element for key: " + key + ", in map: "
-          + values.stream().map(Map::keySet).collect(Collectors.toList()));
+          + values.stream().map(Map::keySet).toList());
     }
     if (possibleTargets.size() > 1) {
       throw new IllegalStateException(
           "More targets found in list element for key: " + key + " in map: "
-              + values.stream().map(Map::keySet).collect(Collectors.toList()));
+              + values.stream().map(Map::keySet).toList());
     }
     return new AbstractMap.SimpleEntry<>(lastIndex, possibleTargets.get(0));
   }
@@ -349,7 +352,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         // field manager name.
         .filter(
             f -> f.getManager().equals(fieldManager) && f.getOperation().equals(APPLY_OPERATION))
-        .collect(Collectors.toList());
+        .toList();
     if (targetManagedFields.isEmpty()) {
       log.debug("No field manager exists for resource: {} with name: {} and operation {}",
           actual.getKind(),

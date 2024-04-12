@@ -10,7 +10,6 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -39,7 +38,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String name;
   private String fieldManager;
   private Long informerListLimit;
-  private WorkflowSpec workflowSpec;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -57,7 +55,6 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.fieldManager = original.fieldManager();
     this.informerListLimit = original.getInformerListLimit().orElse(null);
     this.itemStore = original.getItemStore().orElse(null);
-    this.workflowSpec = original.getWorkflowSpec().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {

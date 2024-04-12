@@ -21,7 +21,7 @@ public class Bootstrapper {
 
   private static final Logger log = LoggerFactory.getLogger(Bootstrapper.class);
 
-  private MustacheFactory mustacheFactory = new DefaultMustacheFactory();
+  private final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
 
   // .gitignore gets excluded from resource, using here a prefixed version
   private static final Map<String, String> TOP_LEVEL_STATIC_FILES =
