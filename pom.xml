@@ -69,7 +69,7 @@
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
-        <maven-gpg-plugin.version>3.2.2</maven-gpg-plugin.version>
+        <maven-gpg-plugin.version>3.2.3</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
         <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
