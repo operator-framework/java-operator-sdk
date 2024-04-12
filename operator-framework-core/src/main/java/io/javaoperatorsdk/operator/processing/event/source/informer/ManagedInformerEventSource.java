@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -25,6 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.Configurable;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
+@SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
     extends AbstractResourceEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
@@ -36,7 +41,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   private final boolean parseResourceVersions;
   private ConfigurationService configurationService;
   private final C configuration;
-  private Map<String, Function<R, List<String>>> indexers = new HashMap<>();
+  private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation client;
 
@@ -75,6 +80,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public synchronized void start() {
     if (isRunning()) {
@@ -124,6 +130,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     }
   }
 
+  @SuppressWarnings("unused")
   public Optional<R> getCachedValue(ResourceID resourceID) {
     return get(resourceID);
   }

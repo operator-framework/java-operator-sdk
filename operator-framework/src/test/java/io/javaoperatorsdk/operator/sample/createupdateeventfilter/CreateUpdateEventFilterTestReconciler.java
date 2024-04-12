@@ -8,7 +8,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -42,8 +47,7 @@ public class CreateUpdateEventFilterTestReconciler
 
   public static final String CONFIG_MAP_TEST_DATA_KEY = "key";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> informerEventSource;
-  private DirectConfigMapDependentResource configMapDR =
+  private final DirectConfigMapDependentResource configMapDR =
       new DirectConfigMapDependentResource(ConfigMap.class);
 
   @Override
@@ -93,7 +97,9 @@ public class CreateUpdateEventFilterTestReconciler
         InformerConfiguration.from(ConfigMap.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
-    informerEventSource = new InformerEventSource<>(informerConfiguration, context.getClient());
+    final var informerEventSource =
+        new InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource>(
+            informerConfiguration, context.getClient());
     this.configMapDR.setEventSource(informerEventSource);
 
     return EventSourceUtils.nameEventSources(informerEventSource);

@@ -20,7 +20,7 @@ public class CustomMappingConfigMapDependentResource
   public static final String CUSTOM_NAMESPACE_KEY = "customNamespaceKey";
   public static final String KEY = "key";
 
-  private SecondaryToPrimaryMapper<ConfigMap> mapper =
+  private final SecondaryToPrimaryMapper<ConfigMap> mapper =
       Mappers.fromAnnotation(CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY);
 
   public CustomMappingConfigMapDependentResource() {
