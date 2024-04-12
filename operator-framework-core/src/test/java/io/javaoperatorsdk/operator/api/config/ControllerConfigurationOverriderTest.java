@@ -11,8 +11,12 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.BasicItemStore;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -93,8 +97,7 @@ class ControllerConfigurationOverriderTest {
   private static class WatchCurrentReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
   }
@@ -265,7 +268,7 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
+  @SuppressWarnings("rawtypes")
   @Test
   void replaceNamedDependentResourceConfigShouldWork() {
     var configuration = createConfiguration(new OneDepReconciler());
@@ -283,7 +286,7 @@ class ControllerConfigurationOverriderTest {
     var maybeConfig =
         DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
     assertNotNull(maybeConfig);
-    assertTrue(maybeConfig instanceof KubernetesDependentResourceConfig);
+    assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
 
     var config = (KubernetesDependentResourceConfig) maybeConfig;
     // check that the DependentResource inherits the controller's configuration if applicable
@@ -311,7 +314,7 @@ class ControllerConfigurationOverriderTest {
     assertEquals(labelSelector, config.labelSelector());
     assertEquals(Set.of(overriddenNS), config.namespaces());
     // check that we still have the proper workflow configuration
-    assertTrue(dependentSpec.getReadyCondition() instanceof TestCondition);
+    assertInstanceOf(TestCondition.class, dependentSpec.getReadyCondition());
   }
 
   @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class))
