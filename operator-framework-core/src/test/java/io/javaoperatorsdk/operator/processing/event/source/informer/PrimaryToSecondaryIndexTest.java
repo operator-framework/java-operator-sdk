@@ -23,10 +23,10 @@ class PrimaryToSecondaryIndexTest {
   private final PrimaryToSecondaryIndex<ConfigMap> primaryToSecondaryIndex =
       new DefaultPrimaryToSecondaryIndex<>(secondaryToPrimaryMapperMock);
 
-  private ResourceID primaryID1 = new ResourceID("id1", "default");
-  private ResourceID primaryID2 = new ResourceID("id2", "default");
-  private ConfigMap secondary1 = secondary("secondary1");
-  private ConfigMap secondary2 = secondary("secondary2");
+  private final ResourceID primaryID1 = new ResourceID("id1", "default");
+  private final ResourceID primaryID2 = new ResourceID("id2", "default");
+  private final ConfigMap secondary1 = secondary("secondary1");
+  private final ConfigMap secondary2 = secondary("secondary2");
 
   @BeforeEach
   void setup() {

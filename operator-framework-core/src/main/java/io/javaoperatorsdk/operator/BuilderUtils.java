@@ -10,7 +10,7 @@ public final class BuilderUtils {
   // prevent instantiation of util class
   private BuilderUtils() {}
 
-  public static final <T, B> B newBuilder(Class<B> builderType, T item) {
+  public static <T, B> B newBuilder(Class<B> builderType, T item) {
     Class<T> builderTargetType = builderTargetType(builderType);
     try {
       Constructor<B> constructor = builderType.getDeclaredConstructor(builderTargetType);

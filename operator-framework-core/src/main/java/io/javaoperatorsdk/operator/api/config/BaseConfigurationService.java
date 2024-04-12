@@ -260,8 +260,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static void configureFromAnnotatedReconciler(Object instance, Reconciler<?> reconciler) {
-    if (instance instanceof AnnotationConfigurable) {
-      AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
+    if (instance instanceof AnnotationConfigurable configurable) {
       final Class<? extends Annotation> configurationClass =
           (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
               instance.getClass(), AnnotationConfigurable.class);

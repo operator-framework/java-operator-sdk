@@ -4,7 +4,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
@@ -15,7 +20,7 @@ public class DependentSSAReconciler
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private SSAConfigMapDependent ssaConfigMapDependent = new SSAConfigMapDependent();
+  private final SSAConfigMapDependent ssaConfigMapDependent = new SSAConfigMapDependent();
 
   public DependentSSAReconciler() {
     this(true);

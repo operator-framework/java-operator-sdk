@@ -49,8 +49,7 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
   @Override
   @SuppressWarnings({"rawtypes", "unchecked"})
   public Optional<Class<?>> resourceType() {
-    if (original instanceof ResourceEventSource) {
-      ResourceEventSource resourceEventSource = (ResourceEventSource) original;
+    if (original instanceof ResourceEventSource resourceEventSource) {
       return Optional.of(resourceEventSource.resourceType());
     }
     return Optional.empty();
@@ -59,8 +58,7 @@ class NamedEventSource implements EventSource, EventSourceMetadata {
   @Override
   @SuppressWarnings("rawtypes")
   public Optional<?> configuration() {
-    if (original instanceof Configurable) {
-      Configurable configurable = (Configurable) original;
+    if (original instanceof Configurable configurable) {
       return Optional.ofNullable(configurable.configuration());
     }
     return Optional.empty();

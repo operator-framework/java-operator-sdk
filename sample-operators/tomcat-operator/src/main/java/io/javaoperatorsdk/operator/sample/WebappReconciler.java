@@ -20,7 +20,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -150,14 +157,14 @@ public class WebappReconciler
 
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch execWatch = execCmd(pod, data, command)) {
-          status[i] = "" + pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);
+          status[i] = pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
-          status[i] = "" + pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
+          status[i] = pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
         } catch (InterruptedException e) {
           status[i] =
-              "" + pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
+              pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
         } catch (TimeoutException e) {
-          status[i] = "" + pod.getMetadata().getName() + ": TimeoutException - " + e.getMessage();
+          status[i] = pod.getMetadata().getName() + ": TimeoutException - " + e.getMessage();
         }
       }
     }
