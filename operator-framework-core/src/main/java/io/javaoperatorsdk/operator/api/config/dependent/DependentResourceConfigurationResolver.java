@@ -22,8 +22,7 @@ public class DependentResourceConfigurationResolver {
 
   public static <C extends ControllerConfiguration<? extends HasMetadata>> void configure(
       DependentResource dependentResource, DependentResourceSpec spec, C parentConfiguration) {
-    if (dependentResource instanceof DependentResourceConfigurator) {
-      final var configurator = (DependentResourceConfigurator) dependentResource;
+    if (dependentResource instanceof DependentResourceConfigurator configurator) {
       final var config = configurationFor(spec, parentConfiguration);
       configurator.configureWith(config);
     }
@@ -33,8 +32,7 @@ public class DependentResourceConfigurationResolver {
       DependentResourceSpec spec, C parentConfiguration) {
 
     // first check if the parent configuration has potentially already resolved the configuration
-    if (parentConfiguration instanceof DependentResourceConfigurationProvider) {
-      final var provider = (DependentResourceConfigurationProvider) parentConfiguration;
+    if (parentConfiguration instanceof DependentResourceConfigurationProvider provider) {
       final var configuration = provider.getConfigurationFor(spec);
       if (configuration != null) {
         return configuration;

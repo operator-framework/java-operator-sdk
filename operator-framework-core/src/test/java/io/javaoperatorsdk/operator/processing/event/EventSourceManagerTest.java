@@ -107,7 +107,7 @@ class EventSourceManagerTest {
     final var exception = assertThrows(OperatorException.class,
         () -> manager.registerEventSource(name, source));
     final var cause = exception.getCause();
-    assertTrue(cause instanceof IllegalArgumentException);
+    assertInstanceOf(IllegalArgumentException.class, cause);
     assertThat(cause.getMessage()).contains(
         "is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, "
             + name + ") class/name combination");

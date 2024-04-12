@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentresourcemanaged;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 @Workflow(dependents = {@Dependent(type = ConfigMapGenericKubernetesDependent.class)})
@@ -13,7 +17,7 @@ public class GenericKubernetesDependentManagedReconciler
       GenericKubernetesDependentManagedCustomResource resource,
       Context<GenericKubernetesDependentManagedCustomResource> context) {
 
-    return UpdateControl.<GenericKubernetesDependentManagedCustomResource>noUpdate();
+    return UpdateControl.noUpdate();
   }
 
 }
