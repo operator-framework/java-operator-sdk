@@ -1,4 +1,4 @@
-name: Verify Pull Request
+name: Fabric8 Client Snapshot Build
 
 env:
   MAVEN_ARGS: -V -ntp -e
