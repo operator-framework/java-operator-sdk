@@ -131,4 +131,9 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     throw new IllegalStateException(
         "onDeleteFilter is not supported for controller resource event source");
   }
+
+  @Override
+  public String name() {
+    return NAME;
+  }
 }
