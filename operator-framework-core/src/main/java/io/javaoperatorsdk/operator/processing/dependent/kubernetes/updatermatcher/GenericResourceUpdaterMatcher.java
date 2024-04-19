@@ -30,6 +30,8 @@ public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
     Map<String, Object> actualMap = kubernetesSerialization.convertValue(actual, Map.class);
     Map<String, Object> desiredMap = kubernetesSerialization.convertValue(desired, Map.class);
     // replace all top level fields from actual with desired, but merge metadata separately
+    // note that this ensures that `resourceVersion` is present, therefore optimistic
+    // locking will happen on server side
     var metadata = actualMap.remove(METADATA);
     actualMap.replaceAll((k, v) -> desiredMap.get(k));
     actualMap.putAll(desiredMap);
