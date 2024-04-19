@@ -1,10 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
@@ -18,9 +14,6 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 class EventSources<R extends HasMetadata> {
-
-  public static final String RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME =
-      "RetryAndRescheduleTimerEventSource";
 
   private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
       new ConcurrentSkipListMap<>();
@@ -60,25 +53,41 @@ class EventSources<R extends HasMetadata> {
     sources.clear();
   }
 
-  public EventSource existing(EventSource source) {
+  public EventSource existingEventSourceOfSameNameAndType(EventSource source) {
     final var eventSources = sources.get(keyFor(source));
-    if (eventSources == null || eventSources.isEmpty()) {
+    if (eventSources == null) {
       return null;
     }
     return eventSources.get(source.name());
   }
 
+
+  public Map<String, EventSource> existingEventSourceOfSameType(EventSource source) {
+    final var eventSources = sources.get(keyFor(source));
+    if (eventSources == null) {
+      return Collections.emptyMap();
+    }
+    return eventSources;
+  }
+
   public void add(EventSource eventSource) {
     final var name = eventSource.name();
-    final var existing = existing(eventSource);
-    if (existing != null && !eventSource.scopeEquals(existing)) {
+    final var existing = existingEventSourceOfSameType(eventSource);
+    if (existing.get(name) != null) {
+      throw new IllegalArgumentException("Event source " + existing
+          + " is already registered with name: " + name);
+    }
+    if (existing.values().stream().anyMatch(eventSource::scopeEquals)) {
       throw new IllegalArgumentException("Event source " + existing
           + " is already registered for the "
           + keyAsString(getResourceType(eventSource), name)
-          + " class/name combination");
+          + " with same scope");
     }
-    sources.computeIfAbsent(keyFor(existing), k -> new HashMap<>()).put(name, eventSource);
+
+    sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
   }
+
+
 
   @SuppressWarnings("rawtypes")
   private Class<?> getResourceType(EventSource source) {

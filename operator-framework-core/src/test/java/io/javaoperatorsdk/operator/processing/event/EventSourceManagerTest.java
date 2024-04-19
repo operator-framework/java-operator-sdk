@@ -92,7 +92,7 @@ class EventSourceManagerTest {
   }
 
   @Test
-  void shouldNotBePossibleToAddEventSourcesForSameTypeAndName() {
+  void notPossibleAddEventSourcesForSameName() {
     EventSourceManager manager = initManager();
     final var name = "name1";
 
@@ -103,15 +103,37 @@ class EventSourceManagerTest {
 
     eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
+    when(eventSource.name()).thenReturn(name);
     final var source = eventSource;
 
     final var exception = assertThrows(OperatorException.class,
         () -> manager.registerEventSource(source));
     final var cause = exception.getCause();
     assertInstanceOf(IllegalArgumentException.class, cause);
-    assertThat(cause.getMessage()).contains(
-        "is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, "
-            + name + ") class/name combination");
+    assertThat(cause.getMessage()).contains("is already registered with name");
+  }
+
+  @Test
+  void notPossibleToAddEventSourceWithSameScopeButDifferentName() {
+    EventSourceManager manager = initManager();
+    final var name = "name1";
+
+    ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
+    when(eventSource.name()).thenReturn("name1");
+    when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
+    manager.registerEventSource(eventSource);
+
+    eventSource = mock(ManagedInformerEventSource.class);
+    when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
+    when(eventSource.name()).thenReturn("name2");
+    when(eventSource.scopeEquals(any())).thenReturn(true);
+    final var source = eventSource;
+
+    final var exception = assertThrows(OperatorException.class,
+        () -> manager.registerEventSource(source));
+    final var cause = exception.getCause();
+    assertInstanceOf(IllegalArgumentException.class, cause);
+    assertThat(cause.getMessage()).contains("with same scope");
   }
 
   @Test
@@ -120,8 +142,9 @@ class EventSourceManagerTest {
 
     ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
-    manager.registerEventSource(eventSource);
     when(eventSource.name()).thenReturn("name1");
+    manager.registerEventSource(eventSource);
+
 
     ManagedInformerEventSource eventSource2 = mock(ManagedInformerEventSource.class);
     when(eventSource2.name()).thenReturn("name2");

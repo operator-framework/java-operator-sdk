@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,25 +34,39 @@ class EventSourcesTest {
     var es2 = mock(EventSource.class);
     when(es2.name()).thenReturn(EVENT_SOURCE_NAME);
 
+    eventSources.add(es1);
     assertThrows(IllegalArgumentException.class, () -> {
-      eventSources.add(es1);
       eventSources.add(es2);
     });
   }
 
   @Test
-  void cannotAddTwoEventSourcesWithSameNameUnlessTheyAreEqual() {
+  void cannotAddTwoEventSourcesWithSame() {
     final var eventSources = new EventSources();
     final var source = mock(EventSource.class);
     when(source.name()).thenReturn("name");
+    when(source.scopeEquals(any())).thenCallRealMethod();
 
     eventSources.add(source);
-    eventSources.add(source);
-
-    assertThat(eventSources.flatMappedSources())
-        .containsExactly(source);
+    assertThrows(IllegalArgumentException.class, () -> eventSources.add(source));
   }
 
+  @Test
+  void cannotAddEventSourceWithDifferentNameSameScope() {
+    final var es1 = mock(EventSource.class);
+    when(es1.name()).thenReturn("name1");
+
+    final var es2 = mock(EventSource.class);
+    when(es2.name()).thenReturn("name2");
+    when(es2.scopeEquals(any())).thenReturn(true);
+
+    final var eventSources = new EventSources();
+    eventSources.add(es1);
+
+    assertThrows(IllegalArgumentException.class, () -> {
+      eventSources.add(es2);
+    });
+  }
 
   @Test
   void eventSourcesStreamShouldNotReturnControllerEventSource() {
@@ -133,15 +148,16 @@ class EventSourcesTest {
         eventSourceMockWithName(ResourceEventSource.class, "name1", HasMetadata.class);
     final var mock2 =
         eventSourceMockWithName(ResourceEventSource.class, "name2", HasMetadata.class);
+    when(mock2.scopeEquals(any())).thenCallRealMethod();
     final var mock3 = eventSourceMockWithName(ResourceEventSource.class, "name2", ConfigMap.class);
 
     eventSources.add(mock1);
-
     eventSources.add(mock2);
-    eventSources.add(mock2);
+    eventSources.add(mock3);
 
     assertEquals(mock1, eventSources.get(HasMetadata.class, "name1"));
     assertEquals(mock2, eventSources.get(HasMetadata.class, "name2"));
+    // todo this should not work?! according new rules
     assertEquals(mock3, eventSources.get(ConfigMap.class, "name2"));
     assertEquals(mock3, eventSources.get(ConfigMap.class, null));
 
