@@ -1,5 +1,5 @@
 ---
-title: About Goldydocs
+title: About Java Operator SDK
 linkTitle: About
 menu: {main: {weight: 10}}
 ---

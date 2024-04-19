@@ -1,35 +1,58 @@
 ---
 title: Getting Started
-description: What does your user need to know to try your project?
-categories: [Examples, Placeholders]
-tags: [test, docs]
-weight: 2
+
+weight: 20
 ---
 
-{{% pageinfo %}}
-This is a placeholder page that shows you how to use this template site.
-{{% /pageinfo %}}
+## Introduction & Resources on Operators
 
-Information in this section helps your user try your project themselves.
+Operators manage both cluster and non-cluster resources on behalf of Kubernetes. This Java
+Operator SDK (JOSDK) aims at making it as easy as possible to write Kubernetes operators in Java
+using an API that should feel natural to Java developers and without having to worry about many
+low-level details that the SDK handles automatically.
 
-* What do your users need to do to start using your project? This could include downloading/installation instructions, including any prerequisites or system requirements.
+For an introduction on operators, please see this
+[blog post](https://blog.container-solutions.com/kubernetes-operators-explained).
+or [this talk](https://www.youtube.com/watch?v=CvftaV-xrB4)
 
-* Introductory “Hello World” example, if appropriate. More complex tutorials should live in the Tutorials section.
+You can read about the common problems JOSDK is solving for you
+[here](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk).
 
-Consider using the headings below for your getting started page. You can delete any that are not applicable to your project.
+You can also refer to the
+[Writing Kubernetes operators using JOSDK blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk)
+.
 
-## Prerequisites
+## Generating Project Skeleton
 
-Are there any system requirements for using your project? What languages are supported (if any)? Do users need to already have any software or tools installed?
+Project includes a maven plugin to generate a skeleton project:
 
-## Installation
+```shell
+mvn io.javaoperatorsdk:bootstrapper:[version]:create -DprojectGroupId=org.acme -DprojectArtifactId=getting-started
+```
 
-Where can your user find your project code? How can they install it (binaries, installable package, build from source)? Are there multiple options/versions they can install and how should they choose the right one for them?
+## Getting Started
 
-## Setup
+The easiest way to get started with SDK is to start
+[minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) and
+execute one of our [examples](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators).
+There is a dedicated page to describe how to [use the samples](/docs/using-samples).
 
-Is there any initial setup users need to do after installation to try your project?
+Here are the main steps to develop the code and deploy the operator to a Kubernetes cluster.
+A more detailed and specific version can be found under `samples/mysql-schema/README.md`.
 
-## Try it out!
+1. Setup `kubectl` to work with your Kubernetes cluster of choice.
+1. Apply Custom Resource Definition
+1. Compile the whole project (framework + samples) using `mvn install` in the root directory
+1. Run the main class of the sample you picked and check out the sample's README to see what it
+   does. When run locally the framework will use your Kubernetes client configuration (in `~/.
+   kube/config`) to establish a connection to the cluster. This is why it was important to set
+   up `kubectl` up front.
+1. You can work in this local development mode to play with the code.
+1. Build the Docker image and push it to the registry
+1. Apply RBAC configuration
+1. Apply deployment configuration
+1. Verify if the operator is up and running. Don't run it locally anymore to avoid conflicts in
+   processing events from the cluster's API server.
 
-Can your users test their installation, for example by running a command or deploying a Hello World example?
+
+
