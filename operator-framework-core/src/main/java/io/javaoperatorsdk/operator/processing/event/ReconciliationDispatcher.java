@@ -95,10 +95,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   private boolean shouldNotDispatchToCleanupWhenMarkedForDeletion(P resource) {
     var alreadyRemovedFinalizer = controller.useFinalizer()
         && !resource.hasFinalizer(configuration().getFinalizerName());
-    if (alreadyRemovedFinalizer) {
-      log.warn("This should not happen. Marked for deletion & already removed finalizer: {}",
-          ResourceID.fromResource(resource));
-    }
     return !controller.useFinalizer() || alreadyRemovedFinalizer;
   }
 
