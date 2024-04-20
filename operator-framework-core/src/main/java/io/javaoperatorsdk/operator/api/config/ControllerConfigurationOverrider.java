@@ -41,6 +41,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String name;
   private String fieldManager;
   private Long informerListLimit;
+  private Boolean reconcileResourcesMarkedForDeletion;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -59,6 +60,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.fieldManager = original.fieldManager();
     this.informerListLimit = original.getInformerListLimit().orElse(null);
     this.itemStore = original.getItemStore().orElse(null);
+    this.reconcileResourcesMarkedForDeletion = original.reconcileResourcesMarkedForDeletion();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -179,6 +181,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withReconcileResourcesMarkedForDeletion(
+      boolean reconcileResourcesMarkedForDeletion) {
+    this.reconcileResourcesMarkedForDeletion = reconcileResourcesMarkedForDeletion;
+    return this;
+  }
+
 
   /**
    * Sets a max page size limit when starting the informer. This will result in pagination while
@@ -216,7 +224,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
         original.getDependentResources(),
         namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        original.getConfigurationService(), informerListLimit);
+        original.getConfigurationService(), informerListLimit, reconcileResourcesMarkedForDeletion);
     overridden.setEventFilter(customResourcePredicate);
     return overridden;
   }

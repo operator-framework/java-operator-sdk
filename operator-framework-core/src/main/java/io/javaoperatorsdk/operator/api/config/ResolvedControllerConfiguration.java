@@ -33,6 +33,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final ItemStore<P> itemStore;
   private final ConfigurationService configurationService;
   private final String fieldManager;
+  private final boolean reconcileResourcesMarkedForDeletion;
 
   private ResourceEventFilter<P> eventFilter;
   private List<DependentResourceSpec> dependentResources;
@@ -47,7 +48,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.getFinalizerName(), other.getLabelSelector(), Collections.emptyMap(),
         other.getItemStore().orElse(null), other.fieldManager(),
         other.getConfigurationService(),
-        other.getInformerListLimit().orElse(null));
+        other.getInformerListLimit().orElse(null), other.reconcileResourcesMarkedForDeletion());
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
@@ -76,11 +77,12 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
       String fieldManager,
-      ConfigurationService configurationService, Long informerListLimit) {
+      ConfigurationService configurationService, Long informerListLimit,
+      Boolean reconcileResourcesMarkedForDeletion) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
         namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        configurationService, informerListLimit);
+        configurationService, informerListLimit, reconcileResourcesMarkedForDeletion);
     setDependentResources(dependentResources);
   }
 
@@ -92,7 +94,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
       String fieldManager,
-      ConfigurationService configurationService, Long informerListLimit) {
+      ConfigurationService configurationService, Long informerListLimit,
+      boolean reconcileResourcesMarkedForDeletion) {
     super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
         itemStore, informerListLimit);
     this.configurationService = configurationService;
@@ -107,13 +110,14 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.finalizer =
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
     this.fieldManager = fieldManager;
+    this.reconcileResourcesMarkedForDeletion = reconcileResourcesMarkedForDeletion;
   }
 
   protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
       Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
     this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
         null, null, null, null, null,
-        null, null, null, null, null, configurationService, null);
+        null, null, null, null, null, configurationService, null, false);
   }
 
   @Override
@@ -194,5 +198,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public String fieldManager() {
     return fieldManager;
+  }
+
+  @Override
+  public boolean reconcileResourcesMarkedForDeletion() {
+    return reconcileResourcesMarkedForDeletion;
   }
 }

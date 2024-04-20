@@ -145,7 +145,8 @@ class ResourceEventFilterTest {
           null,
           null,
           null,
-          null, null, null, finalizer, null, null, null, new BaseConfigurationService(), null);
+          null, null, null, finalizer, null, null, null, new BaseConfigurationService(), null,
+          false);
       setEventFilter(eventFilter);
     }
   }

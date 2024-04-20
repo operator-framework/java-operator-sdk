@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
+import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.DEFAULT_RECONCILER_RESOURCES_MARKED_FOR_DELETION;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 
 @Inherited
@@ -166,4 +167,11 @@ public @interface ControllerConfiguration {
    * the informer cache.
    */
   long informerListLimit() default NO_LONG_VALUE_SET;
+
+  /**
+   * if true and reconciler not implements {@link Cleaner} interface executes reconciliation even if
+   * controller is marked for deletion, thus when waiting for other finalizer removal. This allows
+   * to manage corner cases when not all resources will need a finalizer.
+   */
+  boolean reconcileResourcesMarkedForDeletion() default DEFAULT_RECONCILER_RESOURCES_MARKED_FOR_DELETION;
 }
