@@ -326,6 +326,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return target;
   }
 
+  // todo docs
   @Override
   public boolean scopeEquals(EventSource es) {
     if (es instanceof InformerEventSource<?, ?> otherIEs) {
@@ -337,7 +338,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   static String generateName(InformerConfiguration<?> informerConfiguration) {
-    return informerConfiguration.getResourceClass().getSimpleName() + "-"
+    return informerConfiguration.getResourceClass().getSimpleName()
         + informerConfiguration.hashCode();
   }
 
