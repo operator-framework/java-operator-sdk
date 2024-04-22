@@ -20,6 +20,9 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
 
+  boolean DEFAULT_RECONCILER_RESOURCES_MARKED_FOR_DELETION = false;
+
+
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
   /**
@@ -138,6 +141,10 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
    */
   default String fieldManager() {
     return getName();
+  }
+
+  default boolean reconcileResourcesMarkedForDeletion() {
+    return DEFAULT_RECONCILER_RESOURCES_MARKED_FOR_DELETION;
   }
 
 }

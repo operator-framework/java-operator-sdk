@@ -199,7 +199,7 @@ class ControllerResourceEventSourceTest extends
           null,
           FINALIZER,
           null, null, null, new BaseConfigurationService(),
-          null);
+          null, DEFAULT_RECONCILER_RESOURCES_MARKED_FOR_DELETION);
     }
   }
 }
