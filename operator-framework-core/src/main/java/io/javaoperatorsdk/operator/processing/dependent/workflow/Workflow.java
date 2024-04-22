@@ -45,7 +45,7 @@ public interface Workflow<P extends HasMetadata> {
   }
 
   @SuppressWarnings("rawtypes")
-  default List<DependentResource> getDependentResourcesByNameWithoutActivationCondition() {
+  default List<DependentResource> getDependentResourcesWithoutActivationCondition() {
     return Collections.emptyList();
   }
 }

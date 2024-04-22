@@ -75,6 +75,15 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     }
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public void useEventSource(ResourceEventSource<R, P> resourceEventSource) {
+    if (eventSourceNameToUse != null) {
+      return;
+    }
+    this.eventSource = (T) resourceEventSource;
+  }
+
   /**
    * To make this backwards compatible even for respect of overriding
    *

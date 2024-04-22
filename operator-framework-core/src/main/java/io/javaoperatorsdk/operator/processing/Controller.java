@@ -36,7 +36,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
@@ -235,17 +234,27 @@ public class Controller<P extends HasMetadata>
 
     // register created event sources
     final var dependentResourcesByName =
-        managedWorkflow.getDependentResourcesByNameWithoutActivationCondition();
+        managedWorkflow.getDependentResourcesWithoutActivationCondition();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
       dependentResourcesByName.forEach(dependentResource -> {
-        if (dependentResource instanceof EventSourceProvider provider) {
-          final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(source);
-        } else {
-          Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
-          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(es));
-        }
+        Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
+        eventSource.ifPresent(es -> {
+          // todo check just by the name?
+          Optional<ResourceEventSource<?, P>> alreadyRegisteredES =
+              eventSourceManager.getOptionalResourceEventSourceFor(es.resourceType(), es.name());
+          alreadyRegisteredES.ifPresentOrElse(registered -> {
+            if (es.scopeEquals(registered)) {
+              dependentResource.useEventSource(registered);
+            } else {
+              throw new IllegalStateException(
+                  "Not able to register event source with same name and different scope. Name: "
+                      + registered.name());
+            }
+          }, () -> {
+            eventSourceManager.registerEventSource(es);
+          });
+        });
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source

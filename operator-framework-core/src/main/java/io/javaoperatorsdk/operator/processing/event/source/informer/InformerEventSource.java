@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 /**
@@ -85,13 +86,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(null, configuration, context.getClient(),
+    this(generateName(configuration), configuration, context.getClient(),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
-    this(null, configuration, client, false);
+    this(generateName(configuration), configuration, client, false);
   }
 
   public InformerEventSource(String name, InformerConfiguration<R> configuration,
@@ -323,6 +324,21 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
         id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
     return target;
+  }
+
+  @Override
+  public boolean scopeEquals(EventSource es) {
+    if (es instanceof InformerEventSource<?, ?> otherIEs) {
+      return Objects.equals(this.resourceType(), otherIEs.resourceType()) &&
+          otherIEs.configuration().equals(this.configuration());
+    } else {
+      return false;
+    }
+  }
+
+  static String generateName(InformerConfiguration<?> informerConfiguration) {
+    return informerConfiguration.getResourceClass().getSimpleName() + "-"
+        + informerConfiguration.hashCode();
   }
 
 }

@@ -80,6 +80,30 @@ public interface InformerConfiguration<R extends HasMetadata>
     public Optional<GroupVersionKind> getGroupVersionKind() {
       return Optional.ofNullable(groupVersionKind);
     }
+
+
+    // todo unit test
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (o == null || getClass() != o.getClass())
+        return false;
+      if (!super.equals(o))
+        return false;
+      DefaultInformerConfiguration<?> that = (DefaultInformerConfiguration<?>) o;
+      return followControllerNamespaceChanges == that.followControllerNamespaceChanges
+          && Objects.equals(primaryToSecondaryMapper, that.primaryToSecondaryMapper)
+          && Objects.equals(secondaryToPrimaryMapper, that.secondaryToPrimaryMapper)
+          && Objects.equals(onDeleteFilter, that.onDeleteFilter)
+          && Objects.equals(groupVersionKind, that.groupVersionKind);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(super.hashCode(), primaryToSecondaryMapper, secondaryToPrimaryMapper,
+          followControllerNamespaceChanges, onDeleteFilter, groupVersionKind);
+    }
   }
 
   /**

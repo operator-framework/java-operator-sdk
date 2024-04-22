@@ -37,7 +37,7 @@ public class EventSourceUtils {
   public static <K extends HasMetadata> List<EventSource> eventSourcesFromWorkflow(
       EventSourceContext<K> context,
       Workflow<K> workflow) {
-    return workflow.getDependentResourcesByNameWithoutActivationCondition().stream()
+    return workflow.getDependentResourcesWithoutActivationCondition().stream()
         .flatMap(dr -> dr.eventSource(context).stream()).toList();
   }
 

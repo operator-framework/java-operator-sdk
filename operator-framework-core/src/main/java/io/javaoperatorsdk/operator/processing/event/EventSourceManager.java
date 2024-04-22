@@ -251,9 +251,19 @@ public class EventSourceManager<P extends HasMetadata>
 
   @Override
   public <R> ResourceEventSource<R, P> getResourceEventSourceFor(
-      Class<R> dependentType, String qualifier) {
+      Class<R> dependentType, String name) {
     Objects.requireNonNull(dependentType, "dependentType is Mandatory");
-    return eventSources.get(dependentType, qualifier);
+    return eventSources.get(dependentType, name);
+  }
+
+  // todo get just by name?
+  public <R> Optional<ResourceEventSource<R, P>> getOptionalResourceEventSourceFor(
+      Class<R> dependentType, String qualifier) {
+    try {
+      return Optional.of(getResourceEventSourceFor(dependentType, qualifier));
+    } catch (IllegalArgumentException ex) {
+      return Optional.empty();
+    }
   }
 
   TimerEventSource<P> retryEventSource() {

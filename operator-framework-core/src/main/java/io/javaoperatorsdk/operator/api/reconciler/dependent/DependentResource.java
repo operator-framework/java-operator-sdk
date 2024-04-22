@@ -49,7 +49,7 @@ public interface DependentResource<R, P extends HasMetadata> {
     return Optional.empty();
   }
 
-
+  default void useEventSource(ResourceEventSource<R, P> resourceEventSource) {}
 
   /**
    * Retrieves the secondary resource (if it exists) associated with the specified primary resource
