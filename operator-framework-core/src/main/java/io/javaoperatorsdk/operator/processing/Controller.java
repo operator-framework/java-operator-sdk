@@ -240,7 +240,7 @@ public class Controller<P extends HasMetadata>
       dependentResourcesByName.forEach(dependentResource -> {
         Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
         eventSource.ifPresent(es -> {
-          // todo check just by the name?
+          // todo here just check by type and scope?
           Optional<ResourceEventSource<?, P>> alreadyRegisteredES =
               eventSourceManager.getOptionalResourceEventSourceFor(es.resourceType(), es.name());
           alreadyRegisteredES.ifPresentOrElse(registered -> {
