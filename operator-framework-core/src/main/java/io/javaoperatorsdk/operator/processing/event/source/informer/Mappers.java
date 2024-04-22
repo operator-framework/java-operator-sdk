@@ -21,7 +21,7 @@ public class Mappers {
 
   public static SecondaryToPrimaryMapper<?> OWNER_REF_MAPPER = initFromOwnerReference(false);
   public static SecondaryToPrimaryMapper<?> OWNER_FEF_MAPPER_CLUSTER_SCOPED =
-      initFromOwnerReference(false);
+      initFromOwnerReference(true);
 
   public static SecondaryToPrimaryMapper<?> ALL_OWNER_REF_MAPPER = initFromAllOwnerReference(false);
   public static SecondaryToPrimaryMapper<?> ALL_OWNER_REF_MAPPER_CLUSTER_SCOPED =

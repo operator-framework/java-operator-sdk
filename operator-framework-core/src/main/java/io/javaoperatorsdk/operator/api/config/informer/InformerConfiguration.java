@@ -81,8 +81,6 @@ public interface InformerConfiguration<R extends HasMetadata>
       return Optional.ofNullable(groupVersionKind);
     }
 
-
-    // todo unit test
     @Override
     public boolean equals(Object o) {
       if (this == o)

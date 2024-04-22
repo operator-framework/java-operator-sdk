@@ -14,6 +14,7 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
 
   private final CacheKeyMapper<R> cacheKeyMapper;
 
+  // todo naming && equals
   public PollingDependentResource(Class<R> resourceType, CacheKeyMapper<R> cacheKeyMapper) {
     super(resourceType);
     this.cacheKeyMapper = cacheKeyMapper;

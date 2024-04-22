@@ -25,6 +25,7 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
   @Override
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
+    // todo naming && scopeEquals
     return new PerResourcePollingEventSource<>(this, context,
         Duration.ofMillis(getPollingPeriod()), resourceType(), this);
   }

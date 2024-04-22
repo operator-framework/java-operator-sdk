@@ -90,7 +90,6 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     return Optional.ofNullable(informerListLimit);
   }
 
-  // todo unit test
   @Override
   public boolean equals(Object o) {
     if (this == o)
