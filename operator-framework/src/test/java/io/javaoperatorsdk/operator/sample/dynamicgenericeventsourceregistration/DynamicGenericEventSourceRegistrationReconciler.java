@@ -74,7 +74,7 @@ public class DynamicGenericEventSourceRegistrationReconciler
       Class<? extends HasMetadata> clazz,
       Context<DynamicGenericEventSourceRegistrationCustomResource> context) {
 
-    return new InformerEventSource<>(
+    return new InformerEventSource<>(clazz.getSimpleName(),
         InformerConfiguration.from(gvkFor(clazz),
             context.eventSourceRetriever().eventSourceContextForDynamicRegistration()).build(),
         context.eventSourceRetriever().eventSourceContextForDynamicRegistration());
