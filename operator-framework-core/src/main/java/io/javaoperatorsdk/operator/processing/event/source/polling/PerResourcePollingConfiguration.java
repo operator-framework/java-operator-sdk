@@ -22,7 +22,7 @@ public record PerResourcePollingConfiguration<R, P extends HasMetadata>(Schedule
                                            Duration defaultPollingPeriod, Class<R> resourceClass) {
         this.executorService = executorService == null ? new ScheduledThreadPoolExecutor(DEFAULT_EXECUTOR_THREAD_NUMBER)
                 : executorService;
-        this.cacheKeyMapper = cacheKeyMapper;
+        this.cacheKeyMapper = cacheKeyMapper == null ? CacheKeyMapper.singleResourceCacheKeyMapper() : cacheKeyMapper;
         this.resourceFetcher = resourceFetcher;
         this.registerPredicate = registerPredicate;
         this.defaultPollingPeriod = defaultPollingPeriod;
