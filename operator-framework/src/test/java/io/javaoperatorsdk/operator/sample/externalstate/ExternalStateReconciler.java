@@ -13,6 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
@@ -103,15 +104,19 @@ public class ExternalStateReconciler
         InformerConfiguration.from(ConfigMap.class, context).build(), context);
     configMapEventSource.setEventSourcePriority(EventSourceStartPriority.RESOURCE_STATE_LOADER);
 
-    externalResourceEventSource = new PerResourcePollingEventSource<>(primaryResource -> {
-      var configMap = configMapEventSource.getSecondaryResource(primaryResource).orElse(null);
-      if (configMap == null) {
-        return Collections.emptySet();
-      }
-      var id = configMap.getData().get(ID_KEY);
-      var externalResource = externalService.read(id);
-      return externalResource.map(Set::of).orElseGet(Collections::emptySet);
-    }, context, Duration.ofMillis(300L), ExternalResource.class);
+    externalResourceEventSource = new PerResourcePollingEventSource<>(context,
+        new PerResourcePollingConfigurationBuilder<>(ExternalResource.class,
+            (ExternalStateCustomResource primaryResource) -> {
+              var configMap =
+                  configMapEventSource.getSecondaryResource(primaryResource).orElse(null);
+              if (configMap == null) {
+                return Collections.emptySet();
+              }
+              var id = configMap.getData().get(ID_KEY);
+              var externalResource = externalService.read(id);
+              return externalResource.map(Set::of).orElseGet(Collections::emptySet);
+            }, Duration.ofMillis(300L))
+            .build());
 
     return Arrays.asList(configMapEventSource,
         externalResourceEventSource);

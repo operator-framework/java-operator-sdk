@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
 @ControllerConfiguration
@@ -32,12 +33,14 @@ public class PerResourcePollingEventSourceTestReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<PerResourceEventSourceCustomResource> context) {
     PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource =
-        new PerResourcePollingEventSource<>(resource -> {
-          numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
-          numberOfFetchExecutions.compute(resource.getMetadata().getName(), (s, v) -> v + 1);
-          return Set.of(UUID.randomUUID().toString());
-        },
-            context, Duration.ofMillis(POLL_PERIOD), String.class);
+        new PerResourcePollingEventSource<>(context,
+            new PerResourcePollingConfigurationBuilder<>(String.class,
+                (PerResourceEventSourceCustomResource resource) -> {
+                  numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
+                  numberOfFetchExecutions.compute(resource.getMetadata().getName(),
+                      (s, v) -> v + 1);
+                  return Set.of(UUID.randomUUID().toString());
+                }, Duration.ofMillis(POLL_PERIOD)).build());
     return List.of(eventSource);
   }
 

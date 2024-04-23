@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 public class LinearRateLimiter
     implements RateLimiter<RateState>, AnnotationConfigurable<RateLimited> {
 
-  /** To turn off rate limiting set limit for period to a non-positive number */
+  /** To turn off rate limiting set limit for defaultPollingPeriod to a non-positive number */
   public static final int NO_LIMIT_PERIOD = -1;
   public static final int DEFAULT_REFRESH_PERIOD_SECONDS = 10;
   public static final Duration DEFAULT_REFRESH_PERIOD =

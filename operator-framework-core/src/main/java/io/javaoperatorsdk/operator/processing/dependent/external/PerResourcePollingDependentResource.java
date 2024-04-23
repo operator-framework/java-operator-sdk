@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
 @Ignore
@@ -25,9 +26,11 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
   @Override
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
-    // todo naming && scopeEquals
-    return new PerResourcePollingEventSource<>(this, context,
-        Duration.ofMillis(getPollingPeriod()), resourceType(), this);
-  }
 
+    return new PerResourcePollingEventSource<>(name(), context,
+        new PerResourcePollingConfigurationBuilder<>(resourceType(),
+            this, Duration.ofMillis(getPollingPeriod()))
+            .build());
+
+  }
 }

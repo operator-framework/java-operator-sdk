@@ -37,8 +37,7 @@ public interface EventSource extends LifecycleAware, EventSourceHealthIndicator 
    * todo do not implement here? Check if targets the same resources as the current event source.
    */
   default boolean scopeEquals(EventSource es) {
-    return this == es;
+    return this.equals(es);
   }
-
 
 }

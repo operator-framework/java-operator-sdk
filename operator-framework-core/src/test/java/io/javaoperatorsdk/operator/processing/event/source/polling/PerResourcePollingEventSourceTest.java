@@ -45,8 +45,11 @@ class PerResourcePollingEventSourceTest extends
         .thenReturn(Set.of(SampleExternalResource.testResource1()));
     when(context.getPrimaryCache()).thenReturn(resourceCache);
 
-    setUpSource(new PerResourcePollingEventSource<>(supplier, context, Duration.ofMillis(PERIOD),
-        SampleExternalResource.class, r -> r.getName() + "#" + r.getValue()));
+    setUpSource(new PerResourcePollingEventSource<>(context,
+                    new PerResourcePollingConfigurationBuilder<>(SampleExternalResource.class,
+                            supplier,Duration.ofMillis(PERIOD))
+                            .withCacheKeyMapper(r -> r.getName() + "#" + r.getValue())
+                            .build()));
   }
 
   @Test
@@ -62,9 +65,14 @@ class PerResourcePollingEventSourceTest extends
 
   @Test
   void registeringTaskOnAPredicate() {
-    setUpSource(new PerResourcePollingEventSource<>(supplier, context, Duration.ofMillis(PERIOD),
-        testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1,
-        SampleExternalResource.class, CacheKeyMapper.singleResourceCacheKeyMapper()));
+    setUpSource(new PerResourcePollingEventSource<>(context,
+        new PerResourcePollingConfigurationBuilder<>(SampleExternalResource.class,
+            supplier, Duration.ofMillis(PERIOD))
+            .withRegisterPredicate(
+                testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1)
+            .withCacheKeyMapper(CacheKeyMapper.singleResourceCacheKeyMapper())
+            .build()));
+
     source.onResourceCreated(testCustomResource);
 
 

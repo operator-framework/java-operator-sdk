@@ -132,7 +132,7 @@ public DeleteControl cleanup(MyCustomResource customResource,Context context){
 ```
 
 However, it is possible to instruct the SDK to not remove the finalizer, this allows to clean up
-the resources in a more asynchronous way, mostly for cases when there is a long waiting period
+the resources in a more asynchronous way, mostly for cases when there is a long waiting defaultPollingPeriod
 after a delete operation is initiated. Note that in this case you might want to either schedule
 a timed event to make sure `cleanup` is executed again or use event sources to get notified
 about the state changes of the deleted resource.
