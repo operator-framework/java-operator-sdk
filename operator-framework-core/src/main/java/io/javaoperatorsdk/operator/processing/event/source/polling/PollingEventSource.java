@@ -54,9 +54,9 @@ public class PollingEventSource<R, P extends HasMetadata>
   }
 
   public PollingEventSource(String name, PollingConfiguration<R> config) {
-    super(name, config.getResourceClass(), config.getCacheKeyMapper());
-    this.genericResourceFetcher = config.getGenericResourceFetcher();
-    this.period = config.getPeriod();
+    super(name, config.resourceClass(), config.cacheKeyMapper());
+    this.genericResourceFetcher = config.genericResourceFetcher();
+    this.period = config.period();
   }
 
   @Override

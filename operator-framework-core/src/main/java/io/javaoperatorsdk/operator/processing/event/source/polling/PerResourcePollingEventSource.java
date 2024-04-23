@@ -182,7 +182,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
      *        fetch happened but no resources were found.
      * @param primary related primary resource
      * @return an Optional containing the Duration to wait until the next fetch. If an empty
-     *         Optional is returned, the default polling defaultPollingPeriod will be used.
+     *         Optional is returned, the default polling period will be used.
      */
     default Optional<Duration> fetchDelay(Set<R> lastFetchedResource, P primary) {
       return Optional.empty();

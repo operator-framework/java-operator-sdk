@@ -19,8 +19,6 @@ public class TimerEventSource<R extends HasMetadata>
     implements ResourceEventAware<R> {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
-
-  // toto name RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME
   private Timer timer;
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 

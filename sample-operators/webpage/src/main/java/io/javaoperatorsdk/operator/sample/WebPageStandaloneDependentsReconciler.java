@@ -92,6 +92,7 @@ public class WebPageStandaloneDependentsReconciler
     var serviceDR = new ServiceDependentResource();
     var ingressDR = new IngressDependentResource();
 
+
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
         .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
