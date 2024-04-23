@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -90,26 +89,4 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
     return Optional.ofNullable(informerListLimit);
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-    DefaultResourceConfiguration<?> that = (DefaultResourceConfiguration<?>) o;
-    return Objects.equals(resourceClass, that.resourceClass)
-        && Objects.equals(resourceTypeName, that.resourceTypeName)
-        && Objects.equals(onAddFilter, that.onAddFilter)
-        && Objects.equals(onUpdateFilter, that.onUpdateFilter)
-        && Objects.equals(genericFilter, that.genericFilter)
-        && Objects.equals(labelSelector, that.labelSelector)
-        && Objects.equals(namespaces, that.namespaces) && Objects.equals(itemStore, that.itemStore)
-        && Objects.equals(informerListLimit, that.informerListLimit);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(resourceClass, resourceTypeName, onAddFilter, onUpdateFilter, genericFilter,
-        labelSelector, namespaces, itemStore, informerListLimit);
-  }
 }

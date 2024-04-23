@@ -137,7 +137,6 @@ class EventSourcesTest {
 
     assertEquals(mock1, eventSources.get(HasMetadata.class, "name1"));
     assertEquals(mock2, eventSources.get(HasMetadata.class, "name2"));
-    // todo this should not work?! according new rules
     assertEquals(mock3, eventSources.get(ConfigMap.class, "name2"));
     assertEquals(mock3, eventSources.get(ConfigMap.class, null));
 

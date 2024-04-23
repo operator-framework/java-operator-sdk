@@ -361,7 +361,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         getVersion(resource));
     log.trace("Resource before update: {}", resource);
 
-    // todo unit test
     final var finalizerName = configuration().getFinalizerName();
     if (useSSA && controller.useFinalizer()) {
       // addFinalizer already prevents adding an already present finalizer so no need to check

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -7,6 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
@@ -49,7 +51,7 @@ public class MultipleManagedExternalDependentResourceReconciler
       EventSourceContext<MultipleManagedExternalDependentResourceCustomResource> context) {
 
     PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
-        new PollingEventSource<>(CONFIG_MAP_EVENT_SOURCE, () -> {
+        new PollingEventSource<>(new PollingConfigurationBuilder<>(ExternalResource.class, () -> {
           var lists = externalServiceMock.listResources();
           Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
           lists.forEach(er -> {
@@ -58,7 +60,8 @@ public class MultipleManagedExternalDependentResourceReconciler
             res.get(resourceId).add(er);
           });
           return res;
-        }, 1000L, ExternalResource.class, ExternalResource::getId);
+        },
+            Duration.ofMillis(1000L)).withCacheKeyMapper(ExternalResource::getId).build());
 
     return List.of(pollingEventSource);
   }

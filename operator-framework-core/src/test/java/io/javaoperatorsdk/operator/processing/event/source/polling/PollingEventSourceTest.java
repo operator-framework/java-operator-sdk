@@ -25,14 +25,16 @@ class PollingEventSourceTest
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   public static final int DEFAULT_WAIT_PERIOD = 100;
-  public static final long POLL_PERIOD = 30L;
+  public static final Duration POLL_PERIOD = Duration.ofMillis(30L);
 
   @SuppressWarnings("unchecked")
   private final PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
-      new PollingEventSource<>(resourceFetcher, POLL_PERIOD, SampleExternalResource.class,
-          (SampleExternalResource er) -> er.getName() + "#" + er.getValue());
+      new PollingEventSource<>(new PollingConfigurationBuilder<>(SampleExternalResource.class,
+          resourceFetcher, POLL_PERIOD)
+          .withCacheKeyMapper((SampleExternalResource er) -> er.getName() + "#" + er.getValue())
+          .build());
 
   @BeforeEach
   public void setup() {
@@ -92,7 +94,7 @@ class PollingEventSourceTest
         .thenThrow(new RuntimeException("test exception"))
         .thenReturn(testResponseWithOneValue());
 
-    await().pollInterval(Duration.ofMillis(POLL_PERIOD)).untilAsserted(
+    await().pollInterval(POLL_PERIOD).untilAsserted(
         () -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.UNHEALTHY));
 
     await()

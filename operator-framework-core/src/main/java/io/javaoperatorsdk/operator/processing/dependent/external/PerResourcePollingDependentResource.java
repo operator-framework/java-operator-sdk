@@ -19,7 +19,7 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
     super(resourceType);
   }
 
-  public PerResourcePollingDependentResource(Class<R> resourceType, long pollingPeriod) {
+  public PerResourcePollingDependentResource(Class<R> resourceType, Duration pollingPeriod) {
     super(resourceType, pollingPeriod);
   }
 
@@ -29,8 +29,7 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
 
     return new PerResourcePollingEventSource<>(name(), context,
         new PerResourcePollingConfigurationBuilder<>(resourceType(),
-            this, Duration.ofMillis(getPollingPeriod()))
+            this, getPollingPeriod())
             .build());
-
   }
 }

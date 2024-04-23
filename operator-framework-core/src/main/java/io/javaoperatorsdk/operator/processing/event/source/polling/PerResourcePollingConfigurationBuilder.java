@@ -43,7 +43,6 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
     return this;
   }
 
-
   public PerResourcePollingConfiguration<R, P> build() {
     return new PerResourcePollingConfiguration<>(executorService, cacheKeyMapper,
         resourceFetcher, registerPredicate, defaultPollingPeriod, resourceClass);

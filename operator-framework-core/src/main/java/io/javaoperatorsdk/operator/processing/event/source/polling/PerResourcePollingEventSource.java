@@ -50,8 +50,6 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final Predicate<P> registerPredicate;
   private final Duration period;
 
-  // todo scopeEquals
-
   public PerResourcePollingEventSource(EventSourceContext<P> context,
       PerResourcePollingConfiguration<R, P> config) {
     this(null, context, config);
