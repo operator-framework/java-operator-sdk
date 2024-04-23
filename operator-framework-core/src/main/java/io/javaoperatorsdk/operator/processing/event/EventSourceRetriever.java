@@ -19,10 +19,11 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType);
 
   /**
-   * Registers (and starts) the specified {@link EventSource} dynamically during the reconciliation.
-   * If an EventSource is already registered with the specified name, the registration will be
-   * ignored. It is the user's responsibility to handle the naming correctly, thus to not try to
-   * register different event source with same name that is already registered.
+   * When using this method is important to explicitly name the event source, since comparison is
+   * made using the name! Registers (and starts) the specified {@link EventSource} dynamically
+   * during the reconciliation. If an EventSource is already registered with the specified name, the
+   * registration will be ignored. It is the user's responsibility to handle the naming correctly,
+   * thus to not try to register different event source with same name that is already registered.
    * <p>
    * This is only needed when your operator needs to adapt dynamically based on optional resources
    * that may or may not be present on the target cluster. Even in this situation, it should be
@@ -43,7 +44,6 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * @return the actual event source registered. Might not be the same as the parameter.
    */
   EventSource dynamicallyRegisterEventSource(EventSource eventSource);
-
 
   /**
    * De-registers (and stops) the {@link EventSource} associated with the specified name. If no such
