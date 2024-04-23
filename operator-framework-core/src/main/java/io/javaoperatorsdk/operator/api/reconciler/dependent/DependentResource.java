@@ -65,7 +65,6 @@ public interface DependentResource<R, P extends HasMetadata> {
     return Optional.empty();
   }
 
-  // todo dependen same config -> same name is wrong
   /**
    * Computes a default name for the specified DependentResource class
    *

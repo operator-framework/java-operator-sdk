@@ -24,7 +24,7 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
 
   protected AbstractResourceEventSource(Class<R> resourceClass, String name) {
     this.resourceClass = resourceClass;
-    this.name = name == null ? resourceClass.getName() : name;
+    this.name = name == null ? super.name() : name;
   }
 
   @Override

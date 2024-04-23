@@ -239,22 +239,7 @@ public class Controller<P extends HasMetadata>
     if (size > 0) {
       dependentResourcesByName.forEach(dependentResource -> {
         Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
-        eventSource.ifPresent(es -> {
-          // todo here just check by type and scope?
-          Optional<ResourceEventSource<?, P>> alreadyRegisteredES =
-              eventSourceManager.getOptionalResourceEventSourceFor(es.resourceType(), es.name());
-          alreadyRegisteredES.ifPresentOrElse(registered -> {
-            if (es.scopeEquals(registered)) {
-              dependentResource.useEventSource(registered);
-            } else {
-              throw new IllegalStateException(
-                  "Not able to register event source with same name and different scope. Name: "
-                      + registered.name());
-            }
-          }, () -> {
-            eventSourceManager.registerEventSource(es);
-          });
-        });
+        eventSource.ifPresent(es -> eventSourceManager.registerEventSource(es));
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source

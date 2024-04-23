@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,27 +44,9 @@ class EventSourcesTest {
     final var eventSources = new EventSources();
     final var source = mock(EventSource.class);
     when(source.name()).thenReturn("name");
-    when(source.scopeEquals(any())).thenCallRealMethod();
 
     eventSources.add(source);
     assertThrows(IllegalArgumentException.class, () -> eventSources.add(source));
-  }
-
-  @Test
-  void cannotAddEventSourceWithDifferentNameSameScope() {
-    final var es1 = mock(EventSource.class);
-    when(es1.name()).thenReturn("name1");
-
-    final var es2 = mock(EventSource.class);
-    when(es2.name()).thenReturn("name2");
-    when(es2.scopeEquals(any())).thenReturn(true);
-
-    final var eventSources = new EventSources();
-    eventSources.add(es1);
-
-    assertThrows(IllegalArgumentException.class, () -> {
-      eventSources.add(es2);
-    });
   }
 
   @Test
@@ -148,7 +129,6 @@ class EventSourcesTest {
         eventSourceMockWithName(ResourceEventSource.class, "name1", HasMetadata.class);
     final var mock2 =
         eventSourceMockWithName(ResourceEventSource.class, "name2", HasMetadata.class);
-    when(mock2.scopeEquals(any())).thenCallRealMethod();
     final var mock3 = eventSourceMockWithName(ResourceEventSource.class, "name2", ConfigMap.class);
 
     eventSources.add(mock1);

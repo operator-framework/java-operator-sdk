@@ -256,16 +256,6 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.get(dependentType, name);
   }
 
-  // todo get just by name?
-  public <R> Optional<ResourceEventSource<R, P>> getOptionalResourceEventSourceFor(
-      Class<R> dependentType, String qualifier) {
-    try {
-      return Optional.of(getResourceEventSourceFor(dependentType, qualifier));
-    } catch (IllegalArgumentException ex) {
-      return Optional.empty();
-    }
-  }
-
   TimerEventSource<P> retryEventSource() {
     return eventSources.retryEventSource();
   }

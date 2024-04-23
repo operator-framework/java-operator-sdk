@@ -55,6 +55,7 @@ public class PollingEventSource<R, P extends HasMetadata>
     this(null, supplier, period, resourceClass);
   }
 
+  // todo add config and builder
   public PollingEventSource(String name,
       GenericResourceFetcher<R> supplier,
       long period,

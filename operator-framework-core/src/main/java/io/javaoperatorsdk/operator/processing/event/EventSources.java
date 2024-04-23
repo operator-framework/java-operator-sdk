@@ -77,12 +77,6 @@ class EventSources<R extends HasMetadata> {
       throw new IllegalArgumentException("Event source " + existing
           + " is already registered with name: " + name);
     }
-    if (existing.values().stream().anyMatch(eventSource::scopeEquals)) {
-      throw new IllegalArgumentException("Event source " + existing
-          + " is already registered for the "
-          + keyAsString(getResourceType(eventSource), name)
-          + " with same scope");
-    }
 
     sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
   }

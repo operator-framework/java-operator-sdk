@@ -114,29 +114,6 @@ class EventSourceManagerTest {
   }
 
   @Test
-  void notPossibleToAddEventSourceWithSameScopeButDifferentName() {
-    EventSourceManager manager = initManager();
-    final var name = "name1";
-
-    ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
-    when(eventSource.name()).thenReturn("name1");
-    when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
-    manager.registerEventSource(eventSource);
-
-    eventSource = mock(ManagedInformerEventSource.class);
-    when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
-    when(eventSource.name()).thenReturn("name2");
-    when(eventSource.scopeEquals(any())).thenReturn(true);
-    final var source = eventSource;
-
-    final var exception = assertThrows(OperatorException.class,
-        () -> manager.registerEventSource(source));
-    final var cause = exception.getCause();
-    assertInstanceOf(IllegalArgumentException.class, cause);
-    assertThat(cause.getMessage()).contains("with same scope");
-  }
-
-  @Test
   void retrievingAnEventSourceWhenMultipleAreRegisteredForATypeShouldRequireAQualifier() {
     EventSourceManager manager = initManager();
 

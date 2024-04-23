@@ -195,14 +195,4 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     this.configurationService = configurationService;
   }
 
-  @SuppressWarnings("rawtypes")
-  @Override
-  public boolean scopeEquals(EventSource es) {
-    if (!this.getClass().equals(es.getClass())) {
-      return false;
-    }
-    var managedEventSource = (ManagedInformerEventSource) es;
-    return this.getInformerConfiguration()
-        .equals(managedEventSource.getInformerConfiguration());
-  }
 }

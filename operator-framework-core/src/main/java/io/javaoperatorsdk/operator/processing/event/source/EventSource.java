@@ -30,14 +30,11 @@ public interface EventSource extends LifecycleAware, EventSourceHealthIndicator 
   }
 
   default String name() {
-    return getClass().getSimpleName();
+    return generateName(this);
   }
 
-  /**
-   * todo do not implement here? Check if targets the same resources as the current event source.
-   */
-  default boolean scopeEquals(EventSource es) {
-    return this.equals(es);
+  static String generateName(EventSource eventSource) {
+    return eventSource.getClass().getName() + "@" + Integer.toHexString(eventSource.hashCode());
   }
 
 }

@@ -40,9 +40,4 @@ public interface ResourceEventSource<R, P extends HasMetadata> extends EventSour
 
   void setGenericFilter(GenericFilter<? super R> genericFilter);
 
-  @Override
-  default String name() {
-    return resourceType().getSimpleName();
-  }
-
 }
