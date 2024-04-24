@@ -26,12 +26,14 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
   AbstractOperatorExtension operator =
       isLocal()
           ? LocallyRunOperatorExtension.builder()
-              .withConfigurationService(o -> o.withCloneSecondaryResources(false))
+              .withConfigurationService(
+                  o -> o.withCloneSecondaryResourcesWhenGettingFromCache(false))
               .waitForNamespaceDeletion(false)
               .withReconciler(new WebPageReconciler(client))
               .build()
           : ClusterDeployedOperatorExtension.builder()
-              .withConfigurationService(o -> o.withCloneSecondaryResources(false))
+              .withConfigurationService(
+                  o -> o.withCloneSecondaryResourcesWhenGettingFromCache(false))
               .waitForNamespaceDeletion(false)
               .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items(),
                   resources -> {

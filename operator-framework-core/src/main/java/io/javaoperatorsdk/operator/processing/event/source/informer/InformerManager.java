@@ -170,7 +170,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   public Optional<T> get(ResourceID resourceID) {
     return getSource(resourceID.getNamespace().orElse(WATCH_ALL_NAMESPACES))
         .flatMap(source -> source.get(resourceID))
-        .map(r -> configurationService.cloneSecondaryResources()
+        .map(r -> configurationService.cloneSecondaryResourcesWhenGettingFromCache()
             ? configurationService.getResourceCloner().clone(r)
             : r);
   }

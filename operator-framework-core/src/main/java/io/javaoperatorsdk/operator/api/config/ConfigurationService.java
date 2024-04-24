@@ -405,12 +405,13 @@ public interface ConfigurationService {
   }
 
   /**
-   * By default, secondary resources are cloned when returned from the cache. This might have a
-   * performance impact, and if reconciler relies on SSA it is not needed to do. Since the goal of
-   * the cloning is to prevent modification on the object in the cache, that would no longer reflect
-   * the state on the server in that case.
+   * By default, secondary resources are cloned when returned from the cache.
+   * ({@link io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResource(Class)}) This
+   * might have a performance impact, and if reconciler relies on SSA it is not needed to do. Since
+   * the goal of the cloning is to prevent modification on the object in the cache, that would no
+   * longer reflect the state on the server in that case.
    */
-  default boolean cloneSecondaryResources() {
+  default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return true;
   }
 
