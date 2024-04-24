@@ -10,4 +10,6 @@ public interface WorkflowSpec {
   List<DependentResourceSpec> getDependentResourceSpecs();
 
   boolean isExplicitInvocation();
+
+  boolean silentExceptionHandling();
 }

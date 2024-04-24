@@ -72,6 +72,7 @@ public class Controller<P extends HasMetadata>
   private final boolean isCleaner;
   private final Metrics metrics;
   private final Workflow<P> managedWorkflow;
+  private final boolean explicitWorkflowInvocation;
 
   private final GroupVersionKind associatedGVK;
   private final EventProcessor<P> eventProcessor;
@@ -94,6 +95,9 @@ public class Controller<P extends HasMetadata>
 
     final var managed = configurationService.getWorkflowFactory().workflowFor(configuration);
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
+    explicitWorkflowInvocation =
+        configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
+            .orElse(false);
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
@@ -145,7 +149,7 @@ public class Controller<P extends HasMetadata>
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             configuration.getWorkflowSpec().ifPresent(ws -> {
-              if (!isWorkflowExplicitInvocation()) {
+              if (!explicitWorkflowInvocation) {
                 reconcileManagedWorkflow(resource, context);
               }
             });
@@ -191,7 +195,7 @@ public class Controller<P extends HasMetadata>
 
               // The cleanup is called also when explicit invocation is true, but the cleaner is not
               // implemented
-              if (!isCleaner || !isWorkflowExplicitInvocation()) {
+              if (!isCleaner || !explicitWorkflowInvocation) {
                 workflowCleanupResult = cleanupManagedWorkflow(resource, context);
               }
 
@@ -449,7 +453,6 @@ public class Controller<P extends HasMetadata>
       ((DefaultManagedWorkflowAndDependentResourceContext) context
           .managedWorkflowAndDependentResourceContext())
           .setWorkflowExecutionResult(res);
-      res.throwAggregateExceptionIfErrorsPresent();
     }
   }
 
@@ -459,7 +462,7 @@ public class Controller<P extends HasMetadata>
       ((DefaultManagedWorkflowAndDependentResourceContext) context
           .managedWorkflowAndDependentResourceContext())
           .setWorkflowCleanupResult(workflowCleanupResult);
-      workflowCleanupResult.throwAggregateExceptionIfErrorsPresent();
+
       return workflowCleanupResult;
     } else {
       return null;
@@ -467,7 +470,6 @@ public class Controller<P extends HasMetadata>
   }
 
   public boolean isWorkflowExplicitInvocation() {
-    return configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
-        .orElse(false);
+    return explicitWorkflowInvocation;
   }
 }

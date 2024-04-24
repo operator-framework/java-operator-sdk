@@ -19,4 +19,13 @@ public @interface Workflow {
    */
   boolean explicitInvocation() default false;
 
+  /**
+   * if true and an exception(s) is thrown in the managed workflow, when the workflow reconciliation
+   * finished the controller won't throw an exception, instead will call the reconcile method where
+   * the reconcile result is accessible through
+   * {@link Context#managedWorkflowAndDependentResourceContext()}. If false, the exception is thrown
+   * by the controller before executing the reconcile method.
+   */
+  boolean silentExceptionHandling() default false;
+
 }
