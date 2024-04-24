@@ -40,6 +40,7 @@ public class ConfigurationServiceOverrider {
   private Boolean previousAnnotationForDependentResources;
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
+  private Boolean cloneSecondaryResources;
   private DependentResourceFactory dependentResourceFactory;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
@@ -177,6 +178,11 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withUseSSAToPatchPrimaryResource(boolean value) {
     this.useSSAToPatchPrimaryResource = value;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withCloneSecondaryResources(boolean value) {
+    this.cloneSecondaryResources = value;
     return this;
   }
 
@@ -322,6 +328,12 @@ public class ConfigurationServiceOverrider {
             ? useSSAToPatchPrimaryResource
             : super.useSSAToPatchPrimaryResource();
 
+      }
+
+      @Override
+      public boolean cloneSecondaryResources() {
+        return cloneSecondaryResources != null ? cloneSecondaryResources
+            : super.cloneSecondaryResources();
       }
     };
   }
