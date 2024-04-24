@@ -30,6 +30,7 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
     return new PerResourcePollingEventSource<>(name(), context,
         new PerResourcePollingConfigurationBuilder<>(resourceType(),
             this, getPollingPeriod())
+            .withCacheKeyMapper(this)
             .build());
   }
 }
