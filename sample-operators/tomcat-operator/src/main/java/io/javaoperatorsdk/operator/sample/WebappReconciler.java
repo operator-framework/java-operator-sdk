@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -101,18 +102,25 @@ public class WebappReconciler
 
       String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);
 
-      if (webapp.getStatus() == null) {
-        webapp.setStatus(new WebappStatus());
-      }
-      webapp.getStatus().setDeployedArtifact(webapp.getSpec().getUrl());
-      webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
-      return UpdateControl.patchStatus(webapp);
+      return UpdateControl.patchStatus(createWebAppForStatusUpdate(webapp, commandStatusInAllPods));
     } else {
       log.info("WebappController invoked but Tomcat not ready yet ({}/{})",
           tomcat.getStatus() != null ? tomcat.getStatus().getReadyReplicas() : 0,
           tomcat.getSpec().getReplicas());
       return UpdateControl.noUpdate();
     }
+  }
+
+  private Webapp createWebAppForStatusUpdate(Webapp actual, String[] commandStatusInAllPods) {
+    var webapp = new Webapp();
+    webapp.setMetadata(new ObjectMetaBuilder()
+        .withName(actual.getMetadata().getName())
+        .withNamespace(actual.getMetadata().getNamespace())
+        .build());
+    webapp.setStatus(new WebappStatus());
+    webapp.getStatus().setDeployedArtifact(webapp.getSpec().getUrl());
+    webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
+    return webapp;
   }
 
   @Override
