@@ -14,20 +14,20 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-import static io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
+import static io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler.EVENT_SOURCE_NAME;
 
 @Workflow(dependents = {
     @Dependent(type = ExternalDependentResource1.class,
-        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+        useEventSourceWithName = EVENT_SOURCE_NAME),
     @Dependent(type = ExternalDependentResource2.class,
-        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
+        useEventSourceWithName = EVENT_SOURCE_NAME)
 })
 @ControllerConfiguration()
 public class MultipleManagedExternalDependentResourceReconciler
     implements Reconciler<MultipleManagedExternalDependentResourceCustomResource>,
     TestExecutionInfoProvider {
 
-  public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
+  public static final String EVENT_SOURCE_NAME = "ConfigMapEventSource";
   protected ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -51,17 +51,17 @@ public class MultipleManagedExternalDependentResourceReconciler
       EventSourceContext<MultipleManagedExternalDependentResourceCustomResource> context) {
 
     PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
-        new PollingEventSource<>(new PollingConfigurationBuilder<>(ExternalResource.class, () -> {
-          var lists = externalServiceMock.listResources();
-          Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
-          lists.forEach(er -> {
-            var resourceId = er.toResourceID();
-            res.computeIfAbsent(resourceId, rid -> new HashSet<>());
-            res.get(resourceId).add(er);
-          });
-          return res;
-        },
-            Duration.ofMillis(1000L)).withCacheKeyMapper(ExternalResource::getId).build());
+        new PollingEventSource<>(EVENT_SOURCE_NAME,
+            new PollingConfigurationBuilder<>(ExternalResource.class, () -> {
+              var lists = externalServiceMock.listResources();
+              Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
+              lists.forEach(er -> {
+                var resourceId = er.toResourceID();
+                res.computeIfAbsent(resourceId, rid -> new HashSet<>());
+                res.get(resourceId).add(er);
+              });
+              return res;
+            }, Duration.ofMillis(1000L)).withCacheKeyMapper(ExternalResource::getId).build());
 
     return List.of(pollingEventSource);
   }
