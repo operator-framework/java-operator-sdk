@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
@@ -33,10 +34,10 @@ public class MySQLSchemaReconciler
     Secret secret = context.getSecondaryResource(Secret.class).orElseThrow();
 
     return context.getSecondaryResource(Schema.class, SchemaDependentResource.NAME).map(s -> {
-      updateStatusPojo(schema, s, secret.getMetadata().getName(),
+      var statusUpdateResource = createForStatusUpdate(schema, s, secret.getMetadata().getName(),
           decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
       log.info("Schema {} created - updating CR status", s.getName());
-      return UpdateControl.patchStatus(schema);
+      return UpdateControl.patchStatus(statusUpdateResource);
     }).orElseGet(UpdateControl::noUpdate);
   }
 
@@ -54,8 +55,14 @@ public class MySQLSchemaReconciler
   }
 
 
-  private void updateStatusPojo(MySQLSchema mySQLSchema, Schema schema, String secretName,
+  private MySQLSchema createForStatusUpdate(MySQLSchema mySQLSchema, Schema schema,
+      String secretName,
       String userName) {
+    MySQLSchema res = new MySQLSchema();
+    res.setMetadata(new ObjectMetaBuilder()
+        .withName(mySQLSchema.getMetadata().getName())
+        .withNamespace(mySQLSchema.getMetadata().getNamespace())
+        .build());
     SchemaStatus status = new SchemaStatus();
     status.setUrl(
         format(
@@ -64,6 +71,7 @@ public class MySQLSchemaReconciler
     status.setUserName(userName);
     status.setSecretName(secretName);
     status.setStatus("CREATED");
-    mySQLSchema.setStatus(status);
+    res.setStatus(status);
+    return res;
   }
 }
