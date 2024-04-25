@@ -412,7 +412,7 @@ public interface ConfigurationService {
    * longer reflect the state on the server in that case.
    */
   default boolean cloneSecondaryResourcesWhenGettingFromCache() {
-    return true;
+    return false;
   }
 
 }
