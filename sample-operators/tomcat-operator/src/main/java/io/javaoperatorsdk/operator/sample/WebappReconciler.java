@@ -118,7 +118,7 @@ public class WebappReconciler
         .withNamespace(actual.getMetadata().getNamespace())
         .build());
     webapp.setStatus(new WebappStatus());
-    webapp.getStatus().setDeployedArtifact(webapp.getSpec().getUrl());
+    webapp.getStatus().setDeployedArtifact(actual.getSpec().getUrl());
     webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
     return webapp;
   }
