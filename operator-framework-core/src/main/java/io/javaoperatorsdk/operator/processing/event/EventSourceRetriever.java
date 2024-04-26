@@ -19,11 +19,16 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType);
 
   /**
-   * When using this method is important to explicitly name the event source, since comparison is
-   * made using the name! Registers (and starts) the specified {@link EventSource} dynamically
-   * during the reconciliation. If an EventSource is already registered with the specified name, the
-   * registration will be ignored. It is the user's responsibility to handle the naming correctly,
-   * thus to not try to register different event source with same name that is already registered.
+   * <p>
+   * When using this method is important to explicitly name the event source. Generated names are
+   * unique to the object, when multiple reconciliation executions are registering concurrently the
+   * event source, the name is used to check if there is such an event source already registered.
+   * </p>
+   * <p>
+   * Registers (and starts) the specified {@link EventSource} dynamically during the reconciliation.
+   * If an EventSource is already registered with the specified name, the registration will be
+   * ignored. It is the user's responsibility to handle the naming correctly.
+   * </p>
    * <p>
    * This is only needed when your operator needs to adapt dynamically based on optional resources
    * that may or may not be present on the target cluster. Even in this situation, it should be
@@ -32,7 +37,7 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * activation conditions of dependents, for example.
    * </p>
    * <p>
-   * This method will block until the event source is synced, if needed (as is the case for
+   * This method will block until the event source is synced (if needed, as it is the case for
    * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}).
    * </p>
    * <p>
