@@ -8,6 +8,20 @@ public abstract class AbstractEventSource implements EventSource {
   private EventHandler handler;
   private volatile boolean running = false;
   private EventSourceStartPriority eventSourceStartPriority = EventSourceStartPriority.DEFAULT;
+  private final String name;
+
+  protected AbstractEventSource() {
+    this(null);
+  }
+
+  protected AbstractEventSource(String name) {
+    this.name = name == null ? EventSource.super.name() : name;
+  }
+
+  @Override
+  public String name() {
+    return name;
+  }
 
   protected EventHandler getEventHandler() {
     return handler;

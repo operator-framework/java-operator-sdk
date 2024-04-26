@@ -16,15 +16,13 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
   protected OnDeleteFilter<? super R> onDeleteFilter;
   protected GenericFilter<? super R> genericFilter;
 
-  private final String name;
-
   protected AbstractResourceEventSource(Class<R> resourceClass) {
     this(resourceClass, resourceClass.getName());
   }
 
   protected AbstractResourceEventSource(Class<R> resourceClass, String name) {
+    super(name);
     this.resourceClass = resourceClass;
-    this.name = name == null ? super.name() : name;
   }
 
   @Override
@@ -48,10 +46,5 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
 
   public void setGenericFilter(GenericFilter<? super R> genericFilter) {
     this.genericFilter = genericFilter;
-  }
-
-  @Override
-  public String name() {
-    return name;
   }
 }

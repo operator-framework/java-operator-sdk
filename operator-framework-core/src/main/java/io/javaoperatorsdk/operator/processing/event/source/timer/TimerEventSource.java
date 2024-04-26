@@ -22,6 +22,12 @@ public class TimerEventSource<R extends HasMetadata>
   private Timer timer;
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
+  public TimerEventSource() {}
+
+  public TimerEventSource(String name) {
+    super(name);
+  }
+
   @SuppressWarnings("unused")
   public void scheduleOnce(R resource, long delay) {
     scheduleOnce(ResourceID.fromResource(resource), delay);
