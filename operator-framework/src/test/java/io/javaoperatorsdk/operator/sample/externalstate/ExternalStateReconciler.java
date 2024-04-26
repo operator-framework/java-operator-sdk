@@ -1,14 +1,24 @@
 package io.javaoperatorsdk.operator.sample.externalstate;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
@@ -104,19 +114,20 @@ public class ExternalStateReconciler
         InformerConfiguration.from(ConfigMap.class, context).build(), context);
     configMapEventSource.setEventSourcePriority(EventSourceStartPriority.RESOURCE_STATE_LOADER);
 
-    externalResourceEventSource = new PerResourcePollingEventSource<>(context,
-        new PerResourcePollingConfigurationBuilder<>(ExternalResource.class,
-            (ExternalStateCustomResource primaryResource) -> {
-              var configMap =
-                  configMapEventSource.getSecondaryResource(primaryResource).orElse(null);
-              if (configMap == null) {
-                return Collections.emptySet();
-              }
-              var id = configMap.getData().get(ID_KEY);
-              var externalResource = externalService.read(id);
-              return externalResource.map(Set::of).orElseGet(Collections::emptySet);
-            }, Duration.ofMillis(300L))
-            .build());
+    final PerResourcePollingEventSource.ResourceFetcher<ExternalResource, ExternalStateCustomResource> fetcher =
+        (ExternalStateCustomResource primaryResource) -> {
+          var configMap =
+              configMapEventSource.getSecondaryResource(primaryResource).orElse(null);
+          if (configMap == null) {
+            return Collections.emptySet();
+          }
+          var id = configMap.getData().get(ID_KEY);
+          var externalResource = externalService.read(id);
+          return externalResource.map(Set::of).orElseGet(Collections::emptySet);
+        };
+    externalResourceEventSource =
+        new PerResourcePollingEventSource<>(ExternalResource.class, context,
+            new PerResourcePollingConfigurationBuilder<>(fetcher, Duration.ofMillis(300L)).build());
 
     return Arrays.asList(configMapEventSource,
         externalResourceEventSource);

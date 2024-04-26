@@ -27,8 +27,8 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
 
-    return new PerResourcePollingEventSource<>(name(), context,
-        new PerResourcePollingConfigurationBuilder<>(resourceType(),
+    return new PerResourcePollingEventSource<>(name(), resourceType(), context,
+        new PerResourcePollingConfigurationBuilder<>(
             this, getPollingPeriod())
             .withCacheKeyMapper(this)
             .build());

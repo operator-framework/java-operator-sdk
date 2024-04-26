@@ -1,10 +1,19 @@
 package io.javaoperatorsdk.operator.sample.multiplemanagedexternaldependenttype;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -50,18 +59,22 @@ public class MultipleManagedExternalDependentResourceReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleManagedExternalDependentResourceCustomResource> context) {
 
+    final PollingEventSource.GenericResourceFetcher<ExternalResource> fetcher = () -> {
+      var lists = externalServiceMock.listResources();
+      final Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
+      lists.forEach(er -> {
+        var resourceId = er.toResourceID();
+        res.computeIfAbsent(resourceId, rid -> new HashSet<>());
+        res.get(resourceId).add(er);
+      });
+      return res;
+    };
+
     PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
-        new PollingEventSource<>(EVENT_SOURCE_NAME,
-            new PollingConfigurationBuilder<>(ExternalResource.class, () -> {
-              var lists = externalServiceMock.listResources();
-              Map<ResourceID, Set<ExternalResource>> res = new HashMap<>();
-              lists.forEach(er -> {
-                var resourceId = er.toResourceID();
-                res.computeIfAbsent(resourceId, rid -> new HashSet<>());
-                res.get(resourceId).add(er);
-              });
-              return res;
-            }, Duration.ofMillis(1000L)).withCacheKeyMapper(ExternalResource::getId).build());
+        new PollingEventSource<>(EVENT_SOURCE_NAME, ExternalResource.class,
+            new PollingConfigurationBuilder<>(fetcher, Duration.ofMillis(1000L))
+                .withCacheKeyMapper(ExternalResource::getId)
+                .build());
 
     return List.of(pollingEventSource);
   }

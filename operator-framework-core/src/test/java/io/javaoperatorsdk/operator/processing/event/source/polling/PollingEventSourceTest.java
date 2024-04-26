@@ -31,10 +31,9 @@ class PollingEventSourceTest
   private final PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
-      new PollingEventSource<>(new PollingConfigurationBuilder<>(SampleExternalResource.class,
-          resourceFetcher, POLL_PERIOD)
-          .withCacheKeyMapper((SampleExternalResource er) -> er.getName() + "#" + er.getValue())
-          .build());
+      new PollingEventSource<>(SampleExternalResource.class,
+          new PollingConfiguration<>(resourceFetcher, POLL_PERIOD,
+              (SampleExternalResource er) -> er.getName() + "#" + er.getValue()));
 
   @BeforeEach
   public void setup() {

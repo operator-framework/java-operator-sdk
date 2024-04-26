@@ -5,16 +5,13 @@ import java.time.Duration;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 
 public final class PollingConfigurationBuilder<R> {
-  private final Class<R> resourceClass;
-  private final PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher;
   private final Duration period;
+  private final PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher;
   private CacheKeyMapper<R> cacheKeyMapper;
 
-  public PollingConfigurationBuilder(Class<R> resourceClass,
-      PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
+  public PollingConfigurationBuilder(PollingEventSource.GenericResourceFetcher<R> fetcher,
       Duration period) {
-    this.resourceClass = resourceClass;
-    this.genericResourceFetcher = genericResourceFetcher;
+    this.genericResourceFetcher = fetcher;
     this.period = period;
   }
 
@@ -24,7 +21,6 @@ public final class PollingConfigurationBuilder<R> {
   }
 
   public PollingConfiguration<R> build() {
-    return new PollingConfiguration<>(resourceClass, genericResourceFetcher, period,
-        cacheKeyMapper);
+    return new PollingConfiguration<>(genericResourceFetcher, period, cacheKeyMapper);
   }
 }

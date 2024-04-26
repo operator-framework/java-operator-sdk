@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfigurationBuilder;
+import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
 @Ignore
@@ -31,10 +31,8 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
   @Override
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
-    return new PollingEventSource<>(name(),
-        new PollingConfigurationBuilder<>(resourceType(), this, getPollingPeriod())
-            .withCacheKeyMapper(cacheKeyMapper)
-            .build());
+    return new PollingEventSource<>(name(), resourceType(),
+        new PollingConfiguration<>(this, getPollingPeriod(), cacheKeyMapper));
   }
 
 }

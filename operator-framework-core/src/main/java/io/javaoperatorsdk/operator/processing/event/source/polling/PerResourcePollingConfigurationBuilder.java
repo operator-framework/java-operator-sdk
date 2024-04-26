@@ -10,21 +10,20 @@ import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetadata> {
 
   private final Duration defaultPollingPeriod;
-  private final Class<R> resourceClass;
   private final PerResourcePollingEventSource.ResourceFetcher<R, P> resourceFetcher;
 
   private Predicate<P> registerPredicate;
   private ScheduledExecutorService executorService;
   private CacheKeyMapper<R> cacheKeyMapper;
 
-  public PerResourcePollingConfigurationBuilder(Class<R> resourceClass,
+  public PerResourcePollingConfigurationBuilder(
       PerResourcePollingEventSource.ResourceFetcher<R, P> resourceFetcher,
       Duration defaultPollingPeriod) {
-    this.resourceClass = resourceClass;
     this.resourceFetcher = resourceFetcher;
     this.defaultPollingPeriod = defaultPollingPeriod;
   }
 
+  @SuppressWarnings("unused")
   public PerResourcePollingConfigurationBuilder<R, P> withExecutorService(
       ScheduledExecutorService executorService) {
     this.executorService = executorService;
@@ -45,6 +44,6 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
 
   public PerResourcePollingConfiguration<R, P> build() {
     return new PerResourcePollingConfiguration<>(executorService, cacheKeyMapper,
-        resourceFetcher, registerPredicate, defaultPollingPeriod, resourceClass);
+        resourceFetcher, registerPredicate, defaultPollingPeriod);
   }
 }

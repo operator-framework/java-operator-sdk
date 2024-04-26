@@ -1,7 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -49,12 +52,12 @@ public class PollingEventSource<R, P extends HasMetadata>
   private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
 
-  public PollingEventSource(PollingConfiguration<R> config) {
-    this(null, config);
+  public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R> config) {
+    this(null, resourceClass, config);
   }
 
-  public PollingEventSource(String name, PollingConfiguration<R> config) {
-    super(name, config.resourceClass(), config.cacheKeyMapper());
+  public PollingEventSource(String name, Class<R> resourceClass, PollingConfiguration<R> config) {
+    super(name, resourceClass, config.cacheKeyMapper());
     this.genericResourceFetcher = config.genericResourceFetcher();
     this.period = config.period();
   }
