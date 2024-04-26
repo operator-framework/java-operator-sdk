@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
@@ -17,7 +21,8 @@ class EventSources<R extends HasMetadata> {
 
   private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
       new ConcurrentSkipListMap<>();
-  private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
+  private final TimerEventSource<R> retryAndRescheduleTimerEventSource =
+      new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
   private ControllerResourceEventSource<R> controllerResourceEventSource;
 
 
@@ -54,20 +59,11 @@ class EventSources<R extends HasMetadata> {
   }
 
   public EventSource existingEventSourceOfSameNameAndType(EventSource source) {
-    final var eventSources = sources.get(keyFor(source));
-    if (eventSources == null) {
-      return null;
-    }
-    return eventSources.get(source.name());
+    return existingEventSourceOfSameType(source).get(source.name());
   }
 
-
   public Map<String, EventSource> existingEventSourceOfSameType(EventSource source) {
-    final var eventSources = sources.get(keyFor(source));
-    if (eventSources == null) {
-      return Collections.emptyMap();
-    }
-    return eventSources;
+    return sources.getOrDefault(keyFor(source), Collections.emptyMap());
   }
 
   public void add(EventSource eventSource) {
@@ -80,8 +76,6 @@ class EventSources<R extends HasMetadata> {
 
     sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
   }
-
-
 
   @SuppressWarnings("rawtypes")
   private Class<?> getResourceType(EventSource source) {

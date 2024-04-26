@@ -80,7 +80,6 @@ public interface InformerConfiguration<R extends HasMetadata>
     public Optional<GroupVersionKind> getGroupVersionKind() {
       return Optional.ofNullable(groupVersionKind);
     }
-
   }
 
   /**

@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
 public class ControllerResourceEventSource<T extends HasMetadata>
@@ -26,7 +26,7 @@ public class ControllerResourceEventSource<T extends HasMetadata>
     implements ResourceEventHandler<T> {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
-  public static final String NAME = "ControllerResourceEventSource";
+  private static final String NAME = "ControllerResourceEventSource";
 
   private final Controller<T> controller;
 

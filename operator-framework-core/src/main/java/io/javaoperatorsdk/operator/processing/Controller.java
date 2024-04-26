@@ -239,7 +239,7 @@ public class Controller<P extends HasMetadata>
     if (size > 0) {
       dependentResourcesByName.forEach(dependentResource -> {
         Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
-        eventSource.ifPresent(es -> eventSourceManager.registerEventSource(es));
+        eventSource.ifPresent(eventSourceManager::registerEventSource);
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
