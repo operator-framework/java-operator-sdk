@@ -22,6 +22,11 @@ permalink: /docs/v5-0-migration
    for your `EventSource` implementation (for example, by using its default, no-arg constructor), one will be
    automatically generated. This simplifies the API to define event source to
    `List<EventSource> prepareEventSources(EventSourceContext<P> context)`.
+   !!! IMPORTANT !!!
+   If you use dynamic registration of event sources, be sure to name your event sources explicitly as letting JOSDK name
+   them automatically might result in duplicated event sources being registered as JOSDK relies on the name to identify
+   event sources and concurrent, dynamic registration might lead to identical event sources having different generated
+   names, thus leading JOSDK to consider them as different and hence, register them multiple times.
 4. Updates through `UpdateControl` now
    use [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/) by default to add
    the finalizer and for all

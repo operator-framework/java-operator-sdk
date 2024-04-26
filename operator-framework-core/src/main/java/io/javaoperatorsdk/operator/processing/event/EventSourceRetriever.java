@@ -20,11 +20,6 @@ public interface EventSourceRetriever<P extends HasMetadata> {
 
   /**
    * <p>
-   * When using this method is important to explicitly name the event source. Generated names are
-   * unique to the object, when multiple reconciliation executions are registering concurrently the
-   * event source, the name is used to check if there is such an event source already registered.
-   * </p>
-   * <p>
    * Registers (and starts) the specified {@link EventSource} dynamically during the reconciliation.
    * If an EventSource is already registered with the specified name, the registration will be
    * ignored. It is the user's responsibility to handle the naming correctly.
@@ -41,8 +36,15 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}).
    * </p>
    * <p>
-   * Should multiple reconciliations happen concurrently, only one EventSource with the specified
-   * name will ever be registered.
+   * <strong>IMPORTANT:</strong> Should multiple reconciliations happen concurrently, only one
+   * EventSource with the specified name will ever be registered. It is therefore important to
+   * explicitly name the event sources that you want to reuse because the name will be used to
+   * identify which event sources need to be created or not. If you let JOSDK implicitly name event
+   * sources, then you might end up with duplicated event sources because concurrent registration of
+   * event sources will lead to 2 (or more) event sources for the same resource type to be attempted
+   * to be registered under different, automatically generated names. If you clearly identify your
+   * event sources with names, then, if the concurrent process determines that an event source with
+   * the specified name, it won't register it again.
    * </p>
    *
    * @param eventSource to register
