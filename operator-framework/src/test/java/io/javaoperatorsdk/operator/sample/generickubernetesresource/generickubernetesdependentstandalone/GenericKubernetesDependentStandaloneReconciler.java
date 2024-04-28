@@ -1,11 +1,11 @@
 package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentstandalone;
 
-import java.util.Map;
+import java.util.List;
 
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -30,8 +30,8 @@ public class GenericKubernetesDependentStandaloneReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<GenericKubernetesDependentStandaloneCustomResource> context) {
-    return EventSourceUtils.nameEventSources(dependent.eventSource(context).orElseThrow());
+    return List.of(dependent.eventSource(context).orElseThrow());
   }
 }

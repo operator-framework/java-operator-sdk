@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.externalstate;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +28,7 @@ public class ExternalWithStateDependentResource extends
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   public ExternalWithStateDependentResource() {
-    super(ExternalResource.class, 300);
+    super(ExternalResource.class, Duration.ofMillis(300));
   }
 
   @Override

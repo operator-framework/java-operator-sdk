@@ -86,7 +86,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
-    configureWith(new InformerEventSource<>(ic, context));
+    configureWith(new InformerEventSource<>(name(), ic, context));
   }
 
   // just to seamlessly handle GenericKubernetesDependentResource
