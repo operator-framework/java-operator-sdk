@@ -39,4 +39,5 @@ public interface ResourceEventSource<R, P extends HasMetadata> extends EventSour
   void setOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter);
 
   void setGenericFilter(GenericFilter<? super R> genericFilter);
+
 }

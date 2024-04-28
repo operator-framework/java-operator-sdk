@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -27,7 +26,6 @@ public class InformerRelatedBehaviorTestReconciler
   public static final String CONFIG_MAP_DEPENDENT_RESOURCE = "ConfigMapDependentResource";
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-  private KubernetesClient client;
 
   @Override
   public UpdateControl<InformerRelatedBehaviorTestCustomResource> reconcile(

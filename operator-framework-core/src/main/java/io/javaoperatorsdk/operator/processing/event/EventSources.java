@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
@@ -19,14 +19,10 @@ import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSourc
 
 class EventSources<R extends HasMetadata> {
 
-  public static final String CONTROLLER_RESOURCE_EVENT_SOURCE_NAME =
-      "ControllerResourceEventSource";
-  public static final String RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME =
-      "RetryAndRescheduleTimerEventSource";
-
-  private final ConcurrentNavigableMap<String, Map<String, NamedEventSource>> sources =
+  private final ConcurrentNavigableMap<String, Map<String, EventSource>> sources =
       new ConcurrentSkipListMap<>();
-  private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
+  private final TimerEventSource<R> retryAndRescheduleTimerEventSource =
+      new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
   private ControllerResourceEventSource<R> controllerResourceEventSource;
 
 
@@ -42,32 +38,19 @@ class EventSources<R extends HasMetadata> {
     return retryAndRescheduleTimerEventSource;
   }
 
-  public Stream<NamedEventSource> additionalNamedEventSources() {
-    return Stream.concat(Stream.of(
-        new NamedEventSource(retryAndRescheduleTimerEventSource,
-            RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME)),
-        flatMappedSources());
-  }
-
-  public Stream<NamedEventSource> allNamedEventSources() {
-    return Stream.concat(Stream.of(namedControllerResourceEventSource(),
-        new NamedEventSource(retryAndRescheduleTimerEventSource,
-            RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME)),
+  public Stream<EventSource> allEventSources() {
+    return Stream.concat(
+        Stream.of(controllerResourceEventSource(), retryAndRescheduleTimerEventSource),
         flatMappedSources());
   }
 
   Stream<EventSource> additionalEventSources() {
     return Stream.concat(
         Stream.of(retryEventSource()).filter(Objects::nonNull),
-        flatMappedSources().map(NamedEventSource::original));
+        flatMappedSources());
   }
 
-  NamedEventSource namedControllerResourceEventSource() {
-    return new NamedEventSource(controllerResourceEventSource,
-        CONTROLLER_RESOURCE_EVENT_SOURCE_NAME);
-  }
-
-  Stream<NamedEventSource> flatMappedSources() {
+  Stream<EventSource> flatMappedSources() {
     return sources.values().stream().flatMap(c -> c.values().stream());
   }
 
@@ -75,26 +58,23 @@ class EventSources<R extends HasMetadata> {
     sources.clear();
   }
 
-  public NamedEventSource existing(String name, EventSource source) {
-    final var eventSources = sources.get(keyFor(source));
-    if (eventSources == null || eventSources.isEmpty()) {
-      return null;
-    }
-    return eventSources.get(name);
+  public EventSource existingEventSourceOfSameNameAndType(EventSource source) {
+    return existingEventSourceOfSameType(source).get(source.name());
   }
 
-  public void add(NamedEventSource eventSource) {
+  public Map<String, EventSource> existingEventSourceOfSameType(EventSource source) {
+    return sources.getOrDefault(keyFor(source), Collections.emptyMap());
+  }
+
+  public void add(EventSource eventSource) {
     final var name = eventSource.name();
-    final var original = eventSource.original();
-    final var existing = existing(name, original);
-    if (existing != null && !eventSource.equals(existing)) {
-      throw new IllegalArgumentException("Event source " + existing.original()
-          + " is already registered for the "
-          + keyAsString(getResourceType(original), name)
-          + " class/name combination");
+    final var existing = existingEventSourceOfSameType(eventSource);
+    if (existing.get(name) != null) {
+      throw new IllegalArgumentException("Event source " + existing
+          + " is already registered with name: " + name);
     }
-    sources.computeIfAbsent(keyFor(original), k -> new ConcurrentHashMap<>()).put(name,
-        eventSource);
+
+    sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
   }
 
   @SuppressWarnings("rawtypes")
@@ -105,10 +85,6 @@ class EventSources<R extends HasMetadata> {
   }
 
   private String keyFor(EventSource source) {
-    if (source instanceof NamedEventSource) {
-      source = ((NamedEventSource) source).original();
-    }
-
     return keyFor(getResourceType(source));
   }
 
@@ -129,7 +105,7 @@ class EventSources<R extends HasMetadata> {
     }
 
     final var size = sourcesForType.size();
-    NamedEventSource source;
+    EventSource source;
     if (size == 1 && name == null) {
       source = sourcesForType.values().stream().findFirst().orElseThrow();
     } else {
@@ -147,16 +123,15 @@ class EventSources<R extends HasMetadata> {
       }
     }
 
-    EventSource original = source.original();
-    if (!(original instanceof ResourceEventSource)) {
+    if (!(source instanceof ResourceEventSource)) {
       throw new IllegalArgumentException(source + " associated with "
           + keyAsString(dependentType, name) + " is not a "
           + ResourceEventSource.class.getSimpleName());
     }
-    final var res = (ResourceEventSource<S, R>) original;
+    final var res = (ResourceEventSource<S, R>) source;
     final var resourceClass = res.resourceType();
     if (!resourceClass.isAssignableFrom(dependentType)) {
-      throw new IllegalArgumentException(original + " associated with "
+      throw new IllegalArgumentException(source + " associated with "
           + keyAsString(dependentType, name)
           + " is handling " + resourceClass.getName() + " resources but asked for "
           + dependentType.getName());
@@ -179,7 +154,6 @@ class EventSources<R extends HasMetadata> {
     }
 
     return sourcesForType.values().stream()
-        .map(NamedEventSource::original)
         .filter(ResourceEventSource.class::isInstance)
         .map(es -> (ResourceEventSource<S, R>) es)
         .collect(Collectors.toList());

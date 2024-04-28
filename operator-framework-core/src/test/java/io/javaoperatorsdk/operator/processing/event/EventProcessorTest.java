@@ -352,7 +352,7 @@ class EventProcessorTest {
 
   @Test
   void rateLimitsReconciliationSubmission() {
-    // the refresh period value does not matter here
+    // the refresh defaultPollingPeriod value does not matter here
     var refreshPeriod = Duration.ofMillis(100);
     var event = prepareCREvent();
 
