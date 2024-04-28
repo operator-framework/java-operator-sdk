@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample.dependent;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Optional;
@@ -52,7 +53,7 @@ public class SchemaDependentResource
 
   @Override
   public Optional<ResourcePollerConfig> configuration() {
-    return Optional.of(new ResourcePollerConfig((int) getPollingPeriod(), dbConfig));
+    return Optional.of(new ResourcePollerConfig(getPollingPeriod(), dbConfig));
   }
 
   @Override
@@ -127,11 +128,11 @@ public class SchemaDependentResource
         ControllerConfiguration<?> parentConfiguration,
         Class<SchemaDependentResource> originatingClass) {
       if (configAnnotation != null) {
-        return new ResourcePollerConfig(configAnnotation.pollPeriod(),
+        return new ResourcePollerConfig(Duration.ofMillis(configAnnotation.pollPeriod()),
             new MySQLDbConfig(configAnnotation.host(), String.valueOf(configAnnotation.port()),
                 configAnnotation.user(), configAnnotation.password()));
       }
-      return new ResourcePollerConfig(SchemaConfig.DEFAULT_POLL_PERIOD,
+      return new ResourcePollerConfig(Duration.ofMillis(SchemaConfig.DEFAULT_POLL_PERIOD),
           MySQLDbConfig.loadFromEnvironmentVars());
     }
   }

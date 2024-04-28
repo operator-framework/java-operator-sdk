@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype;
 
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -46,12 +46,13 @@ public class MultipleManagedDependentResourceReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleManagedDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentResourceCustomResource> ies =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-            .build(), context);
-
-    return Map.of(CONFIG_MAP_EVENT_SOURCE, ies);
+        new InformerEventSource<>(CONFIG_MAP_EVENT_SOURCE,
+            InformerConfiguration.from(ConfigMap.class, context)
+                .build(),
+            context);
+    return List.of(ies);
   }
 }
