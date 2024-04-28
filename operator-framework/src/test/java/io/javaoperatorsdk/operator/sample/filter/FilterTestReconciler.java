@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.filter;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,7 +49,7 @@ public class FilterTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<FilterTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
@@ -58,6 +59,6 @@ public class FilterTestReconciler
                 .equals(CONFIG_MAP_FILTER_VALUE))
             .build(), context);
 
-    return EventSourceUtils.nameEventSources(configMapES);
+    return List.of(configMapES);
   }
 }
