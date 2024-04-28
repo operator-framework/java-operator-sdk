@@ -139,8 +139,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
         var eventSource =
             dr.eventSource(eventSourceRetriever.eventSourceContextForDynamicRegistration());
         var es = eventSource.orElseThrow();
-        eventSourceRetriever.dynamicallyRegisterEventSource(dr.name(), es);
-
+        eventSourceRetriever.dynamicallyRegisterEventSource(es);
       } else {
         eventSourceRetriever.dynamicallyDeRegisterEventSource(dr.name());
       }

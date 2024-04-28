@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -26,7 +25,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -47,7 +45,7 @@ public class WebappReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
     /*
      * To create an event to a related WebApp resource and trigger the reconciliation we need to
      * find which WebApp this Tomcat custom resource is related to. To find the related
@@ -67,8 +65,7 @@ public class WebappReconciler
                 (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
                     primary.getMetadata().getNamespace())))
             .build();
-    return EventSourceUtils
-        .nameEventSources(new InformerEventSource<>(configuration, context));
+    return List.of(new InformerEventSource<>(configuration, context));
   }
 
   /**

@@ -76,20 +76,28 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private final String id = UUID.randomUUID().toString();
 
+  public InformerEventSource(String name,
+      InformerConfiguration<R> configuration, EventSourceContext<P> context) {
+    this(name, configuration, context.getClient(),
+        context.getControllerConfiguration().getConfigurationService()
+            .parseResourceVersionsForEventFilteringAndCaching());
+  }
+
   public InformerEventSource(
       InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration, context.getClient(),
+    this(null, configuration, context.getClient(),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
   public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
-    this(configuration, client, false);
+    this(null, configuration, client, false);
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
+  public InformerEventSource(String name, InformerConfiguration<R> configuration,
+      KubernetesClient client,
       boolean parseResourceVersions) {
-    super(
+    super(name,
         configuration.getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
@@ -316,5 +324,4 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
     return target;
   }
-
 }

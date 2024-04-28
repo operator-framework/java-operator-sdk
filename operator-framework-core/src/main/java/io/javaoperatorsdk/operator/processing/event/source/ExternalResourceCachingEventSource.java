@@ -51,7 +51,12 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   protected ExternalResourceCachingEventSource(Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
-    super(resourceClass);
+    this(null, resourceClass, cacheKeyMapper);
+  }
+
+  protected ExternalResourceCachingEventSource(String name, Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    super(resourceClass, name);
     this.cacheKeyMapper = cacheKeyMapper;
   }
 
