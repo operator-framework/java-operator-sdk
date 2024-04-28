@@ -24,10 +24,7 @@ import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.Cache;
-import io.javaoperatorsdk.operator.processing.event.source.Configurable;
-import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.*;
 
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
@@ -45,10 +42,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation client;
 
-  protected ManagedInformerEventSource(
+  protected ManagedInformerEventSource(String name,
       MixedOperation client, C configuration,
       boolean parseResourceVersions) {
-    super(configuration.getResourceClass());
+    super(configuration.getResourceClass(), name);
     this.parseResourceVersions = parseResourceVersions;
     this.client = client;
     this.configuration = configuration;
@@ -197,4 +194,5 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   public void setConfigurationService(ConfigurationService configurationService) {
     this.configurationService = configurationService;
   }
+
 }

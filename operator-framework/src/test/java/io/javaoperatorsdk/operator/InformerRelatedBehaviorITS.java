@@ -22,7 +22,6 @@ import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
-import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
 
@@ -151,7 +150,7 @@ class InformerRelatedBehaviorITS {
 
     InformerHealthIndicator configMapHealthIndicator =
         (InformerHealthIndicator) unhealthyEventSources
-            .get(ConfigMapDependentResource.class.getSimpleName())
+            .get(InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE)
             .informerHealthIndicators().get(additionalNamespace);
     assertThat(configMapHealthIndicator).isNotNull();
     assertThat(configMapHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
