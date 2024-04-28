@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.polling;
 
-import java.util.*;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -10,7 +14,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
 /**
@@ -46,26 +49,17 @@ public class PollingEventSource<R, P extends HasMetadata>
 
   private final Timer timer = new Timer();
   private final GenericResourceFetcher<R> genericResourceFetcher;
-  private final long period;
+  private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
 
-  public PollingEventSource(
-      GenericResourceFetcher<R> supplier,
-      long period,
-      Class<R> resourceClass) {
-    super(resourceClass, CacheKeyMapper.singleResourceCacheKeyMapper());
-    this.genericResourceFetcher = supplier;
-    this.period = period;
+  public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R> config) {
+    this(null, resourceClass, config);
   }
 
-  public PollingEventSource(
-      GenericResourceFetcher<R> supplier,
-      long period,
-      Class<R> resourceClass,
-      CacheKeyMapper<R> cacheKeyMapper) {
-    super(resourceClass, cacheKeyMapper);
-    this.genericResourceFetcher = supplier;
-    this.period = period;
+  public PollingEventSource(String name, Class<R> resourceClass, PollingConfiguration<R> config) {
+    super(name, resourceClass, config.cacheKeyMapper());
+    this.genericResourceFetcher = config.genericResourceFetcher();
+    this.period = config.period();
   }
 
   @Override
@@ -89,8 +83,8 @@ public class PollingEventSource<R, P extends HasMetadata>
             }
           }
         },
-        period,
-        period);
+        period.toMillis(),
+        period.toMillis());
   }
 
   protected synchronized void getStateAndFillCache() {

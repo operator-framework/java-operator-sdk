@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.changenamespace;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,14 +20,14 @@ public class ChangeNamespaceTestReconciler
       new ConcurrentHashMap<>();
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<ChangeNamespaceTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, ChangeNamespaceTestCustomResource> configMapES =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .build(), context);
 
-    return EventSourceUtils.nameEventSources(configMapES);
+    return List.of(configMapES);
   }
 
   @Override

@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache.sample;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -69,7 +70,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<P> context) {
 
     var boundedItemStore =
@@ -82,7 +83,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
             Mappers.fromOwnerReference(this instanceof BoundedCacheClusterScopeTestReconciler))
         .build(), context);
 
-    return EventSourceUtils.nameEventSources(es);
+    return List.of(es);
   }
 
   private void ensureStatus(P resource) {

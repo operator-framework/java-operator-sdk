@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.complexdependent;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.Service;
@@ -51,16 +51,17 @@ public class ComplexDependentReconciler implements Reconciler<ComplexDependentCu
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<ComplexDependentCustomResource> context) {
     InformerEventSource<Service, ComplexDependentCustomResource> serviceEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Service.class, context).build(),
+        new InformerEventSource<>(SERVICE_EVENT_SOURCE_NAME,
+            InformerConfiguration.from(Service.class, context).build(),
             context);
     InformerEventSource<StatefulSet, ComplexDependentCustomResource> statefulSetEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(StatefulSet.class, context).build(),
+        new InformerEventSource<>(STATEFUL_SET_EVENT_SOURCE_NAME,
+            InformerConfiguration.from(StatefulSet.class, context).build(),
             context);
-    return Map.of(SERVICE_EVENT_SOURCE_NAME, serviceEventSource, STATEFUL_SET_EVENT_SOURCE_NAME,
-        statefulSetEventSource);
+    return List.of(serviceEventSource, statefulSetEventSource);
   }
 
   public enum RECONCILE_STATUS {

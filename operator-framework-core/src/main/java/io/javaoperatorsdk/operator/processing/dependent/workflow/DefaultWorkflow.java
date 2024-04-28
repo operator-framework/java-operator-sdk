@@ -148,14 +148,10 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     return resources;
   }
 
-  public Map<String, DependentResource> getDependentResourcesByNameWithoutActivationCondition() {
-    final var resources = new HashMap<String, DependentResource>(dependentResourceNodes.size());
-    dependentResourceNodes
-        .forEach((name, node) -> {
-          if (node.getActivationCondition().isEmpty()) {
-            resources.put(name, node.getDependentResource());
-          }
-        });
-    return resources;
+  public List<DependentResource> getDependentResourcesWithoutActivationCondition() {
+    return dependentResourceNodes.values().stream()
+        .filter(n -> n.getActivationCondition().isEmpty())
+        .map(DependentResourceNode::getDependentResource)
+        .toList();
   }
 }

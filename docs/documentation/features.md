@@ -533,7 +533,7 @@ public class TomcatReconciler implements Reconciler<Tomcat> {
                       .withSecondaryToPrimaryMapper(
                               Mappers.fromAnnotation(ANNOTATION_NAME, ANNOTATION_NAMESPACE)
                                       .build(), context));
-      return EventSourceUtils.nameEventSources(configMapEventSource);
+      return List.of(configMapEventSource);
    }
   
 }
