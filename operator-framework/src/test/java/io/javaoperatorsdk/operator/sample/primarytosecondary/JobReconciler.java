@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.primarytosecondary;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -61,7 +60,7 @@ public class JobReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<Job> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<Job> context) {
     context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
@@ -79,8 +78,7 @@ public class JobReconciler
               primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
     }
 
-    return EventSourceUtils
-        .nameEventSources(new InformerEventSource<>(informerConfiguration.build(), context));
+    return List.of(new InformerEventSource<>(informerConfiguration.build(), context));
   }
 
   private String indexKey(String clusterName, String namespace) {

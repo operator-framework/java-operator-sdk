@@ -28,4 +28,13 @@ public interface EventSource extends LifecycleAware, EventSourceHealthIndicator 
   default Status getStatus() {
     return Status.UNKNOWN;
   }
+
+  default String name() {
+    return generateName(this);
+  }
+
+  static String generateName(EventSource eventSource) {
+    return eventSource.getClass().getName() + "@" + Integer.toHexString(eventSource.hashCode());
+  }
+
 }

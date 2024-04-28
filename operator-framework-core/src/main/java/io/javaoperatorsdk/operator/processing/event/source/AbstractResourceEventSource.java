@@ -17,6 +17,11 @@ public abstract class AbstractResourceEventSource<R, P extends HasMetadata>
   protected GenericFilter<? super R> genericFilter;
 
   protected AbstractResourceEventSource(Class<R> resourceClass) {
+    this(resourceClass, resourceClass.getName());
+  }
+
+  protected AbstractResourceEventSource(Class<R> resourceClass, String name) {
+    super(name);
     this.resourceClass = resourceClass;
   }
 

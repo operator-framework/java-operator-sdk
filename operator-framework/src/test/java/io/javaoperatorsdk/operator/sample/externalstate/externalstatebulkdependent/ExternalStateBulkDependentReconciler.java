@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent;
 
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -33,11 +33,11 @@ public class ExternalStateBulkDependentReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
         InformerConfiguration.from(ConfigMap.class, context).build(), context);
-    return EventSourceUtils.nameEventSources(configMapEventSource);
+    return List.of(configMapEventSource);
   }
 
 }
