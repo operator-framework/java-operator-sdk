@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection;
 
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -28,10 +29,9 @@ public class DependentGarbageCollectionTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<DependentGarbageCollectionTestCustomResource> context) {
-    return EventSourceUtils.nameEventSourcesFromDependentResource(context,
-        configMapDependent);
+    return EventSourceUtils.dependentEventSources(context, configMapDependent);
   }
 
   @Override

@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.informereventsource;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +32,7 @@ public class InformerEventSourceTestCustomReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<InformerEventSourceTestCustomResource> context) {
 
     InformerConfiguration<ConfigMap> config =
@@ -40,8 +40,7 @@ public class InformerEventSourceTestCustomReconciler
             .withSecondaryToPrimaryMapper(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
             .build();
 
-    return EventSourceUtils
-        .nameEventSources(new InformerEventSource<>(config, context));
+    return List.of(new InformerEventSource<>(config, context));
   }
 
   @Override

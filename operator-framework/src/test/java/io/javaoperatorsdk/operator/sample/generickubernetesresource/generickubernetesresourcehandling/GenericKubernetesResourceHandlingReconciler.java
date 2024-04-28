@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickube
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
@@ -64,13 +65,13 @@ public class GenericKubernetesResourceHandlingReconciler
 
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<GenericKubernetesResourceHandlingCustomResource> context) {
 
     var informerEventSource = new InformerEventSource<>(InformerConfiguration.from(
         new GroupVersionKind("", VERSION, KIND), context).build(),
         context);
 
-    return EventSourceUtils.nameEventSources(informerEventSource);
+    return List.of(informerEventSource);
   }
 }
