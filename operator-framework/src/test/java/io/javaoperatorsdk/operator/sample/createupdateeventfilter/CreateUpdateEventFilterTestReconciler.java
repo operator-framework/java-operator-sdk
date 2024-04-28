@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.createupdateeventfilter;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -11,7 +11,6 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -91,7 +90,7 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap> informerConfiguration =
         InformerConfiguration.from(ConfigMap.class)
@@ -102,7 +101,7 @@ public class CreateUpdateEventFilterTestReconciler
             informerConfiguration, context.getClient());
     this.configMapDR.setEventSource(informerEventSource);
 
-    return EventSourceUtils.nameEventSources(informerEventSource);
+    return List.of(informerEventSource);
   }
 
   public int getNumberOfExecutions() {
