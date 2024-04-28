@@ -104,4 +104,13 @@ public interface EventSource<R, P extends HasMetadata>
   default Status getStatus() {
     return Status.UNKNOWN;
   }
+
+  default String name() {
+    return generateName(this);
+  }
+
+  static String generateName(EventSource eventSource) {
+    return eventSource.getClass().getName() + "@" + Integer.toHexString(eventSource.hashCode());
+  }
+
 }
