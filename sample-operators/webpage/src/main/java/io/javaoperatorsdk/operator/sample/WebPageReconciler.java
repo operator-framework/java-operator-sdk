@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -42,7 +43,7 @@ public class WebPageReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .withLabelSelector(SELECTOR)
@@ -59,7 +60,7 @@ public class WebPageReconciler
         new InformerEventSource<>(InformerConfiguration.from(Ingress.class, context)
             .withLabelSelector(SELECTOR)
             .build(), context);
-    return EventSourceUtils.nameEventSources(configMapEventSource, deploymentEventSource,
+    return List.of(configMapEventSource, deploymentEventSource,
         serviceEventSource, ingressEventSource);
   }
 

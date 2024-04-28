@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,8 @@ public class MySQLSchemaOperator {
     operator.register(schemaReconciler,
         configOverrider -> configOverrider.replacingNamedDependentResourceConfig(
             SchemaDependentResource.NAME,
-            new ResourcePollerConfig(300, MySQLDbConfig.loadFromEnvironmentVars())));
+            new ResourcePollerConfig(Duration.ofMillis(300),
+                MySQLDbConfig.loadFromEnvironmentVars())));
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);

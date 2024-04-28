@@ -92,25 +92,25 @@ class EventSourceManagerTest {
   }
 
   @Test
-  void shouldNotBePossibleToAddEventSourcesForSameTypeAndName() {
+  void notPossibleAddEventSourcesForSameName() {
     EventSourceManager manager = initManager();
     final var name = "name1";
 
     ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
+    when(eventSource.name()).thenReturn(name);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
-    manager.registerEventSource(name, eventSource);
+    manager.registerEventSource(eventSource);
 
     eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
+    when(eventSource.name()).thenReturn(name);
     final var source = eventSource;
 
     final var exception = assertThrows(OperatorException.class,
-        () -> manager.registerEventSource(name, source));
+        () -> manager.registerEventSource(source));
     final var cause = exception.getCause();
     assertInstanceOf(IllegalArgumentException.class, cause);
-    assertThat(cause.getMessage()).contains(
-        "is already registered for the (io.javaoperatorsdk.operator.sample.simple.TestCustomResource, "
-            + name + ") class/name combination");
+    assertThat(cause.getMessage()).contains("is already registered with name");
   }
 
   @Test
@@ -119,11 +119,14 @@ class EventSourceManagerTest {
 
     ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(TestCustomResource.class);
-    manager.registerEventSource("name1", eventSource);
+    when(eventSource.name()).thenReturn("name1");
+    manager.registerEventSource(eventSource);
+
 
     ManagedInformerEventSource eventSource2 = mock(ManagedInformerEventSource.class);
+    when(eventSource2.name()).thenReturn("name2");
     when(eventSource2.resourceType()).thenReturn(TestCustomResource.class);
-    manager.registerEventSource("name2", eventSource2);
+    manager.registerEventSource(eventSource2);
 
     final var exception = assertThrows(IllegalArgumentException.class,
         () -> manager.getResourceEventSourceFor(TestCustomResource.class));
@@ -157,10 +160,11 @@ class EventSourceManagerTest {
     InformerConfiguration informerConfigurationMock = mock(InformerConfiguration.class);
     when(informerConfigurationMock.followControllerNamespaceChanges()).thenReturn(true);
     InformerEventSource informerEventSource = mock(InformerEventSource.class);
+    when(informerEventSource.name()).thenReturn("ies");
     when(informerEventSource.resourceType()).thenReturn(TestCustomResource.class);
     when(informerEventSource.configuration()).thenReturn(informerConfigurationMock);
     when(informerEventSource.allowsNamespaceChanges()).thenCallRealMethod();
-    manager.registerEventSource("ies", informerEventSource);
+    manager.registerEventSource(informerEventSource);
 
     manager.changeNamespaces(Set.of(newNamespaces));
 

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.clusterscopedresource;
 
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -52,12 +53,12 @@ public class ClusterScopedCustomResourceReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
     var ies = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
         .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference(true))
         .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
         .build(), context);
-    return EventSourceUtils.nameEventSources(ies);
+    return List.of(ies);
   }
 }
