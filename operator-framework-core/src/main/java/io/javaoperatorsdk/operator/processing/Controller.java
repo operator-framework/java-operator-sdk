@@ -36,7 +36,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
@@ -233,22 +232,17 @@ public class Controller<P extends HasMetadata>
 
     // register created event sources
     final var dependentResourcesByName =
-        managedWorkflow.getDependentResourcesByNameWithoutActivationCondition();
+        managedWorkflow.getDependentResourcesWithoutActivationCondition();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
-      dependentResourcesByName.forEach((key, dependentResource) -> {
-        if (dependentResource instanceof EventSourceProvider provider) {
-          final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(key, source);
-        } else {
-          Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
-          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es));
-        }
+      dependentResourcesByName.forEach(dependentResource -> {
+        Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
+        eventSource.ifPresent(eventSourceManager::registerEventSource);
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
       final Map<String, List<EventSourceReferencer>> unresolvable = new HashMap<>(size);
-      dependentResourcesByName.values().stream()
+      dependentResourcesByName.stream()
           .filter(EventSourceReferencer.class::isInstance)
           .map(EventSourceReferencer.class::cast)
           .forEach(dr -> {

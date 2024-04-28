@@ -28,9 +28,9 @@ public class DynamicGenericEventSourceRegistrationReconciler
 
     numberOfExecutions.addAndGet(1);
 
-    context.eventSourceRetriever().dynamicallyRegisterEventSource(ConfigMap.class.getSimpleName(),
+    context.eventSourceRetriever().dynamicallyRegisterEventSource(
         genericInformerFor(ConfigMap.class, context));
-    context.eventSourceRetriever().dynamicallyRegisterEventSource(Secret.class.getSimpleName(),
+    context.eventSourceRetriever().dynamicallyRegisterEventSource(
         genericInformerFor(Secret.class, context));
 
     context.getClient().resource(secret(primary)).createOr(NonDeletingOperation::update);
@@ -70,7 +70,7 @@ public class DynamicGenericEventSourceRegistrationReconciler
       Class<? extends HasMetadata> clazz,
       Context<DynamicGenericEventSourceRegistrationCustomResource> context) {
 
-    return new InformerEventSource<>(
+    return new InformerEventSource<>(clazz.getSimpleName(),
         InformerConfiguration.from(GroupVersionKind.gvkFor(clazz),
             context.eventSourceRetriever().eventSourceContextForDynamicRegistration()).build(),
         context.eventSourceRetriever().eventSourceContextForDynamicRegistration());
