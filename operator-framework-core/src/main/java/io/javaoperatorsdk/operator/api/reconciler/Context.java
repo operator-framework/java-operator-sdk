@@ -26,7 +26,6 @@ public interface Context<P extends HasMetadata> {
     return getSecondaryResources(expectedType).stream();
   }
 
-  @Deprecated(forRemoval = true)
   <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
 
   ControllerConfiguration<P> getControllerConfiguration();

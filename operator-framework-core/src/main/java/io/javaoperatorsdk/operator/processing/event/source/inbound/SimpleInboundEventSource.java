@@ -11,6 +11,12 @@ public class SimpleInboundEventSource extends AbstractEventSource {
 
   private static final Logger log = LoggerFactory.getLogger(SimpleInboundEventSource.class);
 
+  public SimpleInboundEventSource() {}
+
+  public SimpleInboundEventSource(String name) {
+    super(name);
+  }
+
   public void propagateEvent(ResourceID resourceID) {
     if (isRunning()) {
       getEventHandler().handleEvent(new Event(resourceID));
