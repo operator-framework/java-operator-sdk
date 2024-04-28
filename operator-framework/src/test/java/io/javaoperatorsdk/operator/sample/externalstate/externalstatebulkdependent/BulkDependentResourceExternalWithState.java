@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.externalstate.externalstatebulkdependent;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,7 +32,7 @@ public class BulkDependentResourceExternalWithState extends
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   public BulkDependentResourceExternalWithState() {
-    super(ExternalResource.class, 300);
+    super(ExternalResource.class, Duration.ofMillis(300));
   }
 
   @Override

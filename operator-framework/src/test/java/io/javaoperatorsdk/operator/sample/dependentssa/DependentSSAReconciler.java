@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.dependentssa;
 
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -57,9 +57,9 @@ public class DependentSSAReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource> prepareEventSources(
       EventSourceContext<DependentSSACustomResource> context) {
-    return EventSourceUtils.nameEventSourcesFromDependentResource(context,
+    return EventSourceUtils.dependentEventSources(context,
         ssaConfigMapDependent);
   }
 }

@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -41,7 +41,7 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     // initializes the dependents' event sources from the given context
     return EventSourceUtils.eventSourcesFromWorkflow(context, workflow);
   }
@@ -91,6 +91,7 @@ public class WebPageStandaloneDependentsReconciler
     var deploymentDR = new DeploymentDependentResource();
     var serviceDR = new ServiceDependentResource();
     var ingressDR = new IngressDependentResource();
+
 
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
