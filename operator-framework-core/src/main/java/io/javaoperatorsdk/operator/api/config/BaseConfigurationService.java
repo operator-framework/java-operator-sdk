@@ -178,6 +178,12 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         public boolean isExplicitInvocation() {
           return workflowAnnotation.explicitInvocation();
         }
+
+        @Override
+        public boolean handleExceptionsInReconciler() {
+          return workflowAnnotation.handleExceptionsInReconciler();
+        }
+
       };
       config.setWorkflowSpec(workflowSpec);
     }
