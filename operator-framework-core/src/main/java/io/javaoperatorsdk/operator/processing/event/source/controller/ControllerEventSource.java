@@ -26,7 +26,7 @@ public class ControllerEventSource<T extends HasMetadata>
     implements ResourceEventHandler<T> {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerEventSource.class);
-  private static final String NAME = "ControllerResourceEventSource";
+  public static final String NAME = "ControllerResourceEventSource";
 
   private final Controller<T> controller;
 

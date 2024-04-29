@@ -142,7 +142,7 @@ class InformerRelatedBehaviorITS {
 
     InformerHealthIndicator controllerHealthIndicator =
         (InformerHealthIndicator) unhealthyEventSources
-            .get(ControllerEventSource.class.getSimpleName())
+            .get(ControllerEventSource.NAME)
             .informerHealthIndicators().get(additionalNamespace);
     assertThat(controllerHealthIndicator).isNotNull();
     assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
@@ -269,13 +269,13 @@ class InformerRelatedBehaviorITS {
         operator.getRuntimeInfo().unhealthyEventSources()
             .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(unhealthyEventSources).isNotEmpty();
-    assertThat(unhealthyEventSources.get(ControllerEventSource.class.getSimpleName()))
+    assertThat(unhealthyEventSources.get(ControllerEventSource.NAME))
         .isNotNull();
     var informerHealthIndicators = operator.getRuntimeInfo()
         .unhealthyInformerWrappingEventSourceHealthIndicator()
         .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(informerHealthIndicators).isNotEmpty();
-    assertThat(informerHealthIndicators.get(ControllerEventSource.class.getSimpleName())
+    assertThat(informerHealthIndicators.get(ControllerEventSource.NAME)
         .informerHealthIndicators())
         .hasSize(1);
   }

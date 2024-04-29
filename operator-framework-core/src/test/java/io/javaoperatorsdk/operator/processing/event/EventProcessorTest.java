@@ -66,7 +66,7 @@ class EventProcessorTest {
       mock(ReconciliationDispatcher.class);
   private final EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
   private final TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
-  private final ControllerEventSource controllerResourceEventSourceMock =
+  private final ControllerEventSource controllerEventSourceMock =
       mock(ControllerEventSource.class);
   private final Metrics metricsMock = mock(Metrics.class);
   private EventProcessor eventProcessor;
@@ -75,8 +75,8 @@ class EventProcessorTest {
 
   @BeforeEach
   void setup() {
-    when(eventSourceManagerMock.getControllerResourceEventSource())
-        .thenReturn(controllerResourceEventSourceMock);
+    when(eventSourceManagerMock.getControllerEventSource())
+        .thenReturn(controllerEventSourceMock);
     eventProcessor =
         spy(new EventProcessor(controllerConfiguration(null, rateLimiterMock),
             reconciliationDispatcherMock,
@@ -103,7 +103,7 @@ class EventProcessorTest {
   @Test
   void skipProcessingIfLatestCustomResourceNotInCache() {
     Event event = prepareCREvent();
-    when(controllerResourceEventSourceMock.get(event.getRelatedCustomResourceID()))
+    when(controllerEventSourceMock.get(event.getRelatedCustomResourceID()))
         .thenReturn(Optional.empty());
 
     eventProcessor.handleEvent(event);
@@ -275,7 +275,7 @@ class EventProcessorTest {
             LinearRateLimiter.deactivatedRateLimiter()), reconciliationDispatcherMock,
             eventSourceManagerMock,
             metricsMock));
-    when(controllerResourceEventSourceMock.get(eq(crID)))
+    when(controllerEventSourceMock.get(eq(crID)))
         .thenReturn(Optional.of(testCustomResource()));
     eventProcessor.handleEvent(new Event(crID));
 
@@ -297,7 +297,7 @@ class EventProcessorTest {
 
     eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
 
-    verify(controllerResourceEventSourceMock, times(0)).handleRecentResourceUpdate(any(), any(),
+    verify(controllerEventSourceMock, times(0)).handleRecentResourceUpdate(any(), any(),
         any());
   }
 
@@ -468,7 +468,7 @@ class EventProcessorTest {
   }
 
   private ResourceEvent prepareCREvent(HasMetadata hasMetadata) {
-    when(controllerResourceEventSourceMock.get(eq(ResourceID.fromResource(hasMetadata))))
+    when(controllerEventSourceMock.get(eq(ResourceID.fromResource(hasMetadata))))
         .thenReturn(Optional.of(hasMetadata));
     return new ResourceEvent(ResourceAction.UPDATED,
         ResourceID.fromResource(hasMetadata), hasMetadata);
@@ -476,7 +476,7 @@ class EventProcessorTest {
 
   private ResourceEvent prepareCREvent(ResourceID resourceID) {
     TestCustomResource customResource = testCustomResource(resourceID);
-    when(controllerResourceEventSourceMock.get(eq(resourceID)))
+    when(controllerEventSourceMock.get(eq(resourceID)))
         .thenReturn(Optional.of(customResource));
     return new ResourceEvent(ResourceAction.UPDATED,
         ResourceID.fromResource(customResource), customResource);

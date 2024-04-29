@@ -103,7 +103,7 @@ public class Controller<P extends HasMetadata>
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
     eventSourceContext = new EventSourceContext<>(
-        eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+        eventSourceManager.getControllerEventSource(), configuration, kubernetesClient);
     initAndRegisterEventSources(eventSourceContext);
     configurationService.getMetrics().controllerRegistered(this);
   }

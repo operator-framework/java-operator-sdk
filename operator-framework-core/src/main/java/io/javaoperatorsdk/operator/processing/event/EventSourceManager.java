@@ -194,7 +194,7 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.allEventSources().toList();
   }
 
-  public ControllerEventSource<P> getControllerResourceEventSource() {
+  public ControllerEventSource<P> getControllerEventSource() {
     return eventSources.controllerEventSource();
   }
 

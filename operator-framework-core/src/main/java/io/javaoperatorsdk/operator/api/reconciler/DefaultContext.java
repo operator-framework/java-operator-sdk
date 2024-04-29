@@ -44,7 +44,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public IndexedResourceCache<P> getPrimaryCache() {
-    return controller.getEventSourceManager().getControllerResourceEventSource();
+    return controller.getEventSourceManager().getControllerEventSource();
   }
 
   @Override

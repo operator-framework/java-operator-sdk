@@ -52,7 +52,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this(
         eventSourceManager.getController().getConfiguration(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()), eventSourceManager,
-        configurationService.getMetrics(), eventSourceManager.getControllerResourceEventSource());
+        configurationService.getMetrics(), eventSourceManager.getControllerEventSource());
   }
 
   @SuppressWarnings("rawtypes")
@@ -64,7 +64,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this(
         controllerConfiguration,
         reconciliationDispatcher, eventSourceManager, metrics,
-        eventSourceManager.getControllerResourceEventSource());
+        eventSourceManager.getControllerEventSource());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

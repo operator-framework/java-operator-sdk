@@ -75,11 +75,6 @@ class EventSources<R extends HasMetadata> {
     sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
   }
 
-  @SuppressWarnings("rawtypes")
-  private Class<?> getResourceType(EventSource source) {
-    return source.resourceType();
-  }
-
   private String keyFor(EventSource source) {
     return keyFor(source.resourceType());
   }
