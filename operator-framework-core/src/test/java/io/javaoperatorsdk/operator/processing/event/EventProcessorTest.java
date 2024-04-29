@@ -22,7 +22,7 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
@@ -66,8 +66,8 @@ class EventProcessorTest {
       mock(ReconciliationDispatcher.class);
   private final EventSourceManager eventSourceManagerMock = mock(EventSourceManager.class);
   private final TimerEventSource retryTimerEventSourceMock = mock(TimerEventSource.class);
-  private final ControllerResourceEventSource controllerResourceEventSourceMock =
-      mock(ControllerResourceEventSource.class);
+  private final ControllerEventSource controllerResourceEventSourceMock =
+      mock(ControllerEventSource.class);
   private final Metrics metricsMock = mock(Metrics.class);
   private EventProcessor eventProcessor;
   private EventProcessor eventProcessorWithRetry;

@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
 
@@ -142,7 +142,7 @@ class InformerRelatedBehaviorITS {
 
     InformerHealthIndicator controllerHealthIndicator =
         (InformerHealthIndicator) unhealthyEventSources
-            .get(ControllerResourceEventSource.class.getSimpleName())
+            .get(ControllerEventSource.class.getSimpleName())
             .informerHealthIndicators().get(additionalNamespace);
     assertThat(controllerHealthIndicator).isNotNull();
     assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
@@ -269,13 +269,13 @@ class InformerRelatedBehaviorITS {
         operator.getRuntimeInfo().unhealthyEventSources()
             .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(unhealthyEventSources).isNotEmpty();
-    assertThat(unhealthyEventSources.get(ControllerResourceEventSource.class.getSimpleName()))
+    assertThat(unhealthyEventSources.get(ControllerEventSource.class.getSimpleName()))
         .isNotNull();
     var informerHealthIndicators = operator.getRuntimeInfo()
         .unhealthyInformerWrappingEventSourceHealthIndicator()
         .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(informerHealthIndicators).isNotEmpty();
-    assertThat(informerHealthIndicators.get(ControllerResourceEventSource.class.getSimpleName())
+    assertThat(informerHealthIndicators.get(ControllerEventSource.class.getSimpleName())
         .informerHealthIndicators())
         .hasSize(1);
   }

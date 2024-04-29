@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 /**
  * An interface to implement and provide dependent resource support.
@@ -44,7 +44,7 @@ public interface DependentResource<R, P extends HasMetadata> {
    * @param eventSourceContext context of event source initialization
    * @return an optional event source
    */
-  default Optional<? extends ResourceEventSource<R, P>> eventSource(
+  default Optional<? extends EventSource<R, P>> eventSource(
       EventSourceContext<P> eventSourceContext) {
     return Optional.empty();
   }

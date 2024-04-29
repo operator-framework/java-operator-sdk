@@ -7,14 +7,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
 class EventSources<R extends HasMetadata> {
@@ -23,15 +21,15 @@ class EventSources<R extends HasMetadata> {
       new ConcurrentSkipListMap<>();
   private final TimerEventSource<R> retryAndRescheduleTimerEventSource =
       new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
-  private ControllerResourceEventSource<R> controllerResourceEventSource;
+  private ControllerEventSource<R> controllerEventSource;
 
 
   void createControllerEventSource(Controller<R> controller) {
-    controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
+    controllerEventSource = new ControllerEventSource<>(controller);
   }
 
-  ControllerResourceEventSource<R> controllerResourceEventSource() {
-    return controllerResourceEventSource;
+  public ControllerEventSource<R> controllerEventSource() {
+    return controllerEventSource;
   }
 
   TimerEventSource<R> retryEventSource() {
@@ -40,7 +38,7 @@ class EventSources<R extends HasMetadata> {
 
   public Stream<EventSource> allEventSources() {
     return Stream.concat(
-        Stream.of(controllerResourceEventSource(), retryAndRescheduleTimerEventSource),
+        Stream.of(controllerEventSource(), retryAndRescheduleTimerEventSource),
         flatMappedSources());
   }
 
@@ -79,13 +77,11 @@ class EventSources<R extends HasMetadata> {
 
   @SuppressWarnings("rawtypes")
   private Class<?> getResourceType(EventSource source) {
-    return source instanceof ResourceEventSource
-        ? ((ResourceEventSource) source).resourceType()
-        : source.getClass();
+    return source.resourceType();
   }
 
   private String keyFor(EventSource source) {
-    return keyFor(getResourceType(source));
+    return keyFor(source.resourceType());
   }
 
   private String keyFor(Class<?> dependentType) {
@@ -93,7 +89,7 @@ class EventSources<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  public <S> ResourceEventSource<S, R> get(Class<S> dependentType, String name) {
+  public <S> EventSource<S, R> get(Class<S> dependentType, String name) {
     if (dependentType == null) {
       throw new IllegalArgumentException("Must pass a dependent type to retrieve event sources");
     }
@@ -123,20 +119,14 @@ class EventSources<R extends HasMetadata> {
       }
     }
 
-    if (!(source instanceof ResourceEventSource)) {
-      throw new IllegalArgumentException(source + " associated with "
-          + keyAsString(dependentType, name) + " is not a "
-          + ResourceEventSource.class.getSimpleName());
-    }
-    final var res = (ResourceEventSource<S, R>) source;
-    final var resourceClass = res.resourceType();
+    final var resourceClass = source.resourceType();
     if (!resourceClass.isAssignableFrom(dependentType)) {
       throw new IllegalArgumentException(source + " associated with "
           + keyAsString(dependentType, name)
           + " is handling " + resourceClass.getName() + " resources but asked for "
           + dependentType.getName());
     }
-    return res;
+    return source;
   }
 
   @SuppressWarnings("rawtypes")
@@ -147,16 +137,14 @@ class EventSources<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  public <S> List<ResourceEventSource<S, R>> getEventSources(Class<S> dependentType) {
+  public <S> List<EventSource<S, R>> getEventSources(Class<S> dependentType) {
     final var sourcesForType = sources.get(keyFor(dependentType));
     if (sourcesForType == null) {
       return Collections.emptyList();
     }
 
     return sourcesForType.values().stream()
-        .filter(ResourceEventSource.class::isInstance)
-        .map(es -> (ResourceEventSource<S, R>) es)
-        .collect(Collectors.toList());
+        .map(es -> (EventSource<S, R>) es).toList();
   }
 
   public EventSource remove(String name) {
