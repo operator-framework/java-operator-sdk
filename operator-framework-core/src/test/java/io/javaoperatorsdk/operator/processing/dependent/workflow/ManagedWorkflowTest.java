@@ -73,6 +73,11 @@ class ManagedWorkflowTest {
       public boolean isExplicitInvocation() {
         return false;
       }
+
+      @Override
+      public boolean handleExceptionsInReconciler() {
+        return false;
+      }
     };
     when(configuration.getWorkflowSpec()).thenReturn(Optional.of(ws));
 
