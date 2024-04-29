@@ -95,7 +95,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     final var top =
         topLevelResources.stream().map(alreadyResolved::get).collect(Collectors.toSet());
     return new DefaultWorkflow<>(alreadyResolved, bottom, top,
-        configuration.getWorkflowSpec().map(w -> !w.silentExceptionHandling()).orElseThrow(),
+        configuration.getWorkflowSpec().map(w -> !w.handleExceptionsInReconciler()).orElseThrow(),
         hasCleaner);
   }
 

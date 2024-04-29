@@ -11,5 +11,5 @@ public interface WorkflowSpec {
 
   boolean isExplicitInvocation();
 
-  boolean silentExceptionHandling();
+  boolean handleExceptionsInReconciler();
 }

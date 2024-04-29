@@ -5,8 +5,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.workflowsilentexceptionhandling.WorkflowSilentExceptionHandlingCustomResource;
-import io.javaoperatorsdk.operator.sample.workflowsilentexceptionhandling.WorkflowSilentExceptionHandlingReconciler;
+import io.javaoperatorsdk.operator.sample.workflowsilentexceptionhandling.HandleWorkflowExceptionsInReconcilerCustomResource;
+import io.javaoperatorsdk.operator.sample.workflowsilentexceptionhandling.HandleWorkflowExceptionsInReconcilerReconciler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -16,13 +16,14 @@ public class WorkflowSilentExceptionHandlingIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(WorkflowSilentExceptionHandlingReconciler.class)
+          .withReconciler(HandleWorkflowExceptionsInReconcilerReconciler.class)
           .build();
 
   @Test
-  void silentExceptionHandling() {
+  void handleExceptionsInReconciler() {
     extension.create(testResource());
-    var reconciler = extension.getReconcilerOfType(WorkflowSilentExceptionHandlingReconciler.class);
+    var reconciler =
+        extension.getReconcilerOfType(HandleWorkflowExceptionsInReconcilerReconciler.class);
 
     await().untilAsserted(() -> {
       assertThat(reconciler.isErrorsFoundInReconcilerResult()).isTrue();
@@ -35,8 +36,8 @@ public class WorkflowSilentExceptionHandlingIT {
     });
   }
 
-  WorkflowSilentExceptionHandlingCustomResource testResource() {
-    var res = new WorkflowSilentExceptionHandlingCustomResource();
+  HandleWorkflowExceptionsInReconcilerCustomResource testResource() {
+    var res = new HandleWorkflowExceptionsInReconcilerCustomResource();
     res.setMetadata(new ObjectMetaBuilder()
         .withName("test1")
         .build());

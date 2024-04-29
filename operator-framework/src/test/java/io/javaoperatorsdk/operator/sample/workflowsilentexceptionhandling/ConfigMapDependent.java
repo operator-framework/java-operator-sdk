@@ -7,21 +7,22 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
 public class ConfigMapDependent extends
-    CRUDNoGCKubernetesDependentResource<ConfigMap, WorkflowSilentExceptionHandlingCustomResource> {
+    CRUDNoGCKubernetesDependentResource<ConfigMap, HandleWorkflowExceptionsInReconcilerCustomResource> {
 
   public ConfigMapDependent() {
     super(ConfigMap.class);
   }
 
   @Override
-  public ReconcileResult<ConfigMap> reconcile(WorkflowSilentExceptionHandlingCustomResource primary,
-      Context<WorkflowSilentExceptionHandlingCustomResource> context) {
+  public ReconcileResult<ConfigMap> reconcile(
+      HandleWorkflowExceptionsInReconcilerCustomResource primary,
+      Context<HandleWorkflowExceptionsInReconcilerCustomResource> context) {
     throw new RuntimeException("Exception thrown on purpose");
   }
 
   @Override
-  public void delete(WorkflowSilentExceptionHandlingCustomResource primary,
-      Context<WorkflowSilentExceptionHandlingCustomResource> context) {
+  public void delete(HandleWorkflowExceptionsInReconcilerCustomResource primary,
+      Context<HandleWorkflowExceptionsInReconcilerCustomResource> context) {
     throw new RuntimeException("Exception thrown on purpose");
   }
 }

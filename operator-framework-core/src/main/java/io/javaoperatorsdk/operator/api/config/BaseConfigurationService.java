@@ -180,8 +180,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         }
 
         @Override
-        public boolean silentExceptionHandling() {
-          return workflowAnnotation.silentExceptionHandling();
+        public boolean handleExceptionsInReconciler() {
+          return workflowAnnotation.handleExceptionsInReconciler();
         }
 
       };

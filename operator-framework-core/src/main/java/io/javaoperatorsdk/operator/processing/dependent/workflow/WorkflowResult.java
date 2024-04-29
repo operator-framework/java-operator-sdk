@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -13,7 +14,7 @@ class WorkflowResult {
   private final Map<DependentResource, Exception> erroredDependents;
 
   WorkflowResult(Map<DependentResource, Exception> erroredDependents) {
-    this.erroredDependents = erroredDependents;
+    this.erroredDependents = erroredDependents != null ? erroredDependents : Collections.emptyMap();
   }
 
   public Map<DependentResource, Exception> getErroredDependents() {

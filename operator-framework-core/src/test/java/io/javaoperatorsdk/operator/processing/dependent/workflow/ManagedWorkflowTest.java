@@ -75,7 +75,7 @@ class ManagedWorkflowTest {
       }
 
       @Override
-      public boolean silentExceptionHandling() {
+      public boolean handleExceptionsInReconciler() {
         return false;
       }
     };
