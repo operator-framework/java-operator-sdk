@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
-import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {
@@ -96,7 +95,8 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     final var top =
         topLevelResources.stream().map(alreadyResolved::get).collect(Collectors.toSet());
     return new DefaultWorkflow<>(alreadyResolved, bottom, top,
-        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, hasCleaner);
+        configuration.getWorkflowSpec().map(w -> !w.handleExceptionsInReconciler()).orElseThrow(),
+        hasCleaner);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
