@@ -48,9 +48,9 @@ class EventSourceManagerTest {
   @Test
   public void closeShouldCascadeToEventSources() {
     EventSource eventSource = mock(EventSource.class);
-    when(eventSource.resourceType()).thenReturn(EventSource.class);
+    when(eventSource.name()).thenReturn("name1");
     EventSource eventSource2 = mock(TimerEventSource.class);
-    when(eventSource2.resourceType()).thenReturn(AbstractEventSource.class);
+    when(eventSource2.name()).thenReturn("name2");
 
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
@@ -65,11 +65,10 @@ class EventSourceManagerTest {
   public void startCascadesToEventSources() {
     EventSource eventSource = mock(EventSource.class);
     when(eventSource.priority()).thenReturn(EventSourceStartPriority.DEFAULT);
-    when(eventSource.resourceType()).thenReturn(EventSource.class);
+    when(eventSource.name()).thenReturn("name1");
     EventSource eventSource2 = mock(TimerEventSource.class);
     when(eventSource2.priority()).thenReturn(EventSourceStartPriority.DEFAULT);
-    when(eventSource2.resourceType()).thenReturn(AbstractEventSource.class);
-
+    when(eventSource2.name()).thenReturn("name2");
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
 
