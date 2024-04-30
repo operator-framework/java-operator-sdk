@@ -33,9 +33,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
     final var updatable = bulkDependentResource instanceof Updater;
     desiredResources.forEach((key, value) -> {
-      final var instance =
-          updatable ? new UpdatableBulkDependentResourceInstance<>(bulkDependentResource, value)
-              : new BulkDependentResourceInstance<>(bulkDependentResource, value);
+      final var instance = new BulkDependentResourceInstance<>(bulkDependentResource, value);
       results.add(instance.reconcile(primary, actualResources.get(key), context));
     });
 
@@ -67,7 +65,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
   @Ignore
   private static class BulkDependentResourceInstance<R, P extends HasMetadata>
       extends AbstractDependentResource<R, P>
-      implements Creator<R, P>, Deleter<P> {
+      implements Creator<R, P>, Deleter<P>, Updater<R, P> {
     private final BulkDependentResource<R, P> bulkDependentResource;
     private final R desired;
 
@@ -112,26 +110,24 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
       return asAbstractDependentResource().resourceType();
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
     public R create(R desired, P primary, Context<P> context) {
-      return bulkDependentResource.create(desired, primary, context);
+      return ((Creator<R, P>) bulkDependentResource).create(desired, primary, context);
     }
-  }
 
-  /**
-   * Makes sure that the instance implements Updater if its precursor does as well.
-   *
-   * @param <R>
-   * @param <P>
-   */
-  @Ignore
-  private static class UpdatableBulkDependentResourceInstance<R, P extends HasMetadata>
-      extends BulkDependentResourceInstance<R, P> implements Updater<R, P> {
+    @Override
+    protected boolean isCreatable() {
+      return bulkDependentResource instanceof Creator<?, ?>;
+    }
 
-    private UpdatableBulkDependentResourceInstance(
-        BulkDependentResource<R, P> bulkDependentResource,
-        R desired) {
-      super(bulkDependentResource, desired);
+    @Override
+    protected boolean isUpdatable() {
+      return bulkDependentResource instanceof Updater<?, ?>;
+    }
+
+    @Override
+    public boolean isDeletable() {
+      return bulkDependentResource instanceof Deleter<?>;
     }
   }
 }

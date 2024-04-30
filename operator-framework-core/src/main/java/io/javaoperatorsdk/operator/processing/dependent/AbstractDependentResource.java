@@ -60,7 +60,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected ReconcileResult<R> reconcile(P primary, R actualResource, Context<P> context) {
-    if (creatable || updatable) {
+    if (creatable() || updatable()) {
       if (actualResource == null) {
         if (creatable) {
           var desired = desired(primary, context);
@@ -70,7 +70,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
           return ReconcileResult.resourceCreated(createdResource);
         }
       } else {
-        if (updatable) {
+        if (updatable()) {
           final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
             final var desired = match.computedDesired().orElseGet(() -> desired(primary, context));
@@ -215,5 +215,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  protected boolean creatable() {
+    return creatable;
+  }
+
+  protected boolean updatable() {
+    return updatable;
   }
 }

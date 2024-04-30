@@ -11,10 +11,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkUpdater;
-import io.javaoperatorsdk.operator.processing.dependent.DependentResourceWithExplicitState;
-import io.javaoperatorsdk.operator.processing.dependent.Matcher;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.processing.dependent.*;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
@@ -25,8 +23,10 @@ public class BulkDependentResourceExternalWithState extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>
     implements
     BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
-    DependentResourceWithExplicitState<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap>,
-    BulkUpdater<ExternalResource, ExternalStateBulkDependentCustomResource> {
+    Creator<ExternalResource, ExternalStateBulkDependentCustomResource>,
+    Deleter<ExternalStateBulkDependentCustomResource>,
+    BulkUpdater<ExternalResource, ExternalStateBulkDependentCustomResource>,
+    DependentResourceWithExplicitState<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap> {
 
   public static final String DELIMITER = "-";
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
