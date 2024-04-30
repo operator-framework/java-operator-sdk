@@ -43,6 +43,11 @@ public class Mappers {
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
+      Class<? extends HasMetadata> primaryResourceType) {
+    return fromOwnerReferences(primaryResourceType, false);
+  }
+
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
       Class<? extends HasMetadata> primaryResourceType, boolean clusterScoped) {
     return fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceType),
         HasMetadata.getKind(primaryResourceType),
