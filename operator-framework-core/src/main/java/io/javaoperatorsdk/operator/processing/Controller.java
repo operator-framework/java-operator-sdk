@@ -43,7 +43,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanup
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -102,7 +102,7 @@ public class Controller<P extends HasMetadata>
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
     eventSourceContext = new EventSourceContext<>(
-        eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+        eventSourceManager.getControllerEventSource(), configuration, kubernetesClient);
     initAndRegisterEventSources(eventSourceContext);
     configurationService.getMetrics().controllerRegistered(this);
   }
@@ -240,7 +240,7 @@ public class Controller<P extends HasMetadata>
     final var size = dependentResourcesByName.size();
     if (size > 0) {
       dependentResourcesByName.forEach(dependentResource -> {
-        Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
+        Optional<EventSource> eventSource = dependentResource.eventSource(context);
         eventSource.ifPresent(eventSourceManager::registerEventSource);
       });
 
