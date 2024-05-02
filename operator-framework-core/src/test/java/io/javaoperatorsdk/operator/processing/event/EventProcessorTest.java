@@ -426,8 +426,8 @@ class EventProcessorTest {
                     eventSourceManagerMock, null));
     eventProcessor.start();
 
-    eventProcessor.handleEvent(prepareCREvent());
-    eventProcessor.handleEvent(prepareCREvent());
+    eventProcessor.handleEvent(prepareCREvent(new ResourceID("test1","default")));
+    eventProcessor.handleEvent(prepareCREvent(new ResourceID("test1","default")));
     eventProcessor.stop();
 
     // wait until both event should be handled
