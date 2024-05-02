@@ -44,20 +44,6 @@ public interface EventSource<R, P extends HasMetadata>
    */
   Class<R> resourceType();
 
-  /**
-   * Retrieves this EventSource's configuration if it exists.
-   *
-   * @return this EventSource's configuration if it exists
-   * @since 5.0.0
-   */
-  @SuppressWarnings({"rawtypes", "unused"})
-  default Optional<?> optionalConfiguration() {
-    if (this instanceof Configurable configurable) {
-      return Optional.ofNullable(configurable.configuration());
-    }
-    return Optional.empty();
-  }
-
   default Optional<R> getSecondaryResource(P primary) {
     var resources = getSecondaryResources(primary);
     if (resources.isEmpty()) {
@@ -67,7 +53,6 @@ public interface EventSource<R, P extends HasMetadata>
     } else {
       throw new IllegalStateException("More than 1 secondary resource related to primary");
     }
-
   }
 
   Set<R> getSecondaryResources(P primary);
