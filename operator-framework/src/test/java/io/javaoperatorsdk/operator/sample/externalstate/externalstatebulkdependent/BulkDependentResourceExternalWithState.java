@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.*;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
@@ -23,9 +22,7 @@ public class BulkDependentResourceExternalWithState extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>
     implements
     BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
-    Creator<ExternalResource, ExternalStateBulkDependentCustomResource>,
-    Deleter<ExternalStateBulkDependentCustomResource>,
-    BulkUpdater<ExternalResource, ExternalStateBulkDependentCustomResource>,
+    CRUDBulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
     DependentResourceWithExplicitState<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap> {
 
   public static final String DELIMITER = "-";

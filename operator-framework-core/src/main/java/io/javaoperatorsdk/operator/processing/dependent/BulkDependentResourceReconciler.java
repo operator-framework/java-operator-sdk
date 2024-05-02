@@ -24,8 +24,17 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
-    final var desiredResources = bulkDependentResource.desiredResources(primary, context);
+
     Map<String, R> actualResources = bulkDependentResource.getSecondaryResources(primary, context);
+    if (!(bulkDependentResource instanceof Creator<?, ?>)
+        && !(bulkDependentResource instanceof Deleter<?>)
+        && !(bulkDependentResource instanceof Updater<?, ?>)) {
+      return ReconcileResult
+          .aggregatedResult(actualResources.values().stream().map(ReconcileResult::noOperation)
+              .toList());
+    }
+
+    final var desiredResources = bulkDependentResource.desiredResources(primary, context);
 
     // remove existing resources that are not needed anymore according to the primary state
     deleteExtraResources(desiredResources.keySet(), actualResources, primary, context);
