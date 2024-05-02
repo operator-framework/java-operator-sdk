@@ -70,7 +70,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
-    this.operator = new Operator(getKubernetesClient(), configurationServiceOverrider);
+    this.operator = new Operator(
+        configurationServiceOverrider.andThen(o -> o.withKubernetesClient(getKubernetesClient())));
     this.registeredControllers = new HashMap<>();
   }
 

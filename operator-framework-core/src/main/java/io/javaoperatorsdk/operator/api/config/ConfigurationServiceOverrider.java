@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -67,19 +66,6 @@ public class ConfigurationServiceOverrider {
     return minValue != null ? (minValue < 0 ? 0 : minValue) + 1 : 1;
   }
 
-  public ConfigurationServiceOverrider withMinConcurrentReconciliationThreads(int threadNumber) {
-    this.minConcurrentReconciliationThreads = Utils.ensureValid(threadNumber,
-        "minimum reconciliation threads", ExecutorServiceManager.MIN_THREAD_NUMBER,
-        original.minConcurrentReconciliationThreads());
-    return this;
-  }
-
-  public ConfigurationServiceOverrider withMinConcurrentWorkflowExecutorThreads(int threadNumber) {
-    this.minConcurrentWorkflowExecutorThreads = Utils.ensureValid(threadNumber,
-        "minimum workflow execution threads", ExecutorServiceManager.MIN_THREAD_NUMBER,
-        original.minConcurrentWorkflowExecutorThreads());
-    return this;
-  }
 
   public ConfigurationServiceOverrider withDependentResourceFactory(
       DependentResourceFactory dependentResourceFactory) {
@@ -233,26 +219,6 @@ public class ConfigurationServiceOverrider {
             original.concurrentWorkflowExecutorThreads());
       }
 
-      /**
-       * @deprecated Not used anymore in the default implementation
-       */
-      @Deprecated(forRemoval = true)
-      @Override
-      public int minConcurrentReconciliationThreads() {
-        return overriddenValueOrDefault(minConcurrentReconciliationThreads,
-            ConfigurationService::minConcurrentReconciliationThreads);
-      }
-
-      /**
-       * @deprecated Not used anymore in the default implementation
-       */
-      @Override
-      @Deprecated(forRemoval = true)
-      public int minConcurrentWorkflowExecutorThreads() {
-        return overriddenValueOrDefault(minConcurrentWorkflowExecutorThreads,
-            ConfigurationService::minConcurrentWorkflowExecutorThreads);
-      }
-
       @Override
       public Metrics getMetrics() {
         return overriddenValueOrDefault(metrics, ConfigurationService::getMetrics);
@@ -341,15 +307,4 @@ public class ConfigurationServiceOverrider {
     };
   }
 
-  /**
-   * @deprecated Use
-   *             {@link ConfigurationService#newOverriddenConfigurationService(ConfigurationService, Consumer)}
-   *             instead
-   * @param original that will be overridden
-   * @return current overrider
-   */
-  @Deprecated(since = "2.2.0")
-  public static ConfigurationServiceOverrider override(ConfigurationService original) {
-    return new ConfigurationServiceOverrider(original);
-  }
 }

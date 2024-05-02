@@ -60,20 +60,6 @@ public class MicrometerMetrics implements Metrics {
   private final Cleaner cleaner;
 
   /**
-   * Creates a default micrometer-based Metrics implementation, collecting metrics on a per resource
-   * basis and not dealing with cleaning these after these resources are deleted. Note that this
-   * probably will change in a future release. If you want more control over what the implementation
-   * actually does, please use the static factory methods instead.
-   *
-   * @param registry the {@link MeterRegistry} instance to use for metrics recording
-   * @deprecated Use the factory methods / builders instead
-   */
-  @Deprecated
-  public MicrometerMetrics(MeterRegistry registry) {
-    this(registry, Cleaner.NOOP, true);
-  }
-
-  /**
    * Creates a MicrometerMetrics instance configured to not collect per-resource metrics, just
    * aggregates per resource **type**
    *
