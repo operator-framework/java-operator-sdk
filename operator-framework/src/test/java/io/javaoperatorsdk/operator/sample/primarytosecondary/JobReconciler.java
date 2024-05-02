@@ -48,7 +48,7 @@ public class JobReconciler
     } else {
       // reading the resource from cache as alternative, works without primary to secondary mapper
       var informerEventSource = (InformerEventSource<Cluster, Job>) context.eventSourceRetriever()
-          .getResourceEventSourceFor(Cluster.class);
+          .getEventSourceFor(Cluster.class);
       informerEventSource
           .get(new ResourceID(resource.getSpec().getClusterName(),
               resource.getMetadata().getNamespace()))
