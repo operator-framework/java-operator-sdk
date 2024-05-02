@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +82,7 @@ public class EventSourceManager<P extends HasMetadata>
         getThreadNamer("start"));
   }
 
+  @SuppressWarnings("rawtypes")
   private static Function<EventSource, String> getThreadNamer(String stage) {
     return es -> es.priority() + " " + stage + " -> " + es.name();
   }
@@ -106,7 +108,7 @@ public class EventSourceManager<P extends HasMetadata>
     }
   }
 
-  private Void startEventSource(EventSource eventSource) {
+  private <R> Void startEventSource(EventSource<R, P> eventSource) {
     try {
       logEventSourceEvent(eventSource, "Starting");
       eventSource.start();
@@ -119,7 +121,7 @@ public class EventSourceManager<P extends HasMetadata>
     return null;
   }
 
-  private Void stopEventSource(EventSource eventSource) {
+  private <R> Void stopEventSource(EventSource<R, P> eventSource) {
     try {
       logEventSourceEvent(eventSource, "Stopping");
       eventSource.stop();
@@ -131,7 +133,7 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @SuppressWarnings("rawtypes")
-  public final synchronized void registerEventSource(EventSource eventSource)
+  public final synchronized <R> void registerEventSource(EventSource<R, P> eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
@@ -184,14 +186,20 @@ public class EventSourceManager<P extends HasMetadata>
         getEventSourceThreadNamer("changeNamespace"));
   }
 
-  public Set<EventSource> getRegisteredEventSources() {
+  public Set<EventSource<?, P>> getRegisteredEventSources() {
     return eventSources.flatMappedSources()
-
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
+  @SuppressWarnings("rawtypes")
   public List<EventSource> allEventSources() {
     return eventSources.allEventSources().toList();
+  }
+
+
+  @SuppressWarnings("unused")
+  public Stream<? extends EventSource<?, P>> getEventSourcesStream() {
+    return eventSources.flatMappedSources();
   }
 
   public ControllerEventSource<P> getControllerEventSource() {
@@ -203,7 +211,7 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public EventSource dynamicallyRegisterEventSource(EventSource eventSource) {
+  public <R> EventSource<R, P> dynamicallyRegisterEventSource(EventSource<R, P> eventSource) {
     synchronized (this) {
       var actual = eventSources.existingEventSourceOfSameNameAndType(eventSource);
       if (actual != null) {
@@ -219,8 +227,10 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public synchronized Optional<EventSource> dynamicallyDeRegisterEventSource(String name) {
-    EventSource es = eventSources.remove(name);
+  public synchronized <R> Optional<EventSource<R, P>> dynamicallyDeRegisterEventSource(
+      String name) {
+    @SuppressWarnings("unchecked")
+    EventSource<R, P> es = eventSources.remove(name);
     if (es != null) {
       es.stop();
     }
