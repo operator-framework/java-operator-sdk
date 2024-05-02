@@ -29,8 +29,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-class ControllerResourceEventSourceTest extends
-    AbstractEventSourceTestBase<ControllerResourceEventSource<TestCustomResource>, EventHandler> {
+class ControllerEventSourceTest extends
+    AbstractEventSourceTestBase<ControllerEventSource<TestCustomResource>, EventHandler> {
 
   public static final String FINALIZER =
       ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
@@ -39,7 +39,7 @@ class ControllerResourceEventSourceTest extends
 
   @BeforeEach
   public void setup() {
-    setUpSource(new ControllerResourceEventSource<>(testController), true,
+    setUpSource(new ControllerEventSource<>(testController), true,
         new BaseConfigurationService());
   }
 
@@ -87,7 +87,7 @@ class ControllerResourceEventSourceTest extends
   @Test
   void handlesAllEventIfNotGenerationAware() {
     source =
-        new ControllerResourceEventSource<>(new TestController(false));
+        new ControllerEventSource<>(new TestController(false));
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
@@ -126,7 +126,7 @@ class ControllerResourceEventSourceTest extends
     OnAddFilter<TestCustomResource> onAddFilter = (res) -> false;
     OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
     source =
-        new ControllerResourceEventSource<>(
+        new ControllerEventSource<>(
             new TestController(onAddFilter, onUpdatePredicate, null));
     setUpSource(source);
 
@@ -141,7 +141,7 @@ class ControllerResourceEventSourceTest extends
     TestCustomResource cr = TestUtils.testCustomResource();
 
     source =
-        new ControllerResourceEventSource<>(new TestController(null, null, res -> false));
+        new ControllerEventSource<>(new TestController(null, null, res -> false));
     setUpSource(source);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);

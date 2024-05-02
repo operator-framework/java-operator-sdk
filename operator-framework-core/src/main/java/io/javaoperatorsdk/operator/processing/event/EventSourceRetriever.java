@@ -6,17 +6,16 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
 public interface EventSourceRetriever<P extends HasMetadata> {
 
-  default <R> ResourceEventSource<R, P> getResourceEventSourceFor(Class<R> dependentType) {
-    return getResourceEventSourceFor(dependentType, null);
+  default <R> EventSource<R, P> getEventSourceFor(Class<R> dependentType) {
+    return getEventSourceFor(dependentType, null);
   }
 
-  <R> ResourceEventSource<R, P> getResourceEventSourceFor(Class<R> dependentType, String name);
+  <R> EventSource<R, P> getEventSourceFor(Class<R> dependentType, String name);
 
-  <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType);
+  <R> List<EventSource<R, P>> getEventSourcesFor(Class<R> dependentType);
 
   /**
    * <p>
@@ -50,7 +49,7 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * @param eventSource to register
    * @return the actual event source registered. Might not be the same as the parameter.
    */
-  EventSource dynamicallyRegisterEventSource(EventSource eventSource);
+  <R> EventSource<R, P> dynamicallyRegisterEventSource(EventSource<R, P> eventSource);
 
   /**
    * De-registers (and stops) the {@link EventSource} associated with the specified name. If no such
@@ -68,7 +67,7 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * @param name of the event source
    * @return the actual event source deregistered if there is one.
    */
-  Optional<EventSource> dynamicallyDeRegisterEventSource(String name);
+  <R> Optional<EventSource<R, P>> dynamicallyDeRegisterEventSource(String name);
 
   EventSourceContext<P> eventSourceContextForDynamicRegistration();
 
