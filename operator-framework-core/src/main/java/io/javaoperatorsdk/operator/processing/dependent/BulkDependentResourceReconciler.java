@@ -36,8 +36,10 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
 
     final var desiredResources = bulkDependentResource.desiredResources(primary, context);
 
-    // remove existing resources that are not needed anymore according to the primary state
-    deleteExtraResources(desiredResources.keySet(), actualResources, primary, context);
+    if (bulkDependentResource instanceof Deleter<?>) {
+      // remove existing resources that are not needed anymore according to the primary state
+      deleteExtraResources(desiredResources.keySet(), actualResources, primary, context);
+    }
 
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
     desiredResources.forEach((key, value) -> {
