@@ -11,14 +11,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReference
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 @Ignore
-public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
+public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends EventSource<R, P>>
     extends AbstractDependentResource<R, P> implements EventSourceReferencer<P> {
 
   private T eventSource;
@@ -67,7 +67,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
     if (eventSourceNameToUse != null && eventSource == null) {
       final var source =
-          eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceNameToUse);
+          eventSourceRetriever.getEventSourceFor(resourceType(), eventSourceNameToUse);
       if (source == null) {
         throw new EventSourceNotFoundException(eventSourceNameToUse);
       }
