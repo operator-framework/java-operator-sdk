@@ -49,7 +49,7 @@ public class MultipleOwnerDependentConfigMap
       Context<MultipleOwnerDependentCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource> ies =
         (InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource>) context
-            .eventSourceRetriever().getResourceEventSourceFor(ConfigMap.class);
+            .eventSourceRetriever().getEventSourceFor(ConfigMap.class);
     return ies.get(new ResourceID(RESOURCE_NAME, primary.getMetadata().getNamespace()));
   }
 }
