@@ -31,7 +31,6 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     deleteExtraResources(desiredResources.keySet(), actualResources, primary, context);
 
     final List<ReconcileResult<R>> results = new ArrayList<>(desiredResources.size());
-    final var updatable = bulkDependentResource instanceof Updater;
     desiredResources.forEach((key, value) -> {
       final var instance = new BulkDependentResourceInstance<>(bulkDependentResource, value);
       results.add(instance.reconcile(primary, actualResources.get(key), context));
