@@ -32,8 +32,8 @@ public interface DependentResource<R, P extends HasMetadata> {
   Class<R> resourceType();
 
   /**
-   * Dependent resources are designed to provide event sources by default. There are, however, cases where
-   * they might not:
+   * Dependent resources are designed to provide event sources by default. There are, however, cases
+   * where they might not:
    * <ul>
    * <li>If an event source is shared between multiple dependent resources. In this case only one or
    * none of the dependent resources sharing the event source should provide one, if any.</li>
