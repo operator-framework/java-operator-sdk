@@ -28,7 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.source.*;
 
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
-    extends AbstractResourceEventSource<R, P>
+    extends AbstractEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
     RecentOperationCacheFiller<R>, NamespaceChangeable,
     InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {

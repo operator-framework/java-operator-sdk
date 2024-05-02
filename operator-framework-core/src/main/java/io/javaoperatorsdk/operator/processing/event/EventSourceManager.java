@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +23,7 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
@@ -51,7 +51,7 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   public void postProcessDefaultEventSourcesAfterProcessorInitializer() {
-    eventSources.controllerResourceEventSource().setEventHandler(controller.getEventProcessor());
+    eventSources.controllerEventSource().setEventHandler(controller.getEventProcessor());
     eventSources.retryEventSource().setEventHandler(controller.getEventProcessor());
   }
 
@@ -63,11 +63,11 @@ public class EventSourceManager<P extends HasMetadata>
    * {@link io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}).
    * <p>
    * Now the event sources are also started sequentially, mainly because others might depend on
-   * {@link ControllerResourceEventSource} , which is started first.
+   * {@link ControllerEventSource} , which is started first.
    */
   @Override
   public synchronized void start() {
-    startEventSource(eventSources.controllerResourceEventSource());
+    startEventSource(eventSources.controllerEventSource());
 
     executorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalEventSources()
@@ -82,6 +82,7 @@ public class EventSourceManager<P extends HasMetadata>
         getThreadNamer("start"));
   }
 
+  @SuppressWarnings("rawtypes")
   private static Function<EventSource, String> getThreadNamer(String stage) {
     return es -> es.priority() + " " + stage + " -> " + es.name();
   }
@@ -92,7 +93,7 @@ public class EventSourceManager<P extends HasMetadata>
 
   @Override
   public synchronized void stop() {
-    stopEventSource(eventSources.controllerResourceEventSource());
+    stopEventSource(eventSources.controllerEventSource());
     executorServiceManager.boundedExecuteAndWaitForAllToComplete(
         eventSources.additionalEventSources(),
         this::stopEventSource,
@@ -102,16 +103,12 @@ public class EventSourceManager<P extends HasMetadata>
   @SuppressWarnings("rawtypes")
   private void logEventSourceEvent(EventSource eventSource, String event) {
     if (log.isDebugEnabled()) {
-      if (eventSource instanceof ResourceEventSource source) {
-        log.debug("{} event source {} for {}", event, eventSource.name(),
-            source.resourceType());
-      } else {
-        log.debug("{} event source {}", event, eventSource.name());
-      }
+      log.debug("{} event source {} for {}", event, eventSource.name(),
+          eventSource.resourceType());
     }
   }
 
-  private Void startEventSource(EventSource eventSource) {
+  private <R> Void startEventSource(EventSource<R, P> eventSource) {
     try {
       logEventSourceEvent(eventSource, "Starting");
       eventSource.start();
@@ -124,7 +121,7 @@ public class EventSourceManager<P extends HasMetadata>
     return null;
   }
 
-  private Void stopEventSource(EventSource eventSource) {
+  private <R> Void stopEventSource(EventSource<R, P> eventSource) {
     try {
       logEventSourceEvent(eventSource, "Stopping");
       eventSource.stop();
@@ -136,7 +133,7 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @SuppressWarnings("rawtypes")
-  public final synchronized void registerEventSource(EventSource eventSource)
+  public final synchronized <R> void registerEventSource(EventSource<R, P> eventSource)
       throws OperatorException {
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
@@ -176,7 +173,7 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   public void changeNamespaces(Set<String> namespaces) {
-    eventSources.controllerResourceEventSource()
+    eventSources.controllerEventSource()
         .changeNamespaces(namespaces);
     executorServiceManager.boundedExecuteAndWaitForAllToComplete(eventSources
         .additionalEventSources()
@@ -189,26 +186,32 @@ public class EventSourceManager<P extends HasMetadata>
         getEventSourceThreadNamer("changeNamespace"));
   }
 
-  public Set<EventSource> getRegisteredEventSources() {
+  public Set<EventSource<?, P>> getRegisteredEventSources() {
     return eventSources.flatMappedSources()
-
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
+  @SuppressWarnings("rawtypes")
   public List<EventSource> allEventSources() {
     return eventSources.allEventSources().toList();
   }
 
-  public ControllerResourceEventSource<P> getControllerResourceEventSource() {
-    return eventSources.controllerResourceEventSource();
+
+  @SuppressWarnings("unused")
+  public Stream<? extends EventSource<?, P>> getEventSourcesStream() {
+    return eventSources.flatMappedSources();
   }
 
-  public <R> List<ResourceEventSource<R, P>> getResourceEventSourcesFor(Class<R> dependentType) {
+  public ControllerEventSource<P> getControllerEventSource() {
+    return eventSources.controllerEventSource();
+  }
+
+  public <R> List<EventSource<R, P>> getEventSourcesFor(Class<R> dependentType) {
     return eventSources.getEventSources(dependentType);
   }
 
   @Override
-  public EventSource dynamicallyRegisterEventSource(EventSource eventSource) {
+  public <R> EventSource<R, P> dynamicallyRegisterEventSource(EventSource<R, P> eventSource) {
     synchronized (this) {
       var actual = eventSources.existingEventSourceOfSameNameAndType(eventSource);
       if (actual != null) {
@@ -224,8 +227,10 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public synchronized Optional<EventSource> dynamicallyDeRegisterEventSource(String name) {
-    EventSource es = eventSources.remove(name);
+  public synchronized <R> Optional<EventSource<R, P>> dynamicallyDeRegisterEventSource(
+      String name) {
+    @SuppressWarnings("unchecked")
+    EventSource<R, P> es = eventSources.remove(name);
     if (es != null) {
       es.stop();
     }
@@ -237,20 +242,8 @@ public class EventSourceManager<P extends HasMetadata>
     return controller.eventSourceContext();
   }
 
-  /**
-   * @deprecated Use {@link #getResourceEventSourceFor(Class)} instead
-   *
-   * @param <R> target resource type
-   * @param dependentType target resource class
-   * @return list of related event sources
-   */
-  @Deprecated
-  public <R> List<ResourceEventSource<R, P>> getEventSourcesFor(Class<R> dependentType) {
-    return getResourceEventSourcesFor(dependentType);
-  }
-
   @Override
-  public <R> ResourceEventSource<R, P> getResourceEventSourceFor(
+  public <R> EventSource<R, P> getEventSourceFor(
       Class<R> dependentType, String name) {
     Objects.requireNonNull(dependentType, "dependentType is Mandatory");
     return eventSources.get(dependentType, name);
