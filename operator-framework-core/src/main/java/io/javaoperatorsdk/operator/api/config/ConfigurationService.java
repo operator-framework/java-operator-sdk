@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -456,12 +457,36 @@ public interface ConfigurationService {
    * either use simple patches or SSA. Setting this to {@code true}, controllers will use SSA for
    * adding finalizers, managing observed generation, patching resources and status.
    *
-   * @return {@code true} by default
+   * @return {@code true} if Server-Side Apply (SSA) should be used when patching the primary
+   *         resources, {@code false} otherwise
    * @since 5.0.0
    * @see ConfigurationServiceOverrider#withUseSSAToPatchPrimaryResource(boolean)
    */
   default boolean useSSAToPatchPrimaryResource() {
     return true;
+  }
+
+  /**
+   * <p>
+   * Determines whether resources retrieved from caches such as via calls to
+   * {@link Context#getSecondaryResource(Class)} should be defensively cloned first.
+   * </p>
+   * 
+   * <p>
+   * Defensive cloning to prevent problematic cache modifications (modifying the resource would
+   * otherwise modify the stored copy in the cache) was transparently done in previous JOSDK
+   * versions. This might have performance consequences and, with the more prevalent use of
+   * Server-Side Apply, where you should create a new copy of your resource with only modified
+   * fields, such modifications of these resources are less likely to occur.
+   * </p>
+   * 
+   * @return {@code true} if resources should be defensively cloned before returning them from
+   *         caches, {@code false} otherwise
+   * 
+   * @since 5.0.0
+   */
+  default boolean cloneSecondaryResourcesWhenGettingFromCache() {
+    return false;
   }
 
 }
