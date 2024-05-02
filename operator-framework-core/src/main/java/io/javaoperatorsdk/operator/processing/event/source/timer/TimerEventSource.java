@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.timer;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,17 +16,19 @@ import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
 public class TimerEventSource<R extends HasMetadata>
-    extends AbstractEventSource
+    extends AbstractEventSource<Void, HasMetadata>
     implements ResourceEventAware<R> {
   private static final Logger log = LoggerFactory.getLogger(TimerEventSource.class);
 
   private Timer timer;
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
 
-  public TimerEventSource() {}
+  public TimerEventSource() {
+    super(Void.class);
+  }
 
   public TimerEventSource(String name) {
-    super(name);
+    super(Void.class, name);
   }
 
   @SuppressWarnings("unused")
@@ -73,6 +76,11 @@ public class TimerEventSource<R extends HasMetadata>
       timer.cancel();
       super.stop();
     }
+  }
+
+  @Override
+  public Set<Void> getSecondaryResources(HasMetadata primary) {
+    return Set.of();
   }
 
   public class EventProducerTimeTask extends TimerTask {

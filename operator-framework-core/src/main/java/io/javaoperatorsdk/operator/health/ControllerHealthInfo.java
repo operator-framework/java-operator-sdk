@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 @SuppressWarnings("rawtypes")
 public class ControllerHealthInfo {
@@ -36,8 +37,7 @@ public class ControllerHealthInfo {
 
   /**
    * @return Map with event sources that wraps an informer. Thus, either a
-   *         {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
-   *         or an
+   *         {@link ControllerEventSource} or an
    *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
    */
   public Map<String, InformerWrappingEventSourceHealthIndicator> unhealthyInformerEventSourceHealthIndicators() {
