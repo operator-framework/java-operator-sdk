@@ -40,7 +40,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <P> primary resource
  */
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
-    extends AbstractResourceEventSource<R, P> implements RecentOperationCacheFiller<R> {
+    extends AbstractEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
   private static final Logger log =
       LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
