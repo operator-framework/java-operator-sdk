@@ -60,17 +60,17 @@ class EventSources<P extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   public <R> EventSource<R, P> existingEventSourceOfSameNameAndType(EventSource<R, P> source) {
-    return (EventSource<R, P>) existingEventSourceOfSameType(source).get(source.name());
+    return (EventSource<R, P>) existingEventSourcesOfSameType(source).get(source.name());
   }
 
-  private <R> Map<String, EventSource<?, P>> existingEventSourceOfSameType(
+  private <R> Map<String, EventSource<?, P>> existingEventSourcesOfSameType(
       EventSource<R, P> source) {
     return sources.getOrDefault(keyFor(source), Collections.emptyMap());
   }
 
   public <R> void add(EventSource<R, P> eventSource) {
     final var name = eventSource.name();
-    final var existing = existingEventSourceOfSameType(eventSource);
+    final var existing = existingEventSourcesOfSameType(eventSource);
     if (existing.get(name) != null) {
       throw new IllegalArgumentException("Event source " + existing
           + " is already registered with name: " + name);
