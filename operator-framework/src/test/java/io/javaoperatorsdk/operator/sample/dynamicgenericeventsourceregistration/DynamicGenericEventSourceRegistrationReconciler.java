@@ -37,7 +37,7 @@ public class DynamicGenericEventSourceRegistrationReconciler
     context.getClient().resource(configMap(primary)).createOr(NonDeletingOperation::update);
 
     numberOfEventSources.set(context.eventSourceRetriever()
-        .getResourceEventSourcesFor(GenericKubernetesResource.class).size());
+        .getEventSourcesFor(GenericKubernetesResource.class).size());
 
     return UpdateControl.noUpdate();
   }

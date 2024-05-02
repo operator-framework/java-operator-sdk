@@ -28,6 +28,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -215,8 +216,7 @@ public interface ConfigurationService {
    * <p>
    * if true, operator stops if there are some issues with informers
    * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} or
-   * {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
-   * on startup. Other event sources may also respect this flag.
+   * {@link ControllerEventSource} on startup. Other event sources may also respect this flag.
    * </p>
    * <p>
    * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and

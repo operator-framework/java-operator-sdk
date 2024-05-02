@@ -21,17 +21,17 @@ import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClient
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
-public class ControllerResourceEventSource<T extends HasMetadata>
+public class ControllerEventSource<T extends HasMetadata>
     extends ManagedInformerEventSource<T, T, ControllerConfiguration<T>>
     implements ResourceEventHandler<T> {
 
-  private static final Logger log = LoggerFactory.getLogger(ControllerResourceEventSource.class);
-  private static final String NAME = "ControllerResourceEventSource";
+  private static final Logger log = LoggerFactory.getLogger(ControllerEventSource.class);
+  public static final String NAME = "ControllerResourceEventSource";
 
   private final Controller<T> controller;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public ControllerResourceEventSource(Controller<T> controller) {
+  public ControllerEventSource(Controller<T> controller) {
     super(NAME, controller.getCRClient(), controller.getConfiguration(), false);
     this.controller = controller;
 

@@ -5,10 +5,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-public abstract class AbstractExternalDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
+public abstract class AbstractExternalDependentResource<R, P extends HasMetadata, T extends EventSource<R, P>>
     extends AbstractEventSourceHolderDependentResource<R, P, T> {
 
   private final boolean isDependentResourceWithExplicitState =
@@ -34,7 +34,7 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
       final var eventSourceName = (String) dependentResourceWithExplicitState
           .eventSourceName().orElse(null);
       externalStateEventSource = (InformerEventSource<?, P>) eventSourceRetriever
-          .getResourceEventSourceFor(dependentResourceWithExplicitState.stateResourceClass(),
+          .getEventSourceFor(dependentResourceWithExplicitState.stateResourceClass(),
               eventSourceName);
     }
 
