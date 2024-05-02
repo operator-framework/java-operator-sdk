@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Replaceable;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -91,7 +90,7 @@ public class WebPageReconciler
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
       kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
-          .createOr(Replaceable::update);
+          .serverSideApply();
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
@@ -101,7 +100,7 @@ public class WebPageReconciler
           desiredDeployment.getMetadata().getName(),
           ns);
       kubernetesClient.apps().deployments().inNamespace(ns).resource(desiredDeployment)
-          .createOr(Replaceable::update);
+          .serverSideApply();
     }
 
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
@@ -111,14 +110,14 @@ public class WebPageReconciler
           desiredDeployment.getMetadata().getName(),
           ns);
       kubernetesClient.services().inNamespace(ns).resource(desiredService)
-          .createOr(Replaceable::update);
+          .serverSideApply();
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
-        kubernetesClient.resource(desiredIngress).inNamespace(ns).createOr(Replaceable::update);
+        kubernetesClient.resource(desiredIngress).inNamespace(ns).serverSideApply();
       }
     } else
       existingIngress.ifPresent(
