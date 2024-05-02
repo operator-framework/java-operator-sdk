@@ -13,9 +13,10 @@ import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSourceStartPriority;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
@@ -34,10 +35,11 @@ class EventSourceManagerTest {
   @Test
   public void registersEventSource() {
     EventSource eventSource = mock(EventSource.class);
+    when(eventSource.resourceType()).thenReturn(EventSource.class);
 
     eventSourceManager.registerEventSource(eventSource);
 
-    Set<EventSource> registeredSources = eventSourceManager.getRegisteredEventSources();
+    final var registeredSources = eventSourceManager.getRegisteredEventSources();
     assertThat(registeredSources).contains(eventSource);
 
     verify(eventSource, times(1)).setEventHandler(any());
@@ -46,7 +48,9 @@ class EventSourceManagerTest {
   @Test
   public void closeShouldCascadeToEventSources() {
     EventSource eventSource = mock(EventSource.class);
+    when(eventSource.resourceType()).thenReturn(EventSource.class);
     EventSource eventSource2 = mock(TimerEventSource.class);
+    when(eventSource2.resourceType()).thenReturn(AbstractEventSource.class);
 
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
@@ -61,8 +65,11 @@ class EventSourceManagerTest {
   public void startCascadesToEventSources() {
     EventSource eventSource = mock(EventSource.class);
     when(eventSource.priority()).thenReturn(EventSourceStartPriority.DEFAULT);
+    when(eventSource.resourceType()).thenReturn(EventSource.class);
     EventSource eventSource2 = mock(TimerEventSource.class);
     when(eventSource2.priority()).thenReturn(EventSourceStartPriority.DEFAULT);
+    when(eventSource2.resourceType()).thenReturn(AbstractEventSource.class);
+
     eventSourceManager.registerEventSource(eventSource);
     eventSourceManager.registerEventSource(eventSource2);
 
@@ -75,18 +82,18 @@ class EventSourceManagerTest {
   @Test
   void retrievingEventSourceForClassShouldWork() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> eventSourceManager.getResourceEventSourceFor(Class.class));
+        .isThrownBy(() -> eventSourceManager.getEventSourceFor(Class.class));
 
     // manager is initialized with a controller configured to handle HasMetadata
     EventSourceManager manager = initManager();
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> manager.getResourceEventSourceFor(HasMetadata.class, "unknown_name"));
+        .isThrownBy(() -> manager.getEventSourceFor(HasMetadata.class, "unknown_name"));
 
     ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(String.class);
     manager.registerEventSource(eventSource);
 
-    var source = manager.getResourceEventSourceFor(String.class);
+    var source = manager.getEventSourceFor(String.class);
     assertThat(source).isNotNull();
     assertEquals(eventSource, source);
   }
@@ -129,13 +136,13 @@ class EventSourceManagerTest {
     manager.registerEventSource(eventSource2);
 
     final var exception = assertThrows(IllegalArgumentException.class,
-        () -> manager.getResourceEventSourceFor(TestCustomResource.class));
+        () -> manager.getEventSourceFor(TestCustomResource.class));
     assertTrue(exception.getMessage().contains("name1"));
     assertTrue(exception.getMessage().contains("name2"));
 
-    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name2"),
+    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name2"),
         eventSource2);
-    assertEquals(manager.getResourceEventSourceFor(TestCustomResource.class, "name1"),
+    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name1"),
         eventSource);
   }
 
@@ -152,8 +159,8 @@ class EventSourceManagerTest {
         MockKubernetesClient.client(HasMetadata.class));
 
     EventSources eventSources = spy(new EventSources());
-    var controllerResourceEventSourceMock = mock(ControllerResourceEventSource.class);
-    doReturn(controllerResourceEventSourceMock).when(eventSources).controllerResourceEventSource();
+    var controllerResourceEventSourceMock = mock(ControllerEventSource.class);
+    doReturn(controllerResourceEventSourceMock).when(eventSources).controllerEventSource();
     when(controllerResourceEventSourceMock.allowsNamespaceChanges()).thenCallRealMethod();
     var manager = new EventSourceManager(controller, eventSources);
 
