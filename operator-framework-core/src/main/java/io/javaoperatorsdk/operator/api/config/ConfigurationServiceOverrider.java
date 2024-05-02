@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,7 @@ public class ConfigurationServiceOverrider {
   private Boolean previousAnnotationForDependentResources;
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
+  private Boolean cloneSecondaryResourcesWhenGettingFromCache;
   private DependentResourceFactory dependentResourceFactory;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
@@ -180,6 +182,12 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public ConfigurationServiceOverrider withCloneSecondaryResourcesWhenGettingFromCache(
+      boolean value) {
+    this.cloneSecondaryResourcesWhenGettingFromCache = value;
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -187,22 +195,29 @@ public class ConfigurationServiceOverrider {
         return original.getKnownReconcilerNames();
       }
 
-      @Override
-      public boolean checkCRDAndValidateLocalModel() {
-        return checkCR != null ? checkCR : original.checkCRDAndValidateLocalModel();
+      private <T> T overriddenValueOrDefault(T value,
+          Function<ConfigurationService, T> defaultValue) {
+        return value != null ? value : defaultValue.apply(original);
       }
 
       @Override
+      public boolean checkCRDAndValidateLocalModel() {
+        return overriddenValueOrDefault(checkCR,
+            ConfigurationService::checkCRDAndValidateLocalModel);
+      }
+
+      @Override
+      @SuppressWarnings("rawtypes")
       public DependentResourceFactory dependentResourceFactory() {
-        return dependentResourceFactory != null ? dependentResourceFactory
-            : DependentResourceFactory.DEFAULT;
+        return overriddenValueOrDefault(dependentResourceFactory,
+            ConfigurationService::dependentResourceFactory);
       }
 
       @Override
       public int concurrentReconciliationThreads() {
         return Utils.ensureValid(
-            concurrentReconciliationThreads != null ? concurrentReconciliationThreads
-                : original.concurrentReconciliationThreads(),
+            overriddenValueOrDefault(concurrentReconciliationThreads,
+                ConfigurationService::concurrentReconciliationThreads),
             "maximum reconciliation threads",
             minimumMaxValueFor(minConcurrentReconciliationThreads),
             original.concurrentReconciliationThreads());
@@ -211,8 +226,8 @@ public class ConfigurationServiceOverrider {
       @Override
       public int concurrentWorkflowExecutorThreads() {
         return Utils.ensureValid(
-            concurrentWorkflowExecutorThreads != null ? concurrentWorkflowExecutorThreads
-                : original.concurrentWorkflowExecutorThreads(),
+            overriddenValueOrDefault(concurrentWorkflowExecutorThreads,
+                ConfigurationService::concurrentWorkflowExecutorThreads),
             "maximum workflow execution threads",
             minimumMaxValueFor(minConcurrentWorkflowExecutorThreads),
             original.concurrentWorkflowExecutorThreads());
@@ -224,8 +239,8 @@ public class ConfigurationServiceOverrider {
       @Deprecated(forRemoval = true)
       @Override
       public int minConcurrentReconciliationThreads() {
-        return minConcurrentReconciliationThreads != null ? minConcurrentReconciliationThreads
-            : original.minConcurrentReconciliationThreads();
+        return overriddenValueOrDefault(minConcurrentReconciliationThreads,
+            ConfigurationService::minConcurrentReconciliationThreads);
       }
 
       /**
@@ -234,30 +249,29 @@ public class ConfigurationServiceOverrider {
       @Override
       @Deprecated(forRemoval = true)
       public int minConcurrentWorkflowExecutorThreads() {
-        return minConcurrentWorkflowExecutorThreads != null ? minConcurrentWorkflowExecutorThreads
-            : original.minConcurrentWorkflowExecutorThreads();
+        return overriddenValueOrDefault(minConcurrentWorkflowExecutorThreads,
+            ConfigurationService::minConcurrentWorkflowExecutorThreads);
       }
 
       @Override
       public Metrics getMetrics() {
-        return metrics != null ? metrics : original.getMetrics();
+        return overriddenValueOrDefault(metrics, ConfigurationService::getMetrics);
       }
 
       @Override
       public boolean closeClientOnStop() {
-        return closeClientOnStop != null ? closeClientOnStop : original.closeClientOnStop();
+        return overriddenValueOrDefault(closeClientOnStop, ConfigurationService::closeClientOnStop);
       }
 
       @Override
       public ExecutorService getExecutorService() {
-        return executorService != null ? executorService
-            : super.getExecutorService();
+        return overriddenValueOrDefault(executorService, ConfigurationService::getExecutorService);
       }
 
       @Override
       public ExecutorService getWorkflowExecutorService() {
-        return workflowExecutorService != null ? workflowExecutorService
-            : super.getWorkflowExecutorService();
+        return overriddenValueOrDefault(workflowExecutorService,
+            ConfigurationService::getWorkflowExecutorService);
       }
 
       @Override
@@ -274,54 +288,55 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public boolean stopOnInformerErrorDuringStartup() {
-        return stopOnInformerErrorDuringStartup != null ? stopOnInformerErrorDuringStartup
-            : super.stopOnInformerErrorDuringStartup();
+        return overriddenValueOrDefault(stopOnInformerErrorDuringStartup,
+            ConfigurationService::stopOnInformerErrorDuringStartup);
       }
 
       @Override
       public Duration cacheSyncTimeout() {
-        return cacheSyncTimeout != null ? cacheSyncTimeout : super.cacheSyncTimeout();
+        return overriddenValueOrDefault(cacheSyncTimeout, ConfigurationService::cacheSyncTimeout);
       }
 
       @Override
       public ResourceClassResolver getResourceClassResolver() {
-        return resourceClassResolver != null ? resourceClassResolver
-            : super.getResourceClassResolver();
+        return overriddenValueOrDefault(resourceClassResolver,
+            ConfigurationService::getResourceClassResolver);
       }
 
       @Override
       public boolean ssaBasedCreateUpdateMatchForDependentResources() {
-        return ssaBasedCreateUpdateMatchForDependentResources != null
-            ? ssaBasedCreateUpdateMatchForDependentResources
-            : super.ssaBasedCreateUpdateMatchForDependentResources();
+        return overriddenValueOrDefault(ssaBasedCreateUpdateMatchForDependentResources,
+            ConfigurationService::ssaBasedCreateUpdateMatchForDependentResources);
       }
 
       @Override
       public Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
-        return defaultNonSSAResource != null ? defaultNonSSAResource
-            : super.defaultNonSSAResource();
+        return overriddenValueOrDefault(defaultNonSSAResource,
+            ConfigurationService::defaultNonSSAResource);
       }
 
       @Override
       public boolean previousAnnotationForDependentResourcesEventFiltering() {
-        return previousAnnotationForDependentResources != null
-            ? previousAnnotationForDependentResources
-            : super.previousAnnotationForDependentResourcesEventFiltering();
+        return overriddenValueOrDefault(previousAnnotationForDependentResources,
+            ConfigurationService::previousAnnotationForDependentResourcesEventFiltering);
       }
 
       @Override
       public boolean parseResourceVersionsForEventFilteringAndCaching() {
-        return parseResourceVersions != null
-            ? parseResourceVersions
-            : super.parseResourceVersionsForEventFilteringAndCaching();
+        return overriddenValueOrDefault(parseResourceVersions,
+            ConfigurationService::parseResourceVersionsForEventFilteringAndCaching);
       }
 
       @Override
       public boolean useSSAToPatchPrimaryResource() {
-        return useSSAToPatchPrimaryResource != null
-            ? useSSAToPatchPrimaryResource
-            : super.useSSAToPatchPrimaryResource();
+        return overriddenValueOrDefault(useSSAToPatchPrimaryResource,
+            ConfigurationService::useSSAToPatchPrimaryResource);
+      }
 
+      @Override
+      public boolean cloneSecondaryResourcesWhenGettingFromCache() {
+        return overriddenValueOrDefault(cloneSecondaryResourcesWhenGettingFromCache,
+            ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
       }
     };
   }
