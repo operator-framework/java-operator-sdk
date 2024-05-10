@@ -40,7 +40,7 @@ jobs:
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
       - name: Set up Minikube
-        uses: manusa/actions-setup-minikube@v2.10.0
+        uses: manusa/actions-setup-minikube@v2.11.0
         with:
           minikube version: v1.32.0
           kubernetes version: ${{ inputs.kube-version }}
