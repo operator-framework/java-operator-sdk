@@ -186,57 +186,6 @@ annotation. If you do not specify a finalizer name, one will be automatically ge
 
 From v5 by default finalizer is added using Served Side Apply. See also UpdateControl in docs.
 
-## Automatic Observed Generation Handling
-
-Having an `.observedGeneration` value on your resources' status is a best practice to
-indicate the last generation of the resource which was successfully reconciled by the controller.
-This helps users / administrators diagnose potential issues.
-
-In order to have this feature working:
-
-- the **status class** (not the resource itself) must implement the
-  [`ObservedGenerationAware`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAware.java)
-  interface. See also
-  the [`ObservedGenerationAwareStatus`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAwareStatus.java)
-  convenience implementation that you can extend in your own status class implementations.
-- The other condition is that the `CustomResource.getStatus()` method should not return `null`.
-  So the status should be instantiated when the object is returned using the `UpdateControl`.
-
-If these conditions are fulfilled and generation awareness is activated, the observed generation
-is automatically set by the framework after the `reconcile` method is called. 
-
-When using SSA based patches, the observed generation is only updated when `UpdateControl.patchStatus` or
-`UpdateControl.patchResourceAndStatus` is returned. In case the of non-SSA based patches
-the observed generation is also updated even when `UpdateControl.noUpdate()` is returned from the
-reconciler. 
-See this feature at work in the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5).
-See turning off an on the SSA based patching at [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385).
-
-```java
-public class WebPageStatus extends ObservedGenerationAwareStatus {
- // omitted code
-}
-```
-
-Initializing status automatically on custom resource could be done by overriding the `initStatus` method
-of `CustomResource`. However, this is NOT advised, since breaks the status patching if you use:
-`UpdateControl.patchStatus`. See
-also [javadocs](https://github.com/java-operator-sdk/java-operator-sdk/blob/3994f5ffc1fb000af81aa198abf72a5f75fd3e97/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java#L41-L42)
-.
-
-```java 
-@Group("sample.javaoperatorsdk")
-@Version("v1")
-public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
-    implements Namespaced {
-
-  @Override
-  protected WebPageStatus initStatus() {
-    return new WebPageStatus();
-  }
-}
-```
-
 ## Generation Awareness and Event Filtering
 
 A best practice when an operator starts up is to reconcile all the associated resources because
@@ -254,9 +203,7 @@ To turn off this feature, set `generationAwareEventProcessing` to `false` for th
 ## Support for Well Known (non-custom) Kubernetes Resources
 
 A Controller can be registered for a non-custom resource, so well known Kubernetes resources like (
-`Ingress`, `Deployment`,...). Note that automatic observed generation handling is not supported
-for these resources, though, in this case, the handling of the observed generation is probably
-handled by the primary controller.
+`Ingress`, `Deployment`,...).
 
 See
 the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/deployment/DeploymentReconciler.java)

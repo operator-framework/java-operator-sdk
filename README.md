@@ -40,7 +40,6 @@ It makes it easy to implement best practices and patterns for an Operator. Featu
 * Handling dependent resources, related events, and caching.
 * Automatic Retries
 * Smart event scheduling
-* Handling Observed Generations automatically
 * Easy to use Error Handling
 * ... and everything that a batteries included framework needs 
 

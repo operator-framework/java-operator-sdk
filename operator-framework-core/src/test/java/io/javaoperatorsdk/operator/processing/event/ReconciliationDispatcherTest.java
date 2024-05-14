@@ -436,29 +436,6 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void setObservedGenerationForStatusIfNeeded() throws Exception {
-    var observedGenResource = createObservedGenCustomResource();
-
-    Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
-    ControllerConfiguration<ObservedGenCustomResource> config =
-        MockControllerConfiguration.forResource(ObservedGenCustomResource.class);
-    CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
-    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
-
-    when(config.isGenerationAware()).thenReturn(true);
-
-    when(reconciler.reconcile(any(), any()))
-        .thenReturn(UpdateControl.patchStatus(observedGenResource));
-    when(facade.patchStatus(eq(observedGenResource), any())).thenReturn(observedGenResource);
-
-    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
-        executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
-        .getStatus().getObservedGeneration())
-        .isEqualTo(1L);
-  }
-
-  @Test
   void doesNotUpdatesObservedGenerationIfStatusIsNotPatchedWhenUsingSSA() throws Exception {
     var observedGenResource = createObservedGenCustomResource();
 
@@ -474,28 +451,6 @@ class ReconciliationDispatcherTest {
     PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
         executionScopeWithCREvent(observedGenResource));
     assertThat(control.getUpdatedCustomResource()).isEmpty();
-  }
-
-  @Test
-  void patchObservedGenerationOnCustomResourcePatchIfNoSSA() throws Exception {
-    var observedGenResource = createObservedGenCustomResource();
-
-    Reconciler<ObservedGenCustomResource> reconciler = mock(Reconciler.class);
-    final var config = MockControllerConfiguration.forResource(ObservedGenCustomResource.class);
-    CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
-    when(config.isGenerationAware()).thenReturn(true);
-    when(reconciler.reconcile(any(), any()))
-        .thenReturn(UpdateControl.patchResource(observedGenResource));
-    when(facade.patchResource(any(), any())).thenReturn(observedGenResource);
-    when(facade.patchStatus(eq(observedGenResource), any())).thenReturn(observedGenResource);
-    initConfigService(false);
-    var dispatcher = init(observedGenResource, reconciler, config, facade, true);
-
-    PostExecutionControl<ObservedGenCustomResource> control = dispatcher.handleExecution(
-        executionScopeWithCREvent(observedGenResource));
-    assertThat(control.getUpdatedCustomResource().orElseGet(() -> fail("Missing optional"))
-        .getStatus().getObservedGeneration())
-        .isEqualTo(1L);
   }
 
   @Test
