@@ -54,4 +54,5 @@ permalink: /docs/v5-0-migration
 9. `Operator.installShutdownHook()` has been removed, use `Operator.installShutdownHook(Duration)` instead
 10. Automated observed generation handling feature was removed, since it is trivial to do manually and
     since it cannot be done automatically in all cases with SSA, having different behavior for SSA and non-SSA
-    usage would be confusing.
+    usage would be confusing. See sample how to do observed generation handling manually 
+    [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manualobservedgeneration/ManualObservedGenerationReconciler.java).
