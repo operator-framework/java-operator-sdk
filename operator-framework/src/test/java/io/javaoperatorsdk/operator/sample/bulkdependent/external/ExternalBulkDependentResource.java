@@ -7,8 +7,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.BulkUpdater;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
@@ -16,6 +18,8 @@ import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomR
 public class ExternalBulkDependentResource
     extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource>
     implements BulkDependentResource<ExternalResource, BulkDependentTestCustomResource>,
+    Creator<ExternalResource, BulkDependentTestCustomResource>,
+    Deleter<BulkDependentTestCustomResource>,
     BulkUpdater<ExternalResource, BulkDependentTestCustomResource> {
 
   public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
