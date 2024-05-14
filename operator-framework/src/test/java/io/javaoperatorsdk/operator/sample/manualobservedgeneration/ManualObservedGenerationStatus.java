@@ -1,6 +1,6 @@
-package io.javaoperatorsdk.operator.sample.gracefulstop;
+package io.javaoperatorsdk.operator.sample.manualobservedgeneration;
 
-public class GracefulStopTestCustomResourceStatus {
+public class ManualObservedGenerationStatus {
 
   private long observedGeneration;
 
