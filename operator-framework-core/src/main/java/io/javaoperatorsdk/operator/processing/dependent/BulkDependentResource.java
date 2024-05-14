@@ -13,8 +13,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
  * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
  * implement additionally also {@link Updater}.
  */
-public interface BulkDependentResource<R, P extends HasMetadata>
-    extends Creator<R, P>, Deleter<P> {
+public interface BulkDependentResource<R, P extends HasMetadata> {
 
   /**
    * Retrieves a map of desired secondary resources associated with the specified primary resource,
@@ -26,7 +25,10 @@ public interface BulkDependentResource<R, P extends HasMetadata>
    * @return a Map associating desired secondary resources with the specified primary via arbitrary
    *         identifiers
    */
-  Map<String, R> desiredResources(P primary, Context<P> context);
+  default Map<String, R> desiredResources(P primary, Context<P> context) {
+    throw new IllegalStateException(
+        "Implement desiredResources in case a non read-only bulk dependent resource");
+  }
 
   /**
    * Retrieves the actual secondary resources currently existing on the server and associated with
