@@ -54,7 +54,7 @@
         <assertj.version>3.25.3</assertj.version>
         <awaitility.version>4.2.0</awaitility.version>
         <spring-boot.version>2.7.3</spring-boot.version>
-        <micrometer-core.version>1.12.5</micrometer-core.version>
+        <micrometer-core.version>1.13.0</micrometer-core.version>
         <okhttp.version>4.12.0</okhttp.version>
         <caffeine.version>3.1.8</caffeine.version>
         <jenvtest.version>0.9.6</jenvtest.version>
