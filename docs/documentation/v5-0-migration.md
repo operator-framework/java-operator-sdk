@@ -57,3 +57,6 @@ permalink: /docs/v5-0-migration
 8. `ConfigurationService.getTerminationTimeoutSeconds` and associated overriding mechanism have been removed,
    use `Operator.stop(Duration)` instead.
 9. `Operator.installShutdownHook()` has been removed, use `Operator.installShutdownHook(Duration)` instead
+10. Automated observed generation handling feature was removed, since it is trivial to do manually and
+    since it cannot be done automatically in all cases with SSA, having different behavior for SSA and non-SSA
+    usage would be confusing.
