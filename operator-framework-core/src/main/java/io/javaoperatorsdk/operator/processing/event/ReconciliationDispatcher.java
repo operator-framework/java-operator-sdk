@@ -168,9 +168,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-
-
-    // if using SSA the observed generation is updated only if user instructs patching the status
     if (updateControl.isPatchStatus()) {
       customResourceFacade.patchStatus(toUpdate, originalResource);
     }

@@ -203,9 +203,7 @@ To turn off this feature, set `generationAwareEventProcessing` to `false` for th
 ## Support for Well Known (non-custom) Kubernetes Resources
 
 A Controller can be registered for a non-custom resource, so well known Kubernetes resources like (
-`Ingress`, `Deployment`,...). Note that automatic observed generation handling is not supported
-for these resources, though, in this case, the handling of the observed generation is probably
-handled by the primary controller.
+`Ingress`, `Deployment`,...).
 
 See
 the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/deployment/DeploymentReconciler.java)
