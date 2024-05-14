@@ -44,11 +44,6 @@ permalink: /docs/v5-0-migration
    where it is demonstrated. Also, the related part of
    a [workaround](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L110-L116).
 
-   Related automatic observed generation handling changes:
-   Automated Observed Generation (see features in docs), is automatically handled for non-SSA, even if
-   the status sub-resource is not instructed to be updated. This is not true for SSA, observed generation is updated
-   only when patch status is instructed by `UpdateControl`.
-
 6. `ManagedDependentResourceContext` has been renamed to `ManagedWorkflowAndDependentResourceContext` and is accessed
    via the accordingly renamed `managedWorkflowAndDependentResourceContext` method.
 7. `ResourceDiscriminator` was removed. In most of the cases you can just delete the discriminator, everything should
@@ -57,3 +52,9 @@ permalink: /docs/v5-0-migration
 8. `ConfigurationService.getTerminationTimeoutSeconds` and associated overriding mechanism have been removed,
    use `Operator.stop(Duration)` instead.
 9. `Operator.installShutdownHook()` has been removed, use `Operator.installShutdownHook(Duration)` instead
+10. Automated observed generation handling feature was removed (`ObservedGenerationAware` interface
+    and `ObservedGenerationAwareStatus` class were deleted). Manually handling observed generation is fairly easy to do
+    in your reconciler, however, it cannot be done automatically when using SSA. We therefore removed the feature since
+    it would have been confusing to have a different behavior for SSA and non-SSA cases. For an example of how to do
+    observed generation handling manually in your reconciler, see
+    [this sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manualobservedgeneration/ManualObservedGenerationReconciler.java).

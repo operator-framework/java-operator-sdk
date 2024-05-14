@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.sample.customresource;
 
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
-
-public class WebPageStatus extends ObservedGenerationAwareStatus {
+public class WebPageStatus {
 
   private String htmlConfigMap;
 
