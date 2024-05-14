@@ -10,14 +10,12 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAware;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
@@ -166,13 +164,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-    // check if status also needs to be updated
-    final var updateObservedGeneration = updateControl.isNoUpdate()
-        ? shouldUpdateObservedGenerationAutomatically(resourceForExecution)
-        : shouldUpdateObservedGenerationAutomatically(updatedCustomResource);
-    // if using SSA the observed generation is updated only if user instructs patching the status
-    if (updateControl.isPatchStatus() || (updateObservedGeneration && !useSSA)) {
-      updatedCustomResource = patchStatusGenerationAware(toUpdate, originalResource);
+    if (updateControl.isPatchStatus()) {
+      customResourceFacade.patchStatus(toUpdate, originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -202,9 +195,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
         P updatedResource = null;
         if (errorStatusUpdateControl.getResource().isPresent()) {
-          updatedResource =
-              patchStatusGenerationAware(errorStatusUpdateControl.getResource().orElseThrow(),
-                  originalResource);
+          updatedResource = customResourceFacade
+              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
         }
         if (errorStatusUpdateControl.isNoRetry()) {
           PostExecutionControl<P> postExecutionControl;
@@ -230,36 +222,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private P patchStatusGenerationAware(P resource, P originalResource) {
-    updateStatusObservedGenerationIfRequired(resource);
     return customResourceFacade.patchStatus(resource, originalResource);
-  }
-
-  @SuppressWarnings("rawtypes")
-  private boolean shouldUpdateObservedGenerationAutomatically(P resource) {
-    if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
-      var customResource = (CustomResource) resource;
-      var status = customResource.getStatus();
-      // Note that if status is null we won't update the observed generation.
-      if (status instanceof ObservedGenerationAware) {
-        var observedGen = ((ObservedGenerationAware) status).getObservedGeneration();
-        var currentGen = resource.getMetadata().getGeneration();
-        return !currentGen.equals(observedGen);
-      }
-    }
-    return false;
-  }
-
-  @SuppressWarnings("rawtypes")
-  private void updateStatusObservedGenerationIfRequired(P resource) {
-    if (configuration().isGenerationAware() && resource instanceof CustomResource<?, ?>) {
-      var customResource = (CustomResource) resource;
-      var status = customResource.getStatus();
-      // Note that if status is null we won't update the observed generation.
-      if (status instanceof ObservedGenerationAware) {
-        ((ObservedGenerationAware) status)
-            .setObservedGeneration(resource.getMetadata().getGeneration());
-      }
-    }
   }
 
   private PostExecutionControl<P> createPostExecutionControl(P updatedCustomResource,
