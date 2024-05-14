@@ -20,8 +20,6 @@ public class ManualObservedGenerationIT {
       LocallyRunOperatorExtension.builder().withReconciler(new ManualObservedGenerationReconciler())
           .build();
 
-
-
   @Test
   void observedGenerationUpdated() {
     extension.create(testResource());
@@ -39,13 +37,10 @@ public class ManualObservedGenerationIT {
 
     await().untilAsserted(() -> {
       var r = extension.get(ManualObservedGenerationCustomResource.class, RESOURCE_NAME);
-      assertThat(r).isNotNull();
       assertThat(r.getStatus().getObservedGeneration()).isEqualTo(2);
       assertThat(r.getStatus().getObservedGeneration()).isEqualTo(r.getMetadata().getGeneration());
     });
-
   }
-
 
   ManualObservedGenerationCustomResource testResource() {
     var res = new ManualObservedGenerationCustomResource();
@@ -56,6 +51,4 @@ public class ManualObservedGenerationIT {
     res.getSpec().setValue("Initial Value");
     return res;
   }
-
-
 }
