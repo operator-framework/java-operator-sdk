@@ -29,7 +29,7 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
-  protected Class<BulkDependentTestCustomResource> getPrimaryResourceType() {
+  public Class<BulkDependentTestCustomResource> getPrimaryResourceType() {
     return BulkDependentTestCustomResource.class;
   }
 

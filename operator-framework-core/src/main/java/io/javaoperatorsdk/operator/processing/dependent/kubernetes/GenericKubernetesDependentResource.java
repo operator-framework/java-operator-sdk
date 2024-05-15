@@ -22,7 +22,7 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
 
   @SuppressWarnings("unchecked")
   @Override
-  protected Class<P> getPrimaryResourceType() {
+  public Class<P> getPrimaryResourceType() {
     return (Class<P>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
   }
 

@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -194,7 +195,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static List<DependentResourceSpec> dependentResources(
       Workflow annotation,
-      ControllerConfiguration<?> parent) {
+      ControllerConfiguration<?> controllerConfiguration) {
     final var dependents = annotation.dependents();
 
 
@@ -213,7 +214,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             "A DependentResource named '" + dependentName + "' already exists: " + spec);
       }
 
-      final var name = parent.getName();
+      final var name = controllerConfiguration.getName();
 
       var eventSourceName = dependent.useEventSourceWithName();
       eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
@@ -225,9 +226,21 @@ public class BaseConfigurationService extends AbstractConfigurationService {
           Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
           Utils.instantiate(dependent.activationCondition(), Condition.class, context),
           eventSourceName);
+
+      // extract potential configuration
+      DependentResourceConfigurationResolver.configureSpecFromConfigured(spec,
+          controllerConfiguration,
+          dependentType);
+
       specsMap.put(dependentName, spec);
     }
     return specsMap.values().stream().toList();
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static <R> Class<R> resourceTypeFor(
+      Class<? extends DependentResource> dependentResourceClass) {
+    return Utils.instantiate(dependentResourceClass, DependentResource.class, null).resourceType();
   }
 
   protected boolean createIfNeeded() {

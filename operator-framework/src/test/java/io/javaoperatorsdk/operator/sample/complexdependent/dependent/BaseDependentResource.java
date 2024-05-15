@@ -17,7 +17,7 @@ public abstract class BaseDependentResource<R extends HasMetadata>
   }
 
   @Override
-  protected Class<ComplexDependentCustomResource> getPrimaryResourceType() {
+  public Class<ComplexDependentCustomResource> getPrimaryResourceType() {
     return ComplexDependentCustomResource.class;
   }
 

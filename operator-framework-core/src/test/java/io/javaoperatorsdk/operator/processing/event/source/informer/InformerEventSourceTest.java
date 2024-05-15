@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -56,8 +57,11 @@ class InformerEventSourceTest {
 
     informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
 
+    var mockControllerConfig = mock(ControllerConfiguration.class);
+    when(mockControllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
+
     informerEventSource.setEventHandler(eventHandlerMock);
-    informerEventSource.setConfigurationService(new BaseConfigurationService());
+    informerEventSource.setControllerConfiguration(mockControllerConfig);
     SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
     when(informerConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
@@ -177,11 +181,14 @@ class InformerEventSourceTest {
         ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
             o -> o.withInformerStoppedHandler(informerStoppedHandler));
 
+    var mockControllerConfig = mock(ControllerConfiguration.class);
+    when(mockControllerConfig.getConfigurationService()).thenReturn(configuration);
+
     informerEventSource = new InformerEventSource<>(informerConfiguration,
         MockKubernetesClient.client(Deployment.class, unused -> {
           throw exception;
         }));
-    informerEventSource.setConfigurationService(configuration);
+    informerEventSource.setControllerConfiguration(mockControllerConfig);
 
     // by default informer fails to start if there is an exception in the client on start.
     // Throws the exception further.

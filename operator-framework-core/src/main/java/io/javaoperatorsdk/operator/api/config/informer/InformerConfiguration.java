@@ -7,10 +7,10 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -20,21 +20,26 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
 
 public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
 
+  boolean DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE = true;
+
   class DefaultInformerConfiguration<R extends HasMetadata> extends
       DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
 
+    private final String name;
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
     private final OnDeleteFilter<? super R> onDeleteFilter;
     private final GroupVersionKind groupVersionKind;
 
-    protected DefaultInformerConfiguration(String labelSelector,
+    protected DefaultInformerConfiguration(
+        String name,
+        String labelSelector,
         Class<R> resourceClass,
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
@@ -47,6 +52,7 @@ public interface InformerConfiguration<R extends HasMetadata>
         ItemStore<R> itemStore, Long informerListLimit) {
       super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
           itemStore, informerListLimit);
+      this.name = name;
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -75,8 +81,27 @@ public interface InformerConfiguration<R extends HasMetadata>
       return (PrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;
     }
 
+    @Override
     public Optional<GroupVersionKind> getGroupVersionKind() {
       return Optional.ofNullable(groupVersionKind);
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    public boolean inheritsNamespacesFromController() {
+      return InformerConfiguration.inheritsNamespacesFromController(getNamespaces());
+    }
+
+    @Override
+    public Set<String> getEffectiveNamespaces(ControllerConfiguration<?> controllerConfiguration) {
+      if (inheritsNamespacesFromController()) {
+        return controllerConfiguration.getEffectiveNamespaces();
+      } else {
+        return super.getEffectiveNamespaces(controllerConfiguration);
+      }
     }
   }
 
@@ -117,23 +142,31 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   Optional<GroupVersionKind> getGroupVersionKind();
 
+  String name();
+
+  static boolean inheritsNamespacesFromController(Set<String> namespaces) {
+    return SAME_AS_CONTROLLER_NAMESPACES_SET.equals(namespaces);
+  }
+
   @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata> {
 
     private final Class<R> resourceClass;
     private final GroupVersionKind groupVersionKind;
+    private final Class<? extends HasMetadata> primaryResourceClass;
+    private String name;
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
-    private Set<String> namespaces;
+    private Set<String> namespaces = SAME_AS_CONTROLLER_NAMESPACES_SET;
     private String labelSelector;
     private OnAddFilter<? super R> onAddFilter;
     private OnUpdateFilter<? super R> onUpdateFilter;
     private OnDeleteFilter<? super R> onDeleteFilter;
     private GenericFilter<? super R> genericFilter;
-    private boolean inheritControllerNamespacesOnChange = false;
     private ItemStore<R> itemStore;
     private Long informerListLimit;
-    private final Class<? extends HasMetadata> primaryResourceClass;
+    private boolean followControllerNamespacesOnChange =
+        DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
 
     private InformerConfigurationBuilder(Class<R> resourceClass,
         Class<? extends HasMetadata> primaryResourceClass) {
@@ -151,6 +184,11 @@ public interface InformerConfiguration<R extends HasMetadata>
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
+    }
+
+    public InformerConfigurationBuilder<R> withName(String name) {
+      this.name = name;
+      return this;
     }
 
     public <P extends HasMetadata> InformerConfigurationBuilder<R> withPrimaryToSecondaryMapper(
@@ -187,25 +225,22 @@ public interface InformerConfiguration<R extends HasMetadata>
     public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces,
         boolean followChanges) {
       this.namespaces = namespaces != null ? namespaces : DEFAULT_NAMESPACES_SET;
-      this.inheritControllerNamespacesOnChange = true;
+      this.followControllerNamespacesOnChange = followChanges;
       return this;
     }
 
-    /**
-     * Configures the informer to watch and track the same namespaces as the parent
-     * {@link io.javaoperatorsdk.operator.processing.Controller}, meaning that the informer will be
-     * restarted to watch the new namespaces if the parent controller's namespace configuration
-     * changes.
-     *
-     * @param context {@link EventSourceContext} from which the parent
-     *        {@link io.javaoperatorsdk.operator.processing.Controller}'s configuration is retrieved
-     * @param <P> the primary resource type associated with the parent controller
-     * @return the builder instance so that calls can be chained fluently
-     */
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> withNamespacesInheritedFromController(
-        EventSourceContext<P> context) {
-      namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
-      this.inheritControllerNamespacesOnChange = true;
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> withNamespacesInheritedFromController() {
+      this.namespaces = SAME_AS_CONTROLLER_NAMESPACES_SET;
+      return this;
+    }
+
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> withWatchAllNamespaces() {
+      this.namespaces = WATCH_ALL_NAMESPACE_SET;
+      return this;
+    }
+
+    public <P extends HasMetadata> InformerConfigurationBuilder<R> withWatchCurrentNamespace() {
+      this.namespaces = WATCH_CURRENT_NAMESPACE_SET;
       return this;
     }
 
@@ -217,8 +252,10 @@ public interface InformerConfiguration<R extends HasMetadata>
      *        controller's namespaces are reconfigured, {@code false} otherwise
      * @return the builder instance so that calls can be chained fluently
      */
-    public InformerConfigurationBuilder<R> followNamespaceChanges(boolean followChanges) {
-      this.inheritControllerNamespacesOnChange = followChanges;
+    @SuppressWarnings("UnusedReturnValue")
+    public InformerConfigurationBuilder<R> followControllerNamespacesOnChange(
+        boolean followChanges) {
+      this.followControllerNamespacesOnChange = followChanges;
       return this;
     }
 
@@ -227,6 +264,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public InformerConfigurationBuilder<R> withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
       this.onAddFilter = onAddFilter;
       return this;
@@ -238,12 +276,14 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public InformerConfigurationBuilder<R> withOnDeleteFilter(
         OnDeleteFilter<? super R> onDeleteFilter) {
       this.onDeleteFilter = onDeleteFilter;
       return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public InformerConfigurationBuilder<R> withGenericFilter(
         GenericFilter<? super R> genericFilter) {
       this.genericFilter = genericFilter;
@@ -267,13 +307,28 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
+    public String getName() {
+      return name;
+    }
+
+    public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
+      return secondaryToPrimaryMapper;
+    }
+
     public InformerConfiguration<R> build() {
-      return new DefaultInformerConfiguration<>(labelSelector, resourceClass, groupVersionKind,
+      if (groupVersionKind != null
+          && !GenericKubernetesResource.class.isAssignableFrom(resourceClass)) {
+        throw new IllegalStateException(
+            "If GroupVersionKind is set the resource type must be GenericKubernetesDependentResource");
+      }
+
+      return new DefaultInformerConfiguration<>(name, labelSelector, resourceClass,
+          groupVersionKind,
           primaryToSecondaryMapper,
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceClass),
                   HasMetadata.getKind(primaryResourceClass), false)),
-          namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
+          namespaces, followControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
           onDeleteFilter, genericFilter, itemStore, informerListLimit);
     }
   }
@@ -283,31 +338,6 @@ public interface InformerConfiguration<R extends HasMetadata>
     return new InformerConfigurationBuilder<>(resourceClass, primaryResourceClass);
   }
 
-  /**
-   * Creates a configuration builder that inherits namespaces from the controller and follows
-   * namespaces changes.
-   *
-   * @param resourceClass secondary resource class
-   * @param eventSourceContext of the initializer
-   * @return builder
-   * @param <R> secondary resource type
-   */
-  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
-      Class<R> resourceClass, EventSourceContext<?> eventSourceContext) {
-    return new InformerConfigurationBuilder<>(resourceClass,
-        eventSourceContext.getPrimaryResourceClass())
-        .withNamespacesInheritedFromController(eventSourceContext);
-  }
-
-  /**
-   * For the case when want to use {@link GenericKubernetesResource}
-   */
-  static InformerConfigurationBuilder<GenericKubernetesResource> from(
-      GroupVersionKind groupVersionKind, EventSourceContext<?> eventSourceContext) {
-    return new InformerConfigurationBuilder<GenericKubernetesResource>(groupVersionKind,
-        eventSourceContext.getPrimaryResourceClass())
-        .withNamespacesInheritedFromController(eventSourceContext);
-  }
 
   static InformerConfigurationBuilder<GenericKubernetesResource> from(
       GroupVersionKind groupVersionKind, Class<? extends HasMetadata> primaryResourceClass) {

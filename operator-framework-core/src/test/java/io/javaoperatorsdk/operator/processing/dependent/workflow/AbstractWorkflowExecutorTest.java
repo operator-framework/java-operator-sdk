@@ -3,17 +3,23 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AbstractWorkflowExecutorTest {
   public static final String VALUE = "value";
@@ -40,7 +46,7 @@ public class AbstractWorkflowExecutorTest {
     }
 
     @Override
-    protected Class<TestCustomResource> getPrimaryResourceType() {
+    public Class<TestCustomResource> getPrimaryResourceType() {
       return TestCustomResource.class;
     }
 
@@ -50,6 +56,14 @@ public class AbstractWorkflowExecutorTest {
       executionHistory.add(new ReconcileRecord(this));
       return ReconcileResult
           .resourceCreated(new ConfigMapBuilder().addToBinaryData("key", VALUE).build());
+    }
+
+    @Override
+    public synchronized Optional<InformerEventSource<ConfigMap, TestCustomResource>> eventSource(
+        EventSourceContext<TestCustomResource> context) {
+      var mockIES = mock(InformerEventSource.class);
+      when(mockIES.name()).thenReturn(name);
+      return Optional.of(mockIES);
     }
 
     @Override

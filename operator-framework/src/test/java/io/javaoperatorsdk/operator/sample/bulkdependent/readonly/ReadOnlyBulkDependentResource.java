@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -15,6 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.javaoperatorsdk.operator.sample.bulkdependent.BulkDependentTestCustomResource;
 
 
+@KubernetesDependent
 public class ReadOnlyBulkDependentResource
     extends
     KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
@@ -28,7 +30,7 @@ public class ReadOnlyBulkDependentResource
   }
 
   @Override
-  protected Class<BulkDependentTestCustomResource> getPrimaryResourceType() {
+  public Class<BulkDependentTestCustomResource> getPrimaryResourceType() {
     return BulkDependentTestCustomResource.class;
   }
 
@@ -51,4 +53,5 @@ public class ReadOnlyBulkDependentResource
     return Mappers.fromOwnerReferences(BulkDependentTestCustomResource.class, false)
         .toPrimaryResourceIDs(resource);
   }
+
 }

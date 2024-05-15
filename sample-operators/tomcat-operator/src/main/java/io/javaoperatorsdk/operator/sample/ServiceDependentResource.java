@@ -6,9 +6,11 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator")
+@KubernetesDependent(informerConfig = @InformerConfig(
+    labelSelector = "app.kubernetes.io/managed-by=tomcat-operator"))
 public class ServiceDependentResource extends CRUDKubernetesDependentResource<Service, Tomcat> {
 
   public ServiceDependentResource() {
