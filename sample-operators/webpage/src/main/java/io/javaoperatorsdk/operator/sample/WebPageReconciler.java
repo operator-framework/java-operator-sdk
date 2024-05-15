@@ -44,19 +44,19 @@ public class WebPageReconciler
   @Override
   public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
     var deploymentEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Deployment.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(Deployment.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
     var serviceEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Service.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(Service.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
     var ingressEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Ingress.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(Ingress.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
     return List.of(configMapEventSource, deploymentEventSource,

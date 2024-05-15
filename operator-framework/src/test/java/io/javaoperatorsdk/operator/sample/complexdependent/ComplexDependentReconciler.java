@@ -55,11 +55,11 @@ public class ComplexDependentReconciler implements Reconciler<ComplexDependentCu
       EventSourceContext<ComplexDependentCustomResource> context) {
     InformerEventSource<Service, ComplexDependentCustomResource> serviceEventSource =
         new InformerEventSource<>(SERVICE_EVENT_SOURCE_NAME,
-            InformerConfiguration.from(Service.class, context).build(),
+            InformerConfiguration.from(Service.class).build(),
             context);
     InformerEventSource<StatefulSet, ComplexDependentCustomResource> statefulSetEventSource =
         new InformerEventSource<>(STATEFUL_SET_EVENT_SOURCE_NAME,
-            InformerConfiguration.from(StatefulSet.class, context).build(),
+            InformerConfiguration.from(StatefulSet.class).build(),
             context);
     return List.of(serviceEventSource, statefulSetEventSource);
   }

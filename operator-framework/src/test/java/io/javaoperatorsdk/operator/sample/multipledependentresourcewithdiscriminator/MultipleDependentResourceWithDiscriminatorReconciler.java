@@ -46,7 +46,7 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResourceWithDiscriminator> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResourceWithDiscriminator> eventSource =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
             .build(), context);
     firstDependentResourceConfigMap.setEventSource(eventSource);
     secondDependentResourceConfigMap.setEventSource(eventSource);

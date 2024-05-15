@@ -69,7 +69,7 @@ public class GenericKubernetesResourceHandlingReconciler
       EventSourceContext<GenericKubernetesResourceHandlingCustomResource> context) {
 
     var informerEventSource = new InformerEventSource<>(InformerConfiguration.from(
-        new GroupVersionKind("", VERSION, KIND), context).build(),
+        new GroupVersionKind("", VERSION, KIND)).build(),
         context);
 
     return List.of(informerEventSource);

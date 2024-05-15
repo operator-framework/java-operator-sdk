@@ -55,7 +55,7 @@ public class ClusterScopedCustomResourceReconciler
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
-    var ies = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+    var ies = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
         .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference(true))
         .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
         .build(), context);

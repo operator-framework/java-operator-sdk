@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -23,11 +24,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class ControllerEventSourceTest extends
     AbstractEventSourceTestBase<ControllerEventSource<TestCustomResource>, EventHandler> {
@@ -37,10 +34,14 @@ class ControllerEventSourceTest extends
 
   private final TestController testController = new TestController(true);
 
+
+
   @BeforeEach
   public void setup() {
-    setUpSource(new ControllerEventSource<>(testController), true,
-        new BaseConfigurationService());
+    var controllerConfig = mock(ControllerConfiguration.class);
+    when(controllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
+
+    setUpSource(new ControllerEventSource<>(testController), true, controllerConfig);
   }
 
   @Test

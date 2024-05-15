@@ -17,6 +17,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 @Target({ElementType.TYPE})
 public @interface InformerConfig {
 
+  // todo name
+
   String[] DEFAULT_NAMESPACES = {Constants.SAME_AS_CONTROLLER};
 
   /**

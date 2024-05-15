@@ -7,10 +7,10 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -31,6 +31,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final boolean followControllerNamespaceChanges;
+    private final boolean namespacesInheritedFromController;
     private final OnDeleteFilter<? super R> onDeleteFilter;
     private final GroupVersionKind groupVersionKind;
 
@@ -44,7 +45,7 @@ public interface InformerConfiguration<R extends HasMetadata>
         OnUpdateFilter<? super R> onUpdateFilter,
         OnDeleteFilter<? super R> onDeleteFilter,
         GenericFilter<? super R> genericFilter,
-        ItemStore<R> itemStore, Long informerListLimit) {
+        ItemStore<R> itemStore, Long informerListLimit, boolean namespacesInheritedFromController) {
       super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
           itemStore, informerListLimit);
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
@@ -54,6 +55,7 @@ public interface InformerConfiguration<R extends HasMetadata>
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReference());
       this.onDeleteFilter = onDeleteFilter;
+      this.namespacesInheritedFromController = namespacesInheritedFromController;
     }
 
     @Override
@@ -79,6 +81,19 @@ public interface InformerConfiguration<R extends HasMetadata>
 
     public Optional<GroupVersionKind> getGroupVersionKind() {
       return Optional.ofNullable(groupVersionKind);
+    }
+
+    public boolean namespacesInheritedFromController() {
+      return namespacesInheritedFromController;
+    }
+
+    @Override
+    public Set<String> getEffectiveNamespaces(ControllerConfiguration<?> controllerConfiguration) {
+      if (namespacesInheritedFromController()) {
+        return controllerConfiguration.getEffectiveNamespaces();
+      } else {
+        return super.getEffectiveNamespaces(controllerConfiguration);
+      }
     }
   }
 
@@ -119,6 +134,8 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   Optional<GroupVersionKind> getGroupVersionKind();
 
+  boolean namespacesInheritedFromController();
+
   @SuppressWarnings("unused")
   class InformerConfigurationBuilder<R extends HasMetadata> {
 
@@ -132,9 +149,10 @@ public interface InformerConfiguration<R extends HasMetadata>
     private OnUpdateFilter<? super R> onUpdateFilter;
     private OnDeleteFilter<? super R> onDeleteFilter;
     private GenericFilter<? super R> genericFilter;
-    private boolean inheritControllerNamespacesOnChange = false;
+    private boolean inheritControllerNamespacesOnChange = true;
     private ItemStore<R> itemStore;
     private Long informerListLimit;
+    private boolean namespacesInheritedFromController = true;
 
     private InformerConfigurationBuilder(Class<R> resourceClass) {
       this.resourceClass = resourceClass;
@@ -191,15 +209,15 @@ public interface InformerConfiguration<R extends HasMetadata>
      * restarted to watch the new namespaces if the parent controller's namespace configuration
      * changes.
      *
-     * @param context {@link EventSourceContext} from which the parent
-     *        {@link io.javaoperatorsdk.operator.processing.Controller}'s configuration is retrieved
      * @param <P> the primary resource type associated with the parent controller
      * @return the builder instance so that calls can be chained fluently
      */
     public <P extends HasMetadata> InformerConfigurationBuilder<R> withNamespacesInheritedFromController(
-        EventSourceContext<P> context) {
-      namespaces = context.getControllerConfiguration().getEffectiveNamespaces();
-      this.inheritControllerNamespacesOnChange = true;
+        boolean value) {
+      this.namespacesInheritedFromController = value;
+      if (value) {
+        this.inheritControllerNamespacesOnChange = true;
+      }
       return this;
     }
 
@@ -266,19 +284,15 @@ public interface InformerConfiguration<R extends HasMetadata>
           primaryToSecondaryMapper,
           secondaryToPrimaryMapper,
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
-          onDeleteFilter, genericFilter, itemStore, informerListLimit);
+          onDeleteFilter, genericFilter, itemStore, informerListLimit,
+          namespacesInheritedFromController);
     }
-  }
-
-  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
-      Class<R> resourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass);
   }
 
   /**
    * * For the case when want to use {@link GenericKubernetesResource}
    */
-  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
+  static InformerConfigurationBuilder<GenericKubernetesResource> from(
       GroupVersionKind groupVersionKind) {
     return new InformerConfigurationBuilder<>(groupVersionKind);
   }
@@ -287,25 +301,13 @@ public interface InformerConfiguration<R extends HasMetadata>
    * Creates a configuration builder that inherits namespaces from the controller and follows
    * namespaces changes.
    *
-   * @param resourceClass secondary resource class
-   * @param eventSourceContext of the initializer
+   * @param resourceClass secondary resource class*
    * @return builder
    * @param <R> secondary resource type
    */
   static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
-      Class<R> resourceClass, EventSourceContext<?> eventSourceContext) {
-    return new InformerConfigurationBuilder<>(resourceClass)
-        .withNamespacesInheritedFromController(eventSourceContext);
-  }
-
-  /**
-   * * For the case when want to use {@link GenericKubernetesResource}
-   */
-  @SuppressWarnings("unchecked")
-  static InformerConfigurationBuilder<GenericKubernetesResource> from(
-      GroupVersionKind groupVersionKind, EventSourceContext<?> eventSourceContext) {
-    return new InformerConfigurationBuilder<GenericKubernetesResource>(groupVersionKind)
-        .withNamespacesInheritedFromController(eventSourceContext);
+      Class<R> resourceClass) {
+    return new InformerConfigurationBuilder<>(resourceClass);
   }
 
   @SuppressWarnings("unchecked")

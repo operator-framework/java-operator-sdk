@@ -67,7 +67,7 @@ public class PrimaryToSecondaryDependentReconciler
         .of(indexKey(primary.getSpec().getConfigMapName(), primary.getMetadata().getNamespace()))));
 
     var es = new InformerEventSource<>(CONFIG_MAP_EVENT_SOURCE, InformerConfiguration
-        .from(ConfigMap.class, context)
+        .from(ConfigMap.class)
         // if there is a many-to-many relationship (thus no direct owner reference)
         // PrimaryToSecondaryMapper needs to be added
         .withPrimaryToSecondaryMapper(

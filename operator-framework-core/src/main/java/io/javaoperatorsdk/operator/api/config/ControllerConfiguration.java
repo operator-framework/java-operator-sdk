@@ -86,7 +86,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
 
   @SuppressWarnings("unused")
   default Set<String> getEffectiveNamespaces() {
-    return ResourceConfiguration.super.getEffectiveNamespaces(getConfigurationService());
+    return ResourceConfiguration.super.getEffectiveNamespaces(this);
   }
 
   /**

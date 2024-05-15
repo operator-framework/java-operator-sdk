@@ -65,12 +65,12 @@ public class JobReconciler
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
     InformerConfiguration.InformerConfigurationBuilder<Cluster> informerConfiguration =
-        InformerConfiguration.from(Cluster.class, context)
+        InformerConfiguration.from(Cluster.class)
             .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
                 .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
                     cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
-            .withNamespacesInheritedFromController(context);
+            .withNamespacesInheritedFromController(true);
 
     if (addPrimaryToSecondaryMapper) {
       informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
