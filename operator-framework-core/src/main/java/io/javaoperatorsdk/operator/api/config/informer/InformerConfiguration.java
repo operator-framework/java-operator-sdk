@@ -137,15 +137,18 @@ public interface InformerConfiguration<R extends HasMetadata>
 
     private InformerConfigurationBuilder(Class<R> resourceClass,
         Class<? extends HasMetadata> primaryResourceClass) {
-      this.resourceClass = resourceClass;
-      this.primaryResourceClass = primaryResourceClass;
-      this.groupVersionKind = null;
+      this(resourceClass, primaryResourceClass, null);
     }
 
     @SuppressWarnings("unchecked")
     private InformerConfigurationBuilder(GroupVersionKind groupVersionKind,
         Class<? extends HasMetadata> primaryResourceClass) {
-      this.resourceClass = (Class<R>) GenericKubernetesResource.class;
+      this((Class<R>) GenericKubernetesResource.class, primaryResourceClass, groupVersionKind);
+    }
+
+    private InformerConfigurationBuilder(Class<R> resourceClass,
+        Class<? extends HasMetadata> primaryResourceClass, GroupVersionKind groupVersionKind) {
+      this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
     }
@@ -297,9 +300,8 @@ public interface InformerConfiguration<R extends HasMetadata>
   }
 
   /**
-   * * For the case when want to use {@link GenericKubernetesResource}
+   * For the case when want to use {@link GenericKubernetesResource}
    */
-  @SuppressWarnings("unchecked")
   static InformerConfigurationBuilder<GenericKubernetesResource> from(
       GroupVersionKind groupVersionKind, EventSourceContext<?> eventSourceContext) {
     return new InformerConfigurationBuilder<GenericKubernetesResource>(groupVersionKind,
@@ -309,8 +311,7 @@ public interface InformerConfiguration<R extends HasMetadata>
 
   static InformerConfigurationBuilder<GenericKubernetesResource> from(
       GroupVersionKind groupVersionKind, Class<? extends HasMetadata> primaryResourceClass) {
-    return new InformerConfigurationBuilder<>(groupVersionKind,
-        primaryResourceClass);
+    return new InformerConfigurationBuilder<>(groupVersionKind, primaryResourceClass);
   }
 
   @SuppressWarnings("unchecked")
