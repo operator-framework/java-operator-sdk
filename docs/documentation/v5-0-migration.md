@@ -58,3 +58,8 @@ permalink: /docs/v5-0-migration
     it would have been confusing to have a different behavior for SSA and non-SSA cases. For an example of how to do
     observed generation handling manually in your reconciler, see
     [this sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manualobservedgeneration/ManualObservedGenerationReconciler.java).
+11. `BulkDependentResource` now supports [read-only mode](https://github.com/operator-framework/java-operator-sdk/issues/2233).
+    This also means, that `BulkDependentResource` now does not automatically implement `Creator` and `Deleter` as before.
+    Make sure to implement those interfaces in your bulk dependent resources. You can use also the new helper interface, the
+    [`CRUDBulkDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/CRUDBulkDependentResource.java)
+    what also implement `BulkUpdater` interface.
