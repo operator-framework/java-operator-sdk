@@ -52,7 +52,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper =
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
-              Mappers.fromOwnerReference());
+              Mappers.fromOwnerReferences(false));
       this.onDeleteFilter = onDeleteFilter;
     }
 
