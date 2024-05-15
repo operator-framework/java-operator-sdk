@@ -15,12 +15,12 @@ public class KubernetesDependentResourceConfig<R> {
 
   public static final boolean DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA = true;
 
-  private Set<String> namespaces;
-  private String labelSelector;
-  private final boolean namespacesWereConfigured;
   private final boolean createResourceOnlyIfNotExistingWithSSA;
   private final Boolean useSSA;
 
+  private Set<String> namespaces;
+  private String labelSelector;
+  private final boolean namespacesWereConfigured;
   private final OnAddFilter<R> onAddFilter;
   private final OnUpdateFilter<R> onUpdateFilter;
   private final OnDeleteFilter<R> onDeleteFilter;

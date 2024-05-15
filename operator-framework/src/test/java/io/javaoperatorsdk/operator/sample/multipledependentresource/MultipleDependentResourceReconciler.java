@@ -38,8 +38,8 @@ public class MultipleDependentResourceReconciler
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResource> eventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
             .build(), context);
-    firstDependentResourceConfigMap.configureWith(eventSource);
-    secondDependentResourceConfigMap.configureWith(eventSource);
+    firstDependentResourceConfigMap.setEventSource(eventSource);
+    secondDependentResourceConfigMap.setEventSource(eventSource);
 
     return List.of(eventSource);
   }

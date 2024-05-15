@@ -97,7 +97,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   protected abstract T createEventSource(EventSourceContext<P> context);
 
-  protected void setEventSource(T eventSource) {
+  public void setEventSource(T eventSource) {
     isCacheFillerEventSource = eventSource instanceof RecentOperationCacheFiller;
     this.eventSource = eventSource;
   }

@@ -34,23 +34,28 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     GenericFilter<? extends HasMetadata> genericFilter = null;
     Boolean useSSA = null;
     if (configAnnotation != null) {
-      if (!Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, configAnnotation.namespaces())) {
-        namespaces = Set.of(configAnnotation.namespaces());
+      if (!Arrays.equals(InformerConfig.DEFAULT_NAMESPACES,
+          configAnnotation.informerConfig().namespaces())) {
+        namespaces = Set.of(configAnnotation.informerConfig().namespaces());
         configuredNS = true;
       }
 
-      final var fromAnnotation = configAnnotation.labelSelector();
+      final var fromAnnotation = configAnnotation.informerConfig().labelSelector();
       labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
 
       final var context = Utils.contextFor(parentConfiguration, originatingClass,
           configAnnotation.annotationType());
-      onAddFilter = Utils.instantiate(configAnnotation.onAddFilter(), OnAddFilter.class, context);
+      onAddFilter = Utils.instantiate(configAnnotation.informerConfig().onAddFilter(),
+          OnAddFilter.class, context);
       onUpdateFilter =
-          Utils.instantiate(configAnnotation.onUpdateFilter(), OnUpdateFilter.class, context);
+          Utils.instantiate(configAnnotation.informerConfig().onUpdateFilter(),
+              OnUpdateFilter.class, context);
       onDeleteFilter =
-          Utils.instantiate(configAnnotation.onDeleteFilter(), OnDeleteFilter.class, context);
+          Utils.instantiate(configAnnotation.informerConfig().onDeleteFilter(),
+              OnDeleteFilter.class, context);
       genericFilter =
-          Utils.instantiate(configAnnotation.genericFilter(), GenericFilter.class, context);
+          Utils.instantiate(configAnnotation.informerConfig().genericFilter(), GenericFilter.class,
+              context);
 
       createResourceOnlyIfNotExistingWithSSA =
           configAnnotation.createResourceOnlyIfNotExistingWithSSA();

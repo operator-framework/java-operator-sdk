@@ -86,7 +86,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .withNamespaces(namespaces, inheritNamespacesOnChange)
         .build();
 
-    configureWith(new InformerEventSource<>(name(), ic, context));
+    setEventSource(new InformerEventSource<>(name(), ic, context));
   }
 
   // just to seamlessly handle GenericKubernetesDependentResource
@@ -106,15 +106,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       throw new OperatorException("Provide a SecondaryToPrimaryMapper to associate " +
           "this resource with the primary resource. DependentResource: " + getClass().getName());
     }
-  }
-
-  /**
-   * Use to share informers between event more resources.
-   *
-   * @param informerEventSource informer to use
-   */
-  public void configureWith(InformerEventSource<R, P> informerEventSource) {
-    setEventSource(informerEventSource);
   }
 
   @SuppressWarnings("unused")

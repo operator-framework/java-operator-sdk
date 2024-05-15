@@ -21,10 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.*;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -367,7 +364,8 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @KubernetesDependent(namespaces = Constants.WATCH_ALL_NAMESPACES)
+  @KubernetesDependent(
+      informerConfig = @InformerConfig(namespaces = Constants.WATCH_ALL_NAMESPACES))
   private static class WatchAllNSDependent
       extends KubernetesDependentResource<ConfigMap, ConfigMap> {
 
@@ -388,7 +386,7 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @KubernetesDependent(namespaces = OverriddenNSDependent.DEP_NS)
+  @KubernetesDependent(informerConfig = @InformerConfig(namespaces = OverriddenNSDependent.DEP_NS))
   private static class OverriddenNSDependent
       extends KubernetesDependentResource<ConfigMap, ConfigMap> {
 
