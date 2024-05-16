@@ -35,7 +35,7 @@ public class Operator implements LifecycleAware {
   }
 
   Operator(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, null);
+    this(initConfigurationService(kubernetesClient, null));
   }
 
   /**
@@ -63,19 +63,7 @@ public class Operator implements LifecycleAware {
    *        {@link ConfigurationService} values
    */
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
-    this(null, overrider);
-  }
-
-  /**
-   * @param client client to use to all Kubernetes related operations
-   * @param overrider a {@link ConfigurationServiceOverrider} consumer used to override the default
-   *        {@link ConfigurationService} values
-   * @deprecated Use {@link Operator#Operator(Consumer)} instead, passing your custom client with
-   *             {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}
-   */
-  @Deprecated(since = "4.4.0")
-  public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(initConfigurationService(client, overrider));
+    this(initConfigurationService(null, overrider));
   }
 
   private static ConfigurationService initConfigurationService(KubernetesClient client,
