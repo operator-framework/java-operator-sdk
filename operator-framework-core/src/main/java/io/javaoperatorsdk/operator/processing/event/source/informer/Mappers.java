@@ -42,24 +42,37 @@ public class Mappers {
     return fromMetadata(nameKey, namespaceKey, true);
   }
 
-  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference() {
-    return fromOwnerReference(false);
-  }
-
-  /**
-   * @param clusterScope if the owner is a cluster scoped resource
-   * @return mapper
-   * @param <T> type of the secondary resource, where the owner reference is
-   */
-  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReference(
-      boolean clusterScope) {
-    return resource -> ResourceID.fromFirstOwnerReference(resource, clusterScope).map(Set::of)
-        .orElseGet(Collections::emptySet);
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
+      Class<? extends HasMetadata> primaryResourceType) {
+    return fromOwnerReferences(primaryResourceType, false);
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
+      Class<? extends HasMetadata> primaryResourceType, boolean clusterScoped) {
+    return fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceType),
+        HasMetadata.getKind(primaryResourceType),
+        clusterScoped);
+  }
+
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
+      HasMetadata primaryResource) {
+    return fromOwnerReferences(primaryResource, false);
+  }
+
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
+      HasMetadata primaryResource,
+      boolean clusterScoped) {
+    return fromOwnerReferences(primaryResource.getApiVersion(), primaryResource.getKind(),
+        clusterScoped);
+  }
+
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
+      String apiVersion, String kind,
       boolean clusterScope) {
-    return resource -> resource.getMetadata().getOwnerReferences().stream()
+    return resource -> resource.getMetadata().getOwnerReferences()
+        .stream()
+        .filter(r -> r.getKind().equals(kind)
+            && r.getApiVersion().equals(apiVersion))
         .map(or -> ResourceID.fromOwnerReference(resource, or, clusterScope))
         .collect(Collectors.toSet());
   }
