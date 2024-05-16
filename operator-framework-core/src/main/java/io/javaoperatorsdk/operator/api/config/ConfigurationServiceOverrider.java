@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -23,9 +22,7 @@ public class ConfigurationServiceOverrider {
   private Metrics metrics;
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
-  private Integer minConcurrentReconciliationThreads;
   private Integer concurrentWorkflowExecutorThreads;
-  private Integer minConcurrentWorkflowExecutorThreads;
   private Cloner cloner;
   private Boolean closeClientOnStop;
   private KubernetesClient client;
@@ -61,24 +58,6 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withConcurrentWorkflowExecutorThreads(int threadNumber) {
     this.concurrentWorkflowExecutorThreads = threadNumber;
-    return this;
-  }
-
-  private int minimumMaxValueFor(Integer minValue) {
-    return minValue != null ? (minValue < 0 ? 0 : minValue) + 1 : 1;
-  }
-
-  public ConfigurationServiceOverrider withMinConcurrentReconciliationThreads(int threadNumber) {
-    this.minConcurrentReconciliationThreads = Utils.ensureValid(threadNumber,
-        "minimum reconciliation threads", ExecutorServiceManager.MIN_THREAD_NUMBER,
-        original.minConcurrentReconciliationThreads());
-    return this;
-  }
-
-  public ConfigurationServiceOverrider withMinConcurrentWorkflowExecutorThreads(int threadNumber) {
-    this.minConcurrentWorkflowExecutorThreads = Utils.ensureValid(threadNumber,
-        "minimum workflow execution threads", ExecutorServiceManager.MIN_THREAD_NUMBER,
-        original.minConcurrentWorkflowExecutorThreads());
     return this;
   }
 
@@ -222,7 +201,7 @@ public class ConfigurationServiceOverrider {
             overriddenValueOrDefault(concurrentReconciliationThreads,
                 ConfigurationService::concurrentReconciliationThreads),
             "maximum reconciliation threads",
-            minimumMaxValueFor(minConcurrentReconciliationThreads),
+            1,
             original.concurrentReconciliationThreads());
       }
 
@@ -232,28 +211,8 @@ public class ConfigurationServiceOverrider {
             overriddenValueOrDefault(concurrentWorkflowExecutorThreads,
                 ConfigurationService::concurrentWorkflowExecutorThreads),
             "maximum workflow execution threads",
-            minimumMaxValueFor(minConcurrentWorkflowExecutorThreads),
+            1,
             original.concurrentWorkflowExecutorThreads());
-      }
-
-      /**
-       * @deprecated Not used anymore in the default implementation
-       */
-      @Deprecated(forRemoval = true)
-      @Override
-      public int minConcurrentReconciliationThreads() {
-        return overriddenValueOrDefault(minConcurrentReconciliationThreads,
-            ConfigurationService::minConcurrentReconciliationThreads);
-      }
-
-      /**
-       * @deprecated Not used anymore in the default implementation
-       */
-      @Override
-      @Deprecated(forRemoval = true)
-      public int minConcurrentWorkflowExecutorThreads() {
-        return overriddenValueOrDefault(minConcurrentWorkflowExecutorThreads,
-            ConfigurationService::minConcurrentWorkflowExecutorThreads);
       }
 
       @Override
@@ -344,15 +303,4 @@ public class ConfigurationServiceOverrider {
     };
   }
 
-  /**
-   * @deprecated Use
-   *             {@link ConfigurationService#newOverriddenConfigurationService(ConfigurationService, Consumer)}
-   *             instead
-   * @param original that will be overridden
-   * @return current overrider
-   */
-  @Deprecated(since = "2.2.0")
-  public static ConfigurationServiceOverrider override(ConfigurationService original) {
-    return new ConfigurationServiceOverrider(original);
-  }
 }
