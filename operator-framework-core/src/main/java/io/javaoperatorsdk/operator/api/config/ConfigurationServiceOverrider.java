@@ -22,9 +22,7 @@ public class ConfigurationServiceOverrider {
   private Metrics metrics;
   private Boolean checkCR;
   private Integer concurrentReconciliationThreads;
-  private Integer minConcurrentReconciliationThreads;
   private Integer concurrentWorkflowExecutorThreads;
-  private Integer minConcurrentWorkflowExecutorThreads;
   private Cloner cloner;
   private Boolean closeClientOnStop;
   private KubernetesClient client;
@@ -41,6 +39,7 @@ public class ConfigurationServiceOverrider {
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
+  @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
@@ -62,11 +61,7 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  private int minimumMaxValueFor(Integer minValue) {
-    return minValue != null ? (minValue < 0 ? 0 : minValue) + 1 : 1;
-  }
-
-
+  @SuppressWarnings("rawtypes")
   public ConfigurationServiceOverrider withDependentResourceFactory(
       DependentResourceFactory dependentResourceFactory) {
     this.dependentResourceFactory = dependentResourceFactory;
@@ -205,7 +200,7 @@ public class ConfigurationServiceOverrider {
             overriddenValueOrDefault(concurrentReconciliationThreads,
                 ConfigurationService::concurrentReconciliationThreads),
             "maximum reconciliation threads",
-            minimumMaxValueFor(minConcurrentReconciliationThreads),
+            1,
             original.concurrentReconciliationThreads());
       }
 
@@ -215,7 +210,7 @@ public class ConfigurationServiceOverrider {
             overriddenValueOrDefault(concurrentWorkflowExecutorThreads,
                 ConfigurationService::concurrentWorkflowExecutorThreads),
             "maximum workflow execution threads",
-            minimumMaxValueFor(minConcurrentWorkflowExecutorThreads),
+            1,
             original.concurrentWorkflowExecutorThreads());
       }
 
