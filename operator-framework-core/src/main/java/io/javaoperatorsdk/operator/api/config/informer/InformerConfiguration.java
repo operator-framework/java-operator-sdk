@@ -50,9 +50,7 @@ public interface InformerConfiguration<R extends HasMetadata>
       this.followControllerNamespaceChanges = followControllerNamespaceChanges;
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
-      this.secondaryToPrimaryMapper =
-          Objects.requireNonNullElse(secondaryToPrimaryMapper,
-              Mappers.fromOwnerReferences(false));
+      this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       this.onDeleteFilter = onDeleteFilter;
     }
 
@@ -135,16 +133,24 @@ public interface InformerConfiguration<R extends HasMetadata>
     private boolean inheritControllerNamespacesOnChange = false;
     private ItemStore<R> itemStore;
     private Long informerListLimit;
+    private final Class<? extends HasMetadata> primaryResourceClass;
 
-    private InformerConfigurationBuilder(Class<R> resourceClass) {
-      this.resourceClass = resourceClass;
-      this.groupVersionKind = null;
+    private InformerConfigurationBuilder(Class<R> resourceClass,
+        Class<? extends HasMetadata> primaryResourceClass) {
+      this(resourceClass, primaryResourceClass, null);
     }
 
     @SuppressWarnings("unchecked")
-    private InformerConfigurationBuilder(GroupVersionKind groupVersionKind) {
-      this.resourceClass = (Class<R>) GenericKubernetesResource.class;
+    private InformerConfigurationBuilder(GroupVersionKind groupVersionKind,
+        Class<? extends HasMetadata> primaryResourceClass) {
+      this((Class<R>) GenericKubernetesResource.class, primaryResourceClass, groupVersionKind);
+    }
+
+    private InformerConfigurationBuilder(Class<R> resourceClass,
+        Class<? extends HasMetadata> primaryResourceClass, GroupVersionKind groupVersionKind) {
+      this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
+      this.primaryResourceClass = primaryResourceClass;
     }
 
     public <P extends HasMetadata> InformerConfigurationBuilder<R> withPrimaryToSecondaryMapper(
@@ -264,23 +270,17 @@ public interface InformerConfiguration<R extends HasMetadata>
     public InformerConfiguration<R> build() {
       return new DefaultInformerConfiguration<>(labelSelector, resourceClass, groupVersionKind,
           primaryToSecondaryMapper,
-          secondaryToPrimaryMapper,
+          Objects.requireNonNullElse(secondaryToPrimaryMapper,
+              Mappers.fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceClass),
+                  HasMetadata.getKind(primaryResourceClass), false)),
           namespaces, inheritControllerNamespacesOnChange, onAddFilter, onUpdateFilter,
           onDeleteFilter, genericFilter, itemStore, informerListLimit);
     }
   }
 
   static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
-      Class<R> resourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass);
-  }
-
-  /**
-   * * For the case when want to use {@link GenericKubernetesResource}
-   */
-  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
-      GroupVersionKind groupVersionKind) {
-    return new InformerConfigurationBuilder<>(groupVersionKind);
+      Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
+    return new InformerConfigurationBuilder<>(resourceClass, primaryResourceClass);
   }
 
   /**
@@ -294,18 +294,24 @@ public interface InformerConfiguration<R extends HasMetadata>
    */
   static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
       Class<R> resourceClass, EventSourceContext<?> eventSourceContext) {
-    return new InformerConfigurationBuilder<>(resourceClass)
+    return new InformerConfigurationBuilder<>(resourceClass,
+        eventSourceContext.getPrimaryResourceClass())
         .withNamespacesInheritedFromController(eventSourceContext);
   }
 
   /**
-   * * For the case when want to use {@link GenericKubernetesResource}
+   * For the case when want to use {@link GenericKubernetesResource}
    */
-  @SuppressWarnings("unchecked")
   static InformerConfigurationBuilder<GenericKubernetesResource> from(
       GroupVersionKind groupVersionKind, EventSourceContext<?> eventSourceContext) {
-    return new InformerConfigurationBuilder<GenericKubernetesResource>(groupVersionKind)
+    return new InformerConfigurationBuilder<GenericKubernetesResource>(groupVersionKind,
+        eventSourceContext.getPrimaryResourceClass())
         .withNamespacesInheritedFromController(eventSourceContext);
+  }
+
+  static InformerConfigurationBuilder<GenericKubernetesResource> from(
+      GroupVersionKind groupVersionKind, Class<? extends HasMetadata> primaryResourceClass) {
+    return new InformerConfigurationBuilder<>(groupVersionKind, primaryResourceClass);
   }
 
   @SuppressWarnings("unchecked")
