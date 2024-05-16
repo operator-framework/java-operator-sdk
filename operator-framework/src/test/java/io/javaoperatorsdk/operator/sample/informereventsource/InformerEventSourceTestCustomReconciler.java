@@ -36,7 +36,7 @@ public class InformerEventSourceTestCustomReconciler
       EventSourceContext<InformerEventSourceTestCustomResource> context) {
 
     InformerConfiguration<ConfigMap> config =
-        InformerConfiguration.from(ConfigMap.class)
+        InformerConfiguration.from(ConfigMap.class, context)
             .withSecondaryToPrimaryMapper(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
             .build();
 
