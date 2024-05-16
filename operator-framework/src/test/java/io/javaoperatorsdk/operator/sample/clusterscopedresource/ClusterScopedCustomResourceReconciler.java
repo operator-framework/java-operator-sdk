@@ -56,7 +56,8 @@ public class ClusterScopedCustomResourceReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
     var ies = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-        .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference(true))
+        .withSecondaryToPrimaryMapper(
+            Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
         .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
         .build(), context);
     return List.of(ies);
