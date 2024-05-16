@@ -134,7 +134,7 @@ class EventSourcesTest {
         eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
     final var mock2 =
         eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
-    final var mock3 = eventSourceMockWithName(EventSource.class, "name2", ConfigMap.class);
+    final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
     eventSources.add(mock2);
@@ -142,7 +142,7 @@ class EventSourcesTest {
 
     assertEquals(mock1, eventSources.get(HasMetadata.class, "name1"));
     assertEquals(mock2, eventSources.get(HasMetadata.class, "name2"));
-    assertEquals(mock3, eventSources.get(ConfigMap.class, "name2"));
+    assertEquals(mock3, eventSources.get(ConfigMap.class, "name3"));
     assertEquals(mock3, eventSources.get(ConfigMap.class, null));
 
 
