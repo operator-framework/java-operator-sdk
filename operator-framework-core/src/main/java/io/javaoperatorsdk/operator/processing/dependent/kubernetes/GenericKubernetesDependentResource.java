@@ -17,7 +17,7 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
   }
 
   protected InformerConfiguration.InformerConfigurationBuilder<GenericKubernetesResource> informerConfigurationBuilder() {
-    return InformerConfiguration.from(groupVersionKind);
+    return InformerConfiguration.from(groupVersionKind, getPrimaryResourceType());
   }
 
   @SuppressWarnings("unchecked")

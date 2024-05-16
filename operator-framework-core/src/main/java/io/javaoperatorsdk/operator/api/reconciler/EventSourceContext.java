@@ -16,13 +16,16 @@ public class EventSourceContext<P extends HasMetadata> {
   private final IndexerResourceCache<P> primaryCache;
   private final ControllerConfiguration<P> controllerConfiguration;
   private final KubernetesClient client;
+  private final Class<P> primaryResourceClass;
 
   public EventSourceContext(IndexerResourceCache<P> primaryCache,
       ControllerConfiguration<P> controllerConfiguration,
-      KubernetesClient client) {
+      KubernetesClient client,
+      Class<P> primaryResourceClass) {
     this.primaryCache = primaryCache;
     this.controllerConfiguration = controllerConfiguration;
     this.client = client;
+    this.primaryResourceClass = primaryResourceClass;
   }
 
   /**
@@ -53,5 +56,9 @@ public class EventSourceContext<P extends HasMetadata> {
    */
   public KubernetesClient getClient() {
     return client;
+  }
+
+  public Class<P> getPrimaryResourceClass() {
+    return primaryResourceClass;
   }
 }
