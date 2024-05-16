@@ -64,7 +64,7 @@ public class MultipleSecondaryEventSourceReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleSecondaryEventSourceCustomResource> context) {
 
-    var config = InformerConfiguration.from(ConfigMap.class)
+    var config = InformerConfiguration.from(ConfigMap.class, context)
         .withNamespaces(context.getControllerConfiguration().getNamespaces())
         .withLabelSelector("multisecondary")
         .withSecondaryToPrimaryMapper(s -> {
