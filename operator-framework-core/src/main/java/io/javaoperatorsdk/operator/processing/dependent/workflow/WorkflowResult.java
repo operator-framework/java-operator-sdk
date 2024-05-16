@@ -21,15 +21,6 @@ class WorkflowResult {
     return erroredDependents;
   }
 
-  /**
-   * @deprecated Use {@link #erroredDependentsExist()} instead
-   * @return if any dependents are in error state
-   */
-  @Deprecated(forRemoval = true)
-  public boolean erroredDependentsExists() {
-    return !erroredDependents.isEmpty();
-  }
-
   @SuppressWarnings("unused")
   public boolean erroredDependentsExist() {
     return !erroredDependents.isEmpty();

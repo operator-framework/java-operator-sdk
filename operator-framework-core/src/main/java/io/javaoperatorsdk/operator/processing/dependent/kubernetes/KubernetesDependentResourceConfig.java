@@ -52,21 +52,6 @@ public class KubernetesDependentResourceConfig<R> {
     this.useSSA = useSSA;
   }
 
-  // use builder instead
-  @Deprecated(forRemoval = true)
-  public KubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector) {
-    this(namespaces, labelSelector, true, DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA,
-        null, null,
-        null, null, null);
-  }
-
-  // use builder instead
-  @Deprecated(forRemoval = true)
-  public KubernetesDependentResourceConfig<R> setLabelSelector(String labelSelector) {
-    this.labelSelector = labelSelector;
-    return this;
-  }
-
   public Set<String> namespaces() {
     return namespaces;
   }
