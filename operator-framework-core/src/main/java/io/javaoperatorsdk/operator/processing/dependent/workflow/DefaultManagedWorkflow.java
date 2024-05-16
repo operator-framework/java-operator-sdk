@@ -13,7 +13,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -110,10 +109,6 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     final var name = spec.getName();
     if (name != null && !NO_VALUE_SET.equals(name) && dependentResource instanceof NameSetter) {
       ((NameSetter) dependentResource).setName(name);
-    }
-
-    if (dependentResource instanceof KubernetesClientAware) {
-      ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
     }
 
     spec.getUseEventSourceWithName()
