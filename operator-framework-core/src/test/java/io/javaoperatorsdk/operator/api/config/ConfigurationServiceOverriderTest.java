@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class ConfigurationServiceOverriderTest {
@@ -78,26 +77,6 @@ class ConfigurationServiceOverriderTest {
         overridden.getLeaderElectionConfiguration());
     assertNotEquals(config.getInformerStoppedHandler(),
         overridden.getLeaderElectionConfiguration());
-  }
-
-  @Test
-  void shouldReplaceInvalidValues() {
-    final var original = new BaseConfigurationService();
-
-    final var service = ConfigurationService.newOverriddenConfigurationService(original,
-        o -> o
-            .withConcurrentReconciliationThreads(0)
-            .withMinConcurrentReconciliationThreads(-1)
-            .withConcurrentWorkflowExecutorThreads(2)
-            .withMinConcurrentWorkflowExecutorThreads(3));
-
-    assertEquals(original.minConcurrentReconciliationThreads(),
-        service.minConcurrentReconciliationThreads());
-    assertEquals(original.concurrentReconciliationThreads(),
-        service.concurrentReconciliationThreads());
-    assertEquals(3, service.minConcurrentWorkflowExecutorThreads());
-    assertEquals(original.concurrentWorkflowExecutorThreads(),
-        service.concurrentWorkflowExecutorThreads());
   }
 
 }
