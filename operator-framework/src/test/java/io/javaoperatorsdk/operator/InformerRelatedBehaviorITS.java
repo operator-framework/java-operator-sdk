@@ -316,8 +316,9 @@ class InformerRelatedBehaviorITS {
 
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
-    Operator operator = new Operator(clientUsingServiceAccount(),
+    Operator operator = new Operator(
         co -> {
+          co.withKubernetesClient(clientUsingServiceAccount());
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
           co.withCacheSyncTimeout(Duration.ofMillis(3000));
           if (addStopHandler) {
