@@ -255,18 +255,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         .collect(Collectors.toSet());
   }
 
-  /**
-   * Returns the configuration object for the informer.
-   *
-   * @return the informer configuration object
-   *
-   * @deprecated Use {@link #configuration()} instead
-   */
-  @Deprecated(forRemoval = true)
-  public InformerConfiguration<R> getConfiguration() {
-    return configuration();
-  }
-
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousVersionOfResource) {

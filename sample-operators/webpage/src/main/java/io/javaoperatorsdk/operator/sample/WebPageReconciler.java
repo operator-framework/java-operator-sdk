@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -35,10 +34,8 @@ public class WebPageReconciler
 
   private static final Logger log = LoggerFactory.getLogger(WebPageReconciler.class);
 
-  private final KubernetesClient kubernetesClient;
+  public WebPageReconciler() {
 
-  public WebPageReconciler(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
   }
 
   @Override
@@ -89,7 +86,7 @@ public class WebPageReconciler
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
+      context.getClient().configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
           .serverSideApply();
     }
 
@@ -99,7 +96,7 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      kubernetesClient.apps().deployments().inNamespace(ns).resource(desiredDeployment)
+      context.getClient().apps().deployments().inNamespace(ns).resource(desiredDeployment)
           .serverSideApply();
     }
 
@@ -109,7 +106,7 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      kubernetesClient.services().inNamespace(ns).resource(desiredService)
+      context.getClient().services().inNamespace(ns).resource(desiredService)
           .serverSideApply();
     }
 
@@ -117,11 +114,11 @@ public class WebPageReconciler
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
-        kubernetesClient.resource(desiredIngress).inNamespace(ns).serverSideApply();
+        context.getClient().resource(desiredIngress).inNamespace(ns).serverSideApply();
       }
     } else
       existingIngress.ifPresent(
-          ingress -> kubernetesClient.resource(ingress).delete());
+          ingress -> context.getClient().resource(ingress).delete());
 
     // not that this is not necessary, eventually mounted config map would be updated, just this way
     // is much faster; what is handy for demo purposes.
@@ -130,7 +127,7 @@ public class WebPageReconciler
         previousConfigMap.getData().get(INDEX_HTML),
         desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
       log.info("Restarting pods because HTML has changed in {}", ns);
-      kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
+      context.getClient().pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
 
     return UpdateControl.patchStatus(
