@@ -48,6 +48,7 @@ public class ReadOnlyBulkDependentResource
 
   @Override
   public Set<ResourceID> toPrimaryResourceIDs(ConfigMap resource) {
-    return Mappers.fromOwnerReferences(false).toPrimaryResourceIDs(resource);
+    return Mappers.fromOwnerReferences(BulkDependentTestCustomResource.class, false)
+        .toPrimaryResourceIDs(resource);
   }
 }

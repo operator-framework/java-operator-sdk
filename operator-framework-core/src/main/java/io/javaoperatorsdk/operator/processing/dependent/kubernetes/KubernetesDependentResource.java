@@ -89,7 +89,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   // just to seamlessly handle GenericKubernetesDependentResource
   protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder() {
-    return InformerConfiguration.from(resourceType());
+    return InformerConfiguration.from(resourceType(), getPrimaryResourceType());
   }
 
   @SuppressWarnings("unchecked")
@@ -97,7 +97,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (this instanceof SecondaryToPrimaryMapper) {
       return (SecondaryToPrimaryMapper<R>) this;
     } else if (garbageCollected) {
-      return Mappers.fromOwnerReferences(clustered);
+      return Mappers.fromOwnerReferences(getPrimaryResourceType(), clustered);
     } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       return Mappers.fromDefaultAnnotations();
     } else {
