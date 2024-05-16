@@ -19,10 +19,37 @@ class EventSources<P extends HasMetadata> {
 
   private final ConcurrentNavigableMap<String, Map<String, EventSource<?, P>>> sources =
       new ConcurrentSkipListMap<>();
+  private final Map<String, EventSource> sourceByName = new HashMap<>();
+
   private final TimerEventSource<P> retryAndRescheduleTimerEventSource =
       new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
   private ControllerEventSource<P> controllerEventSource;
 
+  public void add(EventSource eventSource) {
+    final var name = eventSource.name();
+    var existing = sourceByName.get(name);
+    if (existing != null) {
+      throw new IllegalArgumentException("Event source " + existing
+          + " is already registered with name: " + name);
+    }
+    sourceByName.put(name, eventSource);
+    sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
+  }
+
+  public EventSource remove(String name) {
+    var optionalMap = sources.values().stream().filter(m -> m.containsKey(name)).findFirst();
+    sourceByName.remove(name);
+    return optionalMap.map(m -> m.remove(name)).orElse(null);
+  }
+
+  public void clear() {
+    sources.clear();
+    sourceByName.clear();
+  }
+
+  public EventSource existingEventSourceByName(String name) {
+    return sourceByName.get(name);
+  }
 
   void createControllerEventSource(Controller<P> controller) {
     controllerEventSource = new ControllerEventSource<>(controller);
@@ -54,30 +81,7 @@ class EventSources<P extends HasMetadata> {
     return sources.values().stream().flatMap(c -> c.values().stream());
   }
 
-  public void clear() {
-    sources.clear();
-  }
 
-  @SuppressWarnings("unchecked")
-  public <R> EventSource<R, P> existingEventSourceOfSameNameAndType(EventSource<R, P> source) {
-    return (EventSource<R, P>) existingEventSourcesOfSameType(source).get(source.name());
-  }
-
-  private <R> Map<String, EventSource<?, P>> existingEventSourcesOfSameType(
-      EventSource<R, P> source) {
-    return sources.getOrDefault(keyFor(source), Collections.emptyMap());
-  }
-
-  public <R> void add(EventSource<R, P> eventSource) {
-    final var name = eventSource.name();
-    final var existing = existingEventSourcesOfSameType(eventSource);
-    if (existing.get(name) != null) {
-      throw new IllegalArgumentException("Event source " + existing
-          + " is already registered with name: " + name);
-    }
-
-    sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
-  }
 
   private <R> String keyFor(EventSource<R, P> source) {
     return keyFor(source.resourceType());
@@ -144,11 +148,5 @@ class EventSources<P extends HasMetadata> {
 
     return sourcesForType.values().stream()
         .map(es -> (EventSource<S, P>) es).toList();
-  }
-
-  @SuppressWarnings("rawtypes")
-  public EventSource remove(String name) {
-    var optionalMap = sources.values().stream().filter(m -> m.containsKey(name)).findFirst();
-    return optionalMap.map(m -> m.remove(name)).orElse(null);
   }
 }

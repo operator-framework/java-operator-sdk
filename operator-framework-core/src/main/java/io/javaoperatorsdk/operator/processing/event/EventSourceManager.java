@@ -213,7 +213,7 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public <R> EventSource<R, P> dynamicallyRegisterEventSource(EventSource<R, P> eventSource) {
     synchronized (this) {
-      var actual = eventSources.existingEventSourceOfSameNameAndType(eventSource);
+      var actual = eventSources.existingEventSourceByName(eventSource.name());
       if (actual != null) {
         eventSource = actual;
       } else {
