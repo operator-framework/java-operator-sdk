@@ -133,8 +133,8 @@ class EventSourcesTest {
     final var mock1 =
         eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
     final var mock2 =
-        eventSourceMockWithName(ResourceEventSource.class, "name2", HasMetadata.class);
-    final var mock3 = eventSourceMockWithName(ResourceEventSource.class, "name3", ConfigMap.class);
+        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
     eventSources.add(mock2);

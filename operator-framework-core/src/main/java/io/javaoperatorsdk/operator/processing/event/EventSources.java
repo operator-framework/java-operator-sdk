@@ -21,8 +21,8 @@ class EventSources<P extends HasMetadata> {
       new ConcurrentSkipListMap<>();
   private final Map<String, EventSource> sourceByName = new HashMap<>();
 
-    private final TimerEventSource<P> retryAndRescheduleTimerEventSource =
-            new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
+  private final TimerEventSource<P> retryAndRescheduleTimerEventSource =
+      new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
   private ControllerEventSource<P> controllerEventSource;
 
   public void add(EventSource eventSource) {
