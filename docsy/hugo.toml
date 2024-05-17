@@ -105,12 +105,12 @@ version = "0.0"
 url_latest_version = "https://javaoperatorsdk.io/"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
-github_repo = "https://github.com/operator-framework/java-operator-sdk"
+github_repo = "https://github.com/operator-framework/java-operator-sdk/"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
 # github_project_repo = "https://github.com/operator-framework/java-operator-sdk"
 
 # Specify a value here if your content directory is not in your repo's root directory
-# github_subdir = ""
+github_subdir = "docsy"
 
 # Uncomment this if your GitHub repo does not have "main" as the default branch,
 # or specify a new value if you want to reference another branch in your GitHub links
