@@ -12,7 +12,7 @@ based on the community's feedback.
 
 ## The Big Picture and Core Components
 
-![JOSDK architecture](../assets/images/architecture.svg)
+![JOSDK architecture](/images/architecture.svg)
 
 An [Operator](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/Operator.java)
 is a set of

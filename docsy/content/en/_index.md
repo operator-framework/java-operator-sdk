@@ -14,7 +14,7 @@ title: Java Operator SDK Documentation
 {{< /blocks/cover >}}
 
 
-{{% blocks/lead color="grey" %}}
+{{% blocks/lead color="gray" %}}
 Whether you want to build applications that operate themselves or provision infrastructure from Java code, Kubernetes Operators are the way to go.
 Java Operator SDK is based on the fabric8 Kubernetes client and will make it easy for Java developers to embrace this new way of automation.
 {{% /blocks/lead %}}
