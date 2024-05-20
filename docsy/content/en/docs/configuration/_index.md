@@ -1,6 +1,5 @@
 ---
-title: Configuring JOSDK
-description: Configuration options 
+title: Configuring JOSDK 
 layout: docs
 permalink: /docs/configuration
 ---

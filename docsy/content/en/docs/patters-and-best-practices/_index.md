@@ -1,6 +1,5 @@
 ---
 title: Patterns and Best Practices
-description: Patterns and Best Practices Implementing a Controller
 weight: 25
 ---
 

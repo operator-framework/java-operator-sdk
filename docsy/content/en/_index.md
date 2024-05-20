@@ -6,7 +6,7 @@ title: Java Operator SDK Documentation
 <a class="btn btn-lg btn-primary me-3 mb-4" href="/docs/">
   Learn More <i class="fas fa-arrow-alt-circle-right ms-2"></i>
 </a>
-<a class="btn btn-lg btn-secondary me-3 mb-4" href="https://central.sonatype.com/artifact/io.javaoperatorsdk/java-operator-sdk">
+<a class="btn btn-lg btn-secondary me-3 mb-4" href="https://github.com/operator-framework/java-operator-sdk">
   Download <i class="fab fa-github ms-2 "></i>
 </a>
 <p class="lead mt-5">Implement Kubernetes operators in Java without hassle</p>
@@ -55,19 +55,18 @@ Sponsored by:
 
 {{% blocks/section type="row" %}}
 
-{{% blocks/feature icon="fab fa-app-store-ios" title="Download **from AppStore**" %}}
-Get the Goldydocs app!
+{{% blocks/feature icon="no_icon" %}}
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fab fa-github" title="Contributions welcome!"
-    url="https://github.com/operator-framework/java-operator-sdk" %}}
-We do a [Pull Request](https://github.com/operator-framework/java-operator-sdk/pulls)
-contributions workflow on **GitHub**. New users are always welcome!
+{{% blocks/feature %}}
+Java Operator SDK if member of CNCF as a subproject of Operator Framework
+{.h3 .text-center}
+
+<img src="/images/cncf_logo.png" image_anchor="center"  alt="CNCF" width="200"/>
+
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fab fa-twitter" title="Follow us on Twitter!"
-    url="https://twitter.com/javaoperatorsdk" %}}
-For announcement of latest features etc.
+{{% blocks/feature icon="no_icon" %}}
 {{% /blocks/feature %}}
 
 {{% /blocks/section %}}

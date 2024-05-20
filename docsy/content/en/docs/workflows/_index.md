@@ -1,6 +1,5 @@
 ---
 title: Workflows
-description: Reference Documentation for Workflows
 weight: 70
 ---
 

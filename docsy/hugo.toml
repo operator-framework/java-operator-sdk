@@ -126,7 +126,7 @@ offlineSearch = false
 prism_syntax_highlighting = false
 
 [params.copyright]
-  authors = "Java Operator SDK Devs"
+  authors = "Java Operator SDK Developers"
   from_year = 2019
 
 # User interface configuration
