@@ -1,3 +1,9 @@
+# JOSDK comments:
+
+see: sample github action: https://gohugo.io/hosting-and-deployment/hosting-on-github/
+
+currently use hugo version v0.125.7
+
 # Docsy Example
 
 [Docsy][] is a [Hugo theme module][] for technical documentation sites, providing easy
