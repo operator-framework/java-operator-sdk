@@ -3,6 +3,8 @@ title: Features
 weight: 50
 ---
 
+# Features
+
 The Java Operator SDK (JOSDK) is a high level framework and related tooling aimed at
 facilitating the implementation of Kubernetes operators. The features are by default following
 the best practices in an opinionated way. However, feature flags and other configuration options
@@ -62,7 +64,8 @@ and/or re-schedule a reconciliation with a desired time delay:
   @Override
   public UpdateControl<MyCustomResource> reconcile(
      EventSourceTestCustomResource resource, Context context) {
-    ...
+    // omitted code
+    
     return UpdateControl.patchStatus(resource).rescheduleAfter(10, TimeUnit.SECONDS);
   }
 ```
@@ -73,7 +76,8 @@ without an update:
   @Override
   public UpdateControl<MyCustomResource> reconcile(
      EventSourceTestCustomResource resource, Context context) {
-    ...
+    // omitted code
+    
     return UpdateControl.<MyCustomResource>noUpdate().rescheduleAfter(10, TimeUnit.SECONDS);
   }
 ```
@@ -85,17 +89,31 @@ Those are the typical use cases of resource updates, however in some cases there
 the controller wants to update the resource itself (for example to add annotations) or not perform
 any updates, which is also supported.
 
-It is also possible to update both the status and the resource with the
-`updateResourceAndStatus` method. In this case, the resource is updated first followed by the
-status, using two separate requests to the Kubernetes API.
+It is also possible to update both the status and the resource with the `patchResourceAndStatus` method. In this case,
+the resource is updated first followed by the status, using two separate requests to the Kubernetes API.
 
-You should always state your intent using `UpdateControl` and let the SDK deal with the actual
-updates instead of performing these updates yourself using the actual Kubernetes client so that
-the SDK can update its internal state accordingly.
+From v5 `UpdateControl` only supports patching the resources, by default
+using [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
+It is important to understand how SSA works in Kubernetes. Mainly, resources applied using SSA
+should contain only the fields identifying the resource and those the user is interested in (a 'fully specified intent'
+in Kubernetes parlance), thus usually using a resource created from scratch, see
+[sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourcewithssa/PatchResourceWithSSAReconciler.java#L18-L22).
+To contrast, see the same sample, this time [without SSA](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java#L16-L16).
 
-Resource updates are protected using optimistic version control, to make sure that other updates
-that might have occurred in the mean time on the server are not overwritten. This is ensured by
-setting the `resourceVersion` field on the processed resources.
+Non-SSA based patch is still supported.  
+You can control whether or not to use SSA
+using [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385)
+and the related `ConfigurationServiceOverrider.withUseSSAToPatchPrimaryResource` method.
+Related integration test can be
+found [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java).
+
+Handling resources directly using the client, instead of delegating these updates operations to JOSDK by returning
+an `UpdateControl` at the end of your reconciliation, should work appropriately. However, we do recommend to
+use `UpdateControl` instead since JOSDK makes sure that the operations are handled properly, since there are subtleties
+to be aware of. For example, if you are using a finalizer, JOSDK makes sure to include it in your fully specified intent
+so that it is not unintentionally removed from the resource (which would happen if you omit it, since your controller is
+the designated manager for that field and Kubernetes interprets the finalizer being gone from the specified intent as a
+request for removal).
 
 [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java)
 typically instructs the framework to remove the finalizer after the dependent
@@ -104,7 +122,8 @@ resource are cleaned up in `cleanup` implementation.
 ```java
 
 public DeleteControl cleanup(MyCustomResource customResource,Context context){
-        ...
+        // omitted code
+    
         return DeleteControl.defaultDelete();
         }
 
@@ -163,56 +182,7 @@ You can specify the name of the finalizer to use for your `Reconciler` using the
 [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 annotation. If you do not specify a finalizer name, one will be automatically generated for you.
 
-## Automatic Observed Generation Handling
-
-Having an `.observedGeneration` value on your resources' status is a best practice to
-indicate the last generation of the resource which was successfully reconciled by the controller.
-This helps users / administrators diagnose potential issues.
-
-In order to have this feature working:
-
-- the **status class** (not the resource itself) must implement the
-  [`ObservedGenerationAware`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAware.java)
-  interface. See also
-  the [`ObservedGenerationAwareStatus`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/ObservedGenerationAwareStatus.java)
-  convenience implementation that you can extend in your own status class implementations.
-- The other condition is that the `CustomResource.getStatus()` method should not return `null`.
-  So the status should be instantiated when the object is returned using the `UpdateControl`.
-
-If these conditions are fulfilled and generation awareness is activated, the observed generation
-is automatically set by the framework after the `reconcile` method is called. Note that the
-observed generation is also updated even when `UpdateControl.noUpdate()` is returned from the
-reconciler. See this feature at work in
-the [WebPage example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageStatus.java#L5)
-.
-
-```java
-public class WebPageStatus extends ObservedGenerationAwareStatus {
-
-   private String htmlConfigMap;
-  
-  ...
-}
-```
-
-Initializing status automatically on custom resource could be done by overriding the `initStatus` method
-of `CustomResource`. However, this is NOT advised, since breaks the status patching if you use:
-`UpdateControl.patchStatus`. See
-also [javadocs](https://github.com/java-operator-sdk/java-operator-sdk/blob/3994f5ffc1fb000af81aa198abf72a5f75fd3e97/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java#L41-L42)
-.
-
-```java 
-@Group("sample.javaoperatorsdk")
-@Version("v1")
-public class WebPage extends CustomResource<WebPageSpec, WebPageStatus>
-    implements Namespaced {
-
-  @Override
-  protected WebPageStatus initStatus() {
-    return new WebPageStatus();
-  }
-}
-```
+From v5 by default finalizer is added using Served Side Apply. See also UpdateControl in docs.
 
 ## Generation Awareness and Event Filtering
 
@@ -231,9 +201,7 @@ To turn off this feature, set `generationAwareEventProcessing` to `false` for th
 ## Support for Well Known (non-custom) Kubernetes Resources
 
 A Controller can be registered for a non-custom resource, so well known Kubernetes resources like (
-`Ingress`, `Deployment`,...). Note that automatic observed generation handling is not supported
-for these resources, though, in this case, the handling of the observed generation is probably
-handled by the primary controller.
+`Ingress`, `Deployment`,...).
 
 See
 the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/deployment/DeploymentReconciler.java)
@@ -243,11 +211,12 @@ for reconciling deployments.
 public class DeploymentReconciler
     implements Reconciler<Deployment>, TestExecutionInfoProvider {
 
-  @Override
-  public UpdateControl<Deployment> reconcile(
-      Deployment resource, Context context) {
-  ...
-  }
+    @Override
+    public UpdateControl<Deployment> reconcile(
+            Deployment resource, Context context) {
+        // omitted code
+    }
+}
 ```
 
 ## Max Interval Between Reconciliations
@@ -265,6 +234,7 @@ standard annotation:
 @ControllerConfiguration(maxReconciliationInterval = @MaxReconciliationInterval(
                 interval = 50,
                 timeUnit = TimeUnit.MILLISECONDS))
+public class MyReconciler implements Reconciler<HasMetadata> {}
 ```
 
 The event is not propagated at a fixed rate, rather it's scheduled after each reconciliation. So the
@@ -487,9 +457,8 @@ related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/mai
 
 ### Registering Event Sources
 
-To register event sources, your `Reconciler` has to implement the
-[`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
-interface and initialize a list of event sources to register. One way to see this in action is
+To register event sources, your `Reconciler` has to override the `prepareEventSources` and return
+list of event sources to register. One way to see this in action is
 to look at the
 [tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/WebappReconciler.java)
 (irrelevant details omitted):
@@ -499,8 +468,9 @@ to look at the
 @ControllerConfiguration
 public class WebappReconciler
         implements Reconciler<Webapp>, Cleaner<Webapp>, EventSourceInitializer<Webapp> {
-
-    @Override
+   // ommitted code
+    
+   @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
         InformerConfiguration<Tomcat> configuration =
                 InformerConfiguration.from(Tomcat.class, context)
@@ -512,7 +482,7 @@ public class WebappReconciler
         return EventSourceInitializer
                 .nameEventSources(new InformerEventSource<>(configuration, context));
     }
-    ...
+  
 }
 ```
 
@@ -656,15 +626,15 @@ registering an associated `Informer` and then calling the `changeNamespaces` met
 
 ```java
 
-public static void main(String[]args)throws IOException{
-        KubernetesClient client=new DefaultKubernetesClient();
-        Operator operator=new Operator(client);
-        RegisteredController registeredController=operator.register(new WebPageReconciler(client));
-        operator.installShutdownHook();
-        operator.start();
+public static void main(String[] args) {
+    KubernetesClient client = new DefaultKubernetesClient();
+    Operator operator = new Operator(client);
+    RegisteredController registeredController = operator.register(new WebPageReconciler(client));
+    operator.installShutdownHook();
+    operator.start();
 
-        // call registeredController further while operator is running
-        }
+    // call registeredController further while operator is running
+}
 
 ```
 
@@ -676,8 +646,7 @@ configured appropriately so that the `followControllerNamespaceChanges` method r
 ```java
 
 @ControllerConfiguration
-public class MyReconciler
-        implements Reconciler<TestCustomResource>, EventSourceInitializer<TestCustomResource> {
+public class MyReconciler implements Reconciler<TestCustomResource> {
 
    @Override
    public Map<String, EventSource> prepareEventSources(
@@ -688,7 +657,7 @@ public class MyReconciler
             .withNamespacesInheritedFromController(context)
             .build(), context);
 
-    return EventSourceInitializer.nameEventSources(configMapES);
+    return EventSourceUtils.nameEventSources(configMapES);
   }
 
 }
@@ -767,8 +736,8 @@ You can use a different implementation by overriding the default one provided by
 follows:
 
 ```java
-Metrics metrics= …;
-Operator operator = new Operator(client, o -> o.withMetrics());
+Metrics metrics; // initialize your metrics implementation
+Operator operator = new Operator(client, o -> o.withMetrics(metrics));
 ```
 
 ### Micrometer implementation
@@ -784,8 +753,8 @@ To create a `MicrometerMetrics` implementation that behaves how it has historica
 instance via:
 
 ```java
-MeterRegistry registry= …;
-Metrics metrics=new MicrometerMetrics(registry)
+MeterRegistry registry; // initialize your registry implementation
+Metrics metrics = new MicrometerMetrics(registry);
 ```
 
 Note, however, that this constructor is deprecated and we encourage you to use the factory methods instead, which either
@@ -801,7 +770,7 @@ basis, deleting the associated meters after 5 seconds when a resource is deleted
 MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
         .withCleanUpDelayInSeconds(5)
         .withCleaningThreadNumber(2)
-        .build()
+        .build();
 ```
 
 The micrometer implementation records the following metrics:
