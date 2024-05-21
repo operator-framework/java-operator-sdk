@@ -49,6 +49,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
       - name: Install Node.js dependencies
+        working-directory: ./docsy
         run: "[[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true"
       - name: Build with Hugo
         env:
@@ -56,8 +57,8 @@ jobs:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
           TZ: America/Los_Angeles
+        working-directory: ./docsy
         run: |
-          cd docsy
           hugo \
             --gc \
             --minify \
