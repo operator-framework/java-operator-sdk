@@ -23,8 +23,9 @@ public class Bootstrapper {
 
   private MustacheFactory mustacheFactory = new DefaultMustacheFactory();
 
-  private static final List<String> TOP_LEVEL_STATIC_FILES =
-      List.of(".gitignore", "README.md");
+  // .gitignore gets excluded from resource, using here a prefixed version
+  private static final Map<String, String> TOP_LEVEL_STATIC_FILES =
+      Map.of("_.gitignore", ".gitignore", "README.md", "README.md");
   private static final List<String> JAVA_FILES =
       List.of("CustomResource.java", "Reconciler.java",
           "Spec.java", "Status.java");
@@ -106,14 +107,15 @@ public class Bootstrapper {
   }
 
   private void addStaticFiles(File projectDir) {
-    TOP_LEVEL_STATIC_FILES.forEach(f -> addStaticFile(projectDir, f));
+    TOP_LEVEL_STATIC_FILES.forEach((key, value) -> addStaticFile(projectDir, key, value));
   }
 
-  private void addStaticFile(File targetDir, String fileName) {
-    addStaticFile(targetDir, fileName, null);
+  private void addStaticFile(File targetDir, String fileName, String targetFileName) {
+    addStaticFile(targetDir, fileName, targetFileName, null);
   }
 
-  private void addStaticFile(File targetDir, String fileName, String subDir) {
+  private void addStaticFile(File targetDir, String fileName, String targetFilename,
+      String subDir) {
     String sourcePath = subDir == null ? "/static/" : "/static/" + subDir;
     String path = sourcePath + fileName;
     try (var is = Bootstrapper.class.getResourceAsStream(path)) {
@@ -121,7 +123,7 @@ public class Bootstrapper {
       if (subDir != null) {
         FileUtils.forceMkdir(targetDir);
       }
-      FileUtils.copyInputStreamToFile(is, new File(targetDir, fileName));
+      FileUtils.copyInputStreamToFile(is, new File(targetDir, targetFilename));
     } catch (IOException e) {
       throw new RuntimeException("File path: " + path, e);
     }
