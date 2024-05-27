@@ -32,7 +32,7 @@ public class InformerEventSourceTestCustomReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, InformerEventSourceTestCustomResource>> prepareEventSources(
       EventSourceContext<InformerEventSourceTestCustomResource> context) {
 
     InformerConfiguration<ConfigMap> config =

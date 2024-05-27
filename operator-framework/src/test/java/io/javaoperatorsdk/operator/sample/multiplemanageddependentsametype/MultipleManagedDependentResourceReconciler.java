@@ -46,7 +46,7 @@ public class MultipleManagedDependentResourceReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, MultipleManagedDependentResourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleManagedDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentResourceCustomResource> ies =
         new InformerEventSource<>(CONFIG_MAP_EVENT_SOURCE,

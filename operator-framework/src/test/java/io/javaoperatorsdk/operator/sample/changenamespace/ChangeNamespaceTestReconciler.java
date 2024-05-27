@@ -20,7 +20,7 @@ public class ChangeNamespaceTestReconciler
       new ConcurrentHashMap<>();
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, ChangeNamespaceTestCustomResource>> prepareEventSources(
       EventSourceContext<ChangeNamespaceTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, ChangeNamespaceTestCustomResource> configMapES =

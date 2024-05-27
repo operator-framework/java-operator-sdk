@@ -58,7 +58,7 @@ public class PrimaryToSecondaryDependentReconciler
    * demand for it.
    **/
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, PrimaryToSecondaryDependentCustomResource>> prepareEventSources(
       EventSourceContext<PrimaryToSecondaryDependentCustomResource> context) {
     // there is no owner reference in the config map, but we still want to trigger reconciliation if
     // the config map changes. So first we add an index which custom resource references the config

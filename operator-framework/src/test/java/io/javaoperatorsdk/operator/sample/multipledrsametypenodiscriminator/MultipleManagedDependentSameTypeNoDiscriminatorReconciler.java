@@ -46,7 +46,7 @@ public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, MultipleManagedDependentNoDiscriminatorCustomResource>> prepareEventSources(
       EventSourceContext<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> ies =
         new InformerEventSource<>(CONFIG_MAP_EVENT_SOURCE,

@@ -40,7 +40,7 @@ public class WebPageStandaloneDependentsReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
     // initializes the dependents' event sources from the given context
     return EventSourceUtils.eventSourcesFromWorkflow(context, workflow);
   }

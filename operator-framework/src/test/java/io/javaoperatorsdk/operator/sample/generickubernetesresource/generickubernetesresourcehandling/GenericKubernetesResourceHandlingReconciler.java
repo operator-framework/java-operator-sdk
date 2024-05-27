@@ -65,7 +65,7 @@ public class GenericKubernetesResourceHandlingReconciler
 
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, GenericKubernetesResourceHandlingCustomResource>> prepareEventSources(
       EventSourceContext<GenericKubernetesResourceHandlingCustomResource> context) {
 
     var informerEventSource = new InformerEventSource<>(InformerConfiguration.from(

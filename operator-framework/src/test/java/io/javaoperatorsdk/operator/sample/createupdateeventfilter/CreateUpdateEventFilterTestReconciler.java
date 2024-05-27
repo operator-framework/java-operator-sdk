@@ -90,7 +90,7 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, CreateUpdateEventFilterTestCustomResource>> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap> informerConfiguration =
         InformerConfiguration.from(ConfigMap.class, context)

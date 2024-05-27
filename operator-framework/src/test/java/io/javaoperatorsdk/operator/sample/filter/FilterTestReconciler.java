@@ -49,7 +49,7 @@ public class FilterTestReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, FilterTestCustomResource>> prepareEventSources(
       EventSourceContext<FilterTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =

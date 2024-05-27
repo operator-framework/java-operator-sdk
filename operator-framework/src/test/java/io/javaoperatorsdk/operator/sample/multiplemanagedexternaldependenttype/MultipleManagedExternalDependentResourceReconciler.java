@@ -56,7 +56,7 @@ public class MultipleManagedExternalDependentResourceReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, MultipleManagedExternalDependentResourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleManagedExternalDependentResourceCustomResource> context) {
 
     final PollingEventSource.GenericResourceFetcher<ExternalResource> fetcher = () -> {

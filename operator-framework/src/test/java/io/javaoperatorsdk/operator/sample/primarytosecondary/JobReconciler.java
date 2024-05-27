@@ -60,7 +60,7 @@ public class JobReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<Job> context) {
+  public List<EventSource<?, Job>> prepareEventSources(EventSourceContext<Job> context) {
     context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 

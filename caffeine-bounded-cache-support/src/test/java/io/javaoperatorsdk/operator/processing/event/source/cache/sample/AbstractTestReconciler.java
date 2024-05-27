@@ -70,7 +70,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, P>> prepareEventSources(
       EventSourceContext<P> context) {
 
     var boundedItemStore =
