@@ -23,6 +23,7 @@ public class Bootstrapper {
 
   private MustacheFactory mustacheFactory = new DefaultMustacheFactory();
 
+  // .gitignore gets excluded from resource, using here a prefixed version
   private static final Map<String, String> TOP_LEVEL_STATIC_FILES =
       Map.of("_.gitignore", ".gitignore", "README.md", "README.md");
   private static final List<String> JAVA_FILES =
