@@ -9,12 +9,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
@@ -104,9 +102,11 @@ class BaseConfigurationServiceTest {
   }
 
   @Test
-  void missingAnnotationThrowsException() {
+  void missingAnnotationCreatesDefaultConfig() {
     final var reconciler = new MissingAnnotationReconciler();
-    Assertions.assertThrows(OperatorException.class, () -> configFor(reconciler));
+    var config = configFor(reconciler);
+    // todo asserts
+
   }
 
   @SuppressWarnings("rawtypes")
