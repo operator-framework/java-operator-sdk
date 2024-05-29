@@ -70,15 +70,16 @@ will only consider the `ConfigMap` deleted until that post-condition becomes `tr
 
 ```java
 
-@ControllerConfiguration(dependents = {
-    @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
-        readyPostcondition = DeploymentReadyCondition.class),
-    @Dependent(type = ConfigMapDependentResource.class,
-        reconcilePrecondition = ConfigMapReconcileCondition.class,
-        deletePostcondition = ConfigMapDeletePostCondition.class,
-        activationCondition = ConfigMapActivationCondition.class,
-        dependsOn = DEPLOYMENT_NAME)
+@Workflow(dependents = {
+        @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
+                readyPostcondition = DeploymentReadyCondition.class),
+        @Dependent(type = ConfigMapDependentResource.class,
+                reconcilePrecondition = ConfigMapReconcileCondition.class,
+                deletePostcondition = ConfigMapDeletePostCondition.class,
+                activationCondition = ConfigMapActivationCondition.class,
+                dependsOn = DEPLOYMENT_NAME)
 })
+@ControllerConfiguration
 public class SampleWorkflowReconciler implements Reconciler<WorkflowAllFeatureCustomResource>,
     Cleaner<WorkflowAllFeatureCustomResource> {
 
