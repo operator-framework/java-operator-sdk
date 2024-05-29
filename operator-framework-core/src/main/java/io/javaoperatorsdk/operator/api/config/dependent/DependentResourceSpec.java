@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class DependentResourceSpec<R, P extends HasMetadata> {
+public class DependentResourceSpec<R, P extends HasMetadata, C> {
 
   private final Class<? extends DependentResource<R, P>> dependentResourceClass;
 
@@ -25,11 +25,12 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
   private final Condition<?, ?> activationCondition;
 
   private final String useEventSourceWithName;
+  private final C configuration;
 
   public DependentResourceSpec(Class<? extends DependentResource<R, P>> dependentResourceClass,
       String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
       Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition,
-      Condition<?, ?> activationCondition, String useEventSourceWithName) {
+      Condition<?, ?> activationCondition, String useEventSourceWithName, C configuration) {
     this.dependentResourceClass = dependentResourceClass;
     this.name = name;
     this.dependsOn = dependsOn;
@@ -38,6 +39,7 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
     this.deletePostCondition = deletePostCondition;
     this.activationCondition = activationCondition;
     this.useEventSourceWithName = useEventSourceWithName;
+    this.configuration = configuration;
   }
 
   public Class<? extends DependentResource<R, P>> getDependentResourceClass() {
@@ -62,7 +64,7 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DependentResourceSpec<?, ?> that = (DependentResourceSpec<?, ?>) o;
+    DependentResourceSpec<?, ?, ?> that = (DependentResourceSpec<?, ?, ?>) o;
     return name.equals(that.name);
   }
 
@@ -97,5 +99,9 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
 
   public Optional<String> getUseEventSourceWithName() {
     return Optional.ofNullable(useEventSourceWithName);
+  }
+
+  public Optional<C> getConfiguration() {
+    return Optional.ofNullable(configuration);
   }
 }

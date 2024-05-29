@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -215,6 +216,9 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
       final var name = parent.getName();
 
+      final var config = DependentResourceConfigurationResolver
+          .extractConfigurationFromConfigured(dependentType, parent);
+
       var eventSourceName = dependent.useEventSourceWithName();
       eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
       final var context = Utils.contextFor(name, dependentType, null);
@@ -224,7 +228,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
           Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
           Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
           Utils.instantiate(dependent.activationCondition(), Condition.class, context),
-          eventSourceName);
+          eventSourceName, config);
       specsMap.put(dependentName, spec);
     }
     return specsMap.values().stream().toList();

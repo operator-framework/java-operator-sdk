@@ -168,8 +168,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Object getConfigurationFor(DependentResourceSpec spec) {
-    return configurations.get(spec);
+    final var configuration = configurations.get(spec);
+    return configuration != null ? configuration : spec.getConfiguration().orElse(null);
   }
 
   @Override

@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -77,7 +77,7 @@ class ControllerConfigurationOverriderTest {
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
     final var spec =
         configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
-    return DependentResourceConfigurationResolver.configurationFor(spec, configuration);
+    return configuration.getConfigurationFor(spec);
   }
 
   private io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> createConfiguration(
@@ -283,8 +283,7 @@ class ControllerConfigurationOverriderTest {
         .filter(dr -> dr.getName().equals(dependentResourceName))
         .findFirst().orElseThrow();
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
-    var maybeConfig =
-        DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
+    var maybeConfig = configuration.getConfigurationFor(dependentSpec);
     assertNotNull(maybeConfig);
     assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
 
@@ -308,8 +307,7 @@ class ControllerConfigurationOverriderTest {
     dependents = overridden.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
     dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
         .findFirst().orElseThrow();
-    config = (KubernetesDependentResourceConfig) DependentResourceConfigurationResolver
-        .configurationFor(dependentSpec, overridden);
+    config = (KubernetesDependentResourceConfig) overridden.getConfigurationFor(dependentSpec);
     assertEquals(1, config.namespaces().size());
     assertEquals(labelSelector, config.labelSelector());
     assertEquals(Set.of(overriddenNS), config.namespaces());
@@ -420,7 +418,7 @@ class ControllerConfigurationOverriderTest {
     }
 
     private static class ExternalDependentResource implements DependentResource<Object, ConfigMap>,
-        DependentResourceConfigurator<String> {
+        ConfiguredDependentResource<String> {
 
       private String config = "UNSET";
 

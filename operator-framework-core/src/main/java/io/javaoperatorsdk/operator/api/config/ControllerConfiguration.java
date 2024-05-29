@@ -6,6 +6,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
@@ -100,4 +101,6 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return getName();
   }
 
+  @SuppressWarnings("rawtypes")
+  Object getConfigurationFor(DependentResourceSpec spec);
 }

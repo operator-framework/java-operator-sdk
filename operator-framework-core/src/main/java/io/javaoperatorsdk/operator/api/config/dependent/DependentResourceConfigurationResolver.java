@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class DependentResourceConfigurationResolver {
@@ -20,23 +19,13 @@ public class DependentResourceConfigurationResolver {
   private static final Map<Class<? extends ConfigurationConverter>, ConfigurationConverter> knownConverters =
       new HashMap<>();
 
-  public static <C extends ControllerConfiguration<? extends HasMetadata>> void configure(
-      DependentResource dependentResource, DependentResourceSpec spec, C parentConfiguration) {
-    if (dependentResource instanceof DependentResourceConfigurator configurator) {
-      final var config = configurationFor(spec, parentConfiguration);
-      configurator.configureWith(config);
-    }
-  }
-
   public static <C extends ControllerConfiguration<? extends HasMetadata>> Object configurationFor(
       DependentResourceSpec spec, C parentConfiguration) {
 
     // first check if the parent configuration has potentially already resolved the configuration
-    if (parentConfiguration instanceof DependentResourceConfigurationProvider provider) {
-      final var configuration = provider.getConfigurationFor(spec);
-      if (configuration != null) {
-        return configuration;
-      }
+    final var configuration = parentConfiguration.getConfigurationFor(spec);
+    if (configuration != null) {
+      return configuration;
     }
 
     // find Configured-annotated class if it exists

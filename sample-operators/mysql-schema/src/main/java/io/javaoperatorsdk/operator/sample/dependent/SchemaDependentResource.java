@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
@@ -38,7 +38,7 @@ import static java.lang.String.format;
     converter = ResourcePollerConfigConverter.class)
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
-    implements DependentResourceConfigurator<ResourcePollerConfig>,
+    implements ConfiguredDependentResource<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
 
   public static final String NAME = "schema";

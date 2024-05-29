@@ -31,7 +31,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
         .map(DependentResourceSpec::getName)
         .collect(Collectors.toSet());
     this.orderedSpecs = orderedSpecs;
-    for (DependentResourceSpec<?, ?> spec : orderedSpecs) {
+    for (DependentResourceSpec<?, ?, ?> spec : orderedSpecs) {
       // add cycle detection?
       if (spec.getDependsOn().isEmpty()) {
         topLevelResources.add(spec.getName());
@@ -99,7 +99,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private <R> DependentResource<R, P> resolve(DependentResourceSpec<R, P> spec,
+  private <R, C> DependentResource<R, P> resolve(DependentResourceSpec<R, P, C> spec,
       KubernetesClient client,
       ControllerConfiguration<P> configuration) {
     final DependentResource<R, P> dependentResource =

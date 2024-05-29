@@ -20,7 +20,6 @@ import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -31,7 +30,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -80,8 +79,7 @@ class BaseConfigurationServiceTest {
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
     final var spec =
         configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
-    return (KubernetesDependentResourceConfig) DependentResourceConfigurationResolver
-        .configurationFor(spec, configuration);
+    return (KubernetesDependentResourceConfig) spec.getConfiguration().orElseThrow();
   }
 
   @Test
@@ -99,8 +97,7 @@ class BaseConfigurationServiceTest {
     assertTrue(dependents.stream().anyMatch(d -> d.getName().equals(dependentResourceName)));
     var dependentSpec = findByName(dependents, dependentResourceName);
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
-    var maybeConfig =
-        DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
+    var maybeConfig = dependentSpec.getConfiguration().orElse(null);
     assertNotNull(maybeConfig);
     assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
     final var config = (KubernetesDependentResourceConfig) maybeConfig;
@@ -114,8 +111,7 @@ class BaseConfigurationServiceTest {
     assertEquals(1, dependents.size());
     dependentSpec = findByName(dependents, NamedDepReconciler.NAME);
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
-    maybeConfig = DependentResourceConfigurationResolver.configurationFor(dependentSpec,
-        configuration);
+    maybeConfig = dependentSpec.getConfiguration().orElse(null);
     assertNotNull(maybeConfig);
     assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
   }
@@ -232,11 +228,9 @@ class BaseConfigurationServiceTest {
 
   private static int getValue(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
-    return ((CustomConfig) DependentResourceConfigurationResolver
-        .configurationFor(
-            configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index),
-            configuration))
-        .getValue();
+    final DependentResourceSpec<?, ?, ?> spec = configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
+    return spec.getConfiguration().map(CustomConfig.class::cast)
+            .map(CustomConfig::getValue).orElseThrow();
   }
 
   @ControllerConfiguration(
@@ -450,7 +444,7 @@ class BaseConfigurationServiceTest {
   @Configured(by = CustomAnnotation.class, with = CustomConfig.class,
       converter = CustomConfigConverter.class)
   private static class CustomAnnotatedDep implements DependentResource<ConfigMap, ConfigMap>,
-      DependentResourceConfigurator<CustomConfig> {
+      ConfiguredDependentResource<CustomConfig> {
 
     public static final int PROVIDED_VALUE = 42;
     private CustomConfig config;

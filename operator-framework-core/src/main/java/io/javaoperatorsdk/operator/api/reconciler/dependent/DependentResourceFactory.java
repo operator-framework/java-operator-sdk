@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-
-import static io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver.configure;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public interface DependentResourceFactory<C extends ControllerConfiguration<?>> {
@@ -16,6 +15,10 @@ public interface DependentResourceFactory<C extends ControllerConfiguration<?>> 
     return Utils.instantiateAndConfigureIfNeeded(dependentResourceClass,
         DependentResource.class,
         Utils.contextFor(configuration, dependentResourceClass, Dependent.class),
-        (instance) -> configure(instance, spec, configuration));
+        (instance) -> {
+          if (instance instanceof ConfiguredDependentResource configurable) {
+            spec.getConfiguration().ifPresent(configurable::configureWith);
+          }
+        });
   }
 }

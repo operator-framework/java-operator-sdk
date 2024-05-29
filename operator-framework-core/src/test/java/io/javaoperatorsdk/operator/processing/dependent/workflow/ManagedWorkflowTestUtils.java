@@ -11,9 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.EmptyTestDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("rawtypes")
 public class ManagedWorkflowTestUtils {
@@ -21,7 +19,7 @@ public class ManagedWorkflowTestUtils {
   @SuppressWarnings("unchecked")
   public static DependentResourceSpec createDRS(String name, String... dependOns) {
     return new DependentResourceSpec(EmptyTestDependentResource.class, name, Set.of(dependOns),
-        null, null, null, null, null);
+        null, null, null, null, null, null);
   }
 
   public static DependentResourceSpec createDRSWithTraits(String name,
