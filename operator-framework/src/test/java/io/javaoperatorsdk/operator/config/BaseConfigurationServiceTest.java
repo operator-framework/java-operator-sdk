@@ -9,17 +9,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.reconciler.*;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -115,7 +115,8 @@ class BaseConfigurationServiceTest {
     assertThat(config.onUpdateFilter()).isEmpty();
     assertThat(config.genericFilter()).isEmpty();
     assertThat(config.getNamespaces()).isEqualTo(Constants.DEFAULT_NAMESPACES_SET);
-    assertThat(config.getFinalizerName()).isEqualTo(ReconcilerUtils.getDefaultFinalizerName(config.getResourceClass()));
+    assertThat(config.getFinalizerName())
+        .isEqualTo(ReconcilerUtils.getDefaultFinalizerName(config.getResourceClass()));
     assertThat(config.getItemStore()).isEmpty();
   }
 
