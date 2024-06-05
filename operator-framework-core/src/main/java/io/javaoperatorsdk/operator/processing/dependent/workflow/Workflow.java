@@ -36,7 +36,11 @@ public interface Workflow<P extends HasMetadata> {
   }
 
   default boolean isEmpty() {
-    return true;
+    return size() == 0;
+  }
+
+  default int size() {
+    return getDependentResourcesByName().size();
   }
 
   @SuppressWarnings("rawtypes")
