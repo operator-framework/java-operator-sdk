@@ -471,7 +471,7 @@ For a better understanding it might be worth to study
 a [sample implementation](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/externalstate/ExternalStateReconciler.java)
 without dependent resources.
 
-Please also refer to the [docs](/docs/patterns-best-practices#managing-state) for managing state in
+Please also refer to the [docs](/docs/patterns-and-best-practices#managing-state) for managing state in
 general.
 
 ## Combining Bulk and External State Tracking Dependent Resources
