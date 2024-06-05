@@ -7,16 +7,17 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("rawtypes")
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @SuppressWarnings("unchecked")
@@ -27,6 +28,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   TestDependent dr4 = new TestDependent("DR_4");
 
   @BeforeEach
+  @SuppressWarnings("unchecked")
   void setup() {
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
     when(mockContext.eventSourceRetriever()).thenReturn(mock(EventSourceRetriever.class));
@@ -521,6 +523,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void reconcilePreconditionNotCheckedOnNonActiveDependent() {
     var precondition = mock(Condition.class);
 
@@ -557,6 +560,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void activationConditionOnlyCalledOnceOnDeleteDependents() {
     TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
     var condition = mock(Condition.class);
@@ -573,4 +577,79 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     verify(condition, times(1)).isMet(any(), any(), any());
   }
 
+
+  @Test
+  void resultFromReadyConditionShouldBeAvailableIfExisting() {
+    final var result = Integer.valueOf(42);
+    final var resultCondition = new ResultCondition<>() {
+      @Override
+      public Result<Object> detailedIsMet(DependentResource<Object, HasMetadata> dependentResource,
+          HasMetadata primary, Context<HasMetadata> context) {
+        return new Result<>() {
+          @Override
+          public Object getResult() {
+            return result;
+          }
+
+          @Override
+          public boolean isSuccess() {
+            return false; // force not ready
+          }
+        };
+      }
+    };
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1)
+        .withReadyPostcondition(resultCondition)
+        .build();
+
+    final var reconcileResult = workflow.reconcile(new TestCustomResource(), mockContext);
+    assertEquals(result, reconcileResult.getNotReadyDependentResult(dr1, Integer.class));
+  }
+
+  @Test
+  void shouldThrowIllegalArgumentExceptionIfTypesDoNotMatch() {
+    final var result = "FOO";
+    final var resultCondition = new ResultCondition<>() {
+      @Override
+      public Result<Object> detailedIsMet(DependentResource<Object, HasMetadata> dependentResource,
+          HasMetadata primary, Context<HasMetadata> context) {
+        return new Result<>() {
+          @Override
+          public Object getResult() {
+            return result;
+          }
+
+          @Override
+          public boolean isSuccess() {
+            return false; // force not ready
+          }
+        };
+      }
+    };
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1)
+        .withReadyPostcondition(resultCondition)
+        .build();
+
+    final var reconcileResult = workflow.reconcile(new TestCustomResource(), mockContext);
+    final var expectedResultType = Integer.class;
+    final var e = assertThrows(IllegalArgumentException.class,
+        () -> reconcileResult.getNotReadyDependentResult(dr1, expectedResultType));
+    final var message = e.getMessage();
+    assertTrue(message.contains(dr1.name()));
+    assertTrue(message.contains(expectedResultType.getSimpleName()));
+    assertTrue(message.contains(result));
+  }
+
+  @Test
+  void shouldReturnNullIfNoConditionResultExists() {
+    var workflow = new WorkflowBuilder<TestCustomResource>()
+        .addDependentResource(dr1)
+        .withReadyPostcondition(notMetCondition)
+        .build();
+
+    final var reconcileResult = workflow.reconcile(new TestCustomResource(), mockContext);
+    assertNull(reconcileResult.getNotReadyDependentResult(dr1, Integer.class));
+  }
 }

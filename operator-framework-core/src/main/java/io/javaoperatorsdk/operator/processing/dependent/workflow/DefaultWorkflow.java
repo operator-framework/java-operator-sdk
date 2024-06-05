@@ -141,6 +141,11 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   }
 
   @Override
+  public int size() {
+    return dependentResourceNodes.size();
+  }
+
+  @Override
   public Map<String, DependentResource> getDependentResourcesByName() {
     final var resources = new HashMap<String, DependentResource>(dependentResourceNodes.size());
     dependentResourceNodes
