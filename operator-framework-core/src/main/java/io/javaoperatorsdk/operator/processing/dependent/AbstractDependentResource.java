@@ -71,10 +71,17 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
+          } else {
+            log.debug("Update skipped for dependent {} as it matched the existing one",
+                actualResource instanceof HasMetadata
+                    ? ResourceID.fromResource((HasMetadata) actualResource)
+                    : getClass().getSimpleName());
           }
         } else {
-          log.debug("Update skipped for dependent {} as it matched the existing one",
-              actualResource);
+          log.debug("Update skipped for dependent {} implement Updater interface to modify it",
+              actualResource instanceof HasMetadata
+                  ? ResourceID.fromResource((HasMetadata) actualResource)
+                  : getClass().getSimpleName());
         }
       }
     } else {
