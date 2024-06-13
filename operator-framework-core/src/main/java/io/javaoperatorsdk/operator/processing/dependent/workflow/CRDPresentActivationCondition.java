@@ -11,6 +11,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
+/**
+ * A generic CRD checking activation condition. Makes sure that the CRD is not checked unnecessarily
+ * even used in multiple condition. By default, it checks CRD at most 10 times with a delay at least
+ * 10 seconds. To fully customize CRD check trigger behavior you can extend this class and override
+ * the {@link CRDPresentActivationCondition#shouldCheckStateNow(CRDCheckState)} method.
+ **/
 public class CRDPresentActivationCondition<R extends HasMetadata, P extends HasMetadata>
     implements Condition<R, P> {
 
@@ -98,24 +104,12 @@ public class CRDPresentActivationCondition<R extends HasMetadata, P extends HasM
       return crdPresent;
     }
 
-    public void setCrdPresent(boolean crdPresent) {
-      this.crdPresent = crdPresent;
-    }
-
     public LocalDateTime getLastChecked() {
       return lastChecked;
     }
 
-    public void setLastChecked(LocalDateTime lastChecked) {
-      this.lastChecked = lastChecked;
-    }
-
     public int getCheckCount() {
       return checkCount;
-    }
-
-    public void setCheckCount(int checkCount) {
-      this.checkCount = checkCount;
     }
   }
 
