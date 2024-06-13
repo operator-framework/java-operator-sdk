@@ -41,6 +41,11 @@ reconciliation process.
   condition holds or not. This is a very useful feature when your operator needs to handle different flavors of the
   platform (e.g. OpenShift vs plain Kubernetes) and/or change its behavior based on the availability of optional
   resources / features (e.g. CertManager, a specific Ingress controller, etc.).
+    
+  A generic activation condition is provided out of the box, called 
+  [CRDPresentActivationCondition](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/CRDPresentActivationCondition.java)   
+  that checks if the CustomResourceDefinition of the managed resource type of dependent resource is present on the cluster.
+  See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework/src/test/java/io/javaoperatorsdk/operator/CRDPresentActivationConditionIT.java).
 
   Activation condition is semi-experimental at the moment, and it has its limitations.
   For example event sources cannot be shared between multiple managed dependent resources which use activation condition.
