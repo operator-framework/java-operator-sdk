@@ -23,8 +23,9 @@ So you can simply just delete this interface from you reconciler implementation.
 ```java
 
 public class WebPageReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, ~~EventSourceInitializer<WebPage>~~ {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, E̶v̶e̶n̶t̶S̶o̶u̶r̶c̶e̶I̶n̶i̶t̶i̶a̶l̶i̶z̶e̶r̶<W̶e̶b̶P̶a̶g̶e̶> {
 
+// omitted code
 
 }
 
