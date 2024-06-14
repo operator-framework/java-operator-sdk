@@ -22,7 +22,7 @@ import static java.lang.String.format;
 })
 @ControllerConfiguration
 public class MySQLSchemaReconciler
-    implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
+    implements Reconciler<MySQLSchema> {
 
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
