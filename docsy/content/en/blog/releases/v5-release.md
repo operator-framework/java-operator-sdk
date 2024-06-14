@@ -31,7 +31,10 @@ public class WebPageReconciler
 
 ```
 
+This interface implemented also some utility methods, now those cane be found in [`EventSourceUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceUtils.java).
 
+
+### EventSource has a name now
 
 
 
