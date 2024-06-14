@@ -11,7 +11,7 @@ and explain the rational behind them, also show how to migrate from previous rel
 
 ## API Changes
 
-### Removal of EventSourceInitializer interafe
+### Removal of EventSourceInitializer interface
 
 `EventSourceInitializer` is an interfaced that was implemented by most of the reconcilers. In general
 we want to minimize such interaces, since it is hard to find them just "by looking at code", so this
