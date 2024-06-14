@@ -1,9 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -20,25 +18,24 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 @SuppressWarnings("rawtypes")
 abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
-  protected final Workflow<P> workflow;
+  protected final DefaultWorkflow<P> workflow;
   protected final P primary;
   protected final ResourceID primaryID;
   protected final Context<P> context;
+  protected final Map<DependentResourceNode<?, P>, WorkflowResult.DetailBuilder<?>> results;
   /**
    * Covers both deleted and reconciled
    */
-  private final Set<DependentResourceNode> alreadyVisited = ConcurrentHashMap.newKeySet();
   private final Map<DependentResourceNode, Future<?>> actualExecutions = new ConcurrentHashMap<>();
-  private final Map<DependentResourceNode, Exception> exceptionsDuringExecution =
-      new ConcurrentHashMap<>();
   private final ExecutorService executorService;
 
-  public AbstractWorkflowExecutor(Workflow<P> workflow, P primary, Context<P> context) {
+  protected AbstractWorkflowExecutor(DefaultWorkflow<P> workflow, P primary, Context<P> context) {
     this.workflow = workflow;
     this.primary = primary;
     this.context = context;
     this.primaryID = ResourceID.fromResource(primary);
     executorService = context.getWorkflowExecutorService();
+    results = new ConcurrentHashMap<>(workflow.getDependentResourcesByName().size());
   }
 
   protected abstract Logger logger();
@@ -75,11 +72,22 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected boolean alreadyVisited(DependentResourceNode<?, P> dependentResourceNode) {
-    return alreadyVisited.contains(dependentResourceNode);
+    return results.containsKey(dependentResourceNode);
   }
 
   protected void markAsVisited(DependentResourceNode<?, P> dependentResourceNode) {
-    alreadyVisited.add(dependentResourceNode);
+    createOrGetResultFor(dependentResourceNode);
+  }
+
+  protected boolean postDeleteConditionNotMet(DependentResourceNode<?, P> dependentResourceNode) {
+    final var builder = results.get(dependentResourceNode);
+    return builder != null && builder.hasPostDeleteConditionNotMet();
+  }
+
+  protected WorkflowResult.DetailBuilder createOrGetResultFor(
+      DependentResourceNode<?, P> dependentResourceNode) {
+    return results.computeIfAbsent(dependentResourceNode,
+        unused -> new WorkflowResult.DetailBuilder());
   }
 
   protected boolean isExecutingNow(DependentResourceNode<?, P> dependentResourceNode) {
@@ -94,17 +102,17 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected synchronized void handleExceptionInExecutor(
       DependentResourceNode<?, P> dependentResourceNode,
       RuntimeException e) {
-    exceptionsDuringExecution.put(dependentResourceNode, e);
+    createOrGetResultFor(dependentResourceNode).withError(e);
+  }
+
+  protected boolean isNotReady(DependentResourceNode<?, P> dependentResourceNode) {
+    final var builder = results.get(dependentResourceNode);
+    return builder != null && builder.isNotReady();
   }
 
   protected boolean isInError(DependentResourceNode<?, P> dependentResourceNode) {
-    return exceptionsDuringExecution.containsKey(dependentResourceNode);
-  }
-
-  protected Map<DependentResource, Exception> getErroredDependents() {
-    return exceptionsDuringExecution.entrySet().stream()
-        .collect(
-            Collectors.toMap(e -> e.getKey().getDependentResource(), Entry::getValue));
+    final var builder = results.get(dependentResourceNode);
+    return builder != null && builder.hasError();
   }
 
   protected synchronized void handleNodeExecutionFinish(
@@ -116,9 +124,17 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     }
   }
 
-  protected <R> boolean isConditionMet(Optional<Condition<R, P>> condition,
-      DependentResource<R, P> dependentResource) {
-    return condition.map(c -> c.isMet(dependentResource, primary, context)).orElse(true);
+  @SuppressWarnings("unchecked")
+  protected <R> boolean isConditionMet(
+      Optional<DependentResourceNode.ConditionWithType<R, P, ?>> condition,
+      DependentResourceNode<R, P> dependentResource) {
+    final var dr = dependentResource.getDependentResource();
+    return condition.map(c -> {
+      final ResultCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
+      results.computeIfAbsent(dependentResource, unused -> new WorkflowResult.DetailBuilder())
+          .withResultForCondition(c, r);
+      return r;
+    }).orElse(ResultCondition.Result.metWithoutResult).isSuccess();
   }
 
   protected <R> void submit(DependentResourceNode<R, P> dependentResourceNode,
@@ -144,5 +160,11 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
         eventSourceRetriever.dynamicallyDeRegisterEventSource(eventSource.orElseThrow().name());
       }
     }
+  }
+
+  protected Map<DependentResource, WorkflowResult.Detail> asDetails() {
+    return results.entrySet().stream()
+        .collect(
+            Collectors.toMap(e -> e.getKey().getDependentResource(), e -> e.getValue().build()));
   }
 }
