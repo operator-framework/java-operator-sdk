@@ -15,6 +15,34 @@ public interface ResultCondition<R, P extends HasMetadata, T> extends Condition<
   }
 
   interface Result<T> {
+    Result metWithoutResult = new Result() {
+      @Override
+      public Object getResult() {
+        return NULL;
+      }
+
+      @Override
+      public boolean isSuccess() {
+        return true;
+      }
+    };
+
+    Result unmetWithoutResult = new Result() {
+      @Override
+      public Object getResult() {
+        return NULL;
+      }
+
+      @Override
+      public boolean isSuccess() {
+        return false;
+      }
+    };
+
+    static Result withoutResult(boolean success) {
+      return success ? metWithoutResult : unmetWithoutResult;
+    }
+
     T getResult();
 
     boolean isSuccess();

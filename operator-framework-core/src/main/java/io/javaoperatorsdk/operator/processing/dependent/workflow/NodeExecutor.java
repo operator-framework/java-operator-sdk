@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
 
@@ -17,9 +16,7 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
   @Override
   public void run() {
     try {
-      var dependentResource = dependentResourceNode.getDependentResource();
-
-      doRun(dependentResourceNode, dependentResource);
+      doRun(dependentResourceNode);
 
     } catch (RuntimeException e) {
       workflowExecutor.handleExceptionInExecutor(dependentResourceNode, e);
@@ -28,6 +25,5 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
     }
   }
 
-  protected abstract void doRun(DependentResourceNode<R, P> dependentResourceNode,
-      DependentResource<R, P> dependentResource);
+  protected abstract void doRun(DependentResourceNode<R, P> dependentResourceNode);
 }

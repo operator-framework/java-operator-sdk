@@ -108,12 +108,10 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     return result;
   }
 
-  @Override
   public Set<DependentResourceNode> getTopLevelDependentResources() {
     return topLevelResources;
   }
 
-  @Override
   public Set<DependentResourceNode> getBottomLevelResource() {
     return bottomLevelResource;
   }

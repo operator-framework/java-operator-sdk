@@ -7,26 +7,19 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowCleanupResult extends WorkflowResult {
-
-  private final List<DependentResource> deleteCalledOnDependents;
-  private final List<DependentResource> postConditionNotMetDependents;
-
-  WorkflowCleanupResult(Map<DependentResource, Exception> erroredDependents,
-      List<DependentResource> postConditionNotMet, List<DependentResource> deleteCalled) {
-    super(erroredDependents);
-    this.deleteCalledOnDependents = deleteCalled;
-    this.postConditionNotMetDependents = postConditionNotMet;
+  WorkflowCleanupResult(Map<DependentResource, Detail> results) {
+    super(results);
   }
 
   public List<DependentResource> getDeleteCalledOnDependents() {
-    return deleteCalledOnDependents;
+    return listFilteredBy(Detail::deleted);
   }
 
   public List<DependentResource> getPostConditionNotMetDependents() {
-    return postConditionNotMetDependents;
+    return listFilteredBy(detail -> !Detail.isConditionMet(detail.deletePostconditionResult()));
   }
 
   public boolean allPostConditionsMet() {
-    return postConditionNotMetDependents.isEmpty();
+    return getPostConditionNotMetDependents().isEmpty();
   }
 }

@@ -5,40 +5,27 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowReconcileResult extends WorkflowResult {
-  private final Map<DependentResource, Object> notReadyDependents;
-  private final Map<DependentResource, ReconcileResult> reconcileResults;
 
-  public WorkflowReconcileResult(
-      Map<DependentResource, Object> notReadyDependents,
-      Map<DependentResource, Exception> erroredDependents,
-      Map<DependentResource, ReconcileResult> reconcileResults) {
-    super(erroredDependents);
-    this.notReadyDependents = notReadyDependents;
-    this.reconcileResults = reconcileResults;
+  public WorkflowReconcileResult(Map<DependentResource, Detail> results) {
+    super(results);
   }
 
   public List<DependentResource> getReconciledDependents() {
-    return reconcileResults.keySet().stream().toList();
+    return listFilteredBy(detail -> detail.reconcileResult() != null);
   }
 
   public List<DependentResource> getNotReadyDependents() {
-    return notReadyDependents.keySet().stream().toList();
-  }
-
-  @SuppressWarnings("unused")
-  public Map<DependentResource, Object> getNotReadyDependentsWithDetails() {
-    return notReadyDependents;
+    return listFilteredBy(detail -> !Detail.isConditionMet(detail.reconcilePostconditionResult()));
   }
 
   public <T> T getNotReadyDependentResult(DependentResource dependentResource,
       Class<T> expectedResultType) {
     final var result = new Object[1];
     try {
-      return Optional.ofNullable(notReadyDependents.get(dependentResource))
+      return Optional.ofNullable(results().get(dependentResource))
           .filter(cr -> !ResultCondition.NULL.equals(cr))
           .map(r -> result[0] = r)
           .map(expectedResultType::cast)
@@ -50,12 +37,7 @@ public class WorkflowReconcileResult extends WorkflowResult {
     }
   }
 
-  @SuppressWarnings("unused")
-  public Map<DependentResource, ReconcileResult> getReconcileResults() {
-    return reconcileResults;
-  }
-
   public boolean allDependentResourcesReady() {
-    return notReadyDependents.isEmpty();
+    return getNotReadyDependents().isEmpty();
   }
 }
