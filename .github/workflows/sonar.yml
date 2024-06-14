@@ -9,12 +9,12 @@ concurrency:
 on:
   push:
     paths-ignore:
-      - 'docs/**'
+      - 'docsy/**'
       - 'adr/**'
     branches: [ main ]
   pull_request:
     paths-ignore:
-      - 'docs/**'
+      - 'docsy/**'
       - 'adr/**'
     types: [ opened, synchronize, reopened ]
 

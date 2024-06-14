@@ -4,12 +4,12 @@ name: Integration & End to End tests
 on:
   pull_request:
     paths-ignore:
-      - 'docs/**'
+      - 'docsy/**'
       - 'adr/**'
     branches: [ main, next ]
   push:
     paths-ignore:
-      - 'docs/**'
+      - 'docsy/**'
       - 'adr/**'
     branches:
       - main

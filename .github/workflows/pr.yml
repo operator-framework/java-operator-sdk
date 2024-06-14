@@ -9,7 +9,7 @@ concurrency:
 on:
   pull_request:
     paths-ignore:
-      - 'docs/**'
+      - 'docsy/**'
       - 'adr/**'
     branches: [ main, v1, v2, v3, next ]
   workflow_dispatch:
