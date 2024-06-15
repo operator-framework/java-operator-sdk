@@ -26,8 +26,8 @@ public class WorkflowReconcileResult extends WorkflowResult {
     final var result = new Object[1];
     try {
       return Optional.ofNullable(results().get(dependentResource))
-          .filter(cr -> !ResultCondition.NULL.equals(cr))
-          .map(r -> result[0] = r)
+          .flatMap(detail -> detail.getResultForConditionWithType(Condition.Type.READY))
+          .map(r -> result[0] = r.getResult())
           .map(expectedResultType::cast)
           .orElse(null);
     } catch (Exception e) {
