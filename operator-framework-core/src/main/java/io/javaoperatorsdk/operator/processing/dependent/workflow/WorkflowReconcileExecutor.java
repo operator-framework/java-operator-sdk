@@ -43,12 +43,33 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   private synchronized <R> void handleReconcile(DependentResourceNode<R, P> dependentResourceNode) {
     log.debug("Submitting for reconcile: {} primaryID: {}", dependentResourceNode, primaryID);
 
-    if (alreadyVisited(dependentResourceNode)
-        || isExecutingNow(dependentResourceNode)
-        || !allParentsReconciledAndReady(dependentResourceNode)
-        || markedForDelete.contains(dependentResourceNode)
-        || hasErroredParent(dependentResourceNode)) {
-      log.debug("Skipping submit of: {}, primaryID: {}", dependentResourceNode, primaryID);
+    final var alreadyVisited = alreadyVisited(dependentResourceNode);
+    final var executingNow = isExecutingNow(dependentResourceNode);
+    final var isWaitingOnParents = !allParentsReconciledAndReady(dependentResourceNode);
+    final var isMarkedForDelete = markedForDelete.contains(dependentResourceNode);
+    final var hasErroredParent = hasErroredParent(dependentResourceNode);
+    if (alreadyVisited || executingNow || isMarkedForDelete || isWaitingOnParents
+        || hasErroredParent) {
+      if (log.isDebugEnabled()) {
+        final var causes = new ArrayList<String>();
+        if (alreadyVisited) {
+          causes.add("already visited");
+        }
+        if (executingNow) {
+          causes.add("executing now");
+        }
+        if (isMarkedForDelete) {
+          causes.add("marked for delete");
+        }
+        if (isWaitingOnParents) {
+          causes.add("waiting on parents");
+        }
+        if (hasErroredParent) {
+          causes.add("errored parent");
+        }
+        log.debug("Skipping submit of: {} primaryID: {} causes: {}", dependentResourceNode,
+            primaryID, String.join(", ", causes));
+      }
       return;
     }
 
@@ -71,12 +92,29 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   private synchronized void handleDelete(DependentResourceNode dependentResourceNode) {
     log.debug("Submitting for delete: {}", dependentResourceNode);
 
-    if (alreadyVisited(dependentResourceNode)
-        || isExecutingNow(dependentResourceNode)
-        || !markedForDelete.contains(dependentResourceNode)
-        || !allDependentsDeletedAlready(dependentResourceNode)) {
-      log.debug("Skipping submit for delete of: {} primaryID: {} ", dependentResourceNode,
-          primaryID);
+    final var alreadyVisited = alreadyVisited(dependentResourceNode);
+    final var executingNow = isExecutingNow(dependentResourceNode);
+    final var isNotMarkedForDelete = !markedForDelete.contains(dependentResourceNode);
+    final var isWaitingOnDependents = !allDependentsDeletedAlready(dependentResourceNode);
+    if (alreadyVisited || executingNow || isNotMarkedForDelete || isWaitingOnDependents) {
+      if (log.isDebugEnabled()) {
+        final var causes = new ArrayList<String>();
+        if (alreadyVisited) {
+          causes.add("already visited");
+        }
+        if (executingNow) {
+          causes.add("executing now");
+        }
+        if (isNotMarkedForDelete) {
+          causes.add("not marked for delete");
+        }
+        if (isWaitingOnDependents) {
+          causes.add("waiting on dependents");
+        }
+        log.debug("Skipping submit for delete of: {} primaryID: {} causes: {}",
+            dependentResourceNode,
+            primaryID, String.join(", ", causes));
+      }
       return;
     }
 
