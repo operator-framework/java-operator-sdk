@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -13,10 +14,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 @SuppressWarnings("rawtypes")
 class WorkflowResult {
-  private final Map<DependentResource, Detail> results;
+  private final Map<DependentResource, Detail<?>> results;
   private Boolean hasErroredDependents;
 
-  WorkflowResult(Map<DependentResource, Detail> results) {
+  WorkflowResult(Map<DependentResource, Detail<?>> results) {
     this.results = results;
   }
 
@@ -25,11 +26,11 @@ class WorkflowResult {
         .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().error));
   }
 
-  private Stream<Entry<DependentResource, Detail>> getErroredDependentsStream() {
+  private Stream<Entry<DependentResource, Detail<?>>> getErroredDependentsStream() {
     return results.entrySet().stream().filter(entry -> entry.getValue().error != null);
   }
 
-  protected Map<DependentResource, Detail> results() {
+  protected Map<DependentResource, Detail<?>> results() {
     return results;
   }
 
@@ -64,10 +65,11 @@ class WorkflowResult {
     private ResultCondition.Result readyPostconditionResult;
     private ResultCondition.Result reconcilePostconditionResult;
     private boolean deleted;
+    private boolean visited;
 
     Detail<R> build() {
       return new Detail<>(error, reconcileResult, activationConditionResult,
-          deletePostconditionResult, readyPostconditionResult, reconcilePostconditionResult, deleted);
+          deletePostconditionResult, readyPostconditionResult, reconcilePostconditionResult, deleted, visited);
     }
 
     DetailBuilder<R> withResultForCondition(DependentResourceNode.ConditionWithType conditionWithType, ResultCondition.Result conditionResult) {
@@ -107,6 +109,15 @@ class WorkflowResult {
     public boolean isNotReady() {
       return readyPostconditionResult != null && !readyPostconditionResult.isSuccess();
     }
+
+    DetailBuilder<R> markAsVisited() {
+      visited = true;
+      return this;
+    }
+
+    public boolean isVisited() {
+      return visited;
+    }
   }
 
 
@@ -115,10 +126,19 @@ class WorkflowResult {
       ResultCondition.Result deletePostconditionResult,
       ResultCondition.Result readyPostconditionResult,
       ResultCondition.Result reconcilePostconditionResult,
-                   boolean deleted) {
+                   boolean deleted, boolean visited) {
 
-    static boolean isConditionMet(ResultCondition.Result conditionResult) {
-      return conditionResult != null && conditionResult.isSuccess();
+    boolean isConditionWithTypeMet(Condition.Type conditionType) {
+      return getResultForConditionWithType(conditionType).map(ResultCondition.Result::isSuccess).orElse(true);
+    }
+
+    Optional<ResultCondition.Result<?>> getResultForConditionWithType(Condition.Type conditionType) {
+      return switch (conditionType) {
+        case ACTIVATION -> Optional.ofNullable(activationConditionResult);
+        case DELETE -> Optional.ofNullable(deletePostconditionResult);
+        case READY -> Optional.ofNullable(readyPostconditionResult);
+        case RECONCILE -> Optional.ofNullable(reconcilePostconditionResult);
+      };
     }
   }
 }

@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -140,12 +141,13 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
       log.debug(
           "Reconciling for primary: {} node: {} ", primaryID, dependentResourceNode);
       ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
-      createOrGetResultFor(dependentResourceNode).withReconcileResult(reconcileResult);
+      final var detailBuilder = createOrGetResultFor(dependentResourceNode);
+      detailBuilder.withReconcileResult(reconcileResult);
 
       if (isConditionMet(dependentResourceNode.getReconcilePrecondition(), dependentResourceNode)) {
         log.debug("Setting already reconciled for: {} primaryID: {}",
             dependentResourceNode, primaryID);
-        markAsVisited(dependentResourceNode);
+        detailBuilder.markAsVisited();
         handleDependentsReconcile(dependentResourceNode);
       } else {
         log.debug("Setting already reconciled but not ready for: {}", dependentResourceNode);
@@ -162,8 +164,6 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     @Override
     @SuppressWarnings("unchecked")
     protected void doRun(DependentResourceNode<R, P> dependentResourceNode) {
-      var deletePostCondition = dependentResourceNode.getDeletePostcondition();
-
       final var dependentResource = dependentResourceNode.getDependentResource();
       boolean deletePostConditionMet = true;
       if (isConditionMet(dependentResourceNode.getActivationCondition(), dependentResourceNode)) {
@@ -173,11 +173,12 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
         if (dependentResource instanceof Deleter) {
           ((Deleter<P>) dependentResource).delete(primary, context);
         }
-        deletePostConditionMet = isConditionMet(deletePostCondition, dependentResourceNode);
+        deletePostConditionMet =
+            isConditionMet(dependentResourceNode.getDeletePostcondition(), dependentResourceNode);
       }
 
       if (deletePostConditionMet) {
-        markAsVisited(dependentResourceNode);
+        createOrGetResultFor(dependentResourceNode).markAsVisited();
         handleDependentDeleted(dependentResourceNode);
       }
     }
@@ -224,7 +225,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
       }
     } else {
       // this is for an edge case when there is only one resource but that is not active
-      markAsVisited(dependentResourceNode);
+      createOrGetResultFor(dependentResourceNode).markAsVisited();
       if (dependents.isEmpty()) {
         handleNodeExecutionFinish(dependentResourceNode);
       } else {

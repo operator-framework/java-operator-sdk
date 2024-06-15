@@ -74,7 +74,7 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
       }
 
       if (deletePostConditionMet) {
-        markAsVisited(dependentResourceNode);
+        createOrGetResultFor(dependentResourceNode).markAsVisited();
         handleDependentCleaned(dependentResourceNode);
       }
     }

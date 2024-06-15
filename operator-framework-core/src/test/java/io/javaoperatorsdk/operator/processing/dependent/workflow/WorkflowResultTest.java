@@ -14,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class WorkflowResultTest {
   private final static WorkflowResult.Detail detail =
-      new WorkflowResult.Detail<>(new RuntimeException(), null, null, null, null, null, false);
+      new WorkflowResult.Detail<>(new RuntimeException(), null, null, null, null, null, false,
+          false);
 
   @Test
   void throwsExceptionWithoutNumberingIfAllDifferentClass() {
