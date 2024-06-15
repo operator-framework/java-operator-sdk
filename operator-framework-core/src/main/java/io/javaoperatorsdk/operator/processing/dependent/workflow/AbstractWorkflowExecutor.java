@@ -72,11 +72,8 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected boolean alreadyVisited(DependentResourceNode<?, P> dependentResourceNode) {
-    return results.containsKey(dependentResourceNode);
-  }
-
-  protected void markAsVisited(DependentResourceNode<?, P> dependentResourceNode) {
-    createOrGetResultFor(dependentResourceNode);
+    final WorkflowResult.DetailBuilder<?> builder = results.get(dependentResourceNode);
+    return builder != null && builder.isVisited();
   }
 
   protected boolean postDeleteConditionNotMet(DependentResourceNode<?, P> dependentResourceNode) {
@@ -162,7 +159,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     }
   }
 
-  protected Map<DependentResource, WorkflowResult.Detail> asDetails() {
+  protected Map<DependentResource, WorkflowResult.Detail<?>> asDetails() {
     return results.entrySet().stream()
         .collect(
             Collectors.toMap(e -> e.getKey().getDependentResource(), e -> e.getValue().build()));

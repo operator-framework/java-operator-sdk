@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 public class WorkflowReconcileResult extends WorkflowResult {
 
-  public WorkflowReconcileResult(Map<DependentResource, Detail> results) {
+  public WorkflowReconcileResult(Map<DependentResource, Detail<?>> results) {
     super(results);
   }
 
@@ -18,7 +18,7 @@ public class WorkflowReconcileResult extends WorkflowResult {
   }
 
   public List<DependentResource> getNotReadyDependents() {
-    return listFilteredBy(detail -> !Detail.isConditionMet(detail.reconcilePostconditionResult()));
+    return listFilteredBy(detail -> !detail.isConditionWithTypeMet(Condition.Type.READY));
   }
 
   public <T> T getNotReadyDependentResult(DependentResource dependentResource,
