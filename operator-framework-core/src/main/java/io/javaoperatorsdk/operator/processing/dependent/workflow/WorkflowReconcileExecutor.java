@@ -144,7 +144,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
       final var detailBuilder = createOrGetResultFor(dependentResourceNode);
       detailBuilder.withReconcileResult(reconcileResult);
 
-      if (isConditionMet(dependentResourceNode.getReconcilePrecondition(), dependentResourceNode)) {
+      if (isConditionMet(dependentResourceNode.getReadyPostcondition(), dependentResourceNode)) {
         log.debug("Setting already reconciled for: {} primaryID: {}",
             dependentResourceNode, primaryID);
         detailBuilder.markAsVisited();
