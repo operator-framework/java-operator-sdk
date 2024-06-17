@@ -61,3 +61,4 @@ description: Migrating from v4.7 to v5.0
     Make sure to implement those interfaces in your bulk dependent resources. You can use also the new helper interface, the
     [`CRUDBulkDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/CRUDBulkDependentResource.java)
     what also implement `BulkUpdater` interface.
+12. `ErrorStatusHandler` is deleted. Just delete the interface from your impl.
