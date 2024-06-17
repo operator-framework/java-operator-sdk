@@ -20,7 +20,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
 })
 @ControllerConfiguration
 public class WebPageManagedDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, Cleaner<WebPage> {
+    implements Reconciler<WebPage>, Cleaner<WebPage> {
 
   public static final String SELECTOR = "managed";
 
