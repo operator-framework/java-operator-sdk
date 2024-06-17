@@ -6,7 +6,6 @@ import java.util.List;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
@@ -31,7 +30,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
  */
 @ControllerConfiguration
 public class WebPageStandaloneDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+    implements Reconciler<WebPage> {
 
   private final Workflow<WebPage> workflow;
 
