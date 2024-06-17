@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import org.mockito.stubbing.Answer;
 
@@ -28,7 +28,6 @@ import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
@@ -479,7 +478,7 @@ class ReconciliationDispatcherTest {
     reconciler.reconcile = (r, c) -> {
       throw new IllegalStateException("Error Status Test");
     };
-    reconciler.errorHandler = (r, ri, e) -> {
+    reconciler.errorHandler = () -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
       return ErrorStatusUpdateControl.patchStatus(testCustomResource);
     };
@@ -499,7 +498,7 @@ class ReconciliationDispatcherTest {
             }).setResource(testCustomResource));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
-    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+    verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
   }
 
@@ -510,7 +509,7 @@ class ReconciliationDispatcherTest {
     reconciler.reconcile = (r, c) -> {
       throw new IllegalStateException("Error Status Test");
     };
-    reconciler.errorHandler = (r, ri, e) -> {
+    reconciler.errorHandler = () -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
       return ErrorStatusUpdateControl.patchStatus(testCustomResource);
     };
@@ -518,7 +517,7 @@ class ReconciliationDispatcherTest {
     var postExecControl = reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
-    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+    verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
     assertThat(postExecControl.exceptionDuringExecution()).isTrue();
   }
@@ -529,7 +528,7 @@ class ReconciliationDispatcherTest {
     reconciler.reconcile = (r, c) -> {
       throw new IllegalStateException("Error Status Test");
     };
-    reconciler.errorHandler = (r, ri, e) -> {
+    reconciler.errorHandler = () -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
       return ErrorStatusUpdateControl.patchStatus(testCustomResource).withNoRetry();
     };
@@ -537,7 +536,7 @@ class ReconciliationDispatcherTest {
     var postExecControl = reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
 
-    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+    verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     assertThat(postExecControl.exceptionDuringExecution()).isFalse();
@@ -549,7 +548,7 @@ class ReconciliationDispatcherTest {
     reconciler.reconcile = (r, c) -> {
       throw new IllegalStateException("Error Status Test");
     };
-    reconciler.errorHandler = (r, ri, e) -> {
+    reconciler.errorHandler = () -> {
       testCustomResource.getStatus().setConfigMapStatus(ERROR_MESSAGE);
       return ErrorStatusUpdateControl.<TestCustomResource>noStatusUpdate().withNoRetry();
     };
@@ -557,7 +556,7 @@ class ReconciliationDispatcherTest {
     var postExecControl = reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
 
-    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+    verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
     verify(customResourceFacade, times(0)).patchStatus(eq(testCustomResource), any());
     assertThat(postExecControl.exceptionDuringExecution()).isFalse();
@@ -570,13 +569,13 @@ class ReconciliationDispatcherTest {
       throw new IllegalStateException("Error Status Test");
     };
     reconciler.errorHandler =
-        (r, ri, e) -> ErrorStatusUpdateControl.patchStatus(testCustomResource);
+        () -> ErrorStatusUpdateControl.patchStatus(testCustomResource);
 
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
-    verify(((ErrorStatusHandler) reconciler), times(1)).updateErrorStatus(eq(testCustomResource),
+    verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource),
         any(), any());
   }
 
@@ -592,16 +591,14 @@ class ReconciliationDispatcherTest {
     reconciler.reconcile = (r, c) -> {
       throw new IllegalStateException("Error Status Test");
     };
-    var mockErrorHandler = mock(ErrorStatusHandler.class);
-    when(mockErrorHandler.updateErrorStatus(any(), any(), any()))
-        .thenReturn(ErrorStatusUpdateControl.noStatusUpdate());
-    reconciler.errorHandler = mockErrorHandler;
+
+    reconciler.errorHandler = () -> ErrorStatusUpdateControl.noStatusUpdate();
 
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(null).setResource(testCustomResource));
 
-    verify(mockErrorHandler, times(1)).updateErrorStatus(any(),
-        ArgumentMatchers.argThat((ArgumentMatcher<Context<TestCustomResource>>) context -> {
+    verify(reconciler, times(1)).updateErrorStatus(any(),
+        ArgumentMatchers.argThat(context -> {
           var retryInfo = context.getRetryInfo().orElseThrow();
           return retryInfo.isLastAttempt();
         }), any());
@@ -651,7 +648,7 @@ class ReconciliationDispatcherTest {
       throw new IllegalStateException("Error Status Test");
     };
     reconciler.errorHandler =
-        (r, ri, e) -> ErrorStatusUpdateControl.<TestCustomResource>noStatusUpdate()
+        () -> ErrorStatusUpdateControl.<TestCustomResource>noStatusUpdate()
             .rescheduleAfter(delay);
 
     var res = reconciliationDispatcher.handleExecution(
@@ -691,12 +688,11 @@ class ReconciliationDispatcherTest {
   }
 
   private class TestReconciler
-      implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
-      ErrorStatusHandler<TestCustomResource> {
+      implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource> {
 
     private BiFunction<TestCustomResource, Context, UpdateControl<TestCustomResource>> reconcile;
     private BiFunction<TestCustomResource, Context, DeleteControl> cleanup;
-    private ErrorStatusHandler<TestCustomResource> errorHandler;
+    private Supplier<ErrorStatusUpdateControl> errorHandler;
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(TestCustomResource resource,
@@ -719,7 +715,7 @@ class ReconciliationDispatcherTest {
     public ErrorStatusUpdateControl<TestCustomResource> updateErrorStatus(
         TestCustomResource resource,
         Context<TestCustomResource> context, Exception e) {
-      return errorHandler != null ? errorHandler.updateErrorStatus(resource, context, e)
+      return errorHandler != null ? errorHandler.get()
           : ErrorStatusUpdateControl.noStatusUpdate();
     }
   }

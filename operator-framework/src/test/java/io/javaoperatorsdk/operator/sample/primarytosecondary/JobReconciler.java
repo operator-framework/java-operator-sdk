@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
  */
 @ControllerConfiguration()
 public class JobReconciler
-    implements Reconciler<Job>, ErrorStatusHandler<Job> {
+    implements Reconciler<Job> {
 
   private static final String JOB_CLUSTER_INDEX = "job-cluster-index";
 

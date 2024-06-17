@@ -26,7 +26,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
     labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 @SuppressWarnings("unused")
 public class WebPageDependentsWorkflowReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+    implements Reconciler<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
 
