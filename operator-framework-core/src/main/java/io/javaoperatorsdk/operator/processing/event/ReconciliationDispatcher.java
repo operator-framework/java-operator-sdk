@@ -22,7 +22,6 @@ import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -174,55 +173,46 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   private PostExecutionControl<P> handleErrorStatusHandler(P resource, P originalResource,
       Context<P> context,
       Exception e) throws Exception {
-    if (isErrorStatusHandlerPresent()) {
-      try {
-        RetryInfo retryInfo = context.getRetryInfo().orElseGet(() -> new RetryInfo() {
-          @Override
-          public int getAttemptCount() {
-            return 0;
-          }
 
-          @Override
-          public boolean isLastAttempt() {
-            // check also if the retry is limited to 0
-            return retryConfigurationHasZeroAttempts ||
-                controller.getConfiguration().getRetry() == null;
-          }
-        });
-        ((DefaultContext<P>) context).setRetryInfo(retryInfo);
-        var errorStatusUpdateControl = ((ErrorStatusHandler<P>) controller.getReconciler())
-            .updateErrorStatus(resource, context, e);
-
-        P updatedResource = null;
-        if (errorStatusUpdateControl.getResource().isPresent()) {
-          updatedResource = customResourceFacade
-              .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
-        }
-        if (errorStatusUpdateControl.isNoRetry()) {
-          PostExecutionControl<P> postExecutionControl;
-          if (updatedResource != null) {
-            postExecutionControl =
-                PostExecutionControl.customResourceStatusPatched(updatedResource);
-          } else {
-            postExecutionControl = PostExecutionControl.defaultDispatch();
-          }
-          errorStatusUpdateControl.getScheduleDelay()
-              .ifPresent(postExecutionControl::withReSchedule);
-          return postExecutionControl;
-        }
-      } catch (RuntimeException ex) {
-        log.error("Error during error status handling.", ex);
+    RetryInfo retryInfo = context.getRetryInfo().orElseGet(() -> new RetryInfo() {
+      @Override
+      public int getAttemptCount() {
+        return 0;
       }
+
+      @Override
+      public boolean isLastAttempt() {
+        // check also if the retry is limited to 0
+        return retryConfigurationHasZeroAttempts ||
+            controller.getConfiguration().getRetry() == null;
+      }
+    });
+    ((DefaultContext<P>) context).setRetryInfo(retryInfo);
+    var errorStatusUpdateControl = controller.getReconciler()
+        .updateErrorStatus(resource, context, e);
+
+    if (errorStatusUpdateControl.isDefaultErrorProcessing()) {
+      throw e;
+    }
+
+    P updatedResource = null;
+    if (errorStatusUpdateControl.getResource().isPresent()) {
+      updatedResource = customResourceFacade
+          .patchStatus(errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
+    }
+    if (errorStatusUpdateControl.isNoRetry()) {
+      PostExecutionControl<P> postExecutionControl;
+      if (updatedResource != null) {
+        postExecutionControl =
+            PostExecutionControl.customResourceStatusPatched(updatedResource);
+      } else {
+        postExecutionControl = PostExecutionControl.defaultDispatch();
+      }
+      errorStatusUpdateControl.getScheduleDelay()
+          .ifPresent(postExecutionControl::withReSchedule);
+      return postExecutionControl;
     }
     throw e;
-  }
-
-  private boolean isErrorStatusHandlerPresent() {
-    return controller.getReconciler() instanceof ErrorStatusHandler;
-  }
-
-  private P patchStatusGenerationAware(P resource, P originalResource) {
-    return customResourceFacade.patchStatus(resource, originalResource);
   }
 
   private PostExecutionControl<P> createPostExecutionControl(P updatedCustomResource,
