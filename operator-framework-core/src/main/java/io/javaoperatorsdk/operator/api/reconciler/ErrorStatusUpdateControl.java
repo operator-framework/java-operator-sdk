@@ -10,6 +10,7 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
 
   private final P resource;
   private boolean noRetry = false;
+  private final boolean defaultErrorProcessing;
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatus(T resource) {
     return new ErrorStatusUpdateControl<>(resource);
@@ -19,8 +20,21 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
     return new ErrorStatusUpdateControl<>(null);
   }
 
+  /**
+   * No special processing of the error, the error will be thrown and default error handling will
+   * apply
+   */
+  public static <T extends HasMetadata> ErrorStatusUpdateControl<T> defaultErrorProcessing() {
+    return new ErrorStatusUpdateControl<>(null, true);
+  }
+
   private ErrorStatusUpdateControl(P resource) {
+    this(resource, false);
+  }
+
+  private ErrorStatusUpdateControl(P resource, boolean defaultErrorProcessing) {
     this.resource = resource;
+    this.defaultErrorProcessing = defaultErrorProcessing;
   }
 
   /**
@@ -29,6 +43,9 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
    * @return ErrorStatusUpdateControl
    */
   public ErrorStatusUpdateControl<P> withNoRetry() {
+    if (defaultErrorProcessing) {
+      throw new IllegalStateException("Cannot set no-retry for default error processing");
+    }
     this.noRetry = true;
     return this;
   }
@@ -39,6 +56,10 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
 
   public boolean isNoRetry() {
     return noRetry;
+  }
+
+  public boolean isDefaultErrorProcessing() {
+    return defaultErrorProcessing;
   }
 
   /**
