@@ -16,8 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
 public class DependentGarbageCollectionTestReconciler
-    implements Reconciler<DependentGarbageCollectionTestCustomResource>,
-    ErrorStatusHandler<DependentGarbageCollectionTestCustomResource> {
+    implements Reconciler<DependentGarbageCollectionTestCustomResource> {
 
   private KubernetesClient kubernetesClient;
   private volatile boolean errorOccurred = false;
