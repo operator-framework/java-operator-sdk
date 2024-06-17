@@ -10,8 +10,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class ErrorStatusHandlerTestReconciler
-    implements Reconciler<ErrorStatusHandlerTestCustomResource>, TestExecutionInfoProvider,
-    ErrorStatusHandler<ErrorStatusHandlerTestCustomResource> {
+    implements Reconciler<ErrorStatusHandlerTestCustomResource>, TestExecutionInfoProvider {
 
   private static final Logger log = LoggerFactory.getLogger(ErrorStatusHandlerTestReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
