@@ -28,7 +28,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 @RateLimited(maxReconciliations = 2, within = 3)
 @ControllerConfiguration
 public class WebPageReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
+    implements Reconciler<WebPage> {
 
   public static final String INDEX_HTML = "index.html";
 

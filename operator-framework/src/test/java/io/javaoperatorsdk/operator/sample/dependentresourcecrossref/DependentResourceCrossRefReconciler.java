@@ -21,8 +21,7 @@ import static io.javaoperatorsdk.operator.sample.dependentresourcecrossref.Depen
         dependsOn = SECRET_NAME)})
 @ControllerConfiguration
 public class DependentResourceCrossRefReconciler
-    implements Reconciler<DependentResourceCrossRefResource>,
-    ErrorStatusHandler<DependentResourceCrossRefResource> {
+    implements Reconciler<DependentResourceCrossRefResource> {
 
   public static final String SECRET_NAME = "secret";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
