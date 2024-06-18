@@ -8,8 +8,6 @@ public class CRDPresentActivationDependent
     extends
     CRUDNoGCKubernetesDependentResource<CRDPresentActivationDependentCustomResource, CRDPresentActivationCustomResource> {
 
-  public static final String DATA_KEY = "data";
-
   public CRDPresentActivationDependent() {
     super(CRDPresentActivationDependentCustomResource.class);
   }

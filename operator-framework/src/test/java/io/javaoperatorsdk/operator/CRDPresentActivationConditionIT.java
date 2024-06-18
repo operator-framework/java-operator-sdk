@@ -49,7 +49,7 @@ public class CRDPresentActivationConditionIT {
     LocallyRunOperatorExtension.applyCrd(CRDPresentActivationDependentCustomResource.class,
         extension.getKubernetesClient());
 
-    resource.getMetadata().setAnnotations(Map.of("sampple", "value"));
+    resource.getMetadata().setAnnotations(Map.of("sample", "value"));
     extension.replace(resource);
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
