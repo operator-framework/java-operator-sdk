@@ -30,11 +30,6 @@ public class ReadOnlyBulkDependentResource
   }
 
   @Override
-  public Class<BulkDependentTestCustomResource> getPrimaryResourceType() {
-    return BulkDependentTestCustomResource.class;
-  }
-
-  @Override
   public Map<String, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
     return context.getSecondaryResourcesAsStream(ConfigMap.class)

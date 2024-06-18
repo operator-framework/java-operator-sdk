@@ -2,8 +2,8 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 
 public class GenericKubernetesDependentResource<P extends HasMetadata>
@@ -16,15 +16,12 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     this.groupVersionKind = groupVersionKind;
   }
 
-  protected InformerConfiguration.InformerConfigurationBuilder<GenericKubernetesResource> informerConfigurationBuilder() {
-    return InformerConfiguration.from(groupVersionKind, getPrimaryResourceType());
+  protected InformerConfiguration.InformerConfigurationBuilder<GenericKubernetesResource> informerConfigurationBuilder(
+      EventSourceContext<P> context) {
+    return InformerConfiguration.from(groupVersionKind, context.getPrimaryResourceClass());
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public Class<P> getPrimaryResourceType() {
-    return (Class<P>) Utils.getFirstTypeArgumentFromExtendedClass(getClass());
-  }
+
 
   @SuppressWarnings("unused")
   public GroupVersionKind getGroupVersionKind() {

@@ -46,11 +46,6 @@ public class AbstractWorkflowExecutorTest {
     }
 
     @Override
-    public Class<TestCustomResource> getPrimaryResourceType() {
-      return TestCustomResource.class;
-    }
-
-    @Override
     public ReconcileResult<ConfigMap> reconcile(TestCustomResource primary,
         Context<TestCustomResource> context) {
       executionHistory.add(new ReconcileRecord(this));

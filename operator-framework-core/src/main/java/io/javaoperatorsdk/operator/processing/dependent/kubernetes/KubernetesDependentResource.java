@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -51,11 +50,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public KubernetesDependentResource(Class<R> resourceType, String name) {
     super(resourceType, name);
-  }
-
-  @SuppressWarnings("unchecked")
-  public Class<P> getPrimaryResourceType() {
-    return (Class<P>) Utils.getTypeArgumentFromExtendedClassByIndex(getClass(), 1);
   }
 
   @Override
@@ -210,7 +204,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (kubernetesDependentResourceConfig != null
         && kubernetesDependentResourceConfig.informerConfig() != null) {
 
-      var configBuilder = informerConfigurationBuilder();
+      var configBuilder = informerConfigurationBuilder(context);
       kubernetesDependentResourceConfig.informerConfig().updateInformerConfigBuilder(configBuilder);
 
       if (kubernetesDependentResourceConfig.informerConfig().getName() == null) {
@@ -218,13 +212,14 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       } else {
         configBuilder.withName(kubernetesDependentResourceConfig.informerConfig().getName());
       }
-      configBuilder.withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper().orElseThrow());
+      configBuilder
+          .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper(context).orElseThrow());
       config = configBuilder.build();
     } else {
-      config = informerConfigurationBuilder()
+      config = informerConfigurationBuilder(context)
           .withName(name())
           .withSecondaryToPrimaryMapper(
-              getSecondaryToPrimaryMapper().orElseThrow())
+              getSecondaryToPrimaryMapper(context).orElseThrow())
           .build();
     }
     var es = new InformerEventSource<>(config, context);
@@ -235,8 +230,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   /**
    * To handle {@link io.fabric8.kubernetes.api.model.GenericKubernetesResource} based dependents.
    */
-  protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder() {
-    return InformerConfiguration.from(resourceType(), getPrimaryResourceType());
+  protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder(
+      EventSourceContext<P> context) {
+    return InformerConfiguration.from(resourceType(), context.getPrimaryResourceClass());
   }
 
   private boolean useNonOwnerRefBasedSecondaryToPrimaryMapping() {
@@ -301,13 +297,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unchecked")
-  protected Optional<SecondaryToPrimaryMapper<R>> getSecondaryToPrimaryMapper() {
+  protected Optional<SecondaryToPrimaryMapper<R>> getSecondaryToPrimaryMapper(
+      EventSourceContext<P> context) {
     if (this instanceof SecondaryToPrimaryMapper<?>) {
       return Optional.of((SecondaryToPrimaryMapper<R>) this);
     } else {
-      var clustered = !Namespaced.class.isAssignableFrom(getPrimaryResourceType());
+      var clustered = !Namespaced.class.isAssignableFrom(context.getPrimaryResourceClass());
       if (garbageCollected) {
-        return Optional.of(Mappers.fromOwnerReferences(getPrimaryResourceType(), clustered));
+        return Optional
+            .of(Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), clustered));
       } else if (isCreatable()) {
         return Optional.of(Mappers.fromDefaultAnnotations());
       }
