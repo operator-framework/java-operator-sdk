@@ -47,7 +47,7 @@ public class DependentSSAReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, DependnetSSACustomResource>> prepareEventSources(
       EventSourceContext<DependnetSSACustomResource> context) {
     return EventSourceUtils.dependentEventSources(context,
         ssaConfigMapDependent);
