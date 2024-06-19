@@ -73,7 +73,7 @@ See [related issue](https://github.com/operator-framework/java-operator-sdk/issu
 ### Named event sources 
 
 The name is now directly an attribute of an `EventSource`. EventSources were also named in previous releases, but the name was not an attribute. This leads mainly to better internal structures and 
-solves issues out of the box. For example, when a dependent resource provides an event source, in some cases, it needs to have a specific name. In a `Reconciler` implementation simply 
+solves issues out of the box. For example, when a dependent resource provides an event source, in some cases, it needs to have a specific name. In a `Reconciler` implementation,  
 use a `List.of(event sources)` instead the `Map<String,EventSource>` as it was before:
 
 
