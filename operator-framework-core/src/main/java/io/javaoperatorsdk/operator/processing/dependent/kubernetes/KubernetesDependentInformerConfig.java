@@ -13,16 +13,16 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 
 public class KubernetesDependentInformerConfig<R extends HasMetadata> {
 
-  private String name;
-  private Set<String> namespaces;
-  private boolean followControllerNamespacesOnChange;
-  private String labelSelector;
-  private OnAddFilter<? super R> onAddFilter;
-  private OnUpdateFilter<? super R> onUpdateFilter;
-  private OnDeleteFilter<? super R> onDeleteFilter;
-  private GenericFilter<? super R> genericFilter;
-  private ItemStore<R> itemStore;
-  private Long informerListLimit;
+  private final String name;
+  private final Set<String> namespaces;
+  private final boolean followControllerNamespacesOnChange;
+  private final String labelSelector;
+  private final OnAddFilter<? super R> onAddFilter;
+  private final OnUpdateFilter<? super R> onUpdateFilter;
+  private final OnDeleteFilter<? super R> onDeleteFilter;
+  private final GenericFilter<? super R> genericFilter;
+  private final ItemStore<R> itemStore;
+  private final Long informerListLimit;
 
   public KubernetesDependentInformerConfig(String name, Set<String> namespaces,
       boolean followControllerNamespacesOnChange,
@@ -81,9 +81,11 @@ public class KubernetesDependentInformerConfig<R extends HasMetadata> {
     return informerListLimit;
   }
 
-  public void updateInformerConfigBuilder(
+  void updateInformerConfigBuilder(
       InformerConfiguration.InformerConfigurationBuilder<R> builder) {
-    builder.withName(name);
+    if (name != null) {
+      builder.withName(name);
+    }
     builder.withNamespaces(namespaces);
     builder.followControllerNamespacesOnChange(followControllerNamespacesOnChange);
     builder.withLabelSelector(labelSelector);
