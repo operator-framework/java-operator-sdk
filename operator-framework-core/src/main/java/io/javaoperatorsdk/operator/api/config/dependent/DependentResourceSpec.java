@@ -8,23 +8,17 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class DependentResourceSpec<R, P extends HasMetadata> {
+public class DependentResourceSpec<R, P extends HasMetadata, C> {
 
   private final Class<? extends DependentResource<R, P>> dependentResourceClass;
-
   private final String name;
-
   private final Set<String> dependsOn;
-
   private final Condition<?, ?> readyCondition;
-
   private final Condition<?, ?> reconcileCondition;
-
   private final Condition<?, ?> deletePostCondition;
-
   private final Condition<?, ?> activationCondition;
-
   private final String useEventSourceWithName;
+  private C nullableConfiguration;
 
   public DependentResourceSpec(Class<? extends DependentResource<R, P>> dependentResourceClass,
       String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
@@ -62,7 +56,7 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DependentResourceSpec<?, ?> that = (DependentResourceSpec<?, ?>) o;
+    DependentResourceSpec<?, ?, ?> that = (DependentResourceSpec<?, ?, ?>) o;
     return name.equals(that.name);
   }
 
@@ -98,4 +92,13 @@ public class DependentResourceSpec<R, P extends HasMetadata> {
   public Optional<String> getUseEventSourceWithName() {
     return Optional.ofNullable(useEventSourceWithName);
   }
+
+  public Optional<C> getConfiguration() {
+    return Optional.ofNullable(nullableConfiguration);
+  }
+
+  protected void setNullableConfiguration(C configuration) {
+    this.nullableConfiguration = configuration;
+  }
+
 }

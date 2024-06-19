@@ -52,12 +52,10 @@ public class PollingEventSource<R, P extends HasMetadata>
   private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
 
-  public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R> config) {
-    this(null, resourceClass, config);
-  }
 
-  public PollingEventSource(String name, Class<R> resourceClass, PollingConfiguration<R> config) {
-    super(name, resourceClass, config.cacheKeyMapper());
+
+  public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R> config) {
+    super(config.name(), resourceClass, config.cacheKeyMapper());
     this.genericResourceFetcher = config.genericResourceFetcher();
     this.period = config.period();
   }

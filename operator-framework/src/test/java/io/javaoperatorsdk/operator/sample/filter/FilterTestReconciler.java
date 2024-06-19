@@ -54,7 +54,7 @@ public class FilterTestReconciler
 
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
         new InformerEventSource<>(InformerConfiguration
-            .from(ConfigMap.class, context)
+            .from(ConfigMap.class, FilterTestCustomResource.class)
             .withOnUpdateFilter((newCM, oldCM) -> !newCM.getData().get(CM_VALUE_KEY)
                 .equals(CONFIG_MAP_FILTER_VALUE))
             .build(), context);

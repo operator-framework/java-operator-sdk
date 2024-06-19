@@ -71,8 +71,9 @@ public class MultipleManagedExternalDependentResourceReconciler
     };
 
     PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
-        new PollingEventSource<>(EVENT_SOURCE_NAME, ExternalResource.class,
+        new PollingEventSource<>(ExternalResource.class,
             new PollingConfigurationBuilder<>(fetcher, Duration.ofMillis(1000L))
+                .withName(EVENT_SOURCE_NAME)
                 .withCacheKeyMapper(ExternalResource::getId)
                 .build());
 
