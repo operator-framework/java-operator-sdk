@@ -49,7 +49,7 @@ public class WebPageDependentsWorkflowReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
     return EventSourceUtils.dependentEventSources(context, configMapDR,
         deploymentDR, serviceDR,
         ingressDR);
