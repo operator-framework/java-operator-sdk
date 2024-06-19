@@ -8,6 +8,7 @@ public final class PollingConfigurationBuilder<R> {
   private final Duration period;
   private final PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher;
   private CacheKeyMapper<R> cacheKeyMapper;
+  private String name;
 
   public PollingConfigurationBuilder(PollingEventSource.GenericResourceFetcher<R> fetcher,
       Duration period) {
@@ -20,7 +21,12 @@ public final class PollingConfigurationBuilder<R> {
     return this;
   }
 
+  public PollingConfigurationBuilder<R> withName(String name) {
+    this.name = name;
+    return this;
+  }
+
   public PollingConfiguration<R> build() {
-    return new PollingConfiguration<>(genericResourceFetcher, period, cacheKeyMapper);
+    return new PollingConfiguration<>(name, genericResourceFetcher, period, cacheKeyMapper);
   }
 }

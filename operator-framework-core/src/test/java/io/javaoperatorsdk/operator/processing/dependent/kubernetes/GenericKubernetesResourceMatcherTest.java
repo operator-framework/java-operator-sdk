@@ -146,7 +146,7 @@ class GenericKubernetesResourceMatcherTest {
         .addNewImagePullSecret("imagePullSecret3")
         .build();
 
-    final var matcher = GenericResourceUpdaterMatcher.updaterMatcherFor(ServiceAccount.class);
+    final var matcher = GenericResourceUpdaterMatcher.<ServiceAccount>updaterMatcherFor();
     assertThat(matcher.matches(actual, desired, context)).isTrue();
   }
 

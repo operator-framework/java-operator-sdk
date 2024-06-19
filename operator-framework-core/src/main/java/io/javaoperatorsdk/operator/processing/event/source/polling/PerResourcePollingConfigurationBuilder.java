@@ -12,6 +12,7 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
   private final Duration defaultPollingPeriod;
   private final PerResourcePollingEventSource.ResourceFetcher<R, P> resourceFetcher;
 
+  private String name;
   private Predicate<P> registerPredicate;
   private ScheduledExecutorService executorService;
   private CacheKeyMapper<R> cacheKeyMapper;
@@ -42,8 +43,13 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
     return this;
   }
 
+  public PerResourcePollingConfigurationBuilder<R, P> withName(String name) {
+    this.name = name;
+    return this;
+  }
+
   public PerResourcePollingConfiguration<R, P> build() {
-    return new PerResourcePollingConfiguration<>(executorService, cacheKeyMapper,
+    return new PerResourcePollingConfiguration<>(name, executorService, cacheKeyMapper,
         resourceFetcher, registerPredicate, defaultPollingPeriod);
   }
 }
