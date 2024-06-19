@@ -35,7 +35,7 @@ public class StandaloneBulkDependentReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, BulkDependentTestCustomResource>> prepareEventSources(
       EventSourceContext<BulkDependentTestCustomResource> context) {
     return List.of(dependent.initEventSource(context));
   }

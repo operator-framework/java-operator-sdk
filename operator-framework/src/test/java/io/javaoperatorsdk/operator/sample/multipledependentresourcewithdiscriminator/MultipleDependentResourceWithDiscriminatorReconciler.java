@@ -43,7 +43,7 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, MultipleDependentResourceCustomResourceWithDiscriminator>> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResourceWithDiscriminator> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResourceWithDiscriminator> eventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class,
