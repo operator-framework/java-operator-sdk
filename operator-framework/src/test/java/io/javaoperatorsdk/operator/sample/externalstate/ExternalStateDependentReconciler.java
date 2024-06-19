@@ -37,7 +37,8 @@ public class ExternalStateDependentReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<ExternalStateCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
-        InformerConfiguration.from(ConfigMap.class, context).build(), context);
+        InformerConfiguration.from(ConfigMap.class, ExternalStateCustomResource.class).build(),
+        context);
     return List.of(configMapEventSource);
   }
 
