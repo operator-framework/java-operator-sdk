@@ -33,7 +33,7 @@ public class MultipleDependentResourceReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, MultipleDependentResourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResource> eventSource =
         new InformerEventSource<>(InformerConfiguration

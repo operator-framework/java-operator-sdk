@@ -53,7 +53,7 @@ public class ClusterScopedCustomResourceReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, ClusterScopedCustomResource>> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
     var ies = new InformerEventSource<>(
         InformerConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)

@@ -51,7 +51,7 @@ public class ComplexDependentReconciler implements Reconciler<ComplexDependentCu
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, ComplexDependentCustomResource>> prepareEventSources(
       EventSourceContext<ComplexDependentCustomResource> context) {
     InformerEventSource<Service, ComplexDependentCustomResource> serviceEventSource =
         new InformerEventSource<>(
