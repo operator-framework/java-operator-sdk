@@ -27,7 +27,7 @@ public interface Reconciler<P extends HasMetadata> {
    *        sources
    * @return a list of event sources
    */
-  default List<EventSource> prepareEventSources(EventSourceContext<P> context) {
+  default List<EventSource<?, P>> prepareEventSources(EventSourceContext<P> context) {
     return Collections.emptyList();
   }
 
