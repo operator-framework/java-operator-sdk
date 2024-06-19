@@ -49,8 +49,10 @@ public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> ies =
-        new InformerEventSource<>(CONFIG_MAP_EVENT_SOURCE,
-            InformerConfiguration.from(ConfigMap.class, context)
+        new InformerEventSource<>(
+            InformerConfiguration.from(ConfigMap.class,
+                MultipleManagedDependentNoDiscriminatorCustomResource.class)
+                .withName(CONFIG_MAP_EVENT_SOURCE)
                 .build(),
             context);
 
