@@ -237,12 +237,6 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     return specsMap.values().stream().toList();
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static <R> Class<R> resourceTypeFor(
-      Class<? extends DependentResource> dependentResourceClass) {
-    return Utils.instantiate(dependentResourceClass, DependentResource.class, null).resourceType();
-  }
-
   protected boolean createIfNeeded() {
     return true;
   }

@@ -148,7 +148,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     return SAME_AS_CONTROLLER_NAMESPACES_SET.equals(namespaces);
   }
 
-  @SuppressWarnings("unused")
+  @SuppressWarnings({"unused", "UnusedReturnValue"})
   class InformerConfigurationBuilder<R extends HasMetadata> {
 
     private final Class<R> resourceClass;
@@ -252,7 +252,6 @@ public interface InformerConfiguration<R extends HasMetadata>
      *        controller's namespaces are reconfigured, {@code false} otherwise
      * @return the builder instance so that calls can be chained fluently
      */
-    @SuppressWarnings("UnusedReturnValue")
     public InformerConfigurationBuilder<R> followControllerNamespacesOnChange(
         boolean followChanges) {
       this.followControllerNamespacesOnChange = followChanges;
@@ -264,7 +263,6 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    @SuppressWarnings("UnusedReturnValue")
     public InformerConfigurationBuilder<R> withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
       this.onAddFilter = onAddFilter;
       return this;
@@ -276,14 +274,12 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    @SuppressWarnings("UnusedReturnValue")
     public InformerConfigurationBuilder<R> withOnDeleteFilter(
         OnDeleteFilter<? super R> onDeleteFilter) {
       this.onDeleteFilter = onDeleteFilter;
       return this;
     }
 
-    @SuppressWarnings("UnusedReturnValue")
     public InformerConfigurationBuilder<R> withGenericFilter(
         GenericFilter<? super R> genericFilter) {
       this.genericFilter = genericFilter;
