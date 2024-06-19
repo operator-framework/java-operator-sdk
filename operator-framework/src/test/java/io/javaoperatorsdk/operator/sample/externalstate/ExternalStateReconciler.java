@@ -107,7 +107,7 @@ public class ExternalStateReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, ExternalStateCustomResource>> prepareEventSources(
       EventSourceContext<ExternalStateCustomResource> context) {
 
     configMapEventSource = new InformerEventSource<>(

@@ -61,7 +61,7 @@ public class MultipleSecondaryEventSourceReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, MultipleSecondaryEventSourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleSecondaryEventSourceCustomResource> context) {
 
     var config = InformerConfiguration
