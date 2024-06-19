@@ -136,4 +136,13 @@ public class Mappers {
           .collect(Collectors.toSet());
     };
   }
+
+  public static class SecondaryToPrimaryFromDefaultAnnotation
+      implements SecondaryToPrimaryMapper<HasMetadata> {
+    @Override
+    public Set<ResourceID> toPrimaryResourceIDs(HasMetadata resource) {
+      return Mappers.fromDefaultAnnotations().toPrimaryResourceIDs(resource);
+    }
+  }
+
 }

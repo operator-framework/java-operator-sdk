@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -48,7 +50,7 @@ public class WorkflowExplicitInvocationIT {
 
     // The ConfigMap is not garbage collected, this tests that even if the cleaner is not
     // implemented the workflow cleanup still called even if there is explicit invocation
-    await().untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(30)).untilAsserted(() -> {
       assertThat(extension.get(ConfigMap.class, RESOURCE_NAME)).isNull();
     });
   }

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentInformerConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
@@ -82,7 +83,10 @@ public class WebPageDependentsWorkflowReconciler
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-          .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR).build());
+          .withKubernetesDependentInformerConfig(new KubernetesDependentInformerConfigBuilder<>()
+              .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
+              .build())
+          .build());
     });
   }
 
