@@ -19,14 +19,13 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.*;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
+import static io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration.inheritsNamespacesFromController;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerConfigurationOverriderTest {
@@ -66,18 +65,20 @@ class ControllerConfigurationOverriderTest {
     assertEquals(stringConfig, resourceConfig);
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private KubernetesDependentResourceConfig extractFirstDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration) {
-    return (KubernetesDependentResourceConfig) extractDependentKubernetesResourceConfig(
+    var conf = (KubernetesDependentResourceConfig) extractDependentKubernetesResourceConfig(
         configuration, 0);
+    return conf;
   }
 
-  private Object extractDependentKubernetesResourceConfig(
+  @SuppressWarnings("unchecked")
+  private static Object extractDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
     final var spec =
         configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
-    return DependentResourceConfigurationResolver.configurationFor(spec, configuration);
+    return configuration.getConfigurationFor(spec);
   }
 
   private io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> createConfiguration(
@@ -171,8 +172,8 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(OverriddenNSDependent.DEP_NS), configuration.getNamespaces());
 
     // check that the DependentResource inherits has its own configured NS
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
+    var informerConfig = config.informerConfig();
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), informerConfig.getNamespaces());
 
     // override the parent's NS
     final var newNS = "bar";
@@ -181,8 +182,8 @@ class ControllerConfigurationOverriderTest {
 
     // check that dependent config is still using its own NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
+    informerConfig = config.informerConfig();
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), informerConfig.getNamespaces());
   }
 
   @SuppressWarnings("unchecked")
@@ -193,17 +194,10 @@ class ControllerConfigurationOverriderTest {
     var config = extractFirstDependentKubernetesResourceConfig(configuration);
 
     // check that the DependentResource inherits the controller's configuration if applicable
-    assertTrue(ResourceConfiguration.allNamespacesWatched(config.namespaces()));
+    var informerConfig = config.informerConfig();
+    assertTrue(
+        inheritsNamespacesFromController(informerConfig.getNamespaces()));
 
-    // override the NS
-    final var newNS = "bar";
-    configuration =
-        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
-
-    // check that dependent config is using the overridden namespace
-    config = extractFirstDependentKubernetesResourceConfig(configuration);
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(newNS), config.namespaces());
   }
 
   @SuppressWarnings("unchecked")
@@ -214,7 +208,9 @@ class ControllerConfigurationOverriderTest {
     var config = extractFirstDependentKubernetesResourceConfig(configuration);
 
     // check that the DependentResource inherits the controller's configuration if applicable
-    assertTrue(ResourceConfiguration.allNamespacesWatched(config.namespaces()));
+    assertTrue(
+        ResourceConfiguration
+            .allNamespacesWatched(config.informerConfig().getNamespaces()));
 
     // override the NS
     final var newNS = "bar";
@@ -223,28 +219,20 @@ class ControllerConfigurationOverriderTest {
 
     // check that dependent config is still configured to watch all NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
-    assertTrue(ResourceConfiguration.allNamespacesWatched(config.namespaces()));
+    assertTrue(
+        ResourceConfiguration
+            .allNamespacesWatched(config.informerConfig().getNamespaces()));
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void overridingNamespacesShouldBePropagatedToDependentsWithDefaultConfig() {
     var configuration = createConfiguration(new OneDepReconciler());
     // retrieve the config for the first (and unique) dependent
     var config = extractFirstDependentKubernetesResourceConfig(configuration);
 
     // check that the DependentResource inherits the controller's configuration if applicable
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(OneDepReconciler.CONFIGURED_NS), config.namespaces());
-
-    // override the NS
-    final var newNS = "bar";
-    configuration =
-        ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
-
-    // check that dependent config is using the overridden namespace
-    config = extractFirstDependentKubernetesResourceConfig(configuration);
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(newNS), config.namespaces());
+    assertEquals(1, config.informerConfig().getNamespaces().size());
   }
 
   @Test
@@ -254,8 +242,8 @@ class ControllerConfigurationOverriderTest {
     var config = extractFirstDependentKubernetesResourceConfig(configuration);
 
     // DependentResource has its own NS
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS),
+        config.informerConfig().getNamespaces());
 
     // override the NS
     final var newNS = "bar";
@@ -264,12 +252,12 @@ class ControllerConfigurationOverriderTest {
 
     // check that dependent config is still using its own NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), config.namespaces());
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS),
+        config.informerConfig().getNamespaces());
   }
 
-  @SuppressWarnings("rawtypes")
   @Test
+  @SuppressWarnings({"rawtypes", "unchecked"})
   void replaceNamedDependentResourceConfigShouldWork() {
     var configuration = createConfiguration(new OneDepReconciler());
     var dependents = configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
@@ -283,36 +271,40 @@ class ControllerConfigurationOverriderTest {
         .filter(dr -> dr.getName().equals(dependentResourceName))
         .findFirst().orElseThrow();
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
-    var maybeConfig =
-        DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
+    var maybeConfig = extractFirstDependentKubernetesResourceConfig(configuration);
     assertNotNull(maybeConfig);
     assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
 
     var config = (KubernetesDependentResourceConfig) maybeConfig;
     // check that the DependentResource inherits the controller's configuration if applicable
-    assertEquals(1, config.namespaces().size());
-    assertNull(config.labelSelector());
-    assertEquals(Set.of(OneDepReconciler.CONFIGURED_NS), config.namespaces());
+    var informerConfig = config.informerConfig();
+    assertEquals(1, informerConfig.getNamespaces().size());
+    assertNull(informerConfig.getLabelSelector());
 
     // override the namespaces for the dependent resource
     final var overriddenNS = "newNS";
     final var labelSelector = "foo=bar";
+    KubernetesDependentInformerConfigBuilder<ConfigMap> anInformerConfig =
+        new KubernetesDependentInformerConfigBuilder<>();
+    anInformerConfig.withNamespaces(Set.of(overriddenNS));
+    anInformerConfig.withLabelSelector(labelSelector);
     final var overridden = ControllerConfigurationOverrider.override(configuration)
         .replacingNamedDependentResourceConfig(
-            DependentResource.defaultNameFor(ReadOnlyDependent.class),
-            new KubernetesDependentResourceConfigBuilder<>()
-                .withNamespaces(Set.of(overriddenNS))
-                .withLabelSelector(labelSelector)
+            dependentResourceName,
+            new KubernetesDependentResourceConfigBuilder<ConfigMap>()
+                .withKubernetesDependentInformerConfig(anInformerConfig.build())
+
                 .build())
         .build();
     dependents = overridden.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
-    dependentSpec = dependents.stream().filter(dr -> dr.getName().equals(dependentResourceName))
-        .findFirst().orElseThrow();
-    config = (KubernetesDependentResourceConfig) DependentResourceConfigurationResolver
-        .configurationFor(dependentSpec, overridden);
-    assertEquals(1, config.namespaces().size());
-    assertEquals(labelSelector, config.labelSelector());
-    assertEquals(Set.of(overriddenNS), config.namespaces());
+    dependentSpec = dependents.stream()
+        .filter(dr -> dr.getName().equals(dependentResourceName))
+        .findFirst()
+        .orElseThrow();
+    config = (KubernetesDependentResourceConfig) overridden.getConfigurationFor(dependentSpec);
+    informerConfig = config.informerConfig();
+    assertEquals(labelSelector, informerConfig.getLabelSelector());
+    assertEquals(Set.of(overriddenNS), informerConfig.getNamespaces());
     // check that we still have the proper workflow configuration
     assertInstanceOf(TestCondition.class, dependentSpec.getReadyCondition());
   }
@@ -360,16 +352,19 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  private static class ReadOnlyDependent extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+  public static class ReadOnlyDependent extends KubernetesDependentResource<ConfigMap, ConfigMap>
+      implements GarbageCollected<ConfigMap> {
 
     public ReadOnlyDependent() {
       super(ConfigMap.class);
     }
   }
 
-  @KubernetesDependent(namespaces = Constants.WATCH_ALL_NAMESPACES)
-  private static class WatchAllNSDependent
-      extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+  @KubernetesDependent(
+      informerConfig = @InformerConfig(namespaces = Constants.WATCH_ALL_NAMESPACES))
+  public static class WatchAllNSDependent
+      extends KubernetesDependentResource<ConfigMap, ConfigMap>
+      implements GarbageCollected<ConfigMap> {
 
     public WatchAllNSDependent() {
       super(ConfigMap.class);
@@ -378,7 +373,7 @@ class ControllerConfigurationOverriderTest {
 
   @Workflow(dependents = @Dependent(type = OverriddenNSDependent.class))
   @ControllerConfiguration(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS)
-  private static class OverriddenNSOnDepReconciler implements Reconciler<ConfigMap> {
+  public static class OverriddenNSOnDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "parentNS";
 
@@ -388,9 +383,10 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @KubernetesDependent(namespaces = OverriddenNSDependent.DEP_NS)
-  private static class OverriddenNSDependent
-      extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+  @KubernetesDependent(informerConfig = @InformerConfig(namespaces = OverriddenNSDependent.DEP_NS))
+  public static class OverriddenNSDependent
+      extends KubernetesDependentResource<ConfigMap, ConfigMap>
+      implements GarbageCollected<ConfigMap> {
 
     private static final String DEP_NS = "dependentNS";
 
@@ -404,7 +400,7 @@ class ControllerConfigurationOverriderTest {
       @Dependent(type = NamedDependentReconciler.ExternalDependentResource.class)
   })
   @ControllerConfiguration
-  private static class NamedDependentReconciler implements Reconciler<ConfigMap> {
+  public static class NamedDependentReconciler implements Reconciler<ConfigMap> {
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
@@ -412,7 +408,8 @@ class ControllerConfigurationOverriderTest {
     }
 
     private static class NamedDependentResource
-        extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+        extends KubernetesDependentResource<ConfigMap, ConfigMap>
+        implements GarbageCollected<ConfigMap> {
 
       public NamedDependentResource() {
         super(ConfigMap.class);
@@ -420,7 +417,7 @@ class ControllerConfigurationOverriderTest {
     }
 
     private static class ExternalDependentResource implements DependentResource<Object, ConfigMap>,
-        DependentResourceConfigurator<String> {
+        ConfiguredDependentResource<String>, GarbageCollected<ConfigMap> {
 
       private String config = "UNSET";
 
@@ -443,6 +440,9 @@ class ControllerConfigurationOverriderTest {
       public Optional<String> configuration() {
         return Optional.of(config);
       }
+
+      @Override
+      public void delete(ConfigMap primary, Context<ConfigMap> context) {}
     }
   }
 }

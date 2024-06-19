@@ -46,10 +46,11 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResourceWithDiscriminator> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResourceWithDiscriminator> eventSource =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class,
+            MultipleDependentResourceCustomResourceWithDiscriminator.class)
             .build(), context);
-    firstDependentResourceConfigMap.configureWith(eventSource);
-    secondDependentResourceConfigMap.configureWith(eventSource);
+    firstDependentResourceConfigMap.setEventSource(eventSource);
+    secondDependentResourceConfigMap.setEventSource(eventSource);
 
     return List.of(eventSource);
   }

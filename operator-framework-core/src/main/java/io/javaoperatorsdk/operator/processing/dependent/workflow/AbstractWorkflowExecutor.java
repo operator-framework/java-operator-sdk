@@ -135,13 +135,13 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     if (dependentResourceNode.getActivationCondition().isPresent()) {
       final var dr = dependentResourceNode.getDependentResource();
       final var eventSourceRetriever = context.eventSourceRetriever();
+      var eventSource =
+          dr.eventSource(eventSourceRetriever.eventSourceContextForDynamicRegistration());
       if (activationConditionMet) {
-        var eventSource =
-            dr.eventSource(eventSourceRetriever.eventSourceContextForDynamicRegistration());
         var es = eventSource.orElseThrow();
         eventSourceRetriever.dynamicallyRegisterEventSource(es);
       } else {
-        eventSourceRetriever.dynamicallyDeRegisterEventSource(dr.name());
+        eventSourceRetriever.dynamicallyDeRegisterEventSource(eventSource.orElseThrow().name());
       }
     }
   }
