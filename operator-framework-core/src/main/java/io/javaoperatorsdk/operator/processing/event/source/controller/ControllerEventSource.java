@@ -48,8 +48,7 @@ public class ControllerEventSource<T extends HasMetadata>
         .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
             () -> setOnUpdateFilter(internalOnUpdateFilter));
     config.genericFilter().ifPresent(this::setGenericFilter);
-
-    setConfigurationService(config.getConfigurationService());
+    setControllerConfiguration(config);
   }
 
   @Override

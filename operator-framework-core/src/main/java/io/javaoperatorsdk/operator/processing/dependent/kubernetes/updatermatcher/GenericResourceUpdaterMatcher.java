@@ -17,8 +17,7 @@ public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
   protected GenericResourceUpdaterMatcher() {}
 
   @SuppressWarnings("unchecked")
-  public static <R extends HasMetadata> ResourceUpdaterMatcher<R> updaterMatcherFor(
-      Class<R> resourceType) {
+  public static <R extends HasMetadata> ResourceUpdaterMatcher<R> updaterMatcherFor() {
     return (ResourceUpdaterMatcher<R>) INSTANCE;
   }
 

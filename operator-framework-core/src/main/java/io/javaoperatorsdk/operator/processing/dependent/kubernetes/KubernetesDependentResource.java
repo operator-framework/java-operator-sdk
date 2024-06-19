@@ -11,17 +11,14 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher.GenericResourceUpdaterMatcher;
@@ -35,13 +32,12 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
     converter = KubernetesDependentConverter.class)
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
-    implements DependentResourceConfigurator<KubernetesDependentResourceConfig<R>> {
+    implements ConfiguredDependentResource<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
   private final boolean garbageCollected = this instanceof GarbageCollected;
   @SuppressWarnings("unchecked")
   private final ResourceUpdaterMatcher<R> updaterMatcher = this instanceof ResourceUpdaterMatcher ? (ResourceUpdaterMatcher<R>) this : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType());
-  private final boolean clustered;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
 
@@ -51,19 +47,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public KubernetesDependentResource(Class<R> resourceType, String name) {
     super(resourceType, name);
-    final var primaryResourceType = getPrimaryResourceType();
-    clustered = !Namespaced.class.isAssignableFrom(primaryResourceType);
-  }
-
-  protected KubernetesDependentResource(Class<R> resourceType, String name,
-      boolean primaryIsClustered) {
-    super(resourceType, name);
-    clustered = primaryIsClustered;
-  }
-
-  @SuppressWarnings("unchecked")
-  protected Class<P> getPrimaryResourceType() {
-    return (Class<P>) Utils.getTypeArgumentFromExtendedClassByIndex(getClass(), 1);
   }
 
   @Override
@@ -71,49 +54,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.kubernetesDependentResourceConfig = config;
   }
 
-  private void configureWith(String labelSelector, Set<String> namespaces,
-      boolean inheritNamespacesOnChange, EventSourceContext<P> context) {
-
-    if (namespaces.equals(Constants.SAME_AS_CONTROLLER_NAMESPACES_SET)) {
-      namespaces = context.getControllerConfiguration().getNamespaces();
-    }
-
-    var ic = informerConfigurationBuilder()
-        .withLabelSelector(labelSelector)
-        .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper())
-        .withNamespaces(namespaces, inheritNamespacesOnChange)
-        .build();
-
-    configureWith(new InformerEventSource<>(name(), ic, context));
-  }
-
-  // just to seamlessly handle GenericKubernetesDependentResource
-  protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder() {
-    return InformerConfiguration.from(resourceType(), getPrimaryResourceType());
-  }
-
-  @SuppressWarnings("unchecked")
-  private SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
-    if (this instanceof SecondaryToPrimaryMapper) {
-      return (SecondaryToPrimaryMapper<R>) this;
-    } else if (garbageCollected) {
-      return Mappers.fromOwnerReferences(getPrimaryResourceType(), clustered);
-    } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
-      return Mappers.fromDefaultAnnotations();
-    } else {
-      throw new OperatorException("Provide a SecondaryToPrimaryMapper to associate " +
-          "this resource with the primary resource. DependentResource: " + getClass().getName());
-    }
-  }
-
-  /**
-   * Use to share informers between event more resources.
-   *
-   * @param informerEventSource informer to use
-   */
-  public void configureWith(InformerEventSource<R, P> informerEventSource) {
-    setEventSource(informerEventSource);
-  }
 
   @SuppressWarnings("unused")
   public R create(R desired, P primary, Context<P> context) {
@@ -162,11 +102,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return match(actualResource, desired, primary, updaterMatcher, context);
   }
 
-  @SuppressWarnings({"unused", "unchecked"})
+  @SuppressWarnings({"unused"})
   public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     return match(actualResource, desired, primary,
-        (ResourceUpdaterMatcher<R>) GenericResourceUpdaterMatcher
-            .updaterMatcherFor(actualResource.getClass()),
+        GenericResourceUpdaterMatcher.updaterMatcherFor(),
         context);
   }
 
@@ -247,25 +186,29 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
-    if (kubernetesDependentResourceConfig != null) {
-      // sets the filters for the dependent resource, which are applied by parent class
-      onAddFilter = kubernetesDependentResourceConfig.onAddFilter();
-      onUpdateFilter = kubernetesDependentResourceConfig.onUpdateFilter();
-      onDeleteFilter = kubernetesDependentResourceConfig.onDeleteFilter();
-      genericFilter = kubernetesDependentResourceConfig.genericFilter();
-      configureWith(kubernetesDependentResourceConfig.labelSelector(),
-          kubernetesDependentResourceConfig.namespaces(),
-          !kubernetesDependentResourceConfig.wereNamespacesConfigured(), context);
-    } else {
-      configureWith(null, context.getControllerConfiguration().getNamespaces(),
-          true, context);
-      log.warn(
-          "Using default configuration for {} KubernetesDependentResource, call configureWith to provide configuration",
-          resourceType().getSimpleName());
+    final InformerConfiguration.InformerConfigurationBuilder<R> configBuilder =
+        informerConfigurationBuilder(context)
+            .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper(context).orElseThrow())
+            .withName(name());
+
+    // update configuration from annotation if specified
+    if (kubernetesDependentResourceConfig != null
+        && kubernetesDependentResourceConfig.informerConfig() != null) {
+      kubernetesDependentResourceConfig.informerConfig().updateInformerConfigBuilder(configBuilder);
     }
+
+    var es = new InformerEventSource<>(configBuilder.build(), context);
+    setEventSource(es);
     return eventSource().orElseThrow();
+  }
+
+  /**
+   * To handle {@link io.fabric8.kubernetes.api.model.GenericKubernetesResource} based dependents.
+   */
+  protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder(
+      EventSourceContext<P> context) {
+    return InformerConfiguration.from(resourceType(), context.getPrimaryResourceClass());
   }
 
   private boolean useNonOwnerRefBasedSecondaryToPrimaryMapping() {
@@ -329,4 +272,20 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return super.isDeletable() && !garbageCollected;
   }
 
+  @SuppressWarnings("unchecked")
+  protected Optional<SecondaryToPrimaryMapper<R>> getSecondaryToPrimaryMapper(
+      EventSourceContext<P> context) {
+    if (this instanceof SecondaryToPrimaryMapper<?>) {
+      return Optional.of((SecondaryToPrimaryMapper<R>) this);
+    } else {
+      var clustered = !Namespaced.class.isAssignableFrom(context.getPrimaryResourceClass());
+      if (garbageCollected) {
+        return Optional
+            .of(Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), clustered));
+      } else if (isCreatable()) {
+        return Optional.of(Mappers.fromDefaultAnnotations());
+      }
+    }
+    return Optional.empty();
+  }
 }
