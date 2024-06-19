@@ -39,7 +39,7 @@ public class WebPageReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
         new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, WebPage.class)
             .withLabelSelector(SELECTOR)
