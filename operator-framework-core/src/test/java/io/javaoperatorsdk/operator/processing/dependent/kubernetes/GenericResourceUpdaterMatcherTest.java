@@ -40,7 +40,7 @@ class GenericResourceUpdaterMatcherTest {
 
   @Test
   void preservesValues() {
-    var processor = GenericResourceUpdaterMatcher.updaterMatcherFor(Deployment.class);
+    var processor = GenericResourceUpdaterMatcher.<Deployment>updaterMatcherFor();
     var desired = createDeployment();
     var actual = createDeployment();
     actual.getMetadata().setLabels(new HashMap<>());
@@ -57,7 +57,7 @@ class GenericResourceUpdaterMatcherTest {
 
   @Test
   void checkNamespaces() {
-    var processor = GenericResourceUpdaterMatcher.updaterMatcherFor(Namespace.class);
+    var processor = GenericResourceUpdaterMatcher.<Namespace>updaterMatcherFor();
     var desired = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
     var actual = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
     actual.getMetadata().setLabels(new HashMap<>());
@@ -85,7 +85,7 @@ class GenericResourceUpdaterMatcherTest {
 
   @Test
   void checkSecret() {
-    var processor = GenericResourceUpdaterMatcher.updaterMatcherFor(Secret.class);
+    var processor = GenericResourceUpdaterMatcher.<Secret>updaterMatcherFor();
     var desired =
         new SecretBuilder()
             .withMetadata(new ObjectMeta())
@@ -102,7 +102,7 @@ class GenericResourceUpdaterMatcherTest {
 
   @Test
   void checkSeviceAccount() {
-    var processor = GenericResourceUpdaterMatcher.updaterMatcherFor(ServiceAccount.class);
+    var processor = GenericResourceUpdaterMatcher.<ServiceAccount>updaterMatcherFor();
     var desired = new ServiceAccountBuilder()
         .withMetadata(new ObjectMetaBuilder().addToLabels("new", "label").build())
         .build();

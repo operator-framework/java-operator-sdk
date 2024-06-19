@@ -2,7 +2,6 @@ package io.javaoperatorsdk.operator.sample;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -14,6 +13,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -25,7 +25,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -35,7 +34,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration
 public class WebappReconciler
-    implements Reconciler<Webapp>, Cleaner<Webapp>, EventSourceInitializer<Webapp> {
+    implements Reconciler<Webapp>, Cleaner<Webapp> {
 
   private static final Logger log = LoggerFactory.getLogger(WebappReconciler.class);
 
@@ -46,7 +45,7 @@ public class WebappReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
+  public List<EventSource<?, Webapp>> prepareEventSources(EventSourceContext<Webapp> context) {
     /*
      * To create an event to a related WebApp resource and trigger the reconciliation we need to
      * find which WebApp this Tomcat custom resource is related to. To find the related
@@ -60,14 +59,13 @@ public class WebappReconciler
             .collect(Collectors.toSet());
 
     InformerConfiguration<Tomcat> configuration =
-        InformerConfiguration.from(Tomcat.class, context)
+        InformerConfiguration.from(Tomcat.class, Webapp.class)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
             .withPrimaryToSecondaryMapper(
                 (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
                     primary.getMetadata().getNamespace())))
             .build();
-    return EventSourceInitializer
-        .nameEventSources(new InformerEventSource<>(configuration, context));
+    return List.of(new InformerEventSource<>(configuration, context));
   }
 
   /**
@@ -101,18 +99,25 @@ public class WebappReconciler
 
       String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);
 
-      if (webapp.getStatus() == null) {
-        webapp.setStatus(new WebappStatus());
-      }
-      webapp.getStatus().setDeployedArtifact(webapp.getSpec().getUrl());
-      webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
-      return UpdateControl.patchStatus(webapp);
+      return UpdateControl.patchStatus(createWebAppForStatusUpdate(webapp, commandStatusInAllPods));
     } else {
       log.info("WebappController invoked but Tomcat not ready yet ({}/{})",
           tomcat.getStatus() != null ? tomcat.getStatus().getReadyReplicas() : 0,
           tomcat.getSpec().getReplicas());
       return UpdateControl.noUpdate();
     }
+  }
+
+  private Webapp createWebAppForStatusUpdate(Webapp actual, String[] commandStatusInAllPods) {
+    var webapp = new Webapp();
+    webapp.setMetadata(new ObjectMetaBuilder()
+        .withName(actual.getMetadata().getName())
+        .withNamespace(actual.getMetadata().getNamespace())
+        .build());
+    webapp.setStatus(new WebappStatus());
+    webapp.getStatus().setDeployedArtifact(actual.getSpec().getUrl());
+    webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
+    return webapp;
   }
 
   @Override
@@ -157,14 +162,14 @@ public class WebappReconciler
 
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch execWatch = execCmd(pod, data, command)) {
-          status[i] = "" + pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);
+          status[i] = pod.getMetadata().getName() + ":" + data.get(30, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
-          status[i] = "" + pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
+          status[i] = pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
         } catch (InterruptedException e) {
           status[i] =
-              "" + pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
+              pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
         } catch (TimeoutException e) {
-          status[i] = "" + pod.getMetadata().getName() + ": TimeoutException - " + e.getMessage();
+          status[i] = pod.getMetadata().getName() + ": TimeoutException - " + e.getMessage();
         }
       }
     }

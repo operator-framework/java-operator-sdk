@@ -3,7 +3,12 @@ package io.javaoperatorsdk.operator.sample.updatestatusincleanupandreschedule;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration
 public class UpdateStatusInCleanupAndRescheduleReconciler
@@ -38,14 +43,10 @@ public class UpdateStatusInCleanupAndRescheduleReconciler
       resource.getStatus().setCleanupAttempt(currentAttempt + 1);
       if (!Boolean.FALSE.equals(rescheduleDelayWorked)) {
         var diff = ChronoUnit.MILLIS.between(lastCleanupExecution, LocalTime.now());
-        if (diff < DELAY) {
-          rescheduleDelayWorked = false;
-        } else {
-          rescheduleDelayWorked = true;
-        }
+        rescheduleDelayWorked = diff >= DELAY;
       }
     }
-    var res = context.getClient().resource(resource).updateStatus();
+    context.getClient().resource(resource).updateStatus();
 
     if (resource.getStatus().getCleanupAttempt() > 5) {
       return DeleteControl.defaultDelete();

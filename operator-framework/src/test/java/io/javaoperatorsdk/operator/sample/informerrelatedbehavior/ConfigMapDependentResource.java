@@ -7,9 +7,10 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = "app=rbac-test")
+@KubernetesDependent(informerConfig = @InformerConfig(labelSelector = "app=rbac-test"))
 public class ConfigMapDependentResource
     extends CRUDKubernetesDependentResource<ConfigMap, InformerRelatedBehaviorTestCustomResource> {
 

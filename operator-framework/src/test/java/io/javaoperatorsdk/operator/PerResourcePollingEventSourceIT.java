@@ -28,8 +28,8 @@ class PerResourcePollingEventSourceIT {
    **/
   @Test
   void fetchedAndReconciledMultipleTimes() {
-    operator.create(PerResourceEventSourceCustomResource.class, resource(NAME_1));
-    operator.create(PerResourceEventSourceCustomResource.class, resource(NAME_2));
+    operator.create(resource(NAME_1));
+    operator.create(resource(NAME_2));
 
     var reconciler =
         operator.getReconcilerOfType(PerResourcePollingEventSourceTestReconciler.class);

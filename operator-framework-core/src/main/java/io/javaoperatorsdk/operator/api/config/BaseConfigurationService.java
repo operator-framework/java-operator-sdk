@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,15 +17,16 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -99,6 +99,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   protected <P extends HasMetadata> ControllerConfiguration<P> configFor(Reconciler<P> reconciler) {
     final var annotation = reconciler.getClass().getAnnotation(
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class);
+
     if (annotation == null) {
       throw new OperatorException(
           "Missing mandatory @"
@@ -163,49 +164,42 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         Utils.instantiate(annotation.itemStore(), ItemStore.class, context), dependentFieldManager,
         this, informerListLimit);
 
-    ResourceEventFilter<P> answer = deprecatedEventFilter(annotation);
-    config.setEventFilter(answer != null ? answer : ResourceEventFilters.passthrough());
 
-    List<DependentResourceSpec> specs = dependentResources(annotation, config);
-    config.setDependentResources(specs);
+    final var workflowAnnotation = reconciler.getClass().getAnnotation(
+        io.javaoperatorsdk.operator.api.reconciler.Workflow.class);
+    if (workflowAnnotation != null) {
+      final var specs = dependentResources(workflowAnnotation, config);
+      WorkflowSpec workflowSpec = new WorkflowSpec() {
+        @Override
+        public List<DependentResourceSpec> getDependentResourceSpecs() {
+          return specs;
+        }
+
+        @Override
+        public boolean isExplicitInvocation() {
+          return workflowAnnotation.explicitInvocation();
+        }
+
+        @Override
+        public boolean handleExceptionsInReconciler() {
+          return workflowAnnotation.handleExceptionsInReconciler();
+        }
+
+      };
+      config.setWorkflowSpec(workflowSpec);
+    }
 
     return config;
   }
 
-  @SuppressWarnings("unchecked")
-  private static <P extends HasMetadata> ResourceEventFilter<P> deprecatedEventFilter(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation) {
-    ResourceEventFilter<P> answer = null;
-
-    Class<ResourceEventFilter<P>>[] filterTypes =
-        (Class<ResourceEventFilter<P>>[]) valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::eventFilters,
-            new Object[] {});
-    for (var filterType : filterTypes) {
-      try {
-        ResourceEventFilter<P> filter = filterType.getConstructor().newInstance();
-
-        if (answer == null) {
-          answer = filter;
-        } else {
-          answer = answer.and(filter);
-        }
-      } catch (Exception e) {
-        throw new IllegalArgumentException(e);
-      }
-    }
-    return answer;
-  }
-
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static List<DependentResourceSpec> dependentResources(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation,
-      ControllerConfiguration<?> parent) {
-    final var dependents =
-        valueOrDefault(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::dependents,
-            new Dependent[] {});
-    if (dependents.length == 0) {
+      Workflow annotation,
+      ControllerConfiguration<?> controllerConfiguration) {
+    final var dependents = annotation.dependents();
+
+
+    if (dependents == null || dependents.length == 0) {
       return Collections.emptyList();
     }
 
@@ -220,7 +214,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             "A DependentResource named '" + dependentName + "' already exists: " + spec);
       }
 
-      final var name = parent.getName();
+      final var name = controllerConfiguration.getName();
 
       var eventSourceName = dependent.useEventSourceWithName();
       eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
@@ -232,9 +226,15 @@ public class BaseConfigurationService extends AbstractConfigurationService {
           Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
           Utils.instantiate(dependent.activationCondition(), Condition.class, context),
           eventSourceName);
+
+      // extract potential configuration
+      DependentResourceConfigurationResolver.configureSpecFromConfigured(spec,
+          controllerConfiguration,
+          dependentType);
+
       specsMap.put(dependentName, spec);
     }
-    return specsMap.values().stream().collect(Collectors.toUnmodifiableList());
+    return specsMap.values().stream().toList();
   }
 
   protected boolean createIfNeeded() {
@@ -273,8 +273,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static void configureFromAnnotatedReconciler(Object instance, Reconciler<?> reconciler) {
-    if (instance instanceof AnnotationConfigurable) {
-      AnnotationConfigurable configurable = (AnnotationConfigurable) instance;
+    if (instance instanceof AnnotationConfigurable configurable) {
       final Class<? extends Annotation> configurationClass =
           (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
               instance.getClass(), AnnotationConfigurable.class);

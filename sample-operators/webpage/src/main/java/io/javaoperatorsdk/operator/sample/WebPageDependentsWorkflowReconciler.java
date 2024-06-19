@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentInformerConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
@@ -26,7 +27,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
     labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 @SuppressWarnings("unused")
 public class WebPageDependentsWorkflowReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
+    implements Reconciler<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
 
@@ -48,8 +49,8 @@ public class WebPageDependentsWorkflowReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context, configMapDR,
+  public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
+    return EventSourceUtils.dependentEventSources(context, configMapDR,
         deploymentDR, serviceDR,
         ingressDR);
   }
@@ -61,10 +62,10 @@ public class WebPageDependentsWorkflowReconciler
 
     workflow.reconcile(webPage, context);
 
-    webPage.setStatus(
-        createStatus(
-            context.getSecondaryResource(ConfigMap.class).orElseThrow().getMetadata().getName()));
-    return UpdateControl.patchStatus(webPage);
+    return UpdateControl
+        .patchStatus(
+            createWebPageForStatusUpdate(webPage, context.getSecondaryResource(ConfigMap.class)
+                .orElseThrow().getMetadata().getName()));
   }
 
   @Override
@@ -82,7 +83,10 @@ public class WebPageDependentsWorkflowReconciler
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
       dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-          .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR).build());
+          .withKubernetesDependentInformerConfig(new KubernetesDependentInformerConfigBuilder<>()
+              .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
+              .build())
+          .build());
     });
   }
 

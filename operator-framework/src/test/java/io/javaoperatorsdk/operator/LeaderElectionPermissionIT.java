@@ -32,7 +32,8 @@ class LeaderElectionPermissionIT {
         .withImpersonateUsername("leader-elector-stop-noaccess")
         .build()).build();
 
-    var operator = new Operator(client, o -> {
+    var operator = new Operator(o -> {
+      o.withKubernetesClient(client);
       o.withLeaderElectionConfiguration(
           new LeaderElectionConfiguration("lease1", "default"));
       o.withStopOnInformerErrorDuringStartup(false);

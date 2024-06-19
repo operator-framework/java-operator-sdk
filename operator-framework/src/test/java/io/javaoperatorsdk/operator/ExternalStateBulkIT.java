@@ -34,7 +34,7 @@ class ExternalStateBulkIT {
           .build();
 
   @Test
-  void reconcilesResourceWithPersistentState() throws InterruptedException {
+  void reconcilesResourceWithPersistentState() {
     var resource = operator.create(testResource());
     assertResources(resource, INITIAL_TEST_DATA, INITIAL_BULK_SIZE);
 

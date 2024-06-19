@@ -15,8 +15,4 @@ public class StatusUpdateLockingCustomResource
     extends CustomResource<Void, StatusUpdateLockingCustomResourceStatus>
     implements Namespaced {
 
-  @Override
-  protected StatusUpdateLockingCustomResourceStatus initStatus() {
-    return new StatusUpdateLockingCustomResourceStatus();
-  }
 }

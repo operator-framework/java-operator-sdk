@@ -8,10 +8,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.Creator;
-import io.javaoperatorsdk.operator.processing.dependent.Updater;
+import io.javaoperatorsdk.operator.processing.dependent.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 /**
@@ -20,10 +17,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class ConfigMapDeleterBulkDependentResource
     extends
     KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
-    implements Creator<ConfigMap, BulkDependentTestCustomResource>,
-    Updater<ConfigMap, BulkDependentTestCustomResource>,
-    Deleter<BulkDependentTestCustomResource>,
-    BulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
+    implements CRUDBulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
 
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
@@ -41,13 +35,12 @@ public class ConfigMapDeleterBulkDependentResource
     Map<String, ConfigMap> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
       var key = Integer.toString(i);
-      res.put(key, desired(primary, key, context));
+      res.put(key, desired(primary, key));
     }
     return res;
   }
 
-  public ConfigMap desired(BulkDependentTestCustomResource primary, String key,
-      Context<BulkDependentTestCustomResource> context) {
+  public ConfigMap desired(BulkDependentTestCustomResource primary, String key) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName() + INDEX_DELIMITER + key)

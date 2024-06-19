@@ -6,23 +6,21 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.dependentresource.*;
 
-import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
-import static io.javaoperatorsdk.operator.sample.Utils.handleError;
-import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
+import static io.javaoperatorsdk.operator.sample.Utils.*;
 
 /**
  * Shows how to implement a reconciler with managed dependent resources.
  */
-@ControllerConfiguration(
-    dependents = {
-        @Dependent(type = ConfigMapDependentResource.class),
-        @Dependent(type = DeploymentDependentResource.class),
-        @Dependent(type = ServiceDependentResource.class),
-        @Dependent(type = IngressDependentResource.class,
-            reconcilePrecondition = ExposedIngressCondition.class)
-    })
+@Workflow(dependents = {
+    @Dependent(type = ConfigMapDependentResource.class),
+    @Dependent(type = DeploymentDependentResource.class),
+    @Dependent(type = ServiceDependentResource.class),
+    @Dependent(type = IngressDependentResource.class,
+        reconcilePrecondition = ExposedIngressCondition.class)
+})
+@ControllerConfiguration
 public class WebPageManagedDependentsReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, Cleaner<WebPage> {
+    implements Reconciler<WebPage>, Cleaner<WebPage> {
 
   public static final String SELECTOR = "managed";
 
@@ -39,8 +37,7 @@ public class WebPageManagedDependentsReconciler
 
     final var name = context.getSecondaryResource(ConfigMap.class).orElseThrow()
         .getMetadata().getName();
-    webPage.setStatus(createStatus(name));
-    return UpdateControl.patchStatus(webPage);
+    return UpdateControl.patchStatus(createWebPageForStatusUpdate(webPage, name));
   }
 
   @Override

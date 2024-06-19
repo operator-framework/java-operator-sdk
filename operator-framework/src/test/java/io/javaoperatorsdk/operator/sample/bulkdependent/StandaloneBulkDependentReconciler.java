@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.bulkdependent;
 
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -9,8 +9,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class StandaloneBulkDependentReconciler
-    implements Reconciler<BulkDependentTestCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<BulkDependentTestCustomResource> {
+    implements Reconciler<BulkDependentTestCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -36,9 +35,8 @@ public class StandaloneBulkDependentReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, BulkDependentTestCustomResource>> prepareEventSources(
       EventSourceContext<BulkDependentTestCustomResource> context) {
-    return EventSourceInitializer
-        .nameEventSources(dependent.initEventSource(context));
+    return List.of(dependent.initEventSource(context));
   }
 }

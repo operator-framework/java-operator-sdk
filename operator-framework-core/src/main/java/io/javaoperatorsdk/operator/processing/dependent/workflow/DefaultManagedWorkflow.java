@@ -12,9 +12,9 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.KubernetesClientAware;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 
-import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow.THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {
@@ -31,7 +31,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
         .map(DependentResourceSpec::getName)
         .collect(Collectors.toSet());
     this.orderedSpecs = orderedSpecs;
-    for (DependentResourceSpec<?, ?> spec : orderedSpecs) {
+    for (DependentResourceSpec<?, ?, ?> spec : orderedSpecs) {
       // add cycle detection?
       if (spec.getDependsOn().isEmpty()) {
         topLevelResources.add(spec.getName());
@@ -77,13 +77,14 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
       ControllerConfiguration<P> configuration) {
     final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
     for (DependentResourceSpec spec : orderedSpecs) {
-      final var node = new DependentResourceNode(spec.getName(),
+      final var dependentResource = resolve(spec, client, configuration);
+      final var node = new DependentResourceNode(
           spec.getReconcileCondition(),
           spec.getDeletePostCondition(),
           spec.getReadyCondition(),
           spec.getActivationCondition(),
-          resolve(spec, client, configuration));
-      alreadyResolved.put(node.getName(), node);
+          dependentResource);
+      alreadyResolved.put(dependentResource.name(), node);
       spec.getDependsOn()
           .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
@@ -93,19 +94,21 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     final var top =
         topLevelResources.stream().map(alreadyResolved::get).collect(Collectors.toSet());
     return new DefaultWorkflow<>(alreadyResolved, bottom, top,
-        THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, hasCleaner);
+        configuration.getWorkflowSpec().map(w -> !w.handleExceptionsInReconciler()).orElseThrow(),
+        hasCleaner);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private <R> DependentResource<R, P> resolve(DependentResourceSpec<R, P> spec,
+  private <R> DependentResource<R, P> resolve(DependentResourceSpec<R, P, ?> spec,
       KubernetesClient client,
       ControllerConfiguration<P> configuration) {
     final DependentResource<R, P> dependentResource =
         configuration.getConfigurationService().dependentResourceFactory()
             .createFrom(spec, configuration);
 
-    if (dependentResource instanceof KubernetesClientAware) {
-      ((KubernetesClientAware) dependentResource).setKubernetesClient(client);
+    final var name = spec.getName();
+    if (name != null && !NO_VALUE_SET.equals(name) && dependentResource instanceof NameSetter) {
+      ((NameSetter) dependentResource).setName(name);
     }
 
     spec.getUseEventSourceWithName()

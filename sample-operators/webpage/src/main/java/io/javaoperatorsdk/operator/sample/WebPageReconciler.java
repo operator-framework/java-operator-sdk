@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -8,76 +9,54 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Replaceable;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 
-import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
-import static io.javaoperatorsdk.operator.sample.Utils.createStatus;
-import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
-import static io.javaoperatorsdk.operator.sample.Utils.handleError;
-import static io.javaoperatorsdk.operator.sample.Utils.isValidHtml;
-import static io.javaoperatorsdk.operator.sample.Utils.makeDesiredIngress;
-import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
-import static io.javaoperatorsdk.operator.sample.Utils.setInvalidHtmlErrorMessage;
-import static io.javaoperatorsdk.operator.sample.Utils.simulateErrorIfRequested;
+import static io.javaoperatorsdk.operator.sample.Utils.*;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 /** Shows how to implement reconciler using the low level api directly. */
 @RateLimited(maxReconciliations = 2, within = 3)
 @ControllerConfiguration
 public class WebPageReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
+    implements Reconciler<WebPage> {
 
   public static final String INDEX_HTML = "index.html";
 
   private static final Logger log = LoggerFactory.getLogger(WebPageReconciler.class);
 
-  private final KubernetesClient kubernetesClient;
+  public WebPageReconciler() {
 
-  public WebPageReconciler(KubernetesClient kubernetesClient) {
-    this.kubernetesClient = kubernetesClient;
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, WebPage.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
     var deploymentEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Deployment.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(Deployment.class, WebPage.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
     var serviceEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Service.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(Service.class, WebPage.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
     var ingressEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Ingress.class, context)
+        new InformerEventSource<>(InformerConfiguration.from(Ingress.class, WebPage.class)
             .withLabelSelector(SELECTOR)
             .build(), context);
-    return EventSourceInitializer.nameEventSources(configMapEventSource, deploymentEventSource,
+    return List.of(configMapEventSource, deploymentEventSource,
         serviceEventSource, ingressEventSource);
   }
 
@@ -107,8 +86,8 @@ public class WebPageReconciler
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      kubernetesClient.configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
-          .createOr(Replaceable::update);
+      context.getClient().configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
+          .serverSideApply();
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
@@ -117,8 +96,8 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      kubernetesClient.apps().deployments().inNamespace(ns).resource(desiredDeployment)
-          .createOr(Replaceable::update);
+      context.getClient().apps().deployments().inNamespace(ns).resource(desiredDeployment)
+          .serverSideApply();
     }
 
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
@@ -127,19 +106,19 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      kubernetesClient.services().inNamespace(ns).resource(desiredService)
-          .createOr(Replaceable::update);
+      context.getClient().services().inNamespace(ns).resource(desiredService)
+          .serverSideApply();
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
-        kubernetesClient.resource(desiredIngress).inNamespace(ns).createOr(Replaceable::update);
+        context.getClient().resource(desiredIngress).inNamespace(ns).serverSideApply();
       }
     } else
       existingIngress.ifPresent(
-          ingress -> kubernetesClient.resource(ingress).delete());
+          ingress -> context.getClient().resource(ingress).delete());
 
     // not that this is not necessary, eventually mounted config map would be updated, just this way
     // is much faster; what is handy for demo purposes.
@@ -148,10 +127,11 @@ public class WebPageReconciler
         previousConfigMap.getData().get(INDEX_HTML),
         desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
       log.info("Restarting pods because HTML has changed in {}", ns);
-      kubernetesClient.pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
+      context.getClient().pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
-    webPage.setStatus(createStatus(desiredHtmlConfigMap.getMetadata().getName()));
-    return UpdateControl.patchStatus(webPage);
+
+    return UpdateControl.patchStatus(
+        createWebPageForStatusUpdate(webPage, desiredHtmlConfigMap.getMetadata().getName()));
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {

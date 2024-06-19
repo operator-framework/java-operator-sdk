@@ -1,7 +1,7 @@
 package io.javaoperatorsdk.operator.sample.multiplesecondaryeventsource;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -16,8 +16,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class MultipleSecondaryEventSourceReconciler
-    implements Reconciler<MultipleSecondaryEventSourceCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<MultipleSecondaryEventSourceCustomResource> {
+    implements Reconciler<MultipleSecondaryEventSourceCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -62,11 +61,11 @@ public class MultipleSecondaryEventSourceReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, MultipleSecondaryEventSourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleSecondaryEventSourceCustomResource> context) {
 
-
-    var config = InformerConfiguration.from(ConfigMap.class)
+    var config = InformerConfiguration
+        .from(ConfigMap.class, MultipleSecondaryEventSourceCustomResource.class)
         .withNamespaces(context.getControllerConfiguration().getNamespaces())
         .withLabelSelector("multisecondary")
         .withSecondaryToPrimaryMapper(s -> {
@@ -76,7 +75,7 @@ public class MultipleSecondaryEventSourceReconciler
         }).build();
     InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource> configMapEventSource =
         new InformerEventSource<>(config, context);
-    return EventSourceInitializer.nameEventSources(configMapEventSource);
+    return List.of(configMapEventSource);
   }
 
   ConfigMap configMap(String name, MultipleSecondaryEventSourceCustomResource resource) {

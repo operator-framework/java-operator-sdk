@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 /**
  * An interface to implement and provide dependent resource support.
@@ -32,8 +32,8 @@ public interface DependentResource<R, P extends HasMetadata> {
   Class<R> resourceType();
 
   /**
-   * Dependent resources are designed to by default provide event sources. There are cases where
-   * they might not:
+   * Dependent resources are designed to provide event sources by default. There are, however, cases
+   * where they might not:
    * <ul>
    * <li>If an event source is shared between multiple dependent resources. In this case only one or
    * none of the dependent resources sharing the event source should provide one, if any.</li>
@@ -42,13 +42,24 @@ public interface DependentResource<R, P extends HasMetadata> {
    * </ul>
    *
    * @param eventSourceContext context of event source initialization
-   * @return an optional event source
+   * @return an optional event source initialized from the specified context
+   * @since 5.0.0
    */
-  default Optional<? extends ResourceEventSource<R, P>> eventSource(
+  default Optional<? extends EventSource<R, P>> eventSource(
       EventSourceContext<P> eventSourceContext) {
     return Optional.empty();
   }
 
+  /**
+   * Retrieves the secondary resource (if it exists) associated with the specified primary resource
+   * for this DependentResource.
+   *
+   * @param primary the primary resource for which we want to retrieve the secondary resource
+   *        associated with this DependentResource
+   * @param context the current {@link Context} in which the operation is called
+   * @return the secondary resource or {@link Optional#empty()} if it doesn't exist
+   * @throws IllegalStateException if more than one secondary is found to match the primary resource
+   */
   default Optional<R> getSecondaryResource(P primary, Context<P> context) {
     return Optional.empty();
   }
@@ -68,4 +79,9 @@ public interface DependentResource<R, P extends HasMetadata> {
   default boolean isDeletable() {
     return this instanceof Deleter;
   }
+
+  default String name() {
+    return defaultNameFor(getClass());
+  }
+
 }

@@ -10,13 +10,16 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.sample.MySQLSchema;
 
+@KubernetesDependent
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
     implements Creator<Secret, MySQLSchema>, SecondaryToPrimaryMapper<Secret> {
+
   public static final String NAME = "secret";
   public static final String SECRET_SUFFIX = "-secret";
   public static final String SECRET_FORMAT = "%s" + SECRET_SUFFIX;
@@ -60,10 +63,12 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
     return Result.nonComputed(actual.getMetadata().getName().equals(desiredSecretName));
   }
 
+
   @Override
   public Set<ResourceID> toPrimaryResourceIDs(Secret resource) {
     String name = resource.getMetadata().getName();
     return Set.of(new ResourceID(name.substring(0, name.length() - SECRET_SUFFIX.length()),
         resource.getMetadata().getNamespace()));
   }
+
 }

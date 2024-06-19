@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.primarytosecondaydependent;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -24,14 +23,14 @@ import static io.javaoperatorsdk.operator.sample.primarytosecondaydependent.Prim
  * Note that this is usually just used with read only resources. So it has limited usage, one reason
  * to use it is to have nice condition on that resource within a workflow.
  */
-@ControllerConfiguration(dependents = {@Dependent(type = ConfigMapDependent.class,
+@Workflow(dependents = {@Dependent(type = ConfigMapDependent.class,
     name = CONFIG_MAP,
     reconcilePrecondition = ConfigMapReconcilePrecondition.class,
     useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
     @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)})
+@ControllerConfiguration()
 public class PrimaryToSecondaryDependentReconciler
-    implements Reconciler<PrimaryToSecondaryDependentCustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<PrimaryToSecondaryDependentCustomResource> {
+    implements Reconciler<PrimaryToSecondaryDependentCustomResource>, TestExecutionInfoProvider {
 
   public static final String DATA_KEY = "data";
   public static final String CONFIG_MAP = "ConfigMap";
@@ -59,7 +58,7 @@ public class PrimaryToSecondaryDependentReconciler
    * demand for it.
    **/
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, PrimaryToSecondaryDependentCustomResource>> prepareEventSources(
       EventSourceContext<PrimaryToSecondaryDependentCustomResource> context) {
     // there is no owner reference in the config map, but we still want to trigger reconciliation if
     // the config map changes. So first we add an index which custom resource references the config
@@ -67,8 +66,9 @@ public class PrimaryToSecondaryDependentReconciler
     context.getPrimaryCache().addIndexer(CONFIG_MAP_INDEX, (primary -> List
         .of(indexKey(primary.getSpec().getConfigMapName(), primary.getMetadata().getNamespace()))));
 
-    var cmES = new InformerEventSource<>(InformerConfiguration
-        .from(ConfigMap.class, context)
+    var es = new InformerEventSource<>(InformerConfiguration
+        .from(ConfigMap.class, PrimaryToSecondaryDependentCustomResource.class)
+        .withName(CONFIG_MAP_EVENT_SOURCE)
         // if there is a many-to-many relationship (thus no direct owner reference)
         // PrimaryToSecondaryMapper needs to be added
         .withPrimaryToSecondaryMapper(
@@ -83,7 +83,7 @@ public class PrimaryToSecondaryDependentReconciler
         .build(),
         context);
 
-    return Map.of(CONFIG_MAP_EVENT_SOURCE, cmES);
+    return List.of(es);
   }
 
   private String indexKey(String configMapName, String namespace) {

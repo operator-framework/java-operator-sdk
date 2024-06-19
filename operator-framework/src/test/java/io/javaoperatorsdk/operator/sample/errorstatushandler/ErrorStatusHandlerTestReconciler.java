@@ -10,8 +10,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class ErrorStatusHandlerTestReconciler
-    implements Reconciler<ErrorStatusHandlerTestCustomResource>, TestExecutionInfoProvider,
-    ErrorStatusHandler<ErrorStatusHandlerTestCustomResource> {
+    implements Reconciler<ErrorStatusHandlerTestCustomResource>, TestExecutionInfoProvider {
 
   private static final Logger log = LoggerFactory.getLogger(ErrorStatusHandlerTestReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -51,6 +50,6 @@ public class ErrorStatusHandlerTestReconciler
     ensureStatusExists(resource);
     resource.getStatus().getMessages()
         .add(ERROR_STATUS_MESSAGE + context.getRetryInfo().orElseThrow().getAttemptCount());
-    return ErrorStatusUpdateControl.updateStatus(resource);
+    return ErrorStatusUpdateControl.patchStatus(resource);
   }
 }

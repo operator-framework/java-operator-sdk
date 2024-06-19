@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.filter;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,8 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration(onUpdateFilter = UpdateFilter.class)
 public class FilterTestReconciler
-    implements Reconciler<FilterTestCustomResource>,
-    EventSourceInitializer<FilterTestCustomResource> {
+    implements Reconciler<FilterTestCustomResource> {
 
   public static final String CONFIG_MAP_FILTER_VALUE = "config_map_skip_this";
   public static final String CUSTOM_RESOURCE_FILTER_VALUE = "custom_resource_skip_this";
@@ -49,16 +49,16 @@ public class FilterTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, FilterTestCustomResource>> prepareEventSources(
       EventSourceContext<FilterTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
         new InformerEventSource<>(InformerConfiguration
-            .from(ConfigMap.class, context)
+            .from(ConfigMap.class, FilterTestCustomResource.class)
             .withOnUpdateFilter((newCM, oldCM) -> !newCM.getData().get(CM_VALUE_KEY)
                 .equals(CONFIG_MAP_FILTER_VALUE))
             .build(), context);
 
-    return EventSourceInitializer.nameEventSources(configMapES);
+    return List.of(configMapES);
   }
 }

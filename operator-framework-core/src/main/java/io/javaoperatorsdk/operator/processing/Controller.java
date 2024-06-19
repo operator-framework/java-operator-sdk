@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ExecutorServiceManager;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics.ControllerExecution;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
@@ -31,21 +32,19 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -72,6 +71,7 @@ public class Controller<P extends HasMetadata>
   private final boolean isCleaner;
   private final Metrics metrics;
   private final Workflow<P> managedWorkflow;
+  private final boolean explicitWorkflowInvocation;
 
   private final GroupVersionKind associatedGVK;
   private final EventProcessor<P> eventProcessor;
@@ -94,13 +94,17 @@ public class Controller<P extends HasMetadata>
 
     final var managed = configurationService.getWorkflowFactory().workflowFor(configuration);
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
+    explicitWorkflowInvocation =
+        configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
+            .orElse(false);
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
     eventSourceContext = new EventSourceContext<>(
-        eventSourceManager.getControllerResourceEventSource(), configuration, kubernetesClient);
+        eventSourceManager.getControllerEventSource(), configuration, kubernetesClient,
+        configuration.getResourceClass());
     initAndRegisterEventSources(eventSourceContext);
     configurationService.getMetrics().controllerRegistered(this);
   }
@@ -122,10 +126,10 @@ public class Controller<P extends HasMetadata>
           @Override
           public String successTypeName(UpdateControl<P> result) {
             String successType = RESOURCE;
-            if (result.isUpdateStatus()) {
+            if (result.isPatchStatus()) {
               successType = STATUS;
             }
-            if (result.isUpdateResourceAndStatus()) {
+            if (result.isPatchResourceAndStatus()) {
               successType = BOTH;
             }
             return successType;
@@ -144,12 +148,11 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            if (!managedWorkflow.isEmpty()) {
-              var res = managedWorkflow.reconcile(resource, context);
-              ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
-                  .setWorkflowExecutionResult(res);
-              res.throwAggregateExceptionIfErrorsPresent();
-            }
+            configuration.getWorkflowSpec().ifPresent(ws -> {
+              if (!explicitWorkflowInvocation) {
+                reconcileManagedWorkflow(resource, context);
+              }
+            });
             return reconciler.reconcile(resource, context);
           }
         });
@@ -189,12 +192,13 @@ public class Controller<P extends HasMetadata>
             public DeleteControl execute() {
               initContextIfNeeded(resource, context);
               WorkflowCleanupResult workflowCleanupResult = null;
-              if (managedWorkflow.hasCleaner()) {
-                workflowCleanupResult = managedWorkflow.cleanup(resource, context);
-                ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
-                    .setWorkflowCleanupResult(workflowCleanupResult);
-                workflowCleanupResult.throwAggregateExceptionIfErrorsPresent();
+
+              // The cleanup is called also when explicit invocation is true, but the cleaner is not
+              // implemented
+              if (!isCleaner || !explicitWorkflowInvocation) {
+                workflowCleanupResult = cleanupManagedWorkflow(resource, context);
               }
+
               if (isCleaner) {
                 var cleanupResult = ((Cleaner<P>) reconciler).cleanup(resource, context);
                 if (!cleanupResult.isRemoveFinalizer()) {
@@ -230,31 +234,22 @@ public class Controller<P extends HasMetadata>
   }
 
   public void initAndRegisterEventSources(EventSourceContext<P> context) {
-    if (reconciler instanceof EventSourceInitializer) {
-      final var provider = (EventSourceInitializer<P>) this.reconciler;
-      final var ownSources = provider.prepareEventSources(context);
-      ownSources.forEach(eventSourceManager::registerEventSource);
-    }
+    final var ownSources = this.reconciler.prepareEventSources(context);
+    ownSources.forEach(eventSourceManager::registerEventSource);
 
     // register created event sources
     final var dependentResourcesByName =
-        managedWorkflow.getDependentResourcesByNameWithoutActivationCondition();
+        managedWorkflow.getDependentResourcesWithoutActivationCondition();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
-      dependentResourcesByName.forEach((key, dependentResource) -> {
-        if (dependentResource instanceof EventSourceProvider) {
-          final var provider = (EventSourceProvider) dependentResource;
-          final var source = provider.initEventSource(context);
-          eventSourceManager.registerEventSource(key, source);
-        } else {
-          Optional<ResourceEventSource> eventSource = dependentResource.eventSource(context);
-          eventSource.ifPresent(es -> eventSourceManager.registerEventSource(key, es));
-        }
+      dependentResourcesByName.forEach(dependentResource -> {
+        Optional<EventSource> eventSource = dependentResource.eventSource(context);
+        eventSource.ifPresent(eventSourceManager::registerEventSource);
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
       final Map<String, List<EventSourceReferencer>> unresolvable = new HashMap<>(size);
-      dependentResourcesByName.values().stream()
+      dependentResourcesByName.stream()
           .filter(EventSourceReferencer.class::isInstance)
           .map(EventSourceReferencer.class::cast)
           .forEach(dr -> {
@@ -453,5 +448,31 @@ public class Controller<P extends HasMetadata>
 
   public EventSourceContext<P> eventSourceContext() {
     return eventSourceContext;
+  }
+
+  public void reconcileManagedWorkflow(P primary, Context<P> context) {
+    if (!managedWorkflow.isEmpty()) {
+      var res = managedWorkflow.reconcile(primary, context);
+      ((DefaultManagedWorkflowAndDependentResourceContext) context
+          .managedWorkflowAndDependentResourceContext())
+          .setWorkflowExecutionResult(res);
+    }
+  }
+
+  public WorkflowCleanupResult cleanupManagedWorkflow(P resource, Context<P> context) {
+    if (managedWorkflow.hasCleaner()) {
+      var workflowCleanupResult = managedWorkflow.cleanup(resource, context);
+      ((DefaultManagedWorkflowAndDependentResourceContext) context
+          .managedWorkflowAndDependentResourceContext())
+          .setWorkflowCleanupResult(workflowCleanupResult);
+
+      return workflowCleanupResult;
+    } else {
+      return null;
+    }
+  }
+
+  public boolean isWorkflowExplicitInvocation() {
+    return explicitWorkflowInvocation;
   }
 }

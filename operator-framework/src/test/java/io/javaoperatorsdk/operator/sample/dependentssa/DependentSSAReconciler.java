@@ -1,22 +1,26 @@
 package io.javaoperatorsdk.operator.sample.dependentssa;
 
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class DependentSSAReconciler
-    implements Reconciler<DependnetSSACustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<DependnetSSACustomResource> {
+    implements Reconciler<DependnetSSACustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private SSAConfigMapDependent ssaConfigMapDependent = new SSAConfigMapDependent();
+  private final SSAConfigMapDependent ssaConfigMapDependent = new SSAConfigMapDependent();
 
   public DependentSSAReconciler() {
     this(true);
@@ -43,9 +47,9 @@ public class DependentSSAReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, DependnetSSACustomResource>> prepareEventSources(
       EventSourceContext<DependnetSSACustomResource> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
+    return EventSourceUtils.dependentEventSources(context,
         ssaConfigMapDependent);
   }
 }

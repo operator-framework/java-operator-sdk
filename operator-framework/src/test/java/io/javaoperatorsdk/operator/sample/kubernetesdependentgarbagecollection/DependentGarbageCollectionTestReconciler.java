@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.kubernetesdependentgarbagecollection;
 
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -15,9 +16,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
 public class DependentGarbageCollectionTestReconciler
-    implements Reconciler<DependentGarbageCollectionTestCustomResource>,
-    EventSourceInitializer<DependentGarbageCollectionTestCustomResource>,
-    ErrorStatusHandler<DependentGarbageCollectionTestCustomResource> {
+    implements Reconciler<DependentGarbageCollectionTestCustomResource> {
 
   private KubernetesClient kubernetesClient;
   private volatile boolean errorOccurred = false;
@@ -29,10 +28,9 @@ public class DependentGarbageCollectionTestReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, DependentGarbageCollectionTestCustomResource>> prepareEventSources(
       EventSourceContext<DependentGarbageCollectionTestCustomResource> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
-        configMapDependent);
+    return EventSourceUtils.dependentEventSources(context, configMapDependent);
   }
 
   @Override

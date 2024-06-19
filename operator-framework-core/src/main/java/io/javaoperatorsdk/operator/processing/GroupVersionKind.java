@@ -32,6 +32,27 @@ public class GroupVersionKind {
         HasMetadata.getVersion(resourceClass), HasMetadata.getKind(resourceClass));
   }
 
+  /**
+   * Parse GVK from a String representation. Expected format is: [group]/[version]/[kind]
+   * <p/>
+   * Sample: "apps/v1/Deployment"
+   * <p/>
+   * or: [version]/[kind]
+   * <p/>
+   * Sample: v1/ConfigMap
+   **/
+  public static GroupVersionKind fromString(String gvk) {
+    String[] parts = gvk.split("/");
+    if (parts.length == 3) {
+      return new GroupVersionKind(parts[0], parts[1], parts[2]);
+    } else if (parts.length == 2) {
+      return new GroupVersionKind(null, parts[0], parts[1]);
+    } else {
+      throw new IllegalArgumentException(
+          "Cannot parse gvk: " + gvk + ". Needs to be in form [group]/[version]/[kind]");
+    }
+  }
+
   public String getGroup() {
     return group;
   }
@@ -72,4 +93,5 @@ public class GroupVersionKind {
         ", kind='" + kind + '\'' +
         '}';
   }
+
 }

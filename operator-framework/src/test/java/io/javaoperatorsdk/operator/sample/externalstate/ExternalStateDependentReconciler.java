@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.sample.externalstate;
 
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -11,11 +11,10 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(
-    dependents = @Dependent(type = ExternalWithStateDependentResource.class))
+@Workflow(dependents = @Dependent(type = ExternalWithStateDependentResource.class))
+@ControllerConfiguration
 public class ExternalStateDependentReconciler
     implements Reconciler<ExternalStateCustomResource>,
-    EventSourceInitializer<ExternalStateCustomResource>,
     TestExecutionInfoProvider {
 
   public static final String ID_KEY = "id";
@@ -35,11 +34,12 @@ public class ExternalStateDependentReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, ExternalStateCustomResource>> prepareEventSources(
       EventSourceContext<ExternalStateCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
-        InformerConfiguration.from(ConfigMap.class, context).build(), context);
-    return EventSourceInitializer.nameEventSources(configMapEventSource);
+        InformerConfiguration.from(ConfigMap.class, ExternalStateCustomResource.class).build(),
+        context);
+    return List.of(configMapEventSource);
   }
 
 }

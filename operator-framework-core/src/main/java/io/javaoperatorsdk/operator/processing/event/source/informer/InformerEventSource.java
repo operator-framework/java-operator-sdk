@@ -87,9 +87,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     this(configuration, client, false);
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
+  public InformerEventSource(InformerConfiguration<R> configuration,
+      KubernetesClient client,
       boolean parseResourceVersions) {
-    super(
+    super(configuration.name(),
         configuration.getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
@@ -247,18 +248,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         .collect(Collectors.toSet());
   }
 
-  /**
-   * Returns the configuration object for the informer.
-   *
-   * @return the informer configuration object
-   *
-   * @deprecated Use {@link #configuration()} instead
-   */
-  @Deprecated(forRemoval = true)
-  public InformerConfiguration<R> getConfiguration() {
-    return configuration();
-  }
-
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousVersionOfResource) {
@@ -316,5 +305,4 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
     return target;
   }
-
 }

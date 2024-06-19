@@ -14,14 +14,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 
 import static io.javaoperatorsdk.operator.sample.dependentresourcecrossref.DependentResourceCrossRefReconciler.SECRET_NAME;
 
-@ControllerConfiguration(dependents = {
+@Workflow(dependents = {
     @Dependent(name = SECRET_NAME,
         type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
     @Dependent(type = DependentResourceCrossRefReconciler.ConfigMapDependentResource.class,
         dependsOn = SECRET_NAME)})
+@ControllerConfiguration
 public class DependentResourceCrossRefReconciler
-    implements Reconciler<DependentResourceCrossRefResource>,
-    ErrorStatusHandler<DependentResourceCrossRefResource> {
+    implements Reconciler<DependentResourceCrossRefResource> {
 
   public static final String SECRET_NAME = "secret";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);

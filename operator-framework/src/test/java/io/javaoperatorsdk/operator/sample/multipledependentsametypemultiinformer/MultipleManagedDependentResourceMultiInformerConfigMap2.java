@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 import static io.javaoperatorsdk.operator.sample.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.DATA_KEY;
 
-@KubernetesDependent(resourceDiscriminator = ConfigMap2MultiInformerDiscriminator.class)
+@KubernetesDependent
 public class MultipleManagedDependentResourceMultiInformerConfigMap2
     extends
     CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentResourceMultiInformerCustomResource> {

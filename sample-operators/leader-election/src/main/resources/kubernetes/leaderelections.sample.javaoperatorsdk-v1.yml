@@ -4,9 +4,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: leaderelections.sample.javaoperatorsdk
+  name: leaderelections.sample.operator.javaoperatorsdk.io
 spec:
-  group: sample.javaoperatorsdk
+  group: sample.operator.javaoperatorsdk.io
   names:
     kind: LeaderElection
     singular: leaderelection

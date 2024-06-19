@@ -111,11 +111,12 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    *
    * @return a Set of namespace names the associated controller will watch
    */
-  default Set<String> getEffectiveNamespaces(ConfigurationService configurationService) {
+  default Set<String> getEffectiveNamespaces(ControllerConfiguration<?> controllerConfiguration) {
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {
       final String namespace =
-          configurationService.getKubernetesClient().getConfiguration().getNamespace();
+          controllerConfiguration.getConfigurationService().getKubernetesClient().getConfiguration()
+              .getNamespace();
       if (namespace == null) {
         throw new OperatorException(
             "Couldn't retrieve the currently connected namespace. Make sure it's correctly set in your ~/.kube/config file, using, e.g. 'kubectl config set-context <your context> --namespace=<your namespace>'");

@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator;
 
 import java.time.Duration;
-import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -9,54 +8,73 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceConfigMap;
 import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceCustomResource;
 import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceReconciler;
+import io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceSpec;
+import io.javaoperatorsdk.operator.sample.multipledrsametypenodiscriminator.*;
 
+import static io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceConfigMap.DATA_KEY;
+import static io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceConfigMap.getConfigMapName;
+import static io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceReconciler.FIRST_CONFIG_MAP_ID;
+import static io.javaoperatorsdk.operator.sample.multipledependentresource.MultipleDependentResourceReconciler.SECOND_CONFIG_MAP_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class MultipleDependentResourceIT {
+public class MultipleDependentResourceIT {
 
-  public static final String TEST_RESOURCE_NAME = "multipledependentresource-testresource";
+  public static final String CHANGED_VALUE = "changed value";
+  public static final String INITIAL_VALUE = "initial value";
+
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(MultipleDependentResourceReconciler.class)
-          .waitForNamespaceDeletion(true)
+          .withReconciler(new MultipleDependentResourceReconciler())
           .build();
 
   @Test
-  void twoConfigMapsHaveBeenCreated() {
-    MultipleDependentResourceCustomResource customResource = createTestCustomResource();
-    operator.create(customResource);
+  void handlesCRUDOperations() {
+    var res = extension.create(testResource());
 
-    var reconciler = operator.getReconcilerOfType(MultipleDependentResourceReconciler.class);
+    await().untilAsserted(() -> {
+      var cm1 = extension.get(ConfigMap.class, getConfigMapName(FIRST_CONFIG_MAP_ID));
+      var cm2 = extension.get(ConfigMap.class, getConfigMapName(SECOND_CONFIG_MAP_ID));
 
-    await().pollDelay(Duration.ofMillis(300))
-        .until(() -> reconciler.getNumberOfExecutions() <= 1);
+      assertThat(cm1).isNotNull();
+      assertThat(cm2).isNotNull();
+      assertThat(cm1.getData()).containsEntry(DATA_KEY, INITIAL_VALUE);
+      assertThat(cm2.getData()).containsEntry(DATA_KEY, INITIAL_VALUE);
+    });
 
-    IntStream.of(MultipleDependentResourceReconciler.FIRST_CONFIG_MAP_ID,
-        MultipleDependentResourceReconciler.SECOND_CONFIG_MAP_ID).forEach(configMapId -> {
-          ConfigMap configMap =
-              operator.get(ConfigMap.class, customResource.getConfigMapName(configMapId));
-          assertThat(configMap).isNotNull();
-          assertThat(configMap.getMetadata().getName())
-              .isEqualTo(customResource.getConfigMapName(configMapId));
-          assertThat(configMap.getData().get(MultipleDependentResourceConfigMap.DATA_KEY))
-              .isEqualTo(String.valueOf(configMapId));
-        });
+    res.getSpec().setValue(CHANGED_VALUE);
+    res = extension.replace(res);
+
+    await().untilAsserted(() -> {
+      var cm1 = extension.get(ConfigMap.class, getConfigMapName(FIRST_CONFIG_MAP_ID));
+      var cm2 = extension.get(ConfigMap.class, getConfigMapName(SECOND_CONFIG_MAP_ID));
+
+      assertThat(cm1.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
+      assertThat(cm2.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
+    });
+
+    extension.delete(res);
+
+    await().timeout(Duration.ofSeconds(120)).untilAsserted(() -> {
+      var cm1 = extension.get(ConfigMap.class, getConfigMapName(FIRST_CONFIG_MAP_ID));
+      var cm2 = extension.get(ConfigMap.class, getConfigMapName(SECOND_CONFIG_MAP_ID));
+
+      assertThat(cm1).isNull();
+      assertThat(cm2).isNull();
+    });
   }
 
-  public MultipleDependentResourceCustomResource createTestCustomResource() {
-    MultipleDependentResourceCustomResource resource =
-        new MultipleDependentResourceCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(TEST_RESOURCE_NAME)
-            .withNamespace(operator.getNamespace())
-            .build());
-    return resource;
-  }
+  MultipleDependentResourceCustomResource testResource() {
+    var res = new MultipleDependentResourceCustomResource();
+    res.setMetadata(new ObjectMetaBuilder()
+        .withName("test1")
+        .build());
+    res.setSpec(new MultipleDependentResourceSpec());
+    res.getSpec().setValue(INITIAL_VALUE);
 
+    return res;
+  }
 }

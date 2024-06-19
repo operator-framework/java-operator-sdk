@@ -41,10 +41,16 @@ reconciliation process.
   condition holds or not. This is a very useful feature when your operator needs to handle different flavors of the
   platform (e.g. OpenShift vs plain Kubernetes) and/or change its behavior based on the availability of optional
   resources / features (e.g. CertManager, a specific Ingress controller, etc.).
- 
-  Activation condition is semi-experimental at the moment, and it has its limitations. 
-  For example event sources cannot be shared between multiple managed dependent resources which use activation condition. 
-  The intention is to further improve and explore the possibilities with this approach.  
+
+  A generic activation condition is provided out of the box, called
+  [CRDPresentActivationCondition](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/CRDPresentActivationCondition.java)   
+  that will prevent the associated dependent resource from being activated if the Custom Resource Definition associated
+  with the dependent's resource type is not present on the cluster.
+  See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework/src/test/java/io/javaoperatorsdk/operator/CRDPresentActivationConditionIT.java).
+
+  Activation condition is semi-experimental at the moment, and it has its limitations.
+  For example event sources cannot be shared between multiple managed dependent resources which use activation condition.
+  The intention is to further improve and explore the possibilities with this approach.
 
 ## Defining Workflows
 
@@ -70,15 +76,16 @@ will only consider the `ConfigMap` deleted until that post-condition becomes `tr
 
 ```java
 
-@ControllerConfiguration(dependents = {
-    @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
-        readyPostcondition = DeploymentReadyCondition.class),
-    @Dependent(type = ConfigMapDependentResource.class,
-        reconcilePrecondition = ConfigMapReconcileCondition.class,
-        deletePostcondition = ConfigMapDeletePostCondition.class,
-        activationCondition = ConfigMapActivationCondition.class,
-        dependsOn = DEPLOYMENT_NAME)
+@Workflow(dependents = {
+        @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
+                readyPostcondition = DeploymentReadyCondition.class),
+        @Dependent(type = ConfigMapDependentResource.class,
+                reconcilePrecondition = ConfigMapReconcileCondition.class,
+                deletePostcondition = ConfigMapDeletePostCondition.class,
+                activationCondition = ConfigMapActivationCondition.class,
+                dependsOn = DEPLOYMENT_NAME)
 })
+@ControllerConfiguration
 public class SampleWorkflowReconciler implements Reconciler<WorkflowAllFeatureCustomResource>,
     Cleaner<WorkflowAllFeatureCustomResource> {
 
@@ -120,7 +127,7 @@ page sample):
 @ControllerConfiguration(
     labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
 public class WebPageDependentsWorkflowReconciler
-    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage>, EventSourceInitializer<WebPage> {
+    implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
   private static final Logger log =
@@ -131,7 +138,7 @@ public class WebPageDependentsWorkflowReconciler
   private KubernetesDependentResource<Service, WebPage> serviceDR;
   private KubernetesDependentResource<Ingress, WebPage> ingressDR;
 
-  private Workflow<WebPage> workflow;
+  private final Workflow<WebPage> workflow;
 
   public WebPageDependentsWorkflowReconciler(KubernetesClient kubernetesClient) {
     initDependentResources(kubernetesClient);
@@ -145,7 +152,7 @@ public class WebPageDependentsWorkflowReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceInitializer.nameEventSources(
+    return EventSourceUtils.nameEventSources(
         configMapDR.initEventSource(context),
         deploymentDR.initEventSource(context),
         serviceDR.initEventSource(context),
@@ -198,7 +205,7 @@ demonstrated using examples:
 2. Root nodes, i.e. nodes in the graph that do not depend on other nodes are reconciled first,
    in a parallel manner.
 3. A DR is reconciled if it does not depend on any other DRs, or *ALL* the DRs it depends on are
-   reconciled and ready. If a DR defines a reconcile pre-condition and/or an activation condition, 
+   reconciled and ready. If a DR defines a reconcile pre-condition and/or an activation condition,
    then these condition must become `true` before the DR is reconciled.
 4. A DR is considered *ready* if it got successfully reconciled and any ready post-condition it
    might define is `true`.
@@ -331,10 +338,38 @@ provides such a delete post-condition implementation in the form of
 
 Also, check usage in an [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manageddependentdeletecondition/ManagedDependentDefaultDeleteConditionReconciler.java).
 
-In such cases the Kubernetes Dependent Resource should extend `CRUDNoGCKubernetesDependentResource` 
+In such cases the Kubernetes Dependent Resource should extend `CRUDNoGCKubernetesDependentResource`
 and NOT `CRUDKubernetesDependentResource` since otherwise the Kubernetes Garbage Collector would delete the resources.
 In other words if a Kubernetes Dependent Resource depends on another dependent resource, it should not implement
-`GargageCollected` interface, otherwise the deletion order won't be guaranteed. 
+`GargageCollected` interface, otherwise the deletion order won't be guaranteed.
+
+
+## Explicit Managed Workflow Invocation
+
+Managed workflows, i.e. ones that are declared via annotations and therefore completely managed by JOSDK, are reconciled
+before the primary resource. Each dependent resource that can be reconciled (according to the workflow configuration)
+will therefore be reconciled before the primary reconciler is called to reconcile the primary resource. There are,
+however, situations where it would be be useful to perform additional steps before the workflow is reconciled, for
+example to validate the current state, execute arbitrary logic or even skip reconciliation altogether. Explicit
+invocation of managed workflow was therefore introduced to solve these issues.
+
+To use this feature, you need to set the `explicitInvocation` field to `true` on the `@Workflow` annotation and then
+call the `reconcileManagedWorkflow` method from the `
+ManagedWorkflowAndDependentResourceContext` retrieved from the reconciliation `Context` provided as part of your primary
+resource reconciler `reconcile` method arguments.
+
+See
+related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitInvocationIT.java)
+for more details.
+
+For `cleanup`, if the `Cleaner` interface is implemented, the `cleanupManageWorkflow()` needs to be called explicitly.
+However, if `Cleaner` interface is not implemented, it will be called implicitly.
+See
+related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitCleanupIT.java).
+
+While nothing prevents calling the workflow multiple times in a reconciler, it isn't typical or even recommended to do
+so. Conversely, if explicit invocation is requested but `reconcileManagedWorkflow` is not called in the primary resource
+reconciler, the workflow won't be reconciled at all.
 
 ## Notes and Caveats
 

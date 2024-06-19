@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureReconciler.DEPLOYMENT_NAME;
 
-@ControllerConfiguration(dependents = {
+@Workflow(dependents = {
     @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
         readyPostcondition = DeploymentReadyCondition.class),
     @Dependent(type = ConfigMapDependentResource.class,
@@ -15,6 +15,7 @@ import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllF
         deletePostcondition = ConfigMapDeletePostCondition.class,
         dependsOn = DEPLOYMENT_NAME)
 })
+@ControllerConfiguration
 public class WorkflowAllFeatureReconciler
     implements Reconciler<WorkflowAllFeatureCustomResource>,
     Cleaner<WorkflowAllFeatureCustomResource> {
@@ -34,8 +35,8 @@ public class WorkflowAllFeatureReconciler
     }
     resource.getStatus()
         .setReady(
-            context.managedDependentResourceContext()
-                .getWorkflowReconcileResult().orElseThrow()
+            context.managedWorkflowAndDependentResourceContext()
+                .getWorkflowReconcileResult()
                 .allDependentResourcesReady());
     return UpdateControl.patchStatus(resource);
   }

@@ -1,14 +1,18 @@
 package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickubernetesdependentstandalone;
 
-import java.util.Map;
+import java.util.List;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
 public class GenericKubernetesDependentStandaloneReconciler
-    implements Reconciler<GenericKubernetesDependentStandaloneCustomResource>,
-    EventSourceInitializer<GenericKubernetesDependentStandaloneCustomResource> {
+    implements Reconciler<GenericKubernetesDependentStandaloneCustomResource> {
 
   private final ConfigMapGenericKubernetesDependent dependent =
       new ConfigMapGenericKubernetesDependent();
@@ -22,12 +26,12 @@ public class GenericKubernetesDependentStandaloneReconciler
 
     dependent.reconcile(resource, context);
 
-    return UpdateControl.<GenericKubernetesDependentStandaloneCustomResource>noUpdate();
+    return UpdateControl.noUpdate();
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, GenericKubernetesDependentStandaloneCustomResource>> prepareEventSources(
       EventSourceContext<GenericKubernetesDependentStandaloneCustomResource> context) {
-    return EventSourceInitializer.nameEventSources(dependent.eventSource(context).orElseThrow());
+    return List.of(dependent.eventSource(context).orElseThrow());
   }
 }

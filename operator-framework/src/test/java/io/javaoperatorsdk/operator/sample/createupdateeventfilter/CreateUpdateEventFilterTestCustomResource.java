@@ -11,12 +11,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("cue")
 public class CreateUpdateEventFilterTestCustomResource
     extends
-    CustomResource<CreateUpdateEventFilterTestCustomResourceSpec, CreateUpdateEventFilterTestCustomResourceStatus>
+    CustomResource<CreateUpdateEventFilterTestCustomResourceSpec, Void>
     implements Namespaced {
-
-  @Override
-  protected CreateUpdateEventFilterTestCustomResourceStatus initStatus() {
-    return new CreateUpdateEventFilterTestCustomResourceStatus();
-  }
 
 }

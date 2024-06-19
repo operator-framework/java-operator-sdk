@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.sample.generickubernetesresource.generickube
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
@@ -14,8 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration
 public class GenericKubernetesResourceHandlingReconciler
-    implements Reconciler<GenericKubernetesResourceHandlingCustomResource>,
-    EventSourceInitializer<GenericKubernetesResourceHandlingCustomResource> {
+    implements Reconciler<GenericKubernetesResourceHandlingCustomResource> {
 
 
   public static final String VERSION = "v1";
@@ -65,13 +65,14 @@ public class GenericKubernetesResourceHandlingReconciler
 
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, GenericKubernetesResourceHandlingCustomResource>> prepareEventSources(
       EventSourceContext<GenericKubernetesResourceHandlingCustomResource> context) {
 
     var informerEventSource = new InformerEventSource<>(InformerConfiguration.from(
-        new GroupVersionKind("", VERSION, KIND), context).build(),
+        new GroupVersionKind("", VERSION, KIND),
+        GenericKubernetesResourceHandlingCustomResource.class).build(),
         context);
 
-    return EventSourceInitializer.nameEventSources(informerEventSource);
+    return List.of(informerEventSource);
   }
 }

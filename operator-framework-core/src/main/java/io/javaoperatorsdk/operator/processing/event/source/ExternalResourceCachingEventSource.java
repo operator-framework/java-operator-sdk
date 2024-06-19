@@ -1,6 +1,13 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,7 +40,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <P> primary resource
  */
 public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
-    extends AbstractResourceEventSource<R, P> implements RecentOperationCacheFiller<R> {
+    extends AbstractEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
   private static final Logger log =
       LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
@@ -44,7 +51,12 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   protected ExternalResourceCachingEventSource(Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
-    super(resourceClass);
+    this(null, resourceClass, cacheKeyMapper);
+  }
+
+  protected ExternalResourceCachingEventSource(String name, Class<R> resourceClass,
+      CacheKeyMapper<R> cacheKeyMapper) {
+    super(resourceClass, name);
     this.cacheKeyMapper = cacheKeyMapper;
   }
 
@@ -90,8 +102,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   protected synchronized void handleResources(Map<ResourceID, Set<R>> allNewResources) {
-    var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k))
-        .collect(Collectors.toList());
+    var toDelete = cache.keySet().stream().filter(k -> !allNewResources.containsKey(k)).toList();
     toDelete.forEach(this::handleDelete);
     allNewResources.forEach(this::handleResources);
   }
@@ -153,21 +164,15 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     if (onUpdateFilter != null || genericFilter != null) {
-      var anyUpdated = possibleUpdatedResources.entrySet().stream()
+      return possibleUpdatedResources.entrySet().stream()
           .anyMatch(
               entry -> {
                 var newResource = newResourcesMap.get(entry.getKey());
                 return acceptedByGenericFiler(newResource) &&
                     onUpdateFilter.accept(newResource, entry.getValue());
               });
-      if (anyUpdated) {
-        return true;
-      }
-    } else if (!possibleUpdatedResources.isEmpty()) {
-      return true;
-    }
-
-    return false;
+    } else
+      return !possibleUpdatedResources.isEmpty();
   }
 
   private boolean acceptedByGenericFiler(R resource) {

@@ -7,11 +7,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -65,19 +63,6 @@ public @interface ControllerConfiguration {
   String labelSelector() default Constants.NO_VALUE_SET;
 
   /**
-   * @deprecated Use onAddFilter, onUpdateFilter instead.
-   *
-   *             <p>
-   *             Resource event filters only applies on events of the main custom resource. Not on
-   *             events from other event sources nor the periodic events.
-   *             </p>
-   *
-   * @return the list of event filters.
-   */
-  @Deprecated(forRemoval = true)
-  Class<? extends ResourceEventFilter>[] eventFilters() default {};
-
-  /**
    * Filter of onAdd events of resources.
    *
    * @return on-add filter
@@ -106,15 +91,6 @@ public @interface ControllerConfiguration {
    */
   MaxReconciliationInterval maxReconciliationInterval() default @MaxReconciliationInterval(
       interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
-
-
-  /**
-   * Optional list of {@link Dependent} configurations which associate a resource type to a
-   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} implementation
-   *
-   * @return the array of {@link Dependent} configurations
-   */
-  Dependent[] dependents() default {};
 
   /**
    * Optional {@link Retry} implementation for the associated controller to use.

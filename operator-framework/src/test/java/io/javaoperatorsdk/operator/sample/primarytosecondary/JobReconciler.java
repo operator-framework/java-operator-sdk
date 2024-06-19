@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.sample.primarytosecondary;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -20,7 +19,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
  */
 @ControllerConfiguration()
 public class JobReconciler
-    implements Reconciler<Job>, EventSourceInitializer<Job>, ErrorStatusHandler<Job> {
+    implements Reconciler<Job> {
 
   private static final String JOB_CLUSTER_INDEX = "job-cluster-index";
 
@@ -49,7 +48,7 @@ public class JobReconciler
     } else {
       // reading the resource from cache as alternative, works without primary to secondary mapper
       var informerEventSource = (InformerEventSource<Cluster, Job>) context.eventSourceRetriever()
-          .getResourceEventSourceFor(Cluster.class);
+          .getEventSourceFor(Cluster.class);
       informerEventSource
           .get(new ResourceID(resource.getSpec().getClusterName(),
               resource.getMetadata().getNamespace()))
@@ -61,17 +60,17 @@ public class JobReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(EventSourceContext<Job> context) {
+  public List<EventSource<?, Job>> prepareEventSources(EventSourceContext<Job> context) {
     context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
     InformerConfiguration.InformerConfigurationBuilder<Cluster> informerConfiguration =
-        InformerConfiguration.from(Cluster.class, context)
+        InformerConfiguration.from(Cluster.class, Job.class)
             .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
                 .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
                     cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
-            .withNamespacesInheritedFromController(context);
+            .withNamespacesInheritedFromController();
 
     if (addPrimaryToSecondaryMapper) {
       informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
@@ -79,8 +78,7 @@ public class JobReconciler
               primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
     }
 
-    return EventSourceInitializer
-        .nameEventSources(new InformerEventSource<>(informerConfiguration.build(), context));
+    return List.of(new InformerEventSource<>(informerConfiguration.build(), context));
   }
 
   private String indexKey(String clusterName, String namespace) {

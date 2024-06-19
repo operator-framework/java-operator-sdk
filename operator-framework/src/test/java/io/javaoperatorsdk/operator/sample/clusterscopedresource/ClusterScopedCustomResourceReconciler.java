@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.clusterscopedresource;
 
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -13,8 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 @ControllerConfiguration
 public class ClusterScopedCustomResourceReconciler
-    implements Reconciler<ClusterScopedCustomResource>,
-    EventSourceInitializer<ClusterScopedCustomResource> {
+    implements Reconciler<ClusterScopedCustomResource> {
 
   public static final String DATA_KEY = "data-key";
 
@@ -53,12 +53,15 @@ public class ClusterScopedCustomResourceReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, ClusterScopedCustomResource>> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
-    var ies = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-        .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference(true))
-        .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
-        .build(), context);
-    return EventSourceInitializer.nameEventSources(ies);
+    var ies = new InformerEventSource<>(
+        InformerConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)
+            .withSecondaryToPrimaryMapper(
+                Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
+            .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
+            .build(),
+        context);
+    return List.of(ies);
   }
 }

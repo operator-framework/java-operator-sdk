@@ -88,4 +88,5 @@ public class DefaultResourceConfiguration<R extends HasMetadata>
   public Optional<Long> getInformerListLimit() {
     return Optional.ofNullable(informerListLimit);
   }
+
 }

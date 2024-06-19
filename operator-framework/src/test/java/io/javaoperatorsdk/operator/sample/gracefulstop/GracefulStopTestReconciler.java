@@ -22,6 +22,7 @@ public class GracefulStopTestReconciler
 
     numberOfExecutions.addAndGet(1);
     resource.setStatus(new GracefulStopTestCustomResourceStatus());
+    resource.getStatus().setObservedGeneration(resource.getMetadata().getGeneration());
     Thread.sleep(RECONCILER_SLEEP);
 
     return UpdateControl.patchStatus(resource);

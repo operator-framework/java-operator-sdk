@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.monitoring;
 
-import java.util.Collections;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -37,16 +36,6 @@ public interface Metrics {
    */
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
-  /**
-   * @param metadata additional metadata
-   * @param resourceID of primary resource
-   * @param retryInfo for current execution
-   * @deprecated Use {@link #reconcileCustomResource(HasMetadata, RetryInfo, Map)} instead
-   */
-  @Deprecated(forRemoval = true)
-  @SuppressWarnings("unused")
-  default void reconcileCustomResource(ResourceID resourceID, RetryInfo retryInfo,
-      Map<String, Object> metadata) {}
 
   /**
    * Called right before a resource is dispatched to the ExecutorService for reconciliation.
@@ -56,19 +45,6 @@ public interface Metrics {
    * @param metadata metadata associated with the resource being processed
    */
   default void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfo,
-      Map<String, Object> metadata) {
-    reconcileCustomResource(ResourceID.fromResource(resource), retryInfo, metadata);
-  }
-
-  /**
-   * @param exception actual exception
-   * @param metadata additional metadata
-   * @param resourceID of primary resource
-   * @deprecated Use {@link #failedReconciliation(HasMetadata, Exception, Map)} instead
-   */
-  @Deprecated(forRemoval = true)
-  @SuppressWarnings("unused")
-  default void failedReconciliation(ResourceID resourceID, Exception exception,
       Map<String, Object> metadata) {}
 
   /**
@@ -81,9 +57,7 @@ public interface Metrics {
    * @param metadata metadata associated with the resource being processed
    */
   default void failedReconciliation(HasMetadata resource, Exception exception,
-      Map<String, Object> metadata) {
-    failedReconciliation(ResourceID.fromResource(resource), exception, metadata);
-  }
+      Map<String, Object> metadata) {}
 
 
   default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
@@ -91,14 +65,6 @@ public interface Metrics {
   default void reconciliationExecutionFinished(HasMetadata resource,
       Map<String, Object> metadata) {}
 
-  /**
-   * @param resourceID of primary resource
-   * @deprecated Use (and implement) {@link #cleanupDoneFor(ResourceID, Map)} instead
-   */
-  @Deprecated
-  default void cleanupDoneFor(ResourceID resourceID) {
-    cleanupDoneFor(resourceID, Collections.emptyMap());
-  }
 
   /**
    * Called when the resource associated with the specified {@link ResourceID} has been successfully
@@ -110,24 +76,6 @@ public interface Metrics {
   default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**
-   * @param resourceID of primary resource
-   * @deprecated Use (and implement) {@link #finishedReconciliation(ResourceID, Map)} instead
-   */
-  @Deprecated
-  default void finishedReconciliation(ResourceID resourceID) {
-    finishedReconciliation(resourceID, Collections.emptyMap());
-  }
-
-  /**
-   * @param resourceID of primary resource
-   * @param metadata additional metadata
-   * @deprecated Use {@link #finishedReconciliation(HasMetadata, Map)} instead
-   */
-  @Deprecated(forRemoval = true)
-  @SuppressWarnings("unused")
-  default void finishedReconciliation(ResourceID resourceID, Map<String, Object> metadata) {}
-
-  /**
    * Called when the
    * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)}
    * method of the Reconciler associated with the resource associated with the specified
@@ -136,9 +84,7 @@ public interface Metrics {
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
    */
-  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    finishedReconciliation(ResourceID.fromResource(resource), metadata);
-  }
+  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Encapsulates the information about a controller execution i.e. a call to either

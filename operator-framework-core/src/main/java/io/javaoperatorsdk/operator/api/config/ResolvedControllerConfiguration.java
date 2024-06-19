@@ -1,16 +1,18 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -19,8 +21,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 @SuppressWarnings("rawtypes")
 public class ResolvedControllerConfiguration<P extends HasMetadata>
     extends DefaultResourceConfiguration<P>
-    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P>,
-    DependentResourceConfigurationProvider {
+    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
 
   private final String name;
   private final boolean generationAware;
@@ -33,9 +34,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final ItemStore<P> itemStore;
   private final ConfigurationService configurationService;
   private final String fieldManager;
-
-  private ResourceEventFilter<P> eventFilter;
-  private List<DependentResourceSpec> dependentResources;
+  private WorkflowSpec workflowSpec;
 
   public ResolvedControllerConfiguration(Class<P> resourceClass, ControllerConfiguration<P> other) {
     this(resourceClass, other.getName(), other.isGenerationAware(),
@@ -43,11 +42,11 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.maxReconciliationInterval().orElse(null),
         other.onAddFilter().orElse(null), other.onUpdateFilter().orElse(null),
         other.genericFilter().orElse(null),
-        other.getDependentResources(), other.getNamespaces(),
+        other.getNamespaces(),
         other.getFinalizerName(), other.getLabelSelector(), Collections.emptyMap(),
         other.getItemStore().orElse(null), other.fieldManager(),
         other.getConfigurationService(),
-        other.getInformerListLimit().orElse(null));
+        other.getInformerListLimit().orElse(null), other.getWorkflowSpec().orElse(null));
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
@@ -72,16 +71,16 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       RateLimiter rateLimiter, Duration maxReconciliationInterval,
       OnAddFilter<? super P> onAddFilter, OnUpdateFilter<? super P> onUpdateFilter,
       GenericFilter<? super P> genericFilter,
-      List<DependentResourceSpec> dependentResources,
       Set<String> namespaces, String finalizer, String labelSelector,
       Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
       String fieldManager,
-      ConfigurationService configurationService, Long informerListLimit) {
+      ConfigurationService configurationService, Long informerListLimit,
+      WorkflowSpec workflowSpec) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
         namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
         configurationService, informerListLimit);
-    setDependentResources(dependentResources);
+    setWorkflowSpec(workflowSpec);
   }
 
   protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
@@ -146,14 +145,14 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     return rateLimiter;
   }
 
+
   @Override
-  public List<DependentResourceSpec> getDependentResources() {
-    return dependentResources;
+  public Optional<WorkflowSpec> getWorkflowSpec() {
+    return Optional.ofNullable(workflowSpec);
   }
 
-  protected void setDependentResources(List<DependentResourceSpec> dependentResources) {
-    this.dependentResources = dependentResources == null ? Collections.emptyList()
-        : Collections.unmodifiableList(dependentResources);
+  public void setWorkflowSpec(WorkflowSpec workflowSpec) {
+    this.workflowSpec = workflowSpec;
   }
 
   @Override
@@ -167,23 +166,15 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public ResourceEventFilter<P> getEventFilter() {
-    return eventFilter;
-  }
-
-  /**
-   * @deprecated Use {@link OnAddFilter}, {@link OnUpdateFilter} and {@link GenericFilter} instead
-   *
-   * @param eventFilter generic event filter
-   */
-  @Deprecated(forRemoval = true)
-  protected void setEventFilter(ResourceEventFilter<P> eventFilter) {
-    this.eventFilter = eventFilter;
-  }
-
-  @Override
-  public Object getConfigurationFor(DependentResourceSpec spec) {
-    return configurations.get(spec);
+  @SuppressWarnings("unchecked")
+  public <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec) {
+    // first check if there's an overridden configuration at the controller level
+    var config = configurations.get(spec);
+    if (config == null) {
+      // if not, check the spec for configuration
+      config = spec.getConfiguration().orElse(null);
+    }
+    return (C) config;
   }
 
   @Override

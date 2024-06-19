@@ -28,16 +28,16 @@ public class DynamicGenericEventSourceRegistrationReconciler
 
     numberOfExecutions.addAndGet(1);
 
-    context.eventSourceRetriever().dynamicallyRegisterEventSource(ConfigMap.class.getSimpleName(),
+    context.eventSourceRetriever().dynamicallyRegisterEventSource(
         genericInformerFor(ConfigMap.class, context));
-    context.eventSourceRetriever().dynamicallyRegisterEventSource(Secret.class.getSimpleName(),
+    context.eventSourceRetriever().dynamicallyRegisterEventSource(
         genericInformerFor(Secret.class, context));
 
     context.getClient().resource(secret(primary)).createOr(NonDeletingOperation::update);
     context.getClient().resource(configMap(primary)).createOr(NonDeletingOperation::update);
 
     numberOfEventSources.set(context.eventSourceRetriever()
-        .getResourceEventSourcesFor(GenericKubernetesResource.class).size());
+        .getEventSourcesFor(GenericKubernetesResource.class).size());
 
     return UpdateControl.noUpdate();
   }
@@ -75,8 +75,10 @@ public class DynamicGenericEventSourceRegistrationReconciler
       Context<DynamicGenericEventSourceRegistrationCustomResource> context) {
 
     return new InformerEventSource<>(
-        InformerConfiguration.from(gvkFor(clazz),
-            context.eventSourceRetriever().eventSourceContextForDynamicRegistration()).build(),
+        InformerConfiguration
+            .from(gvkFor(clazz), DynamicGenericEventSourceRegistrationCustomResource.class)
+            .withName(clazz.getSimpleName())
+            .build(),
         context.eventSourceRetriever().eventSourceContextForDynamicRegistration());
   }
 

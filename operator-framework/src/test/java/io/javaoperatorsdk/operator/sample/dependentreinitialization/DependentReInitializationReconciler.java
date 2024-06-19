@@ -1,14 +1,13 @@
 package io.javaoperatorsdk.operator.sample.dependentreinitialization;
 
-import java.util.Map;
+import java.util.List;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
 public class DependentReInitializationReconciler
-    implements Reconciler<DependentReInitializationCustomResource>,
-    EventSourceInitializer<DependentReInitializationCustomResource> {
+    implements Reconciler<DependentReInitializationCustomResource> {
 
   private final ConfigMapDependentResource configMapDependentResource;
 
@@ -25,9 +24,9 @@ public class DependentReInitializationReconciler
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, DependentReInitializationCustomResource>> prepareEventSources(
       EventSourceContext<DependentReInitializationCustomResource> context) {
-    return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
+    return EventSourceUtils.dependentEventSources(context,
         configMapDependentResource);
   }
 

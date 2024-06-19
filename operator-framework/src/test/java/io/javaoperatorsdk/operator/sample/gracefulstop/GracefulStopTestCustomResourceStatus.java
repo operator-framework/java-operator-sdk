@@ -1,7 +1,14 @@
 package io.javaoperatorsdk.operator.sample.gracefulstop;
 
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
+public class GracefulStopTestCustomResourceStatus {
 
-public class GracefulStopTestCustomResourceStatus extends ObservedGenerationAwareStatus {
+  private long observedGeneration;
 
+  public long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  public void setObservedGeneration(long observedGeneration) {
+    this.observedGeneration = observedGeneration;
+  }
 }

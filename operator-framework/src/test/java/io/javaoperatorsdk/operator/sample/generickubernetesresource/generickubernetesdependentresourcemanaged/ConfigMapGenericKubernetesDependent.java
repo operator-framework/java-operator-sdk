@@ -11,7 +11,9 @@ import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
+@KubernetesDependent
 public class ConfigMapGenericKubernetesDependent extends
     GenericKubernetesDependentResource<GenericKubernetesDependentManagedCustomResource>
     implements

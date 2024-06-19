@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.sample.changenamespace;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,21 +14,22 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @ControllerConfiguration
 public class ChangeNamespaceTestReconciler
-    implements Reconciler<ChangeNamespaceTestCustomResource>,
-    EventSourceInitializer<ChangeNamespaceTestCustomResource> {
+    implements Reconciler<ChangeNamespaceTestCustomResource> {
 
   private final ConcurrentHashMap<ResourceID, Integer> numberOfResourceReconciliations =
       new ConcurrentHashMap<>();
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, ChangeNamespaceTestCustomResource>> prepareEventSources(
       EventSourceContext<ChangeNamespaceTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, ChangeNamespaceTestCustomResource> configMapES =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-            .build(), context);
+        new InformerEventSource<>(
+            InformerConfiguration.from(ConfigMap.class, ChangeNamespaceTestCustomResource.class)
+                .build(),
+            context);
 
-    return EventSourceInitializer.nameEventSources(configMapES);
+    return List.of(configMapES);
   }
 
   @Override

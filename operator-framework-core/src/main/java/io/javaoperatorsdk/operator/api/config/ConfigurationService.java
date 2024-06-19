@@ -20,10 +20,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -127,11 +129,6 @@ public interface ConfigurationService {
   }
 
   int DEFAULT_RECONCILIATION_THREADS_NUMBER = 50;
-  /**
-   * @deprecated Not used anymore in the default implementation
-   */
-  @Deprecated(forRemoval = true)
-  int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
 
   /**
    * The number of threads the operator can spin out to dispatch reconciliation requests to
@@ -143,23 +140,7 @@ public interface ConfigurationService {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
 
-  /**
-   * The minimum number of threads the operator starts in the thread pool for reconciliations.
-   *
-   * @deprecated not used anymore by default executor implementation
-   * @return the minimum number of concurrent reconciliation threads
-   */
-  @Deprecated(forRemoval = true)
-  default int minConcurrentReconciliationThreads() {
-    return MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
-  }
-
   int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
-  /**
-   * @deprecated Not used anymore in the default implementation
-   */
-  @Deprecated(forRemoval = true)
-  int MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
 
   /**
    * Number of threads the operator can spin out to be used in the workflows with the default
@@ -169,33 +150,6 @@ public interface ConfigurationService {
    */
   default int concurrentWorkflowExecutorThreads() {
     return DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
-  }
-
-  /**
-   * The minimum number of threads the operator starts in the thread pool for workflows.
-   *
-   * @deprecated not used anymore by default executor implementation
-   * @return the minimum number of concurrent workflow threads
-   */
-  @Deprecated(forRemoval = true)
-  default int minConcurrentWorkflowExecutorThreads() {
-    return MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
-  }
-
-  int DEFAULT_TERMINATION_TIMEOUT_SECONDS = 10;
-
-  /**
-   * Retrieves the number of seconds the SDK waits for reconciliation threads to terminate before
-   * shutting down.
-   *
-   * @deprecated use {@link io.javaoperatorsdk.operator.Operator#stop(Duration)} instead. Where the
-   *             parameter can be passed to specify graceful timeout.
-   *
-   * @return the number of seconds to wait before terminating reconciliation threads
-   */
-  @Deprecated(forRemoval = true)
-  default int getTerminationTimeoutSeconds() {
-    return DEFAULT_TERMINATION_TIMEOUT_SECONDS;
   }
 
   default Metrics getMetrics() {
@@ -227,8 +181,7 @@ public interface ConfigurationService {
    * <p>
    * if true, operator stops if there are some issues with informers
    * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} or
-   * {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
-   * on startup. Other event sources may also respect this flag.
+   * {@link ControllerEventSource} on startup. Other event sources may also respect this flag.
    * </p>
    * <p>
    * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
@@ -353,6 +306,8 @@ public interface ConfigurationService {
    * method of Kubernetes Dependent Resource.
    *
    * @since 4.4.0
+   *
+   * @return if SSA should be used for dependent resources
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
     return true;
@@ -381,6 +336,8 @@ public interface ConfigurationService {
    * Disable this if you want to react to your own dependent resource updates
    *
    * @since 4.5.0
+   *
+   * @return if special annotation should be used for dependent resource to filter events
    */
   default boolean previousAnnotationForDependentResourcesEventFiltering() {
     return true;
@@ -392,12 +349,51 @@ public interface ConfigurationService {
    * <p>
    * Disabled by default as Kubernetes does not support, and discourages, this interpretation of
    * resourceVersions. Enable only if your api server event processing seems to lag the operator
-   * logic and you want to further minimize the the amount of work done / updates issued by the
+   * logic, and you want to further minimize the amount of work done / updates issued by the
    * operator.
    *
    * @since 4.5.0
+   *
+   * @return if resource version should be parsed (as integer)
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
+    return false;
+  }
+
+  /**
+   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patch resource or status can
+   * either use simple patches or SSA. Setting this to {@code true}, controllers will use SSA for
+   * adding finalizers, patching resources and status.
+   *
+   * @return {@code true} if Server-Side Apply (SSA) should be used when patching the primary
+   *         resources, {@code false} otherwise
+   * @since 5.0.0
+   * @see ConfigurationServiceOverrider#withUseSSAToPatchPrimaryResource(boolean)
+   */
+  default boolean useSSAToPatchPrimaryResource() {
+    return true;
+  }
+
+  /**
+   * <p>
+   * Determines whether resources retrieved from caches such as via calls to
+   * {@link Context#getSecondaryResource(Class)} should be defensively cloned first.
+   * </p>
+   * 
+   * <p>
+   * Defensive cloning to prevent problematic cache modifications (modifying the resource would
+   * otherwise modify the stored copy in the cache) was transparently done in previous JOSDK
+   * versions. This might have performance consequences and, with the more prevalent use of
+   * Server-Side Apply, where you should create a new copy of your resource with only modified
+   * fields, such modifications of these resources are less likely to occur.
+   * </p>
+   * 
+   * @return {@code true} if resources should be defensively cloned before returning them from
+   *         caches, {@code false} otherwise
+   * 
+   * @since 5.0.0
+   */
+  default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return false;
   }
 

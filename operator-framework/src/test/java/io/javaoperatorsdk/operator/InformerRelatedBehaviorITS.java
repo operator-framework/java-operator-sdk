@@ -21,8 +21,7 @@ import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
-import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.ConfigMapDependentResource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
 
@@ -143,7 +142,7 @@ class InformerRelatedBehaviorITS {
 
     InformerHealthIndicator controllerHealthIndicator =
         (InformerHealthIndicator) unhealthyEventSources
-            .get(ControllerResourceEventSource.class.getSimpleName())
+            .get(ControllerEventSource.NAME)
             .informerHealthIndicators().get(additionalNamespace);
     assertThat(controllerHealthIndicator).isNotNull();
     assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
@@ -151,7 +150,7 @@ class InformerRelatedBehaviorITS {
 
     InformerHealthIndicator configMapHealthIndicator =
         (InformerHealthIndicator) unhealthyEventSources
-            .get(ConfigMapDependentResource.class.getSimpleName())
+            .get(InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE)
             .informerHealthIndicators().get(additionalNamespace);
     assertThat(configMapHealthIndicator).isNotNull();
     assertThat(configMapHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
@@ -270,13 +269,13 @@ class InformerRelatedBehaviorITS {
         operator.getRuntimeInfo().unhealthyEventSources()
             .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(unhealthyEventSources).isNotEmpty();
-    assertThat(unhealthyEventSources.get(ControllerResourceEventSource.class.getSimpleName()))
+    assertThat(unhealthyEventSources.get(ControllerEventSource.NAME))
         .isNotNull();
     var informerHealthIndicators = operator.getRuntimeInfo()
         .unhealthyInformerWrappingEventSourceHealthIndicator()
         .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(informerHealthIndicators).isNotEmpty();
-    assertThat(informerHealthIndicators.get(ControllerResourceEventSource.class.getSimpleName())
+    assertThat(informerHealthIndicators.get(ControllerEventSource.NAME)
         .informerHealthIndicators())
         .hasSize(1);
   }
@@ -317,8 +316,9 @@ class InformerRelatedBehaviorITS {
 
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
-    Operator operator = new Operator(clientUsingServiceAccount(),
+    Operator operator = new Operator(
         co -> {
+          co.withKubernetesClient(clientUsingServiceAccount());
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
           co.withCacheSyncTimeout(Duration.ofMillis(3000));
           if (addStopHandler) {

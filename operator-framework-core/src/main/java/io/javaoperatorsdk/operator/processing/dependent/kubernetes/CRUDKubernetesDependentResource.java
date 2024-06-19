@@ -22,4 +22,8 @@ public abstract class CRUDKubernetesDependentResource<R extends HasMetadata, P e
   public CRUDKubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
   }
+
+  public CRUDKubernetesDependentResource(Class<R> resourceType, String name) {
+    super(resourceType, name);
+  }
 }

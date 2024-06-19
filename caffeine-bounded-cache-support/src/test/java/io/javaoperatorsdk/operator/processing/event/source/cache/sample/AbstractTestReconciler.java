@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing.event.source.cache.sample;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
-    implements Reconciler<P>, EventSourceInitializer<P> {
+    implements Reconciler<P> {
 
   private static final Logger log =
       LoggerFactory.getLogger(BoundedCacheClusterScopeTestReconciler.class);
@@ -69,20 +70,21 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   @Override
-  public Map<String, EventSource> prepareEventSources(
+  public List<EventSource<?, P>> prepareEventSources(
       EventSourceContext<P> context) {
 
     var boundedItemStore =
         boundedItemStore(new KubernetesClientBuilder().build(),
             ConfigMap.class, Duration.ofMinutes(1), 1); // setting max size for testing purposes
 
-    var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+    var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, primaryClass())
         .withItemStore(boundedItemStore)
         .withSecondaryToPrimaryMapper(
-            Mappers.fromOwnerReference(this instanceof BoundedCacheClusterScopeTestReconciler))
+            Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
+                this instanceof BoundedCacheClusterScopeTestReconciler))
         .build(), context);
 
-    return EventSourceInitializer.nameEventSources(es);
+    return List.of(es);
   }
 
   private void ensureStatus(P resource) {
@@ -102,4 +104,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
         .build();
     return CaffeineBoundedItemStores.boundedItemStore(client, rClass, cache);
   }
+
+  protected abstract Class<P> primaryClass();
+
 }
