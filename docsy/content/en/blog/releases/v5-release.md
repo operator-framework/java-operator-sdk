@@ -34,9 +34,10 @@ See [related issue](https://github.com/operator-framework/java-operator-sdk/issu
 ### Removal of automatic observed generation handling
 
 The `ObservedGenerationAware` interface and `ObservedGenerationAwareStatus` and related functionality were removed.
-Although this feature allowed us to handle observed generation in status easily, 
-the rationale behind this removal is that it is not possible to implement it elegantly when using SSA. Also, 
-it is trivial to implement it manually.
+Although this feature allowed us to handle observed generation in status easily,
+the rationale behind this removal is that it is impossible to support it elegantly for every case when using SSA to patch resources. 
+
+Also, it is trivial to implement it manually.
 
 See the related integration test for how to do it manually [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manualobservedgeneration/ManualObservedGenerationReconciler.java).
 
@@ -49,7 +50,7 @@ we want to minimize such interfaces since it is hard to find them just "by looki
 interface was removed and `prepareEventSources(EventSourceContext<P> context)` was simply moved to
 `Reconciler` interface with a default empty implementation.
 
-So you can just delete this interface from your reconciler implementation.
+So you can delete this interface from your reconciler implementation.
 
 ```java
 
