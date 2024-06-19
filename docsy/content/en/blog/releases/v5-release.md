@@ -11,12 +11,12 @@ explain their rationale, and show how to migrate from the previous release if ne
 
 ## Changes
 
-### Usage of SSA
+### SSA for status patch and finalizer adding
 
 [Server Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) has already been supported for a long time
 in the fabric8 client and features like dependent resources. However, it is not used by default
-for updating the status of the custom resource with the `UpdateControl` patch operations in the reconciler and for
-adding the finalizer for the custom resource. 
+to update the status of the custom resource with the `UpdateControl` patch operations in the reconciler and to
+add the finalizer for the custom resource. 
 
 If you do not wish to use SSA, you can deactivate the feature using `ConfigurationService.useSSAToPatchPrimaryResource` 
 and related `ConfigurationServiceOverrider.withUseSSAToPatchPrimaryResource`.
