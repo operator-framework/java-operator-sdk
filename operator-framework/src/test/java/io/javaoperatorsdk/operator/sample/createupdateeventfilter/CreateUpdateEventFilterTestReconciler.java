@@ -93,7 +93,7 @@ public class CreateUpdateEventFilterTestReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap> informerConfiguration =
-        InformerConfiguration.from(ConfigMap.class, context)
+        InformerConfiguration.from(ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
     final var informerEventSource =

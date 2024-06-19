@@ -138,8 +138,8 @@ public class EventSourceManager<P extends HasMetadata>
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
       if (eventSource instanceof ManagedInformerEventSource managedInformerEventSource) {
-        managedInformerEventSource.setConfigurationService(
-            controller.getConfiguration().getConfigurationService());
+        managedInformerEventSource.setControllerConfiguration(
+            controller.getConfiguration());
       }
       eventSources.add(eventSource);
       eventSource.setEventHandler(controller.getEventProcessor());
