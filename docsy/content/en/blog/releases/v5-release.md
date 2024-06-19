@@ -67,6 +67,7 @@ public class WebPageReconciler
 // omitted code
 
 }
+```
 
 See [related issue](https://github.com/operator-framework/java-operator-sdk/issues/2437).
 
