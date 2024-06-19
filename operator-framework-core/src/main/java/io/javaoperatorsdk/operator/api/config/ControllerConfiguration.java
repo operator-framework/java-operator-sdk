@@ -6,6 +6,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
@@ -71,7 +72,6 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return Optional.of(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
   }
 
-  @SuppressWarnings("unused")
   ConfigurationService getConfigurationService();
 
   @SuppressWarnings("unchecked")
@@ -86,7 +86,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
 
   @SuppressWarnings("unused")
   default Set<String> getEffectiveNamespaces() {
-    return ResourceConfiguration.super.getEffectiveNamespaces(getConfigurationService());
+    return ResourceConfiguration.super.getEffectiveNamespaces(this);
   }
 
   /**
@@ -100,4 +100,5 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return getName();
   }
 
+  <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec);
 }

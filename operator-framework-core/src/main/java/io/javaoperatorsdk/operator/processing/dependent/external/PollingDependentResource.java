@@ -31,8 +31,8 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
   @Override
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
-    return new PollingEventSource<>(name(), resourceType(),
-        new PollingConfiguration<>(this, getPollingPeriod(), cacheKeyMapper));
+    return new PollingEventSource<>(resourceType(),
+        new PollingConfiguration<>(name(), this, getPollingPeriod(), cacheKeyMapper));
   }
 
 }

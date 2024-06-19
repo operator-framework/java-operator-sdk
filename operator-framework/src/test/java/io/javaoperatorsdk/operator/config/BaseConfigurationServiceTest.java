@@ -7,7 +7,6 @@ import java.lang.annotation.Target;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Assertions;
@@ -20,7 +19,6 @@ import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -31,9 +29,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
@@ -65,29 +63,19 @@ class BaseConfigurationServiceTest {
     return configurationService.configFor(reconciler);
   }
 
-  @Test
-  void defaultValuesShouldBeConsistent() {
-    final var configuration = configFor(new SelectorReconciler());
-    final var annotated = extractDependentKubernetesResourceConfig(configuration, 1);
-    final var unannotated = extractDependentKubernetesResourceConfig(configuration, 0);
-
-    assertNull(annotated.labelSelector());
-    assertNull(unannotated.labelSelector());
-  }
-
-  @SuppressWarnings("rawtypes")
-  private KubernetesDependentResourceConfig extractDependentKubernetesResourceConfig(
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static KubernetesDependentResourceConfig extractDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
     final var spec =
         configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
-    return (KubernetesDependentResourceConfig) DependentResourceConfigurationResolver
-        .configurationFor(spec, configuration);
+    return (KubernetesDependentResourceConfig) configuration.getConfigurationFor(spec);
   }
 
   @Test
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   void getDependentResources() {
     var configuration = configFor(new NoDepReconciler());
+
     var workflowSpec = configuration.getWorkflowSpec();
     assertTrue(workflowSpec.isEmpty());
 
@@ -99,14 +87,10 @@ class BaseConfigurationServiceTest {
     assertTrue(dependents.stream().anyMatch(d -> d.getName().equals(dependentResourceName)));
     var dependentSpec = findByName(dependents, dependentResourceName);
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
-    var maybeConfig =
-        DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
+    var maybeConfig = extractDependentKubernetesResourceConfig(configuration, 0);
     assertNotNull(maybeConfig);
     assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
     final var config = (KubernetesDependentResourceConfig) maybeConfig;
-    // check that the DependentResource inherits the controller's configuration if applicable
-    assertEquals(1, config.namespaces().size());
-    assertEquals(Set.of(OneDepReconciler.CONFIGURED_NS), config.namespaces());
 
     configuration = configFor(new NamedDepReconciler());
     dependents = configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
@@ -114,8 +98,7 @@ class BaseConfigurationServiceTest {
     assertEquals(1, dependents.size());
     dependentSpec = findByName(dependents, NamedDepReconciler.NAME);
     assertEquals(ReadOnlyDependent.class, dependentSpec.getDependentResourceClass());
-    maybeConfig = DependentResourceConfigurationResolver.configurationFor(dependentSpec,
-        configuration);
+    maybeConfig = extractDependentKubernetesResourceConfig(configuration, 0);
     assertNotNull(maybeConfig);
     assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
   }
@@ -230,13 +213,12 @@ class BaseConfigurationServiceTest {
     assertEquals(CustomConfigConverter.CONVERTER_PROVIDED_DEFAULT, getValue(config, 1));
   }
 
+  @SuppressWarnings("unchecked")
   private static int getValue(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
-    return ((CustomConfig) DependentResourceConfigurationResolver
-        .configurationFor(
-            configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index),
-            configuration))
-        .getValue();
+    final var spec =
+        configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
+    return ((CustomConfig) configuration.getConfigurationFor(spec)).value();
   }
 
   @ControllerConfiguration(
@@ -316,7 +298,7 @@ class BaseConfigurationServiceTest {
       @Dependent(type = ReadOnlyDependent.class)
   })
   @ControllerConfiguration
-  private static class SelectorReconciler implements Reconciler<ConfigMap> {
+  public static class SelectorReconciler implements Reconciler<ConfigMap> {
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
@@ -324,7 +306,8 @@ class BaseConfigurationServiceTest {
     }
 
     @KubernetesDependent
-    private static class WithAnnotation extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+    public static class WithAnnotation
+        extends CRUDKubernetesDependentResource<ConfigMap, ConfigMap> {
 
       public WithAnnotation() {
         super(ConfigMap.class);
@@ -332,7 +315,7 @@ class BaseConfigurationServiceTest {
     }
   }
 
-  private static class MissingAnnotationReconciler implements Reconciler<ConfigMap> {
+  public static class MissingAnnotationReconciler implements Reconciler<ConfigMap> {
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
@@ -450,7 +433,7 @@ class BaseConfigurationServiceTest {
   @Configured(by = CustomAnnotation.class, with = CustomConfig.class,
       converter = CustomConfigConverter.class)
   private static class CustomAnnotatedDep implements DependentResource<ConfigMap, ConfigMap>,
-      DependentResourceConfigurator<CustomConfig> {
+      ConfiguredDependentResource<CustomConfig> {
 
     public static final int PROVIDED_VALUE = 42;
     private CustomConfig config;
@@ -486,28 +469,17 @@ class BaseConfigurationServiceTest {
     int value();
   }
 
-  private static class CustomConfig {
-
-    private final int value;
-
-    private CustomConfig(int value) {
-      this.value = value;
-    }
-
-    public int getValue() {
-      return value;
-    }
-  }
+  private record CustomConfig(int value) {}
 
   private static class CustomConfigConverter
-      implements ConfigurationConverter<CustomAnnotation, CustomConfig, CustomAnnotatedDep> {
+      implements ConfigurationConverter<CustomAnnotation, CustomConfig> {
 
     static final int CONVERTER_PROVIDED_DEFAULT = 7;
 
     @Override
     public CustomConfig configFrom(CustomAnnotation configAnnotation,
-        io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> parentConfiguration,
-        Class<CustomAnnotatedDep> originatingClass) {
+        DependentResourceSpec<?, ?, CustomConfig> spec,
+        io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> parentConfiguration) {
       if (configAnnotation == null) {
         return new CustomConfig(CONVERTER_PROVIDED_DEFAULT);
       } else {

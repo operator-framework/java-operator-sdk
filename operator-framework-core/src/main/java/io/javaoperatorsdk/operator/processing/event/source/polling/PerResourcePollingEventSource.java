@@ -50,15 +50,12 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final Predicate<P> registerPredicate;
   private final Duration period;
 
-  public PerResourcePollingEventSource(Class<R> resourceClass, EventSourceContext<P> context,
-      PerResourcePollingConfiguration<R, P> config) {
-    this(null, resourceClass, context, config);
-  }
 
-  public PerResourcePollingEventSource(String name, Class<R> resourceClass,
+
+  public PerResourcePollingEventSource(Class<R> resourceClass,
       EventSourceContext<P> context,
       PerResourcePollingConfiguration<R, P> config) {
-    super(name, resourceClass, config.cacheKeyMapper());
+    super(config.name(), resourceClass, config.cacheKeyMapper());
     this.primaryResourceCache = context.getPrimaryCache();
     this.resourceFetcher = config.resourceFetcher();
     this.registerPredicate = config.registerPredicate();
