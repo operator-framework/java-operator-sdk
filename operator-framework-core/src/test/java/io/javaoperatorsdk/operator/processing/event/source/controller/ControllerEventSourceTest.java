@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -23,11 +24,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class ControllerEventSourceTest extends
     AbstractEventSourceTestBase<ControllerEventSource<TestCustomResource>, EventHandler> {
@@ -36,11 +33,14 @@ class ControllerEventSourceTest extends
       ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
 
   private final TestController testController = new TestController(true);
+  private final ControllerConfiguration controllerConfig = mock(ControllerConfiguration.class);
 
   @BeforeEach
   public void setup() {
-    setUpSource(new ControllerEventSource<>(testController), true,
-        new BaseConfigurationService());
+
+    when(controllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
+
+    setUpSource(new ControllerEventSource<>(testController), true, controllerConfig);
   }
 
   @Test
@@ -128,7 +128,7 @@ class ControllerEventSourceTest extends
     source =
         new ControllerEventSource<>(
             new TestController(onAddFilter, onUpdatePredicate, null));
-    setUpSource(source);
+    setUpSource(source, true, controllerConfig);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
     source.eventReceived(ResourceAction.UPDATED, cr, cr);
@@ -142,7 +142,7 @@ class ControllerEventSourceTest extends
 
     source =
         new ControllerEventSource<>(new TestController(null, null, res -> false));
-    setUpSource(source);
+    setUpSource(source, true, controllerConfig);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
     source.eventReceived(ResourceAction.UPDATED, cr, cr);
