@@ -49,8 +49,10 @@ public class MultipleManagedDependentResourceReconciler
   public List<EventSource> prepareEventSources(
       EventSourceContext<MultipleManagedDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentResourceCustomResource> ies =
-        new InformerEventSource<>(CONFIG_MAP_EVENT_SOURCE,
-            InformerConfiguration.from(ConfigMap.class, context)
+        new InformerEventSource<>(
+            InformerConfiguration
+                .from(ConfigMap.class, MultipleManagedDependentResourceCustomResource.class)
+                .withName(CONFIG_MAP_EVENT_SOURCE)
                 .build(),
             context);
     return List.of(ies);

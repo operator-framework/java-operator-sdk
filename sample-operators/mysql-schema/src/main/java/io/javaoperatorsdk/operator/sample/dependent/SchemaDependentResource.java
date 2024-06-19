@@ -16,9 +16,10 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.javaoperatorsdk.operator.sample.MySQLDbConfig;
@@ -38,7 +39,7 @@ import static java.lang.String.format;
     converter = ResourcePollerConfigConverter.class)
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
-    implements DependentResourceConfigurator<ResourcePollerConfig>,
+    implements ConfiguredDependentResource<ResourcePollerConfig>,
     Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
 
   public static final String NAME = "schema";
@@ -121,12 +122,12 @@ public class SchemaDependentResource
   }
 
   static class ResourcePollerConfigConverter implements
-      ConfigurationConverter<SchemaConfig, ResourcePollerConfig, SchemaDependentResource> {
+      ConfigurationConverter<SchemaConfig, ResourcePollerConfig> {
 
     @Override
     public ResourcePollerConfig configFrom(SchemaConfig configAnnotation,
-        ControllerConfiguration<?> parentConfiguration,
-        Class<SchemaDependentResource> originatingClass) {
+        DependentResourceSpec<?, ?, ResourcePollerConfig> spec,
+        ControllerConfiguration<?> parentConfiguration) {
       if (configAnnotation != null) {
         return new ResourcePollerConfig(Duration.ofMillis(configAnnotation.pollPeriod()),
             new MySQLDbConfig(configAnnotation.host(), String.valueOf(configAnnotation.port()),
