@@ -30,7 +30,7 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
   public static final String CONFIG_MAP_EVENT_SOURCE = "configMapEventSource";
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, PrimaryIndexerTestCustomResource>> prepareEventSources(
       EventSourceContext<PrimaryIndexerTestCustomResource> context) {
 
     var cache = context.getPrimaryCache();

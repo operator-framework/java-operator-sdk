@@ -16,7 +16,7 @@ public class PrimaryIndexerTestReconciler
     extends AbstractPrimaryIndexerTestReconciler {
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, PrimaryIndexerTestCustomResource>> prepareEventSources(
       EventSourceContext<PrimaryIndexerTestCustomResource> context) {
 
     context.getPrimaryCache().addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);
