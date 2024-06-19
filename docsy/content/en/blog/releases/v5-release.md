@@ -5,8 +5,9 @@ weight: 10
 
 # Version 5.0.0-RC1 Released!
 
-We've just released the next major version of Java Operator SDK. There are many goals for this release. Instead, it is 
-a collection of improvements and features that require API changes. In this post, we will review the significant changes,
+We've just released the next major version of Java Operator SDK. There is not a single big feature or goal of this release. Instead, it is 
+a collection of improvements and features that require API changes. However, the following improvements made the framework much easier to use and understand. 
+In this post, we will review all the significant changes,
 explain their rationale, and show how to migrate from the previous release if needed.
 
 ## Changes
@@ -14,7 +15,7 @@ explain their rationale, and show how to migrate from the previous release if ne
 ### SSA for status patch and finalizer adding
 
 [Server Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) has already been supported for a long time
-in the fabric8 client and features like dependent resources. However, it is not used by default
+in the fabric8 client, and features like dependent resources. However, it is not used by default
 to update the status of the custom resource with the `UpdateControl` patch operations in the reconciler and to
 add the finalizer for the custom resource. 
 
@@ -29,6 +30,17 @@ See known issues with migration from non-SSA to SSA-based status updates here:
 Also, the related [workaround](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/StatusPatchSSAMigrationIT.java#L110-L116).
 
 See [related issue](https://github.com/operator-framework/java-operator-sdk/issues/1931).
+
+### Removal of automatic observed generation handling
+
+The `ObservedGenerationAware` interface and `ObservedGenerationAwareStatus` and related functionality were removed.
+Although this feature allowed us to handle observed generation in status easily, 
+the rationale behind this removal is that it is not possible to implement it elegantly when using SSA. Also, 
+it is trivial to implement it manually.
+
+See the related integration test for how to do it manually [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manualobservedgeneration/ManualObservedGenerationReconciler.java).
+
+See [related issue](https://github.com/operator-framework/java-operator-sdk/issues/2329).
 
 ### Removal of EventSourceInitializer interface
 
