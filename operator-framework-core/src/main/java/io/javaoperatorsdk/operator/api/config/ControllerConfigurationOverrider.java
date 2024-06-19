@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
-@SuppressWarnings({"rawtypes", "unused"})
+@SuppressWarnings({"rawtypes", "unused", "UnusedReturnValue"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
   private String finalizer;
