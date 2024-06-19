@@ -21,8 +21,6 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     return InformerConfiguration.from(groupVersionKind, context.getPrimaryResourceClass());
   }
 
-
-
   @SuppressWarnings("unused")
   public GroupVersionKind getGroupVersionKind() {
     return groupVersionKind;

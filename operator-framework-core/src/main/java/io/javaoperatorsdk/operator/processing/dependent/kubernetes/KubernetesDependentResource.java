@@ -200,29 +200,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unchecked")
   @Override
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
-    InformerConfiguration<R> config;
+    final InformerConfiguration.InformerConfigurationBuilder<R> configBuilder =
+        informerConfigurationBuilder(context)
+            .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper(context).orElseThrow())
+            .withName(name());
+
+    // update configuration from annotation if specified
     if (kubernetesDependentResourceConfig != null
         && kubernetesDependentResourceConfig.informerConfig() != null) {
-
-      var configBuilder = informerConfigurationBuilder(context);
       kubernetesDependentResourceConfig.informerConfig().updateInformerConfigBuilder(configBuilder);
-
-      if (kubernetesDependentResourceConfig.informerConfig().getName() == null) {
-        configBuilder.withName(name());
-      } else {
-        configBuilder.withName(kubernetesDependentResourceConfig.informerConfig().getName());
-      }
-      configBuilder
-          .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper(context).orElseThrow());
-      config = configBuilder.build();
-    } else {
-      config = informerConfigurationBuilder(context)
-          .withName(name())
-          .withSecondaryToPrimaryMapper(
-              getSecondaryToPrimaryMapper(context).orElseThrow())
-          .build();
     }
-    var es = new InformerEventSource<>(config, context);
+
+    var es = new InformerEventSource<>(configBuilder.build(), context);
     setEventSource(es);
     return eventSource().orElseThrow();
   }

@@ -72,7 +72,6 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return Optional.of(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
   }
 
-  @SuppressWarnings("unused")
   ConfigurationService getConfigurationService();
 
   @SuppressWarnings("unchecked")

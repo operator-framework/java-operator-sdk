@@ -23,7 +23,6 @@ public final class Constants {
 
   public static final long NO_MAX_RECONCILIATION_INTERVAL = -1L;
 
-
   public static final String RESOURCE_GVK_KEY = "josdk.resource.gvk";
   public static final String CONTROLLER_NAME = "controller.name";
 
