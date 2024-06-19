@@ -10,16 +10,16 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 public class EventSourceUtils {
 
   @SuppressWarnings("unchecked")
-  public static <R extends HasMetadata> List<EventSource> dependentEventSources(
-      EventSourceContext<R> eventSourceContext, DependentResource... dependentResources) {
+  public static <P extends HasMetadata> List<EventSource<?, P>> dependentEventSources(
+      EventSourceContext<P> eventSourceContext, DependentResource... dependentResources) {
     return Arrays.stream(dependentResources)
         .flatMap(dr -> dr.eventSource(eventSourceContext).stream()).toList();
   }
 
   @SuppressWarnings("unchecked")
-  public static <K extends HasMetadata> List<EventSource> eventSourcesFromWorkflow(
-      EventSourceContext<K> context,
-      Workflow<K> workflow) {
+  public static <P extends HasMetadata> List<EventSource<?, P>> eventSourcesFromWorkflow(
+      EventSourceContext<P> context,
+      Workflow<P> workflow) {
     return workflow.getDependentResourcesWithoutActivationCondition().stream()
         .flatMap(dr -> dr.eventSource(context).stream()).toList();
   }
