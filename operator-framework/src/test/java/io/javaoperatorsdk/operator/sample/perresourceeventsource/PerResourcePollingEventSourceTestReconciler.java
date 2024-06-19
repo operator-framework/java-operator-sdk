@@ -34,7 +34,7 @@ public class PerResourcePollingEventSourceTestReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, PerResourceEventSourceCustomResource>> prepareEventSources(
       EventSourceContext<PerResourceEventSourceCustomResource> context) {
     PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource =
         new PerResourcePollingEventSource<>(String.class, context,
