@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -22,8 +21,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 @SuppressWarnings("rawtypes")
 public class ResolvedControllerConfiguration<P extends HasMetadata>
     extends DefaultResourceConfiguration<P>
-    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P>,
-    DependentResourceConfigurationProvider {
+    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
 
   private final String name;
   private final boolean generationAware;
@@ -168,8 +166,15 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public Object getConfigurationFor(DependentResourceSpec spec) {
-    return configurations.get(spec);
+  @SuppressWarnings("unchecked")
+  public <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec) {
+    // first check if there's an overridden configuration at the controller level
+    var config = configurations.get(spec);
+    if (config == null) {
+      // if not, check the spec for configuration
+      config = spec.getConfiguration().orElse(null);
+    }
+    return (C) config;
   }
 
   @Override

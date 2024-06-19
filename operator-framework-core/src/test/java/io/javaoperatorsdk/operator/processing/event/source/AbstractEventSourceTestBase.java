@@ -2,8 +2,7 @@ package io.javaoperatorsdk.operator.processing.event.source;
 
 import org.junit.jupiter.api.AfterEach;
 
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
@@ -23,7 +22,7 @@ public class AbstractEventSourceTestBase<S extends EventSource, T extends EventH
   }
 
 
-  public void setUpSource(S source, boolean start, ConfigurationService configurationService) {
+  public void setUpSource(S source, boolean start, ControllerConfiguration configurationService) {
     setUpSource(source, (T) mock(EventHandler.class), start, configurationService);
   }
 
@@ -37,16 +36,16 @@ public class AbstractEventSourceTestBase<S extends EventSource, T extends EventH
   }
 
   public void setUpSource(S source, T eventHandler, boolean start) {
-    setUpSource(source, eventHandler, start, new BaseConfigurationService());
+    setUpSource(source, eventHandler, start, mock(ControllerConfiguration.class));
   }
 
   public void setUpSource(S source, T eventHandler, boolean start,
-      ConfigurationService configurationService) {
+      ControllerConfiguration controllerConfiguration) {
     this.eventHandler = eventHandler;
     this.source = source;
 
     if (source instanceof ManagedInformerEventSource) {
-      ((ManagedInformerEventSource) source).setConfigurationService(configurationService);
+      ((ManagedInformerEventSource) source).setControllerConfiguration(controllerConfiguration);
     }
 
     source.setEventHandler(eventHandler);

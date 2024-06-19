@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
@@ -36,7 +36,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
   private InformerManager<R, C> cache;
   private final boolean parseResourceVersions;
-  private ConfigurationService configurationService;
+  private ControllerConfiguration<R> controllerConfiguration;
   private final C configuration;
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;
@@ -85,7 +85,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     }
     temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
     this.cache = new InformerManager<>(client, configuration, this);
-    cache.setConfigurationService(configurationService);
+    cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
     manager().start();
     super.start();
@@ -191,8 +191,8 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
         "}";
   }
 
-  public void setConfigurationService(ConfigurationService configurationService) {
-    this.configurationService = configurationService;
+  public void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
+    this.controllerConfiguration = controllerConfiguration;
   }
 
 }

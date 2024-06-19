@@ -55,11 +55,13 @@ public class ClusterScopedCustomResourceReconciler
   @Override
   public List<EventSource> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
-    var ies = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
-        .withSecondaryToPrimaryMapper(
-            Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
-        .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
-        .build(), context);
+    var ies = new InformerEventSource<>(
+        InformerConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)
+            .withSecondaryToPrimaryMapper(
+                Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
+            .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
+            .build(),
+        context);
     return List.of(ies);
   }
 }

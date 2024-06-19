@@ -77,7 +77,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
         boundedItemStore(new KubernetesClientBuilder().build(),
             ConfigMap.class, Duration.ofMinutes(1), 1); // setting max size for testing purposes
 
-    var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+    var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, primaryClass())
         .withItemStore(boundedItemStore)
         .withSecondaryToPrimaryMapper(
             Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
@@ -104,4 +104,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
         .build();
     return CaffeineBoundedItemStores.boundedItemStore(client, rClass, cache);
   }
+
+  protected abstract Class<P> primaryClass();
+
 }
