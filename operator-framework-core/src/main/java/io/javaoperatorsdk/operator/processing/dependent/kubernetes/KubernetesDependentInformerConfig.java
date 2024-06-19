@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
 
+@SuppressWarnings("unused")
 public class KubernetesDependentInformerConfig<R extends HasMetadata> {
 
   private final String name;

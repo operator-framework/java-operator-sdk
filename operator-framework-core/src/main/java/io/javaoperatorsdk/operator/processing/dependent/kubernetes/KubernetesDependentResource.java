@@ -197,7 +197,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
     final InformerConfiguration.InformerConfigurationBuilder<R> configBuilder =

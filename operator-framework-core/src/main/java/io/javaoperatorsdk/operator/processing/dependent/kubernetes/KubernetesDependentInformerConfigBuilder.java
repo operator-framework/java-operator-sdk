@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import static io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
 
+@SuppressWarnings({"UnusedReturnValue", "unused"})
 public final class KubernetesDependentInformerConfigBuilder<R extends HasMetadata> {
 
   private String name;
@@ -28,63 +29,63 @@ public final class KubernetesDependentInformerConfigBuilder<R extends HasMetadat
 
   public KubernetesDependentInformerConfigBuilder() {}
 
-  public KubernetesDependentInformerConfigBuilder withName(String name) {
+  public KubernetesDependentInformerConfigBuilder<R> withName(String name) {
     this.name = name;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withNamespaces(Set<String> namespaces) {
+  public KubernetesDependentInformerConfigBuilder<R> withNamespaces(Set<String> namespaces) {
     this.namespaces = namespaces;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withFollowControllerNamespacesOnChange(
+  public KubernetesDependentInformerConfigBuilder<R> withFollowControllerNamespacesOnChange(
       boolean followControllerNamespacesOnChange) {
     this.followControllerNamespacesOnChange = followControllerNamespacesOnChange;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withLabelSelector(String labelSelector) {
+  public KubernetesDependentInformerConfigBuilder<R> withLabelSelector(String labelSelector) {
     this.labelSelector = labelSelector;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withOnAddFilter(
+  public KubernetesDependentInformerConfigBuilder<R> withOnAddFilter(
       OnAddFilter<? super R> onAddFilter) {
     this.onAddFilter = onAddFilter;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withOnUpdateFilter(
+  public KubernetesDependentInformerConfigBuilder<R> withOnUpdateFilter(
       OnUpdateFilter<? super R> onUpdateFilter) {
     this.onUpdateFilter = onUpdateFilter;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withOnDeleteFilter(
+  public KubernetesDependentInformerConfigBuilder<R> withOnDeleteFilter(
       OnDeleteFilter<? super R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withGenericFilter(
+  public KubernetesDependentInformerConfigBuilder<R> withGenericFilter(
       GenericFilter<? super R> genericFilter) {
     this.genericFilter = genericFilter;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withItemStore(ItemStore<R> itemStore) {
+  public KubernetesDependentInformerConfigBuilder<R> withItemStore(ItemStore<R> itemStore) {
     this.itemStore = itemStore;
     return this;
   }
 
-  public KubernetesDependentInformerConfigBuilder withInformerListLimit(Long informerListLimit) {
+  public KubernetesDependentInformerConfigBuilder<R> withInformerListLimit(Long informerListLimit) {
     this.informerListLimit = informerListLimit;
     return this;
   }
 
-  public KubernetesDependentInformerConfig build() {
-    return new KubernetesDependentInformerConfig(name, namespaces,
+  public KubernetesDependentInformerConfig<R> build() {
+    return new KubernetesDependentInformerConfig<>(name, namespaces,
         followControllerNamespacesOnChange,
         labelSelector, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter, itemStore,
         informerListLimit);
