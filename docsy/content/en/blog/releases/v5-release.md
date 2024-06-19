@@ -57,10 +57,9 @@ This interface also implemented some utility methods, which can now be found in 
 ### Removal of ErrorStatusHandler interface
 
 Similarly to `EventSourceInitializer` the `ErrorStatusHandler` interface is removed; now the `Reconciler` interface has a default method `updateErrorStatus`,
-you can just delete the interface from your `Reconciler`:
+you can delete the interface from your `Reconciler`:
 
 ```java
-
 public class WebPageReconciler
     implements Reconciler<WebPage>, E̶r̶r̶o̶r̶S̶t̶a̶t̶u̶s̶H̶a̶n̶d̶l̶e̶r̶<W̶e̶b̶P̶a̶g̶e̶> {
 
@@ -73,10 +72,37 @@ See [related issue](https://github.com/operator-framework/java-operator-sdk/issu
 
 ### Named event sources 
 
-The name is now directly an attribute of an `EventSource.` EventSources were also named in previous releases, but the name was not an attribute. This leads mainly to better internal structures and 
-solves issues out of the box. For example, when a dependent resource provides an event source, in some cases, it needs to have a specific name.
+The name is now directly an attribute of an `EventSource`. EventSources were also named in previous releases, but the name was not an attribute. This leads mainly to better internal structures and 
+solves issues out of the box. For example, when a dependent resource provides an event source, in some cases, it needs to have a specific name. In a `Reconciler` implementation simply 
+use a `List.of(event sources)` instead the `Map<String,EventSource>` as it was before:
 
-TODO
+
+```java
+
+public class WebPageReconciler
+    implements Reconciler<WebPage> {
+
+// omitted code
+
+  @Override
+  public List<EventSource> prepareEventSources(EventSourceContext<WebPage> context) {
+    var configMapEventSource =
+        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, context)
+            .withLabelSelector(SELECTOR)
+            .build(), context);
+    var deploymentEventSource = ... // code omitted 
+    
+    return List.of(configMapEventSource, deploymentEventSource);
+  }
+
+}
+```
+
+There is a new utility class [EventSourceUtils](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceUtils.java#L10-L10) to help extract event source from workflows and 
+dependent resources.
+
+
+
 
 
 
