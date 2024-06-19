@@ -33,7 +33,7 @@ public class ExternalStateBulkDependentReconciler
   }
 
   @Override
-  public List<EventSource> prepareEventSources(
+  public List<EventSource<?, ExternalStateBulkDependentCustomResource>> prepareEventSources(
       EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
         InformerConfiguration.from(ConfigMap.class, ExternalStateBulkDependentCustomResource.class)
