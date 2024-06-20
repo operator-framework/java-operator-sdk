@@ -98,7 +98,7 @@ class DependentResourceNode<R, P extends HasMetadata> {
         : new ConditionWithType<>(reconcilePrecondition, Condition.Type.RECONCILE);
   }
 
-  void setDeletePostcondition(Condition<R, P> cleanupCondition) {
+  void setDeletePostcondition(Condition<R, P> deletePostcondition) {
     this.deletePostcondition = deletePostcondition == null ? null
         : new ConditionWithType<>(deletePostcondition, Condition.Type.DELETE);
   }

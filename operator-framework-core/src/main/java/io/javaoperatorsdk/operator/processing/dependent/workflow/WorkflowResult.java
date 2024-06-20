@@ -57,6 +57,7 @@ class WorkflowResult {
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   static class DetailBuilder<R> {
     private Exception error;
     private ReconcileResult<R> reconcileResult;
@@ -103,7 +104,7 @@ class WorkflowResult {
     }
 
     public boolean hasPostDeleteConditionNotMet() {
-      return deletePostconditionResult != null && !readyPostconditionResult.isSuccess();
+      return deletePostconditionResult != null && !deletePostconditionResult.isSuccess();
     }
 
     public boolean isNotReady() {
