@@ -233,10 +233,6 @@ public interface ConfigurationService {
     return ManagedWorkflowFactory.DEFAULT;
   }
 
-  default ResourceClassResolver getResourceClassResolver() {
-    return new DefaultResourceClassResolver();
-  }
-
   /**
    * Creates a new {@link ConfigurationService} instance used to configure an
    * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the specified base
