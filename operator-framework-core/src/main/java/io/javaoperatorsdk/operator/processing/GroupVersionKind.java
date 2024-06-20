@@ -45,12 +45,16 @@ public class GroupVersionKind {
 
   /**
    * Parse GVK from a String representation. Expected format is: [group]/[version]/[kind]
-   * <p/>
-   * Sample: "apps/v1/Deployment"
-   * <p/>
+   * 
+   * <pre>
+   *   Sample: "apps/v1/Deployment"
+   * </pre>
+   * 
    * or: [version]/[kind]
-   * <p/>
-   * Sample: v1/ConfigMap
+   * 
+   * <pre>
+   *     Sample: v1/ConfigMap
+   * </pre>
    **/
   public static GroupVersionKind fromString(String gvk) {
     String[] parts = gvk.split("/");
