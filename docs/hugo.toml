@@ -110,7 +110,7 @@ github_repo = "https://github.com/operator-framework/java-operator-sdk/"
 # github_project_repo = "https://github.com/operator-framework/java-operator-sdk"
 
 # Specify a value here if your content directory is not in your repo's root directory
-github_subdir = "docsy"
+github_subdir = "docs"
 
 # Uncomment this if your GitHub repo does not have "main" as the default branch,
 # or specify a new value if you want to reference another branch in your GitHub links
