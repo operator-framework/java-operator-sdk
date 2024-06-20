@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ConfigurationServiceOverrider {
 
   private static final Logger log = LoggerFactory.getLogger(ConfigurationServiceOverrider.class);
@@ -33,7 +33,6 @@ public class ConfigurationServiceOverrider {
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
-  private ResourceClassResolver resourceClassResolver;
   private Boolean ssaBasedCreateUpdateMatchForDependentResources;
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean previousAnnotationForDependentResources;
@@ -130,12 +129,6 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withCacheSyncTimeout(Duration cacheSyncTimeout) {
     this.cacheSyncTimeout = cacheSyncTimeout;
-    return this;
-  }
-
-  public ConfigurationServiceOverrider withResourceClassResolver(
-      ResourceClassResolver resourceClassResolver) {
-    this.resourceClassResolver = resourceClassResolver;
     return this;
   }
 
@@ -278,12 +271,6 @@ public class ConfigurationServiceOverrider {
       @Override
       public Duration cacheSyncTimeout() {
         return overriddenValueOrDefault(cacheSyncTimeout, ConfigurationService::cacheSyncTimeout);
-      }
-
-      @Override
-      public ResourceClassResolver getResourceClassResolver() {
-        return overriddenValueOrDefault(resourceClassResolver,
-            ConfigurationService::getResourceClassResolver);
       }
 
       @Override
