@@ -5,6 +5,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 public interface ResourceClassResolver {
 
-  <R extends HasMetadata> Class<R> getResourceClass(Class<? extends Reconciler<R>> reconcilerClass);
+  <P extends HasMetadata> Class<P> getPrimaryResourceClass(
+      Class<? extends Reconciler<P>> reconcilerClass);
 
 }

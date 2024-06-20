@@ -39,6 +39,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   private static final String LOGGER_NAME = "Default ConfigurationService implementation";
   private static final Logger logger = LoggerFactory.getLogger(LOGGER_NAME);
+  private static final ResourceClassResolver DEFAULT_RESOLVER = new DefaultResourceClassResolver();
 
   public BaseConfigurationService(Version version) {
     this(version, null);
@@ -54,6 +55,89 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   public BaseConfigurationService() {
     this(Utils.VERSION);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static List<DependentResourceSpec> dependentResources(
+      Workflow annotation,
+      ControllerConfiguration<?> controllerConfiguration) {
+    final var dependents = annotation.dependents();
+
+
+    if (dependents == null || dependents.length == 0) {
+      return Collections.emptyList();
+    }
+
+    final var specsMap = new LinkedHashMap<String, DependentResourceSpec>(dependents.length);
+    for (Dependent dependent : dependents) {
+      final Class<? extends DependentResource> dependentType = dependent.type();
+
+      final var dependentName = getName(dependent.name(), dependentType);
+      var spec = specsMap.get(dependentName);
+      if (spec != null) {
+        throw new IllegalArgumentException(
+            "A DependentResource named '" + dependentName + "' already exists: " + spec);
+      }
+
+      final var name = controllerConfiguration.getName();
+
+      var eventSourceName = dependent.useEventSourceWithName();
+      eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
+      final var context = Utils.contextFor(name, dependentType, null);
+      spec = new DependentResourceSpec(dependentType, dependentName,
+          Set.of(dependent.dependsOn()),
+          Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
+          Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
+          Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
+          Utils.instantiate(dependent.activationCondition(), Condition.class, context),
+          eventSourceName);
+
+      // extract potential configuration
+      DependentResourceConfigurationResolver.configureSpecFromConfigured(spec,
+          controllerConfiguration,
+          dependentType);
+
+      specsMap.put(dependentName, spec);
+    }
+    return specsMap.values().stream().toList();
+  }
+
+  private static <T> T valueOrDefault(
+      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration controllerConfiguration,
+      Function<io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration, T> mapper,
+      T defaultValue) {
+    if (controllerConfiguration == null) {
+      return defaultValue;
+    } else {
+      return mapper.apply(controllerConfiguration);
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static String getName(String name, Class<? extends DependentResource> dependentType) {
+    if (name.isBlank()) {
+      name = DependentResource.defaultNameFor(dependentType);
+    }
+    return name;
+  }
+
+  @SuppressWarnings("unused")
+  private static <T> Configurator<T> configuratorFor(Class<T> instanceType,
+      Reconciler<?> reconciler) {
+    return instance -> configureFromAnnotatedReconciler(instance, reconciler);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static void configureFromAnnotatedReconciler(Object instance, Reconciler<?> reconciler) {
+    if (instance instanceof AnnotationConfigurable configurable) {
+      final Class<? extends Annotation> configurationClass =
+          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
+              instance.getClass(), AnnotationConfigurable.class);
+      final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
+      if (configAnnotation != null) {
+        configurable.initFrom(configAnnotation);
+      }
+    }
   }
 
   @Override
@@ -95,6 +179,15 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     return config;
   }
 
+  /**
+   * Override if a different class resolution is needed
+   *
+   * @return the custom {@link ResourceClassResolver} implementation to use
+   */
+  protected ResourceClassResolver getResourceClassResolver() {
+    return DEFAULT_RESOLVER;
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected <P extends HasMetadata> ControllerConfiguration<P> configFor(Reconciler<P> reconciler) {
     final var annotation = reconciler.getClass().getAnnotation(
@@ -109,7 +202,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
               " annotation for reconciler:  " + reconciler);
     }
     Class<Reconciler<P>> reconcilerClass = (Class<Reconciler<P>>) reconciler.getClass();
-    final var resourceClass = getResourceClassResolver().getResourceClass(reconcilerClass);
+    final var resourceClass = getResourceClassResolver().getPrimaryResourceClass(reconcilerClass);
 
     final var name = ReconcilerUtils.getNameFor(reconciler);
     final var generationAware = valueOrDefault(
@@ -192,51 +285,6 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     return config;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<DependentResourceSpec> dependentResources(
-      Workflow annotation,
-      ControllerConfiguration<?> controllerConfiguration) {
-    final var dependents = annotation.dependents();
-
-
-    if (dependents == null || dependents.length == 0) {
-      return Collections.emptyList();
-    }
-
-    final var specsMap = new LinkedHashMap<String, DependentResourceSpec>(dependents.length);
-    for (Dependent dependent : dependents) {
-      final Class<? extends DependentResource> dependentType = dependent.type();
-
-      final var dependentName = getName(dependent.name(), dependentType);
-      var spec = specsMap.get(dependentName);
-      if (spec != null) {
-        throw new IllegalArgumentException(
-            "A DependentResource named '" + dependentName + "' already exists: " + spec);
-      }
-
-      final var name = controllerConfiguration.getName();
-
-      var eventSourceName = dependent.useEventSourceWithName();
-      eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
-      final var context = Utils.contextFor(name, dependentType, null);
-      spec = new DependentResourceSpec(dependentType, dependentName,
-          Set.of(dependent.dependsOn()),
-          Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
-          Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
-          Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
-          Utils.instantiate(dependent.activationCondition(), Condition.class, context),
-          eventSourceName);
-
-      // extract potential configuration
-      DependentResourceConfigurationResolver.configureSpecFromConfigured(spec,
-          controllerConfiguration,
-          dependentType);
-
-      specsMap.put(dependentName, spec);
-    }
-    return specsMap.values().stream().toList();
-  }
-
   protected boolean createIfNeeded() {
     return true;
   }
@@ -244,43 +292,5 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   @Override
   public boolean checkCRDAndValidateLocalModel() {
     return Utils.shouldCheckCRDAndValidateLocalModel();
-  }
-
-  private static <T> T valueOrDefault(
-      io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration controllerConfiguration,
-      Function<io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration, T> mapper,
-      T defaultValue) {
-    if (controllerConfiguration == null) {
-      return defaultValue;
-    } else {
-      return mapper.apply(controllerConfiguration);
-    }
-  }
-
-  @SuppressWarnings("rawtypes")
-  private static String getName(String name, Class<? extends DependentResource> dependentType) {
-    if (name.isBlank()) {
-      name = DependentResource.defaultNameFor(dependentType);
-    }
-    return name;
-  }
-
-  @SuppressWarnings("unused")
-  private static <T> Configurator<T> configuratorFor(Class<T> instanceType,
-      Reconciler<?> reconciler) {
-    return instance -> configureFromAnnotatedReconciler(instance, reconciler);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static void configureFromAnnotatedReconciler(Object instance, Reconciler<?> reconciler) {
-    if (instance instanceof AnnotationConfigurable configurable) {
-      final Class<? extends Annotation> configurationClass =
-          (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
-              instance.getClass(), AnnotationConfigurable.class);
-      final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
-      if (configAnnotation != null) {
-        configurable.initFrom(configAnnotation);
-      }
-    }
   }
 }
