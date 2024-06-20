@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -34,13 +35,30 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private synchronized void handleCleanup(DependentResourceNode dependentResourceNode) {
-    log.debug("Submitting for cleanup: {} primaryID: {}", dependentResourceNode, primaryID);
+    log.debug("Considering for cleanup: {} primaryID: {}", dependentResourceNode, primaryID);
 
-    if (alreadyVisited(dependentResourceNode)
-        || isExecutingNow(dependentResourceNode)
-        || !allDependentsCleaned(dependentResourceNode)
-        || hasErroredDependent(dependentResourceNode)) {
-      log.debug("Skipping submit of: {} primaryID: {}", dependentResourceNode, primaryID);
+    final var alreadyVisited = alreadyVisited(dependentResourceNode);
+    final var executingNow = isExecutingNow(dependentResourceNode);
+    final var waitingOnDependents = !allDependentsCleaned(dependentResourceNode);
+    final var hasErroredDependent = hasErroredDependent(dependentResourceNode);
+    if (waitingOnDependents || alreadyVisited || executingNow || hasErroredDependent) {
+      if (log.isDebugEnabled()) {
+        final var causes = new ArrayList<String>();
+        if (alreadyVisited) {
+          causes.add("already visited");
+        }
+        if (executingNow) {
+          causes.add("executing now");
+        }
+        if (waitingOnDependents) {
+          causes.add("waiting on dependents");
+        }
+        if (hasErroredDependent) {
+          causes.add("errored dependent");
+        }
+        log.debug("Skipping: {} primaryID: {} causes: {}", dependentResourceNode,
+            primaryID, String.join(", ", causes));
+      }
       return;
     }
 
@@ -73,8 +91,9 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
             isConditionMet(dependentResourceNode.getDeletePostcondition(), dependentResourceNode);
       }
 
+      createOrGetResultFor(dependentResourceNode).markAsVisited();
+
       if (deletePostConditionMet) {
-        createOrGetResultFor(dependentResourceNode).markAsVisited();
         handleDependentCleaned(dependentResourceNode);
       }
     }
@@ -97,7 +116,7 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
     List<DependentResourceNode> parents = dependentResourceNode.getParents();
     return parents.isEmpty()
         || parents.stream()
-            .allMatch(d -> alreadyVisited(d) && postDeleteConditionNotMet(d));
+            .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet(d));
   }
 
   @SuppressWarnings("unchecked")
