@@ -9,24 +9,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
-import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.Workflow;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
@@ -45,6 +39,8 @@ import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSAReconciler;
 import io.javaoperatorsdk.operator.sample.readonly.ConfigMapReader;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
+import static io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval.DEFAULT_INTERVAL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BaseConfigurationServiceTest {
@@ -108,9 +104,24 @@ class BaseConfigurationServiceTest {
   }
 
   @Test
-  void missingAnnotationThrowsException() {
+  void missingAnnotationCreatesDefaultConfig() {
     final var reconciler = new MissingAnnotationReconciler();
-    Assertions.assertThrows(OperatorException.class, () -> configFor(reconciler));
+    var config = configFor(reconciler);
+
+    assertThat(config.getName()).isEqualTo(ReconcilerUtils.getNameFor(reconciler));
+    assertThat(config.getLabelSelector()).isEmpty();
+    assertThat(config.getRetry()).isInstanceOf(GenericRetry.class);
+    assertThat(config.getRateLimiter()).isInstanceOf(LinearRateLimiter.class);
+    assertThat(config.maxReconciliationInterval()).hasValue(Duration.ofHours(DEFAULT_INTERVAL));
+    assertThat(config.fieldManager()).isEqualTo(config.getName());
+    assertThat(config.getInformerListLimit()).isEmpty();
+    assertThat(config.onAddFilter()).isEmpty();
+    assertThat(config.onUpdateFilter()).isEmpty();
+    assertThat(config.genericFilter()).isEmpty();
+    assertThat(config.getNamespaces()).isEqualTo(Constants.DEFAULT_NAMESPACES_SET);
+    assertThat(config.getFinalizerName())
+        .isEqualTo(ReconcilerUtils.getDefaultFinalizerName(config.getResourceClass()));
+    assertThat(config.getItemStore()).isEmpty();
   }
 
   @SuppressWarnings("rawtypes")
