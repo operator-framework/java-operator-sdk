@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -222,6 +221,45 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             ItemStore.class, context),
         dependentFieldManager,
         this, informerListLimit);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static List<DependentResourceSpec> dependentResources(
+      Workflow annotation,
+      ControllerConfiguration<?> parent) {
+    final var dependents = annotation.dependents();
+
+
+    if (dependents == null || dependents.length == 0) {
+      return Collections.emptyList();
+    }
+
+    final var specsMap = new LinkedHashMap<String, DependentResourceSpec>(dependents.length);
+    for (Dependent dependent : dependents) {
+      final Class<? extends DependentResource> dependentType = dependent.type();
+
+      final var dependentName = getName(dependent.name(), dependentType);
+      var spec = specsMap.get(dependentName);
+      if (spec != null) {
+        throw new IllegalArgumentException(
+            "A DependentResource named '" + dependentName + "' already exists: " + spec);
+      }
+
+      final var name = parent.getName();
+
+      var eventSourceName = dependent.useEventSourceWithName();
+      eventSourceName = Constants.NO_VALUE_SET.equals(eventSourceName) ? null : eventSourceName;
+      final var context = Utils.contextFor(name, dependentType, null);
+      spec = new DependentResourceSpec(dependentType, dependentName,
+          Set.of(dependent.dependsOn()),
+          Utils.instantiate(dependent.readyPostcondition(), Condition.class, context),
+          Utils.instantiate(dependent.reconcilePrecondition(), Condition.class, context),
+          Utils.instantiate(dependent.deletePostcondition(), Condition.class, context),
+          Utils.instantiate(dependent.activationCondition(), Condition.class, context),
+          eventSourceName);
+      specsMap.put(dependentName, spec);
+    }
+    return specsMap.values().stream().toList();
   }
 
   protected boolean createIfNeeded() {
