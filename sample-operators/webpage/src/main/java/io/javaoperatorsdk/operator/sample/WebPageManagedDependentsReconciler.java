@@ -18,7 +18,6 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
     @Dependent(type = IngressDependentResource.class,
         reconcilePrecondition = ExposedIngressCondition.class)
 })
-@ControllerConfiguration
 public class WebPageManagedDependentsReconciler
     implements Reconciler<WebPage>, Cleaner<WebPage> {
 
