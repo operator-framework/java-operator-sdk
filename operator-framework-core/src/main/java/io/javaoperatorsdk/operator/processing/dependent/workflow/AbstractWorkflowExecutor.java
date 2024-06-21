@@ -120,7 +120,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected boolean isInError(DependentResourceNode<?, P> dependentResourceNode) {
-   return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::hasError);
+    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::hasError);
   }
 
   protected synchronized void handleNodeExecutionFinish(

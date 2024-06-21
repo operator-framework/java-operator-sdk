@@ -34,6 +34,34 @@ class WorkflowResult {
     return results;
   }
 
+  /**
+   * Retrieves the optional result of the condition with the specified type for the specified
+   * dependent resource.
+   *
+   * @param <T> the expected result type of the condition
+   * @param dependentResource the dependent resource for which we want to retrieve a condition
+   *        result
+   * @param conditionType the condition type which result we're interested in
+   * @param expectedResultType the expected result type of the condition
+   * @return the dependent condition result if it exists or {@link Optional#empty()} otherwise
+   * @throws IllegalArgumentException if a result exists but is not of the expected type
+   */
+  public <T> Optional<T> getDependentConditionResult(DependentResource dependentResource,
+      Condition.Type conditionType, Class<T> expectedResultType) {
+    final var result = new Object[1];
+    try {
+      return Optional.ofNullable(results().get(dependentResource))
+          .flatMap(detail -> detail.getResultForConditionWithType(conditionType))
+          .map(r -> result[0] = r.getResult())
+          .map(expectedResultType::cast);
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Condition " +
+          "result " + result[0] +
+          " for Dependent " + dependentResource.name() + " doesn't match expected type "
+          + expectedResultType.getSimpleName(), e);
+    }
+  }
+
   protected List<DependentResource> listFilteredBy(
       Function<Detail, Boolean> filter) {
     return results.entrySet().stream()
@@ -71,16 +99,20 @@ class WorkflowResult {
 
     Detail<R> build() {
       return new Detail<>(error, reconcileResult, activationConditionResult,
-          deletePostconditionResult, readyPostconditionResult, reconcilePostconditionResult, deleted, visited, markedForDelete);
+          deletePostconditionResult, readyPostconditionResult, reconcilePostconditionResult,
+          deleted, visited, markedForDelete);
     }
 
-    DetailBuilder<R> withResultForCondition(DependentResourceNode.ConditionWithType conditionWithType, ResultCondition.Result conditionResult) {
+    DetailBuilder<R> withResultForCondition(
+        DependentResourceNode.ConditionWithType conditionWithType,
+        ResultCondition.Result conditionResult) {
       switch (conditionWithType.type()) {
         case ACTIVATION -> activationConditionResult = conditionResult;
         case DELETE -> deletePostconditionResult = conditionResult;
         case READY -> readyPostconditionResult = conditionResult;
         case RECONCILE -> reconcilePostconditionResult = conditionResult;
-        default -> throw new IllegalStateException("Unexpected condition type: " + conditionWithType);
+        default ->
+          throw new IllegalStateException("Unexpected condition type: " + conditionWithType);
       }
       return this;
     }
@@ -137,13 +169,15 @@ class WorkflowResult {
       ResultCondition.Result deletePostconditionResult,
       ResultCondition.Result readyPostconditionResult,
       ResultCondition.Result reconcilePostconditionResult,
-                   boolean deleted, boolean visited, boolean markedForDelete) {
+      boolean deleted, boolean visited, boolean markedForDelete) {
 
     boolean isConditionWithTypeMet(Condition.Type conditionType) {
-      return getResultForConditionWithType(conditionType).map(ResultCondition.Result::isSuccess).orElse(true);
+      return getResultForConditionWithType(conditionType).map(ResultCondition.Result::isSuccess)
+          .orElse(true);
     }
 
-    Optional<ResultCondition.Result<?>> getResultForConditionWithType(Condition.Type conditionType) {
+    Optional<ResultCondition.Result<?>> getResultForConditionWithType(
+        Condition.Type conditionType) {
       return switch (conditionType) {
         case ACTIVATION -> Optional.ofNullable(activationConditionResult);
         case DELETE -> Optional.ofNullable(deletePostconditionResult);

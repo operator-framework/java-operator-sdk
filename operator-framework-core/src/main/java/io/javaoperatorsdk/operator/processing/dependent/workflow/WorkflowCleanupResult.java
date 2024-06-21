@@ -7,6 +7,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowCleanupResult extends WorkflowResult {
+  private Boolean allPostConditionsMet;
+
   WorkflowCleanupResult(Map<DependentResource, Detail<?>> results) {
     super(results);
   }
@@ -20,6 +22,9 @@ public class WorkflowCleanupResult extends WorkflowResult {
   }
 
   public boolean allPostConditionsMet() {
-    return getPostConditionNotMetDependents().isEmpty();
+    if (allPostConditionsMet == null) {
+      allPostConditionsMet = getPostConditionNotMetDependents().isEmpty();
+    }
+    return allPostConditionsMet;
   }
 }
