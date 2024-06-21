@@ -67,10 +67,11 @@ class WorkflowResult {
     private ResultCondition.Result reconcilePostconditionResult;
     private boolean deleted;
     private boolean visited;
+    private boolean markedForDelete;
 
     Detail<R> build() {
       return new Detail<>(error, reconcileResult, activationConditionResult,
-          deletePostconditionResult, readyPostconditionResult, reconcilePostconditionResult, deleted, visited);
+          deletePostconditionResult, readyPostconditionResult, reconcilePostconditionResult, deleted, visited, markedForDelete);
     }
 
     DetailBuilder<R> withResultForCondition(DependentResourceNode.ConditionWithType conditionWithType, ResultCondition.Result conditionResult) {
@@ -94,8 +95,8 @@ class WorkflowResult {
       return this;
     }
 
-    DetailBuilder<R> withDeleted(boolean deleted) {
-      this.deleted = deleted;
+    DetailBuilder<R> markAsDeleted() {
+      this.deleted = true;
       return this;
     }
 
@@ -119,6 +120,15 @@ class WorkflowResult {
     public boolean isVisited() {
       return visited;
     }
+
+    public boolean isMarkedForDelete() {
+      return markedForDelete;
+    }
+
+    DetailBuilder<R> markForDelete() {
+      markedForDelete = true;
+      return this;
+    }
   }
 
 
@@ -127,7 +137,7 @@ class WorkflowResult {
       ResultCondition.Result deletePostconditionResult,
       ResultCondition.Result readyPostconditionResult,
       ResultCondition.Result reconcilePostconditionResult,
-                   boolean deleted, boolean visited) {
+                   boolean deleted, boolean visited, boolean markedForDelete) {
 
     boolean isConditionWithTypeMet(Condition.Type conditionType) {
       return getResultForConditionWithType(conditionType).map(ResultCondition.Result::isSuccess).orElse(true);
