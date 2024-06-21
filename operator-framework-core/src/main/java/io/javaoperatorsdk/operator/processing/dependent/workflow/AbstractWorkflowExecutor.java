@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -72,19 +73,31 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected boolean alreadyVisited(DependentResourceNode<?, P> dependentResourceNode) {
-    final WorkflowResult.DetailBuilder<?> builder = results.get(dependentResourceNode);
-    return builder != null && builder.isVisited();
+    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::isVisited);
   }
 
-  protected boolean postDeleteConditionNotMet(DependentResourceNode<?, P> dependentResourceNode) {
-    final var builder = results.get(dependentResourceNode);
-    return builder != null && builder.hasPostDeleteConditionNotMet();
+  protected boolean postDeleteConditionNotMet(DependentResourceNode<?, P> drn) {
+    return getResultFlagFor(drn, WorkflowResult.DetailBuilder::hasPostDeleteConditionNotMet);
+  }
+
+  protected boolean isMarkedForDelete(DependentResourceNode<?, P> drn) {
+    return getResultFlagFor(drn, WorkflowResult.DetailBuilder::isMarkedForDelete);
   }
 
   protected WorkflowResult.DetailBuilder createOrGetResultFor(
       DependentResourceNode<?, P> dependentResourceNode) {
     return results.computeIfAbsent(dependentResourceNode,
         unused -> new WorkflowResult.DetailBuilder());
+  }
+
+  protected Optional<WorkflowResult.DetailBuilder<?>> getResultFor(
+      DependentResourceNode<?, P> dependentResourceNode) {
+    return Optional.ofNullable(results.get(dependentResourceNode));
+  }
+
+  protected boolean getResultFlagFor(DependentResourceNode<?, P> dependentResourceNode,
+      Function<WorkflowResult.DetailBuilder<?>, Boolean> flag) {
+    return getResultFor(dependentResourceNode).map(flag).orElse(false);
   }
 
   protected boolean isExecutingNow(DependentResourceNode<?, P> dependentResourceNode) {
@@ -103,13 +116,11 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected boolean isNotReady(DependentResourceNode<?, P> dependentResourceNode) {
-    final var builder = results.get(dependentResourceNode);
-    return builder != null && builder.isNotReady();
+    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::isNotReady);
   }
 
   protected boolean isInError(DependentResourceNode<?, P> dependentResourceNode) {
-    final var builder = results.get(dependentResourceNode);
-    return builder != null && builder.hasError();
+   return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::hasError);
   }
 
   protected synchronized void handleNodeExecutionFinish(

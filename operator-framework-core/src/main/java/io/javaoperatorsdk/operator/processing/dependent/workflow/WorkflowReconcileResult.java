@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 public class WorkflowReconcileResult extends WorkflowResult {
 
-  public WorkflowReconcileResult(Map<DependentResource, Detail<?>> results) {
+  WorkflowReconcileResult(Map<DependentResource, Detail<?>> results) {
     super(results);
   }
 

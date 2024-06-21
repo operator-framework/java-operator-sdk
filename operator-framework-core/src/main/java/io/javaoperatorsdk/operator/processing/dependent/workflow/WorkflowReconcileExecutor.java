@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,12 +19,8 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   private static final String RECONCILE = "reconcile";
   private static final String DELETE = "delete";
 
-  private final Set<DependentResourceNode> markedForDelete;
-
   public WorkflowReconcileExecutor(DefaultWorkflow<P> workflow, P primary, Context<P> context) {
     super(workflow, primary, context);
-    final var size = workflow.size();
-    markedForDelete = ConcurrentHashMap.newKeySet(size);
   }
 
   public synchronized WorkflowReconcileResult reconcile() {
@@ -47,7 +42,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     final var alreadyVisited = alreadyVisited(dependentResourceNode);
     final var executingNow = isExecutingNow(dependentResourceNode);
     final var isWaitingOnParents = !allParentsReconciledAndReady(dependentResourceNode);
-    final var isMarkedForDelete = markedForDelete.contains(dependentResourceNode);
+    final var isMarkedForDelete = isMarkedForDelete(dependentResourceNode);
     final var hasErroredParent = hasErroredParent(dependentResourceNode);
     if (isWaitingOnParents || alreadyVisited || executingNow || isMarkedForDelete
         || hasErroredParent) {
@@ -95,7 +90,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
 
     final var alreadyVisited = alreadyVisited(dependentResourceNode);
     final var executingNow = isExecutingNow(dependentResourceNode);
-    final var isNotMarkedForDelete = !markedForDelete.contains(dependentResourceNode);
+    final var isNotMarkedForDelete = !isMarkedForDelete(dependentResourceNode);
     final var isWaitingOnDependents = !allDependentsDeletedAlready(dependentResourceNode);
     if (isNotMarkedForDelete || alreadyVisited || executingNow || isWaitingOnDependents) {
       if (log.isDebugEnabled()) {
@@ -216,7 +211,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
     // so if the activation condition was false, this node is not meant to be deleted.
     var dependents = dependentResourceNode.getParents();
     if (activationConditionMet) {
-      markedForDelete.add(dependentResourceNode);
+      createOrGetResultFor(dependentResourceNode).markForDelete();
       if (dependents.isEmpty()) {
         bottomNodes.add(dependentResourceNode);
       } else {

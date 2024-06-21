@@ -84,7 +84,7 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
         final var dependentResource = dependentResourceNode.getDependentResource();
         if (dependentResource.isDeletable()) {
           ((Deleter<P>) dependentResource).delete(primary, context);
-          createOrGetResultFor(dependentResourceNode).withDeleted(true);
+          createOrGetResultFor(dependentResourceNode).markAsDeleted();
         }
 
         deletePostConditionMet =
