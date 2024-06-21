@@ -36,12 +36,6 @@ public class CreateUpdateEventFilterTestReconciler
         Context<CreateUpdateEventFilterTestCustomResource> context) {
       return desired;
     }
-
-    @Override
-    public void setEventSource(
-        io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> eventSource) {
-      super.setEventSource(eventSource);
-    }
   }
 
   public static final String CONFIG_MAP_TEST_DATA_KEY = "key";

@@ -58,7 +58,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   public ReconciliationDispatcher(Controller<P> controller) {
     this(controller,
-        new CustomResourceFacade<>(controller.getCRClient(), controller.getConfiguration()));
+        new CustomResourceFacade<>(controller.getPrimaryResourceClient(),
+            controller.getConfiguration()));
   }
 
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {

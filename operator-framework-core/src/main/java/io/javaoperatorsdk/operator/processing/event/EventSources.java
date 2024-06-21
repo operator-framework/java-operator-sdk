@@ -19,13 +19,13 @@ class EventSources<P extends HasMetadata> {
 
   private final ConcurrentNavigableMap<String, Map<String, EventSource<?, P>>> sources =
       new ConcurrentSkipListMap<>();
-  private final Map<String, EventSource> sourceByName = new HashMap<>();
+  private final Map<String, EventSource<?, P>> sourceByName = new HashMap<>();
 
   private final TimerEventSource<P> retryAndRescheduleTimerEventSource =
       new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
   private ControllerEventSource<P> controllerEventSource;
 
-  public void add(EventSource eventSource) {
+  public void add(EventSource<?, P> eventSource) {
     final var name = eventSource.name();
     var existing = sourceByName.get(name);
     if (existing != null) {
@@ -47,7 +47,7 @@ class EventSources<P extends HasMetadata> {
     sourceByName.clear();
   }
 
-  public EventSource existingEventSourceByName(String name) {
+  public EventSource<?, P> getEventSourceByName(String name) {
     return sourceByName.get(name);
   }
 
@@ -92,15 +92,15 @@ class EventSources<P extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  public <S> EventSource<S, P> get(Class<S> dependentType, String name) {
-    if (dependentType == null) {
+  public <S> EventSource<S, P> get(Class<S> resourceType, String name) {
+    if (resourceType == null) {
       throw new IllegalArgumentException("Must pass a dependent type to retrieve event sources");
     }
 
-    final var sourcesForType = sources.get(keyFor(dependentType));
+    final var sourcesForType = sources.get(keyFor(resourceType));
     if (sourcesForType == null || sourcesForType.isEmpty()) {
       throw new IllegalArgumentException(
-          "There is no event source found for class:" + dependentType.getName());
+          "There is no event source found for class:" + resourceType.getName());
     }
 
     final var size = sourcesForType.size();
@@ -110,7 +110,7 @@ class EventSources<P extends HasMetadata> {
     } else {
       if (name == null || name.isBlank()) {
         throw new IllegalArgumentException("There are multiple EventSources registered for type "
-            + dependentType.getCanonicalName()
+            + resourceType.getCanonicalName()
             + ", you need to provide a name to specify which EventSource you want to query. Known names: "
             + String.join(",", sourcesForType.keySet()));
       }
@@ -118,16 +118,16 @@ class EventSources<P extends HasMetadata> {
 
       if (source == null) {
         throw new IllegalArgumentException("There is no event source found for class:" +
-            " " + dependentType.getName() + ", name:" + name);
+            " " + resourceType.getName() + ", name:" + name);
       }
     }
 
     final var resourceClass = source.resourceType();
-    if (!resourceClass.isAssignableFrom(dependentType)) {
+    if (!resourceClass.isAssignableFrom(resourceType)) {
       throw new IllegalArgumentException(source + " associated with "
-          + keyAsString(dependentType, name)
+          + keyAsString(resourceType, name)
           + " is handling " + resourceClass.getName() + " resources but asked for "
-          + dependentType.getName());
+          + resourceType.getName());
     }
     return source;
   }

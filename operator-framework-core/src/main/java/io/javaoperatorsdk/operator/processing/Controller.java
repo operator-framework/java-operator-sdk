@@ -39,6 +39,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundE
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
+import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
@@ -242,9 +243,23 @@ public class Controller<P extends HasMetadata>
         managedWorkflow.getDependentResourcesWithoutActivationCondition();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
-      dependentResourcesByName.forEach(dependentResource -> {
-        Optional<EventSource> eventSource = dependentResource.eventSource(context);
-        eventSource.ifPresent(eventSourceManager::registerEventSource);
+      dependentResourcesByName.forEach(dr -> {
+        Optional<EventSource> eventSource = dr.eventSource(context);
+
+        eventSource.ifPresent(es -> {
+          eventSourceManager.getEventSourceByName(es.name())
+              .ifPresentOrElse((EventSource regES) -> {
+                if (dr instanceof AbstractEventSourceHolderDependentResource esHolder) {
+                  esHolder.setEventSource(regES);
+                } else {
+                  throw new IllegalStateException("EventSource already registered with name: "
+                      + es.name()
+                      + " and dependent resource is not extends AbstractEventSourceHolderDependentResource: "
+                      + dr.getClass().getName());
+                }
+              },
+                  () -> eventSourceManager.registerEventSource(es));
+        });
       });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
@@ -306,7 +321,7 @@ public class Controller<P extends HasMetadata>
     return kubernetesClient;
   }
 
-  public MixedOperation<P, KubernetesResourceList<P>, Resource<P>> getCRClient() {
+  public MixedOperation<P, KubernetesResourceList<P>, Resource<P>> getPrimaryResourceClient() {
     return kubernetesClient.resources(configuration.getResourceClass());
   }
 

@@ -213,9 +213,9 @@ public class EventSourceManager<P extends HasMetadata>
   @Override
   public <R> EventSource<R, P> dynamicallyRegisterEventSource(EventSource<R, P> eventSource) {
     synchronized (this) {
-      var actual = eventSources.existingEventSourceByName(eventSource.name());
+      var actual = eventSources.getEventSourceByName(eventSource.name());
       if (actual != null) {
-        eventSource = actual;
+        eventSource = (EventSource<R, P>) actual;
       } else {
         registerEventSource(eventSource);
       }
@@ -247,6 +247,11 @@ public class EventSourceManager<P extends HasMetadata>
       Class<R> dependentType, String name) {
     Objects.requireNonNull(dependentType, "dependentType is Mandatory");
     return eventSources.get(dependentType, name);
+  }
+
+
+  public Optional<EventSource<?, P>> getEventSourceByName(String name) {
+    return Optional.ofNullable(eventSources.getEventSourceByName(name));
   }
 
   TimerEventSource<P> retryEventSource() {
