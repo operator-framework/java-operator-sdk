@@ -129,17 +129,18 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   @SuppressWarnings("unused")
   private static <T> Configurator<T> configuratorFor(Class<T> instanceType,
-      Reconciler<?> reconciler) {
-    return instance -> configureFromAnnotatedReconciler(instance, reconciler);
+      Class<? extends Reconciler<?>> reconcilerClass) {
+    return instance -> configureFromAnnotatedReconciler(instance, reconcilerClass);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static void configureFromAnnotatedReconciler(Object instance, Reconciler<?> reconciler) {
+  private static void configureFromAnnotatedReconciler(Object instance,
+      Class<? extends Reconciler<?>> reconcilerClass) {
     if (instance instanceof AnnotationConfigurable configurable) {
       final Class<? extends Annotation> configurationClass =
           (Class<? extends Annotation>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(
               instance.getClass(), AnnotationConfigurable.class);
-      final var configAnnotation = reconciler.getClass().getAnnotation(configurationClass);
+      final var configAnnotation = reconcilerClass.getAnnotation(configurationClass);
       if (configAnnotation != null) {
         configurable.initFrom(configAnnotation);
       }
@@ -196,12 +197,15 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected <P extends HasMetadata> ControllerConfiguration<P> configFor(Reconciler<P> reconciler) {
-    final var annotation = reconciler.getClass().getAnnotation(
+    final Class<? extends Reconciler<P>> reconcilerClass =
+        (Class<? extends Reconciler<P>>) reconciler.getClass();
+    final var controllerAnnotation = reconcilerClass.getAnnotation(
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class);
 
-    ResolvedControllerConfiguration<P> config = controllerConfiguration(reconciler, annotation);
+    ResolvedControllerConfiguration<P> config =
+        controllerConfiguration(reconcilerClass, controllerAnnotation);
 
-    final var workflowAnnotation = reconciler.getClass().getAnnotation(
+    final var workflowAnnotation = reconcilerClass.getAnnotation(
         io.javaoperatorsdk.operator.api.reconciler.Workflow.class);
     if (workflowAnnotation != null) {
       final var specs = dependentResources(workflowAnnotation, config);
@@ -230,18 +234,17 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   @SuppressWarnings({"unchecked"})
   private <P extends HasMetadata> ResolvedControllerConfiguration<P> controllerConfiguration(
-      Reconciler<P> reconciler,
+      Class<? extends Reconciler<P>> reconcilerClass,
       io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation) {
-    Class<Reconciler<P>> reconcilerClass = (Class<Reconciler<P>>) reconciler.getClass();
     final var resourceClass = getResourceClassResolver().getPrimaryResourceClass(reconcilerClass);
 
-    final var name = ReconcilerUtils.getNameFor(reconciler);
+    final var name = ReconcilerUtils.getNameFor(reconcilerClass);
     final var generationAware = valueOrDefaultFromAnnotation(
         annotation,
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::generationAwareEventProcessing,
         "generationAwareEventProcessing");
     final var associatedReconcilerClass =
-        ResolvedControllerConfiguration.getAssociatedReconcilerClassName(reconciler.getClass());
+        ResolvedControllerConfiguration.getAssociatedReconcilerClassName(reconcilerClass);
 
     final var context = Utils.contextFor(name);
     final Class<? extends Retry> retryClass =
@@ -249,14 +252,14 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::retry,
             "retry");
     final var retry = Utils.instantiateAndConfigureIfNeeded(retryClass, Retry.class,
-        context, configuratorFor(Retry.class, reconciler));
+        context, configuratorFor(Retry.class, reconcilerClass));
 
-
+    @SuppressWarnings("rawtypes")
     final Class<? extends RateLimiter> rateLimiterClass = valueOrDefaultFromAnnotation(annotation,
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::rateLimiter,
         "rateLimiter");
     final var rateLimiter = Utils.instantiateAndConfigureIfNeeded(rateLimiterClass,
-        RateLimiter.class, context, configuratorFor(RateLimiter.class, reconciler));
+        RateLimiter.class, context, configuratorFor(RateLimiter.class, reconcilerClass));
 
     final var reconciliationInterval = valueOrDefaultFromAnnotation(annotation,
         io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::maxReconciliationInterval,
