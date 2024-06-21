@@ -604,7 +604,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .build();
 
     final var reconcileResult = workflow.reconcile(new TestCustomResource(), mockContext);
-    assertEquals(result, reconcileResult.getNotReadyDependentResult(dr1, Integer.class));
+    assertEquals(result,
+        reconcileResult.getNotReadyDependentResult(dr1, Integer.class).orElseThrow());
   }
 
   @Test
@@ -643,13 +644,13 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   }
 
   @Test
-  void shouldReturnNullIfNoConditionResultExists() {
+  void shouldReturnEmptyIfNoConditionResultExists() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .withReadyPostcondition(notMetCondition)
         .build();
 
     final var reconcileResult = workflow.reconcile(new TestCustomResource(), mockContext);
-    assertNull(reconcileResult.getNotReadyDependentResult(dr1, Integer.class));
+    assertTrue(reconcileResult.getNotReadyDependentResult(dr1, Integer.class).isEmpty());
   }
 }
