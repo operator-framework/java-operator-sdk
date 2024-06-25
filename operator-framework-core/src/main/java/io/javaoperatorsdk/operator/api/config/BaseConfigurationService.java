@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
@@ -24,11 +23,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
@@ -278,43 +275,20 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         fieldManager.equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name
             : fieldManager;
 
-    var informerListLimitValue = valueOrDefaultFromAnnotation(annotation,
-        io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::informerListLimit,
-        "informerListLimit");
-    final var informerListLimit =
-        informerListLimitValue == Constants.NO_LONG_VALUE_SET ? null
-            : informerListLimitValue;
+    InformerConfigHolder<P> informerConfig = InformerConfigHolder.builder(resourceClass)
+        .initFromAnnotation(annotation != null ? annotation.informerConfig() : null, context)
+        .buildForController();
 
     return new ResolvedControllerConfiguration<P>(
         resourceClass, name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
         ResolvedControllerConfiguration.getMaxReconciliationInterval(interval, timeUnit),
-        Utils.instantiate(valueOrDefaultFromAnnotation(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::onAddFilter,
-            "onAddFilter"), OnAddFilter.class, context),
-        Utils.instantiate(valueOrDefaultFromAnnotation(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::onUpdateFilter,
-            "onUpdateFilter"), OnUpdateFilter.class, context),
-        Utils.instantiate(valueOrDefaultFromAnnotation(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::genericFilter,
-            "genericFilter"), GenericFilter.class, context),
-        Set.of(valueOrDefaultFromAnnotation(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::namespaces,
-            "namespaces")),
         valueOrDefaultFromAnnotation(annotation,
             io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::finalizerName,
             "finalizerName"),
-        valueOrDefaultFromAnnotation(annotation,
-            io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::labelSelector,
-            "labelSelector"),
         null,
-        Utils.instantiate(
-            valueOrDefaultFromAnnotation(annotation,
-                io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration::itemStore,
-                "itemStore"),
-            ItemStore.class, context),
         dependentFieldManager,
-        this, informerListLimit);
+        this, informerConfig);
   }
 
 
@@ -326,6 +300,4 @@ public class BaseConfigurationService extends AbstractConfigurationService {
   public boolean checkCRDAndValidateLocalModel() {
     return Utils.shouldCheckCRDAndValidateLocalModel();
   }
-
-
 }

@@ -10,12 +10,12 @@ public class KubernetesDependentResourceConfig<R extends HasMetadata> {
 
   private final Boolean useSSA;
   private final boolean createResourceOnlyIfNotExistingWithSSA;
-  private final KubernetesDependentInformerConfig<R> informerConfig;
+  private final InformerConfigHolder<R> informerConfig;
 
   public KubernetesDependentResourceConfig(
       Boolean useSSA,
       boolean createResourceOnlyIfNotExistingWithSSA,
-      KubernetesDependentInformerConfig<R> informerConfig) {
+      InformerConfigHolder<R> informerConfig) {
     this.useSSA = useSSA;
     this.createResourceOnlyIfNotExistingWithSSA = createResourceOnlyIfNotExistingWithSSA;
     this.informerConfig = informerConfig;
@@ -29,7 +29,7 @@ public class KubernetesDependentResourceConfig<R extends HasMetadata> {
     return useSSA;
   }
 
-  public KubernetesDependentInformerConfig<R> informerConfig() {
+  public InformerConfigHolder<R> informerConfig() {
     return informerConfig;
   }
 }

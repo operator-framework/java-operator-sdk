@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -24,16 +25,20 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
+  default InformerConfigHolder<R> getInformerConfig() {
+    return InformerConfigHolder.DEFAULT_EVENT_SOURCE_CONFIG;
+  }
+
   default Optional<OnAddFilter<? super R>> onAddFilter() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getOnAddFilter());
   }
 
   default Optional<OnUpdateFilter<? super R>> onUpdateFilter() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getOnUpdateFilter());
   }
 
   default Optional<GenericFilter<? super R>> genericFilter() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getGenericFilter());
   }
 
   /**
@@ -45,7 +50,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    * @return the label selector filtering watched resources
    */
   default String getLabelSelector() {
-    return null;
+    return getInformerConfig().getLabelSelector();
   }
 
   static String ensureValidLabelSelector(String labelSelector) {
@@ -60,7 +65,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   default Set<String> getNamespaces() {
-    return DEFAULT_NAMESPACES_SET;
+    return getInformerConfig().getNamespaces();
   }
 
   default boolean watchAllNamespaces() {
@@ -144,7 +149,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    *         the informers.
    */
   default Optional<ItemStore<R>> getItemStore() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getItemStore());
   }
 
   /**
@@ -152,6 +157,6 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    * is a not null it will result in paginating for the initial load of the informer cache.
    */
   default Optional<Long> getInformerListLimit() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getInformerListLimit());
   }
 }

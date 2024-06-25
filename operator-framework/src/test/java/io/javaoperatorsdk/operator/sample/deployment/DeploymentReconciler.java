@@ -13,9 +13,11 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(labelSelector = "test=KubernetesResourceStatusUpdateIT")
+@ControllerConfiguration(
+    informerConfig = @InformerConfig(labelSelector = "test=KubernetesResourceStatusUpdateIT"))
 public class DeploymentReconciler
     implements Reconciler<Deployment>, TestExecutionInfoProvider {
 
