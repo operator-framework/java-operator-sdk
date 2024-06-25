@@ -96,9 +96,7 @@ public class CreateUpdateEventFilterTestReconciler
         InformerConfiguration.from(ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
-    final var informerEventSource =
-        new InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource>(
-            informerConfiguration, context.getClient());
+    final var informerEventSource = new InformerEventSource<>(informerConfiguration, context);
     this.configMapDR.setEventSource(informerEventSource);
 
     return List.of(informerEventSource);

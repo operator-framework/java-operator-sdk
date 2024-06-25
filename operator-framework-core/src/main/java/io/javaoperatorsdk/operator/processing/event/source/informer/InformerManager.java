@@ -28,7 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES;
 
-public class InformerManager<R extends HasMetadata, C extends ResourceConfiguration<R>>
+class InformerManager<R extends HasMetadata, C extends ResourceConfiguration<R>>
     implements LifecycleAware, IndexerResourceCache<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);

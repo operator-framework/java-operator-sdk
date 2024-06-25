@@ -83,11 +83,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
+  InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
     this(configuration, client, false);
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration,
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private InformerEventSource(InformerConfiguration<R> configuration,
       KubernetesClient client,
       boolean parseResourceVersions) {
     super(configuration.name(),
