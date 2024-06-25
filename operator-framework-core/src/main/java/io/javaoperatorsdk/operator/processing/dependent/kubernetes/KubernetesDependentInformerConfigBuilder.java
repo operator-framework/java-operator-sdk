@@ -84,8 +84,8 @@ public final class KubernetesDependentInformerConfigBuilder<R extends HasMetadat
     return this;
   }
 
-  public KubernetesDependentInformerConfig<R> build() {
-    return new KubernetesDependentInformerConfig<>(name, namespaces,
+  public InformerConfigHolder<R> build() {
+    return new InformerConfigHolder<>(name, namespaces,
         followControllerNamespacesOnChange,
         labelSelector, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter, itemStore,
         informerListLimit);

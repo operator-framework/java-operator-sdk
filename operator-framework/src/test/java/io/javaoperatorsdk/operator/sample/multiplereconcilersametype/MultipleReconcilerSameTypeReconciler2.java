@@ -6,9 +6,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(labelSelector = "reconciler != 1")
+@ControllerConfiguration(informerConfig = @InformerConfig(labelSelector = "reconciler != 1"))
 public class MultipleReconcilerSameTypeReconciler2
     implements Reconciler<MultipleReconcilerSameTypeCustomResource>, TestExecutionInfoProvider {
 

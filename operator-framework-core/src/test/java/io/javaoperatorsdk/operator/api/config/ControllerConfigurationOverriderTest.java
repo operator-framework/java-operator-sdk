@@ -22,7 +22,12 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.*;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration.inheritsNamespacesFromController;
@@ -31,6 +36,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class ControllerConfigurationOverriderTest {
   private final BaseConfigurationService configurationService = new BaseConfigurationService();
 
+  @SuppressWarnings("unchecked")
+  private static Object extractDependentKubernetesResourceConfig(
+      io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
+    final var spec =
+        configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
+    return configuration.getConfigurationFor(spec);
+  }
 
   @BeforeEach
   void clearStaticState() {
@@ -73,34 +85,9 @@ class ControllerConfigurationOverriderTest {
     return conf;
   }
 
-  @SuppressWarnings("unchecked")
-  private static Object extractDependentKubernetesResourceConfig(
-      io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
-    final var spec =
-        configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().get(index);
-    return configuration.getConfigurationFor(spec);
-  }
-
   private io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> createConfiguration(
       Reconciler<?> reconciler) {
     return configurationService.configFor(reconciler);
-  }
-
-  private static class MyItemStore<T extends HasMetadata> extends BasicItemStore<T> {
-
-    public MyItemStore() {
-      super(Cache::metaNamespaceKeyFunc);
-    }
-
-  }
-
-  @ControllerConfiguration(namespaces = "foo", itemStore = MyItemStore.class)
-  private static class WatchCurrentReconciler implements Reconciler<ConfigMap> {
-
-    @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
-      return null;
-    }
   }
 
   @Test
@@ -284,16 +271,15 @@ class ControllerConfigurationOverriderTest {
     // override the namespaces for the dependent resource
     final var overriddenNS = "newNS";
     final var labelSelector = "foo=bar";
-    KubernetesDependentInformerConfigBuilder<ConfigMap> anInformerConfig =
-        new KubernetesDependentInformerConfigBuilder<>();
-    anInformerConfig.withNamespaces(Set.of(overriddenNS));
-    anInformerConfig.withLabelSelector(labelSelector);
+    final var overridingInformerConfig = InformerConfigHolder.builder(ConfigMap.class)
+        .withNamespaces(Set.of(overriddenNS))
+        .withLabelSelector(labelSelector)
+        .buildForInformerEventSource();
     final var overridden = ControllerConfigurationOverrider.override(configuration)
         .replacingNamedDependentResourceConfig(
             dependentResourceName,
             new KubernetesDependentResourceConfigBuilder<ConfigMap>()
-                .withKubernetesDependentInformerConfig(anInformerConfig.build())
-
+                .withKubernetesDependentInformerConfig(overridingInformerConfig)
                 .build())
         .build();
     dependents = overridden.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
@@ -307,6 +293,24 @@ class ControllerConfigurationOverriderTest {
     assertEquals(Set.of(overriddenNS), informerConfig.getNamespaces());
     // check that we still have the proper workflow configuration
     assertInstanceOf(TestCondition.class, dependentSpec.getReadyCondition());
+  }
+
+  private static class MyItemStore<T extends HasMetadata> extends BasicItemStore<T> {
+
+    public MyItemStore() {
+      super(Cache::metaNamespaceKeyFunc);
+    }
+
+  }
+
+  @ControllerConfiguration(
+      informerConfig = @InformerConfig(namespaces = "foo", itemStore = MyItemStore.class))
+  private static class WatchCurrentReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
   }
 
   @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class))
@@ -341,7 +345,8 @@ class ControllerConfigurationOverriderTest {
 
   @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class,
       readyPostcondition = TestCondition.class))
-  @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS)
+  @ControllerConfiguration(
+      informerConfig = @InformerConfig(namespaces = OneDepReconciler.CONFIGURED_NS))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "foo";
@@ -372,7 +377,8 @@ class ControllerConfigurationOverriderTest {
   }
 
   @Workflow(dependents = @Dependent(type = OverriddenNSDependent.class))
-  @ControllerConfiguration(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS)
+  @ControllerConfiguration(
+      informerConfig = @InformerConfig(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS))
   public static class OverriddenNSOnDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "parentNS";

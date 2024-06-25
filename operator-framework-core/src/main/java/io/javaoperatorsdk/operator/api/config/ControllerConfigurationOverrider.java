@@ -10,6 +10,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -189,12 +190,26 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfiguration<R> build() {
+    // todo: should use an informer builder directly and share code across similar builders
+    InformerConfigHolder<R> informerConfig =
+        InformerConfigHolder.builder(original.getResourceClass())
+            .withLabelSelector(labelSelector)
+            .withItemStore(itemStore)
+            .withInformerListLimit(informerListLimit)
+            .withName(name)
+            .withNamespaces(namespaces)
+            .withOnAddFilter(onAddFilter)
+            .withOnUpdateFilter(onUpdateFilter)
+            .withGenericFilter(genericFilter)
+            .buildForController();
+
     return new ResolvedControllerConfiguration<>(original.getResourceClass(),
         name,
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
-        reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
-        namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        original.getConfigurationService(), informerListLimit,
+        reconciliationMaxInterval,
+        finalizer, configurations, fieldManager,
+        original.getConfigurationService(),
+        informerConfig,
         original.getWorkflowSpec().orElse(null));
   }
 
