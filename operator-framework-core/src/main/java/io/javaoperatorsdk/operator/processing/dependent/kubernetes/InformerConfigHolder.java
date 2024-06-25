@@ -145,46 +145,45 @@ public class InformerConfigHolder<R extends HasMetadata> {
     @SuppressWarnings({"unchecked"})
     public InformerConfigHolder<R>.Builder initFromAnnotation(InformerConfig informerConfig,
         String context) {
-      final var config = InformerConfigHolder.builder();
       if (informerConfig != null) {
 
         // override default name if more specific one is provided
         if (!Constants.NO_VALUE_SET.equals(informerConfig.name())) {
-          config.withName(informerConfig.name());
+          withName(informerConfig.name());
         }
 
         var namespaces = Set.of(informerConfig.namespaces());
-        config.withNamespaces(namespaces);
+        withNamespaces(namespaces);
 
         final var fromAnnotation = informerConfig.labelSelector();
         var labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
-        config.withLabelSelector(labelSelector);
+        withLabelSelector(labelSelector);
 
-        config.withOnAddFilter(Utils.instantiate(informerConfig.onAddFilter(),
+        withOnAddFilter(Utils.instantiate(informerConfig.onAddFilter(),
             OnAddFilter.class, context));
 
-        config.withOnUpdateFilter(Utils.instantiate(informerConfig.onUpdateFilter(),
+        withOnUpdateFilter(Utils.instantiate(informerConfig.onUpdateFilter(),
             OnUpdateFilter.class, context));
 
-        config.withOnDeleteFilter(Utils.instantiate(informerConfig.onDeleteFilter(),
+        withOnDeleteFilter(Utils.instantiate(informerConfig.onDeleteFilter(),
             OnDeleteFilter.class, context));
 
-        config.withGenericFilter(Utils.instantiate(informerConfig.genericFilter(),
+        withGenericFilter(Utils.instantiate(informerConfig.genericFilter(),
             GenericFilter.class,
             context));
 
-        config.withFollowControllerNamespacesOnChange(
+        withFollowControllerNamespacesOnChange(
             informerConfig.followControllerNamespacesOnChange());
 
-        config.withItemStore(Utils.instantiate(informerConfig.itemStore(),
+        withItemStore(Utils.instantiate(informerConfig.itemStore(),
             ItemStore.class, context));
 
         final var informerListLimitValue = informerConfig.informerListLimit();
         final var informerListLimit =
             informerListLimitValue == Constants.NO_LONG_VALUE_SET ? null : informerListLimitValue;
-        config.withInformerListLimit(informerListLimit);
+        withInformerListLimit(informerListLimit);
       }
-      return (InformerConfigHolder<R>.Builder) config;
+      return this;
     }
 
     public Builder withName(String name) {
