@@ -1,12 +1,16 @@
 package io.javaoperatorsdk.operator;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.authorization.v1.ResourceRule;
 import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReviewSpecBuilder;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
@@ -23,7 +27,7 @@ public class LeaderElectionManager {
 
   public static final String NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE =
       "No permission to lease resource.";
-  public static final String UNIVERSAL_VERB = "*";
+  public static final String UNIVERSAL_VALUE = "*";
   public static final String COORDINATION_GROUP = "coordination.k8s.io";
   public static final String LEASES_RESOURCE = "leases";
 
@@ -33,6 +37,7 @@ public class LeaderElectionManager {
   private CompletableFuture<?> leaderElectionFuture;
   private final ConfigurationService configurationService;
   private String leaseNamespace;
+  private String leaseName;
 
   LeaderElectionManager(ControllerManager controllerManager,
       ConfigurationService configurationService) {
@@ -55,6 +60,7 @@ public class LeaderElectionManager {
       log.error(message);
       throw new IllegalArgumentException(message);
     }
+    leaseName = config.getLeaseName();
     final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
     leaderElector = new LeaderElectorBuilder(
         configurationService.getKubernetesClient(),
@@ -126,19 +132,33 @@ public class LeaderElectionManager {
   }
 
   private void checkLeaseAccess() {
-    var verbs = Arrays.asList("create", "update", "get");
+    var verbsRequired = Arrays.asList("create", "update", "get");
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setSpec(new SelfSubjectRulesReviewSpecBuilder().withNamespace(leaseNamespace).build());
     var reviewResult = configurationService.getKubernetesClient().resource(review).create();
     log.debug("SelfSubjectRulesReview result: {}", reviewResult);
-    var foundRule = reviewResult.getStatus().getResourceRules().stream()
-        .filter(rule -> rule.getApiGroups().contains(COORDINATION_GROUP)
-            && rule.getResources().contains(LEASES_RESOURCE)
-            && (rule.getVerbs().containsAll(verbs)) || rule.getVerbs().contains(UNIVERSAL_VERB))
-        .findAny();
-    if (foundRule.isEmpty()) {
-      throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
-          " in namespace: " + leaseNamespace);
+    var verbsAllowed = reviewResult.getStatus().getResourceRules().stream()
+        .filter(rule -> matchesValue(rule.getApiGroups(), COORDINATION_GROUP))
+        .filter(rule -> matchesValue(rule.getResources(), LEASES_RESOURCE))
+        .filter(rule -> rule.getResourceNames().isEmpty()
+            || rule.getResourceNames().contains(leaseName))
+        .map(ResourceRule::getVerbs)
+        .flatMap(Collection::stream)
+        .distinct()
+        .collect(Collectors.toList());
+    if (verbsAllowed.contains(UNIVERSAL_VALUE) || verbsAllowed.containsAll(verbsRequired)) {
+      return;
     }
+
+    var missingVerbs = verbsRequired.stream()
+        .filter(Predicate.not(verbsAllowed::contains))
+        .collect(Collectors.toList());
+
+    throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
+        " in namespace: " + leaseNamespace + "; missing required verbs: " + missingVerbs);
+  }
+
+  private boolean matchesValue(Collection<String> values, String match) {
+    return values.contains(match) || values.contains(UNIVERSAL_VALUE);
   }
 }

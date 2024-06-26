@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -20,7 +21,7 @@ import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 
 import static io.javaoperatorsdk.operator.LeaderElectionManager.COORDINATION_GROUP;
 import static io.javaoperatorsdk.operator.LeaderElectionManager.LEASES_RESOURCE;
-import static io.javaoperatorsdk.operator.LeaderElectionManager.UNIVERSAL_VERB;
+import static io.javaoperatorsdk.operator.LeaderElectionManager.UNIVERSAL_VALUE;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
@@ -32,12 +33,23 @@ import static org.mockito.Mockito.when;
 public class MockKubernetesClient {
 
   public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz) {
-    return client(clazz, null);
+    return client(clazz, null, null);
+  }
+
+  public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
+      Object selfSubjectReview) {
+    return client(clazz, null, selfSubjectReview);
+  }
+
+  public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
+      Consumer<Void> informerRunBehavior) {
+    return client(clazz, informerRunBehavior, null);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
-      Consumer<Void> informerRunBehavior) {
+      Consumer<Void> informerRunBehavior,
+      Object selfSubjectReview) {
     final var client = mock(KubernetesClient.class);
     MixedOperation<T, KubernetesResourceList<T>, Resource<T>> resources =
         mock(MixedOperation.class);
@@ -85,7 +97,9 @@ public class MockKubernetesClient {
     var selfSubjectResourceResourceMock = mock(NamespaceableResource.class);
     when(client.resource(any(SelfSubjectRulesReview.class)))
         .thenReturn(selfSubjectResourceResourceMock);
-    when(selfSubjectResourceResourceMock.create()).thenReturn(allowSelfSubjectReview());
+    when(selfSubjectResourceResourceMock.create())
+        .thenReturn(Optional.ofNullable(selfSubjectReview)
+            .orElseGet(MockKubernetesClient::allowSelfSubjectReview));
 
     final var apiGroupDSL = mock(ApiextensionsAPIGroupDSL.class);
     when(client.apiextensions()).thenReturn(apiGroupDSL);
@@ -107,7 +121,7 @@ public class MockKubernetesClient {
     var resourceRule = new ResourceRule();
     resourceRule.setApiGroups(Arrays.asList(COORDINATION_GROUP));
     resourceRule.setResources(Arrays.asList(LEASES_RESOURCE));
-    resourceRule.setVerbs(Arrays.asList(UNIVERSAL_VERB));
+    resourceRule.setVerbs(Arrays.asList(UNIVERSAL_VALUE));
     review.getStatus().setResourceRules(Arrays.asList(resourceRule));
     return review;
   }
