@@ -66,7 +66,9 @@ public interface InformerConfiguration<R extends HasMetadata>
    */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  Optional<OnDeleteFilter<? super R>> onDeleteFilter();
+  default Optional<OnDeleteFilter<? super R>> onDeleteFilter() {
+    return Optional.ofNullable(getInformerConfig().getOnDeleteFilter());
+  }
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
