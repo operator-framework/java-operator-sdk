@@ -125,7 +125,10 @@ public class InformerConfigHolder<R extends HasMetadata> {
   public class Builder {
 
     public InformerConfigHolder<R> buildForController() {
-      if (namespaces == null || namespaces.isEmpty()) {
+      // if the informer config uses the default "same as controller" value, reset the namespaces to
+      // the default set for controllers
+      if (namespaces == null || namespaces.isEmpty()
+          || InformerConfiguration.inheritsNamespacesFromController(namespaces)) {
         namespaces = Constants.DEFAULT_NAMESPACES_SET;
       }
       return InformerConfigHolder.this;

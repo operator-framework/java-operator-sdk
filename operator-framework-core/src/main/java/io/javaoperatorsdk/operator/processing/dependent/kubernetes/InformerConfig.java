@@ -25,11 +25,15 @@ public @interface InformerConfig {
 
   /**
    * Specified which namespaces the associated informer monitors for custom resources events. If no
-   * namespace is specified then the informer will monitor the namespaces configured for the
-   * associated controller (or all namespaces if the configuration is done for a controller).
-   *
+   * namespace is specified then which namespaces the informer will monitor will depend on the
+   * context in which the informer is configured:
    * <ul>
-   * You can set a list of namespaces or also constants:
+   * <li>all namespaces if configuring a controller informer</li>
+   * <li>the namespaces configured for the associated controller if configuring an event source</li>
+   * </ul>
+   *
+   * You can set a list of namespaces or use the following constants:
+   * <ul>
    * <li>{@link Constants#WATCH_ALL_NAMESPACES}</li>
    * <li>{@link Constants#WATCH_CURRENT_NAMESPACE}</li>
    * <li>{@link Constants#SAME_AS_CONTROLLER}</li>
@@ -37,8 +41,6 @@ public @interface InformerConfig {
    * 
    * @return the array of namespaces the associated informer monitors
    */
-  // todo: use unset value as semantics needs to be different depending on whether the configuration
-  // is used on a controller or an informer
   String[] namespaces() default {Constants.SAME_AS_CONTROLLER};
 
   /**
