@@ -182,7 +182,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       var crdString = new String(is.readAllBytes(), StandardCharsets.UTF_8);
       LOGGER.debug("Applying CRD: {}", crdString);
       final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
-      crd.createOrReplace();
+      crd.serverSideApply();
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
       LOGGER.debug("Applied CRD with path: {}", path);
     } catch (InterruptedException ex) {
