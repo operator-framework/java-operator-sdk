@@ -13,6 +13,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
+
 
 @SuppressWarnings("unused")
 public class InformerConfigHolder<R extends HasMetadata> {
@@ -22,7 +24,7 @@ public class InformerConfigHolder<R extends HasMetadata> {
   @SuppressWarnings("rawtypes")
   public static final InformerConfigHolder DEFAULT_EVENT_SOURCE_CONFIG =
       InformerConfigHolder.builder().buildForInformerEventSource();
-
+  private final Builder builder = new Builder();
   private String name;
   private Set<String> namespaces;
   private Boolean followControllerNamespacesOnChange;
@@ -33,7 +35,6 @@ public class InformerConfigHolder<R extends HasMetadata> {
   private GenericFilter<? super R> genericFilter;
   private ItemStore<R> itemStore;
   private Long informerListLimit;
-  private final Builder builder = new Builder();
 
   public InformerConfigHolder(String name, Set<String> namespaces,
       boolean followControllerNamespacesOnChange,
@@ -110,15 +111,15 @@ public class InformerConfigHolder<R extends HasMetadata> {
     if (name != null) {
       builder.withName(name);
     }
-    builder.withNamespaces(namespaces);
-    builder.followControllerNamespacesOnChange(followControllerNamespacesOnChange);
-    builder.withLabelSelector(labelSelector);
-    builder.withItemStore(itemStore);
-    builder.withOnAddFilter(onAddFilter);
-    builder.withOnUpdateFilter(onUpdateFilter);
-    builder.withOnDeleteFilter(onDeleteFilter);
-    builder.withGenericFilter(genericFilter);
-    builder.withInformerListLimit(informerListLimit);
+    builder.withInformerConfiguration(c -> c.withNamespaces(namespaces)
+        .withFollowControllerNamespacesOnChange(followControllerNamespacesOnChange)
+        .withLabelSelector(labelSelector)
+        .withItemStore(itemStore)
+        .withOnAddFilter(onAddFilter)
+        .withOnUpdateFilter(onUpdateFilter)
+        .withOnDeleteFilter(onDeleteFilter)
+        .withGenericFilter(genericFilter)
+        .withInformerListLimit(informerListLimit));
   }
 
   @SuppressWarnings("UnusedReturnValue")
@@ -200,10 +201,52 @@ public class InformerConfigHolder<R extends HasMetadata> {
       return this;
     }
 
-    public Builder withFollowControllerNamespacesOnChange(
-        boolean followControllerNamespacesOnChange) {
+    public Set<String> namespaces() {
+      return Set.copyOf(namespaces);
+    }
+
+    /**
+     * Sets the initial set of namespaces to watch (typically extracted from the parent
+     * {@link io.javaoperatorsdk.operator.processing.Controller}'s configuration), specifying
+     * whether changes made to the parent controller configured namespaces should be tracked or not.
+     *
+     * @param namespaces the initial set of namespaces to watch
+     * @param followChanges {@code true} to follow the changes made to the parent controller
+     *        namespaces, {@code false} otherwise
+     * @return the builder instance so that calls can be chained fluently
+     */
+    public Builder withNamespaces(Set<String> namespaces, boolean followChanges) {
+      withNamespaces(namespaces).withFollowControllerNamespacesOnChange(followChanges);
+      return this;
+    }
+
+    public Builder withNamespacesInheritedFromController() {
+      withNamespaces(SAME_AS_CONTROLLER_NAMESPACES_SET);
+      return this;
+    }
+
+    public Builder withWatchAllNamespaces() {
+      withNamespaces(WATCH_ALL_NAMESPACE_SET);
+      return this;
+    }
+
+    public Builder withWatchCurrentNamespace() {
+      withNamespaces(WATCH_CURRENT_NAMESPACE_SET);
+      return this;
+    }
+
+
+    /**
+     * Whether the associated informer should track changes made to the parent
+     * {@link io.javaoperatorsdk.operator.processing.Controller}'s namespaces configuration.
+     *
+     * @param followChanges {@code true} to reconfigure the associated informer when the parent
+     *        controller's namespaces are reconfigured, {@code false} otherwise
+     * @return the builder instance so that calls can be chained fluently
+     */
+    public Builder withFollowControllerNamespacesOnChange(boolean followChanges) {
       InformerConfigHolder.this.followControllerNamespacesOnChange =
-          followControllerNamespacesOnChange;;
+          followChanges;
       return this;
     }
 
