@@ -7,7 +7,11 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -59,7 +63,8 @@ public class ClusterScopedCustomResourceReconciler
         InformerConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)
             .withSecondaryToPrimaryMapper(
                 Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
-            .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
+            .withInformerConfiguration(
+                c -> c.withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE))
             .build(),
         context);
     return List.of(ies);

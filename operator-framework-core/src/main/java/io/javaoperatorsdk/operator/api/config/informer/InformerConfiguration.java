@@ -3,10 +3,10 @@ package io.javaoperatorsdk.operator.api.config.informer;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
@@ -15,10 +15,7 @@ import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
-import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
@@ -138,6 +135,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
   }
 
+
   @SuppressWarnings({"unused", "UnusedReturnValue"})
   class InformerConfigurationBuilder<R extends HasMetadata> {
 
@@ -147,16 +145,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     private String name;
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
-    private Set<String> namespaces = SAME_AS_CONTROLLER_NAMESPACES_SET;
-    private String labelSelector;
-    private OnAddFilter<? super R> onAddFilter;
-    private OnUpdateFilter<? super R> onUpdateFilter;
-    private OnDeleteFilter<? super R> onDeleteFilter;
-    private GenericFilter<? super R> genericFilter;
-    private ItemStore<R> itemStore;
-    private Long informerListLimit;
-    private boolean followControllerNamespacesOnChange =
-        DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+    private final InformerConfigHolder<R>.Builder config;
 
     private InformerConfigurationBuilder(Class<R> resourceClass,
         Class<? extends HasMetadata> primaryResourceClass) {
@@ -174,6 +163,13 @@ public interface InformerConfiguration<R extends HasMetadata>
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
+      this.config = InformerConfigHolder.builder(resourceClass);
+    }
+
+    public InformerConfigurationBuilder<R> withInformerConfiguration(
+        Consumer<InformerConfigHolder<R>.Builder> configurator) {
+      configurator.accept(config);
+      return this;
     }
 
     public InformerConfigurationBuilder<R> withName(String name) {
@@ -193,106 +189,6 @@ public interface InformerConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withNamespaces(String... namespaces) {
-      return withNamespaces(
-          namespaces != null ? Set.of(namespaces) : DEFAULT_NAMESPACES_SET);
-    }
-
-    public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces) {
-      return withNamespaces(namespaces, false);
-    }
-
-    /**
-     * Sets the initial set of namespaces to watch (typically extracted from the parent
-     * {@link io.javaoperatorsdk.operator.processing.Controller}'s configuration), specifying
-     * whether changes made to the parent controller configured namespaces should be tracked or not.
-     *
-     * @param namespaces the initial set of namespaces to watch
-     * @param followChanges {@code true} to follow the changes made to the parent controller
-     *        namespaces, {@code false} otherwise
-     * @return the builder instance so that calls can be chained fluently
-     */
-    public InformerConfigurationBuilder<R> withNamespaces(Set<String> namespaces,
-        boolean followChanges) {
-      this.namespaces = namespaces != null ? namespaces : DEFAULT_NAMESPACES_SET;
-      this.followControllerNamespacesOnChange = followChanges;
-      return this;
-    }
-
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> withNamespacesInheritedFromController() {
-      this.namespaces = SAME_AS_CONTROLLER_NAMESPACES_SET;
-      return this;
-    }
-
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> withWatchAllNamespaces() {
-      this.namespaces = WATCH_ALL_NAMESPACE_SET;
-      return this;
-    }
-
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> withWatchCurrentNamespace() {
-      this.namespaces = WATCH_CURRENT_NAMESPACE_SET;
-      return this;
-    }
-
-    /**
-     * Whether the associated informer should track changes made to the parent
-     * {@link io.javaoperatorsdk.operator.processing.Controller}'s namespaces configuration.
-     *
-     * @param followChanges {@code true} to reconfigure the associated informer when the parent
-     *        controller's namespaces are reconfigured, {@code false} otherwise
-     * @return the builder instance so that calls can be chained fluently
-     */
-    public InformerConfigurationBuilder<R> followControllerNamespacesOnChange(
-        boolean followChanges) {
-      this.followControllerNamespacesOnChange = followChanges;
-      return this;
-    }
-
-    public InformerConfigurationBuilder<R> withLabelSelector(String labelSelector) {
-      this.labelSelector = labelSelector;
-      return this;
-    }
-
-    public InformerConfigurationBuilder<R> withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
-      this.onAddFilter = onAddFilter;
-      return this;
-    }
-
-    public InformerConfigurationBuilder<R> withOnUpdateFilter(
-        OnUpdateFilter<? super R> onUpdateFilter) {
-      this.onUpdateFilter = onUpdateFilter;
-      return this;
-    }
-
-    public InformerConfigurationBuilder<R> withOnDeleteFilter(
-        OnDeleteFilter<? super R> onDeleteFilter) {
-      this.onDeleteFilter = onDeleteFilter;
-      return this;
-    }
-
-    public InformerConfigurationBuilder<R> withGenericFilter(
-        GenericFilter<? super R> genericFilter) {
-      this.genericFilter = genericFilter;
-      return this;
-    }
-
-    public InformerConfigurationBuilder<R> withItemStore(ItemStore<R> itemStore) {
-      this.itemStore = itemStore;
-      return this;
-    }
-
-    /**
-     * Sets a max page size limit when starting the informer. This will result in pagination while
-     * populating the cache. This means that longer lists will take multiple requests to fetch. See
-     * {@link io.fabric8.kubernetes.client.dsl.Informable#withLimit(Long)} for more details.
-     *
-     * @param informerListLimit null (the default) results in no pagination
-     */
-    public InformerConfigurationBuilder<R> withInformerListLimit(Long informerListLimit) {
-      this.informerListLimit = informerListLimit;
-      return this;
-    }
-
     public String getName() {
       return name;
     }
@@ -308,27 +204,13 @@ public interface InformerConfiguration<R extends HasMetadata>
             "If GroupVersionKind is set the resource type must be GenericKubernetesDependentResource");
       }
 
-      // todo: should use an informer builder directly and share code across similar builders
-      InformerConfigHolder<R> informerConfig = InformerConfigHolder.builder(resourceClass)
-          .withLabelSelector(labelSelector)
-          .withItemStore(itemStore)
-          .withInformerListLimit(informerListLimit)
-          .withFollowControllerNamespacesOnChange(followControllerNamespacesOnChange)
-          .withName(name)
-          .withNamespaces(namespaces)
-          .withOnAddFilter(onAddFilter)
-          .withOnDeleteFilter(onDeleteFilter)
-          .withOnUpdateFilter(onUpdateFilter)
-          .withGenericFilter(genericFilter)
-          .buildForInformerEventSource();
-
       return new DefaultInformerConfiguration<>(resourceClass,
           groupVersionKind,
           primaryToSecondaryMapper,
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceClass),
                   HasMetadata.getKind(primaryResourceClass), false)),
-          informerConfig);
+          config.buildForInformerEventSource());
     }
   }
 }

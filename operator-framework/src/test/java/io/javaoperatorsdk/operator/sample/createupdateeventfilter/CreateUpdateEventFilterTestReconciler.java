@@ -21,29 +21,6 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 public class CreateUpdateEventFilterTestReconciler
     implements Reconciler<CreateUpdateEventFilterTestCustomResource> {
 
-  private static final class DirectConfigMapDependentResource
-      extends
-      CRUDKubernetesDependentResource<ConfigMap, CreateUpdateEventFilterTestCustomResource> {
-
-    private ConfigMap desired;
-
-    private DirectConfigMapDependentResource(Class<ConfigMap> resourceType) {
-      super(resourceType);
-    }
-
-    @Override
-    protected ConfigMap desired(CreateUpdateEventFilterTestCustomResource primary,
-        Context<CreateUpdateEventFilterTestCustomResource> context) {
-      return desired;
-    }
-
-    @Override
-    public void setEventSource(
-        io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> eventSource) {
-      super.setEventSource(eventSource);
-    }
-  }
-
   public static final String CONFIG_MAP_TEST_DATA_KEY = "key";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private final DirectConfigMapDependentResource configMapDR =
@@ -94,7 +71,8 @@ public class CreateUpdateEventFilterTestReconciler
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerConfiguration<ConfigMap> informerConfiguration =
         InformerConfiguration.from(ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
-            .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
+            .withInformerConfiguration(c -> c
+                .withLabelSelector("integrationtest = " + this.getClass().getSimpleName()))
             .build();
     final var informerEventSource = new InformerEventSource<>(informerConfiguration, context);
     this.configMapDR.setEventSource(informerEventSource);
@@ -104,5 +82,28 @@ public class CreateUpdateEventFilterTestReconciler
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
+  }
+
+  private static final class DirectConfigMapDependentResource
+      extends
+      CRUDKubernetesDependentResource<ConfigMap, CreateUpdateEventFilterTestCustomResource> {
+
+    private ConfigMap desired;
+
+    private DirectConfigMapDependentResource(Class<ConfigMap> resourceType) {
+      super(resourceType);
+    }
+
+    @Override
+    protected ConfigMap desired(CreateUpdateEventFilterTestCustomResource primary,
+        Context<CreateUpdateEventFilterTestCustomResource> context) {
+      return desired;
+    }
+
+    @Override
+    public void setEventSource(
+        io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> eventSource) {
+      super.setEventSource(eventSource);
+    }
   }
 }
