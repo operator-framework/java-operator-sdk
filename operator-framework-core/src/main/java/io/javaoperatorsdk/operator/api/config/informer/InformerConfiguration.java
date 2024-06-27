@@ -174,6 +174,7 @@ public interface InformerConfiguration<R extends HasMetadata>
 
     public InformerConfigurationBuilder<R> withName(String name) {
       this.name = name;
+      config.withName(name);
       return this;
     }
 
