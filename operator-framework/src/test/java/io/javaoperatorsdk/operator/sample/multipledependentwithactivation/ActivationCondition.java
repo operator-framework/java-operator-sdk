@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 public class ActivationCondition
     implements Condition<Route, MultipleDependentActivationCustomResource> {
 
-  public static volatile boolean MET = true;
+  public static volatile boolean MET = false;
 
   @Override
   public boolean isMet(

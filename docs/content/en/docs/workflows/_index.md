@@ -48,9 +48,11 @@ reconciliation process.
   with the dependent's resource type is not present on the cluster.
   See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework/src/test/java/io/javaoperatorsdk/operator/CRDPresentActivationConditionIT.java).
 
-  Activation condition is semi-experimental at the moment, and it has its limitations.
-  For example event sources cannot be shared between multiple managed dependent resources which use activation condition.
-  The intention is to further improve and explore the possibilities with this approach.
+  To have multiple resources of same type with an activation condition is a bit tricky, since you
+  don't want to have multiple `InformerEvetnSource` for the same type, you have to explicitly 
+  name the informer for the Dependent Resource (`@KubernetesDependent(informerConfig = @InformerConfig(name = "configMapInformer"))`)
+  for all resource of same type with activation condition. This will make sure that only one is registered.
+  See details at [low level api](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/EventSourceRetriever.java#L20-L52).
 
 ## Defining Workflows
 
