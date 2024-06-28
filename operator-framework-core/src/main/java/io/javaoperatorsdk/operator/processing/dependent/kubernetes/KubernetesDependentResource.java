@@ -38,7 +38,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private final boolean usingCustomResourceUpdateMatcher = this instanceof ResourceUpdaterMatcher;
 
-  private final boolean clustered;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
 
   public KubernetesDependentResource(Class<R> resourceType) {
@@ -53,7 +52,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
   }
-
 
   @SuppressWarnings("unused")
   public R create(R desired, P primary, Context<P> context) {

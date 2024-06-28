@@ -148,8 +148,8 @@ class GenericKubernetesResourceMatcherTest {
         .addNewImagePullSecret("imagePullSecret3")
         .build();
 
-      assertThat(GenericKubernetesResourceMatcher.match(desired, actual, false, false, context)
-              .matched()).isTrue();
+    assertThat(GenericKubernetesResourceMatcher.match(desired, actual, false, false, context)
+        .matched()).isTrue();
   }
 
   @Test
