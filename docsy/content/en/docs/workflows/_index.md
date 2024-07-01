@@ -230,15 +230,14 @@ Notation: The arrows depicts reconciliation ordering, thus following the reverse
 
 #### Reconcile Sample
 
-<div class="mermaid" markdown="0"> 
-
+```mermaid
 stateDiagram-v2
 1 --> 2
 1 --> 3
 2 --> 4
 3 --> 4
+```
 
-</div>
 
 - Root nodes (i.e. nodes that don't depend on any others) are reconciled first. In this example,
   DR `1` is reconciled first since it doesn't depend on others.
@@ -252,15 +251,15 @@ stateDiagram-v2
 
 #### Sample with Reconcile Precondition
 
-<div class="mermaid" markdown="0"> 
-
+ 
+```mermaid
 stateDiagram-v2
 1 --> 2
 1 --> 3
 3 --> 4
 3 --> 5
+```
 
-</div>
 
 - If `3` has a reconcile pre-condition that is not met, `1` and `2` would be reconciled. However,
   DR `3`,`4`,`5` would be deleted: `4` and `5` would be deleted concurrently but `3` would only
@@ -285,16 +284,14 @@ is not met, just for the whole workflow.
    `Deleter` interface, it is considered as deleted automatically.
 
 ### Sample
-
-<div class="mermaid" markdown="0"> 
-
+ 
+```mermaid
 stateDiagram-v2
 1 --> 2
 1 --> 3
 2 --> 4
 3 --> 4
-
-</div>
+```
 
 - The DRs are deleted in the following order: `4` is deleted first, then `2` and `3` are deleted
   concurrently, and, only after both are successfully deleted,  `1` is deleted.
