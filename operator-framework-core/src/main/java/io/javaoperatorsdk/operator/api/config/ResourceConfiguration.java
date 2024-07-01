@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
@@ -103,7 +104,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   static Set<String> ensureValidNamespaces(Collection<String> namespaces) {
     if (namespaces != null && !namespaces.isEmpty()) {
-      return Set.copyOf(namespaces);
+      return namespaces.stream().map(String::trim).collect(Collectors.toSet());
     } else {
       return Constants.DEFAULT_NAMESPACES_SET;
     }

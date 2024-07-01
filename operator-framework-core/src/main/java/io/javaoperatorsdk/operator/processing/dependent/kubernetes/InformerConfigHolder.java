@@ -66,6 +66,15 @@ public class InformerConfigHolder<R extends HasMetadata> {
     return new InformerConfigHolder().builder;
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static <R extends HasMetadata> InformerConfigHolder<R>.Builder builder(
+      InformerConfigHolder<R> original) {
+    return new InformerConfigHolder(original.name, original.namespaces,
+        original.followControllerNamespacesOnChange, original.labelSelector, original.onAddFilter,
+        original.onUpdateFilter, original.onDeleteFilter, original.genericFilter,
+        original.itemStore, original.informerListLimit).builder;
+  }
+
   public String getName() {
     return name;
   }
