@@ -108,12 +108,10 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     return result;
   }
 
-  @Override
   public Set<DependentResourceNode> getTopLevelDependentResources() {
     return topLevelResources;
   }
 
-  @Override
   public Set<DependentResourceNode> getBottomLevelResource() {
     return bottomLevelResource;
   }
@@ -138,6 +136,11 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   @Override
   public boolean isEmpty() {
     return dependentResourceNodes.isEmpty();
+  }
+
+  @Override
+  public int size() {
+    return dependentResourceNodes.size();
   }
 
   @Override

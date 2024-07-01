@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -21,22 +20,16 @@ public interface Workflow<P extends HasMetadata> {
     throw new UnsupportedOperationException("Implement this");
   }
 
-  @SuppressWarnings("rawtypes")
-  default Set<DependentResourceNode> getTopLevelDependentResources() {
-    return Collections.emptySet();
-  }
-
-  @SuppressWarnings("rawtypes")
-  default Set<DependentResourceNode> getBottomLevelResource() {
-    return Collections.emptySet();
-  }
-
   default boolean hasCleaner() {
     return false;
   }
 
   default boolean isEmpty() {
-    return true;
+    return size() == 0;
+  }
+
+  default int size() {
+    return getDependentResourcesByName().size();
   }
 
   @SuppressWarnings("rawtypes")
