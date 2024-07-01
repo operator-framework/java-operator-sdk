@@ -14,7 +14,7 @@ the `Deployment` controller.
 Controllers that deal with secondary resources typically need to perform the following steps, for
 each secondary resource:
 
-<div class="mermaid" markdown="0"> 
+```mermaid
 flowchart TD
 
 compute[Compute desired secondary resource based on primary state] --> A
@@ -25,8 +25,7 @@ A -- No --> Create --> Done
 match{Matches desired state?}
 match -- Yes --> Done
 match -- No --> Update --> Done
-
-</div>
+```
 
 While these steps are not difficult in and of themselves, there are some subtleties that can lead to
 bugs or sub-optimal code if not done right. As this process is pretty much similar for each
