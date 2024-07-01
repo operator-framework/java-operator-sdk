@@ -16,6 +16,18 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 public interface DependentResource<R, P extends HasMetadata> {
 
   /**
+   * Computes a default name for the specified DependentResource class
+   *
+   * @param dependentResourceClass the DependentResource class for which we want to compute a
+   *        default name
+   * @return the default name for the specified DependentResource class
+   */
+  @SuppressWarnings("rawtypes")
+  static String defaultNameFor(Class<? extends DependentResource> dependentResourceClass) {
+    return dependentResourceClass.getName();
+  }
+
+  /**
    * Reconciles the dependent resource given the desired primary state
    *
    * @param primary the primary resource for which we want to reconcile the dependent state
@@ -65,21 +77,23 @@ public interface DependentResource<R, P extends HasMetadata> {
   }
 
   /**
-   * Computes a default name for the specified DependentResource class
+   * Determines whether resources associated with this dependent need explicit handling when
+   * deleted, usually meaning that the dependent implements {@link Deleter}
    *
-   * @param dependentResourceClass the DependentResource class for which we want to compute a
-   *        default name
-   * @return the default name for the specified DependentResource class
+   * @return {@code true} if explicit handling of resource deletion is needed, {@link false}
+   *         otherwise
    */
-  @SuppressWarnings("rawtypes")
-  static String defaultNameFor(Class<? extends DependentResource> dependentResourceClass) {
-    return dependentResourceClass.getName();
-  }
-
   default boolean isDeletable() {
     return this instanceof Deleter;
   }
 
+
+  /**
+   * Retrieves the name identifying this DependentResource implementation, useful to refer to this
+   * in {@link io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow} instances
+   *
+   * @return the name identifying this DependentResource implementation
+   */
   default String name() {
     return defaultNameFor(getClass());
   }

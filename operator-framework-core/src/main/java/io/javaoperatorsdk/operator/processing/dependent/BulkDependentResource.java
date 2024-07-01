@@ -12,6 +12,9 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
  * dependent resource is to manage the number of secondary resources dynamically it implement
  * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
  * implement additionally also {@link Updater}.
+ *
+ * @param <R> the dependent resource type
+ * @param <P> the primary resource type
  */
 public interface BulkDependentResource<R, P extends HasMetadata> {
 

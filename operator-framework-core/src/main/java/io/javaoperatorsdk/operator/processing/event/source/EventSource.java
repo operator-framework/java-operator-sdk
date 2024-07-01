@@ -17,9 +17,17 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
  * Creates an event source to trigger your reconciler whenever something happens to a secondary or
  * external resource that should cause a reconciliation of the primary resource. EventSource
  * generalizes the concept of Informers and extends it to external (i.e. non Kubernetes) resources.
+ *
+ * @param <R> the resource type that this EventSource is associated with
+ * @param <P> the primary resource type which reconciler needs to be triggered when events occur on
+ *        resources of type R
  */
 public interface EventSource<R, P extends HasMetadata>
     extends LifecycleAware, EventSourceHealthIndicator {
+
+  static String generateName(EventSource<?, ?> eventSource) {
+    return eventSource.getClass().getName() + "@" + Integer.toHexString(eventSource.hashCode());
+  }
 
   /**
    * Sets the {@link EventHandler} that is linked to your reconciler when this EventSource is
@@ -29,10 +37,21 @@ public interface EventSource<R, P extends HasMetadata>
    */
   void setEventHandler(EventHandler handler);
 
+  /**
+   * Retrieves the EventSource's name so that it can be referred to
+   *
+   * @return the EventSource's name
+   */
   default String name() {
     return generateName(this);
   }
 
+  /**
+   * Retrieves the EventSource's starting priority
+   *
+   * @return the EventSource's starting priority
+   * @see EventSourceStartPriority
+   */
   default EventSourceStartPriority priority() {
     return EventSourceStartPriority.DEFAULT;
   }
@@ -44,6 +63,15 @@ public interface EventSource<R, P extends HasMetadata>
    */
   Class<R> resourceType();
 
+  /**
+   * Retrieves the optional <em>unique</em> secondary resource associated with the specified primary
+   * resource. Note that this operation will fail if multiple resources are associated with the
+   * specified primary resource.
+   * 
+   * @param primary the primary resource for which the secondary resource is requested
+   * @return the secondary resource associated with the specified primary resource
+   * @throws IllegalStateException if multiple resources are associated with the primary one
+   */
   default Optional<R> getSecondaryResource(P primary) {
     var resources = getSecondaryResources(primary);
     if (resources.isEmpty()) {
@@ -55,6 +83,13 @@ public interface EventSource<R, P extends HasMetadata>
     }
   }
 
+  /**
+   * Retrieves a potential empty set of resources tracked by this EventSource associated with the
+   * specified primary resource
+   * 
+   * @param primary the primary resource for which the secondary resource is requested
+   * @return the set of secondary resources associated with the specified primary
+   */
   Set<R> getSecondaryResources(P primary);
 
   void setOnAddFilter(OnAddFilter<? super R> onAddFilter);
@@ -68,9 +103,5 @@ public interface EventSource<R, P extends HasMetadata>
   @Override
   default Status getStatus() {
     return Status.UNKNOWN;
-  }
-
-  static String generateName(EventSource<?, ?> eventSource) {
-    return eventSource.getClass().getName() + "@" + Integer.toHexString(eventSource.hashCode());
   }
 }
