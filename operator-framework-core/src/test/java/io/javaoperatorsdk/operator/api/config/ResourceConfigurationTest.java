@@ -6,11 +6,16 @@ import java.util.Set;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ResourceConfigurationTest {
+
+  public static final ResourceConfiguration<HasMetadata> DEFAULT =
+      () -> InformerConfigHolder.builder().buildForInformerEventSource();
 
   @Test
   void allNamespacesWatched() {
@@ -46,14 +51,14 @@ class ResourceConfigurationTest {
 
   @Test
   void nullLabelSelectorByDefault() {
-    assertNull(new ResourceConfiguration<>() {}.getLabelSelector());
+    assertNull(DEFAULT.getLabelSelector());
   }
 
   // todo: fix me
   @Disabled
   @Test
   void shouldWatchAllNamespacesByDefault() {
-    assertTrue(new ResourceConfiguration<>() {}.watchAllNamespaces());
+    assertTrue(DEFAULT.watchAllNamespaces());
   }
 
   @Test

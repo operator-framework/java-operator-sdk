@@ -26,9 +26,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
-  default InformerConfigHolder<R> getInformerConfig() {
-    return InformerConfigHolder.DEFAULT_EVENT_SOURCE_CONFIG;
-  }
+  InformerConfigHolder<R> getInformerConfig();
 
   default Optional<OnAddFilter<? super R>> onAddFilter() {
     return Optional.ofNullable(getInformerConfig().getOnAddFilter());
