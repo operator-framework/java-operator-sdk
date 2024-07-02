@@ -4,17 +4,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata>
-    implements Matcher<R, P> {
+public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends HasMetadata> {
 
   private static final String SPEC = "/spec";
   private static final String METADATA = "/metadata";
@@ -26,40 +23,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
 
   private static final String PATH = "path";
   private static final String[] EMPTY_ARRAY = {};
-  private final KubernetesDependentResource<R, P> dependentResource;
 
-  private GenericKubernetesResourceMatcher(KubernetesDependentResource<R, P> dependentResource) {
-    this.dependentResource = dependentResource;
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes", "unused"})
-  static <R extends HasMetadata, P extends HasMetadata> Matcher<R, P> matcherFor(
-      KubernetesDependentResource<R, P> dependentResource) {
-    return new GenericKubernetesResourceMatcher(dependentResource);
-  }
-
-  /**
-   * {@inheritDoc}
-   * <p>
-   * This implementation attempts to cover most common cases out of the box by considering
-   * non-additive changes to the resource's spec (if the resource in question has a {@code spec}
-   * field), making special provisions for {@link ConfigMap} and {@link Secret} resources. Additive
-   * changes (i.e. a field is added that previously didn't exist) are not considered as triggering a
-   * mismatch by default to account for validating webhooks that might add default values
-   * automatically when not present or some other controller adding labels and/or annotations.
-   * </p>
-   * <p>
-   * It should be noted that this implementation is potentially intensive because it generically
-   * attempts to cover common use cases by performing diffs on the JSON representation of objects.
-   * If performance is a concern, it might be easier / simpler to provide a {@link Matcher}
-   * implementation optimized for your use case.
-   * </p>
-   */
-  @Override
-  public Result<R> match(R actualResource, P primary, Context<P> context) {
-    var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource, false, false, context);
-  }
 
   /**
    * Determines whether the specified actual resource matches the specified desired resource,
@@ -84,12 +48,18 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @param <R> resource
    * @return results of matching
    */
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
       R actualResource,
       boolean labelsAndAnnotationsEquality,
       boolean valuesEquality, Context<P> context) {
     return match(desired, actualResource,
         labelsAndAnnotationsEquality, valuesEquality, context, EMPTY_ARRAY);
+  }
+
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
+      R actualResource, Context<P> context) {
+    return match(desired, actualResource,
+        false, false, context, EMPTY_ARRAY);
   }
 
   /**
@@ -108,7 +78,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @param <R> resource
    * @return results of matching
    */
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
       R actualResource,
       boolean labelsAndAnnotationsEquality,
       Context<P> context, String... ignorePaths) {
@@ -139,7 +109,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    *        match fails.
    * @return a {@link io.javaoperatorsdk.operator.processing.dependent.Matcher.Result} object
    */
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context,
       boolean labelsAndAnnotationsEquality,
@@ -150,7 +120,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
         ignorePaths);
   }
 
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
       Context<P> context,
       boolean specEquality,
@@ -161,7 +131,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
         labelsAndAnnotationsEquality, specEquality, context, ignorePaths);
   }
 
-  public static <R extends HasMetadata, P extends HasMetadata> Result<R> match(R desired,
+  public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
       R actualResource, boolean labelsAndAnnotationsEquality, boolean valuesEquality,
       Context<P> context,
       String... ignoredPaths) {
@@ -194,7 +164,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       }
     }
 
-    return Result.computed(matched, desired);
+    return Matcher.Result.computed(matched, desired);
   }
 
   private static boolean match(boolean equality, JsonNode diff,
