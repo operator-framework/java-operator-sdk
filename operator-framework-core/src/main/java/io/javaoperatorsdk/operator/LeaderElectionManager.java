@@ -61,7 +61,7 @@ public class LeaderElectionManager {
       throw new IllegalArgumentException(message);
     }
     leaseName = config.getLeaseName();
-    final var lock = new LeaseLock(leaseNamespace, config.getLeaseName(), identity);
+    final var lock = new LeaseLock(leaseNamespace, leaseName, identity);
     leaderElector = new LeaderElectorBuilder(
         configurationService.getKubernetesClient(),
         configurationService.getExecutorServiceManager().cachingExecutorService())
@@ -75,7 +75,7 @@ public class LeaderElectionManager {
                 // this is required to be false to receive stop event in all cases, thus stopLeading
                 // is called always when leadership is lost/cancelled
                 false,
-                config.getLeaseName()))
+                leaseName))
         .build();
   }
 
