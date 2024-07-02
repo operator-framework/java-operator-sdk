@@ -39,7 +39,7 @@ public class SpecialResourcesDependentIT {
     });
 
     resource.getSpec().setValue(CHANGED_VALUE);
-    extension.replace(resource);
+    extension.createOrUpdate(resource);
 
     await().untilAsserted(() -> {
       var sa = extension.get(ServiceAccount.class, RESOURCE_NAME);

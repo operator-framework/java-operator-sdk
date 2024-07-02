@@ -66,7 +66,7 @@ public class WorkflowAllFeatureIT {
     });
 
     resource.getSpec().setCreateConfigMap(true);
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
 
     await().untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
@@ -109,7 +109,7 @@ public class WorkflowAllFeatureIT {
       cm.getMetadata().setAnnotations(new HashMap<>());
     }
     cm.getMetadata().getAnnotations().put(READY_TO_DELETE_ANNOTATION, "true");
-    operator.replace(cm);
+    operator.createOrUpdate(cm);
   }
 
   private WorkflowAllFeatureCustomResource customResource(boolean createConfigMap) {
