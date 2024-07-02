@@ -1,29 +1,17 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher;
+package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 
-public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
-    ResourceUpdaterMatcher<R> {
+public class GenericResourceUpdater {
 
   private static final String METADATA = "metadata";
-  private static final ResourceUpdaterMatcher<?> INSTANCE = new GenericResourceUpdaterMatcher<>();
-
-  protected GenericResourceUpdaterMatcher() {}
 
   @SuppressWarnings("unchecked")
-  public static <R extends HasMetadata> ResourceUpdaterMatcher<R> updaterMatcherFor() {
-    return (ResourceUpdaterMatcher<R>) INSTANCE;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public R updateResource(R actual, R desired, Context<?> context) {
+  public static <R extends HasMetadata> R updateResource(R actual, R desired, Context<?> context) {
     KubernetesSerialization kubernetesSerialization =
         context.getClient().getKubernetesSerialization();
     Map<String, Object> actualMap = kubernetesSerialization.convertValue(actual, Map.class);
@@ -38,12 +26,6 @@ public class GenericResourceUpdaterMatcher<R extends HasMetadata> implements
     var clonedActual = (R) kubernetesSerialization.convertValue(actualMap, desired.getClass());
     updateLabelsAndAnnotation(clonedActual, desired);
     return clonedActual;
-  }
-
-  @Override
-  public boolean matches(R actual, R desired, Context<?> context) {
-    return GenericKubernetesResourceMatcher.match(desired, actual,
-        false, false, context).matched();
   }
 
   public static <K extends HasMetadata> void updateLabelsAndAnnotation(K actual, K desired) {
