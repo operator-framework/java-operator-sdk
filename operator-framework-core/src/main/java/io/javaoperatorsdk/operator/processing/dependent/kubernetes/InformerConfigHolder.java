@@ -18,12 +18,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
 
 @SuppressWarnings("unused")
 public class InformerConfigHolder<R extends HasMetadata> {
-  @SuppressWarnings("rawtypes")
-  public static final InformerConfigHolder DEFAULT_CONTROLLER_CONFIG =
-      InformerConfigHolder.builder().buildForController();
-  @SuppressWarnings("rawtypes")
-  public static final InformerConfigHolder DEFAULT_EVENT_SOURCE_CONFIG =
-      InformerConfigHolder.builder().buildForInformerEventSource();
   private final Builder builder = new Builder();
   private String name;
   private Set<String> namespaces;
