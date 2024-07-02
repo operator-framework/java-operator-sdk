@@ -10,51 +10,46 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
 @SuppressWarnings({"rawtypes", "unused", "UnusedReturnValue"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
+  private final ControllerConfiguration<R> original;
+  private String name;
   private String finalizer;
   private boolean generationAware;
-  private Set<String> namespaces;
   private Retry retry;
-  private String labelSelector;
-  private final ControllerConfiguration<R> original;
-  private Duration reconciliationMaxInterval;
-  private OnAddFilter<? super R> onAddFilter;
-  private OnUpdateFilter<? super R> onUpdateFilter;
-  private GenericFilter<? super R> genericFilter;
   private RateLimiter rateLimiter;
-  private Map<DependentResourceSpec, Object> configurations;
-  private ItemStore<R> itemStore;
-  private String name;
   private String fieldManager;
-  private Long informerListLimit;
+  private Duration reconciliationMaxInterval;
+  private Map<DependentResourceSpec, Object> configurations;
+  private final InformerConfigHolder<R>.Builder config;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
     this.generationAware = original.isGenerationAware();
-    this.namespaces = new HashSet<>(original.getNamespaces());
+    this.config = InformerConfigHolder.builder(original.getResourceClass())
+        .withName(name)
+        .withNamespaces(original.getNamespaces())
+        .withLabelSelector(original.getLabelSelector())
+        .withOnAddFilter(original.onAddFilter().orElse(null))
+        .withOnUpdateFilter(original.onUpdateFilter().orElse(null))
+        .withGenericFilter(original.genericFilter().orElse(null))
+        .withInformerListLimit(original.getInformerListLimit().orElse(null))
+        .withItemStore(original.getItemStore().orElse(null));
     this.retry = original.getRetry();
-    this.labelSelector = original.getLabelSelector();
     this.reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
-    this.onAddFilter = original.onAddFilter().orElse(null);
-    this.onUpdateFilter = original.onUpdateFilter().orElse(null);
-    this.genericFilter = original.genericFilter().orElse(null);
     this.original = original;
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
-    this.informerListLimit = original.getInformerListLimit().orElse(null);
-    this.itemStore = original.getItemStore().orElse(null);
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -68,26 +63,36 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> watchingOnlyCurrentNamespace() {
-    this.namespaces = WATCH_CURRENT_NAMESPACE_SET;
+    config.withWatchCurrentNamespace();
     return this;
   }
 
   public ControllerConfigurationOverrider<R> addingNamespaces(String... namespaces) {
-    this.namespaces.addAll(List.of(namespaces));
+    if (namespaces != null && namespaces.length > 0) {
+      final var current = config.namespaces();
+      final var aggregated = new HashSet<String>(current.size() + namespaces.length);
+      aggregated.addAll(current);
+      aggregated.addAll(Set.of(namespaces));
+      config.withNamespaces(aggregated);
+    }
     return this;
   }
 
   public ControllerConfigurationOverrider<R> removingNamespaces(String... namespaces) {
-    List.of(namespaces).forEach(this.namespaces::remove);
-    if (this.namespaces.isEmpty()) {
-      this.namespaces = DEFAULT_NAMESPACES_SET;
+    if (namespaces != null && namespaces.length > 0) {
+      final var current = new HashSet<>(config.namespaces());
+      List.of(namespaces).forEach(current::remove);
+      if (current.isEmpty()) {
+        return watchingAllNamespaces();
+      } else {
+        config.withNamespaces(current);
+      }
     }
     return this;
   }
 
   public ControllerConfigurationOverrider<R> settingNamespaces(Set<String> newNamespaces) {
-    this.namespaces.clear();
-    this.namespaces.addAll(newNamespaces);
+    config.withNamespaces(newNamespaces);
     return this;
   }
 
@@ -96,13 +101,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> settingNamespace(String namespace) {
-    this.namespaces.clear();
-    this.namespaces.add(namespace);
+    config.withNamespaces(Set.of(namespace));
     return this;
   }
 
   public ControllerConfigurationOverrider<R> watchingAllNamespaces() {
-    this.namespaces = DEFAULT_NAMESPACES_SET;
+    config.withWatchAllNamespaces();
     return this;
   }
 
@@ -117,7 +121,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> withLabelSelector(String labelSelector) {
-    this.labelSelector = labelSelector;
+    config.withLabelSelector(labelSelector);
     return this;
   }
 
@@ -128,27 +132,28 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfigurationOverrider<R> withOnAddFilter(OnAddFilter<R> onAddFilter) {
-    this.onAddFilter = onAddFilter;
+    config.withOnAddFilter(onAddFilter);
     return this;
   }
 
   public ControllerConfigurationOverrider<R> withOnUpdateFilter(OnUpdateFilter<R> onUpdateFilter) {
-    this.onUpdateFilter = onUpdateFilter;
+    config.withOnUpdateFilter(onUpdateFilter);
     return this;
   }
 
   public ControllerConfigurationOverrider<R> withGenericFilter(GenericFilter<R> genericFilter) {
-    this.genericFilter = genericFilter;
+    config.withGenericFilter(genericFilter);
     return this;
   }
 
   public ControllerConfigurationOverrider<R> withItemStore(ItemStore<R> itemStore) {
-    this.itemStore = itemStore;
+    config.withItemStore(itemStore);
     return this;
   }
 
   public ControllerConfigurationOverrider<R> withName(String name) {
     this.name = name;
+    config.withName(name);
     return this;
   }
 
@@ -168,7 +173,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
    */
   public ControllerConfigurationOverrider<R> withInformerListLimit(
       Long informerListLimit) {
-    this.informerListLimit = informerListLimit;
+    config.withInformerListLimit(informerListLimit);
     return this;
   }
 
@@ -192,9 +197,10 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return new ResolvedControllerConfiguration<>(original.getResourceClass(),
         name,
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
-        reconciliationMaxInterval, onAddFilter, onUpdateFilter, genericFilter,
-        namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        original.getConfigurationService(), informerListLimit,
+        reconciliationMaxInterval,
+        finalizer, configurations, fieldManager,
+        original.getConfigurationService(),
+        config.buildForController(),
         original.getWorkflowSpec().orElse(null));
   }
 

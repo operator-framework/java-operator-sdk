@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
@@ -105,7 +106,7 @@ class BaseConfigurationServiceTest {
     var config = configFor(reconciler);
 
     assertThat(config.getName()).isEqualTo(ReconcilerUtils.getNameFor(reconciler));
-    assertThat(config.getLabelSelector()).isEmpty();
+    assertThat(config.getLabelSelector()).isNull();
     assertThat(config.getRetry()).isInstanceOf(GenericRetry.class);
     assertThat(config.getRateLimiter()).isInstanceOf(LinearRateLimiter.class);
     assertThat(config.maxReconciliationInterval()).hasValue(Duration.ofHours(DEFAULT_INTERVAL));
@@ -244,7 +245,8 @@ class BaseConfigurationServiceTest {
   }
 
   @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class))
-  @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS)
+  @ControllerConfiguration(
+      informerConfig = @InformerConfig(namespaces = OneDepReconciler.CONFIGURED_NS))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "foo";

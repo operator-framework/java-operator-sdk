@@ -175,11 +175,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public ResourceConfiguration<R> getInformerConfiguration() {
-    return configuration();
-  }
-
-  @Override
   public C configuration() {
     return configuration;
   }
