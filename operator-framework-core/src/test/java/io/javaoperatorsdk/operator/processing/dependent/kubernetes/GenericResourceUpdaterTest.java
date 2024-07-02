@@ -14,14 +14,13 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.updatermatcher.GenericResourceUpdaterMatcher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("rawtypes")
-class GenericResourceUpdaterMatcherTest {
+class GenericResourceUpdaterTest {
 
   private static final Context context = mock(Context.class);
 
@@ -40,7 +39,6 @@ class GenericResourceUpdaterMatcherTest {
 
   @Test
   void preservesValues() {
-    var processor = GenericResourceUpdaterMatcher.<Deployment>updaterMatcherFor();
     var desired = createDeployment();
     var actual = createDeployment();
     actual.getMetadata().setLabels(new HashMap<>());
@@ -48,7 +46,7 @@ class GenericResourceUpdaterMatcherTest {
     actual.getMetadata().setResourceVersion("1234");
     actual.getSpec().setRevisionHistoryLimit(5);
 
-    var result = processor.updateResource(actual, desired, context);
+    var result = GenericResourceUpdater.updateResource(actual, desired, context);
 
     assertThat(result.getMetadata().getLabels().get("additionalActualKey")).isEqualTo("value");
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("1234");
@@ -57,27 +55,26 @@ class GenericResourceUpdaterMatcherTest {
 
   @Test
   void checkNamespaces() {
-    var processor = GenericResourceUpdaterMatcher.<Namespace>updaterMatcherFor();
     var desired = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
     var actual = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
     actual.getMetadata().setLabels(new HashMap<>());
     actual.getMetadata().getLabels().put("additionalActualKey", "value");
     actual.getMetadata().setResourceVersion("1234");
 
-    var result = processor.updateResource(actual, desired, context);
+    var result = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(result.getMetadata().getLabels().get("additionalActualKey")).isEqualTo("value");
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("1234");
 
     desired.setSpec(new NamespaceSpec(List.of("halkyon.io/finalizer")));
 
-    result = processor.updateResource(actual, desired, context);
+    result = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(result.getMetadata().getLabels().get("additionalActualKey")).isEqualTo("value");
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("1234");
     assertThat(result.getSpec().getFinalizers()).containsExactly("halkyon.io/finalizer");
 
     desired = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
 
-    result = processor.updateResource(actual, desired, context);
+    result = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(result.getMetadata().getLabels().get("additionalActualKey")).isEqualTo("value");
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("1234");
     assertThat(result.getSpec()).isNull();
@@ -85,7 +82,6 @@ class GenericResourceUpdaterMatcherTest {
 
   @Test
   void checkSecret() {
-    var processor = GenericResourceUpdaterMatcher.<Secret>updaterMatcherFor();
     var desired =
         new SecretBuilder()
             .withMetadata(new ObjectMeta())
@@ -94,15 +90,14 @@ class GenericResourceUpdaterMatcherTest {
         .withMetadata(new ObjectMeta())
         .build();
 
-    final var secret = processor.updateResource(actual, desired, context);
+    final var secret = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(secret.getImmutable()).isTrue();
     assertThat(secret.getType()).isEqualTo("Opaque");
     assertThat(secret.getData()).containsOnlyKeys("foo");
   }
 
   @Test
-  void checkSeviceAccount() {
-    var processor = GenericResourceUpdaterMatcher.<ServiceAccount>updaterMatcherFor();
+  void checkServiceAccount() {
     var desired = new ServiceAccountBuilder()
         .withMetadata(new ObjectMetaBuilder().addToLabels("new", "label").build())
         .build();
@@ -111,7 +106,7 @@ class GenericResourceUpdaterMatcherTest {
         .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("secret").build())
         .build();
 
-    final var serviceAccount = processor.updateResource(actual, desired, context);
+    final var serviceAccount = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(serviceAccount.getMetadata().getLabels())
         .isEqualTo(Map.of("a", "label", "new", "label"));
     assertThat(serviceAccount.getImagePullSecrets()).isNullOrEmpty();
@@ -119,7 +114,7 @@ class GenericResourceUpdaterMatcherTest {
 
   Deployment createDeployment() {
     return ReconcilerUtils.loadYaml(
-        Deployment.class, GenericResourceUpdaterMatcherTest.class, "nginx-deployment.yaml");
+        Deployment.class, GenericResourceUpdaterTest.class, "nginx-deployment.yaml");
   }
 
 }
