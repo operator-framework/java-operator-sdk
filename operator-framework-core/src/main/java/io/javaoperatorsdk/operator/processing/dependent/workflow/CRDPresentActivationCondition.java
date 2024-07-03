@@ -16,7 +16,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
  * even used in multiple condition. By default, it checks CRD at most 10 times with a delay at least
  * 10 seconds. To fully customize CRD check trigger behavior you can extend this class and override
  * the {@link CRDPresentActivationCondition#shouldCheckStateNow(CRDCheckState)} method.
- **/
+ *
+ * @param <R> the resource type associated with the CRD to check for presence
+ * @param <P> the primary resource type associated with the reconciler processing dependents
+ *        associated with this condition
+ */
 public class CRDPresentActivationCondition<R extends HasMetadata, P extends HasMetadata>
     implements Condition<R, P> {
 
