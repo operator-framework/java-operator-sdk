@@ -16,6 +16,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+/**
+ * An abstract implementation of {@link DependentResource} to be used as base for custom
+ * implementations, providing, in particular, the core {@link #reconcile(HasMetadata, Context)}
+ * logic for dependents
+ * 
+ * @param <R> the dependent resource type
+ * @param <P> the associated primary resource type
+ */
 @Ignore
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
     implements DependentResource<R, P>, NameSetter {
@@ -24,18 +32,16 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
   private final boolean deletable = this instanceof Deleter;
-
+  private final DependentResourceReconciler<R, P> dependentResourceReconciler;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  private final DependentResourceReconciler<R, P> dependentResourceReconciler;
-
   protected String name;
 
-  @SuppressWarnings({"unchecked"})
   protected AbstractDependentResource() {
     this(null);
   }
 
+  @SuppressWarnings("unchecked")
   protected AbstractDependentResource(String name) {
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
@@ -120,7 +126,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * secondary candidates for equality with the specified desired state, which might end up costly.
    *
    * @param secondaryResources to select the target resource from
-   *
+   * @param primary the primary resource
+   * @param context the context in which this method is called
    * @return the matching secondary resource or {@link Optional#empty()} if none matches
    * @throws IllegalStateException if more than one candidate is found, in which case some other
    *         mechanism might be necessary to distinguish between candidate secondary resources
