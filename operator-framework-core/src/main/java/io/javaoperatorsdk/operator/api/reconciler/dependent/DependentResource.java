@@ -80,7 +80,7 @@ public interface DependentResource<R, P extends HasMetadata> {
    * Determines whether resources associated with this dependent need explicit handling when
    * deleted, usually meaning that the dependent implements {@link Deleter}
    *
-   * @return {@code true} if explicit handling of resource deletion is needed, {@link false}
+   * @return {@code true} if explicit handling of resource deletion is needed, {@code false}
    *         otherwise
    */
   default boolean isDeletable() {
