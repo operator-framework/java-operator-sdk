@@ -10,6 +10,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
+/**
+ * An abstract implementation of {@link ConfigurationService} meant to ease custom implementations
+ */
 @SuppressWarnings("rawtypes")
 public class AbstractConfigurationService implements ConfigurationService {
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
@@ -18,11 +21,11 @@ public class AbstractConfigurationService implements ConfigurationService {
   private Cloner cloner;
   private ExecutorServiceManager executorServiceManager;
 
-  public AbstractConfigurationService(Version version) {
+  protected AbstractConfigurationService(Version version) {
     this(version, null);
   }
 
-  public AbstractConfigurationService(Version version, Cloner cloner) {
+  protected AbstractConfigurationService(Version version, Cloner cloner) {
     this(version, cloner, null, null);
   }
 
