@@ -104,7 +104,7 @@ class WorkflowResult {
     }
 
     DetailBuilder<R> withResultForCondition(
-        DependentResourceNode.ConditionWithType conditionWithType,
+        ConditionWithType conditionWithType,
         ResultCondition.Result conditionResult) {
       switch (conditionWithType.type()) {
         case ACTIVATION -> activationConditionResult = conditionResult;

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
@@ -19,32 +18,6 @@ class DependentResourceNode<R, P extends HasMetadata> {
   private ConditionWithType<R, P, ?> readyPostcondition;
   private ConditionWithType<R, P, ?> activationCondition;
   private final DependentResource<R, P> dependentResource;
-
-  static class ConditionWithType<R, P extends HasMetadata, T> implements ResultCondition<R, P, T> {
-    private final Condition<R, P> condition;
-    private final Type type;
-
-    ConditionWithType(Condition<R, P> condition, Type type) {
-      this.condition = condition;
-      this.type = type;
-    }
-
-    public Type type() {
-      return type;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public Result<T> detailedIsMet(DependentResource<R, P> dependentResource, P primary,
-        Context<P> context) {
-      if (condition instanceof ResultCondition resultCondition) {
-        return resultCondition.detailedIsMet(dependentResource, primary, context);
-      } else {
-        return ResultCondition.Result
-            .withoutResult(condition.isMet(dependentResource, primary, context));
-      }
-    }
-  }
 
   DependentResourceNode(DependentResource<R, P> dependentResource) {
     this(null, null, null, null, dependentResource);

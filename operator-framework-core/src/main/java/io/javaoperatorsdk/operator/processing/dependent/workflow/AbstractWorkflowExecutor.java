@@ -134,7 +134,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   protected <R> boolean isConditionMet(
-      Optional<DependentResourceNode.ConditionWithType<R, P, ?>> condition,
+      Optional<ConditionWithType<R, P, ?>> condition,
       DependentResourceNode<R, P> dependentResource) {
     final var dr = dependentResource.getDependentResource();
     return condition.map(c -> {
