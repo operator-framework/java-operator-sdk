@@ -8,7 +8,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowReconcileResult extends WorkflowResult {
-  private Boolean allDependentsReady;
 
   WorkflowReconcileResult(Map<DependentResource, Detail<?>> results) {
     super(results);
@@ -28,9 +27,6 @@ public class WorkflowReconcileResult extends WorkflowResult {
   }
 
   public boolean allDependentResourcesReady() {
-    if (allDependentsReady == null) {
-      allDependentsReady = getNotReadyDependents().isEmpty();
-    }
-    return allDependentsReady;
+    return getNotReadyDependents().isEmpty();
   }
 }
