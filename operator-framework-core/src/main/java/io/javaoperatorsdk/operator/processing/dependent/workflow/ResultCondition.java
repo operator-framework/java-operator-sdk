@@ -12,43 +12,18 @@ public interface ResultCondition<R, P extends HasMetadata, T> extends Condition<
     return detailedIsMet(dependentResource, primary, context).isSuccess();
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   interface Result<T> {
-    Result metWithoutResult = new Result() {
-      @Override
-      public Object getResult() {
-        return null;
-      }
+    ResultCondition.Result metWithoutResult = new DefaultResult(true, null);
 
-      @Override
-      public boolean isSuccess() {
-        return true;
-      }
-
-      @Override
-      public String toString() {
-        return asString();
-      }
-    };
-
-    Result unmetWithoutResult = new Result() {
-      @Override
-      public Object getResult() {
-        return null;
-      }
-
-      @Override
-      public boolean isSuccess() {
-        return false;
-      }
-
-      @Override
-      public String toString() {
-        return asString();
-      }
-    };
+    ResultCondition.Result unmetWithoutResult = new DefaultResult(false, null);
 
     static Result withoutResult(boolean success) {
       return success ? metWithoutResult : unmetWithoutResult;
+    }
+
+    static <T> Result<T> withResult(boolean success, T result) {
+      return new DefaultResult<>(success, result);
     }
 
     default String asString() {
