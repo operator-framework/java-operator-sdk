@@ -35,6 +35,40 @@ class WorkflowResult {
   }
 
   /**
+   * Retrieves the {@link DependentResource} associated with the specified name if it exists,
+   * {@link Optional#empty()} otherwise.
+   * 
+   * @param name the name of the {@link DependentResource} to retrieve
+   * @return the {@link DependentResource} associated with the specified name if it exists,
+   *         {@link Optional#empty()} otherwise
+   */
+  public Optional<DependentResource> getDependentResourceByName(String name) {
+    if (name == null || name.isEmpty()) {
+      return Optional.empty();
+    }
+    return results.keySet().stream().filter(dr -> dr.name().equals(name)).findFirst();
+  }
+
+  /**
+   * Retrieves the optional result of the condition with the specified type for the specified
+   * dependent resource.
+   *
+   * @param <T> the expected result type of the condition
+   * @param dependentResourceName the dependent resource for which we want to retrieve a condition
+   *        result
+   * @param conditionType the condition type which result we're interested in
+   * @param expectedResultType the expected result type of the condition
+   * @return the dependent condition result if it exists or {@link Optional#empty()} otherwise
+   * @throws IllegalArgumentException if a result exists but is not of the expected type
+   */
+  public <T> Optional<T> getDependentConditionResult(String dependentResourceName,
+      Condition.Type conditionType, Class<T> expectedResultType) {
+    return getDependentConditionResult(
+        getDependentResourceByName(dependentResourceName).orElse(null), conditionType,
+        expectedResultType);
+  }
+
+  /**
    * Retrieves the optional result of the condition with the specified type for the specified
    * dependent resource.
    *
@@ -48,6 +82,10 @@ class WorkflowResult {
    */
   public <T> Optional<T> getDependentConditionResult(DependentResource dependentResource,
       Condition.Type conditionType, Class<T> expectedResultType) {
+    if (dependentResource == null) {
+      return Optional.empty();
+    }
+
     final var result = new Object[1];
     try {
       return Optional.ofNullable(results().get(dependentResource))
