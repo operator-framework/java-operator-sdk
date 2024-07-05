@@ -7,6 +7,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -184,8 +185,18 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void simpleReconcileCondition() {
+    final var result = "Some error message";
+    final var unmetWithResult = new ResultCondition<ConfigMap, TestCustomResource, String>() {
+      @Override
+      public Result<String> detailedIsMet(
+          DependentResource<ConfigMap, TestCustomResource> dependentResource,
+          TestCustomResource primary, Context<TestCustomResource> context) {
+        return Result.withResult(false, result);
+      }
+    };
+
     var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dr1).withReconcilePrecondition(notMetCondition)
+        .addDependentResource(dr1).withReconcilePrecondition(unmetWithResult)
         .addDependentResource(dr2).withReconcilePrecondition(metCondition)
         .addDependentResource(drDeleter).withReconcilePrecondition(notMetCondition)
         .build();
@@ -196,6 +207,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     Assertions.assertThat(res.getErroredDependents()).isEmpty();
     Assertions.assertThat(res.getReconciledDependents()).containsExactlyInAnyOrder(dr2);
     Assertions.assertThat(res.getNotReadyDependents()).isEmpty();
+    res.getDependentConditionResult(dr1, Condition.Type.RECONCILE, String.class)
+        .ifPresentOrElse(s -> assertEquals(result, s), org.junit.jupiter.api.Assertions::fail);
   }
 
 
