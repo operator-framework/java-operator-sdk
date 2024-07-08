@@ -2,17 +2,13 @@ package io.javaoperatorsdk.operator.sample.builtinresourcecleaner;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
-@ControllerConfiguration(labelSelector = "builtintest=true")
+@ControllerConfiguration(informerConfig = @InformerConfig(labelSelector = "builtintest=true"))
 public class ObservedGenerationTestReconciler
     implements Reconciler<Service>, Cleaner<Service> {
-
-  private static final Logger log = LoggerFactory.getLogger(ObservedGenerationTestReconciler.class);
 
   private final AtomicInteger reconciled = new AtomicInteger(0);
   private final AtomicInteger cleaned = new AtomicInteger(0);
