@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
@@ -70,7 +71,8 @@ public class JobReconciler
                 .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
                     cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
-            .withNamespacesInheritedFromController();
+            .withInformerConfiguration(
+                InformerConfigHolder.Builder::withNamespacesInheritedFromController);
 
     if (addPrimaryToSecondaryMapper) {
       informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
