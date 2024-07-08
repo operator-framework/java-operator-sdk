@@ -50,7 +50,7 @@ class WorkflowTest {
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
         .addDependentResource(dr2).dependsOn(dr1)
-        .build();
+        .buildAsDefaultWorkflow();
 
     Set<DependentResource> topResources =
         workflow.getTopLevelDependentResources().stream()
@@ -66,11 +66,11 @@ class WorkflowTest {
     var dr2 = mockDependent("dr2");
     var independentDR = mockDependent("independentDR");
 
-    Workflow<TestCustomResource> workflow = new WorkflowBuilder<TestCustomResource>()
+    final var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
         .addDependentResource(dr2).dependsOn(dr1)
-        .build();
+        .buildAsDefaultWorkflow();
 
     Set<DependentResource> bottomResources =
         workflow.getBottomLevelResource().stream()
