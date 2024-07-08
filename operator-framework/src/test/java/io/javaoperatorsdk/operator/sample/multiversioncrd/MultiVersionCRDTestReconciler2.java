@@ -7,8 +7,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
-@ControllerConfiguration(labelSelector = "version in (v2)")
+@ControllerConfiguration(informerConfig = @InformerConfig(labelSelector = "version in (v2)"))
 public class MultiVersionCRDTestReconciler2
     implements Reconciler<MultiVersionCRDTestCustomResource2> {
 
