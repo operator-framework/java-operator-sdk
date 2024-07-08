@@ -7,11 +7,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(onUpdateFilter = UpdateFilter.class)
+@ControllerConfiguration(informerConfig = @InformerConfig(onUpdateFilter = UpdateFilter.class))
 public class FilterTestReconciler
     implements Reconciler<FilterTestCustomResource> {
 
@@ -52,12 +57,14 @@ public class FilterTestReconciler
   public List<EventSource<?, FilterTestCustomResource>> prepareEventSources(
       EventSourceContext<FilterTestCustomResource> context) {
 
+    final var informerConfiguration = InformerConfiguration
+        .from(ConfigMap.class, FilterTestCustomResource.class)
+        .withInformerConfiguration(c -> c.withOnUpdateFilter((newCM,
+            oldCM) -> !newCM.getData().get(CM_VALUE_KEY)
+                .equals(CONFIG_MAP_FILTER_VALUE)))
+        .build();
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
-        new InformerEventSource<>(InformerConfiguration
-            .from(ConfigMap.class, FilterTestCustomResource.class)
-            .withOnUpdateFilter((newCM, oldCM) -> !newCM.getData().get(CM_VALUE_KEY)
-                .equals(CONFIG_MAP_FILTER_VALUE))
-            .build(), context);
+        new InformerEventSource<>(informerConfiguration, context);
 
     return List.of(configMapES);
   }

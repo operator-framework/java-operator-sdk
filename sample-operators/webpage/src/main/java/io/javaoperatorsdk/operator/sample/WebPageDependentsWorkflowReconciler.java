@@ -9,7 +9,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentInformerConfigBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
@@ -24,7 +25,8 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
  * Shows how to implement reconciler using standalone dependent resources.
  */
 @ControllerConfiguration(
-    labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR)
+    informerConfig = @InformerConfig(
+        labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR))
 @SuppressWarnings("unused")
 public class WebPageDependentsWorkflowReconciler
     implements Reconciler<WebPage> {
@@ -81,13 +83,12 @@ public class WebPageDependentsWorkflowReconciler
     this.serviceDR = new ServiceDependentResource();
     this.ingressDR = new IngressDependentResource();
 
-    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR).forEach(dr -> {
-      dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-          .withKubernetesDependentInformerConfig(new KubernetesDependentInformerConfigBuilder<>()
-              .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
-              .build())
-          .build());
-    });
+    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
+        .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
+            .withKubernetesDependentInformerConfig(InformerConfigHolder.builder()
+                .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
+                .buildForInformerEventSource())
+            .build()));
   }
 
 }
