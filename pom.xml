@@ -61,7 +61,7 @@
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
 
     <junit.version>5.10.1</junit.version>
-      <fabric8-client.version>6.13.1</fabric8-client.version>
+    <fabric8-client.version>6.13.1</fabric8-client.version>
     <slf4j.version>2.0.12</slf4j.version>
     <log4j.version>2.23.1</log4j.version>
     <mokito.version>5.12.0</mokito.version>
@@ -84,8 +84,8 @@
     <maven-javadoc-plugin.version>3.7.0</maven-javadoc-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-        <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
+    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+    <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
     <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
