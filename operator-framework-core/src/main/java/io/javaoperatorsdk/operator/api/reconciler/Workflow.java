@@ -8,6 +8,8 @@ import java.lang.annotation.Target;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
@@ -29,12 +31,11 @@ public @interface Workflow {
    * execution as would normally be the case. Instead, it will proceed to its
    * {@link Reconciler#reconcile(HasMetadata, Context)} method as if no error occurred. It is then
    * up to the developer to decide how to proceed by retrieving the errored dependents (and their
-   * associated exception) via
-   * {@link io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowResult#erroredDependents},
-   * the workflow result itself being accessed from
-   * {@link Context#managedWorkflowAndDependentResourceContext()}. If {@code false}, an exception
-   * will be automatically thrown at the end of the workflow execution, presenting an aggregated
-   * view of what happened.
+   * associated exception) via {@link WorkflowReconcileResult#getErroredDependents()} or
+   * {@link WorkflowCleanupResult#getErroredDependents()}, the workflow result itself being accessed
+   * from {@link Context#managedWorkflowAndDependentResourceContext()}. If {@code false}, an
+   * exception will be automatically thrown at the end of the workflow execution, presenting an
+   * aggregated view of what happened.
    */
   boolean handleExceptionsInReconciler() default false;
 

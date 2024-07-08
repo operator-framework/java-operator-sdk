@@ -10,9 +10,11 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.sample.workflowallfeature.ConfigMapReconcileCondition;
 import io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureCustomResource;
 import io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureReconciler;
 import io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureSpec;
+import io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureStatus;
 
 import static io.javaoperatorsdk.operator.sample.workflowallfeature.ConfigMapDependentResource.READY_TO_DELETE_ANNOTATION;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,6 +41,8 @@ public class WorkflowAllFeatureIT {
               .isPositive();
           assertThat(operator.get(Deployment.class, RESOURCE_NAME)).isNotNull();
           assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
+          assertThat(getPrimaryStatus().getMsgFromCondition())
+              .isEqualTo(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
         });
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
@@ -47,11 +51,18 @@ public class WorkflowAllFeatureIT {
           .getNumberOfReconciliationExecution())
           .isGreaterThan(1);
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
-      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
-          .getStatus().getReady()).isTrue();
+      final var primaryStatus = getPrimaryStatus();
+      assertThat(primaryStatus.getReady()).isTrue();
+      assertThat(primaryStatus.getMsgFromCondition())
+          .isEqualTo(ConfigMapReconcileCondition.CREATE_SET);
     });
 
     markConfigMapForDelete();
+  }
+
+  private WorkflowAllFeatureStatus getPrimaryStatus() {
+    return operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
+        .getStatus();
   }
 
 
@@ -61,8 +72,7 @@ public class WorkflowAllFeatureIT {
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
-      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
-          .getStatus().getReady()).isTrue();
+      assertThat(getPrimaryStatus().getReady()).isTrue();
     });
 
     resource.getSpec().setCreateConfigMap(true);
@@ -70,8 +80,7 @@ public class WorkflowAllFeatureIT {
 
     await().untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
-      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
-          .getStatus().getReady()).isTrue();
+      assertThat(getPrimaryStatus().getReady()).isTrue();
     });
   }
 
@@ -81,10 +90,9 @@ public class WorkflowAllFeatureIT {
     var resource = operator.create(customResource(true));
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
-      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME).getStatus())
+      assertThat(getPrimaryStatus())
           .isNotNull();
-      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
-          .getStatus().getReady()).isTrue();
+      assertThat(getPrimaryStatus().getReady()).isTrue();
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
     });
 
