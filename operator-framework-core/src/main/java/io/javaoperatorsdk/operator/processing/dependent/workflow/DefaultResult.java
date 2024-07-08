@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
-public class DefaultResult<T> implements ResultCondition.Result<T> {
+public class DefaultResult<T> implements DetailedCondition.Result<T> {
   private final T result;
   private final boolean success;
 

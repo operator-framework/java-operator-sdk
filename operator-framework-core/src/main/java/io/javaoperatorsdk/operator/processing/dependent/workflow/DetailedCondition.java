@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
  *        part of
  * @param <T> the type of the extra information returned by the condition
  */
-public interface ResultCondition<R, P extends HasMetadata, T> extends Condition<R, P> {
+public interface DetailedCondition<R, P extends HasMetadata, T> extends Condition<R, P> {
 
   /**
    * Checks whether a condition holds true for the specified {@link DependentResource}, returning
@@ -42,12 +42,12 @@ public interface ResultCondition<R, P extends HasMetadata, T> extends Condition<
     /**
      * A result expressing a condition has been met without extra information
      */
-    ResultCondition.Result metWithoutResult = new DefaultResult(true, null);
+    Result metWithoutResult = new DefaultResult(true, null);
 
     /**
      * A result expressing a condition has not been met without extra information
      */
-    ResultCondition.Result unmetWithoutResult = new DefaultResult(false, null);
+    Result unmetWithoutResult = new DefaultResult(false, null);
 
     /**
      * Creates a {@link Result} without extra information
@@ -76,13 +76,17 @@ public interface ResultCondition<R, P extends HasMetadata, T> extends Condition<
     }
 
     /**
-     * The extra information provided by the associated {@link ResultCondition} during its evaluation
-     * @return extra information provided by the associated {@link ResultCondition} during its evaluation or {@code null} if none was provided
+     * The extra information provided by the associated {@link DetailedCondition} during its
+     * evaluation
+     * 
+     * @return extra information provided by the associated {@link DetailedCondition} during its
+     *         evaluation or {@code null} if none was provided
      */
     T getDetail();
 
     /**
      * Whether the associated condition held true
+     * 
      * @return {@code true} if the associated condition was met, {@code false} otherwise
      */
     boolean isSuccess();

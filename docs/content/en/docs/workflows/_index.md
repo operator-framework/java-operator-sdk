@@ -58,9 +58,9 @@ reconciliation process.
 
 While simple conditions are usually enough, it might happen you want to convey extra information as a result of the
 evaluation of the conditions (e.g., to report error messages or because the result of the condition evaluation might be
-interesting for other purposes). In this situation, you should implement `ResultCondition` instead of `Condition` and
+interesting for other purposes). In this situation, you should implement `DetailedCondition` instead of `Condition` and
 provide an implementation of the `detailedIsMet` method, which allows you to return a more detailed `Result` object via
-which you can provide extra information. The `ResultCondition.Result` interface provides factory method for your
+which you can provide extra information. The `DetailedCondition.Result` interface provides factory method for your
 convenience but you can also provide your own implementation if required.
 
 You can access the results for conditions from the `WorkflowResult` instance that is returned whenever a workflow is

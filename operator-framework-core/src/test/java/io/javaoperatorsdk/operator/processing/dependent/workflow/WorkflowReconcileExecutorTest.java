@@ -186,7 +186,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   @Test
   void simpleReconcileCondition() {
     final var result = "Some error message";
-    final var unmetWithResult = new ResultCondition<ConfigMap, TestCustomResource, String>() {
+    final var unmetWithResult = new DetailedCondition<ConfigMap, TestCustomResource, String>() {
       @Override
       public Result<String> detailedIsMet(
           DependentResource<ConfigMap, TestCustomResource> dependentResource,
@@ -594,7 +594,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   @Test
   void resultFromReadyConditionShouldBeAvailableIfExisting() {
     final var result = Integer.valueOf(42);
-    final var resultCondition = new ResultCondition<>() {
+    final var resultCondition = new DetailedCondition<>() {
       @Override
       public Result<Object> detailedIsMet(DependentResource<Object, HasMetadata> dependentResource,
           HasMetadata primary, Context<HasMetadata> context) {
@@ -624,7 +624,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   @Test
   void shouldThrowIllegalArgumentExceptionIfTypesDoNotMatch() {
     final var result = "FOO";
-    final var resultCondition = new ResultCondition<>() {
+    final var resultCondition = new DetailedCondition<>() {
       @Override
       public Result<Object> detailedIsMet(DependentResource<Object, HasMetadata> dependentResource,
           HasMetadata primary, Context<HasMetadata> context) {

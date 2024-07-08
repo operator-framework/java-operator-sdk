@@ -3,10 +3,10 @@ package io.javaoperatorsdk.operator.sample.workflowallfeature;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ResultCondition;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.DetailedCondition;
 
 public class ConfigMapReconcileCondition
-    implements ResultCondition<ConfigMap, WorkflowAllFeatureCustomResource, String> {
+    implements DetailedCondition<ConfigMap, WorkflowAllFeatureCustomResource, String> {
 
   public static final String CREATE_SET = "create set";
   public static final String CREATE_NOT_SET = "create not set";

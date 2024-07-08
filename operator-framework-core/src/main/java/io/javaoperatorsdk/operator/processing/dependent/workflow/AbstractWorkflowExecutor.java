@@ -138,11 +138,11 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
       DependentResourceNode<R, P> dependentResource) {
     final var dr = dependentResource.getDependentResource();
     return condition.map(c -> {
-      final ResultCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
+      final DetailedCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
       results.computeIfAbsent(dependentResource, unused -> new WorkflowResult.DetailBuilder())
           .withResultForCondition(c, r);
       return r;
-    }).orElse(ResultCondition.Result.metWithoutResult).isSuccess();
+    }).orElse(DetailedCondition.Result.metWithoutResult).isSuccess();
   }
 
   protected <R> void submit(DependentResourceNode<R, P> dependentResourceNode,

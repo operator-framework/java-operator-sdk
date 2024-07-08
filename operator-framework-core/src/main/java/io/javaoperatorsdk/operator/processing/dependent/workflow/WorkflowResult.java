@@ -127,10 +127,10 @@ class WorkflowResult {
   static class DetailBuilder<R> {
     private Exception error;
     private ReconcileResult<R> reconcileResult;
-    private ResultCondition.Result activationConditionResult;
-    private ResultCondition.Result deletePostconditionResult;
-    private ResultCondition.Result readyPostconditionResult;
-    private ResultCondition.Result reconcilePostconditionResult;
+    private DetailedCondition.Result activationConditionResult;
+    private DetailedCondition.Result deletePostconditionResult;
+    private DetailedCondition.Result readyPostconditionResult;
+    private DetailedCondition.Result reconcilePostconditionResult;
     private boolean deleted;
     private boolean visited;
     private boolean markedForDelete;
@@ -143,7 +143,7 @@ class WorkflowResult {
 
     DetailBuilder<R> withResultForCondition(
         ConditionWithType conditionWithType,
-        ResultCondition.Result conditionResult) {
+        DetailedCondition.Result conditionResult) {
       switch (conditionWithType.type()) {
         case ACTIVATION -> activationConditionResult = conditionResult;
         case DELETE -> deletePostconditionResult = conditionResult;
@@ -203,18 +203,18 @@ class WorkflowResult {
 
 
   record Detail<R>(Exception error, ReconcileResult<R> reconcileResult,
-      ResultCondition.Result activationConditionResult,
-      ResultCondition.Result deletePostconditionResult,
-      ResultCondition.Result readyPostconditionResult,
-      ResultCondition.Result reconcilePostconditionResult,
+      DetailedCondition.Result activationConditionResult,
+      DetailedCondition.Result deletePostconditionResult,
+      DetailedCondition.Result readyPostconditionResult,
+      DetailedCondition.Result reconcilePostconditionResult,
       boolean deleted, boolean visited, boolean markedForDelete) {
 
     boolean isConditionWithTypeMet(Condition.Type conditionType) {
-      return getResultForConditionWithType(conditionType).map(ResultCondition.Result::isSuccess)
+      return getResultForConditionWithType(conditionType).map(DetailedCondition.Result::isSuccess)
           .orElse(true);
     }
 
-    Optional<ResultCondition.Result<?>> getResultForConditionWithType(
+    Optional<DetailedCondition.Result<?>> getResultForConditionWithType(
         Condition.Type conditionType) {
       return switch (conditionType) {
         case ACTIVATION -> Optional.ofNullable(activationConditionResult);
