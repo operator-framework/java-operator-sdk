@@ -7,7 +7,7 @@ public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadat
 
   private boolean createResourceOnlyIfNotExistingWithSSA;
   private Boolean useSSA = null;
-  private KubernetesDependentInformerConfig<R> kubernetesDependentInformerConfig;
+  private InformerConfigHolder<R> informerConfigHolder;
 
   public KubernetesDependentResourceConfigBuilder() {}
 
@@ -24,14 +24,14 @@ public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadat
   }
 
   public KubernetesDependentResourceConfigBuilder<R> withKubernetesDependentInformerConfig(
-      KubernetesDependentInformerConfig<R> kubernetesDependentInformerConfig) {
-    this.kubernetesDependentInformerConfig = kubernetesDependentInformerConfig;
+      InformerConfigHolder<R> informerConfigHolder) {
+    this.informerConfigHolder = informerConfigHolder;
     return this;
   }
 
   public KubernetesDependentResourceConfig<R> build() {
     return new KubernetesDependentResourceConfig<>(
         useSSA, createResourceOnlyIfNotExistingWithSSA,
-        kubernetesDependentInformerConfig);
+        informerConfigHolder);
   }
 }
