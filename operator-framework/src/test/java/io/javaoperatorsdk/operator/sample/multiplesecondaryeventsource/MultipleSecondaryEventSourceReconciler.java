@@ -8,7 +8,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -19,6 +23,14 @@ public class MultipleSecondaryEventSourceReconciler
     implements Reconciler<MultipleSecondaryEventSourceCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
+
+  public static String getName1(MultipleSecondaryEventSourceCustomResource resource) {
+    return resource.getMetadata().getName() + "1";
+  }
+
+  public static String getName2(MultipleSecondaryEventSourceCustomResource resource) {
+    return resource.getMetadata().getName() + "2";
+  }
 
   @Override
   public UpdateControl<MultipleSecondaryEventSourceCustomResource> reconcile(
@@ -48,14 +60,6 @@ public class MultipleSecondaryEventSourceReconciler
     return UpdateControl.noUpdate();
   }
 
-  public static String getName1(MultipleSecondaryEventSourceCustomResource resource) {
-    return resource.getMetadata().getName() + "1";
-  }
-
-  public static String getName2(MultipleSecondaryEventSourceCustomResource resource) {
-    return resource.getMetadata().getName() + "2";
-  }
-
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
@@ -66,8 +70,9 @@ public class MultipleSecondaryEventSourceReconciler
 
     var config = InformerConfiguration
         .from(ConfigMap.class, MultipleSecondaryEventSourceCustomResource.class)
-        .withNamespaces(context.getControllerConfiguration().getNamespaces())
-        .withLabelSelector("multisecondary")
+        .withInformerConfiguration(c -> c
+            .withNamespaces(context.getControllerConfiguration().getNamespaces())
+            .withLabelSelector("multisecondary"))
         .withSecondaryToPrimaryMapper(s -> {
           var name =
               s.getMetadata().getName().subSequence(0, s.getMetadata().getName().length() - 1);
