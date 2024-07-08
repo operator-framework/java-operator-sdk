@@ -3,9 +3,10 @@ package io.javaoperatorsdk.operator.sample.multiplereconcilersametype;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(labelSelector = "reconciler = 1")
+@ControllerConfiguration(informerConfig = @InformerConfig(labelSelector = "reconciler = 1"))
 public class MultipleReconcilerSameTypeReconciler1
     implements Reconciler<MultipleReconcilerSameTypeCustomResource>, TestExecutionInfoProvider {
 

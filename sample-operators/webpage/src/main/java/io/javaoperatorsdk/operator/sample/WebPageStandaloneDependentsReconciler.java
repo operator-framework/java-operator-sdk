@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentInformerConfigBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder;
@@ -96,8 +96,9 @@ public class WebPageStandaloneDependentsReconciler
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
         .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-            .withKubernetesDependentInformerConfig(new KubernetesDependentInformerConfigBuilder<>()
-                .withLabelSelector(SELECTOR + "=true").build())
+            .withKubernetesDependentInformerConfig(InformerConfigHolder.builder()
+                .withLabelSelector(SELECTOR + "=true")
+                .buildForInformerEventSource())
             .build()));
 
     // connect the dependent resources into a workflow, configuring them as we go
