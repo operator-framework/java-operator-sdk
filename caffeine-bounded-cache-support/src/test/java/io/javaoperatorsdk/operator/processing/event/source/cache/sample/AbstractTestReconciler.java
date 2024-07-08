@@ -78,7 +78,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
             ConfigMap.class, Duration.ofMinutes(1), 1); // setting max size for testing purposes
 
     var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, primaryClass())
-        .withItemStore(boundedItemStore)
+        .withInformerConfiguration(c -> c.withItemStore(boundedItemStore))
         .withSecondaryToPrimaryMapper(
             Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
                 this instanceof BoundedCacheClusterScopeTestReconciler))

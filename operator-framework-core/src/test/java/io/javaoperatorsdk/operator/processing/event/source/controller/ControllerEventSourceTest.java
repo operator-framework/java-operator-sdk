@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
@@ -197,14 +198,13 @@ class ControllerEventSourceTest extends
           null,
           null,
           null,
-          onAddFilter,
-          onUpdateFilter,
-          genericFilter,
-          null,
-          null,
           FINALIZER,
-          null, null, null, new BaseConfigurationService(),
-          null);
+          null,
+          null,
+          new BaseConfigurationService(),
+          InformerConfigHolder.builder(TestCustomResource.class).withOnAddFilter(onAddFilter)
+              .withOnUpdateFilter(onUpdateFilter).withGenericFilter(genericFilter)
+              .buildForController());
     }
   }
 }
