@@ -1,10 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,28 +10,16 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowExecutor<P> {
+class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowExecutor<P> {
 
   private static final Logger log = LoggerFactory.getLogger(WorkflowReconcileExecutor.class);
   private static final String RECONCILE = "reconcile";
   private static final String DELETE = "delete";
 
-
-  private final Set<DependentResourceNode> notReady = ConcurrentHashMap.newKeySet();
-
-  private final Set<DependentResourceNode> markedForDelete = ConcurrentHashMap.newKeySet();
-  private final Set<DependentResourceNode> deletePostConditionNotMet =
-      ConcurrentHashMap.newKeySet();
-  // used to remember reconciled (not deleted or errored) dependents
-  private final Set<DependentResourceNode> reconciled = ConcurrentHashMap.newKeySet();
-  private final Map<DependentResource, ReconcileResult> reconcileResults =
-      new ConcurrentHashMap<>();
-
-  public WorkflowReconcileExecutor(Workflow<P> workflow, P primary, Context<P> context) {
+  public WorkflowReconcileExecutor(DefaultWorkflow<P> workflow, P primary, Context<P> context) {
     super(workflow, primary, context);
   }
 
@@ -51,25 +37,46 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   }
 
   private synchronized <R> void handleReconcile(DependentResourceNode<R, P> dependentResourceNode) {
-    log.debug("Submitting for reconcile: {} primaryID: {}", dependentResourceNode, primaryID);
+    log.debug("Considering for reconcile: {} primaryID: {}", dependentResourceNode, primaryID);
 
-    if (alreadyVisited(dependentResourceNode)
-        || isExecutingNow(dependentResourceNode)
-        || !allParentsReconciledAndReady(dependentResourceNode)
-        || markedForDelete.contains(dependentResourceNode)
-        || hasErroredParent(dependentResourceNode)) {
-      log.debug("Skipping submit of: {}, primaryID: {}", dependentResourceNode, primaryID);
+    final var alreadyVisited = alreadyVisited(dependentResourceNode);
+    final var executingNow = isExecutingNow(dependentResourceNode);
+    final var isWaitingOnParents = !allParentsReconciledAndReady(dependentResourceNode);
+    final var isMarkedForDelete = isMarkedForDelete(dependentResourceNode);
+    final var hasErroredParent = hasErroredParent(dependentResourceNode);
+    if (isWaitingOnParents || alreadyVisited || executingNow || isMarkedForDelete
+        || hasErroredParent) {
+      if (log.isDebugEnabled()) {
+        final var causes = new ArrayList<String>();
+        if (alreadyVisited) {
+          causes.add("already visited");
+        }
+        if (executingNow) {
+          causes.add("executing now");
+        }
+        if (isMarkedForDelete) {
+          causes.add("marked for delete");
+        }
+        if (isWaitingOnParents) {
+          causes.add("waiting on parents");
+        }
+        if (hasErroredParent) {
+          causes.add("errored parent");
+        }
+        log.debug("Skipping: {} primaryID: {} causes: {}", dependentResourceNode,
+            primaryID, String.join(", ", causes));
+      }
       return;
     }
 
     boolean activationConditionMet = isConditionMet(dependentResourceNode.getActivationCondition(),
-        dependentResourceNode.getDependentResource());
+        dependentResourceNode);
     registerOrDeregisterEventSourceBasedOnActivation(activationConditionMet, dependentResourceNode);
 
     boolean reconcileConditionMet = true;
     if (activationConditionMet) {
       reconcileConditionMet = isConditionMet(dependentResourceNode.getReconcilePrecondition(),
-          dependentResourceNode.getDependentResource());
+          dependentResourceNode);
     }
     if (!reconcileConditionMet || !activationConditionMet) {
       handleReconcileOrActivationConditionNotMet(dependentResourceNode, activationConditionMet);
@@ -81,12 +88,29 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   private synchronized void handleDelete(DependentResourceNode dependentResourceNode) {
     log.debug("Submitting for delete: {}", dependentResourceNode);
 
-    if (alreadyVisited(dependentResourceNode)
-        || isExecutingNow(dependentResourceNode)
-        || !markedForDelete.contains(dependentResourceNode)
-        || !allDependentsDeletedAlready(dependentResourceNode)) {
-      log.debug("Skipping submit for delete of: {} primaryID: {} ", dependentResourceNode,
-          primaryID);
+    final var alreadyVisited = alreadyVisited(dependentResourceNode);
+    final var executingNow = isExecutingNow(dependentResourceNode);
+    final var isNotMarkedForDelete = !isMarkedForDelete(dependentResourceNode);
+    final var isWaitingOnDependents = !allDependentsDeletedAlready(dependentResourceNode);
+    if (isNotMarkedForDelete || alreadyVisited || executingNow || isWaitingOnDependents) {
+      if (log.isDebugEnabled()) {
+        final var causes = new ArrayList<String>();
+        if (alreadyVisited) {
+          causes.add("already visited");
+        }
+        if (executingNow) {
+          causes.add("executing now");
+        }
+        if (isNotMarkedForDelete) {
+          causes.add("not marked for delete");
+        }
+        if (isWaitingOnDependents) {
+          causes.add("waiting on dependents");
+        }
+        log.debug("Skipping submit for delete of: {} primaryID: {} causes: {}",
+            dependentResourceNode,
+            primaryID, String.join(", ", causes));
+      }
       return;
     }
 
@@ -96,16 +120,8 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
 
   private boolean allDependentsDeletedAlready(DependentResourceNode<?, P> dependentResourceNode) {
     var dependents = dependentResourceNode.getParents();
-    return dependents.stream().allMatch(d -> alreadyVisited(d) && !notReady.contains(d)
-        && !isInError(d) && !deletePostConditionNotMet.contains(d));
-  }
-
-  // needs to be in one step
-  private synchronized void setAlreadyReconciledButNotReady(
-      DependentResourceNode<?, P> dependentResourceNode) {
-    log.debug("Setting already reconciled but not ready for: {}", dependentResourceNode);
-    markAsVisited(dependentResourceNode);
-    notReady.add(dependentResourceNode);
+    return dependents.stream().allMatch(d -> alreadyVisited(d) && !isNotReady(d)
+        && !isInError(d) && !postDeleteConditionNotMet(d));
   }
 
   private class NodeReconcileExecutor<R> extends NodeExecutor<R, P> {
@@ -115,24 +131,20 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     }
 
     @Override
-    protected void doRun(DependentResourceNode<R, P> dependentResourceNode,
-        DependentResource<R, P> dependentResource) {
-
+    protected void doRun(DependentResourceNode<R, P> dependentResourceNode) {
+      final var dependentResource = dependentResourceNode.getDependentResource();
       log.debug(
           "Reconciling for primary: {} node: {} ", primaryID, dependentResourceNode);
       ReconcileResult reconcileResult = dependentResource.reconcile(primary, context);
-      reconcileResults.put(dependentResource, reconcileResult);
-      reconciled.add(dependentResourceNode);
+      final var detailBuilder = createOrGetResultFor(dependentResourceNode);
+      detailBuilder.withReconcileResult(reconcileResult).markAsVisited();
 
-      boolean ready = isConditionMet(dependentResourceNode.getReadyPostcondition(),
-          dependentResource);
-      if (ready) {
+      if (isConditionMet(dependentResourceNode.getReadyPostcondition(), dependentResourceNode)) {
         log.debug("Setting already reconciled for: {} primaryID: {}",
             dependentResourceNode, primaryID);
-        markAsVisited(dependentResourceNode);
         handleDependentsReconcile(dependentResourceNode);
       } else {
-        setAlreadyReconciledButNotReady(dependentResourceNode);
+        log.debug("Setting already reconciled but not ready for: {}", dependentResourceNode);
       }
     }
   }
@@ -145,29 +157,23 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void doRun(DependentResourceNode<R, P> dependentResourceNode,
-        DependentResource<R, P> dependentResource) {
-      var deletePostCondition = dependentResourceNode.getDeletePostcondition();
-
+    protected void doRun(DependentResourceNode<R, P> dependentResourceNode) {
       boolean deletePostConditionMet = true;
-      if (isConditionMet(dependentResourceNode.getActivationCondition(), dependentResource)) {
+      if (isConditionMet(dependentResourceNode.getActivationCondition(), dependentResourceNode)) {
         // GarbageCollected status is irrelevant here, as this method is only called when a
         // precondition does not hold,
         // a deleter should be deleted even if it is otherwise garbage collected
+        final var dependentResource = dependentResourceNode.getDependentResource();
         if (dependentResource instanceof Deleter) {
           ((Deleter<P>) dependentResource).delete(primary, context);
         }
-        deletePostConditionMet = isConditionMet(deletePostCondition, dependentResource);
+        deletePostConditionMet =
+            isConditionMet(dependentResourceNode.getDeletePostcondition(), dependentResourceNode);
       }
 
+      createOrGetResultFor(dependentResourceNode).markAsVisited();
       if (deletePostConditionMet) {
-        markAsVisited(dependentResourceNode);
         handleDependentDeleted(dependentResourceNode);
-      } else {
-        // updating alreadyVisited needs to be the last operation otherwise could lead to a race
-        // condition in handleDelete condition checks
-        deletePostConditionNotMet.add(dependentResourceNode);
-        markAsVisited(dependentResourceNode);
       }
     }
   }
@@ -191,7 +197,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     });
   }
 
-
   private void handleReconcileOrActivationConditionNotMet(
       DependentResourceNode<?, P> dependentResourceNode,
       boolean activationConditionMet) {
@@ -206,7 +211,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
     // so if the activation condition was false, this node is not meant to be deleted.
     var dependents = dependentResourceNode.getParents();
     if (activationConditionMet) {
-      markedForDelete.add(dependentResourceNode);
+      createOrGetResultFor(dependentResourceNode).markForDelete();
       if (dependents.isEmpty()) {
         bottomNodes.add(dependentResourceNode);
       } else {
@@ -214,7 +219,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
       }
     } else {
       // this is for an edge case when there is only one resource but that is not active
-      markAsVisited(dependentResourceNode);
+      createOrGetResultFor(dependentResourceNode).markAsVisited();
       if (dependents.isEmpty()) {
         handleNodeExecutionFinish(dependentResourceNode);
       } else {
@@ -226,7 +231,7 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   private boolean allParentsReconciledAndReady(DependentResourceNode<?, ?> dependentResourceNode) {
     return dependentResourceNode.getDependsOn().isEmpty()
         || dependentResourceNode.getDependsOn().stream()
-            .allMatch(d -> alreadyVisited(d) && !notReady.contains(d));
+            .allMatch(d -> alreadyVisited(d) && !isNotReady(d));
   }
 
   private boolean hasErroredParent(DependentResourceNode<?, ?> dependentResourceNode) {
@@ -236,15 +241,6 @@ public class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWo
   }
 
   private WorkflowReconcileResult createReconcileResult() {
-    return new WorkflowReconcileResult(
-        reconciled.stream()
-            .map(DependentResourceNode::getDependentResource)
-            .collect(Collectors.toList()),
-        notReady.stream()
-            .map(DependentResourceNode::getDependentResource)
-            .collect(Collectors.toList()),
-        getErroredDependents(),
-        reconcileResults);
+    return new WorkflowReconcileResult(asDetails());
   }
-
 }
