@@ -2,8 +2,16 @@ package io.javaoperatorsdk.operator.sample.workflowallfeature;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static io.javaoperatorsdk.operator.sample.workflowallfeature.WorkflowAllFeatureReconciler.DEPLOYMENT_NAME;
 
@@ -33,11 +41,15 @@ public class WorkflowAllFeatureReconciler
     if (resource.getStatus() == null) {
       resource.setStatus(new WorkflowAllFeatureStatus());
     }
+    final var reconcileResult = context.managedWorkflowAndDependentResourceContext()
+        .getWorkflowReconcileResult();
+    final var msgFromCondition = reconcileResult.getDependentConditionResult(
+        DependentResource.defaultNameFor(ConfigMapDependentResource.class),
+        Condition.Type.RECONCILE, String.class)
+        .orElse(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
     resource.getStatus()
-        .setReady(
-            context.managedWorkflowAndDependentResourceContext()
-                .getWorkflowReconcileResult()
-                .allDependentResourcesReady());
+        .withReady(reconcileResult.allDependentResourcesReady())
+        .withMsgFromCondition(msgFromCondition);
     return UpdateControl.patchStatus(resource);
   }
 
