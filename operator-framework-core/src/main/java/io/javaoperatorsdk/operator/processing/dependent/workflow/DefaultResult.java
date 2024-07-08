@@ -10,7 +10,7 @@ public class DefaultResult<T> implements ResultCondition.Result<T> {
   }
 
   @Override
-  public T getResult() {
+  public T getDetail() {
     return result;
   }
 

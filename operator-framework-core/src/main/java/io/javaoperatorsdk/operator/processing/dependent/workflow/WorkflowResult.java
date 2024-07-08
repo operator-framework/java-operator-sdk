@@ -90,7 +90,7 @@ class WorkflowResult {
     try {
       return Optional.ofNullable(results().get(dependentResource))
           .flatMap(detail -> detail.getResultForConditionWithType(conditionType))
-          .map(r -> result[0] = r.getResult())
+          .map(r -> result[0] = r.getDetail())
           .map(expectedResultType::cast);
     } catch (Exception e) {
       throw new IllegalArgumentException("Condition " +

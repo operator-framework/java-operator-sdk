@@ -600,7 +600,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
           HasMetadata primary, Context<HasMetadata> context) {
         return new Result<>() {
           @Override
-          public Object getResult() {
+          public Object getDetail() {
             return result;
           }
 
@@ -630,7 +630,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
           HasMetadata primary, Context<HasMetadata> context) {
         return new Result<>() {
           @Override
-          public Object getResult() {
+          public Object getDetail() {
             return result;
           }
 

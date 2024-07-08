@@ -49,10 +49,25 @@ reconciliation process.
   See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework/src/test/java/io/javaoperatorsdk/operator/CRDPresentActivationConditionIT.java).
 
   To have multiple resources of same type with an activation condition is a bit tricky, since you
-  don't want to have multiple `InformerEvetnSource` for the same type, you have to explicitly 
+  don't want to have multiple `InformerEventSource` for the same type, you have to explicitly 
   name the informer for the Dependent Resource (`@KubernetesDependent(informerConfig = @InformerConfig(name = "configMapInformer"))`)
   for all resource of same type with activation condition. This will make sure that only one is registered.
   See details at [low level api](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/EventSourceRetriever.java#L20-L52).
+
+### Result conditions
+
+While simple conditions are usually enough, it might happen you want to convey extra information as a result of the
+evaluation of the conditions (e.g., to report error messages or because the result of the condition evaluation might be
+interesting for other purposes). In this situation, you should implement `ResultCondition` instead of `Condition` and
+provide an implementation of the `detailedIsMet` method, which allows you to return a more detailed `Result` object via
+which you can provide extra information. The `ResultCondition.Result` interface provides factory method for your
+convenience but you can also provide your own implementation if required.
+
+You can access the results for conditions from the `WorkflowResult` instance that is returned whenever a workflow is
+evaluated. You can access that result from the `ManagedWorkflowAndDependentResourceContext` accessible from the
+reconciliation `Context`. You can then access individual condition results using the `
+getDependentConditionResult` methods. You can see an example of this
+in [this integration test](https://github.com/operator-framework/java-operator-sdk/blob/fd0e92c0de55c47d5df50658cf4e147ee5e6102d/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/workflowallfeature/WorkflowAllFeatureReconciler.java#L44-L49).
 
 ## Defining Workflows
 
