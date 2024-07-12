@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-import static io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration.inheritsNamespacesFromController;
+import static io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration.inheritsNamespacesFromController;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerConfigurationOverriderTest {

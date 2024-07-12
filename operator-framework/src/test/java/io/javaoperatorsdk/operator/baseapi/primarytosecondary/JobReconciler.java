@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -65,8 +65,8 @@ public class JobReconciler
     context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
-    InformerConfiguration.InformerConfigurationBuilder<Cluster> informerConfiguration =
-        InformerConfiguration.from(Cluster.class, Job.class)
+    InformerEventSourceConfiguration.InformerConfigurationBuilder<Cluster> informerConfiguration =
+        InformerEventSourceConfiguration.from(Cluster.class, Job.class)
             .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
                 .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
                     cluster.getMetadata().getNamespace()))

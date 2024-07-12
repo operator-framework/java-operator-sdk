@@ -116,7 +116,7 @@ public class InformerConfigHolder<R extends HasMetadata> {
       // if the informer config uses the default "same as controller" value, reset the namespaces to
       // the default set for controllers
       if (namespaces == null || namespaces.isEmpty()
-          || InformerConfiguration.inheritsNamespacesFromController(namespaces)) {
+          || InformerEventSourceConfiguration.inheritsNamespacesFromController(namespaces)) {
         namespaces = Constants.DEFAULT_NAMESPACES_SET;
       }
       return InformerConfigHolder.this;
@@ -128,7 +128,7 @@ public class InformerConfigHolder<R extends HasMetadata> {
       }
       if (followControllerNamespacesOnChange == null) {
         followControllerNamespacesOnChange =
-            InformerConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+            InformerEventSourceConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
       }
       return InformerConfigHolder.this;
     }

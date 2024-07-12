@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
 
-public interface InformerConfiguration<R extends HasMetadata>
+public interface InformerEventSourceConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
 
   boolean DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE = true;
@@ -78,16 +78,16 @@ public interface InformerConfiguration<R extends HasMetadata>
   @Override
   default Class<R> getResourceClass() {
     return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
-        InformerConfiguration.class);
+        InformerEventSourceConfiguration.class);
   }
 
-  class DefaultInformerConfiguration<R extends HasMetadata> extends
-      DefaultResourceConfiguration<R> implements InformerConfiguration<R> {
+  class DefaultInformerEventSourceConfiguration<R extends HasMetadata> extends
+      DefaultResourceConfiguration<R> implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final GroupVersionKind groupVersionKind;
 
-    protected DefaultInformerConfiguration(
+    protected DefaultInformerEventSourceConfiguration(
         Class<R> resourceClass,
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
@@ -121,7 +121,7 @@ public interface InformerConfiguration<R extends HasMetadata>
     }
 
     public boolean inheritsNamespacesFromController() {
-      return InformerConfiguration.inheritsNamespacesFromController(getNamespaces());
+      return InformerEventSourceConfiguration.inheritsNamespacesFromController(getNamespaces());
     }
 
     @Override
@@ -216,14 +216,14 @@ public interface InformerConfiguration<R extends HasMetadata>
       }
     }
 
-    public InformerConfiguration<R> build() {
+    public InformerEventSourceConfiguration<R> build() {
       if (groupVersionKind != null
           && !GenericKubernetesResource.class.isAssignableFrom(resourceClass)) {
         throw new IllegalStateException(
             "If GroupVersionKind is set the resource type must be GenericKubernetesDependentResource");
       }
 
-      return new DefaultInformerConfiguration<>(resourceClass,
+      return new DefaultInformerEventSourceConfiguration<>(resourceClass,
           groupVersionKind,
           primaryToSecondaryMapper,
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
