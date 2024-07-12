@@ -8,9 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 

@@ -4,7 +4,7 @@ package io.javaoperatorsdk.operator.api.config;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
 
 public class DefaultResourceConfiguration<R extends HasMetadata>
     implements ResourceConfiguration<R> {

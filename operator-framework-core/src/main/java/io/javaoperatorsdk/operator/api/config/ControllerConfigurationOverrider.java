@@ -10,7 +10,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;

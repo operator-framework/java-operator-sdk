@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
@@ -11,7 +12,6 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowBuilder;

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
+package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Set;
 
@@ -6,8 +6,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -110,21 +108,6 @@ public class InformerConfigHolder<R extends HasMetadata> {
     return informerListLimit;
   }
 
-  void updateInformerConfigBuilder(
-      InformerConfiguration.InformerConfigurationBuilder<R> builder) {
-    if (name != null) {
-      builder.withName(name);
-    }
-    builder.withInformerConfiguration(c -> c.withNamespaces(namespaces)
-        .withFollowControllerNamespacesOnChange(followControllerNamespacesOnChange)
-        .withLabelSelector(labelSelector)
-        .withItemStore(itemStore)
-        .withOnAddFilter(onAddFilter)
-        .withOnUpdateFilter(onUpdateFilter)
-        .withOnDeleteFilter(onDeleteFilter)
-        .withGenericFilter(genericFilter)
-        .withInformerListLimit(informerListLimit));
-  }
 
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {

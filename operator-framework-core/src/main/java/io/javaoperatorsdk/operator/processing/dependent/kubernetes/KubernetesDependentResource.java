@@ -196,7 +196,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     // update configuration from annotation if specified
     if (kubernetesDependentResourceConfig != null
         && kubernetesDependentResourceConfig.informerConfig() != null) {
-      kubernetesDependentResourceConfig.informerConfig().updateInformerConfigBuilder(configBuilder);
+      configBuilder.updateFrom(kubernetesDependentResourceConfig.informerConfig());
     }
 
     var es = new InformerEventSource<>(configBuilder.build(), context);

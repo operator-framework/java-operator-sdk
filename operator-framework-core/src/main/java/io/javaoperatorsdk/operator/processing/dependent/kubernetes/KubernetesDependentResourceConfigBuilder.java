@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
 
 public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadata> {
 

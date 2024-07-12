@@ -12,13 +12,12 @@ import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
 
 public interface InformerConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
@@ -142,10 +141,10 @@ public interface InformerConfiguration<R extends HasMetadata>
     private final Class<R> resourceClass;
     private final GroupVersionKind groupVersionKind;
     private final Class<? extends HasMetadata> primaryResourceClass;
+    private final InformerConfigHolder<R>.Builder config;
     private String name;
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
-    private final InformerConfigHolder<R>.Builder config;
 
     private InformerConfigurationBuilder(Class<R> resourceClass,
         Class<? extends HasMetadata> primaryResourceClass) {
@@ -196,6 +195,25 @@ public interface InformerConfiguration<R extends HasMetadata>
 
     public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
       return secondaryToPrimaryMapper;
+    }
+
+    public void updateFrom(InformerConfigHolder<R> informerConfig) {
+      if (informerConfig != null) {
+        final var informerConfigName = informerConfig.getName();
+        if (informerConfigName != null) {
+          this.name = informerConfigName;
+        }
+        config.withNamespaces(informerConfig.getNamespaces())
+            .withFollowControllerNamespacesOnChange(
+                informerConfig.isFollowControllerNamespacesOnChange())
+            .withLabelSelector(informerConfig.getLabelSelector())
+            .withItemStore(informerConfig.getItemStore())
+            .withOnAddFilter(informerConfig.getOnAddFilter())
+            .withOnUpdateFilter(informerConfig.getOnUpdateFilter())
+            .withOnDeleteFilter(informerConfig.getOnDeleteFilter())
+            .withGenericFilter(informerConfig.getGenericFilter())
+            .withInformerListLimit(informerConfig.getInformerListLimit());
+      }
     }
 
     public InformerConfiguration<R> build() {
