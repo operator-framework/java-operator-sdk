@@ -188,7 +188,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
-    final InformerEventSourceConfiguration.InformerConfigurationBuilder<R> configBuilder =
+    final InformerEventSourceConfiguration.Builder<R> configBuilder =
         informerConfigurationBuilder(context)
             .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper(context).orElseThrow())
             .withName(name());
@@ -207,7 +207,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   /**
    * To handle {@link io.fabric8.kubernetes.api.model.GenericKubernetesResource} based dependents.
    */
-  protected InformerEventSourceConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder(
+  protected InformerEventSourceConfiguration.Builder<R> informerConfigurationBuilder(
       EventSourceContext<P> context) {
     return InformerEventSourceConfiguration.from(resourceType(), context.getPrimaryResourceClass());
   }

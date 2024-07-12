@@ -28,14 +28,14 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     return SAME_AS_CONTROLLER_NAMESPACES_SET.equals(namespaces);
   }
 
-  static <R extends HasMetadata> InformerConfigurationBuilder<R> from(
+  static <R extends HasMetadata> Builder<R> from(
       Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
-    return new InformerConfigurationBuilder<>(resourceClass, primaryResourceClass);
+    return new Builder<>(resourceClass, primaryResourceClass);
   }
 
-  static InformerConfigurationBuilder<GenericKubernetesResource> from(
+  static Builder<GenericKubernetesResource> from(
       GroupVersionKind groupVersionKind, Class<? extends HasMetadata> primaryResourceClass) {
-    return new InformerConfigurationBuilder<>(groupVersionKind, primaryResourceClass);
+    return new Builder<>(groupVersionKind, primaryResourceClass);
   }
 
   /**
@@ -136,7 +136,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
 
 
   @SuppressWarnings({"unused", "UnusedReturnValue"})
-  class InformerConfigurationBuilder<R extends HasMetadata> {
+  class Builder<R extends HasMetadata> {
 
     private final Class<R> resourceClass;
     private final GroupVersionKind groupVersionKind;
@@ -146,18 +146,18 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
 
-    private InformerConfigurationBuilder(Class<R> resourceClass,
+    private Builder(Class<R> resourceClass,
         Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
     }
 
     @SuppressWarnings("unchecked")
-    private InformerConfigurationBuilder(GroupVersionKind groupVersionKind,
+    private Builder(GroupVersionKind groupVersionKind,
         Class<? extends HasMetadata> primaryResourceClass) {
       this((Class<R>) GenericKubernetesResource.class, primaryResourceClass, groupVersionKind);
     }
 
-    private InformerConfigurationBuilder(Class<R> resourceClass,
+    private Builder(Class<R> resourceClass,
         Class<? extends HasMetadata> primaryResourceClass, GroupVersionKind groupVersionKind) {
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
@@ -165,25 +165,25 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       this.config = InformerConfigHolder.builder(resourceClass);
     }
 
-    public InformerConfigurationBuilder<R> withInformerConfiguration(
+    public Builder<R> withInformerConfiguration(
         Consumer<InformerConfigHolder<R>.Builder> configurator) {
       configurator.accept(config);
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withName(String name) {
+    public Builder<R> withName(String name) {
       this.name = name;
       config.withName(name);
       return this;
     }
 
-    public <P extends HasMetadata> InformerConfigurationBuilder<R> withPrimaryToSecondaryMapper(
+    public <P extends HasMetadata> Builder<R> withPrimaryToSecondaryMapper(
         PrimaryToSecondaryMapper<P> primaryToSecondaryMapper) {
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       return this;
     }
 
-    public InformerConfigurationBuilder<R> withSecondaryToPrimaryMapper(
+    public Builder<R> withSecondaryToPrimaryMapper(
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       return this;

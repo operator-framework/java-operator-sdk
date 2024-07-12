@@ -16,7 +16,7 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     this.groupVersionKind = groupVersionKind;
   }
 
-  protected InformerEventSourceConfiguration.InformerConfigurationBuilder<GenericKubernetesResource> informerConfigurationBuilder(
+  protected InformerEventSourceConfiguration.Builder<GenericKubernetesResource> informerConfigurationBuilder(
       EventSourceContext<P> context) {
     return InformerEventSourceConfiguration.from(groupVersionKind,
         context.getPrimaryResourceClass());

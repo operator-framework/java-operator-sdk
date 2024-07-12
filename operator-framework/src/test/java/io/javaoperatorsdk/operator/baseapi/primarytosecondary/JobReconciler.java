@@ -65,7 +65,7 @@ public class JobReconciler
     context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
-    InformerEventSourceConfiguration.InformerConfigurationBuilder<Cluster> informerConfiguration =
+    InformerEventSourceConfiguration.Builder<Cluster> informerConfiguration =
         InformerEventSourceConfiguration.from(Cluster.class, Job.class)
             .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
                 .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
