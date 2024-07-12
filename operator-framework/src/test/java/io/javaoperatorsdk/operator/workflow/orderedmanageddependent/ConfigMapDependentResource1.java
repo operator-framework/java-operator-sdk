@@ -5,13 +5,13 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(informerConfig = @InformerConfig(labelSelector = "dependent = cm1"))
+@KubernetesDependent(informer = @Informer(labelSelector = "dependent = cm1"))
 public class ConfigMapDependentResource1 extends
     CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 

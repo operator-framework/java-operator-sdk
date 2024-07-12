@@ -3,13 +3,13 @@ package io.javaoperatorsdk.operator.baseapi.multiversioncrd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration(informerConfig = @InformerConfig(labelSelector = "!version"))
+@ControllerConfiguration(informer = @Informer(labelSelector = "!version"))
 public class MultiVersionCRDTestReconciler1
     implements Reconciler<MultiVersionCRDTestCustomResource1> {
 

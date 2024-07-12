@@ -2,11 +2,11 @@ package io.javaoperatorsdk.operator.baseapi.multiplereconcilersametype;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(informerConfig = @InformerConfig(labelSelector = "reconciler = 1"))
+@ControllerConfiguration(informer = @Informer(labelSelector = "reconciler = 1"))
 public class MultipleReconcilerSameTypeReconciler1
     implements Reconciler<MultipleReconcilerSameTypeCustomResource>, TestExecutionInfoProvider {
 

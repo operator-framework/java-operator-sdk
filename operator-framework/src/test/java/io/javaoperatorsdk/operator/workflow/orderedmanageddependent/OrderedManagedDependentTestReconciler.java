@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
     @Dependent(type = ConfigMapDependentResource2.class, dependsOn = "cm1")
 })
 @ControllerConfiguration(
-    informerConfig = @InformerConfig(namespaces = Constants.WATCH_CURRENT_NAMESPACE))
+    informer = @Informer(namespaces = Constants.WATCH_CURRENT_NAMESPACE))
 public class OrderedManagedDependentTestReconciler
     implements Reconciler<OrderedManagedDependentCustomResource>,
     TestExecutionInfoProvider {

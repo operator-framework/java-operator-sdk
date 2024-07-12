@@ -45,7 +45,7 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
 
     InformerConfigHolder<R>.Builder config = InformerConfigHolder.builder();
     if (configAnnotation != null) {
-      final var informerConfig = configAnnotation.informerConfig();
+      final var informerConfig = configAnnotation.informer();
       final var context = Utils.contextFor(controllerConfig, dependentResourceClass,
           configAnnotation.annotationType());
       config = config.initFromAnnotation(informerConfig, context);

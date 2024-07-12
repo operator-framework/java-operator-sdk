@@ -276,7 +276,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
             : fieldManager;
 
     InformerConfigHolder<P> informerConfig = InformerConfigHolder.builder(resourceClass)
-        .initFromAnnotation(annotation != null ? annotation.informerConfig() : null, context)
+        .initFromAnnotation(annotation != null ? annotation.informer() : null, context)
         .buildForController();
 
     return new ResolvedControllerConfiguration<P>(

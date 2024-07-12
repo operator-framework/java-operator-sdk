@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.sample.Utils;
@@ -16,7 +16,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.serviceName;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
-@KubernetesDependent(informerConfig = @InformerConfig(labelSelector = SELECTOR))
+@KubernetesDependent(informer = @Informer(labelSelector = SELECTOR))
 public class ServiceDependentResource extends
     io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource<Service, WebPage> {
 

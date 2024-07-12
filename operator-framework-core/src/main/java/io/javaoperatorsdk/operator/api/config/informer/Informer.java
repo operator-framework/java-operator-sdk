@@ -19,7 +19,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface InformerConfig {
+public @interface Informer {
 
   String name() default NO_VALUE_SET;
 

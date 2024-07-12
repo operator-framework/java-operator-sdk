@@ -4,12 +4,12 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(informerConfig = @InformerConfig(name = "configMapInformer"))
+@KubernetesDependent(informer = @Informer(name = "configMapInformer"))
 public class ConfigMapDependentResource1
     extends
     CRUDNoGCKubernetesDependentResource<ConfigMap, MultipleDependentActivationCustomResource> {

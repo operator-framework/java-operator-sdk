@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -21,7 +21,7 @@ public @interface ControllerConfiguration {
 
   String name() default Constants.NO_VALUE_SET;
 
-  InformerConfig informerConfig() default @InformerConfig;
+  Informer informer() default @Informer;
 
   /**
    * Optional finalizer name, if it is not provided, one will be automatically generated. Note that

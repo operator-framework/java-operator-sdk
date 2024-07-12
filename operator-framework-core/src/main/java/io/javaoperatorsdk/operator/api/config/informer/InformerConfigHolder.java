@@ -134,7 +134,7 @@ public class InformerConfigHolder<R extends HasMetadata> {
     }
 
     @SuppressWarnings({"unchecked"})
-    public InformerConfigHolder<R>.Builder initFromAnnotation(InformerConfig informerConfig,
+    public InformerConfigHolder<R>.Builder initFromAnnotation(Informer informerConfig,
         String context) {
       if (informerConfig != null) {
 

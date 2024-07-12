@@ -5,7 +5,7 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -18,7 +18,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
 // this annotation only activates when using managed dependents and is not otherwise needed
-@KubernetesDependent(informerConfig = @InformerConfig(labelSelector = SELECTOR))
+@KubernetesDependent(informer = @Informer(labelSelector = SELECTOR))
 public class DeploymentDependentResource
     extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 

@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -25,7 +25,7 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
  * Shows how to implement reconciler using standalone dependent resources.
  */
 @ControllerConfiguration(
-    informerConfig = @InformerConfig(
+    informer = @Informer(
         labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR))
 @SuppressWarnings("unused")
 public class WebPageDependentsWorkflowReconciler
