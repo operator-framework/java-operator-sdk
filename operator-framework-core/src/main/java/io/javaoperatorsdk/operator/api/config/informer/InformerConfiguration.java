@@ -16,7 +16,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
 
 
 @SuppressWarnings("unused")
-public class InformerConfigHolder<R extends HasMetadata> {
+public class InformerConfiguration<R extends HasMetadata> {
   private final Builder builder = new Builder();
   private String name;
   private Set<String> namespaces;
@@ -29,7 +29,7 @@ public class InformerConfigHolder<R extends HasMetadata> {
   private ItemStore<R> itemStore;
   private Long informerListLimit;
 
-  public InformerConfigHolder(String name, Set<String> namespaces,
+  public InformerConfiguration(String name, Set<String> namespaces,
       boolean followControllerNamespacesOnChange,
       String labelSelector, OnAddFilter<? super R> onAddFilter,
       OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
@@ -46,23 +46,23 @@ public class InformerConfigHolder<R extends HasMetadata> {
     this.informerListLimit = informerListLimit;
   }
 
-  private InformerConfigHolder() {}
+  private InformerConfiguration() {}
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <R extends HasMetadata> InformerConfigHolder<R>.Builder builder() {
-    return new InformerConfigHolder().builder;
+  public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder() {
+    return new InformerConfiguration().builder;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <R extends HasMetadata> InformerConfigHolder<R>.Builder builder(
+  public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder(
       Class<R> resourceClass) {
-    return new InformerConfigHolder().builder;
+    return new InformerConfiguration().builder;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <R extends HasMetadata> InformerConfigHolder<R>.Builder builder(
-      InformerConfigHolder<R> original) {
-    return new InformerConfigHolder(original.name, original.namespaces,
+  public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder(
+      InformerConfiguration<R> original) {
+    return new InformerConfiguration(original.name, original.namespaces,
         original.followControllerNamespacesOnChange, original.labelSelector, original.onAddFilter,
         original.onUpdateFilter, original.onDeleteFilter, original.genericFilter,
         original.itemStore, original.informerListLimit).builder;
@@ -112,17 +112,17 @@ public class InformerConfigHolder<R extends HasMetadata> {
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
-    public InformerConfigHolder<R> buildForController() {
+    public InformerConfiguration<R> buildForController() {
       // if the informer config uses the default "same as controller" value, reset the namespaces to
       // the default set for controllers
       if (namespaces == null || namespaces.isEmpty()
           || InformerEventSourceConfiguration.inheritsNamespacesFromController(namespaces)) {
         namespaces = Constants.DEFAULT_NAMESPACES_SET;
       }
-      return InformerConfigHolder.this;
+      return InformerConfiguration.this;
     }
 
-    public InformerConfigHolder<R> buildForInformerEventSource() {
+    public InformerConfiguration<R> buildForInformerEventSource() {
       if (namespaces == null || namespaces.isEmpty()) {
         namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
       }
@@ -130,11 +130,11 @@ public class InformerConfigHolder<R extends HasMetadata> {
         followControllerNamespacesOnChange =
             InformerEventSourceConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
       }
-      return InformerConfigHolder.this;
+      return InformerConfiguration.this;
     }
 
     @SuppressWarnings({"unchecked"})
-    public InformerConfigHolder<R>.Builder initFromAnnotation(Informer informerConfig,
+    public InformerConfiguration<R>.Builder initFromAnnotation(Informer informerConfig,
         String context) {
       if (informerConfig != null) {
 
@@ -178,12 +178,12 @@ public class InformerConfigHolder<R extends HasMetadata> {
     }
 
     public Builder withName(String name) {
-      InformerConfigHolder.this.name = name;
+      InformerConfiguration.this.name = name;
       return this;
     }
 
     public Builder withNamespaces(Set<String> namespaces) {
-      InformerConfigHolder.this.namespaces =
+      InformerConfiguration.this.namespaces =
           ResourceConfiguration.ensureValidNamespaces(namespaces);
       return this;
     }
@@ -232,48 +232,48 @@ public class InformerConfigHolder<R extends HasMetadata> {
      * @return the builder instance so that calls can be chained fluently
      */
     public Builder withFollowControllerNamespacesOnChange(boolean followChanges) {
-      InformerConfigHolder.this.followControllerNamespacesOnChange =
+      InformerConfiguration.this.followControllerNamespacesOnChange =
           followChanges;
       return this;
     }
 
     public Builder withLabelSelector(String labelSelector) {
-      InformerConfigHolder.this.labelSelector =
+      InformerConfiguration.this.labelSelector =
           ResourceConfiguration.ensureValidLabelSelector(labelSelector);
       return this;
     }
 
     public Builder withOnAddFilter(
         OnAddFilter<? super R> onAddFilter) {
-      InformerConfigHolder.this.onAddFilter = onAddFilter;
+      InformerConfiguration.this.onAddFilter = onAddFilter;
       return this;
     }
 
     public Builder withOnUpdateFilter(
         OnUpdateFilter<? super R> onUpdateFilter) {
-      InformerConfigHolder.this.onUpdateFilter = onUpdateFilter;
+      InformerConfiguration.this.onUpdateFilter = onUpdateFilter;
       return this;
     }
 
     public Builder withOnDeleteFilter(
         OnDeleteFilter<? super R> onDeleteFilter) {
-      InformerConfigHolder.this.onDeleteFilter = onDeleteFilter;
+      InformerConfiguration.this.onDeleteFilter = onDeleteFilter;
       return this;
     }
 
     public Builder withGenericFilter(
         GenericFilter<? super R> genericFilter) {
-      InformerConfigHolder.this.genericFilter = genericFilter;
+      InformerConfiguration.this.genericFilter = genericFilter;
       return this;
     }
 
     public Builder withItemStore(ItemStore<R> itemStore) {
-      InformerConfigHolder.this.itemStore = itemStore;
+      InformerConfiguration.this.itemStore = itemStore;
       return this;
     }
 
     public Builder withInformerListLimit(Long informerListLimit) {
-      InformerConfigHolder.this.informerListLimit = informerListLimit;
+      InformerConfiguration.this.informerListLimit = informerListLimit;
       return this;
     }
   }

@@ -5,7 +5,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
 
@@ -36,14 +36,14 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
   }
 
   @SuppressWarnings({"unchecked"})
-  private InformerConfigHolder<R> createInformerConfig(
+  private InformerConfiguration<R> createInformerConfig(
       KubernetesDependent configAnnotation,
       DependentResourceSpec<R, P, KubernetesDependentResourceConfig<R>> spec,
       ControllerConfiguration<? extends HasMetadata> controllerConfig) {
     Class<? extends KubernetesDependentResource<?, ?>> dependentResourceClass =
         (Class<? extends KubernetesDependentResource<?, ?>>) spec.getDependentResourceClass();
 
-    InformerConfigHolder<R>.Builder config = InformerConfigHolder.builder();
+    InformerConfiguration<R>.Builder config = InformerConfiguration.builder();
     if (configAnnotation != null) {
       final var informerConfig = configAnnotation.informer();
       final var context = Utils.contextFor(controllerConfig, dependentResourceClass,

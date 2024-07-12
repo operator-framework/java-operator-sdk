@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.client.informers.cache.BasicItemStore;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -271,7 +271,7 @@ class ControllerConfigurationOverriderTest {
     // override the namespaces for the dependent resource
     final var overriddenNS = "newNS";
     final var labelSelector = "foo=bar";
-    final var overridingInformerConfig = InformerConfigHolder.builder(ConfigMap.class)
+    final var overridingInformerConfig = InformerConfiguration.builder(ConfigMap.class)
         .withNamespaces(Set.of(overriddenNS))
         .withLabelSelector(labelSelector)
         .buildForInformerEventSource();

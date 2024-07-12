@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResolvedControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -202,7 +202,7 @@ class ControllerEventSourceTest extends
           null,
           null,
           new BaseConfigurationService(),
-          InformerConfigHolder.builder(TestCustomResource.class).withOnAddFilter(onAddFilter)
+          InformerConfiguration.builder(TestCustomResource.class).withOnAddFilter(onAddFilter)
               .withOnUpdateFilter(onUpdateFilter).withGenericFilter(genericFilter)
               .buildForController());
     }

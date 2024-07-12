@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -26,7 +26,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
-  InformerConfigHolder<R> getInformerConfig();
+  InformerConfiguration<R> getInformerConfig();
 
   default Optional<OnAddFilter<? super R>> onAddFilter() {
     return Optional.ofNullable(getInformerConfig().getOnAddFilter());

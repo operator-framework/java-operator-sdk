@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -275,7 +275,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         fieldManager.equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name
             : fieldManager;
 
-    InformerConfigHolder<P> informerConfig = InformerConfigHolder.builder(resourceClass)
+    InformerConfiguration<P> informerConfig = InformerConfiguration.builder(resourceClass)
         .initFromAnnotation(annotation != null ? annotation.informer() : null, context)
         .buildForController();
 

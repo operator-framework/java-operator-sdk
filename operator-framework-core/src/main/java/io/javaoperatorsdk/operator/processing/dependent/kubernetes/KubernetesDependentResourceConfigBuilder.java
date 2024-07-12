@@ -2,13 +2,13 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
 public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadata> {
 
   private boolean createResourceOnlyIfNotExistingWithSSA;
   private Boolean useSSA = null;
-  private InformerConfigHolder<R> informerConfigHolder;
+  private InformerConfiguration<R> informerConfiguration;
 
   public KubernetesDependentResourceConfigBuilder() {}
 
@@ -25,14 +25,14 @@ public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadat
   }
 
   public KubernetesDependentResourceConfigBuilder<R> withKubernetesDependentInformerConfig(
-      InformerConfigHolder<R> informerConfigHolder) {
-    this.informerConfigHolder = informerConfigHolder;
+      InformerConfiguration<R> informerConfiguration) {
+    this.informerConfiguration = informerConfiguration;
     return this;
   }
 
   public KubernetesDependentResourceConfig<R> build() {
     return new KubernetesDependentResourceConfig<>(
         useSSA, createResourceOnlyIfNotExistingWithSSA,
-        informerConfigHolder);
+        informerConfiguration);
   }
 }

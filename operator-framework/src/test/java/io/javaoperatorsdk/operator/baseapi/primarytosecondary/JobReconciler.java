@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -72,7 +72,7 @@ public class JobReconciler
                     cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
             .withInformerConfiguration(
-                InformerConfigHolder.Builder::withNamespacesInheritedFromController);
+                InformerConfiguration.Builder::withNamespacesInheritedFromController);
 
     if (addPrimaryToSecondaryMapper) {
       informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
@@ -102,6 +102,7 @@ public class JobReconciler
     return errorOccurred;
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public JobReconciler setGetResourceDirectlyFromCache(boolean getResourceDirectlyFromCache) {
     this.getResourceDirectlyFromCache = getResourceDirectlyFromCache;
     return this;

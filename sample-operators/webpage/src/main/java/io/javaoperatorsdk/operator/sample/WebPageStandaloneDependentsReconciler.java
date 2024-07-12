@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
@@ -96,7 +96,7 @@ public class WebPageStandaloneDependentsReconciler
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
         .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-            .withKubernetesDependentInformerConfig(InformerConfigHolder.builder()
+            .withKubernetesDependentInformerConfig(InformerConfiguration.builder()
                 .withLabelSelector(SELECTOR + "=true")
                 .buildForInformerEventSource())
             .build()));

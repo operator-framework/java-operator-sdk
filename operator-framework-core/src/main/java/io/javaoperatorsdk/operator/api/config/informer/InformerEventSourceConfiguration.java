@@ -92,7 +92,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        InformerConfigHolder<R> informerConfig) {
+        InformerConfiguration<R> informerConfig) {
       super(resourceClass, informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -141,7 +141,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     private final Class<R> resourceClass;
     private final GroupVersionKind groupVersionKind;
     private final Class<? extends HasMetadata> primaryResourceClass;
-    private final InformerConfigHolder<R>.Builder config;
+    private final InformerConfiguration<R>.Builder config;
     private String name;
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
@@ -162,11 +162,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
-      this.config = InformerConfigHolder.builder(resourceClass);
+      this.config = InformerConfiguration.builder(resourceClass);
     }
 
     public Builder<R> withInformerConfiguration(
-        Consumer<InformerConfigHolder<R>.Builder> configurator) {
+        Consumer<InformerConfiguration<R>.Builder> configurator) {
       configurator.accept(config);
       return this;
     }
@@ -197,7 +197,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       return secondaryToPrimaryMapper;
     }
 
-    public void updateFrom(InformerConfigHolder<R> informerConfig) {
+    public void updateFrom(InformerConfiguration<R> informerConfig) {
       if (informerConfig != null) {
         final var informerConfigName = informerConfig.getName();
         if (informerConfigName != null) {
