@@ -5,9 +5,9 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.sample.Utils;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;

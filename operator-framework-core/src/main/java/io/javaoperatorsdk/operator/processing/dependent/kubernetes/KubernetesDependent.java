@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
+
 
 
 @Retention(RetentionPolicy.RUNTIME)

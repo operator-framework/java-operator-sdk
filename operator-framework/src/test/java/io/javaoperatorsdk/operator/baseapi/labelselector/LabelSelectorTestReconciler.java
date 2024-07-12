@@ -2,8 +2,8 @@ package io.javaoperatorsdk.operator.baseapi.labelselector;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.baseapi.labelselector.LabelSelectorTestReconciler.LABEL_KEY;

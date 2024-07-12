@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
+package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -9,11 +9,11 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(

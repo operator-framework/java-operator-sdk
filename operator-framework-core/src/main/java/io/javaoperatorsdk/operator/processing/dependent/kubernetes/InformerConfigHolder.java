@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;

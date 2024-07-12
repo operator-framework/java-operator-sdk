@@ -4,9 +4,9 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent(informerConfig = @InformerConfig(

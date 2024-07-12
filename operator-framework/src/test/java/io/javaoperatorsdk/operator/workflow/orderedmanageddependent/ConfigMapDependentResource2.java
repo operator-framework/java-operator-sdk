@@ -5,10 +5,10 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent(informerConfig = @InformerConfig(labelSelector = "dependent = cm2"))

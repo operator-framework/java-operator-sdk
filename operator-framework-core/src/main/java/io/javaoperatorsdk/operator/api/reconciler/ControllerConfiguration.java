@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;

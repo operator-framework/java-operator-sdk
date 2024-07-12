@@ -3,8 +3,8 @@ package io.javaoperatorsdk.operator.baseapi.builtinresourcecleaner;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfig;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
 @ControllerConfiguration(informerConfig = @InformerConfig(labelSelector = "builtintest=true"))
 public class BuiltInResourceCleanerReconciler
