@@ -157,11 +157,11 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
         .resource(
             new NamespaceBuilder().withMetadata(new ObjectMetaBuilder().withName(namespace).build())
                 .build())
-        .create();
+        .serverSideApply();
 
     kubernetesClient
         .resourceList(infrastructure)
-        .createOrReplace();
+        .serverSideApply();
     kubernetesClient
         .resourceList(infrastructure)
         .waitUntilReady(infrastructureTimeout.toMillis(), TimeUnit.MILLISECONDS);
