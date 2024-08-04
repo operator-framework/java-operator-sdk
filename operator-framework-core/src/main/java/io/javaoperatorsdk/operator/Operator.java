@@ -164,7 +164,9 @@ public class Operator implements LifecycleAware {
 
   @Override
   public void stop() throws OperatorException {
-    stop(Duration.ZERO);
+    Duration reconciliationTerminationTimeout =
+        configurationService.reconciliationTerminationTimeout();
+    stop(reconciliationTerminationTimeout);
   }
 
   /**
