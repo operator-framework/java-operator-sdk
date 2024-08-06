@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 
@@ -63,6 +64,7 @@ class ConfigurationServiceOverriderTest {
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("newLease", "newLeaseNS"))
         .withInformerStoppedHandler((informer, ex) -> {
         })
+        .withReconciliationTerminationTimeout(Duration.ofSeconds(30))
         .build();
 
     assertNotEquals(config.closeClientOnStop(), overridden.closeClientOnStop());
@@ -77,6 +79,8 @@ class ConfigurationServiceOverriderTest {
         overridden.getLeaderElectionConfiguration());
     assertNotEquals(config.getInformerStoppedHandler(),
         overridden.getLeaderElectionConfiguration());
+    assertNotEquals(config.reconciliationTerminationTimeout(),
+        overridden.reconciliationTerminationTimeout());
   }
 
 }
