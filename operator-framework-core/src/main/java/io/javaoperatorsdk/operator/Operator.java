@@ -100,7 +100,7 @@ public class Operator implements LifecycleAware {
   @SuppressWarnings("unused")
   public void installShutdownHook(Duration gracefulShutdownTimeout) {
     if (!leaderElectionManager.isLeaderElectionEnabled()) {
-      Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(gracefulShutdownTimeout)));
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
     } else {
       log.warn("Leader election is on, shutdown hook will not be installed.");
     }
@@ -145,28 +145,24 @@ public class Operator implements LifecycleAware {
     }
   }
 
-  public void stop(Duration gracefulShutdownTimeout) throws OperatorException {
+  @Override
+  public void stop() throws OperatorException {
+    Duration reconciliationTerminationTimeout =
+        configurationService.reconciliationTerminationTimeout();
     if (!started) {
       return;
     }
-    log.info(
-        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
+    log.info("Operator SDK {} is shutting down...",
+        configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
-    configurationService.getExecutorServiceManager().stop(gracefulShutdownTimeout);
+    configurationService.getExecutorServiceManager().stop(reconciliationTerminationTimeout);
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       getKubernetesClient().close();
     }
 
     started = false;
-  }
-
-  @Override
-  public void stop() throws OperatorException {
-    Duration reconciliationTerminationTimeout =
-        configurationService.reconciliationTerminationTimeout();
-    stop(reconciliationTerminationTimeout);
   }
 
   /**

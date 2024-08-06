@@ -304,6 +304,7 @@ public interface ConfigurationService {
    * value is set, the default is immediate shutdown.
    *
    * @return The duration of time to wait before terminating the reconciliation threads
+   * @since 5.0.0
    */
   default Duration reconciliationTerminationTimeout() {
     return Duration.ZERO;
