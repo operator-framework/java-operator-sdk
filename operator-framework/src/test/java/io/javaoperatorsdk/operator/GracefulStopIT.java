@@ -18,26 +18,21 @@ import static org.awaitility.Awaitility.await;
 public class GracefulStopIT {
 
   public static final String TEST_1 = "test1";
-  public static final String TEST_2 = "test2";
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withCloseClientOnStop(false))
+          .withConfigurationService(o -> o.withCloseClientOnStop(false)
+              .withReconciliationTerminationTimeout(Duration.ofMillis(RECONCILER_SLEEP)))
           .withReconciler(new GracefulStopTestReconciler())
           .build();
 
   @Test
-  void stopsGracefullyWIthTimeout() {
-    testGracefulStop(TEST_1, RECONCILER_SLEEP, 2);
+  void stopsGracefullyWithTimeoutConfiguration() {
+    testGracefulStop(TEST_1, 2);
   }
 
-  @Test
-  void stopsGracefullyWithExpiredTimeout() {
-    testGracefulStop(TEST_2, RECONCILER_SLEEP / 5, 1);
-  }
-
-  private void testGracefulStop(String resourceName, int stopTimeout, int expectedFinalGeneration) {
+  private void testGracefulStop(String resourceName, int expectedFinalGeneration) {
     var testRes = operator.create(testResource(resourceName));
     await().untilAsserted(() -> {
       var r = operator.get(GracefulStopTestCustomResource.class, resourceName);
@@ -54,7 +49,7 @@ public class GracefulStopIT {
         () -> assertThat(operator.getReconcilerOfType(GracefulStopTestReconciler.class)
             .getNumberOfExecutions()).isEqualTo(2));
 
-    operator.getOperator().stop(Duration.ofMillis(stopTimeout));
+    operator.getOperator().stop();
 
     await().untilAsserted(() -> {
       var r = operator.get(GracefulStopTestCustomResource.class, resourceName);
