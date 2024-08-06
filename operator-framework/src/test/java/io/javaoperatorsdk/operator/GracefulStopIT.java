@@ -11,9 +11,9 @@ import io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestCustomRes
 import io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestCustomResourceSpec;
 import io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestReconciler;
 
-import static io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestReconciler.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.*;
+import static io.javaoperatorsdk.operator.sample.gracefulstop.GracefulStopTestReconciler.RECONCILER_SLEEP;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 public class GracefulStopIT {
 
