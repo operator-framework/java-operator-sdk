@@ -32,6 +32,7 @@ public class ConfigurationServiceOverrider {
   private InformerStoppedHandler informerStoppedHandler;
   private Boolean stopOnInformerErrorDuringStartup;
   private Duration cacheSyncTimeout;
+  private Duration reconciliationTerminationTimeout;
   private Boolean ssaBasedCreateUpdateMatchForDependentResources;
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean previousAnnotationForDependentResources;
@@ -124,6 +125,12 @@ public class ConfigurationServiceOverrider {
 
   public ConfigurationServiceOverrider withCacheSyncTimeout(Duration cacheSyncTimeout) {
     this.cacheSyncTimeout = cacheSyncTimeout;
+    return this;
+  }
+
+  public ConfigurationServiceOverrider withReconciliationTerminationTimeout(
+      Duration reconciliationTerminationTimeout) {
+    this.reconciliationTerminationTimeout = reconciliationTerminationTimeout;
     return this;
   }
 
@@ -249,6 +256,12 @@ public class ConfigurationServiceOverrider {
       @Override
       public Duration cacheSyncTimeout() {
         return overriddenValueOrDefault(cacheSyncTimeout, ConfigurationService::cacheSyncTimeout);
+      }
+
+      @Override
+      public Duration reconciliationTerminationTimeout() {
+        return overriddenValueOrDefault(reconciliationTerminationTimeout,
+            ConfigurationService::reconciliationTerminationTimeout);
       }
 
       @Override
