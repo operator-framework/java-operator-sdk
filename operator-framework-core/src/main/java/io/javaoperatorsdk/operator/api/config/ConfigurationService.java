@@ -104,8 +104,8 @@ public interface ConfigurationService {
    *
    * @param reconciler the reconciler we want the configuration of
    * @param <R> the {@code CustomResource} type associated with the specified reconciler
-   * @return the {@link ControllerConfiguration} associated with the specified reconciler or {@code
-   * null} if no configuration exists for the reconciler
+   * @return the {@link ControllerConfiguration} associated with the specified reconciler or
+   *         {@code null} if no configuration exists for the reconciler
    */
   <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler);
 
@@ -214,7 +214,7 @@ public interface ConfigurationService {
 
   /**
    * Override to provide a custom {@link Metrics} implementation
-   * 
+   *
    * @return the {@link Metrics} implementation
    */
   default Metrics getMetrics() {
@@ -224,7 +224,7 @@ public interface ConfigurationService {
   /**
    * Override to provide a custom {@link ExecutorService} implementation to change how threads
    * handle concurrent reconciliations
-   * 
+   *
    * @return the {@link ExecutorService} implementation to use for concurrent reconciliation
    *         processing
    */
@@ -235,7 +235,7 @@ public interface ConfigurationService {
   /**
    * Override to provide a custom {@link ExecutorService} implementation to change how dependent
    * workflows are processed in parallel
-   * 
+   *
    * @return the {@link ExecutorService} implementation to use for dependent workflow processing
    */
   default ExecutorService getWorkflowExecutorService() {
@@ -245,7 +245,7 @@ public interface ConfigurationService {
   /**
    * Determines whether the associated Kubernetes client should be closed when the associated
    * {@link io.javaoperatorsdk.operator.Operator} is stopped.
-   * 
+   *
    * @return {@code true} if the Kubernetes should be closed on stop, {@code false} otherwise
    */
   default boolean closeClientOnStop() {
@@ -255,7 +255,7 @@ public interface ConfigurationService {
   /**
    * Override to provide a custom {@link DependentResourceFactory} implementation to change how
    * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} are instantiated
-   * 
+   *
    * @return the custom {@link DependentResourceFactory} implementation
    */
   @SuppressWarnings("rawtypes")
@@ -267,7 +267,7 @@ public interface ConfigurationService {
    * Retrieves the optional {@link LeaderElectionConfiguration} to specify how the associated
    * {@link io.javaoperatorsdk.operator.Operator} handles leader election to ensure only one
    * instance of the operator runs on the cluster at any given time
-   * 
+   *
    * @return the {@link LeaderElectionConfiguration}
    */
   default Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
@@ -303,6 +303,17 @@ public interface ConfigurationService {
   }
 
   /**
+   * This is the timeout value that allows the reconciliation threads to gracefully shut down. If no
+   * value is set, the default is immediate shutdown.
+   *
+   * @return The duration of time to wait before terminating the reconciliation threads
+   * @since 5.0.0
+   */
+  default Duration reconciliationTerminationTimeout() {
+    return Duration.ZERO;
+  }
+
+  /**
    * Handler for an informer stop. Informer stops if there is a non-recoverable error. Like received
    * a resource that cannot be deserialized.
    *
@@ -329,7 +340,7 @@ public interface ConfigurationService {
    * Override to provide a custom {@link ManagedWorkflowFactory} implementation to change how
    * {@link io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow} are
    * instantiated
-   * 
+   *
    * @return the custom {@link ManagedWorkflowFactory} implementation
    */
   @SuppressWarnings("rawtypes")
@@ -339,7 +350,7 @@ public interface ConfigurationService {
 
   /**
    * Override to provide a custom {@link ExecutorServiceManager} implementation
-   * 
+   *
    * @return the custom {@link ExecutorServiceManager} implementation
    */
   default ExecutorServiceManager getExecutorServiceManager() {
@@ -356,9 +367,8 @@ public interface ConfigurationService {
    * SSA based create/update can be still used with the legacy matching, just overriding the match
    * method of Kubernetes Dependent Resource.
    *
-   * @since 4.4.0
-   *
    * @return if SSA should be used for dependent resources
+   * @since 4.4.0
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
     return true;
@@ -443,9 +453,8 @@ public interface ConfigurationService {
    * <p>
    * Disable this if you want to react to your own dependent resource updates
    *
-   * @since 4.5.0
-   *
    * @return if special annotation should be used for dependent resource to filter events
+   * @since 4.5.0
    */
   default boolean previousAnnotationForDependentResourcesEventFiltering() {
     return true;
@@ -460,9 +469,8 @@ public interface ConfigurationService {
    * logic, and you want to further minimize the amount of work done / updates issued by the
    * operator.
    *
-   * @since 4.5.0
-   *
    * @return if resource version should be parsed (as integer)
+   * @since 4.5.0
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
     return false;
@@ -475,8 +483,8 @@ public interface ConfigurationService {
    *
    * @return {@code true} if Server-Side Apply (SSA) should be used when patching the primary
    *         resources, {@code false} otherwise
-   * @since 5.0.0
    * @see ConfigurationServiceOverrider#withUseSSAToPatchPrimaryResource(boolean)
+   * @since 5.0.0
    */
   default boolean useSSAToPatchPrimaryResource() {
     return true;
@@ -487,7 +495,7 @@ public interface ConfigurationService {
    * Determines whether resources retrieved from caches such as via calls to
    * {@link Context#getSecondaryResource(Class)} should be defensively cloned first.
    * </p>
-   * 
+   *
    * <p>
    * Defensive cloning to prevent problematic cache modifications (modifying the resource would
    * otherwise modify the stored copy in the cache) was transparently done in previous JOSDK
@@ -495,10 +503,9 @@ public interface ConfigurationService {
    * Server-Side Apply, where you should create a new copy of your resource with only modified
    * fields, such modifications of these resources are less likely to occur.
    * </p>
-   * 
+   *
    * @return {@code true} if resources should be defensively cloned before returning them from
    *         caches, {@code false} otherwise
-   * 
    * @since 5.0.0
    */
   default boolean cloneSecondaryResourcesWhenGettingFromCache() {

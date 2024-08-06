@@ -120,3 +120,15 @@ might be a permission issue for some resources in another namespace.
 The `stopOnInformerErrorDuringStartup` has implication on [cache sync timeout](https://github.com/java-operator-sdk/java-operator-sdk/blob/114c4312c32b34688811df8dd7cea275878c9e73/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L177-L179)
 behavior. If true operator will stop on cache sync timeout. if `false`, after the timeout the controller will start
 reconcile resources even if one or more event source caches did not sync yet.  
+
+## Graceful Shutdown
+
+You can provide sufficient time for the reconciler to process and complete the currently ongoing events before shutting down. 
+The configuration is simple. You just need to set an appropriate duration value for `reconciliationTerminationTimeout` using `ConfigurationServiceOverrider`.
+
+```java
+final var overridden = new ConfigurationServiceOverrider(config)
+    .withReconciliationTerminationTimeout(Duration.ofSeconds(5));
+
+final var operator = new Operator(overridden);
+```
