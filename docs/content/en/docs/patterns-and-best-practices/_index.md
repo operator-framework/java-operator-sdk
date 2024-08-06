@@ -123,18 +123,8 @@ reconcile resources even if one or more event source caches did not sync yet.
 
 ## Graceful Shutdown
 
-We can provide sufficient time for the reconciler to process and complete the currently ongoing events before shutting down. 
-There are two ways to support the graceful shutdown feature.
-
-The first method is to directly provide a timeout value to the `stop` method.
-
-```java
-final var operator = new Operator();
-
-operator.stop(Duration.ofSeconds(5));
-```
-
-The second method is to specify the timeout value by overriding the `ConfigurationService`.
+You can provide sufficient time for the reconciler to process and complete the currently ongoing events before shutting down. 
+The configuration is simple. You just need to set an appropriate duration value for `reconciliationTerminationTimeout` using `ConfigurationServiceOverrider`.
 
 ```java
 final var overridden = new ConfigurationServiceOverrider(config)
