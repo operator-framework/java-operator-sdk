@@ -76,7 +76,7 @@ class InformerRelatedBehaviorITS {
   @AfterEach
   void cleanup() {
     if (operator != null) {
-      operator.stop(Duration.ofSeconds(1));
+      operator.stop();
     }
     adminClient.resource(dependentConfigMap()).delete();
     adminClient.resource(testCustomResource()).delete();
@@ -321,6 +321,7 @@ class InformerRelatedBehaviorITS {
           co.withKubernetesClient(clientUsingServiceAccount());
           co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
           co.withCacheSyncTimeout(Duration.ofMillis(3000));
+          co.withReconciliationTerminationTimeout(Duration.ofSeconds(1));
           if (addStopHandler) {
             co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
           }
