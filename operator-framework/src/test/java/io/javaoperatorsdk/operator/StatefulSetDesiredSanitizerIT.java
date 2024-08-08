@@ -36,7 +36,7 @@ public class StatefulSetDesiredSanitizerIT {
     });
     // make sure reconciliation happens at least once more
     resource.getSpec().setValue("changed value");
-    extension.replace(resource);
+    extension.createOrUpdate(resource);
 
     await().untilAsserted(
         () -> assertThat(StatefulSetDesiredSanitizerDependentResource.nonMatchedAtLeastOnce)
