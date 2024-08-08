@@ -210,7 +210,6 @@ public class ConfigurationServiceOverrider {
 
       @SuppressWarnings("rawtypes")
       @Override
-      @SuppressWarnings("rawtypes")
       public DependentResourceFactory dependentResourceFactory() {
         return overriddenValueOrDefault(dependentResourceFactory,
             ConfigurationService::dependentResourceFactory);
