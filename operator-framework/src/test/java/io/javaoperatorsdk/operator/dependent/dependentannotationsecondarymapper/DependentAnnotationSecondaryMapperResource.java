@@ -12,6 +12,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("MaxIntervalTestCustomResource")
 @ShortNames("mit")
 public class DependentAnnotationSecondaryMapperResource
-    extends CustomResource<Void, DependentAnnotationSecondaryMapperResourceStatus>
+    extends CustomResource<Void, Void>
     implements Namespaced {
 }

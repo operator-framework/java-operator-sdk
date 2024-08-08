@@ -8,6 +8,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 public class DependentResourceCrossRefResource
-    extends CustomResource<Void, DependentResourceCrossRefResourceStatus>
+    extends CustomResource<Void, Void>
     implements Namespaced {
 }

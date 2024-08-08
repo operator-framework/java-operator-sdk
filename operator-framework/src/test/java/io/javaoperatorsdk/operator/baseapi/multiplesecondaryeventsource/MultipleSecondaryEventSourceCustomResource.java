@@ -12,6 +12,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("MultipleSecondaryEventSourceCustomResource")
 @ShortNames("mses")
 public class MultipleSecondaryEventSourceCustomResource
-    extends CustomResource<Void, MultipleSecondaryEventSourceStatus>
+    extends CustomResource<Void, Void>
     implements Namespaced {
 }

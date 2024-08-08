@@ -10,6 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("cjo")
 public class Job
-    extends CustomResource<JobSpec, JobStatus>
+    extends CustomResource<JobSpec, Void>
     implements Namespaced {
 }

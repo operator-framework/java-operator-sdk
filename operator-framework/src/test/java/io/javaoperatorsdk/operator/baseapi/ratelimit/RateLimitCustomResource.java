@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("rlc")
 public class RateLimitCustomResource
-    extends CustomResource<RateLimitCustomResourceSpec, RateLimitCustomResourceStatus>
+    extends CustomResource<RateLimitCustomResourceSpec, Void>
     implements Namespaced {
 
 }

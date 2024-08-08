@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("mdwd")
 public class MultipleDependentResourceCustomResourceNoDiscriminator
-    extends CustomResource<Void, MultipleDependentResourceWithDiscriminatorStatus>
+    extends CustomResource<Void, Void>
     implements Namespaced {
 
   public String getConfigMapName(int id) {

@@ -10,6 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("clu")
 public class Cluster
-    extends CustomResource<Void, ClusterStatus>
+    extends CustomResource<Void, Void>
     implements Namespaced {
 }
