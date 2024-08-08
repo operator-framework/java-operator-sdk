@@ -1,35 +1,46 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ""
+  name: mongo-template
+  labels:
+    app.kubernetes.io/name: mongo-template
+    app.kubernetes.io/component: first-or-second
 spec:
+  serviceName: mongo-template
+  replicas: 1
   selector:
     matchLabels:
-      app: nginx # has to match .spec.template.metadata.labels
-  serviceName: "nginx"
-  replicas: 1
-  minReadySeconds: 10 # by default is 0
+      app.kubernetes.io/name: mongo-template
   template:
     metadata:
       labels:
-        app: nginx # has to match .spec.selector.matchLabels
+        app.kubernetes.io/name: mongo-template
+        app.kubernetes.io/component: first-or-second
     spec:
       terminationGracePeriodSeconds: 10
       containers:
-        - name: nginx
-          image: registry.k8s.io/nginx-slim:0.8
+        - name: mongo
+          image: mongo:4.4
           ports:
-            - containerPort: 80
-              name: web
+            - name: mongodb
+              containerPort: 27017
           volumeMounts:
-            - name: www
-              mountPath: /usr/share/nginx/html
+            - name: data
+              mountPath: /data/db
   volumeClaimTemplates:
-    - metadata:
-        name: www
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+        labels:
+          app.kubernetes.io/name: mongo-template
       spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "my-storage-class"
+        volumeMode: Filesystem
+        accessModes:
+          - ReadWriteOnce
         resources:
           requests:
             storage: 1Gi
+          limits:
+            storage: 50Gi
+
