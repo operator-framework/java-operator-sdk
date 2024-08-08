@@ -26,7 +26,8 @@ public class ServiceDependentResource
   protected Service desired(SSALegacyMatcherCustomResource primary,
       Context<SSALegacyMatcherCustomResource> context) {
 
-    Service service = loadYaml(Service.class, SSAWithLegacyMatcherIT.class, "/io/javaoperatorsdk/operator/service.yaml");
+    Service service = loadYaml(Service.class, SSAWithLegacyMatcherIT.class,
+        "/io/javaoperatorsdk/operator/service.yaml");
     service.getMetadata().setName(primary.getMetadata().getName());
     service.getMetadata().setNamespace(primary.getMetadata().getNamespace());
     Map<String, String> labels = new HashMap<>();
