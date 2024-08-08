@@ -31,9 +31,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
+import io.javaoperatorsdk.operator.dependent.dependentssa.DependentSSAReconciler;
+import io.javaoperatorsdk.operator.dependent.readonly.ConfigMapReader;
+import io.javaoperatorsdk.operator.dependent.readonly.ReadOnlyDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.BooleanWithUndefined;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
@@ -41,9 +46,6 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
-import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSAReconciler;
-import io.javaoperatorsdk.operator.sample.readonly.ConfigMapReader;
-import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
 import static io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval.DEFAULT_INTERVAL;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -243,7 +245,6 @@ class BaseConfigurationServiceTest {
     final var kubernetesDependentResourceConfig =
         extractDependentKubernetesResourceConfig(config, 1);
     assertNotNull(kubernetesDependentResourceConfig);
-    assertTrue(kubernetesDependentResourceConfig.useSSA().isEmpty());
     assertFalse(configurationService.shouldUseSSA(ReadOnlyDependent.class, ConfigMap.class,
         kubernetesDependentResourceConfig));
   }
@@ -257,8 +258,7 @@ class BaseConfigurationServiceTest {
     final var kubernetesDependentResourceConfig =
         extractDependentKubernetesResourceConfig(config, 0);
     assertNotNull(kubernetesDependentResourceConfig);
-    assertFalse(kubernetesDependentResourceConfig.useSSA().isEmpty());
-    assertTrue((Boolean) kubernetesDependentResourceConfig.useSSA().get());
+    assertTrue(kubernetesDependentResourceConfig.useSSA());
     assertTrue(configurationService.shouldUseSSA(SelectorReconciler.WithAnnotation.class,
         ConfigMap.class, kubernetesDependentResourceConfig));
   }
@@ -270,15 +270,13 @@ class BaseConfigurationServiceTest {
 
     var kubernetesDependentResourceConfig = extractDependentKubernetesResourceConfig(config, 0);
     assertNotNull(kubernetesDependentResourceConfig);
-    assertTrue(kubernetesDependentResourceConfig.useSSA().isEmpty());
     assertTrue(configurationService.shouldUseSSA(
         DefaultSSAForDependentsReconciler.DefaultDependent.class, ConfigMapReader.class,
         kubernetesDependentResourceConfig));
 
     kubernetesDependentResourceConfig = extractDependentKubernetesResourceConfig(config, 1);
     assertNotNull(kubernetesDependentResourceConfig);
-    assertTrue(kubernetesDependentResourceConfig.useSSA().isPresent());
-    assertFalse((Boolean) kubernetesDependentResourceConfig.useSSA().get());
+    assertFalse(kubernetesDependentResourceConfig.useSSA());
     assertFalse(configurationService
         .shouldUseSSA(DefaultSSAForDependentsReconciler.NonSSADependent.class, Service.class,
             kubernetesDependentResourceConfig));
@@ -412,10 +410,11 @@ class BaseConfigurationServiceTest {
     }
   }
 
-  @ControllerConfiguration(dependents = {
-      @Dependent(type = DefaultSSAForDependentsReconciler.DefaultDependent.class),
-      @Dependent(type = DefaultSSAForDependentsReconciler.NonSSADependent.class)
-  })
+  @Workflow(
+      dependents = {
+          @Dependent(type = DefaultSSAForDependentsReconciler.DefaultDependent.class),
+          @Dependent(type = DefaultSSAForDependentsReconciler.NonSSADependent.class)
+      })
   private static class DefaultSSAForDependentsReconciler implements Reconciler<ConfigMap> {
 
     @Override

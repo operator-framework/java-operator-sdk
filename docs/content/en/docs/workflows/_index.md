@@ -46,7 +46,7 @@ reconciliation process.
   [CRDPresentActivationCondition](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/CRDPresentActivationCondition.java)   
   that will prevent the associated dependent resource from being activated if the Custom Resource Definition associated
   with the dependent's resource type is not present on the cluster.
-  See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/ba5e33527bf9e3ea0bd33025ccb35e677f9d44b4/operator-framework/src/test/java/io/javaoperatorsdk/operator/CRDPresentActivationConditionIT.java).
+  See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/crdpresentactivation).
 
   To have multiple resources of same type with an activation condition is a bit tricky, since you
   don't want to have multiple `InformerEventSource` for the same type, you have to explicitly 
@@ -67,7 +67,7 @@ You can access the results for conditions from the `WorkflowResult` instance tha
 evaluated. You can access that result from the `ManagedWorkflowAndDependentResourceContext` accessible from the
 reconciliation `Context`. You can then access individual condition results using the `
 getDependentConditionResult` methods. You can see an example of this
-in [this integration test](https://github.com/operator-framework/java-operator-sdk/blob/fd0e92c0de55c47d5df50658cf4e147ee5e6102d/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/workflowallfeature/WorkflowAllFeatureReconciler.java#L44-L49).
+in [this integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowallfeature/WorkflowAllFeatureReconciler.java).
 
 ## Defining Workflows
 
@@ -350,7 +350,7 @@ checks that the resource is actually removed or that it, at least, doesn't have 
 provides such a delete post-condition implementation in the form of
 [`KubernetesResourceDeletedCondition`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/KubernetesResourceDeletedCondition.java)
 
-Also, check usage in an [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/manageddependentdeletecondition/ManagedDependentDefaultDeleteConditionReconciler.java).
+Also, check usage in an [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/manageddependentdeletecondition/ManagedDependentDefaultDeleteConditionReconciler.java).
 
 In such cases the Kubernetes Dependent Resource should extend `CRUDNoGCKubernetesDependentResource`
 and NOT `CRUDKubernetesDependentResource` since otherwise the Kubernetes Garbage Collector would delete the resources.
@@ -373,13 +373,13 @@ ManagedWorkflowAndDependentResourceContext` retrieved from the reconciliation `C
 resource reconciler `reconcile` method arguments.
 
 See
-related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitInvocationIT.java)
+related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowexplicitinvocation)
 for more details.
 
 For `cleanup`, if the `Cleaner` interface is implemented, the `cleanupManageWorkflow()` needs to be called explicitly.
 However, if `Cleaner` interface is not implemented, it will be called implicitly.
 See
-related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/WorkflowExplicitCleanupIT.java).
+related [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowexplicitcleanup).
 
 While nothing prevents calling the workflow multiple times in a reconciler, it isn't typical or even recommended to do
 so. Conversely, if explicit invocation is requested but `reconcileManagedWorkflow` is not called in the primary resource
