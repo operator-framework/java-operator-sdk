@@ -97,15 +97,15 @@ using [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/s
 It is important to understand how SSA works in Kubernetes. Mainly, resources applied using SSA
 should contain only the fields identifying the resource and those the user is interested in (a 'fully specified intent'
 in Kubernetes parlance), thus usually using a resource created from scratch, see
-[sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourcewithssa/PatchResourceWithSSAReconciler.java#L18-L22).
-To contrast, see the same sample, this time [without SSA](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java#L16-L16).
+[sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/patchresourcewithssa).
+To contrast, see the same sample, this time [without SSA](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java).
 
 Non-SSA based patch is still supported.  
 You can control whether or not to use SSA
 using [`ConfigurationServcice.useSSAToPatchPrimaryResource()`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L385-L385)
 and the related `ConfigurationServiceOverrider.withUseSSAToPatchPrimaryResource` method.
 Related integration test can be
-found [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/patchresourceandstatusnossa/PatchResourceAndStatusNoSSAReconciler.java).
+found [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/patchresourceandstatusnossa).
 
 Handling resources directly using the client, instead of delegating these updates operations to JOSDK by returning
 an `UpdateControl` at the end of your reconciliation, should work appropriately. However, we do recommend to
@@ -204,7 +204,7 @@ A Controller can be registered for a non-custom resource, so well known Kubernet
 `Ingress`, `Deployment`,...).
 
 See
-the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/deployment/DeploymentReconciler.java)
+the [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/deployment)
 for reconciling deployments.
 
 ```java 
@@ -529,7 +529,7 @@ between a primary resource and its associated secondary resources using an imple
 `PrimaryToSecondaryMapper` interface. This is typically needed when there are many-to-one or
 many-to-many relationships between primary and secondary resources, e.g. when the primary resource
 is referencing secondary resources.
-See [PrimaryToSecondaryIT](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/PrimaryToSecondaryIT.java)
+See [PrimaryToSecondaryIT](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/primarytosecondary/PrimaryToSecondaryIT.java)
 integration test for a sample.
 
 ### Built-in EventSources
@@ -665,7 +665,7 @@ As seen in the above code snippet, the informer will have the initial namespaces
 controller, but also will adjust the target namespaces if it changes for the controller.
 
 See also
-the [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/ec37025a15046d8f409c77616110024bf32c3416/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/changenamespace/ChangeNamespaceTestReconciler.java)
+the [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/changenamespace)
 for this feature.
 
 ## Leader Election
