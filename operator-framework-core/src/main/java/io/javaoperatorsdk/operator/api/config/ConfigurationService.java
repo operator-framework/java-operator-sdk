@@ -410,7 +410,7 @@ public interface ConfigurationService {
       return false;
     }
     Boolean useSSAConfig = Optional.ofNullable(config)
-        .flatMap(KubernetesDependentResourceConfig::useSSA)
+        .map(KubernetesDependentResourceConfig::useSSA)
         .orElse(null);
     // don't use SSA for certain resources by default, only if explicitly overridden
     if (useSSAConfig == null) {

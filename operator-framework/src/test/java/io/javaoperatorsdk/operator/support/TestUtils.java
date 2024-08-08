@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.operator.baseapi.simple.TestCustomResource;
+import io.javaoperatorsdk.operator.baseapi.simple.TestCustomResourceSpec;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
-import io.javaoperatorsdk.operator.sample.simple.TestCustomResourceSpec;
 
 public class TestUtils {
 
