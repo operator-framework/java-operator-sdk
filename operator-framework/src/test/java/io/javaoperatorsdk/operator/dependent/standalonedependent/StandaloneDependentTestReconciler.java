@@ -79,7 +79,7 @@ public class StandaloneDependentTestReconciler
         Context<StandaloneDependentTestCustomResource> context) {
       Deployment deployment =
           ReconcilerUtils.loadYaml(Deployment.class, StandaloneDependentResourceIT.class,
-              "nginx-deployment.yaml");
+              "/io/javaoperatorsdk/operator/nginx-deployment.yaml");
       deployment.getMetadata().setName(primary.getMetadata().getName());
       deployment.getSpec().setReplicas(primary.getSpec().getReplicaCount());
       deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());

@@ -26,7 +26,8 @@ public class ServiceDependentResource
   @Override
   protected Service desired(ServiceStrictMatcherTestCustomResource primary,
       Context<ServiceStrictMatcherTestCustomResource> context) {
-    Service service = loadYaml(Service.class, ServiceStrictMatcherIT.class, "service.yaml");
+    Service service = loadYaml(Service.class, ServiceStrictMatcherIT.class,
+        "/io/javaoperatorsdk/operator/service.yaml");
     service.getMetadata().setName(primary.getMetadata().getName());
     service.getMetadata().setNamespace(primary.getMetadata().getNamespace());
     Map<String, String> labels = new HashMap<>();

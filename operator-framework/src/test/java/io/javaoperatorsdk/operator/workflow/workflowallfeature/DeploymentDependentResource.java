@@ -17,7 +17,7 @@ public class DeploymentDependentResource extends
       Context<WorkflowAllFeatureCustomResource> context) {
     Deployment deployment =
         ReconcilerUtils.loadYaml(Deployment.class, WorkflowAllFeatureIT.class,
-            "nginx-deployment.yaml");
+            "/io/javaoperatorsdk/operator/nginx-deployment.yaml");
     deployment.getMetadata().setName(primary.getMetadata().getName());
     deployment.getSpec().setReplicas(2);
     deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());

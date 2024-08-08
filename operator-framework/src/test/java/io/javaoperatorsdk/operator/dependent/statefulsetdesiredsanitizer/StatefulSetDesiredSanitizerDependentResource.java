@@ -20,7 +20,8 @@ public class StatefulSetDesiredSanitizerDependentResource
   protected StatefulSet desired(StatefulSetDesiredSanitizerCustomResource primary,
       Context<StatefulSetDesiredSanitizerCustomResource> context) {
     var template =
-        ReconcilerUtils.loadYaml(StatefulSet.class, getClass(), "statefulset.yaml");
+        ReconcilerUtils.loadYaml(StatefulSet.class, getClass(),
+            "/io/javaoperatorsdk/operator/statefulset.yaml");
     template.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName())
         .withNamespace(primary.getMetadata().getNamespace())
