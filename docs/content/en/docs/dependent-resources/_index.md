@@ -291,7 +291,7 @@ customized by implementing
 by the dependent resource.
 
 See sample in one of the integration
-tests [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/primaryindexer/DependentPrimaryIndexerTestReconciler.java#L25-L25)
+tests [here](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/primaryindexer)
 .
 
 ## Multiple Dependent Resources of Same Type
@@ -310,7 +310,7 @@ There might be casees, though, where it might be problematic to call the `desire
 - Override the `selectManagedSecondaryResource` method, if your `DependentResource` extends `AbstractDependentResource`.
   This should be relatively simple to override this method to optimize the matching to your needs. You can see an
   example of such an implementation in
-  the [`ExternalWithStateDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/6cd0f884a7c9b60c81bd2d52da54adbd64d6e118/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/externalstate/ExternalWithStateDependentResource.java#L43-L49)
+  the [`ExternalWithStateDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/externalstate/ExternalWithStateDependentResource.java)
   class.
 - Override the `managedSecondaryResourceID` method, if your `DependentResource` extends `KubernetesDependentResource`,
   where it's very often possible to easily determine the `ResourceID` of the secondary resource. This would probably be
@@ -333,9 +333,9 @@ would look as follows:
 ```
 
 A sample is provided as an integration test both:
-for [managed](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleManagedDependentNoDiscriminatorIT.java)
+for [managed](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/multipledrsametypenodiscriminator)
 
-For [standalone](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/MultipleDependentResourceIT.java)
+For [standalone](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/multipledependentresource)
 cases.
 
 ## Bulk Dependent Resources
@@ -352,11 +352,11 @@ implement the
 interface.
 
 Various examples are provided
-as [integration tests](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/bulkdependent)
+as [integration tests](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/bulkdependent)
 .
 
 To see how bulk dependent resources interact with workflow conditions, please refer to this
-[integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/bulkdependent/BulkDependentWithConditionIT.java).
+[integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/bulkdependent/conidition).
 
 ## External State Tracking Dependent Resources
 
@@ -377,11 +377,11 @@ interface. Note that most of the JOSDK-provided dependent resource implementatio
 `PollingDependentResource` or `PerResourcePollingDependentResource` already extends
 `AbstractExternalDependentResource`, thus supporting external state tracking out of the box.
 
-See [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/ExternalStateDependentIT.java)
+See [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/externalstate/ExternalStateDependentIT.java)
 as a sample.
 
 For a better understanding it might be worth to study
-a [sample implementation](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/externalstate/ExternalStateReconciler.java)
+a [sample implementation](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/externalstate/ExternalStateReconciler.java)
 without dependent resources.
 
 Please also refer to the [docs](/docs/patterns-and-best-practices#managing-state) for managing state in
@@ -395,7 +395,7 @@ created. For example, if three bulk dependent resources associated with external
 three associated `ConfigMaps` (assuming `ConfigMaps` are used as a state-tracking resource) will
 also be created, one per dependent resource.
 
-See [integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/ExternalStateBulkIT.java)
+See [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/externalstate/externalstatebulkdependent)
 as a sample.
 
 ## GenericKubernetesResource based Dependent Resources
@@ -435,13 +435,13 @@ samples [here](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/
    practice in general) - so for example if there are two config map dependents, either
    there should be a shared event source between them, or a label selector on the event sources
    to select only the relevant events, see
-   in [related integration test](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/sample/orderedmanageddependent/ConfigMapDependentResource1.java)
+   in [related integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/orderedmanageddependent/ConfigMapDependentResource2.java)
    .
 
 ## "Read-only" Dependent Resources vs. Event Source
 
 See Integration test for a read-only
-dependent [here](https://github.com/java-operator-sdk/java-operator-sdk/blob/249b41f3c68c4d0e9c77c41eca647a69a24347b0/operator-framework/src/test/java/io/javaoperatorsdk/operator/PrimaryToSecondaryDependentIT.java).
+dependent [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/primarytosecondaydependent/ConfigMapDependent.java).
 
 Some secondary resources only exist as input for the reconciliation process and are never
 updated *by a controller* (they might, and actually usually do, get updated by users interacting
