@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.dependent.bulkdependent.conidition;
+package io.javaoperatorsdk.operator.dependent.bulkdependent.condition;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

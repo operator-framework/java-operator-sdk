@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.dependent.bulkdependent.conidition;
+package io.javaoperatorsdk.operator.dependent.bulkdependent.condition;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;

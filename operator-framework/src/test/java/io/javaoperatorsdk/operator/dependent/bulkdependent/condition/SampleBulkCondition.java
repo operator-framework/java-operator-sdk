@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.dependent.bulkdependent.conidition;
+package io.javaoperatorsdk.operator.dependent.bulkdependent.condition;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
