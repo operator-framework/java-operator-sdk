@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -188,7 +188,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   protected InformerEventSource<R, P> createEventSource(EventSourceContext<P> context) {
-    final InformerConfiguration.InformerConfigurationBuilder<R> configBuilder =
+    final InformerEventSourceConfiguration.Builder<R> configBuilder =
         informerConfigurationBuilder(context)
             .withSecondaryToPrimaryMapper(getSecondaryToPrimaryMapper(context).orElseThrow())
             .withName(name());
@@ -196,7 +196,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     // update configuration from annotation if specified
     if (kubernetesDependentResourceConfig != null
         && kubernetesDependentResourceConfig.informerConfig() != null) {
-      kubernetesDependentResourceConfig.informerConfig().updateInformerConfigBuilder(configBuilder);
+      configBuilder.updateFrom(kubernetesDependentResourceConfig.informerConfig());
     }
 
     var es = new InformerEventSource<>(configBuilder.build(), context);
@@ -207,9 +207,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   /**
    * To handle {@link io.fabric8.kubernetes.api.model.GenericKubernetesResource} based dependents.
    */
-  protected InformerConfiguration.InformerConfigurationBuilder<R> informerConfigurationBuilder(
+  protected InformerEventSourceConfiguration.Builder<R> informerConfigurationBuilder(
       EventSourceContext<P> context) {
-    return InformerConfiguration.from(resourceType(), context.getPrimaryResourceClass());
+    return InformerEventSourceConfiguration.from(resourceType(), context.getPrimaryResourceClass());
   }
 
   private boolean useNonOwnerRefBasedSecondaryToPrimaryMapping() {

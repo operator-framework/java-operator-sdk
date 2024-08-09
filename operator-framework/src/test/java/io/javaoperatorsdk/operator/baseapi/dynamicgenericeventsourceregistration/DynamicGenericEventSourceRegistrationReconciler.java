@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.dsl.NonDeletingOperation;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -75,7 +75,7 @@ public class DynamicGenericEventSourceRegistrationReconciler
       Context<DynamicGenericEventSourceRegistrationCustomResource> context) {
 
     return new InformerEventSource<>(
-        InformerConfiguration
+        InformerEventSourceConfiguration
             .from(gvkFor(clazz), DynamicGenericEventSourceRegistrationCustomResource.class)
             .withName(clazz.getSimpleName())
             .build(),

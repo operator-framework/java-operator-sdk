@@ -6,8 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
@@ -65,14 +65,14 @@ public class JobReconciler
     context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
         .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
-    InformerConfiguration.InformerConfigurationBuilder<Cluster> informerConfiguration =
-        InformerConfiguration.from(Cluster.class, Job.class)
+    InformerEventSourceConfiguration.Builder<Cluster> informerConfiguration =
+        InformerEventSourceConfiguration.from(Cluster.class, Job.class)
             .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
                 .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
                     cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
             .withInformerConfiguration(
-                InformerConfigHolder.Builder::withNamespacesInheritedFromController);
+                InformerConfiguration.Builder::withNamespacesInheritedFromController);
 
     if (addPrimaryToSecondaryMapper) {
       informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
@@ -102,6 +102,7 @@ public class JobReconciler
     return errorOccurred;
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public JobReconciler setGetResourceDirectlyFromCache(boolean getResourceDirectlyFromCache) {
     this.getResourceDirectlyFromCache = getResourceDirectlyFromCache;
     return this;
