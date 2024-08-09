@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -68,7 +68,7 @@ public class MultipleSecondaryEventSourceReconciler
   public List<EventSource<?, MultipleSecondaryEventSourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleSecondaryEventSourceCustomResource> context) {
 
-    var config = InformerConfiguration
+    var config = InformerEventSourceConfiguration
         .from(ConfigMap.class, MultipleSecondaryEventSourceCustomResource.class)
         .withInformerConfiguration(c -> c
             .withNamespaces(context.getControllerConfiguration().getNamespaces())

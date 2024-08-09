@@ -10,7 +10,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -30,12 +30,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private String fieldManager;
   private Duration reconciliationMaxInterval;
   private Map<DependentResourceSpec, Object> configurations;
-  private final InformerConfigHolder<R>.Builder config;
+  private final InformerConfiguration<R>.Builder config;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
     this.generationAware = original.isGenerationAware();
-    this.config = InformerConfigHolder.builder(original.getResourceClass())
+    this.config = InformerConfiguration.builder(original.getResourceClass())
         .withName(name)
         .withNamespaces(original.getNamespaces())
         .withLabelSelector(original.getLabelSelector())

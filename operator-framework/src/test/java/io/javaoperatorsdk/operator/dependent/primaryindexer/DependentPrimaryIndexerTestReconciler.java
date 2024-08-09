@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -40,7 +40,8 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
 
     InformerEventSource<ConfigMap, PrimaryIndexerTestCustomResource> es =
         new InformerEventSource<>(
-            InformerConfiguration.from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
+            InformerEventSourceConfiguration
+                .from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
                 .withSecondaryToPrimaryMapper(resource -> cache
                     .byIndex(CONFIG_MAP_RELATION_INDEXER, resource.getMetadata().getName())
