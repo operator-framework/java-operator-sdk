@@ -35,15 +35,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
     this.generationAware = original.isGenerationAware();
-    this.config = InformerConfiguration.builder(original.getResourceClass())
-        .withName(name)
-        .withNamespaces(original.getNamespaces())
-        .withLabelSelector(original.getLabelSelector())
-        .withOnAddFilter(original.onAddFilter().orElse(null))
-        .withOnUpdateFilter(original.onUpdateFilter().orElse(null))
-        .withGenericFilter(original.genericFilter().orElse(null))
-        .withInformerListLimit(original.getInformerListLimit().orElse(null))
-        .withItemStore(original.getItemStore().orElse(null));
+    final var informerConfig = original.getInformerConfig();
+    this.config = InformerConfiguration.builder(informerConfig);
     this.retry = original.getRetry();
     this.reconciliationMaxInterval = original.maxReconciliationInterval().orElse(null);
     this.original = original;

@@ -43,11 +43,12 @@ public class ControllerEventSource<T extends HasMetadata>
             .or(onUpdateMarkedForDeletion());
 
     // by default the on add should be processed in all cases regarding internal filters
-    config.onAddFilter().ifPresent(this::setOnAddFilter);
-    config.onUpdateFilter()
+    final var informerConfig = config.getInformerConfig();
+    Optional.ofNullable(informerConfig.getOnAddFilter()).ifPresent(this::setOnAddFilter);
+    Optional.ofNullable(informerConfig.getOnUpdateFilter())
         .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
             () -> setOnUpdateFilter(internalOnUpdateFilter));
-    config.genericFilter().ifPresent(this::setGenericFilter);
+    Optional.ofNullable(informerConfig.getGenericFilter()).ifPresent(this::setGenericFilter);
     setControllerConfiguration(config);
   }
 

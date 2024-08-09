@@ -1,12 +1,17 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
@@ -68,6 +73,48 @@ public class InformerConfiguration<R extends HasMetadata> {
         original.itemStore, original.informerListLimit).builder;
   }
 
+  public static String ensureValidLabelSelector(String labelSelector) {
+    // might want to implement validation here?
+    return labelSelector;
+  }
+
+  public static boolean allNamespacesWatched(Set<String> namespaces) {
+    failIfNotValid(namespaces);
+    return DEFAULT_NAMESPACES_SET.equals(namespaces);
+  }
+
+  public static boolean currentNamespaceWatched(Set<String> namespaces) {
+    failIfNotValid(namespaces);
+    return WATCH_CURRENT_NAMESPACE_SET.equals(namespaces);
+  }
+
+  public static void failIfNotValid(Set<String> namespaces) {
+    if (namespaces != null && !namespaces.isEmpty()) {
+      final var present = namespaces.contains(WATCH_CURRENT_NAMESPACE)
+          || namespaces.contains(WATCH_ALL_NAMESPACES);
+      if (!present || namespaces.size() == 1) {
+        return;
+      }
+    }
+    throw new IllegalArgumentException(
+        "Must specify namespaces. To watch all namespaces, use only '"
+            + WATCH_ALL_NAMESPACES
+            + "'. To watch only the namespace in which the operator is deployed, use only '"
+            + WATCH_CURRENT_NAMESPACE + "'");
+  }
+
+  public static Set<String> ensureValidNamespaces(Collection<String> namespaces) {
+    if (namespaces != null && !namespaces.isEmpty()) {
+      return namespaces.stream().map(String::trim).collect(Collectors.toSet());
+    } else {
+      return Constants.DEFAULT_NAMESPACES_SET;
+    }
+  }
+
+  public static boolean inheritsNamespacesFromController(Set<String> namespaces) {
+    return SAME_AS_CONTROLLER_NAMESPACES_SET.equals(namespaces);
+  }
+
   public String getName() {
     return name;
   }
@@ -76,10 +123,64 @@ public class InformerConfiguration<R extends HasMetadata> {
     return namespaces;
   }
 
+  public boolean watchAllNamespaces() {
+    return InformerConfiguration.allNamespacesWatched(getNamespaces());
+  }
+
+  public boolean watchCurrentNamespace() {
+    return InformerConfiguration.currentNamespaceWatched(getNamespaces());
+  }
+
+  public boolean inheritsNamespacesFromController() {
+    return inheritsNamespacesFromController(getNamespaces());
+  }
+
+  /**
+   * Computes the effective namespaces based on the set specified by the user, in particular
+   * retrieves the current namespace from the client when the user specified that they wanted to
+   * watch the current namespace only.
+   *
+   * @return a Set of namespace names the associated controller will watch
+   */
+  public Set<String> getEffectiveNamespaces(ControllerConfiguration<?> controllerConfiguration) {
+    if (inheritsNamespacesFromController()) {
+      return controllerConfiguration.getEffectiveNamespaces();
+    }
+
+    var targetNamespaces = getNamespaces();
+    if (watchCurrentNamespace()) {
+      final String namespace =
+          controllerConfiguration.getConfigurationService().getKubernetesClient().getConfiguration()
+              .getNamespace();
+      if (namespace == null) {
+        throw new OperatorException(
+            "Couldn't retrieve the currently connected namespace. Make sure it's correctly set in your ~/.kube/config file, using, e.g. 'kubectl config set-context <your context> --namespace=<your namespace>'");
+      }
+      targetNamespaces = Collections.singleton(namespace);
+    }
+    return targetNamespaces;
+  }
+
+  /**
+   * Used in case the watched namespaces are changed dynamically, thus when operator is running (See
+   * {@link io.javaoperatorsdk.operator.RegisteredController}). If true, changing the target
+   * namespaces of a controller would result to change target namespaces for the
+   * InformerEventSource.
+   *
+   * @return if namespace changes should be followed
+   */
   public boolean isFollowControllerNamespacesOnChange() {
     return followControllerNamespacesOnChange;
   }
 
+  /**
+   * Retrieves the label selector that is used to filter which resources are actually watched by the
+   * associated informer. See the official documentation on the
+   * <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">topic</a>
+   * for more details on syntax.
+   *
+   * @return the label selector filtering watched resources
+   */
   public String getLabelSelector() {
     return labelSelector;
   }
@@ -100,10 +201,31 @@ public class InformerConfiguration<R extends HasMetadata> {
     return genericFilter;
   }
 
+  /**
+   * Replaces the item store in informer. See underlying <a href=
+   * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">method</a>
+   * in fabric8 client informer implementation.
+   *
+   * <p>
+   * The main goal, is to be able to use limited caches or provide any custom implementation.
+   * </p>
+   *
+   * <p>
+   * See {@link BoundedItemStore} and <a href=
+   * "https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedCache.java">CaffeineBoundedCache</a>
+   * </p>
+   *
+   * @return Optional {@link ItemStore} implementation. If present this item store will be used by
+   *         the informers.
+   */
   public ItemStore<R> getItemStore() {
     return itemStore;
   }
 
+  /**
+   * The maximum amount of items to return for a single list call when starting an informer. If this
+   * is a not null it will result in paginating for the initial load of the informer cache.
+   */
   public Long getInformerListLimit() {
     return informerListLimit;
   }
@@ -116,7 +238,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       // if the informer config uses the default "same as controller" value, reset the namespaces to
       // the default set for controllers
       if (namespaces == null || namespaces.isEmpty()
-          || InformerEventSourceConfiguration.inheritsNamespacesFromController(namespaces)) {
+          || inheritsNamespacesFromController(namespaces)) {
         namespaces = Constants.DEFAULT_NAMESPACES_SET;
       }
       return InformerConfiguration.this;
@@ -128,7 +250,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       }
       if (followControllerNamespacesOnChange == null) {
         followControllerNamespacesOnChange =
-            InformerEventSourceConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+            DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
       }
       return InformerConfiguration.this;
     }
@@ -184,7 +306,7 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withNamespaces(Set<String> namespaces) {
       InformerConfiguration.this.namespaces =
-          ResourceConfiguration.ensureValidNamespaces(namespaces);
+          ensureValidNamespaces(namespaces);
       return this;
     }
 
@@ -239,7 +361,7 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withLabelSelector(String labelSelector) {
       InformerConfiguration.this.labelSelector =
-          ResourceConfiguration.ensureValidLabelSelector(labelSelector);
+          ensureValidLabelSelector(labelSelector);
       return this;
     }
 
