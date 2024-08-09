@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -22,7 +22,8 @@ public class PrimaryIndexerTestReconciler
     context.getPrimaryCache().addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);
 
     var informerConfiguration =
-        InformerConfiguration.from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
+        InformerEventSourceConfiguration
+            .from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
             .withSecondaryToPrimaryMapper(
                 (ConfigMap secondaryResource) -> context
                     .getPrimaryCache()

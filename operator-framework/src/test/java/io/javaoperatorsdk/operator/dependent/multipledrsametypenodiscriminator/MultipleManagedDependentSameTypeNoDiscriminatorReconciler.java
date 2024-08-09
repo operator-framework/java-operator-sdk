@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -50,7 +50,7 @@ public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
       EventSourceContext<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> ies =
         new InformerEventSource<>(
-            InformerConfiguration.from(ConfigMap.class,
+            InformerEventSourceConfiguration.from(ConfigMap.class,
                 MultipleManagedDependentNoDiscriminatorCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
                 .build(),

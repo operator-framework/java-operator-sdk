@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -25,7 +25,8 @@ public class ChangeNamespaceTestReconciler
 
     InformerEventSource<ConfigMap, ChangeNamespaceTestCustomResource> configMapES =
         new InformerEventSource<>(
-            InformerConfiguration.from(ConfigMap.class, ChangeNamespaceTestCustomResource.class)
+            InformerEventSourceConfiguration
+                .from(ConfigMap.class, ChangeNamespaceTestCustomResource.class)
                 .build(),
             context);
 

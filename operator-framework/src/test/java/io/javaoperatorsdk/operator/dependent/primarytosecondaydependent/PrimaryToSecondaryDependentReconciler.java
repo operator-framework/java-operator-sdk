@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -66,7 +66,7 @@ public class PrimaryToSecondaryDependentReconciler
     context.getPrimaryCache().addIndexer(CONFIG_MAP_INDEX, (primary -> List
         .of(indexKey(primary.getSpec().getConfigMapName(), primary.getMetadata().getNamespace()))));
 
-    var es = new InformerEventSource<>(InformerConfiguration
+    var es = new InformerEventSource<>(InformerEventSourceConfiguration
         .from(ConfigMap.class, PrimaryToSecondaryDependentCustomResource.class)
         .withName(CONFIG_MAP_EVENT_SOURCE)
         // if there is a many-to-many relationship (thus no direct owner reference)

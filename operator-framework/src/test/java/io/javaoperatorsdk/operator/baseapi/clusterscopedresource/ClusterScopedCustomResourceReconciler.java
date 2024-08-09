@@ -6,7 +6,7 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -60,7 +60,7 @@ public class ClusterScopedCustomResourceReconciler
   public List<EventSource<?, ClusterScopedCustomResource>> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
     var ies = new InformerEventSource<>(
-        InformerConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)
+        InformerEventSourceConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)
             .withSecondaryToPrimaryMapper(
                 Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
             .withInformerConfiguration(
