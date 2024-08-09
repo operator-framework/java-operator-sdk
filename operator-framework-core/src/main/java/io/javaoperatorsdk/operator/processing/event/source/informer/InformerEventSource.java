@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -64,7 +64,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
  * @param <P> type of the primary resource
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
-    extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
+    extends ManagedInformerEventSource<R, P, InformerEventSourceConfiguration<R>>
     implements ResourceEventHandler<R> {
 
   public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
@@ -77,18 +77,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
-      InformerConfiguration<R> configuration, EventSourceContext<P> context) {
+      InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
     this(configuration, context.getClient(),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
-  InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
+  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
     this(configuration, client, false);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private InformerEventSource(InformerConfiguration<R> configuration,
+  private InformerEventSource(InformerEventSourceConfiguration<R> configuration,
       KubernetesClient client,
       boolean parseResourceVersions) {
     super(configuration.name(),

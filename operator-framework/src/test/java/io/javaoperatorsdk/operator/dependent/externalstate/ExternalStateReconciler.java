@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -111,7 +111,8 @@ public class ExternalStateReconciler
       EventSourceContext<ExternalStateCustomResource> context) {
 
     configMapEventSource = new InformerEventSource<>(
-        InformerConfiguration.from(ConfigMap.class, ExternalStateCustomResource.class).build(),
+        InformerEventSourceConfiguration.from(ConfigMap.class, ExternalStateCustomResource.class)
+            .build(),
         context);
     configMapEventSource.setEventSourcePriority(EventSourceStartPriority.RESOURCE_STATE_LOADER);
 

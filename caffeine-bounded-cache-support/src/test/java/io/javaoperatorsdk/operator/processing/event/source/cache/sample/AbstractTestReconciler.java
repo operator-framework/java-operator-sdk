@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
@@ -77,12 +77,14 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
         boundedItemStore(new KubernetesClientBuilder().build(),
             ConfigMap.class, Duration.ofMinutes(1), 1); // setting max size for testing purposes
 
-    var es = new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, primaryClass())
-        .withInformerConfiguration(c -> c.withItemStore(boundedItemStore))
-        .withSecondaryToPrimaryMapper(
-            Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
-                this instanceof BoundedCacheClusterScopeTestReconciler))
-        .build(), context);
+    var es = new InformerEventSource<>(
+        InformerEventSourceConfiguration.from(ConfigMap.class, primaryClass())
+            .withInformerConfiguration(c -> c.withItemStore(boundedItemStore))
+            .withSecondaryToPrimaryMapper(
+                Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
+                    this instanceof BoundedCacheClusterScopeTestReconciler))
+            .build(),
+        context);
 
     return List.of(es);
   }
