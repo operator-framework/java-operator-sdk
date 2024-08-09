@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -59,13 +59,15 @@ public class ComplexWorkflowReconciler implements Reconciler<ComplexWorkflowCust
       EventSourceContext<ComplexWorkflowCustomResource> context) {
     InformerEventSource<Service, ComplexWorkflowCustomResource> serviceEventSource =
         new InformerEventSource<>(
-            InformerConfiguration.from(Service.class, ComplexWorkflowCustomResource.class)
+            InformerEventSourceConfiguration
+                .from(Service.class, ComplexWorkflowCustomResource.class)
                 .withName(SERVICE_EVENT_SOURCE_NAME)
                 .build(),
             context);
     InformerEventSource<StatefulSet, ComplexWorkflowCustomResource> statefulSetEventSource =
         new InformerEventSource<>(
-            InformerConfiguration.from(StatefulSet.class, ComplexWorkflowCustomResource.class)
+            InformerEventSourceConfiguration
+                .from(StatefulSet.class, ComplexWorkflowCustomResource.class)
                 .withName(STATEFUL_SET_EVENT_SOURCE_NAME)
                 .build(),
             context);

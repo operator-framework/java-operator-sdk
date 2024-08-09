@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -44,8 +44,8 @@ class InformerEventSourceTest {
   private final TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
       mock(TemporaryResourceCache.class);
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
-  private final InformerConfiguration<Deployment> informerConfiguration =
-      mock(InformerConfiguration.class);
+  private final InformerEventSourceConfiguration<Deployment> informerConfiguration =
+      mock(InformerEventSourceConfiguration.class);
 
   @BeforeEach
   void setup() {

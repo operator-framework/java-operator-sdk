@@ -8,9 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -49,7 +49,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
       ConfigurationService configurationService,
-      InformerConfigHolder<P> informerConfig,
+      InformerConfiguration<P> informerConfig,
       WorkflowSpec workflowSpec) {
     this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, finalizer, configurations, fieldManager,
@@ -62,7 +62,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       RateLimiter rateLimiter, Duration maxReconciliationInterval, String finalizer,
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
-      ConfigurationService configurationService, InformerConfigHolder<P> informerConfig) {
+      ConfigurationService configurationService, InformerConfiguration<P> informerConfig) {
     super(resourceClass, informerConfig);
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
@@ -81,7 +81,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
     this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
         null, null, null, null, configurationService,
-        InformerConfigHolder.builder(resourceClass).buildForController());
+        InformerConfiguration.builder(resourceClass).buildForController());
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -68,7 +68,7 @@ public class GenericKubernetesResourceHandlingReconciler
   public List<EventSource<?, GenericKubernetesResourceHandlingCustomResource>> prepareEventSources(
       EventSourceContext<GenericKubernetesResourceHandlingCustomResource> context) {
 
-    var informerEventSource = new InformerEventSource<>(InformerConfiguration.from(
+    var informerEventSource = new InformerEventSource<>(InformerEventSourceConfiguration.from(
         new GroupVersionKind("", VERSION, KIND),
         GenericKubernetesResourceHandlingCustomResource.class).build(),
         context);
