@@ -111,28 +111,13 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     return kubernetesClient.resource(resource).inNamespace(namespace).create();
   }
 
-  @Deprecated(forRemoval = true)
-  public <T extends HasMetadata> T create(Class<T> type, T resource) {
-    return create(resource);
-  }
-
   public <T extends HasMetadata> T replace(T resource) {
     return kubernetesClient.resource(resource).inNamespace(namespace).replace();
-  }
-
-  @Deprecated(forRemoval = true)
-  public <T extends HasMetadata> T replace(Class<T> type, T resource) {
-    return replace(resource);
   }
 
   public <T extends HasMetadata> boolean delete(T resource) {
     var res = kubernetesClient.resource(resource).inNamespace(namespace).delete();
     return res.size() == 1 && res.get(0).getCauses().isEmpty();
-  }
-
-  @Deprecated(forRemoval = true)
-  public <T extends HasMetadata> boolean delete(Class<T> type, T resource) {
-    return delete(resource);
   }
 
   protected void beforeAllImpl(ExtensionContext context) {

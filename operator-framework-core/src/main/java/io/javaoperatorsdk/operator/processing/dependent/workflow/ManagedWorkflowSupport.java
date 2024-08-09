@@ -12,9 +12,10 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-class ManagedWorkflowSupport {
+public class ManagedWorkflowSupport {
 
   public void checkForNameDuplication(List<DependentResourceSpec> dependentResourceSpecs) {
     if (dependentResourceSpecs == null) {
@@ -38,10 +39,8 @@ class ManagedWorkflowSupport {
     }
   }
 
-
-  public <P extends HasMetadata> ManagedWorkflow<P> createWorkflow(
-      List<DependentResourceSpec> dependentResourceSpecs) {
-    return createAsDefault(dependentResourceSpecs);
+  public <P extends HasMetadata> ManagedWorkflow<P> createWorkflow(WorkflowSpec workflowSpec) {
+    return createAsDefault(workflowSpec.getDependentResourceSpecs());
   }
 
   <P extends HasMetadata> DefaultManagedWorkflow<P> createAsDefault(

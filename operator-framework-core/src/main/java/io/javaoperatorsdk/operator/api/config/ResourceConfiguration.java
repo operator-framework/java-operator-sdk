@@ -4,11 +4,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.event.source.cache.BoundedItemStore;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -24,16 +26,18 @@ public interface ResourceConfiguration<R extends HasMetadata> {
     return ReconcilerUtils.getResourceTypeName(getResourceClass());
   }
 
+  InformerConfiguration<R> getInformerConfig();
+
   default Optional<OnAddFilter<? super R>> onAddFilter() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getOnAddFilter());
   }
 
   default Optional<OnUpdateFilter<? super R>> onUpdateFilter() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getOnUpdateFilter());
   }
 
   default Optional<GenericFilter<? super R>> genericFilter() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getGenericFilter());
   }
 
   /**
@@ -45,7 +49,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    * @return the label selector filtering watched resources
    */
   default String getLabelSelector() {
-    return null;
+    return getInformerConfig().getLabelSelector();
   }
 
   static String ensureValidLabelSelector(String labelSelector) {
@@ -60,7 +64,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
   }
 
   default Set<String> getNamespaces() {
-    return DEFAULT_NAMESPACES_SET;
+    return getInformerConfig().getNamespaces();
   }
 
   default boolean watchAllNamespaces() {
@@ -98,7 +102,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
 
   static Set<String> ensureValidNamespaces(Collection<String> namespaces) {
     if (namespaces != null && !namespaces.isEmpty()) {
-      return Set.copyOf(namespaces);
+      return namespaces.stream().map(String::trim).collect(Collectors.toSet());
     } else {
       return Constants.DEFAULT_NAMESPACES_SET;
     }
@@ -111,11 +115,12 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    *
    * @return a Set of namespace names the associated controller will watch
    */
-  default Set<String> getEffectiveNamespaces(ConfigurationService configurationService) {
+  default Set<String> getEffectiveNamespaces(ControllerConfiguration<?> controllerConfiguration) {
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {
       final String namespace =
-          configurationService.getKubernetesClient().getConfiguration().getNamespace();
+          controllerConfiguration.getConfigurationService().getKubernetesClient().getConfiguration()
+              .getNamespace();
       if (namespace == null) {
         throw new OperatorException(
             "Couldn't retrieve the currently connected namespace. Make sure it's correctly set in your ~/.kube/config file, using, e.g. 'kubectl config set-context <your context> --namespace=<your namespace>'");
@@ -143,7 +148,7 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    *         the informers.
    */
   default Optional<ItemStore<R>> getItemStore() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getItemStore());
   }
 
   /**
@@ -151,6 +156,6 @@ public interface ResourceConfiguration<R extends HasMetadata> {
    * is a not null it will result in paginating for the initial load of the informer cache.
    */
   default Optional<Long> getInformerListLimit() {
-    return Optional.empty();
+    return Optional.ofNullable(getInformerConfig().getInformerListLimit());
   }
 }

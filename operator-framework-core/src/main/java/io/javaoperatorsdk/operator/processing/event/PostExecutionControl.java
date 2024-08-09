@@ -37,7 +37,7 @@ final class PostExecutionControl<R extends HasMetadata> {
     return new PostExecutionControl<>(false, updatedCustomResource, true, null);
   }
 
-  public static <R extends HasMetadata> PostExecutionControl<R> customResourceUpdated(
+  public static <R extends HasMetadata> PostExecutionControl<R> customResourcePatched(
       R updatedCustomResource) {
     return new PostExecutionControl<>(false, updatedCustomResource, false, null);
   }

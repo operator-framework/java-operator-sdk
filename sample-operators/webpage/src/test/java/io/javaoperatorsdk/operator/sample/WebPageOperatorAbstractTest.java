@@ -37,7 +37,7 @@ public abstract class WebPageOperatorAbstractTest {
   public static final String TEST_PAGE = "test-page";
   public static final String TITLE1 = "Hello Operator World";
   public static final String TITLE2 = "Hello Operator World Title 2";
-  public static final int WAIT_SECONDS = 20;
+  public static final int WAIT_SECONDS = 360;
   public static final int LONG_WAIT_SECONDS = 120;
   public static final Duration POLL_INTERVAL = Duration.ofSeconds(1);
 

@@ -13,7 +13,7 @@ public class ReconcilerImplementedIntermediateAbstractClass extends
   public UpdateControl<AbstractReconciler.MyCustomResource> reconcile(
       AbstractReconciler.MyCustomResource customResource,
       Context context) {
-    return UpdateControl.updateResource(null);
+    return UpdateControl.patchResource(null);
   }
 
   public DeleteControl cleanup(AbstractReconciler.MyCustomResource customResource,

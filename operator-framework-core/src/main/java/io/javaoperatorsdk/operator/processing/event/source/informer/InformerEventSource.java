@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -64,7 +64,7 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
  * @param <P> type of the primary resource
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
-    extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
+    extends ManagedInformerEventSource<R, P, InformerEventSourceConfiguration<R>>
     implements ResourceEventHandler<R> {
 
   public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
@@ -77,19 +77,21 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
-      InformerConfiguration<R> configuration, EventSourceContext<P> context) {
+      InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
     this(configuration, context.getClient(),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
+  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
     this(configuration, client, false);
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private InformerEventSource(InformerEventSourceConfiguration<R> configuration,
+      KubernetesClient client,
       boolean parseResourceVersions) {
-    super(
+    super(configuration.name(),
         configuration.getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
@@ -247,18 +249,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         .collect(Collectors.toSet());
   }
 
-  /**
-   * Returns the configuration object for the informer.
-   *
-   * @return the informer configuration object
-   *
-   * @deprecated Use {@link #configuration()} instead
-   */
-  @Deprecated(forRemoval = true)
-  public InformerConfiguration<R> getConfiguration() {
-    return configuration();
-  }
-
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousVersionOfResource) {
@@ -316,5 +306,4 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
     return target;
   }
-
 }

@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -12,7 +16,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
@@ -20,13 +24,11 @@ import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.AbstractResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.Cache;
-import io.javaoperatorsdk.operator.processing.event.source.Configurable;
-import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
+import io.javaoperatorsdk.operator.processing.event.source.*;
 
+@SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
-    extends AbstractResourceEventSource<R, P>
+    extends AbstractEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
     RecentOperationCacheFiller<R>, NamespaceChangeable,
     InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
@@ -34,16 +36,16 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
   private InformerManager<R, C> cache;
   private final boolean parseResourceVersions;
-  private ConfigurationService configurationService;
+  private ControllerConfiguration<R> controllerConfiguration;
   private final C configuration;
-  private Map<String, Function<R, List<String>>> indexers = new HashMap<>();
+  private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation client;
 
-  protected ManagedInformerEventSource(
+  protected ManagedInformerEventSource(String name,
       MixedOperation client, C configuration,
       boolean parseResourceVersions) {
-    super(configuration.getResourceClass());
+    super(configuration.getResourceClass(), name);
     this.parseResourceVersions = parseResourceVersions;
     this.client = client;
     this.configuration = configuration;
@@ -75,6 +77,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public synchronized void start() {
     if (isRunning()) {
@@ -82,7 +85,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     }
     temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
     this.cache = new InformerManager<>(client, configuration, this);
-    cache.setConfigurationService(configurationService);
+    cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
     manager().start();
     super.start();
@@ -124,6 +127,7 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
     }
   }
 
+  @SuppressWarnings("unused")
   public Optional<R> getCachedValue(ResourceID resourceID) {
     return get(resourceID);
   }
@@ -171,11 +175,6 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public ResourceConfiguration<R> getInformerConfiguration() {
-    return configuration();
-  }
-
-  @Override
   public C configuration() {
     return configuration;
   }
@@ -187,7 +186,8 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
         "}";
   }
 
-  public void setConfigurationService(ConfigurationService configurationService) {
-    this.configurationService = configurationService;
+  public void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
+    this.controllerConfiguration = controllerConfiguration;
   }
+
 }

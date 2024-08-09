@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
  * @param <P> primary resource
  */
 @SuppressWarnings("rawtypes")
-public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
+class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
 
   private final Map<String, DependentResourceNode> dependentResourceNodes;
   private final Set<DependentResourceNode> topLevelResources;
@@ -77,9 +77,9 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
           bottomLevelResource.remove(dependsOn);
         }
       }
-      map.put(node.getName(), node);
+      map.put(node.getDependentResource().name(), node);
     }
-    if (topLevelResources.size() == 0) {
+    if (topLevelResources.isEmpty()) {
       throw new IllegalStateException(
           "No top-level dependent resources found. This might indicate a cyclic Set of DependentResourceNode has been provided.");
     }
@@ -108,12 +108,10 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     return result;
   }
 
-  @Override
   public Set<DependentResourceNode> getTopLevelDependentResources() {
     return topLevelResources;
   }
 
-  @Override
   public Set<DependentResourceNode> getBottomLevelResource() {
     return bottomLevelResource;
   }
@@ -141,6 +139,11 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   }
 
   @Override
+  public int size() {
+    return dependentResourceNodes.size();
+  }
+
+  @Override
   public Map<String, DependentResource> getDependentResourcesByName() {
     final var resources = new HashMap<String, DependentResource>(dependentResourceNodes.size());
     dependentResourceNodes
@@ -148,14 +151,10 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     return resources;
   }
 
-  public Map<String, DependentResource> getDependentResourcesByNameWithoutActivationCondition() {
-    final var resources = new HashMap<String, DependentResource>(dependentResourceNodes.size());
-    dependentResourceNodes
-        .forEach((name, node) -> {
-          if (node.getActivationCondition().isEmpty()) {
-            resources.put(name, node.getDependentResource());
-          }
-        });
-    return resources;
+  public List<DependentResource> getDependentResourcesWithoutActivationCondition() {
+    return dependentResourceNodes.values().stream()
+        .filter(n -> n.getActivationCondition().isEmpty())
+        .map(DependentResourceNode::getDependentResource)
+        .toList();
   }
 }

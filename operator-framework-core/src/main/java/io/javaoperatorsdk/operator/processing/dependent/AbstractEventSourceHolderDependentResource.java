@@ -11,26 +11,23 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReference
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @Ignore
-public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends ResourceEventSource<R, P>>
+public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends EventSource<R, P>>
     extends AbstractDependentResource<R, P> implements EventSourceReferencer<P> {
 
   private T eventSource;
   private final Class<R> resourceType;
   private boolean isCacheFillerEventSource;
-  protected OnAddFilter<R> onAddFilter;
-  protected OnUpdateFilter<R> onUpdateFilter;
-  protected OnDeleteFilter<R> onDeleteFilter;
-  protected GenericFilter<R> genericFilter;
   protected String eventSourceNameToUse;
 
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
+    this(resourceType, null);
+  }
+
+  protected AbstractEventSourceHolderDependentResource(Class<R> resourceType, String name) {
+    super(name);
     this.resourceType = resourceType;
   }
 
@@ -52,7 +49,6 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
     if (eventSource == null && eventSourceNameToUse == null) {
       setEventSource(createEventSource(context));
-      applyFilters();
     }
     return Optional.ofNullable(eventSource);
   }
@@ -62,7 +58,7 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
     if (eventSourceNameToUse != null && eventSource == null) {
       final var source =
-          eventSourceRetriever.getResourceEventSourceFor(resourceType(), eventSourceNameToUse);
+          eventSourceRetriever.getEventSourceFor(resourceType(), eventSourceNameToUse);
       if (source == null) {
         throw new EventSourceNotFoundException(eventSourceNameToUse);
       }
@@ -92,16 +88,9 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   protected abstract T createEventSource(EventSourceContext<P> context);
 
-  protected void setEventSource(T eventSource) {
+  public void setEventSource(T eventSource) {
     isCacheFillerEventSource = eventSource instanceof RecentOperationCacheFiller;
     this.eventSource = eventSource;
-  }
-
-  protected void applyFilters() {
-    this.eventSource.setOnAddFilter(onAddFilter);
-    this.eventSource.setOnUpdateFilter(onUpdateFilter);
-    this.eventSource.setOnDeleteFilter(onDeleteFilter);
-    this.eventSource.setGenericFilter(genericFilter);
   }
 
   public Optional<T> eventSource() {
@@ -127,15 +116,4 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
     return (RecentOperationCacheFiller<R>) eventSource;
   }
 
-  public void setOnAddFilter(OnAddFilter<R> onAddFilter) {
-    this.onAddFilter = onAddFilter;
-  }
-
-  public void setOnUpdateFilter(OnUpdateFilter<R> onUpdateFilter) {
-    this.onUpdateFilter = onUpdateFilter;
-  }
-
-  public void setOnDeleteFilter(OnDeleteFilter<R> onDeleteFilter) {
-    this.onDeleteFilter = onDeleteFilter;
-  }
 }

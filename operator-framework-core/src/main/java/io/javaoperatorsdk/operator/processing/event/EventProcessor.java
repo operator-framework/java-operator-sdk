@@ -52,7 +52,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this(
         eventSourceManager.getController().getConfiguration(),
         new ReconciliationDispatcher<>(eventSourceManager.getController()), eventSourceManager,
-        configurationService.getMetrics(), eventSourceManager.getControllerResourceEventSource());
+        configurationService.getMetrics(), eventSourceManager.getControllerEventSource());
   }
 
   @SuppressWarnings("rawtypes")
@@ -64,7 +64,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     this(
         controllerConfiguration,
         reconciliationDispatcher, eventSourceManager, metrics,
-        eventSourceManager.getControllerResourceEventSource());
+        eventSourceManager.getControllerEventSource());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -166,8 +166,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   private void handleEventMarking(Event event, ResourceState state) {
     final var relatedCustomResourceID = event.getRelatedCustomResourceID();
-    if (event instanceof ResourceEvent) {
-      var resourceEvent = (ResourceEvent) event;
+    if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
         log.debug("Marking delete event received for: {}", relatedCustomResourceID);
         state.markDeleteEventReceived();
@@ -245,17 +244,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       state.markProcessedMarkForDeletion();
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
-      postExecutionControl
-          .getUpdatedCustomResource()
-          .ifPresent(
-              p -> {
-                if (!postExecutionControl.updateIsStatusPatch()) {
-                  eventSourceManager
-                      .getControllerResourceEventSource()
-                      .handleRecentResourceUpdate(
-                          ResourceID.fromResource(p), p, executionScope.getResource());
-                }
-              });
       if (state.eventPresent()) {
         submitReconciliationExecution(state);
       } else {
@@ -342,8 +330,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void retryAwareErrorLogging(RetryExecution retry, boolean eventPresent,
       Exception exception,
       ExecutionScope<P> executionScope) {
-    if (!eventPresent && !retry.isLastAttempt() && exception instanceof KubernetesClientException) {
-      KubernetesClientException ex = (KubernetesClientException) exception;
+    if (!eventPresent && !retry.isLastAttempt()
+        && exception instanceof KubernetesClientException ex) {
       if (ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
         log.debug("Full client conflict error during event processing {}", executionScope,
             exception);
@@ -407,6 +395,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         .reconcileExecutorService();
     this.running = true;
     handleAlreadyMarkedEvents();
+  }
+
+  public boolean isNextReconciliationImminent(ResourceID resourceID) {
+    return resourceStateManager.getOrCreate(resourceID).eventPresent();
   }
 
   private void handleAlreadyMarkedEvents() {

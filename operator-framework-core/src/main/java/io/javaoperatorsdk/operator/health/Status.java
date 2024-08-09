@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.health;
 
+/**
+ * The health status of an {@link io.javaoperatorsdk.operator.processing.event.source.EventSource}
+ */
 public enum Status {
 
   HEALTHY, UNHEALTHY,

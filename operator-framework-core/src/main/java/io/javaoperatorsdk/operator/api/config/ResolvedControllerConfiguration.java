@@ -1,26 +1,23 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 @SuppressWarnings("rawtypes")
 public class ResolvedControllerConfiguration<P extends HasMetadata>
     extends DefaultResourceConfiguration<P>
-    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P>,
-    DependentResourceConfigurationProvider {
+    implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
 
   private final String name;
   private final boolean generationAware;
@@ -30,24 +27,61 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final Duration maxReconciliationInterval;
   private final String finalizer;
   private final Map<DependentResourceSpec, Object> configurations;
-  private final ItemStore<P> itemStore;
   private final ConfigurationService configurationService;
   private final String fieldManager;
-
-  private ResourceEventFilter<P> eventFilter;
-  private List<DependentResourceSpec> dependentResources;
+  private WorkflowSpec workflowSpec;
 
   public ResolvedControllerConfiguration(Class<P> resourceClass, ControllerConfiguration<P> other) {
     this(resourceClass, other.getName(), other.isGenerationAware(),
         other.getAssociatedReconcilerClassName(), other.getRetry(), other.getRateLimiter(),
         other.maxReconciliationInterval().orElse(null),
-        other.onAddFilter().orElse(null), other.onUpdateFilter().orElse(null),
-        other.genericFilter().orElse(null),
-        other.getDependentResources(), other.getNamespaces(),
-        other.getFinalizerName(), other.getLabelSelector(), Collections.emptyMap(),
-        other.getItemStore().orElse(null), other.fieldManager(),
+        other.getFinalizerName(), Collections.emptyMap(),
+        other.fieldManager(),
         other.getConfigurationService(),
-        other.getInformerListLimit().orElse(null));
+        other.getInformerConfig(),
+        other.getWorkflowSpec().orElse(null));
+  }
+
+  public ResolvedControllerConfiguration(Class<P> resourceClass, String name,
+      boolean generationAware, String associatedReconcilerClassName, Retry retry,
+      RateLimiter rateLimiter, Duration maxReconciliationInterval,
+      String finalizer,
+      Map<DependentResourceSpec, Object> configurations,
+      String fieldManager,
+      ConfigurationService configurationService,
+      InformerConfiguration<P> informerConfig,
+      WorkflowSpec workflowSpec) {
+    this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
+        maxReconciliationInterval, finalizer, configurations, fieldManager,
+        configurationService, informerConfig);
+    setWorkflowSpec(workflowSpec);
+  }
+
+  protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
+      boolean generationAware, String associatedReconcilerClassName, Retry retry,
+      RateLimiter rateLimiter, Duration maxReconciliationInterval, String finalizer,
+      Map<DependentResourceSpec, Object> configurations,
+      String fieldManager,
+      ConfigurationService configurationService, InformerConfiguration<P> informerConfig) {
+    super(resourceClass, informerConfig);
+    this.configurationService = configurationService;
+    this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
+    this.generationAware = generationAware;
+    this.associatedReconcilerClassName = associatedReconcilerClassName;
+    this.retry = ensureRetry(retry);
+    this.rateLimiter = ensureRateLimiter(rateLimiter);
+    this.maxReconciliationInterval = maxReconciliationInterval;
+    this.configurations = configurations != null ? configurations : Collections.emptyMap();
+    this.finalizer =
+        ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
+    this.fieldManager = fieldManager;
+  }
+
+  protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
+      Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
+    this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
+        null, null, null, null, configurationService,
+        InformerConfiguration.builder(resourceClass).buildForController());
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
@@ -65,55 +99,6 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
 
   protected RateLimiter ensureRateLimiter(RateLimiter given) {
     return given == null ? ControllerConfiguration.super.getRateLimiter() : given;
-  }
-
-  public ResolvedControllerConfiguration(Class<P> resourceClass, String name,
-      boolean generationAware, String associatedReconcilerClassName, Retry retry,
-      RateLimiter rateLimiter, Duration maxReconciliationInterval,
-      OnAddFilter<? super P> onAddFilter, OnUpdateFilter<? super P> onUpdateFilter,
-      GenericFilter<? super P> genericFilter,
-      List<DependentResourceSpec> dependentResources,
-      Set<String> namespaces, String finalizer, String labelSelector,
-      Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
-      String fieldManager,
-      ConfigurationService configurationService, Long informerListLimit) {
-    this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
-        maxReconciliationInterval, onAddFilter, onUpdateFilter, genericFilter,
-        namespaces, finalizer, labelSelector, configurations, itemStore, fieldManager,
-        configurationService, informerListLimit);
-    setDependentResources(dependentResources);
-  }
-
-  protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
-      boolean generationAware, String associatedReconcilerClassName, Retry retry,
-      RateLimiter rateLimiter, Duration maxReconciliationInterval,
-      OnAddFilter<? super P> onAddFilter, OnUpdateFilter<? super P> onUpdateFilter,
-      GenericFilter<? super P> genericFilter,
-      Set<String> namespaces, String finalizer, String labelSelector,
-      Map<DependentResourceSpec, Object> configurations, ItemStore<P> itemStore,
-      String fieldManager,
-      ConfigurationService configurationService, Long informerListLimit) {
-    super(resourceClass, namespaces, labelSelector, onAddFilter, onUpdateFilter, genericFilter,
-        itemStore, informerListLimit);
-    this.configurationService = configurationService;
-    this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
-    this.generationAware = generationAware;
-    this.associatedReconcilerClassName = associatedReconcilerClassName;
-    this.retry = ensureRetry(retry);
-    this.rateLimiter = ensureRateLimiter(rateLimiter);
-    this.maxReconciliationInterval = maxReconciliationInterval;
-    this.configurations = configurations != null ? configurations : Collections.emptyMap();
-    this.itemStore = itemStore;
-    this.finalizer =
-        ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
-    this.fieldManager = fieldManager;
-  }
-
-  protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
-      Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
-    this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
-        null, null, null, null, null,
-        null, null, null, null, null, configurationService, null);
   }
 
   @Override
@@ -146,14 +131,14 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     return rateLimiter;
   }
 
+
   @Override
-  public List<DependentResourceSpec> getDependentResources() {
-    return dependentResources;
+  public Optional<WorkflowSpec> getWorkflowSpec() {
+    return Optional.ofNullable(workflowSpec);
   }
 
-  protected void setDependentResources(List<DependentResourceSpec> dependentResources) {
-    this.dependentResources = dependentResources == null ? Collections.emptyList()
-        : Collections.unmodifiableList(dependentResources);
+  public void setWorkflowSpec(WorkflowSpec workflowSpec) {
+    this.workflowSpec = workflowSpec;
   }
 
   @Override
@@ -167,28 +152,15 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public ResourceEventFilter<P> getEventFilter() {
-    return eventFilter;
-  }
-
-  /**
-   * @deprecated Use {@link OnAddFilter}, {@link OnUpdateFilter} and {@link GenericFilter} instead
-   *
-   * @param eventFilter generic event filter
-   */
-  @Deprecated(forRemoval = true)
-  protected void setEventFilter(ResourceEventFilter<P> eventFilter) {
-    this.eventFilter = eventFilter;
-  }
-
-  @Override
-  public Object getConfigurationFor(DependentResourceSpec spec) {
-    return configurations.get(spec);
-  }
-
-  @Override
-  public Optional<ItemStore<P>> getItemStore() {
-    return Optional.ofNullable(itemStore);
+  @SuppressWarnings("unchecked")
+  public <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec) {
+    // first check if there's an overridden configuration at the controller level
+    var config = configurations.get(spec);
+    if (config == null) {
+      // if not, check the spec for configuration
+      config = spec.getConfiguration().orElse(null);
+    }
+    return (C) config;
   }
 
   @Override

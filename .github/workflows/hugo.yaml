@@ -49,7 +49,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
       - name: Install Node.js dependencies
-        working-directory: ./docsy
+        working-directory: ./docs
         run: |          
           [[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true
           npm install -D autoprefixer
@@ -61,7 +61,7 @@ jobs:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
           TZ: America/Los_Angeles
-        working-directory: ./docsy
+        working-directory: ./docs
         run: |
           hugo \
             --gc \
@@ -70,7 +70,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docsy/public
+          path: ./docs/public
 
   # Deployment job
   deploy:
