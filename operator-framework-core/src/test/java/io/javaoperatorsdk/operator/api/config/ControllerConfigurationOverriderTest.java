@@ -77,12 +77,11 @@ class ControllerConfigurationOverriderTest {
     assertEquals(stringConfig, resourceConfig);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   private KubernetesDependentResourceConfig extractFirstDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration) {
-    var conf = (KubernetesDependentResourceConfig) extractDependentKubernetesResourceConfig(
+    return (KubernetesDependentResourceConfig) extractDependentKubernetesResourceConfig(
         configuration, 0);
-    return conf;
   }
 
   private io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> createConfiguration(
@@ -219,7 +218,6 @@ class ControllerConfigurationOverriderTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void overridingNamespacesShouldBePropagatedToDependentsWithDefaultConfig() {
     var configuration = createConfiguration(new OneDepReconciler());
     // retrieve the config for the first (and unique) dependent

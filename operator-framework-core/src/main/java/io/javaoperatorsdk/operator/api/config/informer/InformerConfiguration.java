@@ -241,6 +241,8 @@ public class InformerConfiguration<R extends HasMetadata> {
           || inheritsNamespacesFromController(namespaces)) {
         namespaces = Constants.DEFAULT_NAMESPACES_SET;
       }
+      // to avoid potential NPE
+      followControllerNamespacesOnChange = false;
       return InformerConfiguration.this;
     }
 
