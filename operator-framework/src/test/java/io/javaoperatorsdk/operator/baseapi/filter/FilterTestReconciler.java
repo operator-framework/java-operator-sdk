@@ -6,17 +6,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(informerConfig = @InformerConfig(onUpdateFilter = UpdateFilter.class))
+@ControllerConfiguration(informer = @Informer(onUpdateFilter = UpdateFilter.class))
 public class FilterTestReconciler
     implements Reconciler<FilterTestCustomResource> {
 
@@ -57,7 +57,7 @@ public class FilterTestReconciler
   public List<EventSource<?, FilterTestCustomResource>> prepareEventSources(
       EventSourceContext<FilterTestCustomResource> context) {
 
-    final var informerConfiguration = InformerConfiguration
+    final var informerConfiguration = InformerEventSourceConfiguration
         .from(ConfigMap.class, FilterTestCustomResource.class)
         .withInformerConfiguration(c -> c.withOnUpdateFilter((newCM,
             oldCM) -> !newCM.getData().get(CM_VALUE_KEY)

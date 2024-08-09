@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -36,7 +36,8 @@ public class ExternalStateBulkDependentReconciler
   public List<EventSource<?, ExternalStateBulkDependentCustomResource>> prepareEventSources(
       EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
-        InformerConfiguration.from(ConfigMap.class, ExternalStateBulkDependentCustomResource.class)
+        InformerEventSourceConfiguration
+            .from(ConfigMap.class, ExternalStateBulkDependentCustomResource.class)
             .build(),
         context);
     return List.of(configMapEventSource);
