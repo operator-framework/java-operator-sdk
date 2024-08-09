@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
+package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,13 +13,13 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
-import static io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+import static io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface InformerConfig {
+public @interface Informer {
 
   String name() default NO_VALUE_SET;
 

@@ -17,13 +17,13 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -275,8 +275,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         fieldManager.equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name
             : fieldManager;
 
-    InformerConfigHolder<P> informerConfig = InformerConfigHolder.builder(resourceClass)
-        .initFromAnnotation(annotation != null ? annotation.informerConfig() : null, context)
+    InformerConfiguration<P> informerConfig = InformerConfiguration.builder(resourceClass)
+        .initFromAnnotation(annotation != null ? annotation.informer() : null, context)
         .buildForController();
 
     return new ResolvedControllerConfiguration<P>(

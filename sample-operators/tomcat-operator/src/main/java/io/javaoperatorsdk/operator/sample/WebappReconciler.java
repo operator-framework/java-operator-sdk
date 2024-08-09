@@ -19,7 +19,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -58,8 +58,8 @@ public class WebappReconciler
             .map(ResourceID::fromResource)
             .collect(Collectors.toSet());
 
-    InformerConfiguration<Tomcat> configuration =
-        InformerConfiguration.from(Tomcat.class, Webapp.class)
+    InformerEventSourceConfiguration<Tomcat> configuration =
+        InformerEventSourceConfiguration.from(Tomcat.class, Webapp.class)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
             .withPrimaryToSecondaryMapper(
                 (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),

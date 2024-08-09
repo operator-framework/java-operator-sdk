@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
@@ -168,7 +168,8 @@ class EventSourceManagerTest {
     when(controllerResourceEventSourceMock.allowsNamespaceChanges()).thenCallRealMethod();
     var manager = new EventSourceManager(controller, eventSources);
 
-    InformerConfiguration informerConfigurationMock = mock(InformerConfiguration.class);
+    InformerEventSourceConfiguration informerConfigurationMock =
+        mock(InformerEventSourceConfiguration.class);
     when(informerConfigurationMock.followControllerNamespaceChanges()).thenReturn(true);
     InformerEventSource informerEventSource = mock(InformerEventSource.class);
     when(informerEventSource.name()).thenReturn("ies");
