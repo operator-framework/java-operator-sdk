@@ -3,19 +3,14 @@ package io.javaoperatorsdk.operator.api.config;
 import java.util.Collections;
 import java.util.Set;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ResourceConfigurationTest {
-
-  public static final ResourceConfiguration<HasMetadata> DEFAULT =
-      () -> InformerConfiguration.builder().buildForInformerEventSource();
+class InformerConfigurationTest {
 
   @Test
   void allNamespacesWatched() {
@@ -51,14 +46,20 @@ class ResourceConfigurationTest {
 
   @Test
   void nullLabelSelectorByDefault() {
-    assertNull(DEFAULT.getInformerConfig().getLabelSelector());
+    final var informerConfig = InformerConfiguration.builder().buildForInformerEventSource();
+    assertNull(informerConfig.getLabelSelector());
   }
 
-  // todo: fix me
-  @Disabled
   @Test
-  void shouldWatchAllNamespacesByDefault() {
-    assertTrue(DEFAULT.getInformerConfig().watchAllNamespaces());
+  void shouldWatchAllNamespacesByDefaultForControllers() {
+    final var informerConfig = InformerConfiguration.builder().buildForController();
+    assertTrue(informerConfig.watchAllNamespaces());
+  }
+
+  @Test
+  void shouldFollowControllerNamespacesByDefaultForInformerEventSource() {
+    final var informerConfig = InformerConfiguration.builder().buildForInformerEventSource();
+    assertTrue(informerConfig.isFollowControllerNamespacesOnChange());
   }
 
   @Test
