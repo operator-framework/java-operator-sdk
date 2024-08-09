@@ -3,7 +3,7 @@ package io.javaoperatorsdk.operator.dependent.multipledependentresource;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -36,7 +36,7 @@ public class MultipleDependentResourceReconciler
   public List<EventSource<?, MultipleDependentResourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResource> eventSource =
-        new InformerEventSource<>(InformerConfiguration
+        new InformerEventSource<>(InformerEventSourceConfiguration
             .from(ConfigMap.class, MultipleDependentResourceCustomResource.class)
             .build(), context);
     firstDependentResourceConfigMap.setEventSource(eventSource);

@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.BasicItemStore;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -22,15 +24,13 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-import static io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration.inheritsNamespacesFromController;
+import static io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration.inheritsNamespacesFromController;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerConfigurationOverriderTest {
@@ -271,7 +271,7 @@ class ControllerConfigurationOverriderTest {
     // override the namespaces for the dependent resource
     final var overriddenNS = "newNS";
     final var labelSelector = "foo=bar";
-    final var overridingInformerConfig = InformerConfigHolder.builder(ConfigMap.class)
+    final var overridingInformerConfig = InformerConfiguration.builder(ConfigMap.class)
         .withNamespaces(Set.of(overriddenNS))
         .withLabelSelector(labelSelector)
         .buildForInformerEventSource();
@@ -304,7 +304,7 @@ class ControllerConfigurationOverriderTest {
   }
 
   @ControllerConfiguration(
-      informerConfig = @InformerConfig(namespaces = "foo", itemStore = MyItemStore.class))
+      informer = @Informer(namespaces = "foo", itemStore = MyItemStore.class))
   private static class WatchCurrentReconciler implements Reconciler<ConfigMap> {
 
     @Override
@@ -346,7 +346,7 @@ class ControllerConfigurationOverriderTest {
   @Workflow(dependents = @Dependent(type = ReadOnlyDependent.class,
       readyPostcondition = TestCondition.class))
   @ControllerConfiguration(
-      informerConfig = @InformerConfig(namespaces = OneDepReconciler.CONFIGURED_NS))
+      informer = @Informer(namespaces = OneDepReconciler.CONFIGURED_NS))
   private static class OneDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "foo";
@@ -366,7 +366,7 @@ class ControllerConfigurationOverriderTest {
   }
 
   @KubernetesDependent(
-      informerConfig = @InformerConfig(namespaces = Constants.WATCH_ALL_NAMESPACES))
+      informer = @Informer(namespaces = Constants.WATCH_ALL_NAMESPACES))
   public static class WatchAllNSDependent
       extends KubernetesDependentResource<ConfigMap, ConfigMap>
       implements GarbageCollected<ConfigMap> {
@@ -378,7 +378,7 @@ class ControllerConfigurationOverriderTest {
 
   @Workflow(dependents = @Dependent(type = OverriddenNSDependent.class))
   @ControllerConfiguration(
-      informerConfig = @InformerConfig(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS))
+      informer = @Informer(namespaces = OverriddenNSOnDepReconciler.CONFIGURED_NS))
   public static class OverriddenNSOnDepReconciler implements Reconciler<ConfigMap> {
 
     private static final String CONFIGURED_NS = "parentNS";
@@ -389,7 +389,7 @@ class ControllerConfigurationOverriderTest {
     }
   }
 
-  @KubernetesDependent(informerConfig = @InformerConfig(namespaces = OverriddenNSDependent.DEP_NS))
+  @KubernetesDependent(informer = @Informer(namespaces = OverriddenNSDependent.DEP_NS))
   public static class OverriddenNSDependent
       extends KubernetesDependentResource<ConfigMap, ConfigMap>
       implements GarbageCollected<ConfigMap> {
