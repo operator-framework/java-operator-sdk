@@ -2,31 +2,20 @@ package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
 
 public interface InformerEventSourceConfiguration<R extends HasMetadata>
     extends ResourceConfiguration<R> {
-
-  boolean DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE = true;
-
-  static boolean inheritsNamespacesFromController(Set<String> namespaces) {
-    return SAME_AS_CONTROLLER_NAMESPACES_SET.equals(namespaces);
-  }
 
   static <R extends HasMetadata> Builder<R> from(
       Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
@@ -61,10 +50,6 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
    *      needed
    */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
-
-  default Optional<OnDeleteFilter<? super R>> onDeleteFilter() {
-    return Optional.ofNullable(getInformerConfig().getOnDeleteFilter());
-  }
 
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
@@ -105,11 +90,6 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     }
 
     @Override
-    public Optional<OnDeleteFilter<? super R>> onDeleteFilter() {
-      return Optional.ofNullable(getInformerConfig().getOnDeleteFilter());
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper() {
       return (PrimaryToSecondaryMapper<P>) primaryToSecondaryMapper;
@@ -118,19 +98,6 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     @Override
     public Optional<GroupVersionKind> getGroupVersionKind() {
       return Optional.ofNullable(groupVersionKind);
-    }
-
-    public boolean inheritsNamespacesFromController() {
-      return InformerEventSourceConfiguration.inheritsNamespacesFromController(getNamespaces());
-    }
-
-    @Override
-    public Set<String> getEffectiveNamespaces(ControllerConfiguration<?> controllerConfiguration) {
-      if (inheritsNamespacesFromController()) {
-        return controllerConfiguration.getEffectiveNamespaces();
-      } else {
-        return super.getEffectiveNamespaces(controllerConfiguration);
-      }
     }
   }
 

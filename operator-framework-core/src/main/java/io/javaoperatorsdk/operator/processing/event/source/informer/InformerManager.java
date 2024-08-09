@@ -20,6 +20,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -71,8 +72,9 @@ class InformerManager<R extends HasMetadata, C extends ResourceConfiguration<R>>
     if (!sources.isEmpty()) {
       throw new IllegalStateException("Some sources already initialized.");
     }
-    final var targetNamespaces = configuration.getEffectiveNamespaces(controllerConfiguration);
-    if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
+    final var targetNamespaces =
+        configuration.getInformerConfig().getEffectiveNamespaces(controllerConfiguration);
+    if (InformerConfiguration.allNamespacesWatched(targetNamespaces)) {
       var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
       log.debug("Registered {} -> {} for any namespace", this, source);
     } else {
@@ -108,13 +110,14 @@ class InformerManager<R extends HasMetadata, C extends ResourceConfiguration<R>>
 
   private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
     final InformerWrapper<R> source;
+    final var labelSelector = configuration.getInformerConfig().getLabelSelector();
     if (namespace.equals(WATCH_ALL_NAMESPACES)) {
       final var filteredBySelectorClient =
-          client.inAnyNamespace().withLabelSelector(configuration.getLabelSelector());
+          client.inAnyNamespace().withLabelSelector(labelSelector);
       source = createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
     } else {
       source = createEventSource(
-          client.inNamespace(namespace).withLabelSelector(configuration.getLabelSelector()),
+          client.inNamespace(namespace).withLabelSelector(labelSelector),
           eventHandler, namespace);
     }
     source.addIndexers(indexers);
@@ -124,9 +127,11 @@ class InformerManager<R extends HasMetadata, C extends ResourceConfiguration<R>>
   private InformerWrapper<R> createEventSource(
       FilterWatchListDeletable<R, KubernetesResourceList<R>, Resource<R>> filteredBySelectorClient,
       ResourceEventHandler<R> eventHandler, String namespaceIdentifier) {
-    var informer = configuration.getInformerListLimit().map(filteredBySelectorClient::withLimit)
+    final var informerConfig = configuration.getInformerConfig();
+    var informer = Optional.ofNullable(informerConfig.getInformerListLimit())
+        .map(filteredBySelectorClient::withLimit)
         .orElse(filteredBySelectorClient).runnableInformer(0);
-    configuration.getItemStore().ifPresent(informer::itemStore);
+    Optional.ofNullable(informerConfig.getItemStore()).ifPresent(informer::itemStore);
     var source = new InformerWrapper<>(informer, controllerConfiguration.getConfigurationService(),
         namespaceIdentifier);
     source.addEventHandler(eventHandler);
@@ -205,11 +210,12 @@ class InformerManager<R extends HasMetadata, C extends ResourceConfiguration<R>>
 
   @Override
   public String toString() {
-    final var selector = configuration.getLabelSelector();
+    final var informerConfig = configuration.getInformerConfig();
+    final var selector = informerConfig.getLabelSelector();
     return "InformerManager ["
         + ReconcilerUtils.getResourceTypeNameWithVersion(configuration.getResourceClass())
         + "] watching: "
-        + configuration.getEffectiveNamespaces(controllerConfiguration)
+        + informerConfig.getEffectiveNamespaces(controllerConfiguration)
         + (selector != null ? " selector: " + selector : "");
   }
 

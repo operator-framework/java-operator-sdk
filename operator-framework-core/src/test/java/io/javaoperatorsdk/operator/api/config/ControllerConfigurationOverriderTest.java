@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-import static io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration.inheritsNamespacesFromController;
+import static io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration.inheritsNamespacesFromController;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerConfigurationOverriderTest {
@@ -67,7 +67,7 @@ class ControllerConfigurationOverriderTest {
         .settingNamespace(namespace)
         .replacingNamedDependentResourceConfig(externalDRName, stringConfig)
         .build();
-    assertEquals(Set.of(namespace), configuration.getNamespaces());
+    assertEquals(Set.of(namespace), configuration.getInformerConfig().getNamespaces());
 
     // check that we still have the proper number of dependent configs
     dependentResources = configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
@@ -93,48 +93,55 @@ class ControllerConfigurationOverriderTest {
   @Test
   void overridingNamespacesShouldWork() {
     var configuration = createConfiguration(new WatchCurrentReconciler());
-    assertEquals(Set.of("foo"), configuration.getNamespaces());
-    assertFalse(configuration.watchAllNamespaces());
-    assertFalse(configuration.watchCurrentNamespace());
+    var informerConfig = configuration.getInformerConfig();
+    assertEquals(Set.of("foo"), informerConfig.getNamespaces());
+    assertFalse(informerConfig.watchAllNamespaces());
+    assertFalse(informerConfig.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
         .addingNamespaces("foo", "bar")
         .build();
-    assertEquals(Set.of("foo", "bar"), configuration.getNamespaces());
-    assertFalse(configuration.watchAllNamespaces());
-    assertFalse(configuration.watchCurrentNamespace());
+    informerConfig = configuration.getInformerConfig();
+    assertEquals(Set.of("foo", "bar"), informerConfig.getNamespaces());
+    assertFalse(informerConfig.watchAllNamespaces());
+    assertFalse(informerConfig.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
         .removingNamespaces("bar")
         .build();
-    assertEquals(Set.of("foo"), configuration.getNamespaces());
-    assertFalse(configuration.watchAllNamespaces());
-    assertFalse(configuration.watchCurrentNamespace());
+    informerConfig = configuration.getInformerConfig();
+    assertEquals(Set.of("foo"), informerConfig.getNamespaces());
+    assertFalse(informerConfig.watchAllNamespaces());
+    assertFalse(informerConfig.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
         .removingNamespaces("foo")
         .build();
-    assertTrue(configuration.watchAllNamespaces());
-    assertFalse(configuration.watchCurrentNamespace());
+    informerConfig = configuration.getInformerConfig();
+    assertTrue(informerConfig.watchAllNamespaces());
+    assertFalse(informerConfig.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
         .settingNamespace("foo")
         .build();
-    assertFalse(configuration.watchAllNamespaces());
-    assertFalse(configuration.watchCurrentNamespace());
-    assertEquals(Set.of("foo"), configuration.getNamespaces());
+    informerConfig = configuration.getInformerConfig();
+    assertFalse(informerConfig.watchAllNamespaces());
+    assertFalse(informerConfig.watchCurrentNamespace());
+    assertEquals(Set.of("foo"), informerConfig.getNamespaces());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
         .watchingOnlyCurrentNamespace()
         .build();
-    assertFalse(configuration.watchAllNamespaces());
-    assertTrue(configuration.watchCurrentNamespace());
+    informerConfig = configuration.getInformerConfig();
+    assertFalse(informerConfig.watchAllNamespaces());
+    assertTrue(informerConfig.watchCurrentNamespace());
 
     configuration = ControllerConfigurationOverrider.override(configuration)
         .watchingAllNamespaces()
         .build();
-    assertTrue(configuration.watchAllNamespaces());
-    assertFalse(configuration.watchCurrentNamespace());
+    informerConfig = configuration.getInformerConfig();
+    assertTrue(informerConfig.watchAllNamespaces());
+    assertFalse(informerConfig.watchCurrentNamespace());
   }
 
   @Test
@@ -144,23 +151,24 @@ class ControllerConfigurationOverriderTest {
     configuration = ControllerConfigurationOverrider.override(configuration)
         .build();
 
-    assertNotNull(configuration.getItemStore().orElse(null));
+    assertNotNull(configuration.getInformerConfig().getItemStore());
   }
 
   @Test
   void configuredDependentShouldNotChangeOnParentOverrideEvenWhenInitialConfigIsSame() {
     var configuration = createConfiguration(new OverriddenNSOnDepReconciler());
     // retrieve the config for the first (and unique) dependent
-    var config = extractFirstDependentKubernetesResourceConfig(configuration);
+    var kubeDependentConfig = extractFirstDependentKubernetesResourceConfig(configuration);
 
     // override the parent NS to match the dependent's
     configuration = ControllerConfigurationOverrider.override(configuration)
         .settingNamespace(OverriddenNSDependent.DEP_NS).build();
-    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), configuration.getNamespaces());
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS),
+        configuration.getInformerConfig().getNamespaces());
 
     // check that the DependentResource inherits has its own configured NS
-    var informerConfig = config.informerConfig();
-    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), informerConfig.getNamespaces());
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS),
+        kubeDependentConfig.informerConfig().getNamespaces());
 
     // override the parent's NS
     final var newNS = "bar";
@@ -168,9 +176,9 @@ class ControllerConfigurationOverriderTest {
         ControllerConfigurationOverrider.override(configuration).settingNamespace(newNS).build();
 
     // check that dependent config is still using its own NS
-    config = extractFirstDependentKubernetesResourceConfig(configuration);
-    informerConfig = config.informerConfig();
-    assertEquals(Set.of(OverriddenNSDependent.DEP_NS), informerConfig.getNamespaces());
+    kubeDependentConfig = extractFirstDependentKubernetesResourceConfig(configuration);
+    assertEquals(Set.of(OverriddenNSDependent.DEP_NS),
+        kubeDependentConfig.informerConfig().getNamespaces());
   }
 
   @SuppressWarnings("unchecked")
@@ -182,8 +190,7 @@ class ControllerConfigurationOverriderTest {
 
     // check that the DependentResource inherits the controller's configuration if applicable
     var informerConfig = config.informerConfig();
-    assertTrue(
-        inheritsNamespacesFromController(informerConfig.getNamespaces()));
+    assertTrue(inheritsNamespacesFromController(informerConfig.getNamespaces()));
 
   }
 
@@ -196,7 +203,7 @@ class ControllerConfigurationOverriderTest {
 
     // check that the DependentResource inherits the controller's configuration if applicable
     assertTrue(
-        ResourceConfiguration
+        InformerConfiguration
             .allNamespacesWatched(config.informerConfig().getNamespaces()));
 
     // override the NS
@@ -207,7 +214,7 @@ class ControllerConfigurationOverriderTest {
     // check that dependent config is still configured to watch all NS
     config = extractFirstDependentKubernetesResourceConfig(configuration);
     assertTrue(
-        ResourceConfiguration
+        InformerConfiguration
             .allNamespacesWatched(config.informerConfig().getNamespaces()));
   }
 
