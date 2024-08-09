@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
@@ -41,21 +41,29 @@ public class WebPageReconciler
   @Override
   public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
     var configMapEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class, WebPage.class)
-            .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
-            .build(), context);
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(ConfigMap.class, WebPage.class)
+                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .build(),
+            context);
     var deploymentEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Deployment.class, WebPage.class)
-            .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
-            .build(), context);
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(Deployment.class, WebPage.class)
+                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .build(),
+            context);
     var serviceEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Service.class, WebPage.class)
-            .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
-            .build(), context);
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(Service.class, WebPage.class)
+                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .build(),
+            context);
     var ingressEventSource =
-        new InformerEventSource<>(InformerConfiguration.from(Ingress.class, WebPage.class)
-            .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
-            .build(), context);
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(Ingress.class, WebPage.class)
+                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .build(),
+            context);
     return List.of(configMapEventSource, deploymentEventSource,
         serviceEventSource, ingressEventSource);
   }

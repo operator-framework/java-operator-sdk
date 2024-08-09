@@ -2,12 +2,12 @@ package io.javaoperatorsdk.operator.dependent.dependentfilter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
 @Workflow(dependents = {@Dependent(type = FilteredDependentConfigMap.class)})
-@ControllerConfiguration(informerConfig = @InformerConfig(onUpdateFilter = UpdateFilter.class))
+@ControllerConfiguration(informer = @Informer(onUpdateFilter = UpdateFilter.class))
 public class DependentFilterTestReconciler
     implements Reconciler<DependentFilterTestCustomResource> {
 
