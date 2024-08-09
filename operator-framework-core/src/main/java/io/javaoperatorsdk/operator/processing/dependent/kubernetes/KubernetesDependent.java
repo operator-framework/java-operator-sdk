@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
+
 
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -28,6 +30,6 @@ public @interface KubernetesDependent {
    */
   BooleanWithUndefined useSSA() default BooleanWithUndefined.UNDEFINED;
 
-  InformerConfig informerConfig() default @InformerConfig;
+  Informer informer() default @Informer;
 
 }
