@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
@@ -69,8 +69,9 @@ public class CreateUpdateEventFilterTestReconciler
   @Override
   public List<EventSource<?, CreateUpdateEventFilterTestCustomResource>> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
-    InformerConfiguration<ConfigMap> informerConfiguration =
-        InformerConfiguration.from(ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
+    InformerEventSourceConfiguration<ConfigMap> informerConfiguration =
+        InformerEventSourceConfiguration
+            .from(ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
             .withInformerConfiguration(c -> c
                 .withLabelSelector("integrationtest = " + this.getClass().getSimpleName()))
             .build();
