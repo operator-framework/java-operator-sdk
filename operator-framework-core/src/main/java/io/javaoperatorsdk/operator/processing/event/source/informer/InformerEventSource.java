@@ -78,7 +78,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration, context.getClient(),
+    this(configuration,
+        configuration.getKubernetesClient() != null ? configuration.getKubernetesClient()
+            : context.getClient(),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
