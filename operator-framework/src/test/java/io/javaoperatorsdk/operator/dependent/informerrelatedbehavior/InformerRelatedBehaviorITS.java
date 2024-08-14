@@ -48,9 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"}, updateKubeConfigFile = true)
 class InformerRelatedBehaviorITS {
-
-  private static final Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorITS.class);
-
+  
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String ADDITIONAL_NAMESPACE_SUFFIX = "-additional";
 
