@@ -392,7 +392,7 @@ public interface ConfigurationService {
    * <p>
    * Disabled by default as Kubernetes does not support, and discourages, this interpretation of
    * resourceVersions. Enable only if your api server event processing seems to lag the operator
-   * logic and you want to further minimize the the amount of work done / updates issued by the
+   * logic and you want to further minimize the amount of work done / updates issued by the
    * operator.
    *
    * @since 4.5.0

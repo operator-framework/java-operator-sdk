@@ -33,8 +33,8 @@ class TypeParameterResolver {
    *        can be passed.
    * @param declaredType Class or Interface which extends or implements the interestedClass, and the
    *        interest is getting the actual declared type is used.
-   * @return the type of the parameter if it can be resolved from the the given declareType,
-   *         otherwise it returns null
+   * @return the type of the parameter if it can be resolved from the given declareType, otherwise
+   *         it returns null
    */
   public TypeMirror resolve(Types typeUtils, DeclaredType declaredType) {
     final var chain = findChain(typeUtils, declaredType);
