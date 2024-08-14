@@ -215,9 +215,9 @@
         <version>${caffeine.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.javaoperatorsdk</groupId>
-        <artifactId>jenvtest</artifactId>
-        <version>${jenvtest.version}</version>
+        <groupId>io.fabric8</groupId>
+        <artifactId>kube-api-test-client-inject</artifactId>
+        <version>${fabric8-client.version}</version>
         <scope>test</scope>
       </dependency>
       <!-- Kubernetes client HTTP client implementations -->
