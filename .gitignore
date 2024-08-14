@@ -12,3 +12,5 @@ target/
 .factorypath
 
 .mvn/wrapper/maven-wrapper.jar
+
+.java-version
