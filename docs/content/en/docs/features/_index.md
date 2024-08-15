@@ -623,6 +623,7 @@ InformerEventSourceConfiguration<Tomcat> configuration =
 Of course, you will need to specify a `SecondaryToPrimaryMapper`, since the default that
 is based on owner references naturally won't work, rather use the one that supports annotations.
 
+See related [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/informerremotecluster).
 
 ## Dynamically Changing Target Namespaces
 
