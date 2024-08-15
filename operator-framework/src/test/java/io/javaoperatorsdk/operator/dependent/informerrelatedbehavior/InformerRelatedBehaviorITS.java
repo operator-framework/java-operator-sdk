@@ -3,9 +3,8 @@ package io.javaoperatorsdk.operator.dependent.informerrelatedbehavior;
 import java.time.Duration;
 
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubeapitest.junit.EnableKubeAPIServer;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
@@ -18,7 +17,6 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
-import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -48,8 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"}, updateKubeConfigFile = true)
 class InformerRelatedBehaviorITS {
-
-  private static final Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorITS.class);
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String ADDITIONAL_NAMESPACE_SUFFIX = "-additional";
