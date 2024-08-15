@@ -85,8 +85,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>jenvtest</artifactId>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kube-api-test-client-inject</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
