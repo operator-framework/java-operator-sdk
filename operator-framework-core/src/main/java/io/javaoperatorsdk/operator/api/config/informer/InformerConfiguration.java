@@ -5,9 +5,11 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -23,6 +25,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.*;
 @SuppressWarnings("unused")
 public class InformerConfiguration<R extends HasMetadata> {
   private final Builder builder = new Builder();
+  private final Class<R> resourceClass;
+  private final String resourceTypeName;
   private String name;
   private Set<String> namespaces;
   private Boolean followControllerNamespacesOnChange;
@@ -34,11 +38,12 @@ public class InformerConfiguration<R extends HasMetadata> {
   private ItemStore<R> itemStore;
   private Long informerListLimit;
 
-  public InformerConfiguration(String name, Set<String> namespaces,
+  protected InformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
       boolean followControllerNamespacesOnChange,
       String labelSelector, OnAddFilter<? super R> onAddFilter,
       OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
       GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit) {
+    this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
     this.followControllerNamespacesOnChange = followControllerNamespacesOnChange;
@@ -51,23 +56,25 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.informerListLimit = informerListLimit;
   }
 
-  private InformerConfiguration() {}
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder() {
-    return new InformerConfiguration().builder;
+  private InformerConfiguration(Class<R> resourceClass) {
+    this.resourceClass = resourceClass;
+    this.resourceTypeName = resourceClass.isAssignableFrom(GenericKubernetesResource.class)
+        // in general this is irrelevant now for secondary resources it is used just by controller
+        // where GenericKubernetesResource now does not apply
+        ? GenericKubernetesResource.class.getSimpleName()
+        : ReconcilerUtils.getResourceTypeName(resourceClass);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder(
       Class<R> resourceClass) {
-    return new InformerConfiguration().builder;
+    return new InformerConfiguration(resourceClass).builder;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder(
       InformerConfiguration<R> original) {
-    return new InformerConfiguration(original.name, original.namespaces,
+    return new InformerConfiguration(original.resourceClass, original.name, original.namespaces,
         original.followControllerNamespacesOnChange, original.labelSelector, original.onAddFilter,
         original.onUpdateFilter, original.onDeleteFilter, original.genericFilter,
         original.itemStore, original.informerListLimit).builder;
@@ -113,6 +120,14 @@ public class InformerConfiguration<R extends HasMetadata> {
 
   public static boolean inheritsNamespacesFromController(Set<String> namespaces) {
     return SAME_AS_CONTROLLER_NAMESPACES_SET.equals(namespaces);
+  }
+
+  public Class<R> getResourceClass() {
+    return resourceClass;
+  }
+
+  public String getResourceTypeName() {
+    return resourceTypeName;
   }
 
   public String getName() {

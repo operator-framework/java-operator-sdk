@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 
@@ -46,19 +47,21 @@ class InformerConfigurationTest {
 
   @Test
   void nullLabelSelectorByDefault() {
-    final var informerConfig = InformerConfiguration.builder().buildForInformerEventSource();
+    final var informerConfig =
+        InformerConfiguration.builder(ConfigMap.class).buildForInformerEventSource();
     assertNull(informerConfig.getLabelSelector());
   }
 
   @Test
   void shouldWatchAllNamespacesByDefaultForControllers() {
-    final var informerConfig = InformerConfiguration.builder().buildForController();
+    final var informerConfig = InformerConfiguration.builder(ConfigMap.class).buildForController();
     assertTrue(informerConfig.watchAllNamespaces());
   }
 
   @Test
   void shouldFollowControllerNamespacesByDefaultForInformerEventSource() {
-    final var informerConfig = InformerConfiguration.builder().buildForInformerEventSource();
+    final var informerConfig =
+        InformerConfiguration.builder(ConfigMap.class).buildForInformerEventSource();
     assertTrue(informerConfig.isFollowControllerNamespacesOnChange());
   }
 
