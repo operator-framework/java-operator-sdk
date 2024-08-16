@@ -19,7 +19,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -29,7 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES;
 
-class InformerManager<R extends HasMetadata, C extends ResourceConfiguration<R>>
+class InformerManager<R extends HasMetadata, C extends Informable<R>>
     implements LifecycleAware, IndexerResourceCache<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);

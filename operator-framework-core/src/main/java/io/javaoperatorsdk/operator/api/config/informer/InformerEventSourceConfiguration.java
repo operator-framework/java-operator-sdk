@@ -6,8 +6,8 @@ import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.DefaultInformable;
+import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 public interface InformerEventSourceConfiguration<R extends HasMetadata>
-    extends ResourceConfiguration<R> {
+    extends Informable<R> {
 
   static <R extends HasMetadata> Builder<R> from(
       Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
@@ -67,7 +67,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
   }
 
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata> extends
-      DefaultResourceConfiguration<R> implements InformerEventSourceConfiguration<R> {
+      DefaultInformable<R> implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final GroupVersionKind groupVersionKind;

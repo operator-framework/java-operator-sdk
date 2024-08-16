@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
+public interface ControllerConfiguration<P extends HasMetadata> extends Informable<P> {
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();

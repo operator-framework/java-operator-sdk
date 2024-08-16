@@ -16,7 +16,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 @SuppressWarnings("rawtypes")
 public class ResolvedControllerConfiguration<P extends HasMetadata>
-    extends DefaultResourceConfiguration<P>
+    extends DefaultInformable<P>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
 
   private final String name;

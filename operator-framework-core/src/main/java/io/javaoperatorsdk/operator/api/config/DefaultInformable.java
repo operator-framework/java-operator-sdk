@@ -6,14 +6,14 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
-public class DefaultResourceConfiguration<R extends HasMetadata>
-    implements ResourceConfiguration<R> {
+public class DefaultInformable<R extends HasMetadata>
+    implements Informable<R> {
 
   private final Class<R> resourceClass;
   private final String resourceTypeName;
   private final InformerConfiguration<R> informerConfig;
 
-  protected DefaultResourceConfiguration(Class<R> resourceClass,
+  protected DefaultInformable(Class<R> resourceClass,
       InformerConfiguration<R> informerConfig) {
     this.resourceClass = resourceClass;
     this.resourceTypeName = resourceClass.isAssignableFrom(GenericKubernetesResource.class)
