@@ -117,19 +117,21 @@ class BaseConfigurationServiceTest {
     var config = configFor(reconciler);
 
     assertThat(config.getName()).isEqualTo(ReconcilerUtils.getNameFor(reconciler));
-    assertThat(config.getLabelSelector()).isNull();
     assertThat(config.getRetry()).isInstanceOf(GenericRetry.class);
     assertThat(config.getRateLimiter()).isInstanceOf(LinearRateLimiter.class);
     assertThat(config.maxReconciliationInterval()).hasValue(Duration.ofHours(DEFAULT_INTERVAL));
     assertThat(config.fieldManager()).isEqualTo(config.getName());
-    assertThat(config.getInformerListLimit()).isEmpty();
-    assertThat(config.onAddFilter()).isEmpty();
-    assertThat(config.onUpdateFilter()).isEmpty();
-    assertThat(config.genericFilter()).isEmpty();
-    assertThat(config.getNamespaces()).isEqualTo(Constants.DEFAULT_NAMESPACES_SET);
     assertThat(config.getFinalizerName())
         .isEqualTo(ReconcilerUtils.getDefaultFinalizerName(config.getResourceClass()));
-    assertThat(config.getItemStore()).isEmpty();
+
+    final var informerConfig = config.getInformerConfig();
+    assertThat(informerConfig.getLabelSelector()).isNull();
+    assertNull(informerConfig.getInformerListLimit());
+    assertNull(informerConfig.getOnAddFilter());
+    assertNull(informerConfig.getOnUpdateFilter());
+    assertNull(informerConfig.getGenericFilter());
+    assertNull(informerConfig.getItemStore());
+    assertThat(informerConfig.getNamespaces()).isEqualTo(Constants.DEFAULT_NAMESPACES_SET);
   }
 
   @SuppressWarnings("rawtypes")

@@ -2,31 +2,18 @@ package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.Utils;
+import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
-
 public interface InformerEventSourceConfiguration<R extends HasMetadata>
-    extends ResourceConfiguration<R> {
-
-  boolean DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE = true;
-
-  static boolean inheritsNamespacesFromController(Set<String> namespaces) {
-    return SAME_AS_CONTROLLER_NAMESPACES_SET.equals(namespaces);
-  }
+    extends Informable<R> {
 
   static <R extends HasMetadata> Builder<R> from(
       Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
@@ -62,10 +49,6 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
    */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
-  default Optional<OnDeleteFilter<? super R>> onDeleteFilter() {
-    return Optional.ofNullable(getInformerConfig().getOnDeleteFilter());
-  }
-
   <P extends HasMetadata> PrimaryToSecondaryMapper<P> getPrimaryToSecondaryMapper();
 
   Optional<GroupVersionKind> getGroupVersionKind();
@@ -74,39 +57,32 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     return getInformerConfig().getName();
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  default Class<R> getResourceClass() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
-        InformerEventSourceConfiguration.class);
-  }
-
-  class DefaultInformerEventSourceConfiguration<R extends HasMetadata> extends
-      DefaultResourceConfiguration<R> implements InformerEventSourceConfiguration<R> {
+  class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
+      implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final GroupVersionKind groupVersionKind;
+    private final InformerConfiguration<R> informerConfig;
 
     protected DefaultInformerEventSourceConfiguration(
-        Class<R> resourceClass,
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         InformerConfiguration<R> informerConfig) {
-      super(resourceClass, informerConfig);
+      this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
     }
 
     @Override
-    public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
-      return secondaryToPrimaryMapper;
+    public InformerConfiguration<R> getInformerConfig() {
+      return informerConfig;
     }
 
     @Override
-    public Optional<OnDeleteFilter<? super R>> onDeleteFilter() {
-      return Optional.ofNullable(getInformerConfig().getOnDeleteFilter());
+    public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
+      return secondaryToPrimaryMapper;
     }
 
     @Override
@@ -118,19 +94,6 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     @Override
     public Optional<GroupVersionKind> getGroupVersionKind() {
       return Optional.ofNullable(groupVersionKind);
-    }
-
-    public boolean inheritsNamespacesFromController() {
-      return InformerEventSourceConfiguration.inheritsNamespacesFromController(getNamespaces());
-    }
-
-    @Override
-    public Set<String> getEffectiveNamespaces(ControllerConfiguration<?> controllerConfiguration) {
-      if (inheritsNamespacesFromController()) {
-        return controllerConfiguration.getEffectiveNamespaces();
-      } else {
-        return super.getEffectiveNamespaces(controllerConfiguration);
-      }
     }
   }
 
@@ -223,7 +186,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
             "If GroupVersionKind is set the resource type must be GenericKubernetesDependentResource");
       }
 
-      return new DefaultInformerEventSourceConfiguration<>(resourceClass,
+      return new DefaultInformerEventSourceConfiguration<>(
           groupVersionKind,
           primaryToSecondaryMapper,
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
