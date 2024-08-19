@@ -17,8 +17,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
@@ -27,7 +27,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
 
 @SuppressWarnings("rawtypes")
-public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends ResourceConfiguration<R>>
+public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends Informable<R>>
     extends AbstractEventSource<R, P>
     implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
     RecentOperationCacheFiller<R>, NamespaceChangeable,

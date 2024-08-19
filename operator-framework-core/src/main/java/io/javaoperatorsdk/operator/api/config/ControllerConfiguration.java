@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
+public interface ControllerConfiguration<P extends HasMetadata> extends Informable<P> {
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
@@ -74,19 +74,9 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
 
   ConfigurationService getConfigurationService();
 
-  @SuppressWarnings("unchecked")
-  @Override
-  default Class<P> getResourceClass() {
-    // note that this implementation at the end not used within the boundaries of the core
-    // framework, should be removed in the future, (and marked as an API changed, or behavior
-    // change)
-    return (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
-        ControllerConfiguration.class);
-  }
-
   @SuppressWarnings("unused")
   default Set<String> getEffectiveNamespaces() {
-    return ResourceConfiguration.super.getEffectiveNamespaces(this);
+    return getInformerConfig().getEffectiveNamespaces(this);
   }
 
   /**
