@@ -191,7 +191,6 @@ class ControllerEventSourceTest extends
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
         GenericFilter<TestCustomResource> genericFilter) {
       super(
-          TestCustomResource.class,
           "test",
           generationAware,
           null,

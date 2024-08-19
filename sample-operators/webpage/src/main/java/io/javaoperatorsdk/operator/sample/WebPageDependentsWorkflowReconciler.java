@@ -85,7 +85,7 @@ public class WebPageDependentsWorkflowReconciler
 
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
         .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-            .withKubernetesDependentInformerConfig(InformerConfiguration.builder()
+            .withKubernetesDependentInformerConfig(InformerConfiguration.builder(dr.resourceType())
                 .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
                 .buildForInformerEventSource())
             .build()));

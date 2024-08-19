@@ -16,9 +16,9 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 @SuppressWarnings("rawtypes")
 public class ResolvedControllerConfiguration<P extends HasMetadata>
-    extends DefaultResourceConfiguration<P>
     implements io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> {
 
+  private final InformerConfiguration<P> informerConfig;
   private final String name;
   private final boolean generationAware;
   private final String associatedReconcilerClassName;
@@ -31,8 +31,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final String fieldManager;
   private WorkflowSpec workflowSpec;
 
-  public ResolvedControllerConfiguration(Class<P> resourceClass, ControllerConfiguration<P> other) {
-    this(resourceClass, other.getName(), other.isGenerationAware(),
+  public ResolvedControllerConfiguration(ControllerConfiguration<P> other) {
+    this(other.getName(), other.isGenerationAware(),
         other.getAssociatedReconcilerClassName(), other.getRetry(), other.getRateLimiter(),
         other.maxReconciliationInterval().orElse(null),
         other.getFinalizerName(), Collections.emptyMap(),
@@ -42,7 +42,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.getWorkflowSpec().orElse(null));
   }
 
-  public ResolvedControllerConfiguration(Class<P> resourceClass, String name,
+  public ResolvedControllerConfiguration(String name,
       boolean generationAware, String associatedReconcilerClassName, Retry retry,
       RateLimiter rateLimiter, Duration maxReconciliationInterval,
       String finalizer,
@@ -51,19 +51,19 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
       WorkflowSpec workflowSpec) {
-    this(resourceClass, name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
+    this(name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
         maxReconciliationInterval, finalizer, configurations, fieldManager,
         configurationService, informerConfig);
     setWorkflowSpec(workflowSpec);
   }
 
-  protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
+  protected ResolvedControllerConfiguration(String name,
       boolean generationAware, String associatedReconcilerClassName, Retry retry,
       RateLimiter rateLimiter, Duration maxReconciliationInterval, String finalizer,
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
       ConfigurationService configurationService, InformerConfiguration<P> informerConfig) {
-    super(resourceClass, informerConfig);
+    this.informerConfig = informerConfig;
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
     this.generationAware = generationAware;
@@ -79,9 +79,14 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
 
   protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
       Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
-    this(resourceClass, name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
+    this(name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
         null, null, null, null, configurationService,
         InformerConfiguration.builder(resourceClass).buildForController());
+  }
+
+  @Override
+  public InformerConfiguration<P> getInformerConfig() {
+    return informerConfig;
   }
 
   public static Duration getMaxReconciliationInterval(long interval, TimeUnit timeUnit) {
