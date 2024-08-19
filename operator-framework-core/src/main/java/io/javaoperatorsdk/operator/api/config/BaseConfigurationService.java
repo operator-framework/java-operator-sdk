@@ -280,7 +280,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         .buildForController();
 
     return new ResolvedControllerConfiguration<P>(
-        resourceClass, name, generationAware,
+        name, generationAware,
         associatedReconcilerClass, retry, rateLimiter,
         ResolvedControllerConfiguration.getMaxReconciliationInterval(interval, timeUnit),
         valueOrDefaultFromAnnotation(annotation,
