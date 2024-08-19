@@ -187,7 +187,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfiguration<R> build() {
-    return new ResolvedControllerConfiguration<>(original.getResourceClass(),
+    return new ResolvedControllerConfiguration<>(
         name,
         generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
         reconciliationMaxInterval,

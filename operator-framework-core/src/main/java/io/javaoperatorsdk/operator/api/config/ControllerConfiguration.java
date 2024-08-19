@@ -74,16 +74,6 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
 
   ConfigurationService getConfigurationService();
 
-  @SuppressWarnings("unchecked")
-  @Override
-  default Class<P> getResourceClass() {
-    // note that this implementation at the end not used within the boundaries of the core
-    // framework, should be removed in the future, (and marked as an API changed, or behavior
-    // change)
-    return (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
-        ControllerConfiguration.class);
-  }
-
   @SuppressWarnings("unused")
   default Set<String> getEffectiveNamespaces() {
     return getInformerConfig().getEffectiveNamespaces(this);

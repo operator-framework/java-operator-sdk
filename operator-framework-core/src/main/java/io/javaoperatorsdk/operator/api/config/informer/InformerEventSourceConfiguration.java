@@ -6,9 +6,7 @@ import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.DefaultInformable;
 import io.javaoperatorsdk.operator.api.config.Informable;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -59,29 +57,27 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     return getInformerConfig().getName();
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  default Class<R> getResourceClass() {
-    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
-        InformerEventSourceConfiguration.class);
-  }
-
-  class DefaultInformerEventSourceConfiguration<R extends HasMetadata> extends
-      DefaultInformable<R> implements InformerEventSourceConfiguration<R> {
+  class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
+      implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final GroupVersionKind groupVersionKind;
+    private final InformerConfiguration<R> informerConfig;
 
     protected DefaultInformerEventSourceConfiguration(
-        Class<R> resourceClass,
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         InformerConfiguration<R> informerConfig) {
-      super(resourceClass, informerConfig);
+      this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
+    }
+
+    @Override
+    public InformerConfiguration<R> getInformerConfig() {
+      return informerConfig;
     }
 
     @Override
@@ -190,7 +186,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
             "If GroupVersionKind is set the resource type must be GenericKubernetesDependentResource");
       }
 
-      return new DefaultInformerEventSourceConfiguration<>(resourceClass,
+      return new DefaultInformerEventSourceConfiguration<>(
           groupVersionKind,
           primaryToSecondaryMapper,
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
