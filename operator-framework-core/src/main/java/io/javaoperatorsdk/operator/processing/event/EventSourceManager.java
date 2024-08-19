@@ -173,16 +173,16 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   public void changeNamespaces(Set<String> namespaces) {
-    eventSources.controllerEventSource()
-        .changeNamespaces(namespaces);
-    executorServiceManager.boundedExecuteAndWaitForAllToComplete(eventSources
+    eventSources.controllerEventSource().changeNamespaces(namespaces);
+    final var namespaceChangeables = eventSources
         .additionalEventSources()
         .filter(NamespaceChangeable.class::isInstance)
         .map(NamespaceChangeable.class::cast)
-        .filter(NamespaceChangeable::allowsNamespaceChanges), e -> {
-          e.changeNamespaces(namespaces);
-          return null;
-        },
+        .filter(NamespaceChangeable::allowsNamespaceChanges);
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(namespaceChangeables, e -> {
+      e.changeNamespaces(namespaces);
+      return null;
+    },
         getEventSourceThreadNamer("changeNamespace"));
   }
 
