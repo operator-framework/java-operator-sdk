@@ -102,11 +102,15 @@ public class LeaderElectionManager {
   }
 
   private void stopLeading() {
-    log.info("Stopped leading for identity: {}. Exiting.", identity);
-    // When leader stops leading the process ends immediately to prevent multiple reconciliations
-    // running parallel.
-    // Note that some reconciliations might run for a very long time.
-    System.exit(1);
+    if (configurationService.getLeaderElectionConfiguration().orElseThrow().isExitOnStopLeading()) {
+      log.info("Stopped leading for identity: {}. Exiting.", identity);
+      // When leader stops leading the process ends immediately to prevent multiple reconciliations
+      // running parallel.
+      // Note that some reconciliations might run for a very long time.
+      System.exit(1);
+    } else {
+      log.info("Stopped leading, configured not to exit");
+    }
   }
 
   private String identity(LeaderElectionConfiguration config) {
