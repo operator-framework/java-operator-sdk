@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -44,18 +45,19 @@ class InformerEventSourceTest {
   private final TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
       mock(TemporaryResourceCache.class);
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
-  private final InformerEventSourceConfiguration<Deployment> informerConfiguration =
+  private final InformerEventSourceConfiguration<Deployment> informerEventSourceConfiguration =
       mock(InformerEventSourceConfiguration.class);
 
   @BeforeEach
   void setup() {
-    when(informerConfiguration.getEffectiveNamespaces(any()))
-        .thenReturn(DEFAULT_NAMESPACES_SET);
-    when(informerConfiguration.getSecondaryToPrimaryMapper())
+    final var informerConfig = mock(InformerConfiguration.class);
+    when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
+    when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
+    when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
-    when(informerConfiguration.getResourceClass()).thenReturn(Deployment.class);
+    when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
-    informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
+    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration, clientMock);
 
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
@@ -63,7 +65,7 @@ class InformerEventSourceTest {
     informerEventSource.setEventHandler(eventHandlerMock);
     informerEventSource.setControllerConfiguration(mockControllerConfig);
     SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
-    when(informerConfiguration.getSecondaryToPrimaryMapper())
+    when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
     when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
         .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
@@ -184,7 +186,7 @@ class InformerEventSourceTest {
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(configuration);
 
-    informerEventSource = new InformerEventSource<>(informerConfiguration,
+    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration,
         MockKubernetesClient.client(Deployment.class, unused -> {
           throw exception;
         }));
