@@ -16,6 +16,7 @@ public final class LeaderElectionConfigurationBuilder {
   private Duration renewDeadline = RENEW_DEADLINE_DEFAULT_VALUE;
   private Duration retryPeriod = RETRY_PERIOD_DEFAULT_VALUE;
   private LeaderCallbacks leaderCallbacks;
+  private boolean exitOnStopLeading = true;
 
   private LeaderElectionConfigurationBuilder(String leaseName) {
     this.leaseName = leaseName;
@@ -55,8 +56,13 @@ public final class LeaderElectionConfigurationBuilder {
     return this;
   }
 
+  public LeaderElectionConfigurationBuilder withExitOnStopLeading(boolean exitOnStopLeading) {
+    this.exitOnStopLeading = exitOnStopLeading;
+    return this;
+  }
+
   public LeaderElectionConfiguration build() {
     return new LeaderElectionConfiguration(leaseName, leaseNamespace, leaseDuration, renewDeadline,
-        retryPeriod, identity, leaderCallbacks);
+        retryPeriod, identity, leaderCallbacks, exitOnStopLeading);
   }
 }
