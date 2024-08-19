@@ -96,7 +96,7 @@ public class WebPageStandaloneDependentsReconciler
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
         .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-            .withKubernetesDependentInformerConfig(InformerConfiguration.builder()
+            .withKubernetesDependentInformerConfig(InformerConfiguration.builder(dr.resourceType())
                 .withLabelSelector(SELECTOR + "=true")
                 .buildForInformerEventSource())
             .build()));

@@ -43,7 +43,10 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     Class<? extends KubernetesDependentResource<?, ?>> dependentResourceClass =
         (Class<? extends KubernetesDependentResource<?, ?>>) spec.getDependentResourceClass();
 
-    InformerConfiguration<R>.Builder config = InformerConfiguration.builder();
+    final var resourceType = controllerConfig.getConfigurationService().dependentResourceFactory()
+        .associatedResourceType(spec);
+
+    InformerConfiguration<R>.Builder config = InformerConfiguration.builder(resourceType);
     if (configAnnotation != null) {
       final var informerConfig = configAnnotation.informer();
       final var context = Utils.contextFor(controllerConfig, dependentResourceClass,

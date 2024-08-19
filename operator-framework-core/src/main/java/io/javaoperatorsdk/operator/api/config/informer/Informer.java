@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
-import static io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
