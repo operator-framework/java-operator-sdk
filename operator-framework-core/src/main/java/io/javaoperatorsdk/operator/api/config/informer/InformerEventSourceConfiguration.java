@@ -59,10 +59,12 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
   }
 
   /**
-   * Use of a specific kubernetes client, typically a client connects to a different cluster. Note
-   * that this is solely for multi cluster support.
+   * Optional, specific kubernetes client, typically to connect to a different cluster than the rest
+   * of the operator. Note that this is solely for multi cluster support.
    */
-  KubernetesClient getKubernetesClient();
+  default Optional<KubernetesClient> getKubernetesClient() {
+    return Optional.empty();
+  }
 
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
       implements InformerEventSourceConfiguration<R> {
@@ -107,8 +109,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     }
 
     @Override
-    public KubernetesClient getKubernetesClient() {
-      return kubernetesClient;
+    public Optional<KubernetesClient> getKubernetesClient() {
+      return Optional.ofNullable(kubernetesClient);
     }
   }
 

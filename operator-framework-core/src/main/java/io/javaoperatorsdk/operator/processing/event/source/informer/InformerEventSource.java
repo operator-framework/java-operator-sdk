@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -67,10 +69,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerEventSourceConfiguration<R>>
     implements ResourceEventHandler<R> {
 
-  public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
-
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
-
+  public static final String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
@@ -79,8 +79,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
     this(configuration,
-        configuration.getKubernetesClient() != null ? configuration.getKubernetesClient()
-            : context.getClient(),
+        configuration.getKubernetesClient().orElse(context.getClient()),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
@@ -289,10 +288,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  private enum Operation {
-    ADD, UPDATE
-  }
-
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
     return (onDeleteFilter == null || onDeleteFilter.accept(resource, b)) &&
         (genericFilter == null || genericFilter.accept(resource));
@@ -308,5 +303,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
         id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
     return target;
+  }
+
+  private enum Operation {
+    ADD, UPDATE
   }
 }
