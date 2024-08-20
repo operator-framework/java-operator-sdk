@@ -26,6 +26,7 @@ class InformerRemoteClusterIT {
   public static final String CHANGED_VALUE = "changed_value";
   public static final String CM_NAMESPACE = "default";
 
+  // injected by Kube API Test. Client for another cluster.
   static KubernetesClient kubernetesClient;
 
   @RegisterExtension
