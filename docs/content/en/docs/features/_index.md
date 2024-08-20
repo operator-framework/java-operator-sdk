@@ -606,6 +606,25 @@ parts of reconciliation logic and during the execution of the controller:
 
 For more information about MDC see this [link](https://www.baeldung.com/mdc-in-log4j-2-logback).
 
+## InformerEventSource Multi-Cluster Support
+
+It is possible to handle resources for remote cluster with `InformerEventSource`. To do so,
+simply set a client that connects to a remote cluster:
+
+```java
+
+InformerEventSourceConfiguration<Tomcat> configuration =
+        InformerEventSourceConfiguration.from(SecondaryResource.class, PrimaryResource.class)
+            .withKubernetesClient(remoteClusterClient)
+            .withSecondaryToPrimaryMapper(Mappers.fromDefaultAnnotations());
+
+```
+
+You will also need to specify a `SecondaryToPrimaryMapper`, since the default one
+is based on owner references and won't work across cluster instances. You could, for example, use the provided implementation that relies on annotations added to the secondary resources to identify the associated primary resource.
+
+See related [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/informerremotecluster).
+
 ## Dynamically Changing Target Namespaces
 
 A controller can be configured to watch a specific set of namespaces in addition of the
