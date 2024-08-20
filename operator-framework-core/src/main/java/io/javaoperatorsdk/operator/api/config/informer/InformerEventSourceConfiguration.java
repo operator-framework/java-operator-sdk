@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
@@ -57,22 +58,33 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     return getInformerConfig().getName();
   }
 
+  /**
+   * Optional, specific kubernetes client, typically to connect to a different cluster than the rest
+   * of the operator. Note that this is solely for multi cluster support.
+   */
+  default Optional<KubernetesClient> getKubernetesClient() {
+    return Optional.empty();
+  }
+
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
       implements InformerEventSourceConfiguration<R> {
     private final PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private final GroupVersionKind groupVersionKind;
     private final InformerConfiguration<R> informerConfig;
+    private final KubernetesClient kubernetesClient;
 
     protected DefaultInformerEventSourceConfiguration(
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        InformerConfiguration<R> informerConfig) {
+        InformerConfiguration<R> informerConfig,
+        KubernetesClient kubernetesClient) {
       this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
+      this.kubernetesClient = kubernetesClient;
     }
 
     @Override
@@ -95,8 +107,12 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     public Optional<GroupVersionKind> getGroupVersionKind() {
       return Optional.ofNullable(groupVersionKind);
     }
-  }
 
+    @Override
+    public Optional<KubernetesClient> getKubernetesClient() {
+      return Optional.ofNullable(kubernetesClient);
+    }
+  }
 
   @SuppressWarnings({"unused", "UnusedReturnValue"})
   class Builder<R extends HasMetadata> {
@@ -108,6 +124,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     private String name;
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
+    private KubernetesClient kubernetesClient;
 
     private Builder(Class<R> resourceClass,
         Class<? extends HasMetadata> primaryResourceClass) {
@@ -152,6 +169,16 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       return this;
     }
 
+    /**
+     * Use this is case want to create an InformerEventSource that handles resources from different
+     * cluster.
+     */
+    public Builder<R> withKubernetesClient(
+        KubernetesClient kubernetesClient) {
+      this.kubernetesClient = kubernetesClient;
+      return this;
+    }
+
     public String getName() {
       return name;
     }
@@ -192,7 +219,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceClass),
                   HasMetadata.getKind(primaryResourceClass), false)),
-          config.buildForInformerEventSource());
+          config.buildForInformerEventSource(), kubernetesClient);
     }
   }
 }
