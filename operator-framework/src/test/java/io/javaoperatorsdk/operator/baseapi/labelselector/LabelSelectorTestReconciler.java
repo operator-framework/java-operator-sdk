@@ -22,6 +22,7 @@ public class LabelSelectorTestReconciler
   @Override
   public UpdateControl<LabelSelectorTestCustomResource> reconcile(
       LabelSelectorTestCustomResource resource, Context<LabelSelectorTestCustomResource> context) {
+
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }
