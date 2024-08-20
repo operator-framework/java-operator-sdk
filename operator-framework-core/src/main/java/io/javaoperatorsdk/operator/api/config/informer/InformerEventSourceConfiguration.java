@@ -6,12 +6,8 @@ import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.Informable;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.DefaultResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.Utils;
+import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -62,11 +58,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     return getInformerConfig().getName();
   }
 
-    /**
-     * Use of a specific kubernetes client, typically a client connects to a different cluster. Note
-     * that this is solely for multi cluster support.
-     */
-    KubernetesClient getKubernetesClient();
+  /**
+   * Use of a specific kubernetes client, typically a client connects to a different cluster. Note
+   * that this is solely for multi cluster support.
+   */
+  KubernetesClient getKubernetesClient();
 
   class DefaultInformerEventSourceConfiguration<R extends HasMetadata>
       implements InformerEventSourceConfiguration<R> {
@@ -110,10 +106,10 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       return Optional.ofNullable(groupVersionKind);
     }
 
-      @Override
-      public KubernetesClient getKubernetesClient() {
-          return kubernetesClient;
-      }
+    @Override
+    public KubernetesClient getKubernetesClient() {
+      return kubernetesClient;
+    }
   }
 
   @SuppressWarnings({"unused", "UnusedReturnValue"})
