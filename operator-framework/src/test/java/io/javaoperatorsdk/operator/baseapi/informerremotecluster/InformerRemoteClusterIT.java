@@ -44,7 +44,7 @@ class InformerRemoteClusterIT {
             r.getMetadata().getNamespace()))
         .create();
 
-    // config map not exists on the primary resource cluster
+    // config map does not exist on the primary resource cluster
     assertThat(extension.getKubernetesClient().configMaps()
         .inNamespace(CM_NAMESPACE)
         .withName(CONFIG_MAP_NAME).get()).isNull();

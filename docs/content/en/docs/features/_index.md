@@ -609,7 +609,7 @@ For more information about MDC see this [link](https://www.baeldung.com/mdc-in-l
 ## InformerEventSource Multi-Cluster Support
 
 It is possible to handle resources for remote cluster with `InformerEventSource`. To do so,
-simply just set a client that connects to a remote cluster:
+simply set a client that connects to a remote cluster:
 
 ```java
 
@@ -620,8 +620,8 @@ InformerEventSourceConfiguration<Tomcat> configuration =
 
 ```
 
-Of course, you will need to specify a `SecondaryToPrimaryMapper`, since the default that
-is based on owner references naturally won't work, rather use the one that supports annotations.
+You will also need to specify a `SecondaryToPrimaryMapper`, since the default one
+is based on owner references and won't work across cluster instances. You could, for example, use the provided implementation that relies on annotations added to the secondary resources to identify the associated primary resource.
 
 See related [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/informerremotecluster).
 

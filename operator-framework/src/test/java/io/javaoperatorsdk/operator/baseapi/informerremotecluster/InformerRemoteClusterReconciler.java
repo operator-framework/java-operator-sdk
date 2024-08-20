@@ -51,7 +51,7 @@ public class InformerRemoteClusterReconciler
 
     var es = new InformerEventSource<>(InformerEventSourceConfiguration
         .from(ConfigMap.class, InformerRemoteClusterCustomResource.class)
-        // owner references naturally not work cross cluster, using
+        // owner references do not work cross cluster, using
         // annotations here to reference primary resource
         .withSecondaryToPrimaryMapper(Mappers.fromDefaultAnnotations())
         // setting remote client for informer
