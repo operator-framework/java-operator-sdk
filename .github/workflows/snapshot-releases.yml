@@ -7,10 +7,13 @@ concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
 on:
+  schedule:
+    #   Run on end of the day
+    - cron: '0 0 * * *'
   push:
     paths-ignore:
       - 'docs/**'
-    branches: [ main, v1, v2, v3, next ]
+    branches: [ fabric8-next-version ]
   workflow_dispatch:
 jobs:
   test:

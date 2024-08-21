@@ -5,7 +5,7 @@
 
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>operator-framework-bom</artifactId>
-    <version>4.9.3-SNAPSHOT</version>
+    <version>999.F8-SNAPSHOT</version>
     <name>Operator SDK - Bill of Materials</name>
     <packaging>pom</packaging>
     <description>Java SDK for implementing Kubernetes operators</description>
