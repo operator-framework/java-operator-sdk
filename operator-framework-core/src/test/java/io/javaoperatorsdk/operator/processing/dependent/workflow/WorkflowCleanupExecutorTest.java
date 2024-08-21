@@ -54,9 +54,9 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanUpDiamondWorkflow() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dr1).dependsOn(dd1)
-        .addDependentResource(dd2).dependsOn(dd1)
-        .addDependentResource(dd3).dependsOn(dr1, dd2)
+        .configuring(dr1).dependsOn(dd1)
+        .configuring(dd2).dependsOn(dd1)
+        .configuring(dd3).dependsOn(dr1, dd2)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -73,9 +73,9 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void dontDeleteIfDependentErrored() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1)
-        .addDependentResource(dd3).dependsOn(dd2)
-        .addDependentResource(errorDD).dependsOn(dd2)
+        .configuring(dd2).dependsOn(dd1)
+        .configuring(dd3).dependsOn(dd2)
+        .configuring(errorDD).dependsOn(dd2)
         .withThrowExceptionFurther(false)
         .build();
 
@@ -95,7 +95,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanupConditionTrivialCase() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1).withDeletePostcondition(notMetCondition)
+        .configuring(dd2).dependsOn(dd1).withDeletePostcondition(notMetCondition)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -110,7 +110,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanupConditionMet() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1).withDeletePostcondition(metCondition)
+        .configuring(dd2).dependsOn(dd1).withDeletePostcondition(metCondition)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -126,9 +126,9 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void cleanupConditionDiamondWorkflow() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1)
-        .addDependentResource(dd3).dependsOn(dd1).withDeletePostcondition(notMetCondition)
-        .addDependentResource(dd4).dependsOn(dd2, dd3)
+        .configuring(dd2).dependsOn(dd1)
+        .configuring(dd3).dependsOn(dd1).withDeletePostcondition(notMetCondition)
+        .configuring(dd4).dependsOn(dd2, dd3)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -162,10 +162,10 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void ifDependentActiveDependentNormallyDeleted() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1)
-        .addDependentResource(dd3).dependsOn(dd1)
+        .configuring(dd2).dependsOn(dd1)
+        .configuring(dd3).dependsOn(dd1)
         .withActivationCondition(metCondition)
-        .addDependentResource(dd4).dependsOn(dd2, dd3)
+        .configuring(dd4).dependsOn(dd2, dd3)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -182,11 +182,11 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void ifDependentActiveDeletePostConditionIsChecked() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1)
-        .addDependentResource(dd3).dependsOn(dd1)
+        .configuring(dd2).dependsOn(dd1)
+        .configuring(dd3).dependsOn(dd1)
         .withDeletePostcondition(notMetCondition)
         .withActivationCondition(metCondition)
-        .addDependentResource(dd4).dependsOn(dd2, dd3)
+        .configuring(dd4).dependsOn(dd2, dd3)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -206,10 +206,10 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void ifDependentInactiveDeleteIsNotCalled() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1)
-        .addDependentResource(dd3).dependsOn(dd1)
+        .configuring(dd2).dependsOn(dd1)
+        .configuring(dd3).dependsOn(dd1)
         .withActivationCondition(notMetCondition)
-        .addDependentResource(dd4).dependsOn(dd2, dd3)
+        .configuring(dd4).dependsOn(dd2, dd3)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -225,11 +225,11 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   void ifDependentInactiveDeletePostConditionNotChecked() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dd1)
-        .addDependentResource(dd2).dependsOn(dd1)
-        .addDependentResource(dd3).dependsOn(dd1)
+        .configuring(dd2).dependsOn(dd1)
+        .configuring(dd3).dependsOn(dd1)
         .withDeletePostcondition(notMetCondition)
         .withActivationCondition(notMetCondition)
-        .addDependentResource(dd4).dependsOn(dd2, dd3)
+        .configuring(dd4).dependsOn(dd2, dd3)
         .build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
@@ -243,7 +243,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   @Test
   void singleInactiveDependent() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
+        .configuring(dd1)
         .withActivationCondition(notMetCondition)
         .build();
 

@@ -46,7 +46,7 @@ public class WebPageDependentsWorkflowReconciler
         .addDependentResource(configMapDR)
         .addDependentResource(deploymentDR)
         .addDependentResource(serviceDR)
-        .addDependentResource(ingressDR).withReconcilePrecondition(new ExposedIngressCondition())
+        .configuring(ingressDR).withReconcilePrecondition(new ExposedIngressCondition())
         .build();
   }
 

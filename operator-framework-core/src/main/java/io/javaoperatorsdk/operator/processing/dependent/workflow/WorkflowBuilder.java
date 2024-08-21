@@ -17,50 +17,24 @@ public class WorkflowBuilder<P extends HasMetadata> {
   private final Map<String, DependentResourceNode<?, P>> dependentResourceNodes =
       new HashMap<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
-  private DependentResourceNode currentNode;
   private boolean isCleaner = false;
 
+  public DependentResourceBuilder configuring(DependentResource dependentResource) {
+    final var currentNode = doAddDependentResource(dependentResource);
+    return new DependentResourceBuilder(currentNode);
+  }
+
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
-    currentNode = new DependentResourceNode<>(dependentResource);
+    doAddDependentResource(dependentResource);
+    return this;
+  }
+
+  private DependentResourceNode doAddDependentResource(DependentResource dependentResource) {
+    final var currentNode = new DependentResourceNode<>(dependentResource);
     isCleaner = isCleaner || dependentResource.isDeletable();
     final var actualName = dependentResource.name();
     dependentResourceNodes.put(actualName, currentNode);
-    return this;
-  }
-
-  public WorkflowBuilder<P> dependsOn(Set<DependentResource> dependentResources) {
-    for (var dependentResource : dependentResources) {
-      var dependsOn = getNodeByDependentResource(dependentResource);
-      currentNode.addDependsOnRelation(dependsOn);
-    }
-    return this;
-  }
-
-  public WorkflowBuilder<P> dependsOn(DependentResource... dependentResources) {
-    if (dependentResources != null) {
-      return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
-    }
-    return this;
-  }
-
-  public WorkflowBuilder<P> withReconcilePrecondition(Condition reconcilePrecondition) {
-    currentNode.setReconcilePrecondition(reconcilePrecondition);
-    return this;
-  }
-
-  public WorkflowBuilder<P> withReadyPostcondition(Condition readyPostcondition) {
-    currentNode.setReadyPostcondition(readyPostcondition);
-    return this;
-  }
-
-  public WorkflowBuilder<P> withDeletePostcondition(Condition deletePostcondition) {
-    currentNode.setDeletePostcondition(deletePostcondition);
-    return this;
-  }
-
-  public WorkflowBuilder<P> withActivationCondition(Condition activationCondition) {
-    currentNode.setActivationCondition(activationCondition);
-    return this;
+    return currentNode;
   }
 
   DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
@@ -88,5 +62,69 @@ public class WorkflowBuilder<P extends HasMetadata> {
   DefaultWorkflow<P> buildAsDefaultWorkflow() {
     return new DefaultWorkflow(new HashSet<>(dependentResourceNodes.values()),
         throwExceptionAutomatically, isCleaner);
+  }
+
+  public class DependentResourceBuilder {
+    private final DependentResourceNode currentNode;
+
+    private DependentResourceBuilder(DependentResourceNode currentNode) {
+      this.currentNode = currentNode;
+    }
+
+    public WorkflowBuilder<P> addDependentResource(DependentResource<?, ?> dependentResource) {
+      return WorkflowBuilder.this.addDependentResource(dependentResource);
+    }
+
+    public DependentResourceBuilder configuring(DependentResource<?, ?> dependentResource) {
+      final var currentNode = WorkflowBuilder.this.doAddDependentResource(dependentResource);
+      return new DependentResourceBuilder(currentNode);
+    }
+
+    public Workflow<P> build() {
+      return WorkflowBuilder.this.build();
+    }
+
+    DefaultWorkflow<P> buildAsDefaultWorkflow() {
+      return WorkflowBuilder.this.buildAsDefaultWorkflow();
+    }
+
+    public WorkflowBuilder<P> withThrowExceptionFurther(boolean throwExceptionFurther) {
+      return WorkflowBuilder.this.withThrowExceptionFurther(throwExceptionFurther);
+    }
+
+    public DependentResourceBuilder dependsOn(Set<DependentResource> dependentResources) {
+      for (var dependentResource : dependentResources) {
+        var dependsOn = getNodeByDependentResource(dependentResource);
+        currentNode.addDependsOnRelation(dependsOn);
+      }
+      return this;
+    }
+
+    public DependentResourceBuilder dependsOn(DependentResource... dependentResources) {
+      if (dependentResources != null) {
+        return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
+      }
+      return this;
+    }
+
+    public DependentResourceBuilder withReconcilePrecondition(Condition reconcilePrecondition) {
+      currentNode.setReconcilePrecondition(reconcilePrecondition);
+      return this;
+    }
+
+    public DependentResourceBuilder withReadyPostcondition(Condition readyPostcondition) {
+      currentNode.setReadyPostcondition(readyPostcondition);
+      return this;
+    }
+
+    public DependentResourceBuilder withDeletePostcondition(Condition deletePostcondition) {
+      currentNode.setDeletePostcondition(deletePostcondition);
+      return this;
+    }
+
+    public DependentResourceBuilder withActivationCondition(Condition activationCondition) {
+      currentNode.setActivationCondition(activationCondition);
+      return this;
+    }
   }
 }
