@@ -491,25 +491,28 @@ To register event sources, your `Reconciler` has to implement the
 [`EventSourceInitializer`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/EventSourceInitializer.java)
 interface and initialize a list of event sources to register. One way to see this in action is
 to look at the
-[tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/TomcatReconciler.java)
+[tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/WebappReconciler.java)
 (irrelevant details omitted):
 
 ```java
 
 @ControllerConfiguration
-public class TomcatReconciler implements Reconciler<Tomcat>, EventSourceInitializer<Tomcat> {
+public class WebappReconciler
+        implements Reconciler<Webapp>, Cleaner<Webapp>, EventSourceInitializer<Webapp> {
 
-   @Override
-   public List<EventSource> prepareEventSources(EventSourceContext<Tomcat> context) {
-      var configMapEventSource =
-              new InformerEventSource<>(InformerConfiguration.from(Deployment.class, context)
-                      .withLabelSelector(SELECTOR)
-                      .withSecondaryToPrimaryMapper(
-                              Mappers.fromAnnotation(ANNOTATION_NAME, ANNOTATION_NAMESPACE)
-                                      .build(), context));
-      return EventSourceInitializer.nameEventSources(configMapEventSource);
-   }
-  ...
+    @Override
+    public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
+        InformerConfiguration<Tomcat> configuration =
+                InformerConfiguration.from(Tomcat.class, context)
+                        .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
+                        .withPrimaryToSecondaryMapper(
+                                (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
+                                        primary.getMetadata().getNamespace())))
+                        .build();
+        return EventSourceInitializer
+                .nameEventSources(new InformerEventSource<>(configuration, context));
+    }
+    ...
 }
 ```
 
