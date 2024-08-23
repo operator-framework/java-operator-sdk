@@ -66,16 +66,12 @@ public class DynamicGenericEventSourceRegistrationReconciler
     return cm;
   }
 
-  private GroupVersionKind gvkFor(Class<? extends HasMetadata> clazz) {
-    return new GroupVersionKind(HasMetadata.getApiVersion(clazz), HasMetadata.getKind(clazz));
-  }
-
   private InformerEventSource<GenericKubernetesResource, DynamicGenericEventSourceRegistrationCustomResource> genericInformerFor(
       Class<? extends HasMetadata> clazz,
       Context<DynamicGenericEventSourceRegistrationCustomResource> context) {
 
     return new InformerEventSource<>(
-        InformerConfiguration.from(gvkFor(clazz),
+        InformerConfiguration.from(GroupVersionKind.gvkFor(clazz),
             context.eventSourceRetriever().eventSourceContextForDynamicRegistration()).build(),
         context.eventSourceRetriever().eventSourceContextForDynamicRegistration());
   }
