@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.Pluralize;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -22,7 +23,7 @@ public class GroupVersionKind {
       this.group = groupAndVersion[0];
       this.version = groupAndVersion[1];
     }
-    this.plural = Pluralize.toPlural(kind);
+    this.plural = null;
     this.apiVersion = apiVersion;
   }
 
@@ -34,7 +35,7 @@ public class GroupVersionKind {
     this.group = group;
     this.version = version;
     this.kind = kind;
-    this.plural = plural != null ? plural : Pluralize.toPlural(kind);
+    this.plural = plural;
     this.apiVersion = (group == null || group.isBlank()) ? version : group + "/" + version;
   }
 
@@ -56,8 +57,16 @@ public class GroupVersionKind {
     return kind;
   }
 
-  public String getPlural() {
-    return plural;
+  /**
+   * Returns the plural form associated with the kind if it has been provided explicitly (either
+   * manually by the user, or determined from the associated resource class definition)
+   *
+   * @return {@link Optional#empty()} if the plural form was not provided explicitly (in which case,
+   *         it could be approximated by using {@link Pluralize#toPlural(String)} on the kind), or
+   *         the plural form if it was provided explicitly
+   */
+  public Optional<String> getPlural() {
+    return Optional.ofNullable(plural);
   }
 
   public String apiVersion() {
