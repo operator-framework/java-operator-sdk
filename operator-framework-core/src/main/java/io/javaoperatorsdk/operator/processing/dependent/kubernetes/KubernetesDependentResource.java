@@ -38,15 +38,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final ResourceUpdaterMatcher<R> updaterMatcher;
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
-
-  private final boolean usingCustomResourceUpdateMatcher;
+  private volatile Boolean useSSA;
 
   @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
 
-    usingCustomResourceUpdateMatcher = this instanceof ResourceUpdaterMatcher;
-    updaterMatcher = usingCustomResourceUpdateMatcher
+    updaterMatcher = this instanceof ResourceUpdaterMatcher
         ? (ResourceUpdaterMatcher<R>) this
         : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType);
   }
@@ -194,18 +192,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   protected boolean useSSA(Context<P> context) {
-    if (usingCustomResourceUpdateMatcher) {
-      return false;
+    if (useSSA == null) {
+      useSSA = context.getControllerConfiguration().getConfigurationService().shouldUseSSA(this);
     }
-    Optional<Boolean> useSSAConfig =
-        configuration().flatMap(KubernetesDependentResourceConfig::useSSA);
-    var configService = context.getControllerConfiguration().getConfigurationService();
-    // don't use SSA for certain resources by default, only if explicitly overriden
-    if (useSSAConfig.isEmpty() && configService.defaultNonSSAResource().contains(resourceType())) {
-      return false;
-    }
-    return useSSAConfig.orElse(context.getControllerConfiguration().getConfigurationService()
-        .ssaBasedCreateUpdateMatchForDependentResources());
+    return useSSA;
   }
 
   private boolean usePreviousAnnotation(Context<P> context) {
