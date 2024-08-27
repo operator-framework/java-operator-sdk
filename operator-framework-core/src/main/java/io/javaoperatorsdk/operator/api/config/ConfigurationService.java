@@ -23,6 +23,9 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
 /** An interface from which to retrieve configuration information. */
@@ -356,6 +359,32 @@ public interface ConfigurationService {
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
     return true;
+  }
+
+  /**
+   * This is mostly useful as an integration point for downstream projects to be able to reuse the
+   * logic used to determine whether a given {@link KubernetesDependentResource} should use SSA or
+   * not.
+   *
+   * @param dependentResource the {@link KubernetesDependentResource} under consideration
+   * @return {@code true} if SSA should be used for
+   * @param <R> the dependent resource type
+   * @param <P> the primary resource type
+   * @since 4.9.4
+   */
+  default <R extends HasMetadata, P extends HasMetadata> boolean shouldUseSSA(
+      KubernetesDependentResource<R, P> dependentResource) {
+    if (dependentResource instanceof ResourceUpdaterMatcher) {
+      return false;
+    }
+    Optional<Boolean> useSSAConfig = dependentResource.configuration()
+        .flatMap(KubernetesDependentResourceConfig::useSSA);
+    // don't use SSA for certain resources by default, only if explicitly overriden
+    if (useSSAConfig.isEmpty()
+        && defaultNonSSAResource().contains(dependentResource.resourceType())) {
+      return false;
+    }
+    return useSSAConfig.orElse(ssaBasedCreateUpdateMatchForDependentResources());
   }
 
   /**
