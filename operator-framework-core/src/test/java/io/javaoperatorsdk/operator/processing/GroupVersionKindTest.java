@@ -4,29 +4,26 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GroupVersionKindPlural;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class GroupVersionKindTest {
 
   @Test
   void testInitFromApiVersion() {
-    var gvk = new GroupVersionKind("v1", "ConfigMap");
+    var gvk = GroupVersionKindPlural.gvkFor("v1", "ConfigMap");
     assertThat(gvk.getGroup()).isNull();
     assertThat(gvk.getVersion()).isEqualTo("v1");
 
-    gvk = new GroupVersionKind("apps/v1", "Deployment");
+    gvk = GroupVersionKindPlural.gvkFor("apps/v1", "Deployment");
     assertThat(gvk.getGroup()).isEqualTo("apps");
     assertThat(gvk.getVersion()).isEqualTo("v1");
   }
 
   @Test
   void pluralShouldOnlyBeProvidedIfExplicitlySet() {
-    var gvk = new GroupVersionKind("v1", "ConfigMap");
-    assertThat(gvk.getPlural()).isEmpty();
-
-    gvk = GroupVersionKind.gvkFor(ConfigMap.class);
+    final var gvk = GroupVersionKindPlural.gvkFor(ConfigMap.class);
     assertThat(gvk.getPlural()).hasValue(HasMetadata.getPlural(ConfigMap.class));
   }
 
