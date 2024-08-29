@@ -391,7 +391,7 @@ public interface ConfigurationService {
       return false;
     }
     Optional<Boolean> useSSAConfig = dependentResource.configuration()
-        .flatMap(KubernetesDependentResourceConfig::useSSA);
+        .map(KubernetesDependentResourceConfig::useSSA);
     // don't use SSA for certain resources by default, only if explicitly overriden
     if (useSSAConfig.isEmpty()
         && defaultNonSSAResource().contains(dependentResource.resourceType())) {
