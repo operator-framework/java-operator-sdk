@@ -12,19 +12,48 @@ class GroupVersionKindTest {
 
   @Test
   void testInitFromApiVersion() {
-    var gvk = GroupVersionKindPlural.gvkFor("v1", "ConfigMap");
+    var gvk = new GroupVersionKind("v1", "ConfigMap");
     assertThat(gvk.getGroup()).isNull();
     assertThat(gvk.getVersion()).isEqualTo("v1");
 
-    gvk = GroupVersionKindPlural.gvkFor("apps/v1", "Deployment");
+    gvk = new GroupVersionKind("apps/v1", "Deployment");
     assertThat(gvk.getGroup()).isEqualTo("apps");
     assertThat(gvk.getVersion()).isEqualTo("v1");
   }
 
   @Test
   void pluralShouldOnlyBeProvidedIfExplicitlySet() {
-    final var gvk = GroupVersionKindPlural.gvkFor(ConfigMap.class);
+    final var kind = "ConfigMap";
+    var gvk = GroupVersionKindPlural.from(new GroupVersionKind("v1", kind));
+    assertThat(gvk.getPlural()).isEmpty();
+    assertThat(gvk.getPluralOrDefault())
+        .isEqualTo(GroupVersionKindPlural.getDefaultPluralFor(kind));
+
+    gvk = GroupVersionKindPlural.from(GroupVersionKind.gvkFor(ConfigMap.class));
+    assertThat(gvk.getPlural()).isEmpty();
+    assertThat(gvk.getPluralOrDefault()).isEqualTo(HasMetadata.getPlural(ConfigMap.class));
+
+    gvk = GroupVersionKindPlural.gvkFor(ConfigMap.class);
+    assertThat(gvk.getPlural()).hasValue(HasMetadata.getPlural(ConfigMap.class));
+
+    gvk = GroupVersionKindPlural.from(gvk);
     assertThat(gvk.getPlural()).hasValue(HasMetadata.getPlural(ConfigMap.class));
   }
 
+  @Test
+  void pluralShouldBeEmptyIfNotProvided() {
+    final var kind = "MyKind";
+    var gvk =
+        GroupVersionKindPlural.gvkWithPlural(new GroupVersionKind("josdk.io", "v1", kind), null);
+    assertThat(gvk.getPlural()).isEmpty();
+    assertThat(gvk.getPluralOrDefault())
+        .isEqualTo(GroupVersionKindPlural.getDefaultPluralFor(kind));
+  }
+
+  @Test
+  void pluralShouldOverrideDefaultComputedVersionIfProvided() {
+    var gvk = GroupVersionKindPlural.gvkWithPlural(new GroupVersionKind("josdk.io", "v1", "MyKind"),
+        "MyPlural");
+    assertThat(gvk.getPlural()).hasValue("MyPlural");
+  }
 }

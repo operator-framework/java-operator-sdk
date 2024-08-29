@@ -1,20 +1,19 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GroupVersionKindPlural;
 
 public class GroupVersionKind {
   private final String group;
   private final String version;
   private final String kind;
   private final String apiVersion;
+  protected final static Map<Class<? extends HasMetadata>, GroupVersionKind> CACHE =
+      new ConcurrentHashMap<>();
 
-  /**
-   * @deprecated Use {@link GroupVersionKindPlural#gvkFor(String, String)} instead
-   */
-  @Deprecated(forRemoval = true)
   public GroupVersionKind(String apiVersion, String kind) {
     this.kind = kind;
     String[] groupAndVersion = apiVersion.split("/");
@@ -29,13 +28,14 @@ public class GroupVersionKind {
   }
 
   public static GroupVersionKind gvkFor(Class<? extends HasMetadata> resourceClass) {
-    return GroupVersionKindPlural.gvkFor(resourceClass);
+    return CACHE.computeIfAbsent(resourceClass, GroupVersionKind::computeGVK);
   }
 
-  /**
-   * @deprecated Use {@link GroupVersionKindPlural#gvkFor(String, String, String)} instead
-   */
-  @Deprecated(forRemoval = true)
+  private static GroupVersionKind computeGVK(Class<? extends HasMetadata> rc) {
+    return new GroupVersionKind(HasMetadata.getGroup(rc),
+        HasMetadata.getVersion(rc), HasMetadata.getKind(rc));
+  }
+
   public GroupVersionKind(String group, String version, String kind) {
     this.group = group;
     this.version = version;

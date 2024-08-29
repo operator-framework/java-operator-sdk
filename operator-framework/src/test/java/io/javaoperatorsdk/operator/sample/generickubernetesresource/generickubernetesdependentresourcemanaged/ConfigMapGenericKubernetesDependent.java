@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
@@ -25,7 +24,7 @@ public class ConfigMapGenericKubernetesDependent extends
   public static final String KEY = "key";
 
   public ConfigMapGenericKubernetesDependent() {
-    super(GroupVersionKind.gvkFor(ConfigMap.class));
+    super(new GroupVersionKind("", VERSION, KIND));
   }
 
   @Override
