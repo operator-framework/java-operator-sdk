@@ -40,14 +40,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
   private final boolean garbageCollected = this instanceof GarbageCollected;
   @SuppressWarnings("unchecked")
-  private final ResourceUpdaterMatcher<R> updaterMatcher = this instanceof ResourceUpdaterMatcher
-      ? (ResourceUpdaterMatcher<R>) this
-      : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType());
+  private final ResourceUpdaterMatcher<R> updaterMatcher = this instanceof ResourceUpdaterMatcher ? (ResourceUpdaterMatcher<R>) this : GenericResourceUpdaterMatcher.updaterMatcherFor(resourceType());
   private final boolean clustered;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
 
-  @SuppressWarnings("unchecked")
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }
