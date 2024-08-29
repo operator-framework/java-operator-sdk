@@ -5,7 +5,7 @@
   <parent>
     <artifactId>java-operator-sdk</artifactId>
     <groupId>io.javaoperatorsdk</groupId>
-    <version>4.9.4-SNAPSHOT</version>
+    <version>4.9.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>bootstrapper</artifactId>
