@@ -27,7 +27,7 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
   }
 
   @SuppressWarnings("unused")
-  public GroupVersionKind getGroupVersionKind() {
+  public GroupVersionKindPlural getGroupVersionKind() {
     return groupVersionKind;
   }
 }
