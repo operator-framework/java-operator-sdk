@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
@@ -8,6 +10,9 @@ public class GroupVersionKind {
   private final String group;
   private final String version;
   private final String kind;
+  private final String apiVersion;
+  protected final static Map<Class<? extends HasMetadata>, GroupVersionKind> CACHE =
+      new ConcurrentHashMap<>();
 
   public GroupVersionKind(String apiVersion, String kind) {
     this.kind = kind;
@@ -19,17 +24,23 @@ public class GroupVersionKind {
       this.group = groupAndVersion[0];
       this.version = groupAndVersion[1];
     }
+    this.apiVersion = apiVersion;
+  }
+
+  public static GroupVersionKind gvkFor(Class<? extends HasMetadata> resourceClass) {
+    return CACHE.computeIfAbsent(resourceClass, GroupVersionKind::computeGVK);
+  }
+
+  private static GroupVersionKind computeGVK(Class<? extends HasMetadata> rc) {
+    return new GroupVersionKind(HasMetadata.getGroup(rc),
+        HasMetadata.getVersion(rc), HasMetadata.getKind(rc));
   }
 
   public GroupVersionKind(String group, String version, String kind) {
     this.group = group;
     this.version = version;
     this.kind = kind;
-  }
-
-  public static GroupVersionKind gvkFor(Class<? extends HasMetadata> resourceClass) {
-    return new GroupVersionKind(HasMetadata.getGroup(resourceClass),
-        HasMetadata.getVersion(resourceClass), HasMetadata.getKind(resourceClass));
+    this.apiVersion = (group == null || group.isBlank()) ? version : group + "/" + version;
   }
 
   public String getGroup() {
@@ -45,7 +56,7 @@ public class GroupVersionKind {
   }
 
   public String apiVersion() {
-    return group == null || group.isBlank() ? version : group + "/" + version;
+    return apiVersion;
   }
 
   @Override
@@ -55,20 +66,18 @@ public class GroupVersionKind {
     if (o == null || getClass() != o.getClass())
       return false;
     GroupVersionKind that = (GroupVersionKind) o;
-    return Objects.equals(group, that.group) && Objects.equals(version, that.version)
-        && Objects.equals(kind, that.kind);
+    return Objects.equals(apiVersion, that.apiVersion) && Objects.equals(kind, that.kind);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(group, version, kind);
+    return Objects.hash(apiVersion, kind);
   }
 
   @Override
   public String toString() {
     return "GroupVersionKind{" +
-        "group='" + group + '\'' +
-        ", version='" + version + '\'' +
+        "apiVersion='" + apiVersion + '\'' +
         ", kind='" + kind + '\'' +
         '}';
   }
