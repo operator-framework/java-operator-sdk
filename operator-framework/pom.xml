@@ -20,6 +20,7 @@
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>kubernetes-httpclient-${fabric8-httpclient-impl.name}</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
