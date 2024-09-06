@@ -189,7 +189,7 @@ public class Controller<P extends HasMetadata>
             }
 
             @Override
-            public DeleteControl execute() {
+            public DeleteControl execute() throws Exception {
               initContextIfNeeded(resource, context);
               WorkflowCleanupResult workflowCleanupResult = null;
 
