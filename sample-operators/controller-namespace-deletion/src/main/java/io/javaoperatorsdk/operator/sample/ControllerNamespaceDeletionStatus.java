@@ -1,6 +1,15 @@
 package io.javaoperatorsdk.operator.sample;
 
-import io.fabric8.kubernetes.client.CustomResource;
 
 public class ControllerNamespaceDeletionStatus {
+
+  private String value;
+
+  public String getValue() {
+    return value;
+  }
+
+  public void setValue(String value) {
+    this.value = value;
+  }
 }
