@@ -1,9 +1,15 @@
 package io.javaoperatorsdk.operator.sample;
 
+import java.time.LocalTime;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 public class ControllerNamespaceDeletionOperator {
 
@@ -11,9 +17,30 @@ public class ControllerNamespaceDeletionOperator {
       LoggerFactory.getLogger(ControllerNamespaceDeletionOperator.class);
 
   public static void main(String[] args) {
-    Operator operator = new Operator();
 
-    operator.register(new ControllerNamespaceDeletionReconciler());
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      log.info("Shutting down...");
+      boolean allResourcesDeleted = waitUntilResourcesDeleted();
+      log.info("All resources within timeout: {}", allResourcesDeleted);
+    }));
+
+    Operator operator = new Operator();
+    operator.register(new ControllerNamespaceDeletionReconciler(),
+        ControllerConfigurationOverrider::watchingOnlyCurrentNamespace);
     operator.start();
+  }
+
+  private static boolean waitUntilResourcesDeleted() {
+    try (var client = new KubernetesClientBuilder().build()) {
+      var startTime = LocalTime.now();
+      while (startTime.until(LocalTime.now(), SECONDS) < 30) {
+        var items =
+            client.resources(ControllerNamespaceDeletionCustomResource.class).list().getItems();
+        if (items.isEmpty()) {
+          return true;
+        }
+      }
+      return false;
+    }
   }
 }
