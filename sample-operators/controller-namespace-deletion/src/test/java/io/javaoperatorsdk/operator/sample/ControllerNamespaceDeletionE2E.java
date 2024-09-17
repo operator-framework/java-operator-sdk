@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ class ControllerNamespaceDeletionE2E {
   KubernetesClient client;
 
   // not for local mode by design
-  // @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
+  @EnabledIfSystemProperty(named = "test.deployment", matches = "remote")
   @Test
   void customResourceCleanedUpOnNamespaceDeletion() {
     deployController();
@@ -60,7 +61,7 @@ class ControllerNamespaceDeletionE2E {
       assertThat(ns).isNull();
     });
 
-    log.info("Removing finalizers from role and role bing");
+    log.info("Removing finalizers from role and role bing and service account");
     removeRoleAndRoleBindingFinalizers();
 
     await().timeout(Duration.ofSeconds(20)).untilAsserted(() -> {
