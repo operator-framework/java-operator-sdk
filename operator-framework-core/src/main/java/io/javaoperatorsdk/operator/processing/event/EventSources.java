@@ -99,8 +99,7 @@ class EventSources<P extends HasMetadata> {
 
     final var sourcesForType = sources.get(keyFor(dependentType));
     if (sourcesForType == null || sourcesForType.isEmpty()) {
-      throw new IllegalArgumentException(
-          "There is no event source found for class:" + dependentType.getName());
+      throw new NoEventSourceForClassException(dependentType);
     }
 
     final var size = sourcesForType.size();
