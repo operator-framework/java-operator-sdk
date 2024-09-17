@@ -48,6 +48,7 @@ public class ControllerNamespaceDeletionReconciler
   @Override
   public DeleteControl cleanup(ControllerNamespaceDeletionCustomResource resource,
       Context<ControllerNamespaceDeletionCustomResource> context) {
+    log.info("Cleaning up resource");
     try {
       Thread.sleep(CLEANUP_DELAY.toMillis());
       return DeleteControl.defaultDelete();

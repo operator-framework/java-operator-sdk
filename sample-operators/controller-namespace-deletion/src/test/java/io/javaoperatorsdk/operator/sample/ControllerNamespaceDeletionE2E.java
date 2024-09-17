@@ -63,7 +63,7 @@ class ControllerNamespaceDeletionE2E {
     log.info("Removing finalizers from role and role bing");
     removeRoleAndRoleBindingFinalizers();
 
-    await().untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(20)).untilAsserted(() -> {
       var ns = client.namespaces().withName(namespace).get();
       assertThat(ns).isNull();
     });
@@ -79,6 +79,9 @@ class ControllerNamespaceDeletionE2E {
     role.getFinalizers().clear();
     client.resource(role).update();
 
+    var sa = client.serviceAccounts().inNamespace(namespace).withName(RESOURCE_NAME).get();
+    sa.getMetadata().getFinalizers().clear();
+    client.resource(sa).update();
   }
 
   ControllerNamespaceDeletionCustomResource testResource() {

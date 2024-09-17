@@ -33,9 +33,12 @@ public class ControllerNamespaceDeletionOperator {
   private static boolean waitUntilResourcesDeleted() {
     try (var client = new KubernetesClientBuilder().build()) {
       var startTime = LocalTime.now();
-      while (startTime.until(LocalTime.now(), SECONDS) < 30) {
+      while (startTime.until(LocalTime.now(), SECONDS) < 20) {
         var items =
-            client.resources(ControllerNamespaceDeletionCustomResource.class).list().getItems();
+            client.resources(ControllerNamespaceDeletionCustomResource.class)
+                .inNamespace(client.getConfiguration().getNamespace())
+                .list().getItems();
+        log.info("Custom resource in namespace: {}", items);
         if (items.isEmpty()) {
           return true;
         }
