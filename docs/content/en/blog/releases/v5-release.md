@@ -13,9 +13,40 @@ us if you have some trouble with updates.
 
 ## Minimal Java version is 17
 
-## Support for Server Side Apply
+## Changes in low-level APIs
 
-## Dependent Resource Changes
+### Multi-cluster support in InformerEventSource
+
+### Patch status with Server Side Apply
+
+### Adding finalizer with Server Side Apply
+
+### Naming event sources
+
+### EventSourceInitializer and ErrorStatusHandler are removed
+
+### Cloning accessing secondary resources
+
+### All EventSource is now a ResourceEventSource
+
+### SecondaryToPrimaryMapper now checks resource types
+
+### InformerEventSource is context-independent
+
+### @ControllerConfiguration is now optional
+
+## Dependent Resource related changes
+
+### ResourceDescriminator is removed
+
+### Read-only bulk dependent resources
+
+
+## Workflow related Changes
+
+### Silent exception handling
+
+### CRDPresentActivationCondition 
 
 ## Additional minor changes
 
