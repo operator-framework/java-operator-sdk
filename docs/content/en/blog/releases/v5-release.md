@@ -1,7 +1,6 @@
 ---
 title: Version 5 Released! 
-weight: 30
-date: 2024-10-01
+date: 2024-09-21
 ---
 
 We are excited to announce that Java Operator SDK v5 has been released. This significant effort contains
