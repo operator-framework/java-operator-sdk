@@ -39,11 +39,17 @@ us if you have some trouble with updates.
 - Context independent
 - Informer Configuration classes
 
+### @ControllerConfiguration is now optional
+
+You no longer have to annotate the reconciler with `@ControllerConfiuraion` annotation. 
+This annotation is (one) way to override the default properties of a controller.
+If the annotation is not present, the default values from the annotation are used.
+
+PR: https://github.com/operator-framework/java-operator-sdk/pull/2203
+
 ### EventSourceInitializer and ErrorStatusHandler are removed
 
 ### Cloning accessing secondary resources
-
-### @ControllerConfiguration is now optional
 
 ### Remove automated observed generation handling
 
