@@ -17,50 +17,25 @@ public class WorkflowBuilder<P extends HasMetadata> {
   private final Map<String, DependentResourceNode<?, P>> dependentResourceNodes =
       new HashMap<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
-  private DependentResourceNode currentNode;
   private boolean isCleaner = false;
 
+  public WorkflowNodeConfigurationBuilder addDependentResourceAndConfigure(
+      DependentResource dependentResource) {
+    final var currentNode = doAddDependentResource(dependentResource);
+    return new WorkflowNodeConfigurationBuilder(currentNode);
+  }
+
   public WorkflowBuilder<P> addDependentResource(DependentResource dependentResource) {
-    currentNode = new DependentResourceNode<>(dependentResource);
+    doAddDependentResource(dependentResource);
+    return this;
+  }
+
+  private DependentResourceNode doAddDependentResource(DependentResource dependentResource) {
+    final var currentNode = new DependentResourceNode<>(dependentResource);
     isCleaner = isCleaner || dependentResource.isDeletable();
     final var actualName = dependentResource.name();
     dependentResourceNodes.put(actualName, currentNode);
-    return this;
-  }
-
-  public WorkflowBuilder<P> dependsOn(Set<DependentResource> dependentResources) {
-    for (var dependentResource : dependentResources) {
-      var dependsOn = getNodeByDependentResource(dependentResource);
-      currentNode.addDependsOnRelation(dependsOn);
-    }
-    return this;
-  }
-
-  public WorkflowBuilder<P> dependsOn(DependentResource... dependentResources) {
-    if (dependentResources != null) {
-      return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
-    }
-    return this;
-  }
-
-  public WorkflowBuilder<P> withReconcilePrecondition(Condition reconcilePrecondition) {
-    currentNode.setReconcilePrecondition(reconcilePrecondition);
-    return this;
-  }
-
-  public WorkflowBuilder<P> withReadyPostcondition(Condition readyPostcondition) {
-    currentNode.setReadyPostcondition(readyPostcondition);
-    return this;
-  }
-
-  public WorkflowBuilder<P> withDeletePostcondition(Condition deletePostcondition) {
-    currentNode.setDeletePostcondition(deletePostcondition);
-    return this;
-  }
-
-  public WorkflowBuilder<P> withActivationCondition(Condition activationCondition) {
-    currentNode.setActivationCondition(activationCondition);
-    return this;
+    return currentNode;
   }
 
   DependentResourceNode getNodeByDependentResource(DependentResource<?, ?> dependentResource) {
@@ -88,5 +63,71 @@ public class WorkflowBuilder<P extends HasMetadata> {
   DefaultWorkflow<P> buildAsDefaultWorkflow() {
     return new DefaultWorkflow(new HashSet<>(dependentResourceNodes.values()),
         throwExceptionAutomatically, isCleaner);
+  }
+
+  public class WorkflowNodeConfigurationBuilder {
+    private final DependentResourceNode currentNode;
+
+    private WorkflowNodeConfigurationBuilder(DependentResourceNode currentNode) {
+      this.currentNode = currentNode;
+    }
+
+    public WorkflowBuilder<P> addDependentResource(DependentResource<?, ?> dependentResource) {
+      return WorkflowBuilder.this.addDependentResource(dependentResource);
+    }
+
+    public WorkflowNodeConfigurationBuilder addDependentResourceAndConfigure(
+        DependentResource<?, ?> dependentResource) {
+      final var currentNode = WorkflowBuilder.this.doAddDependentResource(dependentResource);
+      return new WorkflowNodeConfigurationBuilder(currentNode);
+    }
+
+    public Workflow<P> build() {
+      return WorkflowBuilder.this.build();
+    }
+
+    DefaultWorkflow<P> buildAsDefaultWorkflow() {
+      return WorkflowBuilder.this.buildAsDefaultWorkflow();
+    }
+
+    public WorkflowBuilder<P> withThrowExceptionFurther(boolean throwExceptionFurther) {
+      return WorkflowBuilder.this.withThrowExceptionFurther(throwExceptionFurther);
+    }
+
+    public WorkflowNodeConfigurationBuilder toDependOn(Set<DependentResource> dependentResources) {
+      for (var dependentResource : dependentResources) {
+        var dependsOn = getNodeByDependentResource(dependentResource);
+        currentNode.addDependsOnRelation(dependsOn);
+      }
+      return this;
+    }
+
+    public WorkflowNodeConfigurationBuilder toDependOn(DependentResource... dependentResources) {
+      if (dependentResources != null) {
+        return toDependOn(new HashSet<>(Arrays.asList(dependentResources)));
+      }
+      return this;
+    }
+
+    public WorkflowNodeConfigurationBuilder withReconcilePrecondition(
+        Condition reconcilePrecondition) {
+      currentNode.setReconcilePrecondition(reconcilePrecondition);
+      return this;
+    }
+
+    public WorkflowNodeConfigurationBuilder withReadyPostcondition(Condition readyPostcondition) {
+      currentNode.setReadyPostcondition(readyPostcondition);
+      return this;
+    }
+
+    public WorkflowNodeConfigurationBuilder withDeletePostcondition(Condition deletePostcondition) {
+      currentNode.setDeletePostcondition(deletePostcondition);
+      return this;
+    }
+
+    public WorkflowNodeConfigurationBuilder withActivationCondition(Condition activationCondition) {
+      currentNode.setActivationCondition(activationCondition);
+      return this;
+    }
   }
 }

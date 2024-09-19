@@ -109,7 +109,7 @@ public class WebPageStandaloneDependentsReconciler
         .addDependentResource(configMapDR)
         .addDependentResource(deploymentDR)
         .addDependentResource(serviceDR)
-        .addDependentResource(ingressDR)
+        .addDependentResourceAndConfigure(ingressDR)
         // prevent the Ingress from being created based on the linked condition (here: only if the
         // `exposed` flag is set in the primary resource), delete the Ingress if it already exists
         // and the condition becomes false
