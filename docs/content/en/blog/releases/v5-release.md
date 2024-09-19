@@ -11,11 +11,12 @@ a rationale behind the changes if necessary.
 We will omit descriptions of changes that are trivial to update from the source code; feel free to contact
 us if you have some trouble with updates.
 
-## Minimal Java version is 17
+## Various Changes 
+
+- From this release, the minimal Java version is 17.
+- Various deprecated APIs are removed. The migration should be trivial.
 
 ## Changes in low-level APIs
-
-### Multi-cluster support in InformerEventSource
 
 ### Patch status with Server Side Apply
 
@@ -23,21 +24,24 @@ us if you have some trouble with updates.
  
 ### Adding finalizer with Server Side Apply
 
-### Naming event sources
+### Event Sources
+
+#### Naming event sources
+
+#### Multi-cluster support in InformerEventSource
+
+#### All EventSource is now a ResourceEventSource
+
+#### SecondaryToPrimaryMapper now checks resource types
+
+#### InformerEventSource-related refactors
+
+- Context independent
+- Informer Configuration classes
 
 ### EventSourceInitializer and ErrorStatusHandler are removed
 
 ### Cloning accessing secondary resources
-
-### All EventSource is now a ResourceEventSource
-
-### SecondaryToPrimaryMapper now checks resource types
-
-### InformerEventSource-related changes
-
-- Context independent
-- Informer Configuration classes
-- Todo show diff
 
 ### @ControllerConfiguration is now optional
 
