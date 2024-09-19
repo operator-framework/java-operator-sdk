@@ -19,6 +19,8 @@ us if you have some trouble with updates.
 
 ### Patch status with Server Side Apply
 
+- explain also why creation of a new object
+ 
 ### Adding finalizer with Server Side Apply
 
 ### Naming event sources
@@ -31,9 +33,15 @@ us if you have some trouble with updates.
 
 ### SecondaryToPrimaryMapper now checks resource types
 
-### InformerEventSource is context-independent
+### InformerEventSource-related changes
+
+- Context independent
+- Informer Configuration classes
+- Todo show diff
 
 ### @ControllerConfiguration is now optional
+
+### Remove automated observed generation handling
 
 ## Dependent Resource related changes
 
@@ -41,8 +49,13 @@ us if you have some trouble with updates.
 
 ### Read-only bulk dependent resources
 
+### Multiple Dependents with Activation Condition
 
 ## Workflow related Changes
+
+### @Workflow annotation
+
+### Explicit workflow invocation
 
 ### Silent exception handling
 
