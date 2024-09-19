@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -22,8 +20,6 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("rawtypes")
 class WorkflowTest {
 
-  ExecutorService executorService = Executors.newCachedThreadPool();
-
   @Test
   void zeroTopLevelDRShouldThrowException() {
     var dr1 = mockDependent("dr1");
@@ -31,10 +27,10 @@ class WorkflowTest {
     var dr3 = mockDependent("dr3");
 
     var cyclicWorkflowBuilderSetup = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dr1).dependsOn()
-        .addDependentResource(dr2).dependsOn(dr1)
-        .addDependentResource(dr3).dependsOn(dr2)
-        .addDependentResource(dr1).dependsOn(dr2);
+        .addDependentResourceAndConfigure(dr1).toDependOn()
+        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
+        .addDependentResourceAndConfigure(dr3).toDependOn(dr2)
+        .addDependentResourceAndConfigure(dr1).toDependOn(dr2);
 
     assertThrows(IllegalStateException.class,
         cyclicWorkflowBuilderSetup::build);
@@ -49,7 +45,7 @@ class WorkflowTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResource(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
         .buildAsDefaultWorkflow();
 
     Set<DependentResource> topResources =
@@ -69,7 +65,7 @@ class WorkflowTest {
     final var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResource(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
         .buildAsDefaultWorkflow();
 
     Set<DependentResource> bottomResources =
