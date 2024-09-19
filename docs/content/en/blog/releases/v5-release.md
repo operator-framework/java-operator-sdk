@@ -20,8 +20,10 @@ us if you have some trouble with updates.
 
 ### Patch status with Server Side Apply
 
-- explain also why creation of a new object
- 
+[Server Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) is now a first-class citizen in the framework and
+the default approach for patching the status resource.
+
+
 ### Adding finalizer with Server Side Apply
 
 ### Event Sources
