@@ -17,5 +17,6 @@
     <module>webpage</module>
     <module>mysql-schema</module>
     <module>leader-election</module>
+    <module>controller-namespace-deletion</module>
   </modules>
 </project>

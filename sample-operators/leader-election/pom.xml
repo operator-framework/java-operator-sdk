@@ -77,11 +77,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.12.1</version>
-      </plugin>
-      <plugin>
         <!-- Generate Java code from the custom resource definitions -->
         <groupId>io.fabric8</groupId>
         <artifactId>java-generator-maven-plugin</artifactId>
