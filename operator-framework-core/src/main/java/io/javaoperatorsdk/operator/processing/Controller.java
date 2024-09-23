@@ -473,4 +473,10 @@ public class Controller<P extends HasMetadata>
   public boolean isWorkflowExplicitInvocation() {
     return explicitWorkflowInvocation;
   }
+
+  public boolean workflowContainsDependentForType(Class<?> clazz) {
+    return managedWorkflow.getDependentResourcesByName().values().stream()
+        .anyMatch(d -> d.resourceType().equals(clazz));
+  }
+
 }

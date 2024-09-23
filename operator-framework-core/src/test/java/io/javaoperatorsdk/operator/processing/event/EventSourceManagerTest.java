@@ -85,12 +85,12 @@ class EventSourceManagerTest {
 
   @Test
   void retrievingEventSourceForClassShouldWork() {
-    assertThatExceptionOfType(IllegalArgumentException.class)
+    assertThatExceptionOfType(NoEventSourceForClassException.class)
         .isThrownBy(() -> eventSourceManager.getEventSourceFor(Class.class));
 
     // manager is initialized with a controller configured to handle HasMetadata
     EventSourceManager manager = initManager();
-    assertThatExceptionOfType(IllegalArgumentException.class)
+    assertThatExceptionOfType(NoEventSourceForClassException.class)
         .isThrownBy(() -> manager.getEventSourceFor(HasMetadata.class, "unknown_name"));
 
     ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
