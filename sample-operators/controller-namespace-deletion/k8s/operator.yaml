@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operator
+  finalizers:
+    - controller.deletion/finalizer
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: operator
+spec:
+  serviceAccountName: operator
+  containers:
+    - name: operator
+      image: controller-namespace-deletion-operator
+      imagePullPolicy: Never
+      env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+  terminationGracePeriodSeconds: 30
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operator
+  finalizers:
+    - controller.deletion/finalizer
+subjects:
+  - kind: ServiceAccount
+    name: operator
+roleRef:
+  kind: Role
+  name: operator
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: operator
+  finalizers:
+    - controller.deletion/finalizer
+rules:
+  - apiGroups:
+      - "apiextensions.k8s.io"
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - '*'
+  - apiGroups:
+      - "namespacedeletion.io"
+    resources:
+      - controllernamespacedeletioncustomresources
+      - controllernamespacedeletioncustomresources/status
+    verbs:
+      - '*'
+
