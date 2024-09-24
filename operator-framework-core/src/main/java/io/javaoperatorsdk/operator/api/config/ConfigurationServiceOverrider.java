@@ -40,6 +40,7 @@ public class ConfigurationServiceOverrider {
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean previousAnnotationForDependentResources;
   private Boolean parseResourceVersions;
+  @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
 
   ConfigurationServiceOverrider(ConfigurationService original) {
@@ -79,6 +80,7 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  @SuppressWarnings("rawtypes")
   public ConfigurationServiceOverrider withDependentResourceFactory(
       DependentResourceFactory dependentResourceFactory) {
     this.dependentResourceFactory = dependentResourceFactory;
@@ -192,6 +194,7 @@ public class ConfigurationServiceOverrider {
         return checkCR != null ? checkCR : original.checkCRDAndValidateLocalModel();
       }
 
+      @SuppressWarnings("rawtypes")
       @Override
       public DependentResourceFactory dependentResourceFactory() {
         return dependentResourceFactory != null ? dependentResourceFactory
@@ -302,9 +305,9 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
+      public Set<Class<? extends HasMetadata>> defaultNonSSAResources() {
         return defaultNonSSAResource != null ? defaultNonSSAResource
-            : super.defaultNonSSAResource();
+            : super.defaultNonSSAResources();
       }
 
       @Override
