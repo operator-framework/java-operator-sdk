@@ -42,6 +42,7 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSAReconciler;
 import io.javaoperatorsdk.operator.sample.readonly.ConfigMapReader;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
@@ -238,6 +239,7 @@ class BaseConfigurationServiceTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void excludedResourceClassesShouldNotUseSSAByDefault() {
     final var config = configFor(new SelectorReconciler());
 
@@ -246,10 +248,12 @@ class BaseConfigurationServiceTest {
         extractDependentKubernetesResourceConfig(config, 1);
     assertNotNull(kubernetesDependentResourceConfig);
     assertTrue(kubernetesDependentResourceConfig.useSSA().isEmpty());
-    assertFalse(configurationService.shouldUseSSA(ReadOnlyDependent.class, ConfigMap.class));
+    assertFalse(configurationService.shouldUseSSA(ReadOnlyDependent.class, ConfigMap.class,
+        kubernetesDependentResourceConfig));
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void excludedResourceClassesShouldUseSSAIfAnnotatedToDoSo() {
     final var config = configFor(new SelectorReconciler());
 
@@ -260,10 +264,11 @@ class BaseConfigurationServiceTest {
     assertFalse(kubernetesDependentResourceConfig.useSSA().isEmpty());
     assertTrue((Boolean) kubernetesDependentResourceConfig.useSSA().get());
     assertTrue(configurationService.shouldUseSSA(SelectorReconciler.WithAnnotation.class,
-        ConfigMap.class));
+        ConfigMap.class, kubernetesDependentResourceConfig));
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void dependentsShouldUseSSAByDefaultIfNotExcluded() {
     final var config = configFor(new DefaultSSAForDependentsReconciler());
 
@@ -271,14 +276,27 @@ class BaseConfigurationServiceTest {
     assertNotNull(kubernetesDependentResourceConfig);
     assertTrue(kubernetesDependentResourceConfig.useSSA().isEmpty());
     assertTrue(configurationService.shouldUseSSA(
-        DefaultSSAForDependentsReconciler.DefaultDependent.class, ConfigMapReader.class));
+        DefaultSSAForDependentsReconciler.DefaultDependent.class, ConfigMapReader.class,
+        kubernetesDependentResourceConfig));
 
     kubernetesDependentResourceConfig = extractDependentKubernetesResourceConfig(config, 1);
     assertNotNull(kubernetesDependentResourceConfig);
     assertTrue(kubernetesDependentResourceConfig.useSSA().isPresent());
     assertFalse((Boolean) kubernetesDependentResourceConfig.useSSA().get());
     assertFalse(configurationService
-        .shouldUseSSA(DefaultSSAForDependentsReconciler.NonSSADependent.class, Service.class));
+        .shouldUseSSA(DefaultSSAForDependentsReconciler.NonSSADependent.class, Service.class,
+            kubernetesDependentResourceConfig));
+  }
+
+  @Test
+  void shouldUseSSAShouldAlsoWorkWithManualConfiguration() {
+    var reconciler = new DependentSSAReconciler(true);
+    assertEquals(reconciler.isUseSSA(),
+        configurationService.shouldUseSSA(reconciler.getSsaConfigMapDependent()));
+
+    reconciler = new DependentSSAReconciler(false);
+    assertEquals(reconciler.isUseSSA(),
+        configurationService.shouldUseSSA(reconciler.getSsaConfigMapDependent()));
   }
 
   private static int getValue(

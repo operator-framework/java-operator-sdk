@@ -24,6 +24,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
@@ -361,12 +362,20 @@ public interface ConfigurationService {
   }
 
   /**
-   * @deprecated Use {@link #shouldUseSSA(Class, Class)} instead
+   * This is mostly useful as an integration point for downstream projects to be able to reuse the
+   * logic used to determine whether a given {@link KubernetesDependentResource} should use SSA or
+   * not.
+   *
+   * @param dependentResource the {@link KubernetesDependentResource} under consideration
+   * @param <R> the dependent resource type
+   * @param <P> the primary resource type
+   * @return {@code true} if SSA should be used for
+   * @since 4.9.4
    */
-  @Deprecated(forRemoval = true)
   default <R extends HasMetadata, P extends HasMetadata> boolean shouldUseSSA(
       KubernetesDependentResource<R, P> dependentResource) {
-    return shouldUseSSA(dependentResource.getClass(), dependentResource.resourceType());
+    return shouldUseSSA(dependentResource.getClass(), dependentResource.resourceType(),
+        dependentResource.configuration().orElse(null));
   }
 
   /**
@@ -382,14 +391,14 @@ public interface ConfigurationService {
    */
   @SuppressWarnings("rawtypes")
   default boolean shouldUseSSA(Class<? extends KubernetesDependentResource> dependentResourceType,
-      Class<? extends HasMetadata> resourceType) {
+      Class<? extends HasMetadata> resourceType,
+      KubernetesDependentResourceConfig<? extends HasMetadata> config) {
     if (ResourceUpdaterMatcher.class.isAssignableFrom(dependentResourceType)) {
       return false;
     }
-    Boolean useSSAConfig =
-        Optional.ofNullable(dependentResourceType.getAnnotation(KubernetesDependent.class))
-            .map(kd -> kd.useSSA().asBoolean())
-            .orElse(null);
+    Boolean useSSAConfig = Optional.ofNullable(config)
+        .flatMap(KubernetesDependentResourceConfig::useSSA)
+        .orElse(null);
     // don't use SSA for certain resources by default, only if explicitly overridden
     if (useSSAConfig == null) {
       if (defaultNonSSAResources().contains(resourceType)) {

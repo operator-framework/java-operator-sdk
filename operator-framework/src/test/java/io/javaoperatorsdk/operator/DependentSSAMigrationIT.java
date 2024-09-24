@@ -12,9 +12,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSACustomResource;
 import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSAReconciler;
 import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSASpec;
-import io.javaoperatorsdk.operator.sample.dependentssa.DependnetSSACustomResource;
 import io.javaoperatorsdk.operator.sample.dependentssa.SSAConfigMapDependent;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +33,7 @@ class DependentSSAMigrationIT {
   @BeforeEach
   void setup(TestInfo testInfo) {
     SSAConfigMapDependent.NUMBER_OF_UPDATES.set(0);
-    LocallyRunOperatorExtension.applyCrd(DependnetSSACustomResource.class, client);
+    LocallyRunOperatorExtension.applyCrd(DependentSSACustomResource.class, client);
     testInfo.getTestMethod().ifPresent(method -> {
       namespace = KubernetesResourceUtil.sanitizeName(method.getName());
       cleanup();
@@ -53,7 +53,7 @@ class DependentSSAMigrationIT {
   @Test
   void migratesFromLegacyToWorksAndBack() {
     var legacyOperator = createOperator(client, true, null);
-    DependnetSSACustomResource testResource = reconcileWithLegacyOperator(legacyOperator);
+    DependentSSACustomResource testResource = reconcileWithLegacyOperator(legacyOperator);
 
     var operator = createOperator(client, false, null);
     testResource = reconcileWithNewApproach(testResource, operator);
@@ -66,7 +66,7 @@ class DependentSSAMigrationIT {
   @Test
   void usingDefaultFieldManagerDoesNotCreatesANewOneWithApplyOperation() {
     var legacyOperator = createOperator(client, true, null);
-    DependnetSSACustomResource testResource = reconcileWithLegacyOperator(legacyOperator);
+    DependentSSACustomResource testResource = reconcileWithLegacyOperator(legacyOperator);
 
     var operator = createOperator(client, false,
         FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER);
@@ -83,7 +83,7 @@ class DependentSSAMigrationIT {
   }
 
   private void reconcileAgainWithLegacy(Operator legacyOperator,
-      DependnetSSACustomResource testResource) {
+      DependentSSACustomResource testResource) {
     legacyOperator.start();
 
     testResource.getSpec().setValue(INITIAL_VALUE);
@@ -98,8 +98,8 @@ class DependentSSAMigrationIT {
     legacyOperator.stop();
   }
 
-  private DependnetSSACustomResource reconcileWithNewApproach(
-      DependnetSSACustomResource testResource, Operator operator) {
+  private DependentSSACustomResource reconcileWithNewApproach(
+      DependentSSACustomResource testResource, Operator operator) {
     operator.start();
 
     await().untilAsserted(() -> {
@@ -124,7 +124,7 @@ class DependentSSAMigrationIT {
     return client.configMaps().inNamespace(namespace).withName(TEST_RESOURCE_NAME).get();
   }
 
-  private DependnetSSACustomResource reconcileWithLegacyOperator(Operator legacyOperator) {
+  private DependentSSACustomResource reconcileWithLegacyOperator(Operator legacyOperator) {
     legacyOperator.start();
 
     var testResource = client.resource(testResource()).create();
@@ -155,8 +155,8 @@ class DependentSSAMigrationIT {
     return operator;
   }
 
-  public DependnetSSACustomResource testResource() {
-    DependnetSSACustomResource resource = new DependnetSSACustomResource();
+  public DependentSSACustomResource testResource() {
+    DependentSSACustomResource resource = new DependentSSACustomResource();
     resource.setMetadata(new ObjectMetaBuilder()
         .withNamespace(namespace)
         .withName(TEST_RESOURCE_NAME)

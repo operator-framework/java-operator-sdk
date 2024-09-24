@@ -194,7 +194,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected boolean useSSA(Context<P> context) {
     if (useSSA == null) {
       useSSA = context.getControllerConfiguration().getConfigurationService()
-          .shouldUseSSA(getClass(), resourceType());
+          .shouldUseSSA(getClass(), resourceType(), configuration().orElse(null));
     }
     return useSSA;
   }

@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class SSAConfigMapDependent extends
-    CRUDKubernetesDependentResource<ConfigMap, DependnetSSACustomResource> {
+    CRUDKubernetesDependentResource<ConfigMap, DependentSSACustomResource> {
 
   public static AtomicInteger NUMBER_OF_UPDATES = new AtomicInteger(0);
 
@@ -21,8 +21,8 @@ public class SSAConfigMapDependent extends
   }
 
   @Override
-  protected ConfigMap desired(DependnetSSACustomResource primary,
-      Context<DependnetSSACustomResource> context) {
+  protected ConfigMap desired(DependentSSACustomResource primary,
+      Context<DependentSSACustomResource> context) {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withName(primary.getMetadata().getName())
@@ -34,8 +34,8 @@ public class SSAConfigMapDependent extends
 
   @Override
   public ConfigMap update(ConfigMap actual, ConfigMap desired,
-      DependnetSSACustomResource primary,
-      Context<DependnetSSACustomResource> context) {
+      DependentSSACustomResource primary,
+      Context<DependentSSACustomResource> context) {
     NUMBER_OF_UPDATES.incrementAndGet();
     return super.update(actual, desired, primary, context);
   }
