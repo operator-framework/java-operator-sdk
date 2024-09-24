@@ -12,9 +12,9 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSACustomResource;
 import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSAReconciler;
 import io.javaoperatorsdk.operator.sample.dependentssa.DependentSSASpec;
-import io.javaoperatorsdk.operator.sample.dependentssa.DependnetSSACustomResource;
 import io.javaoperatorsdk.operator.sample.dependentssa.SSAConfigMapDependent;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,8 +86,8 @@ public class DependentSSAMatchingIT {
     });
   }
 
-  public DependnetSSACustomResource testResource() {
-    DependnetSSACustomResource resource = new DependnetSSACustomResource();
+  public DependentSSACustomResource testResource() {
+    DependentSSACustomResource resource = new DependentSSACustomResource();
     resource.setMetadata(new ObjectMetaBuilder()
         .withName(TEST_RESOURCE_NAME)
         .build());

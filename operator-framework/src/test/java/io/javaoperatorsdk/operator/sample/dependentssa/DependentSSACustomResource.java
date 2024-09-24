@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("dssa")
-public class DependnetSSACustomResource
+public class DependentSSACustomResource
     extends CustomResource<DependentSSASpec, Void>
     implements Namespaced {
 }

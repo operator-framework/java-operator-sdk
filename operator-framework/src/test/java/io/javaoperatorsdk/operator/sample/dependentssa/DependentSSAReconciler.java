@@ -11,12 +11,13 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class DependentSSAReconciler
-    implements Reconciler<DependnetSSACustomResource>, TestExecutionInfoProvider,
-    EventSourceInitializer<DependnetSSACustomResource> {
+    implements Reconciler<DependentSSACustomResource>, TestExecutionInfoProvider,
+    EventSourceInitializer<DependentSSACustomResource> {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
-  private SSAConfigMapDependent ssaConfigMapDependent = new SSAConfigMapDependent();
+  private final SSAConfigMapDependent ssaConfigMapDependent = new SSAConfigMapDependent();
+  private final boolean useSSA;
 
   public DependentSSAReconciler() {
     this(true);
@@ -26,12 +27,21 @@ public class DependentSSAReconciler
     ssaConfigMapDependent.configureWith(new KubernetesDependentResourceConfigBuilder<ConfigMap>()
         .withUseSSA(useSSA)
         .build());
+    this.useSSA = useSSA;
+  }
+
+  public boolean isUseSSA() {
+    return useSSA;
+  }
+
+  public SSAConfigMapDependent getSsaConfigMapDependent() {
+    return ssaConfigMapDependent;
   }
 
   @Override
-  public UpdateControl<DependnetSSACustomResource> reconcile(
-      DependnetSSACustomResource resource,
-      Context<DependnetSSACustomResource> context) {
+  public UpdateControl<DependentSSACustomResource> reconcile(
+      DependentSSACustomResource resource,
+      Context<DependentSSACustomResource> context) {
 
     ssaConfigMapDependent.reconcile(resource, context);
     numberOfExecutions.addAndGet(1);
@@ -44,7 +54,7 @@ public class DependentSSAReconciler
 
   @Override
   public Map<String, EventSource> prepareEventSources(
-      EventSourceContext<DependnetSSACustomResource> context) {
+      EventSourceContext<DependentSSACustomResource> context) {
     return EventSourceInitializer.nameEventSourcesFromDependentResource(context,
         ssaConfigMapDependent);
   }
