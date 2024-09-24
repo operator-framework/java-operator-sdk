@@ -381,7 +381,7 @@ public interface ConfigurationService {
         .flatMap(KubernetesDependentResourceConfig::useSSA);
     // don't use SSA for certain resources by default, only if explicitly overriden
     if (useSSAConfig.isEmpty()
-        && defaultNonSSAResource().contains(dependentResource.resourceType())) {
+        && defaultNonSSAResources().contains(dependentResource.resourceType())) {
       return false;
     }
     return useSSAConfig.orElse(ssaBasedCreateUpdateMatchForDependentResources());
@@ -397,10 +397,17 @@ public interface ConfigurationService {
    * By default, SSA is disabled for {@link ConfigMap} and {@link Secret} resources.
    *
    * @return The set of resource types for which SSA will not be used
-   * @since 4.4.0
    */
-  default Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
+  default Set<Class<? extends HasMetadata>> defaultNonSSAResources() {
     return Set.of(ConfigMap.class, Secret.class);
+  }
+
+  /**
+   * @deprecated Use {@link #defaultNonSSAResources()} instead
+   */
+  @Deprecated(forRemoval = true)
+  default Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
+    return defaultNonSSAResources();
   }
 
   /**
