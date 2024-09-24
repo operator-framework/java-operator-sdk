@@ -6,14 +6,11 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 public enum BooleanWithUndefined {
   TRUE, FALSE, UNDEFINED;
 
-  Boolean asBoolean() {
-    switch (this) {
-      case TRUE:
-        return Boolean.TRUE;
-      case FALSE:
-        return Boolean.FALSE;
-      default:
-        return null;
-    }
+  public Boolean asBoolean() {
+    return switch (this) {
+      case TRUE -> Boolean.TRUE;
+      case FALSE -> Boolean.FALSE;
+      default -> null;
+    };
   }
 }
