@@ -24,7 +24,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 
@@ -362,29 +361,45 @@ public interface ConfigurationService {
   }
 
   /**
-   * This is mostly useful as an integration point for downstream projects to be able to reuse the
-   * logic used to determine whether a given {@link KubernetesDependentResource} should use SSA or
-   * not.
-   *
-   * @param dependentResource the {@link KubernetesDependentResource} under consideration
-   * @return {@code true} if SSA should be used for
-   * @param <R> the dependent resource type
-   * @param <P> the primary resource type
-   * @since 4.9.4
+   * @deprecated Use {@link #shouldUseSSA(Class, Class)} instead
    */
+  @Deprecated(forRemoval = true)
   default <R extends HasMetadata, P extends HasMetadata> boolean shouldUseSSA(
       KubernetesDependentResource<R, P> dependentResource) {
-    if (dependentResource instanceof ResourceUpdaterMatcher) {
+    return shouldUseSSA(dependentResource.getClass(), dependentResource.resourceType());
+  }
+
+  /**
+   * This is mostly useful as an integration point for downstream projects to be able to reuse the
+   * logic used to determine whether a given {@link KubernetesDependentResource} type should use SSA
+   * or not.
+   *
+   * @param dependentResourceType the {@link KubernetesDependentResource} type under consideration
+   * @param resourceType the resource type associated with the considered dependent resource type
+   * @return {@code true} if SSA should be used for specified dependent resource type, {@code false}
+   *         otherwise
+   * @since 4.9.5
+   */
+  @SuppressWarnings("rawtypes")
+  default boolean shouldUseSSA(Class<? extends KubernetesDependentResource> dependentResourceType,
+      Class<? extends HasMetadata> resourceType) {
+    if (ResourceUpdaterMatcher.class.isAssignableFrom(dependentResourceType)) {
       return false;
     }
-    Optional<Boolean> useSSAConfig = dependentResource.configuration()
-        .flatMap(KubernetesDependentResourceConfig::useSSA);
-    // don't use SSA for certain resources by default, only if explicitly overriden
-    if (useSSAConfig.isEmpty()
-        && defaultNonSSAResources().contains(dependentResource.resourceType())) {
-      return false;
+    Boolean useSSAConfig =
+        Optional.ofNullable(dependentResourceType.getAnnotation(KubernetesDependent.class))
+            .map(kd -> kd.useSSA().asBoolean())
+            .orElse(null);
+    // don't use SSA for certain resources by default, only if explicitly overridden
+    if (useSSAConfig == null) {
+      if (defaultNonSSAResources().contains(resourceType)) {
+        return false;
+      } else {
+        return ssaBasedCreateUpdateMatchForDependentResources();
+      }
+    } else {
+      return useSSAConfig;
     }
-    return useSSAConfig.orElse(ssaBasedCreateUpdateMatchForDependentResources());
   }
 
   /**

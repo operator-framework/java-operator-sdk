@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
@@ -31,6 +32,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.BooleanWithUndefined;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -40,6 +42,7 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
+import io.javaoperatorsdk.operator.sample.readonly.ConfigMapReader;
 import io.javaoperatorsdk.operator.sample.readonly.ReadOnlyDependent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -106,7 +109,7 @@ class BaseConfigurationServiceTest {
     var maybeConfig =
         DependentResourceConfigurationResolver.configurationFor(dependentSpec, configuration);
     assertNotNull(maybeConfig);
-    assertTrue(maybeConfig instanceof KubernetesDependentResourceConfig);
+    assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
     final var config = (KubernetesDependentResourceConfig) maybeConfig;
     // check that the DependentResource inherits the controller's configuration if applicable
     assertEquals(1, config.namespaces().size());
@@ -121,7 +124,7 @@ class BaseConfigurationServiceTest {
     maybeConfig = DependentResourceConfigurationResolver.configurationFor(dependentSpec,
         configuration);
     assertNotNull(maybeConfig);
-    assertTrue(maybeConfig instanceof KubernetesDependentResourceConfig);
+    assertInstanceOf(KubernetesDependentResourceConfig.class, maybeConfig);
   }
 
   @Test
@@ -234,6 +237,50 @@ class BaseConfigurationServiceTest {
     assertEquals(CustomConfigConverter.CONVERTER_PROVIDED_DEFAULT, getValue(config, 1));
   }
 
+  @Test
+  void excludedResourceClassesShouldNotUseSSAByDefault() {
+    final var config = configFor(new SelectorReconciler());
+
+    // ReadOnlyDependent targets ConfigMap which is configured to not use SSA by default
+    final var kubernetesDependentResourceConfig =
+        extractDependentKubernetesResourceConfig(config, 1);
+    assertNotNull(kubernetesDependentResourceConfig);
+    assertTrue(kubernetesDependentResourceConfig.useSSA().isEmpty());
+    assertFalse(configurationService.shouldUseSSA(ReadOnlyDependent.class, ConfigMap.class));
+  }
+
+  @Test
+  void excludedResourceClassesShouldUseSSAIfAnnotatedToDoSo() {
+    final var config = configFor(new SelectorReconciler());
+
+    // WithAnnotation dependent also targets ConfigMap but overrides the default with the annotation
+    final var kubernetesDependentResourceConfig =
+        extractDependentKubernetesResourceConfig(config, 0);
+    assertNotNull(kubernetesDependentResourceConfig);
+    assertFalse(kubernetesDependentResourceConfig.useSSA().isEmpty());
+    assertTrue((Boolean) kubernetesDependentResourceConfig.useSSA().get());
+    assertTrue(configurationService.shouldUseSSA(SelectorReconciler.WithAnnotation.class,
+        ConfigMap.class));
+  }
+
+  @Test
+  void dependentsShouldUseSSAByDefaultIfNotExcluded() {
+    final var config = configFor(new DefaultSSAForDependentsReconciler());
+
+    var kubernetesDependentResourceConfig = extractDependentKubernetesResourceConfig(config, 0);
+    assertNotNull(kubernetesDependentResourceConfig);
+    assertTrue(kubernetesDependentResourceConfig.useSSA().isEmpty());
+    assertTrue(configurationService.shouldUseSSA(
+        DefaultSSAForDependentsReconciler.DefaultDependent.class, ConfigMapReader.class));
+
+    kubernetesDependentResourceConfig = extractDependentKubernetesResourceConfig(config, 1);
+    assertNotNull(kubernetesDependentResourceConfig);
+    assertTrue(kubernetesDependentResourceConfig.useSSA().isPresent());
+    assertFalse((Boolean) kubernetesDependentResourceConfig.useSSA().get());
+    assertFalse(configurationService
+        .shouldUseSSA(DefaultSSAForDependentsReconciler.NonSSADependent.class, Service.class));
+  }
+
   private static int getValue(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration, int index) {
     return ((CustomConfig) DependentResourceConfigurationResolver
@@ -247,32 +294,33 @@ class BaseConfigurationServiceTest {
   private static class MaxIntervalReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
   }
 
   @ControllerConfiguration(namespaces = OneDepReconciler.CONFIGURED_NS,
       dependents = @Dependent(type = ReadOnlyDependent.class))
-  private static class OneDepReconciler implements Reconciler<ConfigMap> {
+  private static class OneDepReconciler implements Reconciler<ConfigMapReader> {
 
     private static final String CONFIGURED_NS = "foo";
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+    public UpdateControl<ConfigMapReader> reconcile(ConfigMapReader resource,
+        Context<ConfigMapReader> context) {
       return null;
     }
   }
 
   @ControllerConfiguration(
       dependents = @Dependent(type = ReadOnlyDependent.class, name = NamedDepReconciler.NAME))
-  private static class NamedDepReconciler implements Reconciler<ConfigMap> {
+  private static class NamedDepReconciler implements Reconciler<ConfigMapReader> {
 
     private static final String NAME = "foo";
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+    public UpdateControl<ConfigMapReader> reconcile(ConfigMapReader resource,
+        Context<ConfigMapReader> context) {
       return null;
     }
   }
@@ -282,10 +330,11 @@ class BaseConfigurationServiceTest {
           @Dependent(type = ReadOnlyDependent.class),
           @Dependent(type = ReadOnlyDependent.class)
       })
-  private static class DuplicatedDepReconciler implements Reconciler<ConfigMap> {
+  private static class DuplicatedDepReconciler implements Reconciler<ConfigMapReader> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+    public UpdateControl<ConfigMapReader> reconcile(ConfigMapReader resource,
+        Context<ConfigMapReader> context) {
       return null;
     }
   }
@@ -295,21 +344,23 @@ class BaseConfigurationServiceTest {
           @Dependent(type = ReadOnlyDependent.class, name = NamedDuplicatedDepReconciler.NAME),
           @Dependent(type = ReadOnlyDependent.class)
       })
-  private static class NamedDuplicatedDepReconciler implements Reconciler<ConfigMap> {
+  private static class NamedDuplicatedDepReconciler implements Reconciler<ConfigMapReader> {
 
     private static final String NAME = "duplicated";
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+    public UpdateControl<ConfigMapReader> reconcile(ConfigMapReader resource,
+        Context<ConfigMapReader> context) {
       return null;
     }
   }
 
   @ControllerConfiguration
-  private static class NoDepReconciler implements Reconciler<ConfigMap> {
+  private static class NoDepReconciler implements Reconciler<ConfigMapReader> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+    public UpdateControl<ConfigMapReader> reconcile(ConfigMapReader resource,
+        Context<ConfigMapReader> context) {
       return null;
     }
   }
@@ -318,16 +369,17 @@ class BaseConfigurationServiceTest {
       @Dependent(type = SelectorReconciler.WithAnnotation.class),
       @Dependent(type = ReadOnlyDependent.class)
   })
-  private static class SelectorReconciler implements Reconciler<ConfigMap> {
+  private static class SelectorReconciler implements Reconciler<ConfigMapReader> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMapReader> reconcile(ConfigMapReader resource,
+        Context<ConfigMapReader> context) {
       return null;
     }
 
-    @KubernetesDependent
-    private static class WithAnnotation extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+    @KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
+    private static class WithAnnotation
+        extends KubernetesDependentResource<ConfigMap, ConfigMapReader> {
 
       public WithAnnotation() {
         super(ConfigMap.class);
@@ -340,6 +392,32 @@ class BaseConfigurationServiceTest {
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
+    }
+  }
+
+  @ControllerConfiguration(dependents = {
+      @Dependent(type = DefaultSSAForDependentsReconciler.DefaultDependent.class),
+      @Dependent(type = DefaultSSAForDependentsReconciler.NonSSADependent.class)
+  })
+  private static class DefaultSSAForDependentsReconciler implements Reconciler<ConfigMap> {
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
+      return null;
+    }
+
+    private static class DefaultDependent
+        extends KubernetesDependentResource<ConfigMapReader, ConfigMap> {
+      public DefaultDependent() {
+        super(ConfigMapReader.class);
+      }
+    }
+
+    @KubernetesDependent(useSSA = BooleanWithUndefined.FALSE)
+    private static class NonSSADependent extends KubernetesDependentResource<Service, ConfigMap> {
+      public NonSSADependent() {
+        super(Service.class);
+      }
     }
   }
 
@@ -377,8 +455,7 @@ class BaseConfigurationServiceTest {
   private static class ConfigurableRateLimitAndRetryReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return UpdateControl.noUpdate();
     }
   }
@@ -397,8 +474,7 @@ class BaseConfigurationServiceTest {
     public static final int MAX_INTERVAL = 60000;
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return UpdateControl.noUpdate();
     }
   }
@@ -445,8 +521,7 @@ class BaseConfigurationServiceTest {
   private static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
 
     @Override
-    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
-        throws Exception {
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
       return null;
     }
   }
