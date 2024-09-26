@@ -66,6 +66,13 @@ but we decided to merge and remove `ResourceEventSource` since this has a nice i
 
 If you still need to create an `EventSource` that does only the triggering, see [TimerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/timer/TimerEventSource.java) as an example. 
 
+#### Naming event sources
+
+The name is now directly property of the [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L45).
+
+This results in nicer internal structures.
+
+
 ### @ControllerConfiguration is now optional
 
 You no longer have to annotate the reconciler with `@ControllerConfiuraion` annotation. 
@@ -91,7 +98,6 @@ no longer represent the state on the server.
 
 If you want to still clone resource by default, set [ConfigurationService.cloneSecondaryResourcesWhenGettingFromCache](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L484) to `true`.
 
-#### Naming event sources
 
 ### Remove automated observed generation handling
 
