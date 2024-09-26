@@ -68,7 +68,7 @@ If you still need to create an `EventSource` that does only the triggering, see 
 
 #### Naming event sources
 
-The name is now directly property of the [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L45).
+The `name` is now directly property of the [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L45).
 
 This results in nicer internal structures.
 
