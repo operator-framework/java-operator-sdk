@@ -16,6 +16,10 @@ us if you have some trouble with updates.
 - From this release, the minimal Java version is 17.
 - Various deprecated APIs are removed. The migration should be trivial.
 
+## Naming changes
+
+TODO add handy diff links here
+
 ## Changes in low-level APIs
 
 ### Server Side Apply 
@@ -32,6 +36,8 @@ See some identified problematic migration cases and how to handle them in [Statu
 ### Event Sources
 
 #### Naming event sources
+
+
 
 #### Multi-cluster support in InformerEventSource
 
