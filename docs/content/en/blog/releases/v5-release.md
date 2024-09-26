@@ -33,7 +33,7 @@ To continue to use a non-SSA based on, set [ConfigurationService.useSSAToPatchPr
 
 See some identified problematic migration cases and how to handle them in [StatusPatchSSAMigrationIT](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuspatchnonlocking/StatusPatchSSAMigrationIT.java).
 
-### Event Sources
+### Event Sources related changes
 
 #### Multi-cluster support in InformerEventSource
 
@@ -58,8 +58,6 @@ There are multiple smaller changes to `InformerEventSource` and related classes:
 1. `InformerConfiguration` is renamed to [`InformerEventSourceConfiguration'](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/InformerEventSourceConfiguration.java)
 2. `InformerEventSourceConfiguration` doesn't require `EventSourceContext` to be initialized anymore.
  
-
-
 #### All EventSource is now a ResourceEventSource
 
 The [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java) abstraction is now always aware of the resources and
@@ -86,7 +84,12 @@ You can now simply override those methods when implementing the `Reconciler` int
 
 ### Cloning accessing secondary resources
 
+When accessing the secondary resources using [`Context.getSecondaryResource(s)(...)`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Context.java#L19-L29), the resources are no longer cloned by default, since 
+cloning could have an impact on performance. Note that means that these POJOs should be used only for "read-only"; any changes
+are now made directly to the cached resource. This should be avoided since the same resource instance may be present for other reconciliation cycles and would
+no longer represent the state on the server.
 
+If you want to still clone resource by default, set [ConfigurationService.cloneSecondaryResourcesWhenGettingFromCache](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L484) to `true`.
 
 #### Naming event sources
 
