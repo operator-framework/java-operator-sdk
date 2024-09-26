@@ -35,10 +35,6 @@ See some identified problematic migration cases and how to handle them in [Statu
 
 ### Event Sources
 
-#### Naming event sources
-
-
-
 #### Multi-cluster support in InformerEventSource
 
 `InformerEventSource` now supports watching remote clusters. You can simply pass an `KubernetesClient` that is
@@ -48,14 +44,29 @@ Such an informer behaves exactly as a normal one. Obviously, owner references wo
 
 See related integration test [here](https://github.com/operator-framework/java-operator-sdk/tree/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/informerremotecluster)
 
-#### All EventSource is now a ResourceEventSource
-
 #### SecondaryToPrimaryMapper now checks resource types
 
-#### InformerEventSource-related refactors
+The owner reference based mappers are now checking the type (`kind` and `apiVersion`) of the resource when resolving the mapping. This is important
+since a resource may have owner references to a different resource type with the same name.
 
-- Context independent
-- Informer Configuration classes
+See implementation details [here](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/Mappers.java#L74-L75)
+
+#### InformerEventSource-related reactors
+
+There are multiple smaller changes to `InformerEventSource` and related classes:
+
+1. `InformerConfiguration` is renamed to [`InformerEventSourceConfiguration'](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/InformerEventSourceConfiguration.java)
+2. `InformerEventSourceConfiguration` doesn't require `EventSourceContext` to be initialized anymore.
+ 
+
+
+#### All EventSource is now a ResourceEventSource
+
+The [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java) abstraction is now always aware of the resources and
+handles accessing (the cached) resources, filtering, and additional capabilities. Before v5, such capabilities were present only in a sub-class called `ResourceEventSource`,
+but we decided to merge and remove `ResourceEventSource` since this has a nice impact on other parts of the system in terms of architecture. 
+
+If you still need to create an `EventSource` that does only the triggering, see [TimerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/timer/TimerEventSource.java) as an example. 
 
 ### @ControllerConfiguration is now optional
 
@@ -67,7 +78,17 @@ PR: https://github.com/operator-framework/java-operator-sdk/pull/2203
 
 ### EventSourceInitializer and ErrorStatusHandler are removed
 
+Both the `EventSourceIntializer` and `ErrorStatusHandler` interfaces are removed, and their methods are moved directly 
+under [`Reconciler`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L30-L56).
+
+If possible, we try to avoid such marker interfaces since it is hard to deduce related usage just by looking at the source code. 
+You can now simply override those methods when implementing the `Reconciler` interface.
+
 ### Cloning accessing secondary resources
+
+
+
+#### Naming event sources
 
 ### Remove automated observed generation handling
 
