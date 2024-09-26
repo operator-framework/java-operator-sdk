@@ -41,6 +41,13 @@ See some identified problematic migration cases and how to handle them in [Statu
 
 #### Multi-cluster support in InformerEventSource
 
+`InformerEventSource` now supports watching remote clusters. You can simply pass an `KubernetesClient` that is
+initialized to connect to a different cluster where the controller runs. See [InformerEventSourceConfiguration.withKubernetesClient](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/InformerEventSourceConfiguration.java)
+
+Such an informer behaves exactly as a normal one. Obviously, owner references won't work, so you have to specify a `SecondaryToPrimaryMapper` (probably based on labels or annotations).
+
+See related integration test [here](https://github.com/operator-framework/java-operator-sdk/tree/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/informerremotecluster)
+
 #### All EventSource is now a ResourceEventSource
 
 #### SecondaryToPrimaryMapper now checks resource types
