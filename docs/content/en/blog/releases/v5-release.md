@@ -23,7 +23,7 @@ us if you have some trouble with updates.
 [Server Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) is now a first-class citizen in the framework and
 the default approach for patching the status resource.
 
-Note that, especially migration from a non-SSA based pathing to an SSA based one can be problematic.
+Migration from a non-SSA based patching to an SSA based one can be problematic.
 To continue to use a non-SSA based on, set [ConfigurationService.useSSAToPatchPrimaryResource](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L462) to `false`.
 
 See problematic cases, and how to handle them in [StatusPatchSSAMigrationIT](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuspatchnonlocking/StatusPatchSSAMigrationIT.java).
