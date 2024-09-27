@@ -109,17 +109,36 @@ If you want to still clone resource by default, set [ConfigurationService.cloneS
 ### Remove automated observed generation handling
 
 The automatic observed generation handling feature was removed since it is trivial to implement inside the reconciler, but it made
-implementation much more complex, especially if the framework would have to support it both for served side apply and client side apply.
+the implementation much more complex, especially if the framework would have to support it both for served side apply and client side apply.
 
 You can check a sample implementation how to do it manually in this [integration test](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/manualobservedgeneration/).
 
 ## Dependent Resource related changes
 
-### ResourceDescriminator is removal and related topics
+### ResourceDescriminator is removal and related changes
 
+The primary reason `ResourceDiscriminator` was introduced is to cover the case when there are
+more dependent resources for that same type, so there was a need a generic mechanism to
+associate the resources from API served with the related dependent resource. 
+This mechanism is now improved with a more lightweight approach, that made the `ResourceDiscriminator`
+obsolete. 
 
+As a replacement, the dependent resource will select the target resource based on the desired state. 
+See the generic implementation in [`AbstractDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractDependentResource.java#L135-L144).
+Calculating the desired state can be costly and might depend on other resources. For `KubernetesDependentResource` 
+is usually enough to provide the name and namespace (if namespace-scoped) of the target resource, therefore 
+in case the desired state is more heavy weight, in order to provide the ID of the target resource you might
+override [`ResourceID managedSecondaryResourceID()`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L234-L244) method.
+
+TODO add sample.
 
 ### Read-only bulk dependent resources
+
+Read-only bulk-dependent resources are now supported; this was a request from multiple users, but it required changes to the underlying APIs.
+Please check the documentation for further details.
+
+See also the related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/bulkdependent/readonly)
+
 
 ### Multiple Dependents with Activation Condition
 
