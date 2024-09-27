@@ -107,7 +107,6 @@ public @interface Informer {
    *
    * @return the class of the {@link ItemStore} implementation to use
    */
-  // todo: check javadoc
   Class<? extends ItemStore> itemStore() default ItemStore.class;
 
   /**
@@ -115,7 +114,6 @@ public @interface Informer {
    * related informers. If this is a not null it will result in paginating for the initial load of
    * the informer cache.
    */
-  // todo: check javadoc
   long informerListLimit() default NO_LONG_VALUE_SET;
 
 }
