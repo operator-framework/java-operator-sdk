@@ -153,11 +153,18 @@ See the complete example [here](https://github.com/operator-framework/java-opera
 
 ### The getSecondaryResource() is Activation condition aware 
 
+When there is an activation condition for a resource type, it might or might not be met based that 
+an informer might be registered for the target kind. However, when calling `Context.getSecondaryResource` 
+and its alternatives; it behaves differently if there is an Informer registered or not. Thus, normally
+throws an exception if there is no registered informer for the target type. For resources
+with activation condition, this might be confusing however. Therefore, if a dependent resource for a type with an activation
+condition is present, it always behaves as there is an Informer registered.
+
+See related [issue](https://github.com/operator-framework/java-operator-sdk/issues/2198) for details.
+
 ## Workflow related Changes
 
 ### @Workflow annotation
-
-
 
 ### Explicit workflow invocation
 
