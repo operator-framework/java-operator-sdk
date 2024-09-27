@@ -134,7 +134,7 @@ TODO add sample.
 
 ### Read-only bulk dependent resources
 
-Read-only bulk-dependent resources are now supported; this was a request from multiple users, but it required changes to the underlying APIs.
+Read-only bulk dependent resources are now supported; this was a request from multiple users, but it required changes to the underlying APIs.
 Please check the documentation for further details.
 
 See also the related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/bulkdependent/readonly).
@@ -142,9 +142,22 @@ See also the related [integration test](https://github.com/operator-framework/ja
 
 ### Multiple Dependents with Activation Condition
 
+Until now, activation conditions had a limitation that only one condition was allowed for a specific resource type. 
+For example, two ConfigMap dependent resources were not allowed, both with activation conditions. The underlying issue
+was with the informer registration process. When an activation condition is evaluated as "met" in the background,
+the informer is registered dynamically for the target resource type. However, we need to avoid registering multiple
+informers of the same kind. To prevent this the dependent resource must specify the [name of the informer](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/multipledependentwithactivation/ConfigMapDependentResource2.java#L12).
+
+See the complete example [here](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/multipledependentwithactivation).
+
+
+### The getSecondaryResource() is Activation condition aware 
+
 ## Workflow related Changes
 
 ### @Workflow annotation
+
+
 
 ### Explicit workflow invocation
 
