@@ -137,7 +137,7 @@ TODO add sample.
 Read-only bulk-dependent resources are now supported; this was a request from multiple users, but it required changes to the underlying APIs.
 Please check the documentation for further details.
 
-See also the related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/bulkdependent/readonly)
+See also the related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/bulkdependent/readonly).
 
 
 ### Multiple Dependents with Activation Condition
