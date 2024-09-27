@@ -70,8 +70,7 @@ If you still need to create an `EventSource` that does only the triggering, see 
 
 The `name` is now directly property of the [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L45).
 
-This results in nicer internal structures.
-
+This results in nicer internal structures. For example, if a DependentResource provides an EventSource, we have more options to set the name for it.
 
 ### @ControllerConfiguration is now optional
 
