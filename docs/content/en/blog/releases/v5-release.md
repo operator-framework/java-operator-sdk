@@ -83,8 +83,8 @@ If the annotation is not present, the default values from the annotation are use
 PR: https://github.com/operator-framework/java-operator-sdk/pull/2203
 
 In addition to that, the informer-related configurations are now extracted into
-a separate annotation within [`@ControllerConfiguration`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L24). Hopefully this makes the underlying components more explicit
-and easier to understand. Note that the same [`@Informer`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/Informer.java) annotation is used when configuring a managed `KubernetesDependentResource` with
+a separate [`@Informer`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/Informer.java) annotation within [`@ControllerConfiguration`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L24). Hopefully this makes the underlying components more explicit
+and easier to understand. Note that the same `@Informer` annotation is used when configuring a managed `KubernetesDependentResource` with
 [`KubernetesDependent`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependent.java#L33) annotation.
 
 
