@@ -74,13 +74,19 @@ The `name` is now directly property of the [`EventSource`](https://github.com/op
 
 This results in nicer internal structures. For example, if a DependentResource provides an EventSource, we have more options to set the name for it.
 
-### @ControllerConfiguration is now optional
+### ControllerConfiguration annotation related changes
 
 You no longer have to annotate the reconciler with `@ControllerConfiuraion` annotation. 
 This annotation is (one) way to override the default properties of a controller.
 If the annotation is not present, the default values from the annotation are used.
 
 PR: https://github.com/operator-framework/java-operator-sdk/pull/2203
+
+In addition to that, the informer-related configurations are now extracted into
+a separate annotation within [`@ControllerConfiguration`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L24). Hopefully this makes the underlying components more explicit
+and easier to understand. Note that the same [`@Informer`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/Informer.java) annotation is used when configuring a managed `KubernetesDependentResource` with
+[`KubernetesDependent`](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependent.java#L33) annotation.
+
 
 ### EventSourceInitializer and ErrorStatusHandler are removed
 
