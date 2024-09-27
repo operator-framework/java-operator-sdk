@@ -33,6 +33,8 @@ To continue to use a non-SSA based on, set [ConfigurationService.useSSAToPatchPr
 
 See some identified problematic migration cases and how to handle them in [StatusPatchSSAMigrationIT](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuspatchnonlocking/StatusPatchSSAMigrationIT.java).
 
+TODO using new instance to update status always,
+
 ### Event Sources related changes
 
 #### Multi-cluster support in InformerEventSource
@@ -100,9 +102,16 @@ If you want to still clone resource by default, set [ConfigurationService.cloneS
 
 ### Remove automated observed generation handling
 
+The automatic observed generation handling feature was removed since it is trivial to implement inside the reconciler, but it made
+implementation much more complex, especially if the framework would have to support it both for served side apply and client side apply.
+
+You can check a sample implementation how to do it manually in this [integration test](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/manualobservedgeneration/).
+
 ## Dependent Resource related changes
 
-### ResourceDescriminator is removed
+### ResourceDescriminator is removal and related topics
+
+
 
 ### Read-only bulk dependent resources
 
