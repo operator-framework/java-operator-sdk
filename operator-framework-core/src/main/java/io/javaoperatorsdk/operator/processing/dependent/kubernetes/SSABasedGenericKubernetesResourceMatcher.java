@@ -104,7 +104,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     removeIrrelevantValues(desiredMap);
 
     if (LoggingUtils.isNotSensitiveResource(desired)) {
-      log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
+      var actualYml = objectMapper.asYaml(prunedActual);
+      var desiredYml = objectMapper.asYaml(desiredMap);
+      log.debug("Pruned actual: \n {} \n desired: \n {} ", actualYml, desiredYml);
     }
 
     return prunedActual.equals(desiredMap);
