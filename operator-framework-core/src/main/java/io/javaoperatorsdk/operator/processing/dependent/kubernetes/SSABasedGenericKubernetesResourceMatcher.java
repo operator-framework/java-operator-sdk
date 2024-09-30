@@ -114,9 +114,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     if (log.isDebugEnabled()) {
       var actualYaml = serialization.asYaml(prunedActualMap);
       var desiredYaml = serialization.asYaml(desiredMap);
-      log.debug("Pruned actual: \n {} \n desired: \n {} ", actualYaml, desiredYaml);
+      log.debug("Pruned actual yaml: \n {} \n desired yaml: \n {} ", actualYaml, desiredYaml);
     } else {
-      log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActualMap, desiredMap);
+      log.debug("Pruned actual map: \n {} \n desired map: \n {} ", prunedActualMap, desiredMap);
     }
   }
 
