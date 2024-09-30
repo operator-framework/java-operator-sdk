@@ -110,7 +110,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return prunedActual.equals(desiredMap);
   }
 
-  private void logDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap, KubernetesSerialization serialization) {
+  private void logDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
+      KubernetesSerialization serialization) {
     if (log.isDebugEnabled()) {
       var actualYaml = serialization.asYaml(prunedActualMap);
       var desiredYaml = serialization.asYaml(desiredMap);
