@@ -104,12 +104,20 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     removeIrrelevantValues(desiredMap);
 
     if (LoggingUtils.isNotSensitiveResource(desired)) {
-      var actualYaml = objectMapper.asYaml(prunedActual);
-      var desiredYaml = objectMapper.asYaml(desiredMap);
-      log.debug("Pruned actual: \n {} \n desired: \n {} ", actualYaml, desiredYaml);
+      logDiff(prunedActual, desiredMap, objectMapper);
     }
 
     return prunedActual.equals(desiredMap);
+  }
+
+  private void logDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap, KubernetesSerialization serialization) {
+    if (log.isDebugEnabled()) {
+      var actualYaml = serialization.asYaml(prunedActualMap);
+      var desiredYaml = serialization.asYaml(desiredMap);
+      log.debug("Pruned actual: \n {} \n desired: \n {} ", actualYaml, desiredYaml);
+    } else {
+      log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActualMap, desiredMap);
+    }
   }
 
   /**
