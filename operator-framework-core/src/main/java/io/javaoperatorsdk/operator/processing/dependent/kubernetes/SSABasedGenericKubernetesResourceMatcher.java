@@ -136,7 +136,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Object> sortMap(Map<String, Object> map) {
+  Map<String, Object> sortMap(Map<String, Object> map) {
     List<String> sortedKeys = new ArrayList<>(map.keySet());
     Collections.sort(sortedKeys);
 
@@ -144,10 +144,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     for (String key : sortedKeys) {
       Object value = map.get(key);
       if (value instanceof Map) {
-        Map<String, Object> nestedMap = (Map<String, Object>) value;
-        sortedMap.put(key, sortMap(nestedMap));
+        sortedMap.put(key, sortMap((Map<String, Object>) value));
       } else if (value instanceof List) {
-        sortedMap.put(key, sortList((List<?>) value));
+        sortedMap.put(key, sortListItems((List<Object>) value));
       } else {
         sortedMap.put(key, value);
       }
@@ -156,14 +155,13 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  private List<?> sortList(List<?> list) {
+  List<Object> sortListItems(List<Object> list) {
     List<Object> sortedList = new ArrayList<>();
     for (Object item : list) {
       if (item instanceof Map) {
-        Map<String, Object> mapItem = (Map<String, Object>) item;
-        sortedList.add(sortMap(mapItem));
+        sortedList.add(sortMap((Map<String, Object>) item));
       } else if (item instanceof List) {
-        sortedList.add(sortList((List<?>) item));
+        sortedList.add(sortListItems((List<Object>) item));
       } else {
         sortedList.add(item);
       }
