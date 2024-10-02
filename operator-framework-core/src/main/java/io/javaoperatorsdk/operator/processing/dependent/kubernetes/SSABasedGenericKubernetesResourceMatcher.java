@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.assertj.core.util.diff.DiffUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +25,9 @@ import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LoggingUtils;
+
+import com.github.difflib.DiffUtils;
+import com.github.difflib.UnifiedDiffUtils;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -123,12 +125,13 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var actualYaml = serialization.asYaml(sortMap(prunedActualMap));
     var desiredYaml = serialization.asYaml(sortMap(desiredMap));
     if (log.isTraceEnabled()) {
-      log.trace("Pruned actual resource: \n{} \ndesired resource: \n{} ", actualYaml, desiredYaml);
+      log.trace("Pruned actual resource: \n {} \ndesired resource: \n {} ", actualYaml,
+          desiredYaml);
     }
 
     var patch = DiffUtils.diff(actualYaml.lines().toList(), desiredYaml.lines().toList());
     List<String> unifiedDiff =
-        DiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
+        UnifiedDiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
     return String.join("\n", unifiedDiff);
   }
 
