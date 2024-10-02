@@ -107,14 +107,12 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     var matches = prunedActual.equals(desiredMap);
 
-    if (!matches && LoggingUtils.isNotSensitiveResource(desired)) {
+    if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
       var diff = getDiff(prunedActual, desiredMap, objectMapper);
-      if (log.isDebugEnabled()) {
-        log.debug(
-            "Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}",
-            actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(),
-            diff);
-      }
+      log.debug(
+          "Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}",
+          actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(),
+          diff);
     }
 
     return matches;
