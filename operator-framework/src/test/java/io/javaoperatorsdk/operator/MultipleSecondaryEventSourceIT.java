@@ -51,7 +51,7 @@ class MultipleSecondaryEventSourceIT {
         number == 1 ? MultipleSecondaryEventSourceReconciler.getName1(resource)
             : MultipleSecondaryEventSourceReconciler.getName2(resource));
     map1.getData().put("value2", "value2");
-    operator.replace(map1);
+    operator.createOrUpdate(map1);
   }
 
   public MultipleSecondaryEventSourceCustomResource createTestCustomResource() {

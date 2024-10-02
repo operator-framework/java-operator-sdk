@@ -35,7 +35,7 @@ class RateLimitIT {
       log.debug("replacing resource version: {}", i);
       var resource = createResource();
       resource.getSpec().setNumber(i);
-      operator.replace(resource);
+      operator.createOrUpdate(resource);
     });
     await().pollInterval(Duration.ofMillis(100))
         .pollDelay(Duration.ofMillis(REFRESH_PERIOD / 2))

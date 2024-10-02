@@ -62,7 +62,7 @@ class KubernetesDependentGarbageCollectionIT {
     });
 
     createdResources.getSpec().setCreateConfigMap(false);
-    operator.replace(createdResources);
+    operator.createOrUpdate(createdResources);
 
     await().untilAsserted(() -> {
       ConfigMap cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
