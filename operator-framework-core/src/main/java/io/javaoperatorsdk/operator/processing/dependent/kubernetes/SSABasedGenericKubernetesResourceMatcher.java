@@ -106,12 +106,14 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     removeIrrelevantValues(desiredMap);
 
     var matches = prunedActual.equals(desiredMap);
-    
+
     if (!matches && LoggingUtils.isNotSensitiveResource(desired)) {
       var diff = getDiff(prunedActual, desiredMap, objectMapper);
       if (log.isDebugEnabled()) {
-          log.debug("Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}", 
-                  actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(), diff);
+        log.debug(
+            "Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}",
+            actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(),
+            diff);
       }
     }
 
@@ -119,7 +121,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   private String getDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
-                         KubernetesSerialization serialization) {
+      KubernetesSerialization serialization) {
     var actualLines = serialization.asYaml(sortMap(prunedActualMap)).lines().toList();
     var desiredLines = serialization.asYaml(sortMap(desiredMap)).lines().toList();
 
