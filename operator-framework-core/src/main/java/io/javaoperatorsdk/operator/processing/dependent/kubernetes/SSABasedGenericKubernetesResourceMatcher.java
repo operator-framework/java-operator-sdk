@@ -105,7 +105,9 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     removeIrrelevantValues(desiredMap);
 
-    if (LoggingUtils.isNotSensitiveResource(desired)) {
+    var matches = prunedActual.equals(desiredMap);
+    
+    if (!matches && LoggingUtils.isNotSensitiveResource(desired)) {
       var diff = getDiff(prunedActual, desiredMap, objectMapper);
       if (diff != null) {
           log.debug("Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}", 
@@ -113,7 +115,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       }
     }
 
-    return prunedActual.equals(desiredMap);
+    return matches;
   }
 
   private String getDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
