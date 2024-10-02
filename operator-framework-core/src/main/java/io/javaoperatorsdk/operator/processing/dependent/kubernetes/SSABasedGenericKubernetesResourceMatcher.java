@@ -120,11 +120,15 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   private String getDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
       KubernetesSerialization serialization) {
-    var actualLines = serialization.asYaml(sortMap(prunedActualMap)).lines().toList();
-    var desiredLines = serialization.asYaml(sortMap(desiredMap)).lines().toList();
+    var actualYaml = serialization.asYaml(sortMap(prunedActualMap));
+    var desiredYaml = serialization.asYaml(sortMap(desiredMap));
+    if (log.isTraceEnabled()) {
+      log.trace("Pruned actual resource: \n{} \ndesired resource: \n{} ", actualYaml, desiredYaml);
+    }
 
-    var patch = DiffUtils.diff(actualLines, desiredLines);
-    List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("", "", actualLines, patch, 1);
+    var patch = DiffUtils.diff(actualYaml.lines().toList(), desiredYaml.lines().toList());
+    List<String> unifiedDiff =
+        DiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
     return String.join("\n", unifiedDiff);
   }
 
