@@ -124,7 +124,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var desiredLines = serialization.asYaml(sortMap(desiredMap)).lines().toList();
 
     var patch = DiffUtils.diff(actualLines, desiredLines);
-    List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("", "", actualLines, patch, 0);
+    List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("", "", actualLines, patch, 1);
     return String.join("\n", unifiedDiff);
   }
 
