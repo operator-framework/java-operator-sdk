@@ -109,7 +109,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     
     if (!matches && LoggingUtils.isNotSensitiveResource(desired)) {
       var diff = getDiff(prunedActual, desiredMap, objectMapper);
-      if (diff != null) {
+      if (log.isDebugEnabled()) {
           log.debug("Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}", 
                   actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(), diff);
       }
@@ -120,15 +120,12 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   private String getDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
                          KubernetesSerialization serialization) {
-    if (log.isDebugEnabled()) {
-      var actualLines = serialization.asYaml(sortMap(prunedActualMap)).lines().toList();
-      var desiredLines = serialization.asYaml(sortMap(desiredMap)).lines().toList();
+    var actualLines = serialization.asYaml(sortMap(prunedActualMap)).lines().toList();
+    var desiredLines = serialization.asYaml(sortMap(desiredMap)).lines().toList();
 
-      var patch = DiffUtils.diff(actualLines, desiredLines);
-      List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("", "", actualLines, patch, 0);
-      return unifiedDiff.isEmpty() ? null : String.join("\n", unifiedDiff);
-    }
-    return null;
+    var patch = DiffUtils.diff(actualLines, desiredLines);
+    List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("", "", actualLines, patch, 0);
+    return String.join("\n", unifiedDiff);
   }
 
   @SuppressWarnings("unchecked")
