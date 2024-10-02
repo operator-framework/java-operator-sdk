@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,6 +14,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.assertj.core.util.diff.DiffUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,19 +106,63 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     removeIrrelevantValues(desiredMap);
 
     if (LoggingUtils.isNotSensitiveResource(desired)) {
-      logDiff(prunedActual, desiredMap, objectMapper);
+      var diff = getDiff(prunedActual, desiredMap, objectMapper);
+      if (diff != null) {
+          log.debug("Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}", 
+                  actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(), diff);
+      }
     }
 
     return prunedActual.equals(desiredMap);
   }
 
-  private void logDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
-      KubernetesSerialization serialization) {
+  private String getDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
+                         KubernetesSerialization serialization) {
     if (log.isDebugEnabled()) {
-      var actualYaml = serialization.asYaml(prunedActualMap);
-      var desiredYaml = serialization.asYaml(desiredMap);
-      log.debug("Pruned actual yaml: \n {} \n desired yaml: \n {} ", actualYaml, desiredYaml);
+      var actualLines = serialization.asYaml(sortMap(prunedActualMap)).lines().toList();
+      var desiredLines = serialization.asYaml(sortMap(desiredMap)).lines().toList();
+
+      var patch = DiffUtils.diff(actualLines, desiredLines);
+      List<String> unifiedDiff = DiffUtils.generateUnifiedDiff("", "", actualLines, patch, 0);
+      return unifiedDiff.isEmpty() ? null : String.join("\n", unifiedDiff);
     }
+    return null;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> sortMap(Map<String, Object> map) {
+    List<String> sortedKeys = new ArrayList<>(map.keySet());
+    Collections.sort(sortedKeys);
+
+    Map<String, Object> sortedMap = new LinkedHashMap<>();
+    for (String key : sortedKeys) {
+      Object value = map.get(key);
+      if (value instanceof Map) {
+        Map<String, Object> nestedMap = (Map<String, Object>) value;
+        sortedMap.put(key, sortMap(nestedMap));
+      } else if (value instanceof List) {
+        sortedMap.put(key, sortList((List<?>) value));
+      } else {
+        sortedMap.put(key, value);
+      }
+    }
+    return sortedMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<?> sortList(List<?> list) {
+    List<Object> sortedList = new ArrayList<>();
+    for (Object item : list) {
+      if (item instanceof Map) {
+        Map<String, Object> mapItem = (Map<String, Object>) item;
+        sortedList.add(sortMap(mapItem));
+      } else if (item instanceof List) {
+        sortedList.add(sortList((List<?>) item));
+      } else {
+        sortedList.add(item);
+      }
+    }
+    return sortedList;
   }
 
   /**
