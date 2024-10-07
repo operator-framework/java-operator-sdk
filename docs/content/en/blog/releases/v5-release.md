@@ -204,7 +204,39 @@ To turn on this mode of execution, set [`explicitInvocation`](https://github.com
 
 See the following integration tests for [invocation](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowexplicitinvocation) and [cleanup](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowexplicitcleanup).
 
-### Silent exception handling
+### Explicit exception handling
+
+If an exception happens during reconciliation of a workflow, the framework automatically throws it further. 
+You can now set [`handleExceptionsInReconciler`](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Workflow.java#L40) to true for a workflow and check the thrown exceptions explicitly 
+in the execution results.
+
+```java
+@Workflow(handleExceptionsInReconciler = true,
+    dependents = @Dependent(type = ConfigMapDependent.class))
+@ControllerConfiguration
+public class HandleWorkflowExceptionsInReconcilerReconciler
+    implements Reconciler<HandleWorkflowExceptionsInReconcilerCustomResource>,
+    Cleaner<HandleWorkflowExceptionsInReconcilerCustomResource> {
+
+  private volatile boolean errorsFoundInReconcilerResult = false;
+  private volatile boolean errorsFoundInCleanupResult = false;
+
+  @Override
+  public UpdateControl<HandleWorkflowExceptionsInReconcilerCustomResource> reconcile(
+      HandleWorkflowExceptionsInReconcilerCustomResource resource,
+      Context<HandleWorkflowExceptionsInReconcilerCustomResource> context) {
+
+    errorsFoundInReconcilerResult = context.managedWorkflowAndDependentResourceContext()
+        .getWorkflowReconcileResult().erroredDependentsExist();
+
+    // check errors here:
+    Map<DependentResource, Exception> errors = context.getErroredDependents();
+
+    return UpdateControl.noUpdate();
+  }
+```
+
+See integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowsilentexceptionhandling).
 
 ### @Workflow annotation
 
