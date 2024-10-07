@@ -164,14 +164,27 @@ See related [issue](https://github.com/operator-framework/java-operator-sdk/issu
 
 ## Workflow related Changes
 
-### @Workflow annotation
-
 ### Explicit workflow invocation
 
+You can explicitly invoke managed workflows during reconciliation and/or cleanup, until now the execution always happened 
+before the `reconcile(...)` (respectively before `cleanup(...)`). This mean you can do all kind of operations - typically validations -
+before executing the workflow.
+
+To turn on this mode of execution, set [`explicitInvocation`](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Workflow.java#L26) flag to true in managed workflow definition.
+
+See the following integration tests for [invocation](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowexplicitinvocation) and [cleanup](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/workflowexplicitcleanup).
+
 ### Silent exception handling
+
+### @Workflow annotation
+
+The managed workflow definition is now a separate `@Workflow` annotation; it is no longer part of `@ControllerConfiguration`.
+
+See sample usage [here](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java#L14-L20)
 
 ### CRDPresentActivationCondition 
 
 ## Additional minor changes
 
 ## Deprecation removals
+
