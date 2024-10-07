@@ -171,7 +171,14 @@ before the `reconcile(...)` (respectively before `cleanup(...)`). This mean you 
 before executing the workflow. Sample:
 
 ```java
- @Override
+ @Workflow(explicitInvocation = true,
+    dependents = @Dependent(type = ConfigMapDependent.class))
+@ControllerConfiguration
+public class WorkflowExplicitCleanupReconciler
+    implements Reconciler<WorkflowExplicitCleanupCustomResource>,
+    Cleaner<WorkflowExplicitCleanupCustomResource> {
+
+  @Override
   public UpdateControl<WorkflowExplicitCleanupCustomResource> reconcile(
       WorkflowExplicitCleanupCustomResource resource,
       Context<WorkflowExplicitCleanupCustomResource> context) {
@@ -180,6 +187,17 @@ before executing the workflow. Sample:
 
     return UpdateControl.noUpdate();
   }
+
+  @Override
+  public DeleteControl cleanup(WorkflowExplicitCleanupCustomResource resource,
+      Context<WorkflowExplicitCleanupCustomResource> context) {
+
+    context.managedWorkflowAndDependentResourceContext().cleanupManageWorkflow();
+    // this can be checked
+    // context.managedWorkflowAndDependentResourceContext().getWorkflowCleanupResult()
+    return DeleteControl.defaultDelete();
+  }
+}
 ```
 
 To turn on this mode of execution, set [`explicitInvocation`](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Workflow.java#L26) flag to true in managed workflow definition.
