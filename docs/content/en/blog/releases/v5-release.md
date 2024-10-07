@@ -253,7 +253,33 @@ purpose, it will check if the CRD of a target resource type of a dependent resou
 
 See usage in integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/refs/heads/next/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/crdpresentactivation).
 
+## Experimental
+
+### Check if the following reconciliation is imminent
+
+You can now check if the subsequent reconciliation will happen right after the current one. In other words 
+If we have already received a new event triggering the reconciliation for the actual resource. 
+This information is available from the [context](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Context.java#L69).
+
+Note that this could be useful, for example, in situations when a heavy task would be repeated in the follow-up reconciliation. In the current
+reconciliation, you can check this flag and return, don't do the heavy task twice. Note that this is a semi-experimental feature, so please let us know
+if you found this helpful.
+
+```
+@Override
+public UpdateControl<NextReconciliationImminentCustomResource> reconcile(MyCustomResource resource, Context<MyCustomResource> context) {
+
+  if (context.isNextReconciliationImminent()) {
+    // your logic, maybe return?
+  }
+}
+```
+
+See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/nextreconciliationimminent).
+
 ## Additional minor changes
+
+
 
 ## Deprecation removals
 
