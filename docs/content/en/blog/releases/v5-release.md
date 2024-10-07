@@ -171,7 +171,7 @@ before the `reconcile(...)` (respectively before `cleanup(...)`). This mean you 
 before executing the workflow. Sample:
 
 ```java
- @Workflow(explicitInvocation = true,
+@Workflow(explicitInvocation = true,
     dependents = @Dependent(type = ConfigMapDependent.class))
 @ControllerConfiguration
 public class WorkflowExplicitCleanupReconciler
