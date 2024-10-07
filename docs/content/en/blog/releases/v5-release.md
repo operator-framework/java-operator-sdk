@@ -162,7 +162,7 @@ condition is present, it always behaves as there is an Informer registered.
 
 See related [issue](https://github.com/operator-framework/java-operator-sdk/issues/2198) for details.
 
-## Workflow related Changes
+## Workflow related changes
 
 ### Explicit workflow invocation
 
@@ -244,7 +244,13 @@ The managed workflow definition is now a separate `@Workflow` annotation; it is 
 
 See sample usage [here](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageManagedDependentsReconciler.java#L14-L20)
 
-### CRDPresentActivationCondition 
+### CRDPresentActivationCondition
+
+Activation conditions are typically used to check if the cluster has specific capabilities (e.g., is cert-manager available).
+Such a check can be done by verifying if a particular custom resource definition (CRD) is present on the cluster. You
+can now use the generic [`CRDPresentActivationCondition`](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/CRDPresentActivationCondition.java) for this
+purpose, it will check if the CRD of a target resource type of a dependent resource exists on the cluster.
+
 
 ## Additional minor changes
 
