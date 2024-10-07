@@ -251,6 +251,8 @@ Such a check can be done by verifying if a particular custom resource definition
 can now use the generic [`CRDPresentActivationCondition`](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/workflow/CRDPresentActivationCondition.java) for this
 purpose, it will check if the CRD of a target resource type of a dependent resource exists on the cluster.
 
+See usage in integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/refs/heads/next/operator-framework/src/test/java/io/javaoperatorsdk/operator/workflow/crdpresentactivation)
+here.
 
 ## Additional minor changes
 
