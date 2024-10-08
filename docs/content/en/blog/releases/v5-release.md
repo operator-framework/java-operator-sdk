@@ -265,7 +265,7 @@ Note that this could be useful, for example, in situations when a heavy task wou
 reconciliation, you can check this flag and return, don't do the heavy task twice. Note that this is a semi-experimental feature, so please let us know
 if you found this helpful.
 
-```
+```java
 @Override
 public UpdateControl<NextReconciliationImminentCustomResource> reconcile(MyCustomResource resource, Context<MyCustomResource> context) {
 
