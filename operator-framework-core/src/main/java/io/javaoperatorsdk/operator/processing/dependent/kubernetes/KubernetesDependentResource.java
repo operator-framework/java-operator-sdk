@@ -222,9 +222,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected Optional<R> selectManagedSecondaryResource(Set<R> secondaryResources, P primary,
+  protected Optional<R> selectTargetSecondaryResource(Set<R> secondaryResources, P primary,
       Context<P> context) {
-    ResourceID managedResourceID = managedSecondaryResourceID(primary, context);
+    ResourceID managedResourceID = targetSecondaryResourceID(primary, context);
     return secondaryResources.stream()
         .filter(r -> r.getMetadata().getName().equals(managedResourceID.getName()) &&
             Objects.equals(r.getMetadata().getNamespace(),
@@ -240,7 +240,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    * @param context of current reconciliation
    * @return id of the target managed resource
    */
-  protected ResourceID managedSecondaryResourceID(P primary, Context<P> context) {
+  protected ResourceID targetSecondaryResourceID(P primary, Context<P> context) {
     return ResourceID.fromResource(desired(primary, context));
   }
 
