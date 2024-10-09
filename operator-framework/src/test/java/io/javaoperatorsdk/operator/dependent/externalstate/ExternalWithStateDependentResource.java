@@ -40,7 +40,7 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  protected Optional<ExternalResource> selectManagedSecondaryResource(
+  protected Optional<ExternalResource> selectTargetSecondaryResource(
       Set<ExternalResource> secondaryResources,
       ExternalStateCustomResource primary, Context<ExternalStateCustomResource> context) {
     var id = getResourceID(primary);

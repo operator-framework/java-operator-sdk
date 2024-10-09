@@ -114,7 +114,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     if (secondaryResources.isEmpty()) {
       return Optional.empty();
     } else {
-      return selectManagedSecondaryResource(secondaryResources, primary, context);
+      return selectTargetSecondaryResource(secondaryResources, primary, context);
     }
 
   }
@@ -132,7 +132,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @throws IllegalStateException if more than one candidate is found, in which case some other
    *         mechanism might be necessary to distinguish between candidate secondary resources
    */
-  protected Optional<R> selectManagedSecondaryResource(Set<R> secondaryResources, P primary,
+  protected Optional<R> selectTargetSecondaryResource(Set<R> secondaryResources, P primary,
       Context<P> context) {
     R desired = desired(primary, context);
     var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
