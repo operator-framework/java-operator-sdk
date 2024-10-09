@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @KubernetesDependent
 public class MultipleManagedDependentNoDiscriminatorConfigMap1
@@ -18,6 +19,19 @@ public class MultipleManagedDependentNoDiscriminatorConfigMap1
 
   public MultipleManagedDependentNoDiscriminatorConfigMap1() {
     super(ConfigMap.class);
+  }
+
+  /*
+   * Showcases optimization to avoid computing the whole desired state by providing the ResourceID
+   * of the target resource. In this particular case this would not be necessary, since desired
+   * state creation is pretty lightweight. However, this might make sense in situation where the
+   * desired state is more costly
+   */
+  protected ResourceID targetSecondaryResourceID(
+      MultipleManagedDependentNoDiscriminatorCustomResource primary,
+      Context<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
+    return new ResourceID(primary.getMetadata().getName() + NAME_SUFFIX,
+        primary.getMetadata().getNamespace());
   }
 
   @Override
