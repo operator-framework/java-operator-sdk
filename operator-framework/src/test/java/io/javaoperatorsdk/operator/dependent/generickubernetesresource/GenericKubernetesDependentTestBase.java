@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.dependent.generickubernetesresource.generickubernetesdependentstandalone.ConfigMapGenericKubernetesDependent;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT_SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -38,7 +39,7 @@ public abstract class GenericKubernetesDependentTestBase<R extends CustomResourc
 
     extension().delete(resource);
 
-    await().timeout(Duration.ofSeconds(30)).untilAsserted(() -> {
+    await().timeout(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS)).untilAsserted(() -> {
       var cm = extension().get(ConfigMap.class, TEST_RESOURCE_NAME);
       assertThat(cm).isNull();
     });
