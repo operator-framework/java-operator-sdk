@@ -20,6 +20,7 @@ public class LeaderElectionConfiguration {
   private final Duration retryPeriod;
 
   private final LeaderCallbacks leaderCallbacks;
+  private final boolean exitOnStopLeading;
 
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace, String identity) {
     this(
@@ -27,7 +28,7 @@ public class LeaderElectionConfiguration {
         leaseNamespace,
         LEASE_DURATION_DEFAULT_VALUE,
         RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE, identity, null);
+        RETRY_PERIOD_DEFAULT_VALUE, identity, null, true);
   }
 
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace) {
@@ -36,7 +37,7 @@ public class LeaderElectionConfiguration {
         leaseNamespace,
         LEASE_DURATION_DEFAULT_VALUE,
         RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE, null, null);
+        RETRY_PERIOD_DEFAULT_VALUE, null, null, true);
   }
 
   public LeaderElectionConfiguration(String leaseName) {
@@ -45,7 +46,7 @@ public class LeaderElectionConfiguration {
         null,
         LEASE_DURATION_DEFAULT_VALUE,
         RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE, null, null);
+        RETRY_PERIOD_DEFAULT_VALUE, null, null, true);
   }
 
   public LeaderElectionConfiguration(
@@ -54,7 +55,7 @@ public class LeaderElectionConfiguration {
       Duration leaseDuration,
       Duration renewDeadline,
       Duration retryPeriod) {
-    this(leaseName, leaseNamespace, leaseDuration, renewDeadline, retryPeriod, null, null);
+    this(leaseName, leaseNamespace, leaseDuration, renewDeadline, retryPeriod, null, null, true);
   }
 
   public LeaderElectionConfiguration(
@@ -64,7 +65,8 @@ public class LeaderElectionConfiguration {
       Duration renewDeadline,
       Duration retryPeriod,
       String identity,
-      LeaderCallbacks leaderCallbacks) {
+      LeaderCallbacks leaderCallbacks,
+      boolean exitOnStopLeading) {
     this.leaseName = leaseName;
     this.leaseNamespace = leaseNamespace;
     this.leaseDuration = leaseDuration;
@@ -72,6 +74,7 @@ public class LeaderElectionConfiguration {
     this.retryPeriod = retryPeriod;
     this.identity = identity;
     this.leaderCallbacks = leaderCallbacks;
+    this.exitOnStopLeading = exitOnStopLeading;
   }
 
   public Optional<String> getLeaseNamespace() {
@@ -100,5 +103,9 @@ public class LeaderElectionConfiguration {
 
   public Optional<LeaderCallbacks> getLeaderCallbacks() {
     return Optional.ofNullable(leaderCallbacks);
+  }
+
+  public boolean isExitOnStopLeading() {
+    return exitOnStopLeading;
   }
 }

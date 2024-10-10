@@ -18,8 +18,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.Informable;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -28,50 +29,52 @@ import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES;
 
-public class InformerManager<T extends HasMetadata, C extends ResourceConfiguration<T>>
-    implements LifecycleAware, IndexerResourceCache<T> {
+class InformerManager<R extends HasMetadata, C extends Informable<R>>
+    implements LifecycleAware, IndexerResourceCache<R> {
 
   private static final Logger log = LoggerFactory.getLogger(InformerManager.class);
 
-  private final Map<String, InformerWrapper<T>> sources = new ConcurrentHashMap<>();
+  private final Map<String, InformerWrapper<R>> sources = new ConcurrentHashMap<>();
   private final C configuration;
-  private final MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client;
-  private final ResourceEventHandler<T> eventHandler;
-  private final Map<String, Function<T, List<String>>> indexers = new HashMap<>();
-  private ConfigurationService configurationService;
+  private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client;
+  private final ResourceEventHandler<R> eventHandler;
+  private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
+  private ControllerConfiguration<R> controllerConfiguration;
 
-  InformerManager(MixedOperation<T, KubernetesResourceList<T>, Resource<T>> client,
+  InformerManager(MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client,
       C configuration,
-      ResourceEventHandler<T> eventHandler) {
+      ResourceEventHandler<R> eventHandler) {
     this.client = client;
     this.configuration = configuration;
     this.eventHandler = eventHandler;
   }
 
-  void setConfigurationService(ConfigurationService configurationService) {
-    this.configurationService = configurationService;
+  void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
+    this.controllerConfiguration = controllerConfiguration;
   }
 
   @Override
   public void start() throws OperatorException {
     initSources();
     // make sure informers are all started before proceeding further
-    configurationService.getExecutorServiceManager().boundedExecuteAndWaitForAllToComplete(
-        sources.values().stream(),
-        iw -> {
-          iw.start();
-          return null;
-        },
-        iw -> "InformerStarter-" + iw.getTargetNamespace() + "-"
-            + configuration.getResourceClass().getSimpleName());
+    controllerConfiguration.getConfigurationService().getExecutorServiceManager()
+        .boundedExecuteAndWaitForAllToComplete(
+            sources.values().stream(),
+            iw -> {
+              iw.start();
+              return null;
+            },
+            iw -> "InformerStarter-" + iw.getTargetNamespace() + "-"
+                + configuration.getResourceClass().getSimpleName());
   }
 
   private void initSources() {
     if (!sources.isEmpty()) {
       throw new IllegalStateException("Some sources already initialized.");
     }
-    final var targetNamespaces = configuration.getEffectiveNamespaces(configurationService);
-    if (ResourceConfiguration.allNamespacesWatched(targetNamespaces)) {
+    final var targetNamespaces =
+        configuration.getInformerConfig().getEffectiveNamespaces(controllerConfiguration);
+    if (InformerConfiguration.allNamespacesWatched(targetNamespaces)) {
       var source = createEventSourceForNamespace(WATCH_ALL_NAMESPACES);
       log.debug("Registered {} -> {} for any namespace", this, source);
     } else {
@@ -96,7 +99,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
 
     namespaces.forEach(ns -> {
       if (!sources.containsKey(ns)) {
-        final InformerWrapper<T> source = createEventSourceForNamespace(ns);
+        final InformerWrapper<R> source = createEventSourceForNamespace(ns);
         source.start();
         log.debug("Registered new {} -> {} for namespace: {}", this, source,
             ns);
@@ -105,28 +108,32 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
 
-  private InformerWrapper<T> createEventSourceForNamespace(String namespace) {
-    final InformerWrapper<T> source;
+  private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
+    final InformerWrapper<R> source;
+    final var labelSelector = configuration.getInformerConfig().getLabelSelector();
     if (namespace.equals(WATCH_ALL_NAMESPACES)) {
       final var filteredBySelectorClient =
-          client.inAnyNamespace().withLabelSelector(configuration.getLabelSelector());
+          client.inAnyNamespace().withLabelSelector(labelSelector);
       source = createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
     } else {
       source = createEventSource(
-          client.inNamespace(namespace).withLabelSelector(configuration.getLabelSelector()),
+          client.inNamespace(namespace).withLabelSelector(labelSelector),
           eventHandler, namespace);
     }
     source.addIndexers(indexers);
     return source;
   }
 
-  private InformerWrapper<T> createEventSource(
-      FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filteredBySelectorClient,
-      ResourceEventHandler<T> eventHandler, String namespaceIdentifier) {
-    var informer = configuration.getInformerListLimit().map(filteredBySelectorClient::withLimit)
+  private InformerWrapper<R> createEventSource(
+      FilterWatchListDeletable<R, KubernetesResourceList<R>, Resource<R>> filteredBySelectorClient,
+      ResourceEventHandler<R> eventHandler, String namespaceIdentifier) {
+    final var informerConfig = configuration.getInformerConfig();
+    var informer = Optional.ofNullable(informerConfig.getInformerListLimit())
+        .map(filteredBySelectorClient::withLimit)
         .orElse(filteredBySelectorClient).runnableInformer(0);
-    configuration.getItemStore().ifPresent(informer::itemStore);
-    var source = new InformerWrapper<>(informer, configurationService, namespaceIdentifier);
+    Optional.ofNullable(informerConfig.getItemStore()).ifPresent(informer::itemStore);
+    var source = new InformerWrapper<>(informer, controllerConfiguration.getConfigurationService(),
+        namespaceIdentifier);
     source.addEventHandler(eventHandler);
     sources.put(namespaceIdentifier, source);
     return source;
@@ -146,7 +153,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   @Override
-  public Stream<T> list(Predicate<T> predicate) {
+  public Stream<R> list(Predicate<R> predicate) {
     if (predicate == null) {
       return sources.values().stream().flatMap(IndexerResourceCache::list);
     }
@@ -154,7 +161,7 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   @Override
-  public Stream<T> list(String namespace, Predicate<T> predicate) {
+  public Stream<R> list(String namespace, Predicate<R> predicate) {
     if (isWatchingAllNamespaces()) {
       return getSource(WATCH_ALL_NAMESPACES)
           .map(source -> source.list(namespace, predicate))
@@ -167,10 +174,13 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
   }
 
   @Override
-  public Optional<T> get(ResourceID resourceID) {
+  public Optional<R> get(ResourceID resourceID) {
     return getSource(resourceID.getNamespace().orElse(WATCH_ALL_NAMESPACES))
         .flatMap(source -> source.get(resourceID))
-        .map(r -> configurationService.getResourceCloner().clone(r));
+        .map(r -> controllerConfiguration.getConfigurationService()
+            .cloneSecondaryResourcesWhenGettingFromCache()
+                ? controllerConfiguration.getConfigurationService().getResourceCloner().clone(r)
+                : r);
   }
 
   @Override
@@ -182,29 +192,30 @@ public class InformerManager<T extends HasMetadata, C extends ResourceConfigurat
     return sources.containsKey(WATCH_ALL_NAMESPACES);
   }
 
-  private Optional<InformerWrapper<T>> getSource(String namespace) {
+  private Optional<InformerWrapper<R>> getSource(String namespace) {
     namespace = isWatchingAllNamespaces() || namespace == null ? WATCH_ALL_NAMESPACES : namespace;
     return Optional.ofNullable(sources.get(namespace));
   }
 
   @Override
-  public void addIndexers(Map<String, Function<T, List<String>>> indexers) {
+  public void addIndexers(Map<String, Function<R, List<String>>> indexers) {
     this.indexers.putAll(indexers);
   }
 
   @Override
-  public List<T> byIndex(String indexName, String indexKey) {
+  public List<R> byIndex(String indexName, String indexKey) {
     return sources.values().stream().map(s -> s.byIndex(indexName, indexKey))
         .flatMap(List::stream).collect(Collectors.toList());
   }
 
   @Override
   public String toString() {
-    final var selector = configuration.getLabelSelector();
+    final var informerConfig = configuration.getInformerConfig();
+    final var selector = informerConfig.getLabelSelector();
     return "InformerManager ["
         + ReconcilerUtils.getResourceTypeNameWithVersion(configuration.getResourceClass())
         + "] watching: "
-        + configuration.getEffectiveNamespaces(configurationService)
+        + informerConfig.getEffectiveNamespaces(controllerConfiguration)
         + (selector != null ? " selector: " + selector : "");
   }
 

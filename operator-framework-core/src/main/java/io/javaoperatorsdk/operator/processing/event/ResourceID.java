@@ -14,20 +14,6 @@ public class ResourceID implements Serializable {
         resource.getMetadata().getNamespace());
   }
 
-  public static Optional<ResourceID> fromFirstOwnerReference(HasMetadata resource) {
-    return fromFirstOwnerReference(resource, false);
-  }
-
-  public static Optional<ResourceID> fromFirstOwnerReference(HasMetadata resource,
-      boolean clusterScoped) {
-    var ownerReferences = resource.getMetadata().getOwnerReferences();
-    if (!ownerReferences.isEmpty()) {
-      return Optional.of(fromOwnerReference(resource, ownerReferences.get(0), clusterScoped));
-    } else {
-      return Optional.empty();
-    }
-  }
-
   public static ResourceID fromOwnerReference(HasMetadata resource, OwnerReference ownerReference,
       boolean clusterScoped) {
     return new ResourceID(ownerReference.getName(),

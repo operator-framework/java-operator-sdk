@@ -22,7 +22,6 @@ import io.javaoperatorsdk.operator.OperatorException;
 public class ExecutorServiceManager {
 
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceManager.class);
-  public static final int MIN_THREAD_NUMBER = 0;
   private ExecutorService executor;
   private ExecutorService workflowExecutor;
   private ExecutorService cachingExecutorService;

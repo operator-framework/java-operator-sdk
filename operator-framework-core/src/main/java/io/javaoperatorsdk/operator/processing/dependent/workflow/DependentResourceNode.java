@@ -8,33 +8,28 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public class DependentResourceNode<R, P extends HasMetadata> {
+class DependentResourceNode<R, P extends HasMetadata> {
 
   private final List<DependentResourceNode> dependsOn = new LinkedList<>();
   private final List<DependentResourceNode> parents = new LinkedList<>();
-  private final String name;
-  private Condition<R, P> reconcilePrecondition;
-  private Condition<R, P> deletePostcondition;
-  private Condition<R, P> readyPostcondition;
-  private Condition<R, P> activationCondition;
+
+  private ConditionWithType<R, P, ?> reconcilePrecondition;
+  private ConditionWithType<R, P, ?> deletePostcondition;
+  private ConditionWithType<R, P, ?> readyPostcondition;
+  private ConditionWithType<R, P, ?> activationCondition;
   private final DependentResource<R, P> dependentResource;
 
-  DependentResourceNode(String name, DependentResource<R, P> dependentResource) {
-    this(name, null, null, null, null, dependentResource);
-  }
-
   DependentResourceNode(DependentResource<R, P> dependentResource) {
-    this(getNameFor(dependentResource), null, null, null, null, dependentResource);
+    this(null, null, null, null, dependentResource);
   }
 
-  public DependentResourceNode(String name, Condition<R, P> reconcilePrecondition,
+  public DependentResourceNode(Condition<R, P> reconcilePrecondition,
       Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
       Condition<R, P> activationCondition, DependentResource<R, P> dependentResource) {
-    this.name = name;
-    this.reconcilePrecondition = reconcilePrecondition;
-    this.deletePostcondition = deletePostcondition;
-    this.readyPostcondition = readyPostcondition;
-    this.activationCondition = activationCondition;
+    setReconcilePrecondition(reconcilePrecondition);
+    setDeletePostcondition(deletePostcondition);
+    setReadyPostcondition(readyPostcondition);
+    setActivationCondition(activationCondition);
     this.dependentResource = dependentResource;
   }
 
@@ -55,42 +50,40 @@ public class DependentResourceNode<R, P extends HasMetadata> {
     return parents;
   }
 
-  public String getName() {
-    return name;
-  }
-
-
-  public Optional<Condition<R, P>> getReconcilePrecondition() {
+  public Optional<ConditionWithType<R, P, ?>> getReconcilePrecondition() {
     return Optional.ofNullable(reconcilePrecondition);
   }
 
-
-  public Optional<Condition<R, P>> getDeletePostcondition() {
+  public Optional<ConditionWithType<R, P, ?>> getDeletePostcondition() {
     return Optional.ofNullable(deletePostcondition);
   }
 
-  public Optional<Condition<R, P>> getActivationCondition() {
+  public Optional<ConditionWithType<R, P, ?>> getActivationCondition() {
     return Optional.ofNullable(activationCondition);
   }
 
-  void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
-    this.reconcilePrecondition = reconcilePrecondition;
-  }
-
-  void setDeletePostcondition(Condition<R, P> cleanupCondition) {
-    this.deletePostcondition = cleanupCondition;
-  }
-
-  void setActivationCondition(Condition<R, P> activationCondition) {
-    this.activationCondition = activationCondition;
-  }
-
-  public Optional<Condition<R, P>> getReadyPostcondition() {
+  public Optional<ConditionWithType<R, P, ?>> getReadyPostcondition() {
     return Optional.ofNullable(readyPostcondition);
   }
 
+  void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
+    this.reconcilePrecondition = reconcilePrecondition == null ? null
+        : new ConditionWithType<>(reconcilePrecondition, Condition.Type.RECONCILE);
+  }
+
+  void setDeletePostcondition(Condition<R, P> deletePostcondition) {
+    this.deletePostcondition = deletePostcondition == null ? null
+        : new ConditionWithType<>(deletePostcondition, Condition.Type.DELETE);
+  }
+
+  void setActivationCondition(Condition<R, P> activationCondition) {
+    this.activationCondition = activationCondition == null ? null
+        : new ConditionWithType<>(activationCondition, Condition.Type.ACTIVATION);
+  }
+
   void setReadyPostcondition(Condition<R, P> readyPostcondition) {
-    this.readyPostcondition = readyPostcondition;
+    this.readyPostcondition = readyPostcondition == null ? null
+        : new ConditionWithType<>(readyPostcondition, Condition.Type.READY);
   }
 
   public DependentResource<R, P> getDependentResource() {
@@ -106,18 +99,12 @@ public class DependentResourceNode<R, P extends HasMetadata> {
       return false;
     }
     DependentResourceNode<?, ?> that = (DependentResourceNode<?, ?>) o;
-    return name.equals(that.name);
+    return this.getDependentResource().name().equals(that.getDependentResource().name());
   }
 
   @Override
   public int hashCode() {
-    return name.hashCode();
-  }
-
-  @SuppressWarnings("rawtypes")
-  static String getNameFor(DependentResource dependentResource) {
-    return DependentResource.defaultNameFor(dependentResource.getClass()) + "#"
-        + dependentResource.hashCode();
+    return this.getDependentResource().name().hashCode();
   }
 
   @Override

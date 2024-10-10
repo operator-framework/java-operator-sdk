@@ -9,24 +9,32 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
     extends BaseControl<ErrorStatusUpdateControl<P>> {
 
   private final P resource;
-  private final boolean patch;
   private boolean noRetry = false;
+  private final boolean defaultErrorProcessing;
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> patchStatus(T resource) {
-    return new ErrorStatusUpdateControl<>(resource, true);
-  }
-
-  public static <T extends HasMetadata> ErrorStatusUpdateControl<T> updateStatus(T resource) {
-    return new ErrorStatusUpdateControl<>(resource, false);
+    return new ErrorStatusUpdateControl<>(resource);
   }
 
   public static <T extends HasMetadata> ErrorStatusUpdateControl<T> noStatusUpdate() {
+    return new ErrorStatusUpdateControl<>(null);
+  }
+
+  /**
+   * No special processing of the error, the error will be thrown and default error handling will
+   * apply
+   */
+  public static <T extends HasMetadata> ErrorStatusUpdateControl<T> defaultErrorProcessing() {
     return new ErrorStatusUpdateControl<>(null, true);
   }
 
-  private ErrorStatusUpdateControl(P resource, boolean patch) {
+  private ErrorStatusUpdateControl(P resource) {
+    this(resource, false);
+  }
+
+  private ErrorStatusUpdateControl(P resource, boolean defaultErrorProcessing) {
     this.resource = resource;
-    this.patch = patch;
+    this.defaultErrorProcessing = defaultErrorProcessing;
   }
 
   /**
@@ -35,6 +43,9 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
    * @return ErrorStatusUpdateControl
    */
   public ErrorStatusUpdateControl<P> withNoRetry() {
+    if (defaultErrorProcessing) {
+      throw new IllegalStateException("Cannot set no-retry for default error processing");
+    }
     this.noRetry = true;
     return this;
   }
@@ -47,8 +58,8 @@ public class ErrorStatusUpdateControl<P extends HasMetadata>
     return noRetry;
   }
 
-  public boolean isPatch() {
-    return patch;
+  public boolean isDefaultErrorProcessing() {
+    return defaultErrorProcessing;
   }
 
   /**

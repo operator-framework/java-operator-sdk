@@ -21,12 +21,13 @@ public class ExecutionAssert
 
   public ExecutionAssert reconciled(DependentResource<?, ?>... dependentResources) {
     for (int i = 0; i < dependentResources.length; i++) {
-      var rr = getReconcileRecordFor(dependentResources[i]);
+      final DependentResource<?, ?> dr = dependentResources[i];
+      var rr = getReconcileRecordFor(dr);
       if (rr.isEmpty()) {
-        failWithMessage("Resource not reconciled: %s with index %d", dependentResources, i);
+        failWithMessage("Resource not reconciled: %s with index %d", dr, i);
       } else {
         if (rr.get().isDeleted()) {
-          failWithMessage("Resource deleted: %s with index %d", dependentResources, i);
+          failWithMessage("Resource deleted: %s with index %d", dr, i);
         }
       }
     }
@@ -35,12 +36,13 @@ public class ExecutionAssert
 
   public ExecutionAssert deleted(DependentResource<?, ?>... dependentResources) {
     for (int i = 0; i < dependentResources.length; i++) {
-      var rr = getReconcileRecordFor(dependentResources[i]);
+      final DependentResource<?, ?> dr = dependentResources[i];
+      var rr = getReconcileRecordFor(dr);
       if (rr.isEmpty()) {
-        failWithMessage("Resource not reconciled: %s with index %d", dependentResources, i);
+        failWithMessage("Resource not reconciled: %s with index %d", dr, i);
       } else {
         if (!rr.get().isDeleted()) {
-          failWithMessage("Resource not deleted: %s with index %d", dependentResources, i);
+          failWithMessage("Resource not deleted: %s with index %d", dr, i);
         }
       }
     }
@@ -75,17 +77,18 @@ public class ExecutionAssert
 
   public ExecutionAssert notReconciled(DependentResource<?, ?>... dependentResources) {
     for (int i = 0; i < dependentResources.length; i++) {
-      if (getActualDependentResources().contains(dependentResources[i])) {
-        failWithMessage("Resource was reconciled: %s with index %d", dependentResources, i);
+      final DependentResource<?, ?> dr = dependentResources[i];
+      if (getActualDependentResources().contains(dr)) {
+        failWithMessage("Resource was reconciled: %s with index %d", dr, i);
       }
     }
     return this;
   }
 
   private void checkIfReconciled(int i, DependentResource<?, ?>[] dependentResources) {
-    if (!getActualDependentResources().contains(dependentResources[i])) {
-      failWithMessage("Dependent resource: %s, not reconciled on place %d", dependentResources[i],
-          i);
+    final DependentResource<?, ?> dr = dependentResources[i];
+    if (!getActualDependentResources().contains(dr)) {
+      failWithMessage("Dependent resource: %s, not reconciled on place %d", dr, i);
     }
   }
 }

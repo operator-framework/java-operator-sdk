@@ -3,10 +3,9 @@ package io.javaoperatorsdk.operator.api.config.dependent;
 import java.lang.annotation.Annotation;
 
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 
-public interface ConfigurationConverter<A extends Annotation, C, D extends DependentResourceConfigurator<? extends C>> {
+public interface ConfigurationConverter<A extends Annotation, C> {
 
-  C configFrom(A configAnnotation, ControllerConfiguration<?> parentConfiguration,
-      Class<D> originatingClass);
+  C configFrom(A configAnnotation, DependentResourceSpec<?, ?, C> spec,
+      ControllerConfiguration<?> parentConfiguration);
 }

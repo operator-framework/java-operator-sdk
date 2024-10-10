@@ -3,19 +3,35 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-
-import static io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver.configure;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public interface DependentResourceFactory<C extends ControllerConfiguration<?>> {
+public interface DependentResourceFactory<C extends ControllerConfiguration<?>, D extends DependentResourceSpec> {
 
   DependentResourceFactory DEFAULT = new DependentResourceFactory() {};
 
-  default DependentResource createFrom(DependentResourceSpec spec, C configuration) {
+  default DependentResource createFrom(D spec, C controllerConfiguration) {
     final var dependentResourceClass = spec.getDependentResourceClass();
     return Utils.instantiateAndConfigureIfNeeded(dependentResourceClass,
         DependentResource.class,
-        Utils.contextFor(configuration, dependentResourceClass, Dependent.class),
-        (instance) -> configure(instance, spec, configuration));
+        Utils.contextFor(controllerConfiguration, dependentResourceClass, Dependent.class),
+        (instance) -> configure(instance, spec, controllerConfiguration));
+  }
+
+  default void configure(DependentResource instance, D spec, C controllerConfiguration) {
+    if (instance instanceof ConfiguredDependentResource configurable) {
+      final var config = controllerConfiguration.getConfigurationFor(spec);
+      if (config != null) {
+        configurable.configureWith(config);
+      }
+    }
+  }
+
+  default Class<?> associatedResourceType(D spec) {
+    final var dependentResourceClass = spec.getDependentResourceClass();
+    final var dr = Utils.instantiateAndConfigureIfNeeded(dependentResourceClass,
+        DependentResource.class,
+        null, null);
+    return dr != null ? dr.resourceType() : null;
   }
 }

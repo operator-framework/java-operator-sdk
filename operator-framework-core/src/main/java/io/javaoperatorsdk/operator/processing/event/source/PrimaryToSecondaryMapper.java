@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event.source;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
@@ -12,13 +13,12 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * primary resources *without* a standard way (e.g. owner reference or annotations) to materialize
  * that relations. When owner references are present, a {@code PrimaryToSecondaryMapper} instance
  * should not be needed. In other words, associating such a mapper with your
- * {@link io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration} is usually needed
- * when your secondary resources are referenced in some way by your primary resource but that this
- * link does not exist in the secondary resource information. The mapper implementation instructs
- * the SDK on how to find all the secondary resources associated with a given primary resource so
- * that this primary resource can properly be reconciled when changes impact the associated
- * secondary resources, even though these don't contain any information allowing to make such an
- * inference.
+ * {@link InformerEventSourceConfiguration} is usually needed when your secondary resources are
+ * referenced in some way by your primary resource but that this link does not exist in the
+ * secondary resource information. The mapper implementation instructs the SDK on how to find all
+ * the secondary resources associated with a given primary resource so that this primary resource
+ * can properly be reconciled when changes impact the associated secondary resources, even though
+ * these don't contain any information allowing to make such an inference.
  * </p>
  * <p>
  * This helps particularly in cases where several secondary resources, listed in some way in the

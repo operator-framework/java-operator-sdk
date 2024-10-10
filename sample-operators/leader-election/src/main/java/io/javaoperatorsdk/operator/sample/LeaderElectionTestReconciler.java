@@ -7,9 +7,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-
-import javaoperatorsdk.sample.v1.LeaderElection;
-import javaoperatorsdk.sample.v1.LeaderElectionStatus;
+import io.javaoperatorsdk.operator.sample.v1.LeaderElection;
+import io.javaoperatorsdk.operator.sample.v1.LeaderElectionStatus;
 
 @ControllerConfiguration()
 public class LeaderElectionTestReconciler
@@ -35,7 +34,7 @@ public class LeaderElectionTestReconciler
 
     resource.getStatus().getReconciledBy().add(reconcilerName);
     // update status is with optimistic locking
-    return UpdateControl.updateStatus(resource).rescheduleAfter(Duration.ofSeconds(1));
+    return UpdateControl.patchStatus(resource).rescheduleAfter(Duration.ofSeconds(1));
   }
 
 }

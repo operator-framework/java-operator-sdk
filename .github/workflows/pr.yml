@@ -26,15 +26,14 @@ jobs:
           cache: 'maven'
       - name: Check code format
         run: |
-          ./mvnw ${MAVEN_ARGS} formatter:validate -Dconfigfile=$PWD/contributing/eclipse-google-style.xml -pl '!operator-framework-bom' --file pom.xml
-          ./mvnw ${MAVEN_ARGS} impsort:check -pl '!operator-framework-bom' --file pom.xml
+          ./mvnw ${MAVEN_ARGS} spotless:check --file pom.xml
       - name: Run unit tests
         run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml
 
   integration_tests:
     strategy:
       matrix:
-        java: [ 11, 17 ]
+        java: [ 17, 21 ]
         kubernetes: [ 'v1.28.12', 'v1.29.7','1.30.3', '1.31.0' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
@@ -56,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 11, 17 ]
+        java: [ 17, 21 ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java and Maven

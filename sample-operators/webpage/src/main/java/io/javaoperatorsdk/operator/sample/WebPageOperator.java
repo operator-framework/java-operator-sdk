@@ -6,8 +6,6 @@ import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
@@ -28,11 +26,10 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
-    KubernetesClient client = new KubernetesClientBuilder().build();
-    Operator operator = new Operator(client, o -> o.withStopOnInformerErrorDuringStartup(false));
+    Operator operator = new Operator(o -> o.withStopOnInformerErrorDuringStartup(false));
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
-      operator.register(new WebPageReconciler(client));
+      operator.register(new WebPageReconciler());
     } else if (WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE
         .equals(reconcilerEnvVar)) {
       operator.register(new WebPageManagedDependentsReconciler());

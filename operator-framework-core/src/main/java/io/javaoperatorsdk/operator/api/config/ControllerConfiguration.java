@@ -1,24 +1,20 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilters;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
-import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-public interface ControllerConfiguration<P extends HasMetadata> extends ResourceConfiguration<P> {
+public interface ControllerConfiguration<P extends HasMetadata> extends Informable<P> {
 
   @SuppressWarnings("rawtypes")
   RateLimiter DEFAULT_RATE_LIMITER = LinearRateLimiter.deactivatedRateLimiter();
@@ -60,22 +56,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
   String getAssociatedReconcilerClassName();
 
   default Retry getRetry() {
-    final var configuration = getRetryConfiguration();
-    return !RetryConfiguration.DEFAULT.equals(configuration)
-        ? GenericRetry.fromConfiguration(configuration)
-        : GenericRetry.DEFAULT; // NOSONAR
-  }
-
-  /**
-   * Use {@link #getRetry()} instead.
-   *
-   * @return configuration for retry.
-   * @deprecated provide your own {@link Retry} implementation or use the {@link GradualRetry}
-   *             annotation instead
-   */
-  @Deprecated(forRemoval = true)
-  default RetryConfiguration getRetryConfiguration() {
-    return RetryConfiguration.DEFAULT;
+    return GenericRetry.DEFAULT;
   }
 
   @SuppressWarnings("rawtypes")
@@ -83,50 +64,19 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return DEFAULT_RATE_LIMITER;
   }
 
-  /**
-   * Allow controllers to filter events before they are passed to the
-   * {@link io.javaoperatorsdk.operator.processing.event.EventHandler}.
-   *
-   * <p>
-   * Resource event filters only applies on events of the main custom resource. Not on events from
-   * other event sources nor the periodic events.
-   * </p>
-   *
-   * @return filter
-   * @deprecated use {@link ResourceConfiguration#onAddFilter()},
-   *             {@link ResourceConfiguration#onUpdateFilter()} or
-   *             {@link ResourceConfiguration#genericFilter()} instead
-   */
-  @Deprecated(forRemoval = true)
-  default ResourceEventFilter<P> getEventFilter() {
-    return ResourceEventFilters.passthrough();
-  }
-
-  @SuppressWarnings("rawtypes")
-  default List<DependentResourceSpec> getDependentResources() {
-    return Collections.emptyList();
+  default Optional<WorkflowSpec> getWorkflowSpec() {
+    return Optional.empty();
   }
 
   default Optional<Duration> maxReconciliationInterval() {
     return Optional.of(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
   }
 
-  @SuppressWarnings("unused")
   ConfigurationService getConfigurationService();
-
-  @SuppressWarnings("unchecked")
-  @Override
-  default Class<P> getResourceClass() {
-    // note that this implementation at the end not used within the boundaries of the core
-    // framework, should be removed in the future, (and marked as an API changed, or behavior
-    // change)
-    return (Class<P>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(getClass(),
-        ControllerConfiguration.class);
-  }
 
   @SuppressWarnings("unused")
   default Set<String> getEffectiveNamespaces() {
-    return ResourceConfiguration.super.getEffectiveNamespaces(getConfigurationService());
+    return getInformerConfig().getEffectiveNamespaces(this);
   }
 
   /**
@@ -140,4 +90,5 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Resource
     return getName();
   }
 
+  <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec);
 }

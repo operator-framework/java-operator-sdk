@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -13,7 +13,14 @@ import io.fabric8.kubernetes.api.model.authorization.v1.SelfSubjectRulesReview;
 import io.fabric8.kubernetes.api.model.authorization.v1.SubjectRulesReviewStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.*;
+import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.fabric8.kubernetes.client.dsl.Informable;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NamespaceableResource;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectorBuilder;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
@@ -119,10 +126,10 @@ public class MockKubernetesClient {
     SelfSubjectRulesReview review = new SelfSubjectRulesReview();
     review.setStatus(new SubjectRulesReviewStatus());
     var resourceRule = new ResourceRule();
-    resourceRule.setApiGroups(Arrays.asList(COORDINATION_GROUP));
-    resourceRule.setResources(Arrays.asList(LEASES_RESOURCE));
-    resourceRule.setVerbs(Arrays.asList(UNIVERSAL_VALUE));
-    review.getStatus().setResourceRules(Arrays.asList(resourceRule));
+    resourceRule.setApiGroups(List.of(COORDINATION_GROUP));
+    resourceRule.setResources(List.of(LEASES_RESOURCE));
+    resourceRule.setVerbs(List.of(UNIVERSAL_VALUE));
+    review.getStatus().setResourceRules(List.of(resourceRule));
     return review;
   }
 }

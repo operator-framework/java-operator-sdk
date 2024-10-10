@@ -8,13 +8,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 
 /**
- * Manages dynamic number of resources created for a primary resource. Since the point of a bulk
- * dependent resource is to manage the number of secondary resources dynamically it implement
- * {@link Creator} and {@link Deleter} interfaces out of the box. A concrete dependent resource can
- * implement additionally also {@link Updater}.
+ * Manages dynamic number of resources created for a primary resource. A dependent resource
+ * implementing this interface will typically also implement one or more additional interfaces such
+ * as {@link Creator}, {@link Updater}, {@link Deleter}.
+ *
+ * @param <R> the dependent resource type
+ * @param <P> the primary resource type
  */
-public interface BulkDependentResource<R, P extends HasMetadata>
-    extends Creator<R, P>, Deleter<P> {
+public interface BulkDependentResource<R, P extends HasMetadata> {
 
   /**
    * Retrieves a map of desired secondary resources associated with the specified primary resource,
@@ -26,7 +27,10 @@ public interface BulkDependentResource<R, P extends HasMetadata>
    * @return a Map associating desired secondary resources with the specified primary via arbitrary
    *         identifiers
    */
-  Map<String, R> desiredResources(P primary, Context<P> context);
+  default Map<String, R> desiredResources(P primary, Context<P> context) {
+    throw new IllegalStateException(
+        "Implement desiredResources in case a non read-only bulk dependent resource");
+  }
 
   /**
    * Retrieves the actual secondary resources currently existing on the server and associated with

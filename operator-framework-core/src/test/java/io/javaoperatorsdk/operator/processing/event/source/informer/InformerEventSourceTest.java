@@ -14,8 +14,10 @@ import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
@@ -43,23 +45,27 @@ class InformerEventSourceTest {
   private final TemporaryResourceCache<Deployment> temporaryResourceCacheMock =
       mock(TemporaryResourceCache.class);
   private final EventHandler eventHandlerMock = mock(EventHandler.class);
-  private final InformerConfiguration<Deployment> informerConfiguration =
-      mock(InformerConfiguration.class);
+  private final InformerEventSourceConfiguration<Deployment> informerEventSourceConfiguration =
+      mock(InformerEventSourceConfiguration.class);
 
   @BeforeEach
   void setup() {
-    when(informerConfiguration.getEffectiveNamespaces(any()))
-        .thenReturn(DEFAULT_NAMESPACES_SET);
-    when(informerConfiguration.getSecondaryToPrimaryMapper())
+    final var informerConfig = mock(InformerConfiguration.class);
+    when(informerEventSourceConfiguration.getInformerConfig()).thenReturn(informerConfig);
+    when(informerConfig.getEffectiveNamespaces(any())).thenReturn(DEFAULT_NAMESPACES_SET);
+    when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
-    when(informerConfiguration.getResourceClass()).thenReturn(Deployment.class);
+    when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
-    informerEventSource = new InformerEventSource<>(informerConfiguration, clientMock);
+    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration, clientMock);
+
+    var mockControllerConfig = mock(ControllerConfiguration.class);
+    when(mockControllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
 
     informerEventSource.setEventHandler(eventHandlerMock);
-    informerEventSource.setConfigurationService(new BaseConfigurationService());
+    informerEventSource.setControllerConfiguration(mockControllerConfig);
     SecondaryToPrimaryMapper secondaryToPrimaryMapper = mock(SecondaryToPrimaryMapper.class);
-    when(informerConfiguration.getSecondaryToPrimaryMapper())
+    when(informerEventSourceConfiguration.getSecondaryToPrimaryMapper())
         .thenReturn(secondaryToPrimaryMapper);
     when(secondaryToPrimaryMapper.toPrimaryResourceIDs(any()))
         .thenReturn(Set.of(ResourceID.fromResource(testDeployment())));
@@ -177,11 +183,14 @@ class InformerEventSourceTest {
         ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
             o -> o.withInformerStoppedHandler(informerStoppedHandler));
 
-    informerEventSource = new InformerEventSource<>(informerConfiguration,
+    var mockControllerConfig = mock(ControllerConfiguration.class);
+    when(mockControllerConfig.getConfigurationService()).thenReturn(configuration);
+
+    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration,
         MockKubernetesClient.client(Deployment.class, unused -> {
           throw exception;
         }));
-    informerEventSource.setConfigurationService(configuration);
+    informerEventSource.setControllerConfiguration(mockControllerConfig);
 
     // by default informer fails to start if there is an exception in the client on start.
     // Throws the exception further.
