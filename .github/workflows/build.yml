@@ -1,0 +1,37 @@
+name: Build
+
+env:
+  MAVEN_ARGS: -V -ntp -e
+
+on:
+  workflow_call:
+
+jobs:
+  integration_tests:
+    strategy:
+      matrix:
+        java: [ 17, 21 ]
+        kubernetes: [ 'v1.28.14', 'v1.29.9','1.30.5', '1.31.1' ]
+        it-category: [ 'baseapi', 'dependent', 'workflow' ]
+        httpclient: [ 'vertx', 'jdk', 'jetty' ]
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      java-version: ${{ matrix.java }}
+      kube-version: ${{ matrix.kubernetes }}
+      it-category: ${{ matrix.it-category }}
+      http-client: ${{ matrix.httpclient }}
+
+  special_integration_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 17, 21 ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Run Special Integration Tests
+        run: ./mvnw ${MAVEN_ARGS} -B package -P minimal-watch-timeout-dependent-it --file pom.xml

@@ -255,6 +255,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <compilerArgs>
+              <arg>-Aio.fabric8.crd.generator.parallel=true</arg>
+            </compilerArgs>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -275,6 +280,23 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
+          <!-- Summary output for tests at the end -->
+          <configuration>
+            <reportFormat>plain</reportFormat>
+            <consoleOutputReporter>
+              <disable>true</disable>
+            </consoleOutputReporter>
+            <statelessTestsetInfoReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter">
+              <theme>UNICODE</theme>
+            </statelessTestsetInfoReporter>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>me.fabriciorby</groupId>
+              <artifactId>maven-surefire-junit5-tree-reporter</artifactId>
+              <version>1.3.0</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -349,25 +371,14 @@
   </build>
   <profiles>
     <profile>
-      <id>all-tests</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <includes>
-                <include>**/*Test.java</include>
-                <include>**/*IT.java</include>
-                <include>**/*E2E.java</include>
-              </includes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>no-unit-tests</id>
+      <id>integration-tests</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.fabric8</groupId>
+          <artifactId>crd-generator-apt</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -386,9 +397,97 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>integration-tests-baseapi</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.fabric8</groupId>
+          <artifactId>crd-generator-apt</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>io/javaoperatorsdk/operator/baseapi/**/*IT.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/*Test.java</exclude>
+                <exclude>**/*E2E.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>integration-tests-dependent</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.fabric8</groupId>
+          <artifactId>crd-generator-apt</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>io/javaoperatorsdk/operator/dependent/**/*IT.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/*Test.java</exclude>
+                <exclude>**/*E2E.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>integration-tests-workflow</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.fabric8</groupId>
+          <artifactId>crd-generator-apt</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>io/javaoperatorsdk/operator/workflow/**/*IT.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/*Test.java</exclude>
+                <exclude>**/*E2E.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!--     Special category of tests. See usage in source code.   -->
     <profile>
       <id>minimal-watch-timeout-dependent-it</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.fabric8</groupId>
+          <artifactId>crd-generator-apt</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -410,6 +509,13 @@
     </profile>
     <profile>
       <id>end-to-end-tests</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.fabric8</groupId>
+          <artifactId>crd-generator-apt</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
