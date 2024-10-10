@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -121,4 +124,47 @@ class SSABasedGenericKubernetesResourceMatcherTest {
         fileName);
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  void sortListItemsTest() {
+    Map<String, Object> nestedMap1 = new HashMap<>();
+    nestedMap1.put("z", 26);
+    nestedMap1.put("y", 25);
+
+    Map<String, Object> nestedMap2 = new HashMap<>();
+    nestedMap2.put("b", 26);
+    nestedMap2.put("c", 25);
+    nestedMap2.put("a", 24);
+
+    List<Object> unsortedListItems = Arrays.asList(1, nestedMap1, nestedMap2);
+    List<Object> sortedListItems = matcher.sortListItems(unsortedListItems);
+
+    assertThat(sortedListItems).element(0).isEqualTo(1);
+
+    Map<String, Object> sortedNestedMap1 = (Map<String, Object>) sortedListItems.get(1);
+    assertThat(sortedNestedMap1.keySet()).containsExactly("y", "z");
+
+    Map<String, Object> sortedNestedMap2 = (Map<String, Object>) sortedListItems.get(2);
+    assertThat(sortedNestedMap2.keySet()).containsExactly("a", "b", "c");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testSortMapWithNestedMap() {
+    Map<String, Object> nestedMap = new HashMap<>();
+    nestedMap.put("z", 26);
+    nestedMap.put("y", 25);
+
+    Map<String, Object> unsortedMap = new HashMap<>();
+    unsortedMap.put("b", nestedMap);
+    unsortedMap.put("a", 1);
+    unsortedMap.put("c", 2);
+
+    Map<String, Object> sortedMap = matcher.sortMap(unsortedMap);
+
+    assertThat(sortedMap.keySet()).containsExactly("a", "b", "c");
+
+    Map<String, Object> sortedNestedMap = (Map<String, Object>) sortedMap.get("b");
+    assertThat(sortedNestedMap.keySet()).containsExactly("y", "z");
+  }
 }
