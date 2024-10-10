@@ -4,6 +4,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,6 +33,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LoggingUtils;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
+
+import com.github.difflib.DiffUtils;
+import com.github.difflib.UnifiedDiffUtils;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -107,20 +111,66 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     removeIrrelevantValues(desiredMap);
 
-    if (LoggingUtils.isNotSensitiveResource(desired)) {
-      logDiff(prunedActual, desiredMap, objectMapper);
+    var matches = prunedActual.equals(desiredMap);
+
+    if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
+      var diff = getDiff(prunedActual, desiredMap, objectMapper);
+      log.debug(
+          "Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}",
+          actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(),
+          diff);
     }
 
-    return prunedActual.equals(desiredMap);
+    return matches;
   }
 
-  private void logDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
+  private String getDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
       KubernetesSerialization serialization) {
-    if (log.isDebugEnabled()) {
-      var actualYaml = serialization.asYaml(prunedActualMap);
-      var desiredYaml = serialization.asYaml(desiredMap);
-      log.debug("Pruned actual yaml: \n {} \n desired yaml: \n {} ", actualYaml, desiredYaml);
+    var actualYaml = serialization.asYaml(sortMap(prunedActualMap));
+    var desiredYaml = serialization.asYaml(sortMap(desiredMap));
+    if (log.isTraceEnabled()) {
+      log.trace("Pruned actual resource: \n {} \ndesired resource: \n {} ", actualYaml,
+          desiredYaml);
     }
+
+    var patch = DiffUtils.diff(actualYaml.lines().toList(), desiredYaml.lines().toList());
+    List<String> unifiedDiff =
+        UnifiedDiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
+    return String.join("\n", unifiedDiff);
+  }
+
+  @SuppressWarnings("unchecked")
+  Map<String, Object> sortMap(Map<String, Object> map) {
+    List<String> sortedKeys = new ArrayList<>(map.keySet());
+    Collections.sort(sortedKeys);
+
+    Map<String, Object> sortedMap = new LinkedHashMap<>();
+    for (String key : sortedKeys) {
+      Object value = map.get(key);
+      if (value instanceof Map) {
+        sortedMap.put(key, sortMap((Map<String, Object>) value));
+      } else if (value instanceof List) {
+        sortedMap.put(key, sortListItems((List<Object>) value));
+      } else {
+        sortedMap.put(key, value);
+      }
+    }
+    return sortedMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  List<Object> sortListItems(List<Object> list) {
+    List<Object> sortedList = new ArrayList<>();
+    for (Object item : list) {
+      if (item instanceof Map) {
+        sortedList.add(sortMap((Map<String, Object>) item));
+      } else if (item instanceof List) {
+        sortedList.add(sortListItems((List<Object>) item));
+      } else {
+        sortedList.add(item);
+      }
+    }
+    return sortedList;
   }
 
   /**
