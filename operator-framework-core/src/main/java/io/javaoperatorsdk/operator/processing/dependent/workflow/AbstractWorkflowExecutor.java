@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +37,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     this.context = context;
     this.primaryID = ResourceID.fromResource(primary);
     executorService = context.getWorkflowExecutorService();
-    results = new ConcurrentHashMap<>(workflow.getDependentResourcesByName().size());
+    results = new HashMap<>(workflow.getDependentResourcesByName().size());
   }
 
   protected abstract Logger logger();
@@ -84,13 +85,13 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     return getResultFlagFor(drn, WorkflowResult.DetailBuilder::isMarkedForDelete);
   }
 
-  protected WorkflowResult.DetailBuilder createOrGetResultFor(
+  protected synchronized WorkflowResult.DetailBuilder createOrGetResultFor(
       DependentResourceNode<?, P> dependentResourceNode) {
     return results.computeIfAbsent(dependentResourceNode,
         unused -> new WorkflowResult.DetailBuilder());
   }
 
-  protected Optional<WorkflowResult.DetailBuilder<?>> getResultFor(
+  protected synchronized Optional<WorkflowResult.DetailBuilder<?>> getResultFor(
       DependentResourceNode<?, P> dependentResourceNode) {
     return Optional.ofNullable(results.get(dependentResourceNode));
   }
@@ -115,8 +116,8 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     createOrGetResultFor(dependentResourceNode).withError(e);
   }
 
-  protected boolean isNotReady(DependentResourceNode<?, P> dependentResourceNode) {
-    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::isNotReady);
+  protected boolean isReady(DependentResourceNode<?, P> dependentResourceNode) {
+    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::isReady);
   }
 
   protected boolean isInError(DependentResourceNode<?, P> dependentResourceNode) {
@@ -132,15 +133,17 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "OptionalUsedAsFieldOrParameterType"})
   protected <R> boolean isConditionMet(
       Optional<ConditionWithType<R, P, ?>> condition,
       DependentResourceNode<R, P> dependentResource) {
     final var dr = dependentResource.getDependentResource();
     return condition.map(c -> {
       final DetailedCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
-      results.computeIfAbsent(dependentResource, unused -> new WorkflowResult.DetailBuilder())
-          .withResultForCondition(c, r);
+      synchronized (this) {
+        results.computeIfAbsent(dependentResource, unused -> new WorkflowResult.DetailBuilder())
+            .withResultForCondition(c, r);
+      }
       return r;
     }).orElse(DetailedCondition.Result.metWithoutResult).isSuccess();
   }
@@ -170,7 +173,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     }
   }
 
-  protected Map<DependentResource, WorkflowResult.Detail<?>> asDetails() {
+  protected synchronized Map<DependentResource, WorkflowResult.Detail<?>> asDetails() {
     return results.entrySet().stream()
         .collect(
             Collectors.toMap(e -> e.getKey().getDependentResource(), e -> e.getValue().build()));
