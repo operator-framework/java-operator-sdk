@@ -120,7 +120,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
 
   private boolean allDependentsDeletedAlready(DependentResourceNode<?, P> dependentResourceNode) {
     var dependents = dependentResourceNode.getParents();
-    return dependents.stream().allMatch(d -> alreadyVisited(d) && !isNotReady(d)
+    return dependents.stream().allMatch(d -> alreadyVisited(d) && isReady(d)
         && !isInError(d) && !postDeleteConditionNotMet(d));
   }
 
@@ -231,7 +231,7 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   private boolean allParentsReconciledAndReady(DependentResourceNode<?, ?> dependentResourceNode) {
     return dependentResourceNode.getDependsOn().isEmpty()
         || dependentResourceNode.getDependsOn().stream()
-            .allMatch(d -> alreadyVisited(d) && !isNotReady(d));
+            .allMatch(d -> alreadyVisited(d) && isReady(d));
   }
 
   private boolean hasErroredParent(DependentResourceNode<?, ?> dependentResourceNode) {
