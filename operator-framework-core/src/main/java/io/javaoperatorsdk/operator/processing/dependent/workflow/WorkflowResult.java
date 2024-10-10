@@ -178,8 +178,8 @@ class WorkflowResult {
       return deletePostconditionResult != null && !deletePostconditionResult.isSuccess();
     }
 
-    public boolean isNotReady() {
-      return readyPostconditionResult != null && !readyPostconditionResult.isSuccess();
+    public boolean isReady() {
+      return readyPostconditionResult == null || readyPostconditionResult.isSuccess();
     }
 
     DetailBuilder<R> markAsVisited() {
