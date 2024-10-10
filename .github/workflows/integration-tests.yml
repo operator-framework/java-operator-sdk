@@ -21,6 +21,10 @@ on:
         type: string
         required: false
         default: ''
+      it-category:
+        type: string
+        required: false
+        default: ''
 
 jobs:
   integration_tests:
@@ -42,9 +46,14 @@ jobs:
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.12.0
         with:
-          minikube version: v1.33.0
-          kubernetes version: ${{ inputs.kube-version }}
+          minikube version: 'v1.33.0'
+          kubernetes version: '${{ inputs.kube-version }}'
           driver: 'docker'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run integration tests
-        run: ./mvnw ${MAVEN_ARGS} -B package -P no-unit-tests -Dfabric8-httpclient-impl.name=${{inputs.http-client}} --file pom.xml
+        run: |
+          it_profile="integration-tests"
+          if [ -z "${{inputs.it-category}}" ]; then
+            it_profile="integration-tests-${{inputs.it-category}}"
+          fi
+          ./mvnw ${MAVEN_ARGS} -B package -P${it_profile} -Dfabric8-httpclient-impl.name=${{inputs.http-client}} --file pom.xml
