@@ -449,7 +449,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void diamondShareWithReadyCondition() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
+        .addDependentResourceAndConfigure(dr2)
+        .toDependOn(dr1)
         .withReadyPostcondition(notMetCondition)
         .addDependentResourceAndConfigure(dr3).toDependOn(dr1)
         .addDependentResourceAndConfigure(dr4).toDependOn(dr2, dr3)
