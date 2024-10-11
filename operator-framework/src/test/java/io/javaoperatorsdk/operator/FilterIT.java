@@ -34,7 +34,7 @@ class FilterIT {
             .getNumberOfExecutions()).isEqualTo(2));
 
     res.getSpec().setValue(FilterTestReconciler.CUSTOM_RESOURCE_FILTER_VALUE);
-    operator.replace(res);
+    operator.createOrUpdate(res);
 
     // not more reconciliation with the filtered value
     await().pollDelay(Duration.ofMillis(POLL_DELAY))
@@ -51,7 +51,7 @@ class FilterIT {
             .getNumberOfExecutions()).isEqualTo(2));
 
     res.getSpec().setValue(CONFIG_MAP_FILTER_VALUE);
-    operator.replace(res);
+    operator.createOrUpdate(res);
 
     // the CM event filtered out
     await().pollDelay(Duration.ofMillis(POLL_DELAY))

@@ -34,7 +34,7 @@ class MultipleManagedExternalDependentSameTypeIT {
 
     var updatedResource = testResource();
     updatedResource.getSpec().setValue(UPDATED_SPEC_VALUE);
-    operator.replace(updatedResource);
+    operator.createOrUpdate(updatedResource);
     assertResourceCreatedWithData(UPDATED_SPEC_VALUE);
 
     operator.delete(testResource());

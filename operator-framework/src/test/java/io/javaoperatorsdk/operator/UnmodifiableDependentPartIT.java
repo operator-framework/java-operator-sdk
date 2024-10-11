@@ -39,7 +39,7 @@ public class UnmodifiableDependentPartIT {
     });
 
     resource.getSpec().setData(UPDATED_DATA);
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
 
     await().untilAsserted(() -> {
       var cm = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);

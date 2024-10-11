@@ -61,7 +61,7 @@ public class WorkflowMultipleActivationIT {
 
     ActivationCondition.MET = true;
     cr1.getSpec().setValue(CHANGED_VALUE);
-    extension.replace(cr1);
+    extension.createOrUpdate(cr1);
 
     await().untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
@@ -71,7 +71,7 @@ public class WorkflowMultipleActivationIT {
 
     ActivationCondition.MET = false;
     cr1.getSpec().setValue(INITIAL_DATA);
-    extension.replace(cr1);
+    extension.createOrUpdate(cr1);
 
     await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
@@ -85,7 +85,7 @@ public class WorkflowMultipleActivationIT {
             .getNumberOfReconciliationExecution();
     var actualCM = extension.get(ConfigMap.class, TEST_RESOURCE1);
     actualCM.getData().put("data2", "additionaldata");
-    extension.replace(actualCM);
+    extension.createOrUpdate(actualCM);
     await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
       // change in config map does not induce reconciliation if inactive (thus informer is not
       // present)

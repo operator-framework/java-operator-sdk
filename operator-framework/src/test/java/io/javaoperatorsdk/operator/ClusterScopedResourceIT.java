@@ -40,7 +40,7 @@ class ClusterScopedResourceIT {
     });
 
     resource.getSpec().setData(UPDATED_DATA);
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
     await().untilAsserted(() -> {
       var cm = operator.get(ConfigMap.class, TEST_NAME);
       assertThat(cm).isNotNull();
