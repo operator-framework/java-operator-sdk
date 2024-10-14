@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 /**
@@ -79,7 +80,7 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
       }
       map.put(node.getName(), node);
     }
-    if (topLevelResources.size() == 0) {
+    if (topLevelResources.isEmpty()) {
       throw new IllegalStateException(
           "No top-level dependent resources found. This might indicate a cyclic Set of DependentResourceNode has been provided.");
     }
@@ -91,6 +92,8 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     WorkflowReconcileExecutor<P> workflowReconcileExecutor =
         new WorkflowReconcileExecutor<>(this, primary, context);
     var result = workflowReconcileExecutor.reconcile();
+    context.managedDependentResourceContext()
+        .put(DefaultManagedDependentResourceContext.RECONCILE_RESULT_KEY, result);
     if (throwExceptionAutomatically) {
       result.throwAggregateExceptionIfErrorsPresent();
     }
@@ -102,6 +105,8 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     WorkflowCleanupExecutor<P> workflowCleanupExecutor =
         new WorkflowCleanupExecutor<>(this, primary, context);
     var result = workflowCleanupExecutor.cleanup();
+    context.managedDependentResourceContext()
+        .put(DefaultManagedDependentResourceContext.CLEANUP_RESULT_KEY, result);
     if (throwExceptionAutomatically) {
       result.throwAggregateExceptionIfErrorsPresent();
     }
