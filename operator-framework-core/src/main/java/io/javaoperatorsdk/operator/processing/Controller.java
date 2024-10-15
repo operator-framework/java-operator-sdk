@@ -93,9 +93,9 @@ public class Controller<P extends HasMetadata>
 
     final var managed = configurationService.getWorkflowFactory().workflowFor(configuration);
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
-    explicitWorkflowInvocation =
-        configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
-            .orElse(false);
+    explicitWorkflowInvocation = configuration.getWorkflowSpec()
+        .map(WorkflowSpec::isExplicitInvocation)
+        .orElse(false);
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
