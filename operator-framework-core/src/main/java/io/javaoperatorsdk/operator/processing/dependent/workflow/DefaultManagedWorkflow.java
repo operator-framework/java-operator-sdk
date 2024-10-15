@@ -12,9 +12,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
-
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {
@@ -105,11 +102,6 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
     final DependentResource<R, P> dependentResource =
         configuration.getConfigurationService().dependentResourceFactory()
             .createFrom(spec, configuration);
-
-    final var name = spec.getName();
-    if (name != null && !NO_VALUE_SET.equals(name) && dependentResource instanceof NameSetter) {
-      ((NameSetter) dependentResource).setName(name);
-    }
 
     spec.getUseEventSourceWithName()
         .ifPresent(esName -> {

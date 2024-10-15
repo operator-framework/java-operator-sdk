@@ -53,11 +53,12 @@ public class AbstractWorkflowExecutorTest {
           .resourceCreated(new ConfigMapBuilder().addToBinaryData("key", VALUE).build());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public synchronized Optional<InformerEventSource<ConfigMap, TestCustomResource>> eventSource(
         EventSourceContext<TestCustomResource> context) {
       var mockIES = mock(InformerEventSource.class);
-      when(mockIES.name()).thenReturn(name);
+      when(mockIES.name()).thenReturn(name());
       return Optional.of(mockIES);
     }
 
