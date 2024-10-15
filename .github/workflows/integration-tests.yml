@@ -12,7 +12,7 @@ on:
       http-client:
         type: string
         required: false
-        default: 'jdk'
+        default: 'vertx'
       experimental:
         type: boolean
         required: false
