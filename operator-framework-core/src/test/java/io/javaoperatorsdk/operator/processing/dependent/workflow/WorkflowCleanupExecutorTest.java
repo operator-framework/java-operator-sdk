@@ -14,13 +14,13 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.processing.dependent.workflow.ExecutionAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
@@ -29,8 +29,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
   protected TestDeleterDependent dd3 = new TestDeleterDependent("DR_DELETER_3");
   protected TestDeleterDependent dd4 = new TestDeleterDependent("DR_DELETER_4");
   @SuppressWarnings("unchecked")
-
-  Context<TestCustomResource> mockContext = mock(Context.class);
+  Context<TestCustomResource> mockContext = spy(Context.class);
   ExecutorService executorService = Executors.newCachedThreadPool();
 
   @BeforeEach
@@ -45,7 +44,8 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
     when(eventSourceContextMock.getControllerConfiguration()).thenReturn(mockControllerConfig);
     when(mockControllerConfig.getConfigurationService())
         .thenReturn(mock(ConfigurationService.class));
-
+    when(mockContext.managedDependentResourceContext())
+        .thenReturn(mock(ManagedDependentResourceContext.class));
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
     when(mockContext.eventSourceRetriever()).thenReturn(eventSourceRetrieverMock);
   }

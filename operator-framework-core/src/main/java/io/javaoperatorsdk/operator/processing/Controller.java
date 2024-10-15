@@ -38,7 +38,6 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceNotFoundException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
@@ -145,10 +144,7 @@ public class Controller<P extends HasMetadata>
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
             if (!managedWorkflow.isEmpty()) {
-              var res = managedWorkflow.reconcile(resource, context);
-              ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
-                  .setWorkflowExecutionResult(res);
-              res.throwAggregateExceptionIfErrorsPresent();
+              managedWorkflow.reconcile(resource, context);
             }
             return reconciler.reconcile(resource, context);
           }
@@ -191,9 +187,6 @@ public class Controller<P extends HasMetadata>
               WorkflowCleanupResult workflowCleanupResult = null;
               if (managedWorkflow.hasCleaner()) {
                 workflowCleanupResult = managedWorkflow.cleanup(resource, context);
-                ((DefaultManagedDependentResourceContext) context.managedDependentResourceContext())
-                    .setWorkflowCleanupResult(workflowCleanupResult);
-                workflowCleanupResult.throwAggregateExceptionIfErrorsPresent();
               }
               if (isCleaner) {
                 var cleanupResult = ((Cleaner<P>) reconciler).cleanup(resource, context);

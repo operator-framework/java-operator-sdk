@@ -14,8 +14,7 @@ import static io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class WorkflowBuilder<P extends HasMetadata> {
 
-  private final Map<String, DependentResourceNode<?, P>> dependentResourceNodes =
-      new HashMap<>();
+  private final Map<String, DependentResourceNode<?, P>> dependentResourceNodes = new HashMap<>();
   private boolean throwExceptionAutomatically = THROW_EXCEPTION_AUTOMATICALLY_DEFAULT;
   private DependentResourceNode currentNode;
   private boolean isCleaner = false;
