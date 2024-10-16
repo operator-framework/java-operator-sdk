@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,34 +9,25 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReferencer;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWorkflow<P> {
+  private final DefaultWorkflow<P> workflow;
+  private boolean resolved;
+  private final List<DependentResourceSpec> orderedSpecs; // todo: remove
 
-  private final Set<String> topLevelResources;
-  private final Set<String> bottomLevelResources;
-  private final List<DependentResourceSpec> orderedSpecs;
-  private final boolean hasCleaner;
-
+  @SuppressWarnings("unchecked")
   protected DefaultManagedWorkflow(List<DependentResourceSpec> orderedSpecs, boolean hasCleaner) {
-    this.hasCleaner = hasCleaner;
-    topLevelResources = new HashSet<>(orderedSpecs.size());
-    bottomLevelResources = orderedSpecs.stream()
-        .map(DependentResourceSpec::getName)
-        .collect(Collectors.toSet());
-    this.orderedSpecs = orderedSpecs;
-    for (DependentResourceSpec<?, ?, ?> spec : orderedSpecs) {
-      // add cycle detection?
-      if (spec.getDependsOn().isEmpty()) {
-        topLevelResources.add(spec.getName());
-      } else {
-        for (String dependsOn : spec.getDependsOn()) {
-          bottomLevelResources.remove(dependsOn);
-        }
-      }
+    final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
+    for (DependentResourceSpec spec : orderedSpecs) {
+      final var node = new UnresolvedDependentResourceNode(spec);
+      alreadyResolved.put(spec.getName(), node);
+      spec.getDependsOn()
+          .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
+
+    this.workflow = new DefaultWorkflow<>(alreadyResolved.values(), false, hasCleaner);
+    this.orderedSpecs = orderedSpecs; // todo: remove
   }
 
   @Override
@@ -47,74 +37,41 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   }
 
   protected Set<String> getTopLevelResources() {
-    return topLevelResources;
+    return workflow.getTopLevelDependentResources().stream().map(DependentResourceNode::name)
+        .collect(Collectors.toSet());
   }
 
   protected Set<String> getBottomLevelResources() {
-    return bottomLevelResources;
+    return workflow.getBottomLevelDependentResources().stream().map(DependentResourceNode::name)
+        .collect(Collectors.toSet());
   }
 
   List<String> nodeNames() {
-    return orderedSpecs.stream().map(DependentResourceSpec::getName).collect(Collectors.toList());
+    return workflow.getDependentResourceNodes().keySet().stream().toList();
   }
 
   @Override
   public boolean hasCleaner() {
-    return hasCleaner;
+    return workflow.hasCleaner();
   }
 
   @Override
   public boolean isEmpty() {
-    return orderedSpecs.isEmpty();
+    return workflow.isEmpty();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Workflow<P> resolve(KubernetesClient client,
       ControllerConfiguration<P> configuration) {
-    final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
-    for (DependentResourceSpec spec : orderedSpecs) {
-      final var dependentResource = resolve(spec, client, configuration);
-      final var node = new DependentResourceNode(
-          spec.getReconcileCondition(),
-          spec.getDeletePostCondition(),
-          spec.getReadyCondition(),
-          spec.getActivationCondition(),
-          dependentResource);
-      alreadyResolved.put(dependentResource.name(), node);
-      spec.getDependsOn()
-          .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
+    if (!resolved) {
+      workflow.getDependentResourceNodes().values()
+          .parallelStream()
+          .filter(UnresolvedDependentResourceNode.class::isInstance)
+          .map(UnresolvedDependentResourceNode.class::cast)
+          .forEach(node -> node.resolve(configuration));
+      resolved = true;
     }
-
-    final var bottom =
-        bottomLevelResources.stream().map(alreadyResolved::get).collect(Collectors.toSet());
-    final var top =
-        topLevelResources.stream().map(alreadyResolved::get).collect(Collectors.toSet());
-    return new DefaultWorkflow<>(alreadyResolved, bottom, top,
-        configuration.getWorkflowSpec().map(w -> !w.handleExceptionsInReconciler()).orElseThrow(),
-        hasCleaner);
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private <R> DependentResource<R, P> resolve(DependentResourceSpec<R, P, ?> spec,
-      KubernetesClient client,
-      ControllerConfiguration<P> configuration) {
-    final DependentResource<R, P> dependentResource =
-        configuration.getConfigurationService().dependentResourceFactory()
-            .createFrom(spec, configuration);
-
-    spec.getUseEventSourceWithName()
-        .ifPresent(esName -> {
-          if (dependentResource instanceof EventSourceReferencer) {
-            ((EventSourceReferencer) dependentResource).useEventSourceWithName(esName);
-          } else {
-            throw new IllegalStateException(
-                "DependentResource " + spec + " wants to use EventSource named " + esName
-                    + " but doesn't implement support for this feature by implementing "
-                    + EventSourceReferencer.class.getSimpleName());
-          }
-        });
-
-    return dependentResource;
+    return workflow;
   }
 }
