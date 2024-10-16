@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,11 +33,11 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   private final boolean throwExceptionAutomatically;
   private final boolean hasCleaner;
 
-  DefaultWorkflow(Set<DependentResourceNode> dependentResourceNodes) {
+  DefaultWorkflow(Collection<DependentResourceNode> dependentResourceNodes) {
     this(dependentResourceNodes, THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false);
   }
 
-  DefaultWorkflow(Set<DependentResourceNode> dependentResourceNodes,
+  DefaultWorkflow(Collection<DependentResourceNode> dependentResourceNodes,
       boolean throwExceptionAutomatically,
       boolean hasCleaner) {
     this.throwExceptionAutomatically = throwExceptionAutomatically;
@@ -65,7 +66,7 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, DependentResourceNode> toMap(Set<DependentResourceNode> nodes) {
+  private Map<String, DependentResourceNode> toMap(Collection<DependentResourceNode> nodes) {
     if (nodes == null || nodes.isEmpty()) {
       return Collections.emptyMap();
     }
@@ -80,7 +81,7 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
           bottomLevelResource.remove(dependsOn);
         }
       }
-      map.put(node.getDependentResource().name(), node);
+      map.put(node.name(), node);
     }
     if (topLevelResources.isEmpty()) {
       throw new IllegalStateException(
@@ -161,5 +162,9 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
         .filter(n -> n.getActivationCondition().isEmpty())
         .map(DependentResourceNode::getDependentResource)
         .toList();
+  }
+
+  Map<String, DependentResourceNode> getDependentResourceNodes() {
+    return dependentResourceNodes;
   }
 }
