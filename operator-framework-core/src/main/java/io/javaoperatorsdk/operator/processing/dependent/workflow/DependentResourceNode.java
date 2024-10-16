@@ -17,19 +17,19 @@ class DependentResourceNode<R, P extends HasMetadata> {
   private ConditionWithType<R, P, ?> deletePostcondition;
   private ConditionWithType<R, P, ?> readyPostcondition;
   private ConditionWithType<R, P, ?> activationCondition;
-  private final DependentResource<R, P> dependentResource;
+  protected DependentResource<R, P> dependentResource;
 
-  DependentResourceNode(DependentResource<R, P> dependentResource) {
-    this(null, null, null, null, dependentResource);
-  }
-
-  public DependentResourceNode(Condition<R, P> reconcilePrecondition,
+  protected DependentResourceNode(Condition<R, P> reconcilePrecondition,
       Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
-      Condition<R, P> activationCondition, DependentResource<R, P> dependentResource) {
+      Condition<R, P> activationCondition) {
     setReconcilePrecondition(reconcilePrecondition);
     setDeletePostcondition(deletePostcondition);
     setReadyPostcondition(readyPostcondition);
     setActivationCondition(activationCondition);
+  }
+
+  DependentResourceNode(DependentResource<R, P> dependentResource) {
+    this(null, null, null, null);
     this.dependentResource = dependentResource;
   }
 
@@ -54,21 +54,13 @@ class DependentResourceNode<R, P extends HasMetadata> {
     return Optional.ofNullable(reconcilePrecondition);
   }
 
-  public Optional<ConditionWithType<R, P, ?>> getDeletePostcondition() {
-    return Optional.ofNullable(deletePostcondition);
-  }
-
-  public Optional<ConditionWithType<R, P, ?>> getActivationCondition() {
-    return Optional.ofNullable(activationCondition);
-  }
-
-  public Optional<ConditionWithType<R, P, ?>> getReadyPostcondition() {
-    return Optional.ofNullable(readyPostcondition);
-  }
-
   void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
     this.reconcilePrecondition = reconcilePrecondition == null ? null
         : new ConditionWithType<>(reconcilePrecondition, Condition.Type.RECONCILE);
+  }
+
+  public Optional<ConditionWithType<R, P, ?>> getDeletePostcondition() {
+    return Optional.ofNullable(deletePostcondition);
   }
 
   void setDeletePostcondition(Condition<R, P> deletePostcondition) {
@@ -76,9 +68,17 @@ class DependentResourceNode<R, P extends HasMetadata> {
         : new ConditionWithType<>(deletePostcondition, Condition.Type.DELETE);
   }
 
+  public Optional<ConditionWithType<R, P, ?>> getActivationCondition() {
+    return Optional.ofNullable(activationCondition);
+  }
+
   void setActivationCondition(Condition<R, P> activationCondition) {
     this.activationCondition = activationCondition == null ? null
         : new ConditionWithType<>(activationCondition, Condition.Type.ACTIVATION);
+  }
+
+  public Optional<ConditionWithType<R, P, ?>> getReadyPostcondition() {
+    return Optional.ofNullable(readyPostcondition);
   }
 
   void setReadyPostcondition(Condition<R, P> readyPostcondition) {
@@ -90,6 +90,10 @@ class DependentResourceNode<R, P extends HasMetadata> {
     return dependentResource;
   }
 
+  public String name() {
+    return getDependentResource().name();
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -99,12 +103,12 @@ class DependentResourceNode<R, P extends HasMetadata> {
       return false;
     }
     DependentResourceNode<?, ?> that = (DependentResourceNode<?, ?>) o;
-    return this.getDependentResource().name().equals(that.getDependentResource().name());
+    return name().equals(that.name());
   }
 
   @Override
   public int hashCode() {
-    return this.getDependentResource().name().hashCode();
+    return name().hashCode();
   }
 
   @Override
