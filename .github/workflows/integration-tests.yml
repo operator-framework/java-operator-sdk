@@ -59,4 +59,4 @@ jobs:
           fi
           echo "Using profile: ${it_profile}"
           ./mvnw ${MAVEN_ARGS} -B install -DskipTests -Pno-apt --file pom.xml
-          ./mvnw ${MAVEN_ARGS} -B package -T1C -P${it_profile} -Dfabric8-httpclient-impl.name=${{inputs.http-client}} --file pom.xml
+          ./mvnw ${MAVEN_ARGS} -B package -P${it_profile} -Dfabric8-httpclient-impl.name=${{inputs.http-client}} --file pom.xml
