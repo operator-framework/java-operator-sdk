@@ -6,6 +6,9 @@ import java.util.concurrent.Executors;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -20,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
+  private static final Logger log = LoggerFactory.getLogger(WorkflowReconcileExecutorTest.class);
 
   @SuppressWarnings("unchecked")
   Context<TestCustomResource> mockContext = spy(Context.class);
@@ -30,8 +34,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @BeforeEach
   @SuppressWarnings("unchecked")
-  void setup() {
-    when(mockContext.managedDependentResourceContext()).thenReturn(mock(ManagedDependentResourceContext.class));
+  void setup(TestInfo testInfo) {
+    log.debug("==> Starting test {}", testInfo.getDisplayName());
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
     when(mockContext.eventSourceRetriever()).thenReturn(mock(EventSourceRetriever.class));
   }
