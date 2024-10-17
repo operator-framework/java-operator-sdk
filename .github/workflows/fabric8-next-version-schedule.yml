@@ -23,46 +23,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: 'maven'
       - name: Run unit tests
         run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml
 
-  integration_tests:
-    strategy:
-      matrix:
-        java: [ 11, 17 ]
-        kubernetes: ['v1.28.12', 'v1.29.7','1.30.3', '1.31.0']
-    uses: ./.github/workflows/integration-tests.yml
-    with:
-      java-version: ${{ matrix.java }}
-      kube-version: ${{ matrix.kubernetes }}
-
-  httpclient-tests:
-    strategy:
-      matrix:
-        httpclient: [ 'vertx', 'jdk', 'jetty' ]
-    uses: ./.github/workflows/integration-tests.yml
-    with:
-      java-version: 17
-      kube-version: 'v1.29.1'
-      http-client: ${{ matrix.httpclient }}
-      experimental: true
-      checkout-ref: 'fabric8-next-version'
-
-  special_integration_tests:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java: [ 11, 17 ]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: 'fabric8-next-version'
-      - name: Set up Java and Maven
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ matrix.java }}
-          cache: 'maven'
-      - name: Run Special Integration Tests
-        run: ./mvnw ${MAVEN_ARGS} -B package -P minimal-watch-timeout-dependent-it --file pom.xml
+  build:
+    uses: ./.github/workflows/build.yml

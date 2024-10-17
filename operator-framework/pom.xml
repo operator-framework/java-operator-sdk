@@ -57,11 +57,6 @@
       <artifactId>compile-testing</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>crd-generator-apt</artifactId>
-      <scope>test</scope>
-    </dependency>
     <!-- This is just here to make some special test using Route, Openshift is actually not used in tests -->
     <dependency>
       <groupId>io.fabric8</groupId>
@@ -113,7 +108,10 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
     </plugins>
   </build>
-
 </project>
