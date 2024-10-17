@@ -69,7 +69,7 @@ class WorkflowTest {
         .buildAsDefaultWorkflow();
 
     Set<DependentResource> bottomResources =
-        workflow.getBottomLevelResource().stream()
+        workflow.getBottomLevelDependentResources().stream()
             .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());
 
