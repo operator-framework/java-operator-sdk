@@ -21,7 +21,8 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
   }
 
   public synchronized WorkflowCleanupResult cleanup() {
-    for (DependentResourceNode dependentResourceNode : workflow.getBottomLevelResource()) {
+    for (DependentResourceNode dependentResourceNode : workflow
+        .getBottomLevelDependentResources()) {
       handleCleanup(dependentResourceNode);
     }
     waitForScheduledExecutionsToRun();
