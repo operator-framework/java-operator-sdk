@@ -104,7 +104,7 @@ public class TestCustomReconciler
       }
       resource.getStatus().setConfigMapStatus("ConfigMap Ready");
     }
-    return UpdateControl.updateResource(resource);
+    return UpdateControl.patchResource(resource);
   }
 
   private Map<String, String> configMapData(TestCustomResource resource) {

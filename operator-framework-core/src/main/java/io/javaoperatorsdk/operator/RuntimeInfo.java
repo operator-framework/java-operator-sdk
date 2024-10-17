@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 /**
  * RuntimeInfo in general is available when operator is fully started. You can use "isStarted" to
@@ -64,9 +65,7 @@ public class RuntimeInfo {
 
   /**
    * @return Aggregated Map with controller related event sources that wraps an informer. Thus,
-   *         either a
-   *         {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
-   *         or an
+   *         either a {@link ControllerEventSource} or an
    *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
    */
   public Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> unhealthyInformerWrappingEventSourceHealthIndicator() {

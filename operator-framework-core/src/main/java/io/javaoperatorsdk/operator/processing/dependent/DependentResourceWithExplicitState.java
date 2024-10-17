@@ -11,6 +11,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
  * are non Kubernetes resources which when created their ID is generated, so cannot be determined
  * based only on primary resources. In order to manage such dependent resource use this interface
  * for a resource that extends {@link AbstractExternalDependentResource}.
+ *
+ * @param <R> the dependent resource type
+ * @param <P> the primary resource type
+ * @param <S> the state type
  */
 public interface DependentResourceWithExplicitState<R, P extends HasMetadata, S extends HasMetadata>
     extends Creator<R, P>, Deleter<P> {

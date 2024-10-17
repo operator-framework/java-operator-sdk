@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-template
+  labels:
+    app.kubernetes.io/name: mongo-template
+    app.kubernetes.io/component: first-or-second
+spec:
+  serviceName: mongo-template
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mongo-template
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mongo-template
+        app.kubernetes.io/component: first-or-second
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongo
+          image: mongo:4.4
+          ports:
+            - name: mongodb
+              containerPort: 27017
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+        labels:
+          app.kubernetes.io/name: mongo-template
+      spec:
+        volumeMode: Filesystem
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+          limits:
+            storage: 50Gi
+

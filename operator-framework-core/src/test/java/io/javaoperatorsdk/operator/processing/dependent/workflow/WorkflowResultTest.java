@@ -13,11 +13,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class WorkflowResultTest {
+  private final static WorkflowResult.Detail<?> detail =
+      new WorkflowResult.Detail<>(new RuntimeException(), null, null, null, null, null, false,
+          false, false);
 
   @Test
   void throwsExceptionWithoutNumberingIfAllDifferentClass() {
-    var res = new WorkflowResult(Map.of(new DependentA(), new RuntimeException(),
-        new DependentB(), new RuntimeException()));
+    var res = new WorkflowResult(Map.of(new DependentA(), detail,
+        new DependentB(), detail));
     try {
       res.throwAggregateExceptionIfErrorsPresent();
     } catch (AggregatedOperatorException e) {
@@ -28,8 +31,8 @@ class WorkflowResultTest {
 
   @Test
   void numbersDependentClassNamesIfMoreOfSameType() {
-    var res = new WorkflowResult(Map.of(new DependentA(), new RuntimeException(),
-        new DependentA(), new RuntimeException()));
+    var res = new WorkflowResult(Map.of(new DependentA("name1"), detail,
+        new DependentA("name2"), detail));
     try {
       res.throwAggregateExceptionIfErrorsPresent();
     } catch (AggregatedOperatorException e) {
@@ -39,6 +42,25 @@ class WorkflowResultTest {
 
   @SuppressWarnings("rawtypes")
   static class DependentA implements DependentResource {
+
+    private final String name;
+
+    public DependentA() {
+      this(null);
+    }
+
+    public DependentA(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public String name() {
+      if (name == null) {
+        return DependentResource.super.name();
+      }
+      return name;
+    }
+
     @Override
     public ReconcileResult reconcile(HasMetadata primary, Context context) {
       return null;

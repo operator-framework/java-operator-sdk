@@ -43,6 +43,31 @@ public class GroupVersionKind {
     this.apiVersion = (group == null || group.isBlank()) ? version : group + "/" + version;
   }
 
+  /**
+   * Parse GVK from a String representation. Expected format is: [group]/[version]/[kind]
+   * 
+   * <pre>
+   *   Sample: "apps/v1/Deployment"
+   * </pre>
+   * 
+   * or: [version]/[kind]
+   * 
+   * <pre>
+   *     Sample: v1/ConfigMap
+   * </pre>
+   **/
+  public static GroupVersionKind fromString(String gvk) {
+    String[] parts = gvk.split("/");
+    if (parts.length == 3) {
+      return new GroupVersionKind(parts[0], parts[1], parts[2]);
+    } else if (parts.length == 2) {
+      return new GroupVersionKind(null, parts[0], parts[1]);
+    } else {
+      throw new IllegalArgumentException(
+          "Cannot parse gvk: " + gvk + ". Needs to be in form [group]/[version]/[kind]");
+    }
+  }
+
   public String getGroup() {
     return group;
   }
@@ -81,4 +106,5 @@ public class GroupVersionKind {
         ", kind='" + kind + '\'' +
         '}';
   }
+
 }

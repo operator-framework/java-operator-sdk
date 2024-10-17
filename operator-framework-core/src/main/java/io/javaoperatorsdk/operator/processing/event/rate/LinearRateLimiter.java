@@ -36,11 +36,10 @@ public class LinearRateLimiter
 
   @Override
   public Optional<Duration> isLimited(RateLimitState rateLimitState) {
-    if (!isActivated() || !(rateLimitState instanceof RateState)) {
+    if (!isActivated() || !(rateLimitState instanceof RateState actualState)) {
       return Optional.empty();
     }
 
-    var actualState = (RateState) rateLimitState;
     if (actualState.getCount() < limitForPeriod) {
       actualState.increaseCount();
       return Optional.empty();
