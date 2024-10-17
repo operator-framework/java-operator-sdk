@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT_SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -46,7 +47,7 @@ class ClusterScopedResourceIT {
     });
 
     operator.delete(resource);
-    await().atMost(Duration.ofSeconds(30))
+    await().atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS))
         .untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
   }
 
