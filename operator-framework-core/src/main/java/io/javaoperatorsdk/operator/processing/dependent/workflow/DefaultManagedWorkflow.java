@@ -42,7 +42,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   }
 
   protected Set<String> getBottomLevelResources() {
-    return workflow.getBottomLevelResource().stream().map(DependentResourceNode::name)
+    return workflow.getBottomLevelDependentResources().stream().map(DependentResourceNode::name)
         .collect(Collectors.toSet());
   }
 
