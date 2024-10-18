@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
@@ -27,12 +28,12 @@ class WorkflowTest {
     var dr3 = mockDependent("dr3");
 
     var cyclicWorkflowBuilderSetup = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResourceAndConfigure(dr1).toDependOn()
+        .addDependentResource(dr1)
         .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
         .addDependentResourceAndConfigure(dr3).toDependOn(dr2)
         .addDependentResourceAndConfigure(dr1).toDependOn(dr2);
 
-    assertThrows(IllegalStateException.class,
+    assertThrows(OperatorException.class,
         cyclicWorkflowBuilderSetup::build);
   }
 

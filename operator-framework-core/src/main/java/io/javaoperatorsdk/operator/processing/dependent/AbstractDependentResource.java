@@ -11,7 +11,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.NameSetter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -26,16 +25,16 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 @Ignore
 public abstract class AbstractDependentResource<R, P extends HasMetadata>
-    implements DependentResource<R, P>, NameSetter {
+    implements DependentResource<R, P> {
   private static final Logger log = LoggerFactory.getLogger(AbstractDependentResource.class);
 
   private final boolean creatable = this instanceof Creator;
   private final boolean updatable = this instanceof Updater;
   private final boolean deletable = this instanceof Deleter;
+  private final String name;
   private final DependentResourceReconciler<R, P> dependentResourceReconciler;
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
-  protected String name;
 
   protected AbstractDependentResource() {
     this(null);
@@ -225,10 +224,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   @Override
   public String name() {
     return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
   }
 
   protected boolean creatable() {
