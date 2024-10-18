@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 
+import java.util.Set;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -9,7 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReference
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 class UnresolvedDependentResourceNode<R, P extends HasMetadata>
-    extends DependentResourceNode<R, P> {
+    extends WorkflowNodePrecursor<R, P> {
   private final DependentResourceSpec<R, P, ?> spec;
 
   UnresolvedDependentResourceNode(DependentResourceSpec<R, P, ?> spec) {
@@ -25,8 +27,8 @@ class UnresolvedDependentResourceNode<R, P extends HasMetadata>
 
       spec.getUseEventSourceWithName()
           .ifPresent(esName -> {
-            if (dependentResource instanceof EventSourceReferencer) {
-              ((EventSourceReferencer) dependentResource).useEventSourceWithName(esName);
+            if (dependentResource instanceof EventSourceReferencer esReferencer) {
+              esReferencer.useEventSourceWithName(esName);
             } else {
               throw new IllegalStateException(
                   "DependentResource " + spec + " wants to use EventSource named " + esName
@@ -40,13 +42,18 @@ class UnresolvedDependentResourceNode<R, P extends HasMetadata>
   @Override
   public DependentResource<R, P> getDependentResource() {
     if (dependentResource == null) {
-      throw new IllegalStateException(name() + " dependent resource node should be resolved first");
+      throw new IllegalStateException(
+          name() + " dependent resource node should be resolved first");
     }
     return super.getDependentResource();
   }
 
-  @Override
   public String name() {
-    return dependentResource != null ? dependentResource.name() : spec.getName();
+    return dependentResource != null ? super.name() : spec.getName();
+  }
+
+  @Override
+  public Set<String> dependsOnAsNames() {
+    return spec.getDependsOn();
   }
 }

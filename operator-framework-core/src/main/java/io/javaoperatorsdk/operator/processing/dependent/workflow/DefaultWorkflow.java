@@ -34,7 +34,7 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     this(dependentResourceNodes, THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false);
   }
 
-  DefaultWorkflow(Collection<DependentResourceNode> dependentResourceNodes,
+  DefaultWorkflow(Collection<? extends DependentResourceNode> dependentResourceNodes,
       boolean throwExceptionAutomatically,
       boolean hasCleaner) {
     this.throwExceptionAutomatically = throwExceptionAutomatically;
@@ -63,7 +63,8 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, DependentResourceNode> toMap(Collection<DependentResourceNode> nodes) {
+  private Map<String, DependentResourceNode> toMap(
+      Collection<? extends DependentResourceNode> nodes) {
     if (nodes == null || nodes.isEmpty()) {
       return Collections.emptyMap();
     }
