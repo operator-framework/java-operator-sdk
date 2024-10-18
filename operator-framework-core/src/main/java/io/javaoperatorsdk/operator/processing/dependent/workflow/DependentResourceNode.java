@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 @SuppressWarnings("rawtypes")
 class DependentResourceNode<R, P extends HasMetadata> {
 
-  private final List<DependentResourceNode> dependsOn = new LinkedList<>();
-  private final List<DependentResourceNode> parents = new LinkedList<>();
+  private final List<DependentResourceNode> dependsOn;
+  private final List<DependentResourceNode> parents;
 
   private ConditionWithType<R, P, ?> reconcilePrecondition;
   private ConditionWithType<R, P, ?> deletePostcondition;
@@ -22,15 +22,39 @@ class DependentResourceNode<R, P extends HasMetadata> {
   protected DependentResourceNode(Condition<R, P> reconcilePrecondition,
       Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
       Condition<R, P> activationCondition) {
+    this(null, reconcilePrecondition, deletePostcondition, readyPostcondition, activationCondition);
+  }
+
+  DependentResourceNode(DependentResource<R, P> dependentResource) {
+    this(dependentResource, null, null, null, null);
+  }
+
+  private DependentResourceNode(DependentResource<R, P> dependentResource,
+      Condition<R, P> reconcilePrecondition,
+      Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
+      Condition<R, P> activationCondition) {
     setReconcilePrecondition(reconcilePrecondition);
     setDeletePostcondition(deletePostcondition);
     setReadyPostcondition(readyPostcondition);
     setActivationCondition(activationCondition);
+    this.dependentResource = dependentResource;
+    dependsOn = new LinkedList<>();
+    parents = new LinkedList<>();
   }
 
-  DependentResourceNode(DependentResource<R, P> dependentResource) {
-    this(null, null, null, null);
-    this.dependentResource = dependentResource;
+  protected DependentResourceNode(DependentResourceNode<R, P> other) {
+    this.dependentResource = other.dependentResource;
+    this.parents = other.parents;
+    this.dependsOn = other.dependsOn;
+    this.reconcilePrecondition = other.reconcilePrecondition;
+    this.deletePostcondition = other.deletePostcondition;
+    this.readyPostcondition = other.readyPostcondition;
+    this.activationCondition = other.activationCondition;
+  }
+
+  @SuppressWarnings("unchecked")
+  Class<? extends DependentResource<R, P>> getDependentResourceClass() {
+    return (Class<? extends DependentResource<R, P>>) dependentResource.getClass();
   }
 
   public List<DependentResourceNode> getDependsOn() {
