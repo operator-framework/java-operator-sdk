@@ -70,6 +70,7 @@ project, as shown below:
 - [Keycloak operator](https://github.com/keycloak/keycloak/tree/main/operator): the official
   Keycloak operator, built with Quarkus and JOSDK.
 - [Apache Flink Kubernetes operator](https://github.com/apache/flink-kubernetes-operator) is the market leader among Flink operators.
+- [Apache Spark Kubernetes Operator](https://github.com/apache/spark-kubernetes-operator) emerging operator for Spark.
 - [Strimzi Access operator](https://github.com/strimzi/kafka-access-operator). While the core Strimzi operator development predates  
   JOSDK, but new components like the Access operator is using the framework.
 - [EureKubeOperator](https://medium.com/@heesuk.dev/implementing-kubernetes-operator-for-eureka-service-discovery-integration-by-java-operator-sdk-d21d8087c38e): integrates service discovery of Eureka and Kubernetes using the framework - developed by 11street. It is not released as an open source yet but is very interesting to read about this problem and how it is solved by an operator written with JOSDK.
