@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -16,11 +17,10 @@ import static io.javaoperatorsdk.operator.processing.dependent.workflow.Executio
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("rawtypes")
 class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @SuppressWarnings("unchecked")
-  Context<TestCustomResource> mockContext = mock(Context.class);
+  Context<TestCustomResource> mockContext = spy(Context.class);
   ExecutorService executorService = Executors.newCachedThreadPool();
 
   TestDependent dr3 = new TestDependent("DR_3");
@@ -28,6 +28,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
   @BeforeEach
   void setup() {
+    when(mockContext.managedDependentResourceContext()).thenReturn(mock(ManagedDependentResourceContext.class));
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
     when(mockContext.eventSourceRetriever()).thenReturn(mock(EventSourceRetriever.class));
   }
