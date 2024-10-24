@@ -11,7 +11,6 @@ public class DefaultConfigurationService extends BaseConfigurationService {
   @Override
   protected <R extends HasMetadata> ControllerConfiguration<R> configFor(Reconciler<R> reconciler) {
     final var other = super.configFor(reconciler);
-    return new ResolvedControllerConfiguration<>(
-        RuntimeControllerMetadata.getResourceClass(reconciler), other);
+    return new ResolvedControllerConfiguration<>(other);
   }
 }

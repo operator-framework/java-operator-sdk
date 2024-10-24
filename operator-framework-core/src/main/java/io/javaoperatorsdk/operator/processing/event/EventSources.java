@@ -7,108 +7,84 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 
-class EventSources<R extends HasMetadata> {
+class EventSources<P extends HasMetadata> {
 
-  public static final String CONTROLLER_RESOURCE_EVENT_SOURCE_NAME =
-      "ControllerResourceEventSource";
-  public static final String RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME =
-      "RetryAndRescheduleTimerEventSource";
-
-  private final ConcurrentNavigableMap<String, Map<String, NamedEventSource>> sources =
+  private final ConcurrentNavigableMap<String, Map<String, EventSource<?, P>>> sources =
       new ConcurrentSkipListMap<>();
-  private final TimerEventSource<R> retryAndRescheduleTimerEventSource = new TimerEventSource<>();
-  private ControllerResourceEventSource<R> controllerResourceEventSource;
+  private final Map<String, EventSource> sourceByName = new HashMap<>();
 
+  private final TimerEventSource<P> retryAndRescheduleTimerEventSource =
+      new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
+  private ControllerEventSource<P> controllerEventSource;
 
-  void createControllerEventSource(Controller<R> controller) {
-    controllerResourceEventSource = new ControllerResourceEventSource<>(controller);
+  public void add(EventSource eventSource) {
+    final var name = eventSource.name();
+    var existing = sourceByName.get(name);
+    if (existing != null) {
+      throw new IllegalArgumentException("Event source " + existing
+          + " is already registered with name: " + name);
+    }
+    sourceByName.put(name, eventSource);
+    sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
   }
 
-  ControllerResourceEventSource<R> controllerResourceEventSource() {
-    return controllerResourceEventSource;
-  }
-
-  TimerEventSource<R> retryEventSource() {
-    return retryAndRescheduleTimerEventSource;
-  }
-
-  public Stream<NamedEventSource> additionalNamedEventSources() {
-    return Stream.concat(Stream.of(
-        new NamedEventSource(retryAndRescheduleTimerEventSource,
-            RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME)),
-        flatMappedSources());
-  }
-
-  public Stream<NamedEventSource> allNamedEventSources() {
-    return Stream.concat(Stream.of(namedControllerResourceEventSource(),
-        new NamedEventSource(retryAndRescheduleTimerEventSource,
-            RETRY_RESCHEDULE_TIMER_EVENT_SOURCE_NAME)),
-        flatMappedSources());
-  }
-
-  Stream<EventSource> additionalEventSources() {
-    return Stream.concat(
-        Stream.of(retryEventSource()).filter(Objects::nonNull),
-        flatMappedSources().map(NamedEventSource::original));
-  }
-
-  NamedEventSource namedControllerResourceEventSource() {
-    return new NamedEventSource(controllerResourceEventSource,
-        CONTROLLER_RESOURCE_EVENT_SOURCE_NAME);
-  }
-
-  Stream<NamedEventSource> flatMappedSources() {
-    return sources.values().stream().flatMap(c -> c.values().stream());
+  public EventSource remove(String name) {
+    var optionalMap = sources.values().stream().filter(m -> m.containsKey(name)).findFirst();
+    sourceByName.remove(name);
+    return optionalMap.map(m -> m.remove(name)).orElse(null);
   }
 
   public void clear() {
     sources.clear();
+    sourceByName.clear();
   }
 
-  public NamedEventSource existing(String name, EventSource source) {
-    final var eventSources = sources.get(keyFor(source));
-    if (eventSources == null || eventSources.isEmpty()) {
-      return null;
-    }
-    return eventSources.get(name);
+  public EventSource existingEventSourceByName(String name) {
+    return sourceByName.get(name);
   }
 
-  public void add(NamedEventSource eventSource) {
-    final var name = eventSource.name();
-    final var original = eventSource.original();
-    final var existing = existing(name, original);
-    if (existing != null && !eventSource.equals(existing)) {
-      throw new IllegalArgumentException("Event source " + existing.original()
-          + " is already registered for the "
-          + keyAsString(getResourceType(original), name)
-          + " class/name combination");
-    }
-    sources.computeIfAbsent(keyFor(original), k -> new HashMap<>()).put(name, eventSource);
+  void createControllerEventSource(Controller<P> controller) {
+    controllerEventSource = new ControllerEventSource<>(controller);
+  }
+
+  public ControllerEventSource<P> controllerEventSource() {
+    return controllerEventSource;
+  }
+
+  TimerEventSource<P> retryEventSource() {
+    return retryAndRescheduleTimerEventSource;
   }
 
   @SuppressWarnings("rawtypes")
-  private Class<?> getResourceType(EventSource source) {
-    return source instanceof ResourceEventSource
-        ? ((ResourceEventSource) source).resourceType()
-        : source.getClass();
+  public Stream<EventSource> allEventSources() {
+    return Stream.concat(
+        Stream.of(controllerEventSource(), retryAndRescheduleTimerEventSource),
+        flatMappedSources());
   }
 
-  private String keyFor(EventSource source) {
-    if (source instanceof NamedEventSource) {
-      source = ((NamedEventSource) source).original();
-    }
+  @SuppressWarnings("rawtypes")
+  Stream<EventSource> additionalEventSources() {
+    return Stream.concat(
+        Stream.of(retryEventSource()).filter(Objects::nonNull),
+        flatMappedSources());
+  }
 
-    return keyFor(getResourceType(source));
+  Stream<EventSource<?, P>> flatMappedSources() {
+    return sources.values().stream().flatMap(c -> c.values().stream());
+  }
+
+
+
+  private <R> String keyFor(EventSource<R, P> source) {
+    return keyFor(source.resourceType());
   }
 
   private String keyFor(Class<?> dependentType) {
@@ -116,21 +92,20 @@ class EventSources<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  public <S> ResourceEventSource<S, R> get(Class<S> dependentType, String name) {
+  public <S> EventSource<S, P> get(Class<S> dependentType, String name) {
     if (dependentType == null) {
       throw new IllegalArgumentException("Must pass a dependent type to retrieve event sources");
     }
 
     final var sourcesForType = sources.get(keyFor(dependentType));
     if (sourcesForType == null || sourcesForType.isEmpty()) {
-      throw new IllegalArgumentException(
-          "There is no event source found for class:" + dependentType.getName());
+      throw new NoEventSourceForClassException(dependentType);
     }
 
     final var size = sourcesForType.size();
-    NamedEventSource source;
+    EventSource<S, P> source;
     if (size == 1 && name == null) {
-      source = sourcesForType.values().stream().findFirst().orElseThrow();
+      source = (EventSource<S, P>) sourcesForType.values().stream().findFirst().orElseThrow();
     } else {
       if (name == null || name.isBlank()) {
         throw new IllegalArgumentException("There are multiple EventSources registered for type "
@@ -138,7 +113,7 @@ class EventSources<R extends HasMetadata> {
             + ", you need to provide a name to specify which EventSource you want to query. Known names: "
             + String.join(",", sourcesForType.keySet()));
       }
-      source = sourcesForType.get(name);
+      source = (EventSource<S, P>) sourcesForType.get(name);
 
       if (source == null) {
         throw new IllegalArgumentException("There is no event source found for class:" +
@@ -146,21 +121,14 @@ class EventSources<R extends HasMetadata> {
       }
     }
 
-    EventSource original = source.original();
-    if (!(original instanceof ResourceEventSource)) {
-      throw new IllegalArgumentException(source + " associated with "
-          + keyAsString(dependentType, name) + " is not a "
-          + ResourceEventSource.class.getSimpleName());
-    }
-    final var res = (ResourceEventSource<S, R>) original;
-    final var resourceClass = res.resourceType();
+    final var resourceClass = source.resourceType();
     if (!resourceClass.isAssignableFrom(dependentType)) {
-      throw new IllegalArgumentException(original + " associated with "
+      throw new IllegalArgumentException(source + " associated with "
           + keyAsString(dependentType, name)
           + " is handling " + resourceClass.getName() + " resources but asked for "
           + dependentType.getName());
     }
-    return res;
+    return source;
   }
 
   @SuppressWarnings("rawtypes")
@@ -171,21 +139,13 @@ class EventSources<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  public <S> List<ResourceEventSource<S, R>> getEventSources(Class<S> dependentType) {
+  public <S> List<EventSource<S, P>> getEventSources(Class<S> dependentType) {
     final var sourcesForType = sources.get(keyFor(dependentType));
     if (sourcesForType == null) {
       return Collections.emptyList();
     }
 
     return sourcesForType.values().stream()
-        .map(NamedEventSource::original)
-        .filter(ResourceEventSource.class::isInstance)
-        .map(es -> (ResourceEventSource<S, R>) es)
-        .collect(Collectors.toList());
-  }
-
-  public EventSource remove(String name) {
-    var optionalMap = sources.values().stream().filter(m -> m.containsKey(name)).findFirst();
-    return optionalMap.map(m -> m.remove(name)).orElse(null);
+        .map(es -> (EventSource<S, P>) es).toList();
   }
 }

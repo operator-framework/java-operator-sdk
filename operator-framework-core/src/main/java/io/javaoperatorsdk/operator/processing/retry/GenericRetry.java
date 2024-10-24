@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 
 public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry> {
   private int maxAttempts = GradualRetry.DEFAULT_MAX_ATTEMPTS;
@@ -18,23 +17,6 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
   public static GenericRetry noRetry() {
     return new GenericRetry().setMaxAttempts(0);
   }
-
-  /**
-   * @deprecated Use the {@link GradualRetry} annotation instead
-   *
-   * @param configuration retry config
-   * @return Retry instance
-   */
-  @Deprecated(forRemoval = true)
-  public static Retry fromConfiguration(RetryConfiguration configuration) {
-    return configuration == null ? defaultLimitedExponentialRetry()
-        : new GenericRetry()
-            .setInitialInterval(configuration.getInitialInterval())
-            .setMaxAttempts(configuration.getMaxAttempts())
-            .setIntervalMultiplier(configuration.getIntervalMultiplier())
-            .setMaxInterval(configuration.getMaxInterval());
-  }
-
 
   public static GenericRetry every10second10TimesRetry() {
     return new GenericRetry().withLinearRetry().setMaxAttempts(10).setInitialInterval(10000);

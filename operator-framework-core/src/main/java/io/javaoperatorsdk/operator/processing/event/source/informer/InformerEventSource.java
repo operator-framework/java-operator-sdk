@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -10,7 +12,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -64,32 +66,33 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
  * @param <P> type of the primary resource
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
-    extends ManagedInformerEventSource<R, P, InformerConfiguration<R>>
+    extends ManagedInformerEventSource<R, P, InformerEventSourceConfiguration<R>>
     implements ResourceEventHandler<R> {
 
-  public static String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
-
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
-
+  public static final String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
-      InformerConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration, context.getClient(),
+      InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
+    this(configuration,
+        configuration.getKubernetesClient().orElse(context.getClient()),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client) {
+  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
     this(configuration, client, false);
   }
 
-  public InformerEventSource(InformerConfiguration<R> configuration, KubernetesClient client,
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private InformerEventSource(InformerEventSourceConfiguration<R> configuration,
+      KubernetesClient client,
       boolean parseResourceVersions) {
-    super(
+    super(configuration.name(),
         configuration.getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
@@ -104,10 +107,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
     }
 
-    onAddFilter = configuration.onAddFilter().orElse(null);
-    onUpdateFilter = configuration.onUpdateFilter().orElse(null);
-    onDeleteFilter = configuration.onDeleteFilter().orElse(null);
-    genericFilter = configuration.genericFilter().orElse(null);
+    final var informerConfig = configuration.getInformerConfig();
+    onAddFilter = informerConfig.getOnAddFilter();
+    onUpdateFilter = informerConfig.getOnUpdateFilter();
+    onDeleteFilter = informerConfig.getOnDeleteFilter();
+    genericFilter = informerConfig.getGenericFilter();
   }
 
   @Override
@@ -247,18 +251,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         .collect(Collectors.toSet());
   }
 
-  /**
-   * Returns the configuration object for the informer.
-   *
-   * @return the informer configuration object
-   *
-   * @deprecated Use {@link #configuration()} instead
-   */
-  @Deprecated(forRemoval = true)
-  public InformerConfiguration<R> getConfiguration() {
-    return configuration();
-  }
-
   @Override
   public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
       R previousVersionOfResource) {
@@ -296,10 +288,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  private enum Operation {
-    ADD, UPDATE
-  }
-
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
     return (onDeleteFilter == null || onDeleteFilter.accept(resource, b)) &&
         (genericFilter == null || genericFilter.accept(resource));
@@ -317,4 +305,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return target;
   }
 
+  private enum Operation {
+    ADD, UPDATE
+  }
 }

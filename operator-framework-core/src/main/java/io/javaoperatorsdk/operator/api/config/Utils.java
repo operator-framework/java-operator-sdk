@@ -33,11 +33,8 @@ public class Utils {
    * via the {@code git-commit-id-plugin} maven plugin.
    *
    * @return a {@link Version} object encapsulating the version information
-   * @deprecated use {@link #VERSION} instead, as this method will be made internal in a future
-   *             release
    */
-  @Deprecated
-  public static Version loadFromProperties() {
+  private static Version loadFromProperties() {
     final var is =
         Thread.currentThread().getContextClassLoader().getResourceAsStream("version.properties");
 
@@ -79,9 +76,8 @@ public class Utils {
         throw new IllegalArgumentException(
             "Default value for " + description + " must be greater than " + minValue);
       }
-      log.warn("Requested " + description + " should be greater than " + minValue + ". Requested: "
-          + value + ", using " + defaultValue + (defaultValue == minValue ? "" : " (default)") +
-          " instead");
+      log.warn("Requested {} should be greater than {}. Requested: {}, using {}{} instead",
+          description, minValue, value, defaultValue, defaultValue == minValue ? "" : " (default)");
       value = defaultValue;
     }
     return value;
@@ -107,21 +103,22 @@ public class Utils {
       return defaultValue;
     } else {
       property = property.trim().toLowerCase();
-      switch (property) {
-        case "true":
-          return true;
-        case "false":
-          return false;
-        default:
-          return defaultValue;
-      }
+      return switch (property) {
+        case "true" -> true;
+        case "false" -> false;
+        default -> defaultValue;
+      };
     }
   }
 
   public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
+    return getTypeArgumentFromExtendedClassByIndex(clazz, 0);
+  }
+
+  public static Class<?> getTypeArgumentFromExtendedClassByIndex(Class<?> clazz, int index) {
     try {
       Type type = clazz.getGenericSuperclass();
-      return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
+      return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[index];
     } catch (Exception e) {
       throw new RuntimeException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
           + clazz.getSimpleName()
@@ -190,27 +187,31 @@ public class Utils {
 
   public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
       Class<?> expectedImplementedInterface) {
+    return getTypeArgumentFromSuperClassOrInterfaceByIndex(clazz, expectedImplementedInterface, 0);
+  }
+
+  public static Class<?> getTypeArgumentFromSuperClassOrInterfaceByIndex(Class<?> clazz,
+      Class<?> expectedImplementedInterface, int index) {
     // first check super class if it exists
     try {
       final Class<?> superclass = clazz.getSuperclass();
       if (!superclass.equals(Object.class)) {
         try {
-          return getFirstTypeArgumentFromExtendedClass(clazz);
+          return getTypeArgumentFromExtendedClassByIndex(clazz, index);
         } catch (Exception e) {
           // try interfaces
           try {
-            return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+            return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, index);
           } catch (Exception ex) {
             // try on the parent
-            return getFirstTypeArgumentFromSuperClassOrInterface(superclass,
-                expectedImplementedInterface);
+            return getTypeArgumentFromSuperClassOrInterfaceByIndex(superclass,
+                expectedImplementedInterface, index);
           }
         }
       }
-      return getFirstTypeArgumentFromInterface(clazz, expectedImplementedInterface);
+      return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, index);
     } catch (Exception e) {
-      throw new OperatorException(
-          GENERIC_PARAMETER_TYPE_ERROR_PREFIX + clazz.getSimpleName(), e);
+      throw new OperatorException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX + clazz.getSimpleName(), e);
     }
   }
 

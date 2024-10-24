@@ -1,4 +1,4 @@
-# ![java-operator-sdk](docsy/static/images/full_logo.png)
+# ![java-operator-sdk](docs/static/images/full_logo.png)
 
 ![Java CI with Maven](https://github.com/operator-framework/java-operator-sdk/actions/workflows/snapshot-releases.yml/badge.svg)
 [![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white)](https://kubernetes.slack.com/archives/CAW0GV7A5 "get invite here: https://communityinviter.com/apps/kubernetes/community" )
@@ -40,7 +40,6 @@ It makes it easy to implement best practices and patterns for an Operator. Featu
 * Handling dependent resources, related events, and caching.
 * Automatic Retries
 * Smart event scheduling
-* Handling Observed Generations automatically
 * Easy to use Error Handling
 * ... and everything that a batteries included framework needs 
 

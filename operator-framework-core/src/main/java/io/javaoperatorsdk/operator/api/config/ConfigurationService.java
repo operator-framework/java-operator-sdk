@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -27,6 +28,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -34,17 +36,78 @@ public interface ConfigurationService {
   Logger log = LoggerFactory.getLogger(ConfigurationService.class);
 
   int DEFAULT_MAX_CONCURRENT_REQUEST = 512;
+  /**
+   * The default numbers of concurrent reconciliations
+   */
+  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 50;
+  /**
+   * The default number of threads used to process dependent workflows
+   */
+  int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
+
+  /**
+   * Creates a new {@link ConfigurationService} instance used to configure an
+   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the specified base
+   * configuration and overriding specific aspects according to the provided
+   * {@link ConfigurationServiceOverrider} instance.
+   *
+   * <p>
+   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
+   * your Operator instance as the configuration service is set at creation time and cannot be
+   * subsequently changed. As a result, overriding values this way after the Operator has been
+   * configured will not take effect.
+   * </p>
+   *
+   * @param baseConfiguration the {@link ConfigurationService} to start from
+   * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
+   *        by the base configuration
+   * @return a new {@link ConfigurationService} starting from the configuration provided as base but
+   *         with overridden values.
+   */
+  static ConfigurationService newOverriddenConfigurationService(
+      ConfigurationService baseConfiguration,
+      Consumer<ConfigurationServiceOverrider> overrider) {
+    if (overrider != null) {
+      final var toOverride = new ConfigurationServiceOverrider(baseConfiguration);
+      overrider.accept(toOverride);
+      return toOverride.build();
+    }
+    return baseConfiguration;
+  }
+
+  /**
+   * Creates a new {@link ConfigurationService} instance used to configure an
+   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the default configuration
+   * and overriding specific aspects according to the provided {@link ConfigurationServiceOverrider}
+   * instance.
+   *
+   * <p>
+   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
+   * your Operator instance as the configuration service is set at creation time and cannot be
+   * subsequently changed. As a result, overriding values this way after the Operator has been
+   * configured will not take effect.
+   * </p>
+   *
+   * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
+   *        by the default configuration
+   * @return a new {@link ConfigurationService} overriding the default values with the ones provided
+   *         by the specified {@link ConfigurationServiceOverrider}
+   * @since 4.4.0
+   */
+  static ConfigurationService newOverriddenConfigurationService(
+      Consumer<ConfigurationServiceOverrider> overrider) {
+    return newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
+  }
 
   /**
    * Retrieves the configuration associated with the specified reconciler
    *
    * @param reconciler the reconciler we want the configuration of
    * @param <R> the {@code CustomResource} type associated with the specified reconciler
-   * @return the {@link ControllerConfiguration} associated with the specified reconciler or {@code
-   * null} if no configuration exists for the reconciler
+   * @return the {@link ControllerConfiguration} associated with the specified reconciler or
+   *         {@code null} if no configuration exists for the reconciler
    */
   <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler);
-
 
   /**
    * Used to clone custom resources.
@@ -129,13 +192,6 @@ public interface ConfigurationService {
     return false;
   }
 
-  int DEFAULT_RECONCILIATION_THREADS_NUMBER = 50;
-  /**
-   * @deprecated Not used anymore in the default implementation
-   */
-  @Deprecated(forRemoval = true)
-  int MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER = 10;
-
   /**
    * The number of threads the operator can spin out to dispatch reconciliation requests to
    * reconcilers with the default executors
@@ -145,24 +201,6 @@ public interface ConfigurationService {
   default int concurrentReconciliationThreads() {
     return DEFAULT_RECONCILIATION_THREADS_NUMBER;
   }
-
-  /**
-   * The minimum number of threads the operator starts in the thread pool for reconciliations.
-   *
-   * @deprecated not used anymore by default executor implementation
-   * @return the minimum number of concurrent reconciliation threads
-   */
-  @Deprecated(forRemoval = true)
-  default int minConcurrentReconciliationThreads() {
-    return MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
-  }
-
-  int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
-  /**
-   * @deprecated Not used anymore in the default implementation
-   */
-  @Deprecated(forRemoval = true)
-  int MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = MIN_DEFAULT_RECONCILIATION_THREADS_NUMBER;
 
   /**
    * Number of threads the operator can spin out to be used in the workflows with the default
@@ -175,53 +213,63 @@ public interface ConfigurationService {
   }
 
   /**
-   * The minimum number of threads the operator starts in the thread pool for workflows.
+   * Override to provide a custom {@link Metrics} implementation
    *
-   * @deprecated not used anymore by default executor implementation
-   * @return the minimum number of concurrent workflow threads
+   * @return the {@link Metrics} implementation
    */
-  @Deprecated(forRemoval = true)
-  default int minConcurrentWorkflowExecutorThreads() {
-    return MIN_DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER;
-  }
-
-  int DEFAULT_TERMINATION_TIMEOUT_SECONDS = 10;
-
-  /**
-   * Retrieves the number of seconds the SDK waits for reconciliation threads to terminate before
-   * shutting down.
-   *
-   * @deprecated use {@link io.javaoperatorsdk.operator.Operator#stop(Duration)} instead. Where the
-   *             parameter can be passed to specify graceful timeout.
-   *
-   * @return the number of seconds to wait before terminating reconciliation threads
-   */
-  @Deprecated(forRemoval = true)
-  default int getTerminationTimeoutSeconds() {
-    return DEFAULT_TERMINATION_TIMEOUT_SECONDS;
-  }
-
   default Metrics getMetrics() {
     return Metrics.NOOP;
   }
 
+  /**
+   * Override to provide a custom {@link ExecutorService} implementation to change how threads
+   * handle concurrent reconciliations
+   *
+   * @return the {@link ExecutorService} implementation to use for concurrent reconciliation
+   *         processing
+   */
   default ExecutorService getExecutorService() {
     return Executors.newFixedThreadPool(concurrentReconciliationThreads());
   }
 
+  /**
+   * Override to provide a custom {@link ExecutorService} implementation to change how dependent
+   * workflows are processed in parallel
+   *
+   * @return the {@link ExecutorService} implementation to use for dependent workflow processing
+   */
   default ExecutorService getWorkflowExecutorService() {
     return Executors.newFixedThreadPool(concurrentWorkflowExecutorThreads());
   }
 
+  /**
+   * Determines whether the associated Kubernetes client should be closed when the associated
+   * {@link io.javaoperatorsdk.operator.Operator} is stopped.
+   *
+   * @return {@code true} if the Kubernetes should be closed on stop, {@code false} otherwise
+   */
   default boolean closeClientOnStop() {
     return true;
   }
 
+  /**
+   * Override to provide a custom {@link DependentResourceFactory} implementation to change how
+   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} are instantiated
+   *
+   * @return the custom {@link DependentResourceFactory} implementation
+   */
   @SuppressWarnings("rawtypes")
   default DependentResourceFactory dependentResourceFactory() {
     return DependentResourceFactory.DEFAULT;
   }
 
+  /**
+   * Retrieves the optional {@link LeaderElectionConfiguration} to specify how the associated
+   * {@link io.javaoperatorsdk.operator.Operator} handles leader election to ensure only one
+   * instance of the operator runs on the cluster at any given time
+   *
+   * @return the {@link LeaderElectionConfiguration}
+   */
   default Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
     return Optional.empty();
   }
@@ -230,8 +278,7 @@ public interface ConfigurationService {
    * <p>
    * if true, operator stops if there are some issues with informers
    * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} or
-   * {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
-   * on startup. Other event sources may also respect this flag.
+   * {@link ControllerEventSource} on startup. Other event sources may also respect this flag.
    * </p>
    * <p>
    * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
@@ -253,6 +300,17 @@ public interface ConfigurationService {
    */
   default Duration cacheSyncTimeout() {
     return Duration.ofMinutes(2);
+  }
+
+  /**
+   * This is the timeout value that allows the reconciliation threads to gracefully shut down. If no
+   * value is set, the default is immediate shutdown.
+   *
+   * @return The duration of time to wait before terminating the reconciliation threads
+   * @since 5.0.0
+   */
+  default Duration reconciliationTerminationTimeout() {
+    return Duration.ZERO;
   }
 
   /**
@@ -278,69 +336,23 @@ public interface ConfigurationService {
     });
   }
 
+  /**
+   * Override to provide a custom {@link ManagedWorkflowFactory} implementation to change how
+   * {@link io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow} are
+   * instantiated
+   *
+   * @return the custom {@link ManagedWorkflowFactory} implementation
+   */
   @SuppressWarnings("rawtypes")
   default ManagedWorkflowFactory getWorkflowFactory() {
     return ManagedWorkflowFactory.DEFAULT;
   }
 
-  default ResourceClassResolver getResourceClassResolver() {
-    return new DefaultResourceClassResolver();
-  }
-
   /**
-   * Creates a new {@link ConfigurationService} instance used to configure an
-   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the specified base
-   * configuration and overriding specific aspects according to the provided
-   * {@link ConfigurationServiceOverrider} instance.
+   * Override to provide a custom {@link ExecutorServiceManager} implementation
    *
-   * <p>
-   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
-   * your Operator instance as the configuration service is set at creation time and cannot be
-   * subsequently changed. As a result, overriding values this way after the Operator has been
-   * configured will not take effect.
-   * </p>
-   *
-   * @param baseConfiguration the {@link ConfigurationService} to start from
-   * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
-   *        by the base configuration
-   * @return a new {@link ConfigurationService} starting from the configuration provided as base but
-   *         with overridden values.
+   * @return the custom {@link ExecutorServiceManager} implementation
    */
-  static ConfigurationService newOverriddenConfigurationService(
-      ConfigurationService baseConfiguration,
-      Consumer<ConfigurationServiceOverrider> overrider) {
-    if (overrider != null) {
-      final var toOverride = new ConfigurationServiceOverrider(baseConfiguration);
-      overrider.accept(toOverride);
-      return toOverride.build();
-    }
-    return baseConfiguration;
-  }
-
-  /**
-   * Creates a new {@link ConfigurationService} instance used to configure an
-   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the default configuration
-   * and overriding specific aspects according to the provided {@link ConfigurationServiceOverrider}
-   * instance.
-   *
-   * <p>
-   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
-   * your Operator instance as the configuration service is set at creation time and cannot be
-   * subsequently changed. As a result, overriding values this way after the Operator has been
-   * configured will not take effect.
-   * </p>
-   *
-   * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
-   *        by the default configuration
-   * @return a new {@link ConfigurationService} overriding the default values with the ones provided
-   *         by the specified {@link ConfigurationServiceOverrider}
-   * @since 4.4.0
-   */
-  static ConfigurationService newOverriddenConfigurationService(
-      Consumer<ConfigurationServiceOverrider> overrider) {
-    return newOverriddenConfigurationService(new BaseConfigurationService(), overrider);
-  }
-
   default ExecutorServiceManager getExecutorServiceManager() {
     return new ExecutorServiceManager(this);
   }
@@ -355,6 +367,7 @@ public interface ConfigurationService {
    * SSA based create/update can be still used with the legacy matching, just overriding the match
    * method of Kubernetes Dependent Resource.
    *
+   * @return {@code true} if SSA should be used for dependent resources, {@code false} otherwise
    * @since 4.4.0
    */
   default boolean ssaBasedCreateUpdateMatchForDependentResources() {
@@ -397,7 +410,7 @@ public interface ConfigurationService {
       return false;
     }
     Boolean useSSAConfig = Optional.ofNullable(config)
-        .flatMap(KubernetesDependentResourceConfig::useSSA)
+        .map(KubernetesDependentResourceConfig::useSSA)
         .orElse(null);
     // don't use SSA for certain resources by default, only if explicitly overridden
     if (useSSAConfig == null) {
@@ -440,7 +453,10 @@ public interface ConfigurationService {
    * <p>
    * Disable this if you want to react to your own dependent resource updates
    *
+   * @return if special annotation should be used for dependent resource to filter events
    * @since 4.5.0
+   *
+   * @return if special annotation should be used for dependent resource to filter events
    */
   default boolean previousAnnotationForDependentResourcesEventFiltering() {
     return true;
@@ -452,12 +468,51 @@ public interface ConfigurationService {
    * <p>
    * Disabled by default as Kubernetes does not support, and discourages, this interpretation of
    * resourceVersions. Enable only if your api server event processing seems to lag the operator
-   * logic and you want to further minimize the amount of work done / updates issued by the
+   * logic, and you want to further minimize the amount of work done / updates issued by the
    * operator.
    *
+   * @return if resource version should be parsed (as integer)
    * @since 4.5.0
+   *
+   * @return if resource version should be parsed (as integer)
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
+    return false;
+  }
+
+  /**
+   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patch resource or status can
+   * either use simple patches or SSA. Setting this to {@code true}, controllers will use SSA for
+   * adding finalizers, patching resources and status.
+   *
+   * @return {@code true} if Server-Side Apply (SSA) should be used when patching the primary
+   *         resources, {@code false} otherwise
+   * @see ConfigurationServiceOverrider#withUseSSAToPatchPrimaryResource(boolean)
+   * @since 5.0.0
+   */
+  default boolean useSSAToPatchPrimaryResource() {
+    return true;
+  }
+
+  /**
+   * <p>
+   * Determines whether resources retrieved from caches such as via calls to
+   * {@link Context#getSecondaryResource(Class)} should be defensively cloned first.
+   * </p>
+   *
+   * <p>
+   * Defensive cloning to prevent problematic cache modifications (modifying the resource would
+   * otherwise modify the stored copy in the cache) was transparently done in previous JOSDK
+   * versions. This might have performance consequences and, with the more prevalent use of
+   * Server-Side Apply, where you should create a new copy of your resource with only modified
+   * fields, such modifications of these resources are less likely to occur.
+   * </p>
+   *
+   * @return {@code true} if resources should be defensively cloned before returning them from
+   *         caches, {@code false} otherwise
+   * @since 5.0.0
+   */
+  default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return false;
   }
 

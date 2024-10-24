@@ -9,10 +9,12 @@ import java.util.stream.Stream;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
+import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
@@ -20,14 +22,15 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final Controller<P> controller;
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
-  private final DefaultManagedDependentResourceContext defaultManagedDependentResourceContext;
+  private final DefaultManagedWorkflowAndDependentResourceContext<P> defaultManagedDependentResourceContext;
 
   public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
     this.retryInfo = retryInfo;
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
-    this.defaultManagedDependentResourceContext = new DefaultManagedDependentResourceContext();
+    this.defaultManagedDependentResourceContext =
+        new DefaultManagedWorkflowAndDependentResourceContext<>(controller, primaryResource, this);
   }
 
   @Override
@@ -42,28 +45,44 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public IndexedResourceCache<P> getPrimaryCache() {
-    return controller.getEventSourceManager().getControllerResourceEventSource();
+    return controller.getEventSourceManager().getControllerEventSource();
+  }
+
+  @Override
+  public boolean isNextReconciliationImminent() {
+    return controller.getEventProcessor()
+        .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
   }
 
   @Override
   public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return controller.getEventSourceManager().getResourceEventSourcesFor(expectedType).stream()
+    return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
         .flatMap(Set::stream);
   }
 
   @Override
   public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
-    return controller
-        .getEventSourceManager()
-        .getResourceEventSourceFor(expectedType, eventSourceName)
-        .getSecondaryResource(primaryResource);
-  }
-
-  @Override
-  public <R> Optional<R> getSecondaryResource(Class<R> expectedType,
-      ResourceDiscriminator<R, P> discriminator) {
-    return discriminator.distinguish(expectedType, primaryResource, this);
+    try {
+      return controller
+          .getEventSourceManager()
+          .getEventSourceFor(expectedType, eventSourceName)
+          .getSecondaryResource(primaryResource);
+    } catch (NoEventSourceForClassException e) {
+      /*
+       * If a workflow has an activation condition there can be event sources which are only
+       * registered if the activation condition holds, but to provide a consistent API we return an
+       * Optional instead of throwing an exception.
+       * 
+       * Note that not only the resource which has an activation condition might not be registered
+       * but dependents which depend on it.
+       */
+      if (eventSourceName == null && controller.workflowContainsDependentForType(expectedType)) {
+        return Optional.empty();
+      } else {
+        throw e;
+      }
+    }
   }
 
   @Override
@@ -72,7 +91,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public ManagedDependentResourceContext managedDependentResourceContext() {
+  public ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext() {
     return defaultManagedDependentResourceContext;
   }
 

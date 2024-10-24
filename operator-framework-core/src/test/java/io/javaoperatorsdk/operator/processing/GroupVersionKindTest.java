@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GroupVersionKindPlural;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GroupVersionKindTest {
 
@@ -19,6 +20,24 @@ class GroupVersionKindTest {
     gvk = new GroupVersionKind("apps/v1", "Deployment");
     assertThat(gvk.getGroup()).isEqualTo("apps");
     assertThat(gvk.getVersion()).isEqualTo("v1");
+  }
+
+  @Test
+  void parseGVK() {
+    var gvk = GroupVersionKind.fromString("apps/v1/Deployment");
+    assertThat(gvk.getGroup()).isEqualTo("apps");
+    assertThat(gvk.getVersion()).isEqualTo("v1");
+    assertThat(gvk.getKind()).isEqualTo("Deployment");
+
+
+    gvk = GroupVersionKind.fromString("v1/ConfigMap");
+    assertThat(gvk.getGroup()).isNull();
+    assertThat(gvk.getVersion()).isEqualTo("v1");
+    assertThat(gvk.getKind()).isEqualTo("ConfigMap");
+
+    assertThrows(IllegalArgumentException.class, () -> GroupVersionKind.fromString("v1#ConfigMap"));
+    assertThrows(IllegalArgumentException.class,
+        () -> GroupVersionKind.fromString("api/beta/v1/ConfigMap"));
   }
 
   @Test

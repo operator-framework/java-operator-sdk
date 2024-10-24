@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 @SuppressWarnings("rawtypes")
 public class ControllerHealthInfo {
@@ -15,36 +17,35 @@ public class ControllerHealthInfo {
   }
 
   public Map<String, EventSourceHealthIndicator> eventSourceHealthIndicators() {
-    return eventSourceManager.allEventSources().entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    return eventSourceManager.allEventSources().stream()
+        .collect(Collectors.toMap(EventSource::name, e -> e));
   }
 
   public Map<String, EventSourceHealthIndicator> unhealthyEventSources() {
-    return eventSourceManager.allEventSources().entrySet().stream()
-        .filter(e -> e.getValue().getStatus() == Status.UNHEALTHY)
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    return eventSourceManager.allEventSources().stream()
+        .filter(e -> e.getStatus() == Status.UNHEALTHY)
+        .collect(Collectors.toMap(EventSource::name, e -> e));
   }
 
   public Map<String, InformerWrappingEventSourceHealthIndicator> informerEventSourceHealthIndicators() {
-    return eventSourceManager.allEventSources().entrySet().stream()
-        .filter(e -> e.getValue() instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(Collectors.toMap(Map.Entry::getKey,
-            e -> (InformerWrappingEventSourceHealthIndicator) e.getValue()));
+    return eventSourceManager.allEventSources().stream()
+        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
+        .collect(Collectors.toMap(EventSource::name,
+            e -> (InformerWrappingEventSourceHealthIndicator) e));
 
   }
 
   /**
    * @return Map with event sources that wraps an informer. Thus, either a
-   *         {@link io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource}
-   *         or an
+   *         {@link ControllerEventSource} or an
    *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
    */
   public Map<String, InformerWrappingEventSourceHealthIndicator> unhealthyInformerEventSourceHealthIndicators() {
-    return eventSourceManager.allEventSources().entrySet().stream()
-        .filter(e -> e.getValue().getStatus() == Status.UNHEALTHY)
-        .filter(e -> e.getValue() instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(Collectors.toMap(Map.Entry::getKey,
-            e -> (InformerWrappingEventSourceHealthIndicator) e.getValue()));
+    return eventSourceManager.allEventSources().stream()
+        .filter(e -> e.getStatus() == Status.UNHEALTHY)
+        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
+        .collect(Collectors.toMap(EventSource::name,
+            e -> (InformerWrappingEventSourceHealthIndicator) e));
   }
 
 }

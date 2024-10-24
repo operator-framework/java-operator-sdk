@@ -1,8 +1,18 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,13 +26,16 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LoggingUtils;
 
+import com.github.difflib.DiffUtils;
+import com.github.difflib.UnifiedDiffUtils;
+
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
  *
  * <p>
  * The basis of algorithm is to extract the fields managed we convert resources to Map/List
  * composition. The actual resource (from the server) is pruned, all the fields which are not
- * mentioed in managedFields of the target manager is removed. Some irrelevant fields are also
+ * mentioned in managedFields of the target manager is removed. Some irrelevant fields are also
  * removed from desired. And the two resulted Maps are compared for equality. The implementation is
  * a bit nasty since have to deal with some specific cases of managedFields format.
  * </p>
@@ -94,20 +107,73 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     removeIrrelevantValues(desiredMap);
 
-    if (LoggingUtils.isNotSensitiveResource(desired)) {
-      log.debug("Pruned actual: \n {} \n desired: \n {} ", prunedActual, desiredMap);
+    var matches = prunedActual.equals(desiredMap);
+
+    if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
+      var diff = getDiff(prunedActual, desiredMap, objectMapper);
+      log.debug(
+          "Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}",
+          actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(),
+          diff);
     }
 
-    return prunedActual.equals(desiredMap);
+    return matches;
+  }
+
+  private String getDiff(Map<String, Object> prunedActualMap, Map<String, Object> desiredMap,
+      KubernetesSerialization serialization) {
+    var actualYaml = serialization.asYaml(sortMap(prunedActualMap));
+    var desiredYaml = serialization.asYaml(sortMap(desiredMap));
+    if (log.isTraceEnabled()) {
+      log.trace("Pruned actual resource: \n {} \ndesired resource: \n {} ", actualYaml,
+          desiredYaml);
+    }
+
+    var patch = DiffUtils.diff(actualYaml.lines().toList(), desiredYaml.lines().toList());
+    List<String> unifiedDiff =
+        UnifiedDiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
+    return String.join("\n", unifiedDiff);
+  }
+
+  @SuppressWarnings("unchecked")
+  Map<String, Object> sortMap(Map<String, Object> map) {
+    List<String> sortedKeys = new ArrayList<>(map.keySet());
+    Collections.sort(sortedKeys);
+
+    Map<String, Object> sortedMap = new LinkedHashMap<>();
+    for (String key : sortedKeys) {
+      Object value = map.get(key);
+      if (value instanceof Map) {
+        sortedMap.put(key, sortMap((Map<String, Object>) value));
+      } else if (value instanceof List) {
+        sortedMap.put(key, sortListItems((List<Object>) value));
+      } else {
+        sortedMap.put(key, value);
+      }
+    }
+    return sortedMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  List<Object> sortListItems(List<Object> list) {
+    List<Object> sortedList = new ArrayList<>();
+    for (Object item : list) {
+      if (item instanceof Map) {
+        sortedList.add(sortMap((Map<String, Object>) item));
+      } else if (item instanceof List) {
+        sortedList.add(sortListItems((List<Object>) item));
+      } else {
+        sortedList.add(item);
+      }
+    }
+    return sortedList;
   }
 
   /**
    * Correct for known issue with SSA
    */
-  @SuppressWarnings("unchecked")
   private void sanitizeState(R actual, R desired, Map<String, Object> actualMap) {
-    if (desired instanceof StatefulSet) {
-      StatefulSet desiredStatefulSet = (StatefulSet) desired;
+    if (desired instanceof StatefulSet desiredStatefulSet) {
       StatefulSet actualStatefulSet = (StatefulSet) actual;
       int claims = desiredStatefulSet.getSpec().getVolumeClaimTemplates().size();
       if (claims == actualStatefulSet.getSpec().getVolumeClaimTemplates().size()) {
@@ -321,12 +387,12 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
     if (possibleTargets.isEmpty()) {
       throw new IllegalStateException("Cannot find list element for key:" + key + ", in map: "
-          + values.stream().map(Map::keySet).collect(Collectors.toList()));
+          + values.stream().map(Map::keySet).toList());
     }
     if (possibleTargets.size() > 1) {
       throw new IllegalStateException(
           "More targets found in list element for key:" + key + ", in map: "
-              + values.stream().map(Map::keySet).collect(Collectors.toList()));
+              + values.stream().map(Map::keySet).toList());
     }
     final var finalIndex = index;
     return new AbstractMap.SimpleEntry<>(finalIndex, possibleTargets.get(0));
@@ -339,7 +405,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         // field manager name.
         .filter(
             f -> f.getManager().equals(fieldManager) && f.getOperation().equals(APPLY_OPERATION))
-        .collect(Collectors.toList());
+        .toList();
     if (targetManagedFields.isEmpty()) {
       log.debug("No field manager exists for resource {} with name: {} and operation Apply ",
           actual.getKind(),

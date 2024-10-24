@@ -2,41 +2,31 @@ package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 @SuppressWarnings("rawtypes")
 public class WorkflowReconcileResult extends WorkflowResult {
 
-  private final List<DependentResource> reconciledDependents;
-  private final List<DependentResource> notReadyDependents;
-  private final Map<DependentResource, ReconcileResult> reconcileResults;
-
-  public WorkflowReconcileResult(List<DependentResource> reconciledDependents,
-      List<DependentResource> notReadyDependents,
-      Map<DependentResource, Exception> erroredDependents,
-      Map<DependentResource, ReconcileResult> reconcileResults) {
-    super(erroredDependents);
-    this.reconciledDependents = reconciledDependents;
-    this.notReadyDependents = notReadyDependents;
-    this.reconcileResults = reconcileResults;
+  WorkflowReconcileResult(Map<DependentResource, Detail<?>> results) {
+    super(results);
   }
 
   public List<DependentResource> getReconciledDependents() {
-    return reconciledDependents;
+    return listFilteredBy(detail -> detail.reconcileResult() != null);
   }
 
   public List<DependentResource> getNotReadyDependents() {
-    return notReadyDependents;
+    return listFilteredBy(detail -> !detail.isConditionWithTypeMet(Condition.Type.READY));
   }
 
-  @SuppressWarnings("unused")
-  public Map<DependentResource, ReconcileResult> getReconcileResults() {
-    return reconcileResults;
+  public <T> Optional<T> getNotReadyDependentResult(DependentResource dependentResource,
+      Class<T> expectedResultType) {
+    return getDependentConditionResult(dependentResource, Condition.Type.READY, expectedResultType);
   }
 
   public boolean allDependentResourcesReady() {
-    return notReadyDependents.isEmpty();
+    return getNotReadyDependents().isEmpty();
   }
 }

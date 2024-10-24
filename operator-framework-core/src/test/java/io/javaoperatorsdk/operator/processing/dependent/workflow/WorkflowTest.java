@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -14,26 +12,25 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.withSettings;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("rawtypes")
 class WorkflowTest {
 
-  ExecutorService executorService = Executors.newCachedThreadPool();
-
   @Test
   void zeroTopLevelDRShouldThrowException() {
-    var dr1 = mock(DependentResource.class);
-    var dr2 = mock(DependentResource.class);
-    var dr3 = mock(DependentResource.class);
+    var dr1 = mockDependent("dr1");
+    var dr2 = mockDependent("dr2");
+    var dr3 = mockDependent("dr3");
 
     var cyclicWorkflowBuilderSetup = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dr1).dependsOn()
-        .addDependentResource(dr2).dependsOn(dr1)
-        .addDependentResource(dr3).dependsOn(dr2)
-        .addDependentResource(dr1).dependsOn(dr2);
+        .addDependentResourceAndConfigure(dr1).toDependOn()
+        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
+        .addDependentResourceAndConfigure(dr3).toDependOn(dr2)
+        .addDependentResourceAndConfigure(dr1).toDependOn(dr2);
 
     assertThrows(IllegalStateException.class,
         cyclicWorkflowBuilderSetup::build);
@@ -41,15 +38,15 @@ class WorkflowTest {
 
   @Test
   void calculatesTopLevelResources() {
-    var dr1 = mock(DependentResource.class);
-    var dr2 = mock(DependentResource.class);
-    var independentDR = mock(DependentResource.class);
+    var dr1 = mockDependent("dr1");
+    var dr2 = mockDependent("dr2");
+    var independentDR = mockDependent("independentDR");
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResource(dr2).dependsOn(dr1)
-        .build();
+        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
+        .buildAsDefaultWorkflow();
 
     Set<DependentResource> topResources =
         workflow.getTopLevelDependentResources().stream()
@@ -61,18 +58,18 @@ class WorkflowTest {
 
   @Test
   void calculatesBottomLevelResources() {
-    var dr1 = mock(DependentResource.class);
-    var dr2 = mock(DependentResource.class);
-    var independentDR = mock(DependentResource.class);
+    var dr1 = mockDependent("dr1");
+    var dr2 = mockDependent("dr2");
+    var independentDR = mockDependent("independentDR");
 
-    Workflow<TestCustomResource> workflow = new WorkflowBuilder<TestCustomResource>()
+    final var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResource(dr2).dependsOn(dr1)
-        .build();
+        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
+        .buildAsDefaultWorkflow();
 
     Set<DependentResource> bottomResources =
-        workflow.getBottomLevelResource().stream()
+        workflow.getBottomLevelDependentResources().stream()
             .map(DependentResourceNode::getDependentResource)
             .collect(Collectors.toSet());
 
@@ -98,4 +95,11 @@ class WorkflowTest {
         GarbageCollected.class));
     assertFalse(DefaultWorkflow.isDeletable(dr.getClass()));
   }
+
+  static DependentResource mockDependent(String name) {
+    var res = mock(DependentResource.class);
+    when(res.name()).thenReturn(name);
+    return res;
+  }
+
 }

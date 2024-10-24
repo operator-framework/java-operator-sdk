@@ -6,15 +6,17 @@ import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 
 import static io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration.*;
 
+@SuppressWarnings("unused")
 public final class LeaderElectionConfigurationBuilder {
 
-  private String leaseName;
+  private final String leaseName;
   private String leaseNamespace;
   private String identity;
   private Duration leaseDuration = LEASE_DURATION_DEFAULT_VALUE;
   private Duration renewDeadline = RENEW_DEADLINE_DEFAULT_VALUE;
   private Duration retryPeriod = RETRY_PERIOD_DEFAULT_VALUE;
   private LeaderCallbacks leaderCallbacks;
+  private boolean exitOnStopLeading = true;
 
   private LeaderElectionConfigurationBuilder(String leaseName) {
     this.leaseName = leaseName;
@@ -54,8 +56,13 @@ public final class LeaderElectionConfigurationBuilder {
     return this;
   }
 
+  public LeaderElectionConfigurationBuilder withExitOnStopLeading(boolean exitOnStopLeading) {
+    this.exitOnStopLeading = exitOnStopLeading;
+    return this;
+  }
+
   public LeaderElectionConfiguration build() {
     return new LeaderElectionConfiguration(leaseName, leaseNamespace, leaseDuration, renewDeadline,
-        retryPeriod, identity, leaderCallbacks);
+        retryPeriod, identity, leaderCallbacks, exitOnStopLeading);
   }
 }

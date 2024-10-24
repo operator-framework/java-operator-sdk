@@ -35,7 +35,7 @@ public class Operator implements LifecycleAware {
   }
 
   Operator(KubernetesClient kubernetesClient) {
-    this(kubernetesClient, null);
+    this(initConfigurationService(kubernetesClient, null));
   }
 
   /**
@@ -63,19 +63,7 @@ public class Operator implements LifecycleAware {
    *        {@link ConfigurationService} values
    */
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
-    this(null, overrider);
-  }
-
-  /**
-   * @param client client to use to all Kubernetes related operations
-   * @param overrider a {@link ConfigurationServiceOverrider} consumer used to override the default
-   *        {@link ConfigurationService} values
-   * @deprecated Use {@link Operator#Operator(Consumer)} instead, passing your custom client with
-   *             {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}
-   */
-  @Deprecated(since = "4.4.0")
-  public Operator(KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
-    this(initConfigurationService(client, overrider));
+    this(initConfigurationService(null, overrider));
   }
 
   private static ConfigurationService initConfigurationService(KubernetesClient client,
@@ -99,17 +87,6 @@ public class Operator implements LifecycleAware {
   }
 
   /**
-   * Uses {@link ConfigurationService#getTerminationTimeoutSeconds()} for graceful shutdown timeout
-   *
-   * @deprecated use the overloaded version with graceful shutdown timeout parameter.
-   *
-   */
-  @Deprecated(forRemoval = true)
-  public void installShutdownHook() {
-    installShutdownHook(Duration.ofSeconds(configurationService.getTerminationTimeoutSeconds()));
-  }
-
-  /**
    * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. Note
    * that graceful shutdown is usually not needed, but some {@link Reconciler} implementations might
    * require it.
@@ -120,9 +97,10 @@ public class Operator implements LifecycleAware {
    * @param gracefulShutdownTimeout timeout to wait for executor threads to complete actual
    *        reconciliations
    */
+  @SuppressWarnings("unused")
   public void installShutdownHook(Duration gracefulShutdownTimeout) {
     if (!leaderElectionManager.isLeaderElectionEnabled()) {
-      Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(gracefulShutdownTimeout)));
+      Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
     } else {
       log.warn("Leader election is on, shutdown hook will not be installed.");
     }
@@ -167,26 +145,24 @@ public class Operator implements LifecycleAware {
     }
   }
 
-  public void stop(Duration gracefulShutdownTimeout) throws OperatorException {
+  @Override
+  public void stop() throws OperatorException {
+    Duration reconciliationTerminationTimeout =
+        configurationService.reconciliationTerminationTimeout();
     if (!started) {
       return;
     }
-    log.info(
-        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
+    log.info("Operator SDK {} is shutting down...",
+        configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
-    configurationService.getExecutorServiceManager().stop(gracefulShutdownTimeout);
+    configurationService.getExecutorServiceManager().stop(reconciliationTerminationTimeout);
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       getKubernetesClient().close();
     }
 
     started = false;
-  }
-
-  @Override
-  public void stop() throws OperatorException {
-    stop(Duration.ZERO);
   }
 
   /**
@@ -237,8 +213,9 @@ public class Operator implements LifecycleAware {
 
     controllerManager.add(controller);
 
-    final var watchedNS = configuration.watchAllNamespaces() ? "[all namespaces]"
-        : configuration.getEffectiveNamespaces();
+    final var informerConfig = configuration.getInformerConfig();
+    final var watchedNS = informerConfig.watchAllNamespaces() ? "[all namespaces]"
+        : informerConfig.getEffectiveNamespaces(configuration);
 
     log.info(
         "Registered reconciler: '{}' for resource: '{}' for namespace(s): {}",
