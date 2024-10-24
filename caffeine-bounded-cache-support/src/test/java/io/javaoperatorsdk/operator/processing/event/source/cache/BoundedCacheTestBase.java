@@ -63,7 +63,7 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
     IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
       var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
       cm.getData().put(DATA_KEY, UPDATED_PREFIX + i);
-      extension().replace(cm);
+      extension().createOrUpdate(cm);
     });
   }
 

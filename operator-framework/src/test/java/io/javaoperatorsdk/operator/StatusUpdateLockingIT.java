@@ -29,7 +29,7 @@ class StatusUpdateLockingIT {
     var resource = operator.create(createResource());
     Thread.sleep(WAIT_TIME / 2);
     resource.getMetadata().setAnnotations(Map.of("key", "value"));
-    operator.replace(resource);
+    operator.createOrUpdate(resource);
 
     await().pollDelay(Duration.ofMillis(WAIT_TIME)).untilAsserted(() -> {
       assertThat(

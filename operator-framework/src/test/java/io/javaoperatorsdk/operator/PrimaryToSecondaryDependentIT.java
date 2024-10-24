@@ -44,7 +44,7 @@ class PrimaryToSecondaryDependentIT {
 
     cm.setData(Map.of(DATA_KEY, TEST_DATA));
     var executions = reconciler.getNumberOfExecutions();
-    operator.replace(cm);
+    operator.createOrUpdate(cm);
 
     await().pollDelay(Duration.ofMillis(250)).untilAsserted(() -> {
       assertThat(reconciler.getNumberOfExecutions()).isGreaterThan(executions);

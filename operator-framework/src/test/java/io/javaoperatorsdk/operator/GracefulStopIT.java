@@ -48,7 +48,7 @@ public class GracefulStopIT {
     });
 
     testRes.getSpec().setValue(2);
-    operator.replace(testRes);
+    operator.createOrUpdate(testRes);
 
     await().pollDelay(Duration.ofMillis(50)).untilAsserted(
         () -> assertThat(operator.getReconcilerOfType(GracefulStopTestReconciler.class)
