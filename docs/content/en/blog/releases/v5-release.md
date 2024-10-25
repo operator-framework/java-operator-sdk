@@ -277,9 +277,4 @@ public UpdateControl<NextReconciliationImminentCustomResource> reconcile(MyCusto
 
 See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/664cb7109fe62f9822997d578ae7f57f17ef8c26/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/nextreconciliationimminent).
 
-## Additional minor changes
-
-
-
-## Deprecation removals
 
