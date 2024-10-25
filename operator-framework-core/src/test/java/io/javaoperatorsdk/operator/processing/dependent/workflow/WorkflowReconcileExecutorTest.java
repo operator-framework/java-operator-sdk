@@ -58,7 +58,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void reconciliationWithSimpleDependsOn() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -75,8 +75,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
+        .addDependentResourceAndConfigure(dr3).dependOn(dr1)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -93,9 +93,9 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void diamondShareWorkflowReconcile() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr4).dependsOn(dr3).dependsOn(dr2)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
+        .addDependentResourceAndConfigure(dr3).dependOn(dr1)
+        .addDependentResourceAndConfigure(dr4).dependOn(dr3).dependOn(dr2)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -133,8 +133,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void dependentsOnErroredResourceNotReconciled() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(drError).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(drError)
+        .addDependentResourceAndConfigure(drError).dependOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(drError)
         .withThrowExceptionFurther(false)
         .build();
 
@@ -153,9 +153,9 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(drError).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr2)
+        .addDependentResourceAndConfigure(drError).dependOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
+        .addDependentResourceAndConfigure(dr3).dependOn(dr2)
         .withThrowExceptionFurther(false)
         .build();
 
@@ -174,7 +174,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .addDependentResource(drError)
-        .addDependentResourceAndConfigure(dr2).dependsOn(drError, dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(drError, dr1)
         .withThrowExceptionFurther(false)
         .build();
 
@@ -221,9 +221,9 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void triangleOnceConditionNotMet() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
         .addDependentResourceAndConfigure(drDeleter).withReconcilePrecondition(notMetCondition)
-        .dependsOn(dr1)
+        .dependOn(dr1)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -240,11 +240,11 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
         .withReconcilePrecondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter).dependsOn(dr2)
+        .addDependentResourceAndConfigure(drDeleter).dependOn(dr2)
         .withReconcilePrecondition(metCondition)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(drDeleter)
         .withReconcilePrecondition(metCondition)
         .build();
 
@@ -267,7 +267,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(drError)
         .addDependentResourceAndConfigure(drDeleter).withReconcilePrecondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(drError, drDeleter)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(drError, drDeleter)
         .withReconcilePrecondition(metCondition)
         .withThrowExceptionFurther(false)
         .build();
@@ -290,7 +290,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .addDependentResourceAndConfigure(dr2).withReconcilePrecondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter).dependsOn(dr1, dr2)
+        .addDependentResourceAndConfigure(drDeleter).dependOn(dr1, dr2)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -308,9 +308,9 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     TestDeleterDependent drDeleter2 = new TestDeleterDependent("DR_DELETER_2");
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(drDeleter).dependsOn(dr1)
+        .addDependentResourceAndConfigure(drDeleter).dependOn(dr1)
         .withReconcilePrecondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(dr1, drDeleter)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(dr1, drDeleter)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -333,10 +333,10 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .addDependentResourceAndConfigure(drDeleter).withReconcilePrecondition(notMetCondition)
-        .dependsOn(dr1)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(drDeleter)
-        .addDependentResourceAndConfigure(drDeleter3).dependsOn(drDeleter)
-        .addDependentResourceAndConfigure(drDeleter4).dependsOn(drDeleter3)
+        .dependOn(dr1)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter3).dependOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter4).dependOn(drDeleter3)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -359,10 +359,10 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(drDeleter).withReconcilePrecondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(drDeleter)
-        .addDependentResourceAndConfigure(drDeleter3).dependsOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter3).dependOn(drDeleter)
         .withDeletePostcondition(this.notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter4).dependsOn(drDeleter3, drDeleter2)
+        .addDependentResourceAndConfigure(drDeleter4).dependOn(drDeleter3, drDeleter2)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -383,9 +383,9 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(drDeleter).withReconcilePrecondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(drDeleter)
-        .addDependentResourceAndConfigure(errorDD).dependsOn(drDeleter)
-        .addDependentResourceAndConfigure(drDeleter3).dependsOn(errorDD, drDeleter2)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(drDeleter)
+        .addDependentResourceAndConfigure(errorDD).dependOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter3).dependOn(errorDD, drDeleter2)
         .withThrowExceptionFurther(false)
         .build();
 
@@ -404,7 +404,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void readyConditionTrivialCase() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(dr1).withReadyPostcondition(metCondition)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -420,7 +420,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void readyConditionNotMetTrivialCase() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(dr1).withReadyPostcondition(notMetCondition)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependOn(dr1)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -439,7 +439,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(dr1).withReadyPostcondition(notMetCondition)
         .addDependentResource(dr2)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr1, dr2)
+        .addDependentResourceAndConfigure(dr3).dependOn(dr1, dr2)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -455,10 +455,10 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(dr1)
         .addDependentResourceAndConfigure(dr2)
-        .dependsOn(dr1)
+        .dependOn(dr1)
         .withReadyPostcondition(notMetCondition)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr4).dependsOn(dr2, dr3)
+        .addDependentResourceAndConfigure(dr3).dependOn(dr1)
+        .addDependentResourceAndConfigure(dr4).dependOn(dr2, dr3)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -489,7 +489,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   void garbageCollectedDeepResourceIsDeletedIfReconcilePreconditionDoesNotHold() {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(dr1).withReconcilePrecondition(notMetCondition)
-        .addDependentResourceAndConfigure(gcDeleter).dependsOn(dr1)
+        .addDependentResourceAndConfigure(gcDeleter).dependOn(dr1)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -518,7 +518,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .addDependentResourceAndConfigure(dr1)
         .withActivationCondition(notMetCondition)
         .addDependentResource(dr2)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr3).dependOn(dr1)
         .build();
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
 
@@ -534,7 +534,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
         .withActivationCondition(notMetCondition)
         .withReadyPostcondition(notMetCondition)
         .addDependentResource(dr2)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr3).dependOn(dr1)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -565,10 +565,10 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(dr1).withActivationCondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter).dependsOn(dr1)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter).dependOn(dr1)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(drDeleter)
         .withActivationCondition(notMetCondition)
-        .addDependentResourceAndConfigure(drDeleter3).dependsOn(drDeleter2)
+        .addDependentResourceAndConfigure(drDeleter3).dependOn(drDeleter2)
         .build();
 
     var res = workflow.reconcile(new TestCustomResource(), mockContext);
@@ -588,7 +588,7 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
 
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResourceAndConfigure(drDeleter).withActivationCondition(condition)
-        .addDependentResourceAndConfigure(drDeleter2).dependsOn(drDeleter)
+        .addDependentResourceAndConfigure(drDeleter2).dependOn(drDeleter)
         .build();
 
     workflow.reconcile(new TestCustomResource(), mockContext);
