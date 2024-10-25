@@ -94,7 +94,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
       return WorkflowBuilder.this.withThrowExceptionFurther(throwExceptionFurther);
     }
 
-    public WorkflowNodeConfigurationBuilder dependOn(Set<DependentResource> dependentResources) {
+    public WorkflowNodeConfigurationBuilder dependsOn(Set<DependentResource> dependentResources) {
       for (var dependentResource : dependentResources) {
         var dependsOn = getNodeByDependentResource(dependentResource);
         currentNode.addDependsOnRelation(dependsOn);
@@ -102,9 +102,9 @@ public class WorkflowBuilder<P extends HasMetadata> {
       return this;
     }
 
-    public WorkflowNodeConfigurationBuilder dependOn(DependentResource... dependentResources) {
+    public WorkflowNodeConfigurationBuilder dependsOn(DependentResource... dependentResources) {
       if (dependentResources != null) {
-        return dependOn(new HashSet<>(Arrays.asList(dependentResources)));
+        return dependsOn(new HashSet<>(Arrays.asList(dependentResources)));
       }
       return this;
     }
