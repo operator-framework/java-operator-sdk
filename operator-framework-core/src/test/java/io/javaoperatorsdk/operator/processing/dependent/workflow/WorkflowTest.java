@@ -27,10 +27,10 @@ class WorkflowTest {
     var dr3 = mockDependent("dr3");
 
     var cyclicWorkflowBuilderSetup = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResourceAndConfigure(dr1).toDependOn()
-        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
-        .addDependentResourceAndConfigure(dr3).toDependOn(dr2)
-        .addDependentResourceAndConfigure(dr1).toDependOn(dr2);
+        .addDependentResourceAndConfigure(dr1).dependsOn()
+        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr3).dependsOn(dr2)
+        .addDependentResourceAndConfigure(dr1).dependsOn(dr2);
 
     assertThrows(IllegalStateException.class,
         cyclicWorkflowBuilderSetup::build);
@@ -45,7 +45,7 @@ class WorkflowTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
         .buildAsDefaultWorkflow();
 
     Set<DependentResource> topResources =
@@ -65,7 +65,7 @@ class WorkflowTest {
     final var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).toDependOn(dr1)
+        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
         .buildAsDefaultWorkflow();
 
     Set<DependentResource> bottomResources =
