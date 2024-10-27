@@ -1,18 +1,20 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -20,22 +22,21 @@ import static org.mockito.Mockito.when;
 
 class SSABasedGenericKubernetesResourceMatcherTest {
 
-  Context<?> mockedContext = mock(Context.class);
+  private final Context<?> mockedContext = mock();
 
-  SSABasedGenericKubernetesResourceMatcher<HasMetadata> matcher =
-      new SSABasedGenericKubernetesResourceMatcher<>();
+  private final SSABasedGenericKubernetesResourceMatcher<HasMetadata> matcher =
+      SSABasedGenericKubernetesResourceMatcher.getInstance();
 
   @BeforeEach
   @SuppressWarnings("unchecked")
   void setup() {
-    var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.fieldManager()).thenReturn("controller");
-    var configurationService = mock(ConfigurationService.class);
-
     final var client = MockKubernetesClient.client(HasMetadata.class);
     when(mockedContext.getClient()).thenReturn(client);
 
+    final var configurationService = mock(ConfigurationService.class);
+    final var controllerConfiguration = mock(ControllerConfiguration.class);
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(controllerConfiguration.fieldManager()).thenReturn("controller");
     when(mockedContext.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 
@@ -116,9 +117,33 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
   }
 
-  private <R> R loadResource(String fileName, Class<R> clazz) {
+  @ParameterizedTest
+  @ValueSource(strings = {"sample-sts-volumeclaimtemplates-desired.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-status.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-volumemode.yaml"})
+  void testSanitizeState_statefulSetWithVolumeClaims(String desiredResourceFileName) {
+    var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-volumeclaimtemplates.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"sample-sts-volumeclaimtemplates-desired-add.yaml",
+      "sample-sts-volumeclaimtemplates-desired-update.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-status-mismatch.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-volumemode-mismatch.yaml"})
+  void testSanitizeState_statefulSetWithVolumeClaims_withMismatch(String desiredResourceFileName) {
+    var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-volumeclaimtemplates.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isFalse();
+  }
+
+  private static <R> R loadResource(String fileName, Class<R> clazz) {
     return ReconcilerUtils.loadYaml(clazz, SSABasedGenericKubernetesResourceMatcherTest.class,
         fileName);
   }
-
 }
