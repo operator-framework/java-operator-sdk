@@ -1,16 +1,18 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -23,22 +25,21 @@ import static org.mockito.Mockito.when;
 
 class SSABasedGenericKubernetesResourceMatcherTest {
 
-  Context<?> mockedContext = mock(Context.class);
+  private final Context<?> mockedContext = mock();
 
-  SSABasedGenericKubernetesResourceMatcher<HasMetadata> matcher =
-      new SSABasedGenericKubernetesResourceMatcher<>();
+  private final SSABasedGenericKubernetesResourceMatcher<HasMetadata> matcher =
+      SSABasedGenericKubernetesResourceMatcher.getInstance();
 
   @BeforeEach
   @SuppressWarnings("unchecked")
   void setup() {
-    var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.fieldManager()).thenReturn("controller");
-    var configurationService = mock(ConfigurationService.class);
-
     final var client = MockKubernetesClient.client(HasMetadata.class);
     when(mockedContext.getClient()).thenReturn(client);
 
+    final var configurationService = mock(ConfigurationService.class);
+    final var controllerConfiguration = mock(ControllerConfiguration.class);
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(controllerConfiguration.fieldManager()).thenReturn("controller");
     when(mockedContext.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 
@@ -119,52 +120,78 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
   }
 
-  private <R> R loadResource(String fileName, Class<R> clazz) {
-    return ReconcilerUtils.loadYaml(clazz, SSABasedGenericKubernetesResourceMatcherTest.class,
-        fileName);
-  }
-
   @Test
   @SuppressWarnings("unchecked")
   void sortListItemsTest() {
-    Map<String, Object> nestedMap1 = new HashMap<>();
+    var nestedMap1 = new HashMap<String, Object>();
     nestedMap1.put("z", 26);
     nestedMap1.put("y", 25);
 
-    Map<String, Object> nestedMap2 = new HashMap<>();
+    var nestedMap2 = new HashMap<String, Object>();
     nestedMap2.put("b", 26);
     nestedMap2.put("c", 25);
     nestedMap2.put("a", 24);
 
-    List<Object> unsortedListItems = Arrays.asList(1, nestedMap1, nestedMap2);
-    List<Object> sortedListItems = matcher.sortListItems(unsortedListItems);
-
+    var unsortedListItems = List.<Object>of(1, nestedMap1, nestedMap2);
+    var sortedListItems = matcher.sortListItems(unsortedListItems);
     assertThat(sortedListItems).element(0).isEqualTo(1);
 
-    Map<String, Object> sortedNestedMap1 = (Map<String, Object>) sortedListItems.get(1);
+    var sortedNestedMap1 = (Map<String, Object>) sortedListItems.get(1);
     assertThat(sortedNestedMap1.keySet()).containsExactly("y", "z");
 
-    Map<String, Object> sortedNestedMap2 = (Map<String, Object>) sortedListItems.get(2);
+    var sortedNestedMap2 = (Map<String, Object>) sortedListItems.get(2);
     assertThat(sortedNestedMap2.keySet()).containsExactly("a", "b", "c");
   }
 
   @Test
   @SuppressWarnings("unchecked")
   void testSortMapWithNestedMap() {
-    Map<String, Object> nestedMap = new HashMap<>();
+    var nestedMap = new HashMap<String, Object>();
     nestedMap.put("z", 26);
     nestedMap.put("y", 25);
 
-    Map<String, Object> unsortedMap = new HashMap<>();
+    var unsortedMap = new HashMap<String, Object>();
     unsortedMap.put("b", nestedMap);
     unsortedMap.put("a", 1);
     unsortedMap.put("c", 2);
 
-    Map<String, Object> sortedMap = matcher.sortMap(unsortedMap);
-
+    var sortedMap = matcher.sortMap(unsortedMap);
     assertThat(sortedMap.keySet()).containsExactly("a", "b", "c");
 
-    Map<String, Object> sortedNestedMap = (Map<String, Object>) sortedMap.get("b");
+    var sortedNestedMap = (Map<String, Object>) sortedMap.get("b");
     assertThat(sortedNestedMap.keySet()).containsExactly("y", "z");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"sample-sts-volumeclaimtemplates-desired.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-status.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-volumemode.yaml"})
+  void testSanitizeState_statefulSetWithVolumeClaims(String desiredResourceFileName) {
+    var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-volumeclaimtemplates.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"sample-sts-volumeclaimtemplates-desired-add.yaml",
+      "sample-sts-volumeclaimtemplates-desired-update.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-status-mismatch.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-volumemode-mismatch.yaml"})
+  void testSanitizeState_statefulSetWithVolumeClaims_withMismatch(String desiredResourceFileName) {
+    var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-volumeclaimtemplates.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isFalse();
+  }
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isTrue();
+  }
+
+  private static <R> R loadResource(String fileName, Class<R> clazz) {
+    return ReconcilerUtils.loadYaml(clazz, SSABasedGenericKubernetesResourceMatcherTest.class,
+        fileName);
   }
 }
