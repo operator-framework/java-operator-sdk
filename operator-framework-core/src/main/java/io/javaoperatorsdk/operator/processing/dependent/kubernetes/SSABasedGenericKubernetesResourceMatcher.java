@@ -3,6 +3,9 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
+import io.fabric8.kubernetes.api.model.apps.DaemonSet;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -23,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -128,6 +133,19 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           }
         }
       }
+      sanitizeResourceRequirements(actualMap, actualSpec.getTemplate(), desiredSpec.getTemplate());
+    } else if (actual instanceof Deployment) {
+      sanitizeResourceRequirements(actualMap,
+          ((Deployment) actual).getSpec().getTemplate(),
+          ((Deployment) desired).getSpec().getTemplate());
+    } else if (actual instanceof ReplicaSet) {
+      sanitizeResourceRequirements(actualMap,
+          ((ReplicaSet) actual).getSpec().getTemplate(),
+          ((ReplicaSet) desired).getSpec().getTemplate());
+    } else if (actual instanceof DaemonSet) {
+      sanitizeResourceRequirements(actualMap,
+          ((DaemonSet) actual).getSpec().getTemplate(),
+          ((DaemonSet) desired).getSpec().getTemplate());
     }
   }
 
