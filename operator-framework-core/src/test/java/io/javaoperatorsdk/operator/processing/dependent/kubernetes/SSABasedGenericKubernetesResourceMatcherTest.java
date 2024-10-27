@@ -11,7 +11,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -187,7 +189,61 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isFalse();
   }
 
+  @Test
+  void testSanitizeState_statefulSetWithResources() {
+    var desiredStatefulSet = loadResource("sample-sts-resources-desired.yaml", StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-resources.yaml",
+        StatefulSet.class);
+
     assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isTrue();
+  }
+
+  @Test
+  void testSanitizeState_statefulSetWithResources_withMismatch() {
+    var desiredStatefulSet =
+        loadResource("sample-sts-resources-desired-update.yaml", StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-resources.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_replicaSetWithResources() {
+    var desiredReplicaSet = loadResource("sample-rs-resources-desired.yaml", ReplicaSet.class);
+    var actualReplicaSet = loadResource("sample-rs-resources.yaml",
+        ReplicaSet.class);
+
+    assertThat(matcher.matches(actualReplicaSet, desiredReplicaSet, mockedContext)).isTrue();
+  }
+
+  @Test
+  void testSanitizeState_replicaSetWithResources_withMismatch() {
+    var desiredReplicaSet =
+        loadResource("sample-rs-resources-desired-update.yaml", ReplicaSet.class);
+    var actualReplicaSet = loadResource("sample-rs-resources.yaml",
+        ReplicaSet.class);
+
+    assertThat(matcher.matches(actualReplicaSet, desiredReplicaSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_daemonSetWithResources() {
+    var desiredDaemonSet = loadResource("sample-ds-resources-desired.yaml", DaemonSet.class);
+    var actualDaemonSet = loadResource("sample-ds-resources.yaml",
+        DaemonSet.class);
+
+    assertThat(matcher.matches(actualDaemonSet, desiredDaemonSet, mockedContext)).isTrue();
+  }
+
+  @Test
+  void testSanitizeState_daemonSetWithResources_withMismatch() {
+    var desiredDaemonSet =
+        loadResource("sample-ds-resources-desired-update.yaml", DaemonSet.class);
+    var actualDaemonSet = loadResource("sample-ds-resources.yaml",
+        DaemonSet.class);
+
+    assertThat(matcher.matches(actualDaemonSet, desiredDaemonSet, mockedContext)).isFalse();
   }
 
   private static <R> R loadResource(String fileName, Class<R> clazz) {

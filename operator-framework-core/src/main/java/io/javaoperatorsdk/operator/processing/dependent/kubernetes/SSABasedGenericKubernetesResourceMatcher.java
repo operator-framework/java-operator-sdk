@@ -19,6 +19,9 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
+import io.fabric8.kubernetes.api.model.apps.DaemonSet;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -27,6 +30,8 @@ import io.javaoperatorsdk.operator.processing.LoggingUtils;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
+
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -185,6 +190,22 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           }
         }
       }
+      sanitizeResourceRequirements(actualMap, actualSpec.getTemplate(), desiredSpec.getTemplate());
+    } else if (actual instanceof Deployment actualDeployment
+        && desired instanceof Deployment desiredDeployment) {
+      sanitizeResourceRequirements(actualMap,
+          actualDeployment.getSpec().getTemplate(),
+          desiredDeployment.getSpec().getTemplate());
+    } else if (actual instanceof ReplicaSet actualReplicaSet
+        && desired instanceof ReplicaSet desiredReplicaSet) {
+      sanitizeResourceRequirements(actualMap,
+          actualReplicaSet.getSpec().getTemplate(),
+          desiredReplicaSet.getSpec().getTemplate());
+    } else if (actual instanceof DaemonSet actualDaemonSet
+        && desired instanceof DaemonSet desiredDaemonSet) {
+      sanitizeResourceRequirements(actualMap,
+          actualDaemonSet.getSpec().getTemplate(),
+          desiredDaemonSet.getSpec().getTemplate());
     }
   }
 
