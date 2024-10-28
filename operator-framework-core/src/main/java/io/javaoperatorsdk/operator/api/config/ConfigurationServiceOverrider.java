@@ -176,6 +176,22 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  /**
+   * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
+   * @return this
+   */
+  public ConfigurationServiceOverrider withParseResourceVersions(
+      boolean value) {
+    this.parseResourceVersions = value;
+    return this;
+  }
+
+  /**
+   * @deprecated use withParseResourceVersions
+   * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
+   * @return this
+   */
+  @Deprecated(forRemoval = true)
   public ConfigurationServiceOverrider wihtParseResourceVersions(
       boolean value) {
     this.parseResourceVersions = value;
