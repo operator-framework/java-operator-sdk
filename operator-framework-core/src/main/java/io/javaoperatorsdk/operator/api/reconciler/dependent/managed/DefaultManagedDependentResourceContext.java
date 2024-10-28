@@ -8,9 +8,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconci
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedDependentResourceContext implements ManagedDependentResourceContext {
-
-  private WorkflowReconcileResult workflowReconcileResult;
-  private WorkflowCleanupResult workflowCleanupResult;
+  public static final Object RECONCILE_RESULT_KEY = new Object();
+  public static final Object CLEANUP_RESULT_KEY = new Object();
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
 
   @Override
@@ -37,25 +36,13 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
             + ") is missing or not of the expected type"));
   }
 
-  public DefaultManagedDependentResourceContext setWorkflowExecutionResult(
-      WorkflowReconcileResult workflowReconcileResult) {
-    this.workflowReconcileResult = workflowReconcileResult;
-    return this;
-  }
-
-  public DefaultManagedDependentResourceContext setWorkflowCleanupResult(
-      WorkflowCleanupResult workflowCleanupResult) {
-    this.workflowCleanupResult = workflowCleanupResult;
-    return this;
-  }
-
   @Override
   public Optional<WorkflowReconcileResult> getWorkflowReconcileResult() {
-    return Optional.ofNullable(workflowReconcileResult);
+    return get(RECONCILE_RESULT_KEY, WorkflowReconcileResult.class);
   }
 
   @Override
   public Optional<WorkflowCleanupResult> getWorkflowCleanupResult() {
-    return Optional.ofNullable(workflowCleanupResult);
+    return get(CLEANUP_RESULT_KEY, WorkflowCleanupResult.class);
   }
 }
