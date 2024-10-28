@@ -124,7 +124,7 @@ public class ConfigurationServiceOverrider {
    * preferred mechanism to configure which client will be used to access the cluster.
    * <p>
    * Note that when {@link Operator#stop()} is called, by default the client is closed even if
-   * explicitly provided with this method. Use {@link #withKubernetesClient(KubernetesClient)} to
+   * explicitly provided with this method. Use {@link #withCloseClientOnStop(boolean)} to
    * change this behavior.
    *
    * @param client the fully configured client to use for cluster access
