@@ -173,9 +173,9 @@ public class Controller<P extends HasMetadata>
               return deleteControl.isRemoveFinalizer() ? DELETE : FINALIZER_NOT_REMOVED;
             }
 
-            @Override
-            public ResourceID resourceID() {
-              return ResourceID.fromResource(resource);
+              @Override
+              public ResourceID resourceID() {
+                  return ResourceID.fromResource(resource);
             }
 
             @Override
