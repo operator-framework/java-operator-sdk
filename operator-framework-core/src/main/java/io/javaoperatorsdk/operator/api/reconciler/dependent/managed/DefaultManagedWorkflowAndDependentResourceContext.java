@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconci
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMetadata>
-    implements ManagedWorkflowAndDependentResourceContext {
+        implements ManagedWorkflowAndDependentResourceContext {
 
     public static final Object RECONCILE_RESULT_KEY = new Object();
     public static final Object CLEANUP_RESULT_KEY = new Object();

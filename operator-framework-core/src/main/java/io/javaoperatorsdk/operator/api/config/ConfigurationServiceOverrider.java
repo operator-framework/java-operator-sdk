@@ -41,6 +41,7 @@ public class ConfigurationServiceOverrider {
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
   private Boolean previousAnnotationForDependentResources;
   private Boolean parseResourceVersions;
+  private Boolean useSSAForResourceStatusPatch;
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
 
@@ -203,6 +204,11 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public ConfigurationServiceOverrider withUseSSAForResourceStatusPatch(boolean value) {
+    this.useSSAForResourceStatusPatch = value;
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -343,6 +349,14 @@ public class ConfigurationServiceOverrider {
         return parseResourceVersions != null
             ? parseResourceVersions
             : super.parseResourceVersionsForEventFilteringAndCaching();
+      }
+
+      @Override
+      public boolean useSSAForResourceStatusPatch() {
+        return useSSAForResourceStatusPatch != null
+            ? useSSAForResourceStatusPatch
+            : super.useSSAForResourceStatusPatch();
+
       }
     };
   }
