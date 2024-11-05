@@ -12,8 +12,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+
+import static io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext.CLEANUP_RESULT_KEY;
+import static io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext.RECONCILE_RESULT_KEY;
 
 /**
  * Dependents definition: so if B depends on A, the B is dependent of A.
@@ -92,8 +94,7 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     WorkflowReconcileExecutor<P> workflowReconcileExecutor =
         new WorkflowReconcileExecutor<>(this, primary, context);
     var result = workflowReconcileExecutor.reconcile();
-    context.managedDependentResourceContext()
-        .put(DefaultManagedDependentResourceContext.RECONCILE_RESULT_KEY, result);
+    context.managedWorkflowAndDependentResourceContext().put(RECONCILE_RESULT_KEY, result);
     if (throwExceptionAutomatically) {
       result.throwAggregateExceptionIfErrorsPresent();
     }
@@ -105,8 +106,7 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     WorkflowCleanupExecutor<P> workflowCleanupExecutor =
         new WorkflowCleanupExecutor<>(this, primary, context);
     var result = workflowCleanupExecutor.cleanup();
-    context.managedDependentResourceContext()
-        .put(DefaultManagedDependentResourceContext.CLEANUP_RESULT_KEY, result);
+    context.managedWorkflowAndDependentResourceContext().put(CLEANUP_RESULT_KEY, result);
     if (throwExceptionAutomatically) {
       result.throwAggregateExceptionIfErrorsPresent();
     }

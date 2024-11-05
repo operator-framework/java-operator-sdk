@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -36,6 +37,8 @@ class WorkflowReconcileExecutorTest extends AbstractWorkflowExecutorTest {
   @SuppressWarnings("unchecked")
   void setup(TestInfo testInfo) {
     log.debug("==> Starting test {}", testInfo.getDisplayName());
+    when(mockContext.managedWorkflowAndDependentResourceContext())
+        .thenReturn(mock(ManagedWorkflowAndDependentResourceContext.class));
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
     when(mockContext.eventSourceRetriever()).thenReturn(mock(EventSourceRetriever.class));
   }
