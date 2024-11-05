@@ -11,10 +11,10 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconci
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMetadata>
-        implements ManagedWorkflowAndDependentResourceContext {
+    implements ManagedWorkflowAndDependentResourceContext {
 
-    public static final Object RECONCILE_RESULT_KEY = new Object();
-    public static final Object CLEANUP_RESULT_KEY = new Object();
+  public static final Object RECONCILE_RESULT_KEY = new Object();
+  public static final Object CLEANUP_RESULT_KEY = new Object();
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();
   private final Controller<P> controller;
   private final P primaryResource;
@@ -53,13 +53,13 @@ public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMeta
   }
 
   @Override
-  public Optional<WorkflowReconcileResult> getWorkflowReconcileResult() {
-    return get(RECONCILE_RESULT_KEY, WorkflowReconcileResult.class);
+  public WorkflowReconcileResult getWorkflowReconcileResult() {
+    return getMandatory(RECONCILE_RESULT_KEY, WorkflowReconcileResult.class);
   }
 
   @Override
-  public Optional<WorkflowCleanupResult> getWorkflowCleanupResult() {
-    return get(CLEANUP_RESULT_KEY, WorkflowCleanupResult.class);
+  public WorkflowCleanupResult getWorkflowCleanupResult() {
+    return getMandatory(CLEANUP_RESULT_KEY, WorkflowCleanupResult.class);
   }
 
   @Override
