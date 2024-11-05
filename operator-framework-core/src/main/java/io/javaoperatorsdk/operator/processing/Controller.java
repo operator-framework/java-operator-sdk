@@ -149,7 +149,7 @@ public class Controller<P extends HasMetadata>
             initContextIfNeeded(resource, context);
             configuration.getWorkflowSpec().ifPresent(ws -> {
               if (!managedWorkflow.isEmpty() && !explicitWorkflowInvocation) {
-                  managedWorkflow.reconcile(resource, context);
+                managedWorkflow.reconcile(resource, context);
               }
             });
             return reconciler.reconcile(resource, context);
@@ -177,9 +177,9 @@ public class Controller<P extends HasMetadata>
               return deleteControl.isRemoveFinalizer() ? DELETE : FINALIZER_NOT_REMOVED;
             }
 
-              @Override
-              public ResourceID resourceID() {
-                  return ResourceID.fromResource(resource);
+            @Override
+            public ResourceID resourceID() {
+              return ResourceID.fromResource(resource);
             }
 
             @Override
@@ -192,7 +192,8 @@ public class Controller<P extends HasMetadata>
               initContextIfNeeded(resource, context);
               WorkflowCleanupResult workflowCleanupResult = null;
 
-              // The cleanup is called also when explicit invocation is true, but the cleaner is not implemented
+              // The cleanup is called also when explicit invocation is true, but the cleaner is not
+              // implemented
               if (managedWorkflow.hasCleaner() || !explicitWorkflowInvocation) {
                 workflowCleanupResult = managedWorkflow.cleanup(resource, context);
               }
@@ -450,23 +451,13 @@ public class Controller<P extends HasMetadata>
 
   public void reconcileManagedWorkflow(P primary, Context<P> context) {
     if (!managedWorkflow.isEmpty()) {
-      var res = managedWorkflow.reconcile(primary, context);
-      ((DefaultManagedWorkflowAndDependentResourceContext) context
-          .managedWorkflowAndDependentResourceContext())
-          .setWorkflowExecutionResult(res);
+      managedWorkflow.reconcile(primary, context);
     }
   }
 
-  public WorkflowCleanupResult cleanupManagedWorkflow(P resource, Context<P> context) {
+  public void cleanupManagedWorkflow(P resource, Context<P> context) {
     if (managedWorkflow.hasCleaner()) {
-      var workflowCleanupResult = managedWorkflow.cleanup(resource, context);
-      ((DefaultManagedWorkflowAndDependentResourceContext) context
-          .managedWorkflowAndDependentResourceContext())
-          .setWorkflowCleanupResult(workflowCleanupResult);
-
-      return workflowCleanupResult;
-    } else {
-      return null;
+      managedWorkflow.cleanup(resource, context);
     }
   }
 

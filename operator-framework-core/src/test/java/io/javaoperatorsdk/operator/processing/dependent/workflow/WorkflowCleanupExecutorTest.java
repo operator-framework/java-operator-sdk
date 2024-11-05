@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -44,8 +44,8 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
     when(eventSourceContextMock.getControllerConfiguration()).thenReturn(mockControllerConfig);
     when(mockControllerConfig.getConfigurationService())
         .thenReturn(mock(ConfigurationService.class));
-    when(mockContext.managedDependentResourceContext())
-        .thenReturn(mock(ManagedDependentResourceContext.class));
+    when(mockContext.managedWorkflowAndDependentResourceContext())
+        .thenReturn(mock(ManagedWorkflowAndDependentResourceContext.class));
     when(mockContext.getWorkflowExecutorService()).thenReturn(executorService);
     when(mockContext.eventSourceRetriever()).thenReturn(eventSourceRetrieverMock);
   }
