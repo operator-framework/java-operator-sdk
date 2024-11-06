@@ -1,0 +1,19 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tests.crd.example
+spec:
+  group: crd.example
+  names:
+    kind: Test
+    singular: test
+    plural: tests
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+        type: "object"
+    served: true
+    storage: true
