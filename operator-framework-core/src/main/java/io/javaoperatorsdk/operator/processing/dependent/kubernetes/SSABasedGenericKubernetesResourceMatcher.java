@@ -12,10 +12,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +28,10 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LoggingUtils;
 
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
-
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
+
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -112,15 +108,13 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     removeIrrelevantValues(desiredMap);
 
     var matches = prunedActual.equals(desiredMap);
-
     if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
       var diff = getDiff(prunedActual, desiredMap, objectMapper);
       log.debug(
-          "Diff between actual and desired state for resource: {} with name: {} in namespace: {} is: \n{}",
+          "Diff between actual and desired state for resource: {} with name: {} in namespace: {} is:\n{}",
           actual.getKind(), actual.getMetadata().getName(), actual.getMetadata().getNamespace(),
           diff);
     }
-
     return matches;
   }
 
@@ -129,24 +123,23 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     var actualYaml = serialization.asYaml(sortMap(prunedActualMap));
     var desiredYaml = serialization.asYaml(sortMap(desiredMap));
     if (log.isTraceEnabled()) {
-      log.trace("Pruned actual resource: \n {} \ndesired resource: \n {} ", actualYaml,
-          desiredYaml);
+      log.trace("Pruned actual resource:\n {} \ndesired resource:\n {} ", actualYaml, desiredYaml);
     }
 
     var patch = DiffUtils.diff(actualYaml.lines().toList(), desiredYaml.lines().toList());
-    List<String> unifiedDiff =
+    var unifiedDiff =
         UnifiedDiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
     return String.join("\n", unifiedDiff);
   }
 
   @SuppressWarnings("unchecked")
   Map<String, Object> sortMap(Map<String, Object> map) {
-    List<String> sortedKeys = new ArrayList<>(map.keySet());
+    var sortedKeys = new ArrayList<>(map.keySet());
     Collections.sort(sortedKeys);
 
-    Map<String, Object> sortedMap = new LinkedHashMap<>();
-    for (String key : sortedKeys) {
-      Object value = map.get(key);
+    var sortedMap = new LinkedHashMap<String, Object>();
+    for (var key : sortedKeys) {
+      var value = map.get(key);
       if (value instanceof Map) {
         sortedMap.put(key, sortMap((Map<String, Object>) value));
       } else if (value instanceof List) {
@@ -160,8 +153,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
   @SuppressWarnings("unchecked")
   List<Object> sortListItems(List<Object> list) {
-    List<Object> sortedList = new ArrayList<>();
-    for (Object item : list) {
+    var sortedList = new ArrayList<>();
+    for (var item : list) {
       if (item instanceof Map) {
         sortedList.add(sortMap((Map<String, Object>) item));
       } else if (item instanceof List) {
@@ -177,9 +170,10 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
    * Correct for known issue with SSA
    */
   private void sanitizeState(R actual, R desired, Map<String, Object> actualMap) {
-    if (actual instanceof StatefulSet) {
-      var actualSpec = (((StatefulSet) actual)).getSpec();
-      var desiredSpec = (((StatefulSet) desired)).getSpec();
+    if (actual instanceof StatefulSet actualStatefulSet
+        && desired instanceof StatefulSet desiredStatefulSet) {
+      var actualSpec = actualStatefulSet.getSpec();
+      var desiredSpec = desiredStatefulSet.getSpec();
       int claims = desiredSpec.getVolumeClaimTemplates().size();
       if (claims == actualSpec.getVolumeClaimTemplates().size()) {
         for (int i = 0; i < claims; i++) {
@@ -197,18 +191,21 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         }
       }
       sanitizeResourceRequirements(actualMap, actualSpec.getTemplate(), desiredSpec.getTemplate());
-    } else if (actual instanceof Deployment) {
+    } else if (actual instanceof Deployment actualDeployment
+        && desired instanceof Deployment desiredDeployment) {
       sanitizeResourceRequirements(actualMap,
-          ((Deployment) actual).getSpec().getTemplate(),
-          ((Deployment) desired).getSpec().getTemplate());
-    } else if (actual instanceof ReplicaSet) {
+          actualDeployment.getSpec().getTemplate(),
+          desiredDeployment.getSpec().getTemplate());
+    } else if (actual instanceof ReplicaSet actualReplicaSet
+        && desired instanceof ReplicaSet desiredReplicaSet) {
       sanitizeResourceRequirements(actualMap,
-          ((ReplicaSet) actual).getSpec().getTemplate(),
-          ((ReplicaSet) desired).getSpec().getTemplate());
-    } else if (actual instanceof DaemonSet) {
+          actualReplicaSet.getSpec().getTemplate(),
+          desiredReplicaSet.getSpec().getTemplate());
+    } else if (actual instanceof DaemonSet actualDaemonSet
+        && desired instanceof DaemonSet desiredDaemonSet) {
       sanitizeResourceRequirements(actualMap,
-          ((DaemonSet) actual).getSpec().getTemplate(),
-          ((DaemonSet) desired).getSpec().getTemplate());
+          actualDaemonSet.getSpec().getTemplate(),
+          desiredDaemonSet.getSpec().getTemplate());
     }
   }
 
@@ -393,7 +390,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       }
     }
     if (possibleTargets.isEmpty()) {
-      throw new IllegalStateException("Cannot find list element for key: " + key + ", in map: "
+      throw new IllegalStateException("Cannot find list element for key: " + key + " in map: "
           + values.stream().map(Map::keySet).toList());
     }
     if (possibleTargets.size() > 1) {
