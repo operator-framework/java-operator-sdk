@@ -1,14 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Sanitizes the {@link ResourceRequirements} in the containers of a pair of {@link PodTemplateSpec}

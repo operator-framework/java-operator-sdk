@@ -1,5 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Map;
+
+import org.assertj.core.api.MapAssert;
+import org.junit.jupiter.api.Test;
+
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
@@ -9,10 +14,6 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
-import org.assertj.core.api.MapAssert;
-import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
 import static org.assertj.core.api.Assertions.assertThat;
