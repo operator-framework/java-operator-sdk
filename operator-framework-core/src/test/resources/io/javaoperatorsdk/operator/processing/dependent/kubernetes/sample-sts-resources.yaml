@@ -1,0 +1,57 @@
+# actual StatefulSet with Resources
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  managedFields:
+    - manager: controller
+      operation: Apply
+      apiVersion: apps/v1
+      time: '2024-10-24T19:15:25Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          f:replicas: { }
+          f:selector: { }
+          f:serviceName: { }
+          f:template:
+            f:metadata:
+              f:labels:
+                f:app: { }
+            f:spec:
+              f:containers:
+                k:{"name":"nginx"}:
+                  .: { }
+                  f:image: { }
+                  f:name: { }
+                  f:ports:
+                    k:{"containerPort":80}:
+                      .: { }
+                      f:containerPort: { }
+                  f:resources: { }
+  name: "test"
+  uid: 50913e35-e855-469f-bec6-3e8cd2607ab4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-app
+  serviceName: "nginx-service"
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.17.0
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+              ephemeral-storage: "100G"
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+              ephemeral-storage: "100G"

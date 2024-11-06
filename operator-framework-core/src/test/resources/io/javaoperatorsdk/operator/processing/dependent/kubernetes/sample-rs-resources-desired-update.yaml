@@ -1,0 +1,29 @@
+# desired ReplicaSet with Resources with an updated resource limit
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: "test"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-app
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.17.0
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              cpu: "4000m"
+              memory: "2Gi"
+              ephemeral-storage: "100G"
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+              ephemeral-storage: "100G"

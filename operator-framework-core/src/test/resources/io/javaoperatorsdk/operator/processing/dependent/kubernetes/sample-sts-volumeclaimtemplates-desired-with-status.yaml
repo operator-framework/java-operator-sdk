@@ -1,0 +1,36 @@
+# desired StatefulSet with a VolumeClaimTemplate with a matching spec.volumeClaimTemplates.spec.status
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "test"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-app
+  serviceName: "nginx-service"
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.17.0
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+    - metadata:
+        name: persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: standard
+      status:
+        phase: Pending

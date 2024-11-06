@@ -4,10 +4,15 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -20,22 +25,21 @@ import static org.mockito.Mockito.when;
 
 class SSABasedGenericKubernetesResourceMatcherTest {
 
-  Context<?> mockedContext = mock(Context.class);
+  private final Context<?> mockedContext = mock();
 
-  SSABasedGenericKubernetesResourceMatcher<HasMetadata> matcher =
-      new SSABasedGenericKubernetesResourceMatcher<>();
+  private final SSABasedGenericKubernetesResourceMatcher<HasMetadata> matcher =
+      SSABasedGenericKubernetesResourceMatcher.getInstance();
 
   @BeforeEach
   @SuppressWarnings("unchecked")
   void setup() {
-    var controllerConfiguration = mock(ControllerConfiguration.class);
-    when(controllerConfiguration.fieldManager()).thenReturn("controller");
-    var configurationService = mock(ConfigurationService.class);
-
     final var client = MockKubernetesClient.client(HasMetadata.class);
     when(mockedContext.getClient()).thenReturn(client);
 
+    final var configurationService = mock(ConfigurationService.class);
+    final var controllerConfiguration = mock(ControllerConfiguration.class);
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
+    when(controllerConfiguration.fieldManager()).thenReturn("controller");
     when(mockedContext.getControllerConfiguration()).thenReturn(controllerConfiguration);
   }
 
@@ -116,9 +120,90 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
   }
 
-  private <R> R loadResource(String fileName, Class<R> clazz) {
+  @ParameterizedTest
+  @ValueSource(strings = {"sample-sts-volumeclaimtemplates-desired.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-status.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-volumemode.yaml"})
+  void testSanitizeState_statefulSetWithVolumeClaims(String desiredResourceFileName) {
+    var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-volumeclaimtemplates.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"sample-sts-volumeclaimtemplates-desired-add.yaml",
+      "sample-sts-volumeclaimtemplates-desired-update.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-status-mismatch.yaml",
+      "sample-sts-volumeclaimtemplates-desired-with-volumemode-mismatch.yaml"})
+  void testSanitizeState_statefulSetWithVolumeClaims_withMismatch(String desiredResourceFileName) {
+    var desiredStatefulSet = loadResource(desiredResourceFileName, StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-volumeclaimtemplates.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_statefulSetWithResources() {
+    var desiredStatefulSet = loadResource("sample-sts-resources-desired.yaml", StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-resources.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isTrue();
+  }
+
+  @Test
+  void testSanitizeState_statefulSetWithResources_withMismatch() {
+    var desiredStatefulSet =
+        loadResource("sample-sts-resources-desired-update.yaml", StatefulSet.class);
+    var actualStatefulSet = loadResource("sample-sts-resources.yaml",
+        StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredStatefulSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_replicaSetWithResources() {
+    var desiredReplicaSet = loadResource("sample-rs-resources-desired.yaml", ReplicaSet.class);
+    var actualReplicaSet = loadResource("sample-rs-resources.yaml",
+        ReplicaSet.class);
+
+    assertThat(matcher.matches(actualReplicaSet, desiredReplicaSet, mockedContext)).isTrue();
+  }
+
+  @Test
+  void testSanitizeState_replicaSetWithResources_withMismatch() {
+    var desiredReplicaSet =
+        loadResource("sample-rs-resources-desired-update.yaml", ReplicaSet.class);
+    var actualReplicaSet = loadResource("sample-rs-resources.yaml",
+        ReplicaSet.class);
+
+    assertThat(matcher.matches(actualReplicaSet, desiredReplicaSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_daemonSetWithResources() {
+    var desiredDaemonSet = loadResource("sample-ds-resources-desired.yaml", DaemonSet.class);
+    var actualDaemonSet = loadResource("sample-ds-resources.yaml",
+        DaemonSet.class);
+
+    assertThat(matcher.matches(actualDaemonSet, desiredDaemonSet, mockedContext)).isTrue();
+  }
+
+  @Test
+  void testSanitizeState_daemonSetWithResources_withMismatch() {
+    var desiredDaemonSet =
+        loadResource("sample-ds-resources-desired-update.yaml", DaemonSet.class);
+    var actualDaemonSet = loadResource("sample-ds-resources.yaml",
+        DaemonSet.class);
+
+    assertThat(matcher.matches(actualDaemonSet, desiredDaemonSet, mockedContext)).isFalse();
+  }
+
+  private static <R> R loadResource(String fileName, Class<R> clazz) {
     return ReconcilerUtils.loadYaml(clazz, SSABasedGenericKubernetesResourceMatcherTest.class,
         fileName);
   }
-
 }
