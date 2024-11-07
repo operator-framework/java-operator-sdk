@@ -45,7 +45,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final List<LocalPortForward> localPortForwards;
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
-  private final Map<Class<? extends CustomResource>, String> crdMappings;
+  private final Map<String, String> crdMappings;
 
   private LocallyRunOperatorExtension(
       List<ReconcilerSpec> reconcilers,
@@ -60,7 +60,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
-      Map<Class<? extends CustomResource>, String> crdMappings) {
+      Map<String, String> crdMappings) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -207,10 +207,16 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         ref.controllerConfigurationOverrider.accept(oconfig);
       }
 
+      final var unapplied = new HashMap<>(crdMappings);
+      final var resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
       // only try to apply a CRD for the reconciler if it is associated to a CR
       if (CustomResource.class.isAssignableFrom(resourceClass)) {
-        applyCrd(resourceClass);
+        applyCrd(resourceTypeName);
+        unapplied.remove(resourceTypeName);
       }
+
+      // apply yet unapplied CRDs
+      unapplied.keySet().forEach(this::applyCrd);
 
       var registeredController = this.operator.register(ref.reconciler, oconfig.build());
       registeredControllers.put(ref.reconciler, registeredController);
@@ -229,7 +235,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
    * @param crClass the custom resource class for which we want to apply the CRD
    */
   public void applyCrd(Class<? extends CustomResource> crClass) {
-    final var path = crdMappings.get(crClass);
+    applyCrd(ReconcilerUtils.getResourceTypeName(crClass));
+  }
+
+  public void applyCrd(String resourceTypeName) {
+    final var path = crdMappings.get(resourceTypeName);
     if (path != null) {
       try (InputStream inputStream = new FileInputStream(path)) {
         applyCrd(inputStream, path, getKubernetesClient());
@@ -237,7 +247,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         throw new IllegalStateException("Cannot apply CRD yaml: " + path, e);
       }
     } else {
-      applyCrd(crClass, getKubernetesClient());
+      applyCrd(resourceTypeName, getKubernetesClient());
     }
   }
 
@@ -266,7 +276,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<ReconcilerSpec> reconcilers;
     private final List<PortForwardSpec> portForwards;
     private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
-    private final Map<Class<? extends CustomResource>, String> crdMappings;
+    private final Map<String, String> crdMappings;
     private KubernetesClient kubernetesClient;
 
     protected Builder() {
@@ -331,7 +341,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     public Builder withCRDMapping(Class<? extends CustomResource> customResourceClass,
         String path) {
-      crdMappings.put(customResourceClass, path);
+      return withCRDMapping(ReconcilerUtils.getResourceTypeName(customResourceClass), path);
+    }
+
+    public Builder withCRDMapping(String resourceTypeName, String path) {
+      crdMappings.put(resourceTypeName, path);
       return this;
     }
 
