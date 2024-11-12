@@ -215,7 +215,9 @@ class EventSourcesTest {
       t2.join();
     }
 
-    assertThat(concurrentExceptionFound).isFalse();
+    assertThat(concurrentExceptionFound)
+        .withFailMessage("ConcurrentModificationException thrown")
+        .isFalse();
   }
 
   <T extends EventSource> EventSource eventSourceMockWithName(Class<T> clazz, String name,
