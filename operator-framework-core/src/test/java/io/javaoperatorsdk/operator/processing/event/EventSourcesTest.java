@@ -1,5 +1,11 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.ConcurrentModificationException;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -183,5 +189,46 @@ class EventSourcesTest {
     assertThat(sources).contains(mock3);
 
     assertThat(eventSources.getEventSources(Service.class)).isEmpty();
+  }
+
+  @Test
+  void testConcurrentAddRemoveAndGet() throws InterruptedException {
+    final var concurrentExceptionFound = new AtomicBoolean(false);
+    for (int i = 0; i < 1000 && !concurrentExceptionFound.get(); i++) {
+      final var eventSources = new EventSources();
+      var eventSourceList =
+          IntStream.range(1, 20).mapToObj(n -> {
+            var mockResES = mock(ResourceEventSource.class);
+            NamedEventSource eventSource = mock(NamedEventSource.class);
+            when(eventSource.original()).thenReturn(mockResES);
+            when(eventSource.name()).thenReturn("name" + n);
+            when(mockResES.resourceType()).thenReturn(HasMetadata.class);
+            return eventSource;
+          }).collect(Collectors.toList());
+
+      IntStream.range(1, 10).forEach(n -> eventSources.add(eventSourceList.get(n - 1)));
+
+      var phaser = new Phaser(2);
+
+      var t1 = new Thread(() -> {
+        phaser.arriveAndAwaitAdvance();
+        IntStream.range(11, 20).forEach(n -> eventSources.add(eventSourceList.get(n - 1)));
+      });
+      var t2 = new Thread(() -> {
+        phaser.arriveAndAwaitAdvance();
+        try {
+          eventSources.getEventSources(HasMetadata.class);
+        } catch (ConcurrentModificationException e) {
+          concurrentExceptionFound.set(true);
+        }
+      });
+      t1.start();
+      t2.start();
+      t1.join();
+      t2.join();
+    }
+    assertThat(concurrentExceptionFound)
+        .withFailMessage("ConcurrentModificationException thrown")
+        .isFalse();
   }
 }
