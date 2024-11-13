@@ -1,10 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
@@ -93,7 +93,8 @@ class EventSources<R extends HasMetadata> {
           + keyAsString(getResourceType(original), name)
           + " class/name combination");
     }
-    sources.computeIfAbsent(keyFor(original), k -> new HashMap<>()).put(name, eventSource);
+    sources.computeIfAbsent(keyFor(original), k -> new ConcurrentHashMap<>()).put(name,
+        eventSource);
   }
 
   @SuppressWarnings("rawtypes")
