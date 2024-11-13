@@ -36,6 +36,7 @@ class EventSourceManagerTest {
   public void registersEventSource() {
     EventSource eventSource = mock(EventSource.class);
     when(eventSource.resourceType()).thenReturn(EventSource.class);
+    when(eventSource.name()).thenReturn("name1");
 
     eventSourceManager.registerEventSource(eventSource);
 
@@ -95,6 +96,7 @@ class EventSourceManagerTest {
 
     ManagedInformerEventSource eventSource = mock(ManagedInformerEventSource.class);
     when(eventSource.resourceType()).thenReturn(String.class);
+    when(eventSource.name()).thenReturn("name1");
     manager.registerEventSource(eventSource);
 
     var source = manager.getEventSourceFor(String.class);
