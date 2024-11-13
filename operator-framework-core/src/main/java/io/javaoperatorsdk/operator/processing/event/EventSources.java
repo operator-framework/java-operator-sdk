@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
@@ -33,7 +35,8 @@ class EventSources<P extends HasMetadata> {
           + " is already registered with name: " + name);
     }
     sourceByName.put(name, eventSource);
-    sources.computeIfAbsent(keyFor(eventSource), k -> new HashMap<>()).put(name, eventSource);
+    sources.computeIfAbsent(keyFor(eventSource), k -> new ConcurrentHashMap<>()).put(name,
+        eventSource);
   }
 
   public EventSource remove(String name) {
@@ -144,7 +147,6 @@ class EventSources<P extends HasMetadata> {
     if (sourcesForType == null) {
       return Collections.emptyList();
     }
-
     return sourcesForType.values().stream()
         .map(es -> (EventSource<S, P>) es).toList();
   }
