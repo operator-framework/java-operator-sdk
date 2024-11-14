@@ -146,7 +146,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
   public static CustomResourceDefinition parseCrd(String path, KubernetesClient client) {
     try (InputStream is = new FileInputStream(path)) {
-      return (CustomResourceDefinition) client.load(new ByteArrayInputStream(is.readAllBytes()));
+      return (CustomResourceDefinition) client.load(new ByteArrayInputStream(is.readAllBytes()))
+          .items().get(0);
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     } catch (IOException e) {
