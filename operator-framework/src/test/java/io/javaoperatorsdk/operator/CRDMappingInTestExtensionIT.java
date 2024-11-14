@@ -28,7 +28,7 @@ public class CRDMappingInTestExtensionIT {
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new TestReconciler())
-          .withCRDMapping("tests.crd.example", "src/test/crd/test.crd")
+          .withAdditionalCRD("src/test/resource/crd/test.crd")
           .build();
 
   @Test
