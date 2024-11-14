@@ -357,7 +357,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       additionalCustomResourceDefinitions.add(customResource);
       return this;
     }
-    
+
     public Builder withAdditionalCRD(String path) {
       additionalCRDs.add(path);
       return this;
