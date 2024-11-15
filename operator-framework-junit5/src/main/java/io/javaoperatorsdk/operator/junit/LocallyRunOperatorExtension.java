@@ -144,10 +144,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
   }
 
-  public static CustomResourceDefinition parseCrd(String path, KubernetesClient client) {
+  public static List<CustomResourceDefinition> parseCrds(String path, KubernetesClient client) {
     try (InputStream is = new FileInputStream(path)) {
-      return (CustomResourceDefinition) client.load(new ByteArrayInputStream(is.readAllBytes()))
-          .items().get(0);
+      return client.load(new ByteArrayInputStream(is.readAllBytes()))
+          .items().stream().map(i -> (CustomResourceDefinition) i).collect(Collectors.toList());
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     } catch (IOException e) {
@@ -248,8 +248,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private Map<String, CustomResourceDefinition> getAdditionalCRDsFromFiles() {
     Map<String, CustomResourceDefinition> crdMappings = new HashMap<>();
     additionalCrds.forEach(p -> {
-      var crd = parseCrd(p, getKubernetesClient());
-      crdMappings.put(crd.getMetadata().getName(), crd);
+      var crds = parseCrds(p, getKubernetesClient());
+      crds.forEach(c -> crdMappings.put(c.getMetadata().getName(), c));
     });
     return crdMappings;
   }
