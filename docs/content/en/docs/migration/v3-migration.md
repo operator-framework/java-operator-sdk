@@ -1,11 +1,8 @@
 ---
 title: Migrating from v2 to v3
-description: Migrating from v2 to v3
 layout: docs
 permalink: /docs/v3-migration
 ---
-
-# Migrating from v2 to v3
 
 Version 3 introduces some breaking changes to APIs, however the migration to these changes should be trivial.
 
