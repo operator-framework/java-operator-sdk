@@ -1,11 +1,8 @@
 ---
 title: Migrating from v1 to v2
-description: Migrating from v1 to v2
 layout: docs
 permalink: /docs/v2-migration
 ---
-
-# Migrating from v1 to v2
 
 Version 2 of the framework introduces improvements, features and breaking changes for the APIs both
 internal and user facing ones. The migration should be however trivial in most of the cases. For
