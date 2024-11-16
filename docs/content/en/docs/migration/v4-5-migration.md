@@ -1,11 +1,8 @@
 ---
 title: Migrating from v4.4 to v4.5
-description: Migrating from v4.4 to v4.5
 layout: docs
 permalink: /docs/v4-5-migration
 ---
-
-# Migrating from v4.4 to v4.5
 
 Version 4.5 introduces improvements related to event handling for Dependent Resources, more precisely the
 [caching and event handling](https://javaoperatorsdk.io/docs/dependent-resources#caching-and-event-handling-in-kubernetesdependentresource)
