@@ -1,11 +1,8 @@
 ---
 title: Migrating from v3 to v3.1
-description: Migrating from v3 to v3.1
 layout: docs
 permalink: /docs/v3-1-migration
 ---
-
-# Migrating from v3 to v3.1
 
 ## ReconciliationMaxInterval Annotation has been renamed to MaxReconciliationInterval
 
