@@ -1,11 +1,8 @@
 ---
 title: Migrating from v4.2 to v4.3
-description: Migrating from v4.2 to v4.3
 layout: docs
 permalink: /docs/v4-3-migration
 ---
-
-# Migrating from v4.2 to v4.3
 
 ## Condition API Change
 

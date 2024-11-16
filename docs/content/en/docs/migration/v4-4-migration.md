@@ -1,11 +1,8 @@
 ---
 title: Migrating from v4.3 to v4.4
-description: Migrating from v4.3 to v4.4
 layout: docs
 permalink: /docs/v4-4-migration
 ---
-
-# Migrating from v4.3 to v4.4
 
 ## API changes
 
