@@ -68,6 +68,19 @@ public class GroupVersionKind {
     }
   }
 
+  /**
+   * Reverse to {@link #fromString(String)}.
+   * 
+   * @return gvk encoded in simple string.
+   */
+  public String toSimpleString() {
+    var res = "";
+    if (group != null) {
+      res += group + "/";
+    }
+    return res + version + "/" + kind;
+  }
+
   public String getGroup() {
     return group;
   }

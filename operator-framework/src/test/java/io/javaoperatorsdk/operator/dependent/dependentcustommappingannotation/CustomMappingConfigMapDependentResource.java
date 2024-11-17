@@ -20,10 +20,12 @@ public class CustomMappingConfigMapDependentResource
 
   public static final String CUSTOM_NAME_KEY = "customNameKey";
   public static final String CUSTOM_NAMESPACE_KEY = "customNamespaceKey";
+  public static final String CUSTOM_TYPE_KEY = "customTypeKey";
   public static final String KEY = "key";
 
   private static final SecondaryToPrimaryMapper<ConfigMap> mapper =
-      Mappers.fromAnnotation(CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY);
+      Mappers.fromAnnotation(CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY, CUSTOM_TYPE_KEY,
+          DependentCustomMappingCustomResource.class);
 
   public CustomMappingConfigMapDependentResource() {
     super(ConfigMap.class);
@@ -44,7 +46,8 @@ public class CustomMappingConfigMapDependentResource
   @Override
   protected void addSecondaryToPrimaryMapperAnnotations(ConfigMap desired,
       DependentCustomMappingCustomResource primary) {
-    addSecondaryToPrimaryMapperAnnotations(desired, primary, CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY);
+    addSecondaryToPrimaryMapperAnnotations(desired, primary, CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY,
+        CUSTOM_TYPE_KEY);
   }
 
 

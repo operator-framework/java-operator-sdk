@@ -75,4 +75,13 @@ class GroupVersionKindTest {
         "MyPlural");
     assertThat(gvk.getPlural()).hasValue("MyPlural");
   }
+
+  @Test
+  void encodesGVKToSimpleString() {
+    var gvk = GroupVersionKind.fromString("apps/v1/Deployment");
+    assertThat(gvk.toSimpleString()).isEqualTo("apps/v1/Deployment");
+
+    gvk = GroupVersionKind.fromString("v1/ConfigMap");
+    assertThat(gvk.toSimpleString()).isEqualTo("v1/ConfigMap");
+  }
 }
