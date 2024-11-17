@@ -53,7 +53,8 @@ public class InformerRemoteClusterReconciler
         .from(ConfigMap.class, InformerRemoteClusterCustomResource.class)
         // owner references do not work cross cluster, using
         // annotations here to reference primary resource
-        .withSecondaryToPrimaryMapper(Mappers.fromDefaultAnnotations())
+        .withSecondaryToPrimaryMapper(
+            Mappers.fromDefaultAnnotations(InformerRemoteClusterCustomResource.class))
         // setting remote client for informer
         .withKubernetesClient(remoteClient)
         .withInformerConfiguration(

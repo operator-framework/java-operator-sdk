@@ -19,6 +19,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
+import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractEventSourceHolderDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -208,17 +209,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected void addSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
     addSecondaryToPrimaryMapperAnnotations(desired, primary, Mappers.DEFAULT_ANNOTATION_FOR_NAME,
-        Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE);
+        Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE, Mappers.DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE);
   }
 
   protected void addSecondaryToPrimaryMapperAnnotations(R desired, P primary, String nameKey,
-      String namespaceKey) {
+      String namespaceKey, String typeKey) {
     var annotations = desired.getMetadata().getAnnotations();
     annotations.put(nameKey, primary.getMetadata().getName());
     var primaryNamespaces = primary.getMetadata().getNamespace();
     if (primaryNamespaces != null) {
       annotations.put(namespaceKey, primary.getMetadata().getNamespace());
     }
+    annotations.put(typeKey, GroupVersionKind.gvkFor(primary.getClass()).toSimpleString());
   }
 
   @Override
@@ -274,7 +276,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         return Optional
             .of(Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), clustered));
       } else if (isCreatable()) {
-        return Optional.of(Mappers.fromDefaultAnnotations());
+        return Optional.of(Mappers.fromDefaultAnnotations(context.getPrimaryResourceClass()));
       }
     }
     return Optional.empty();
