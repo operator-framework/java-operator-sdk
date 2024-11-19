@@ -4,8 +4,6 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -23,8 +21,6 @@ import static org.awaitility.Awaitility.await;
 class ComplexWorkflowIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
-
-  Logger log = LoggerFactory.getLogger(ComplexWorkflowIT.class);
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
