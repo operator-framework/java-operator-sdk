@@ -21,11 +21,9 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
 
   @Override
   @SuppressWarnings("unchecked")
+  @Deprecated(forRemoval = true)
   public <T> T put(Object key, T value) {
-    if (value == null) {
-      return (T) Optional.ofNullable(attributes.remove(key));
-    }
-    return (T) Optional.ofNullable(attributes.put(key, value));
+    return (T) putOrRemove(key, value);
   }
 
   @Override

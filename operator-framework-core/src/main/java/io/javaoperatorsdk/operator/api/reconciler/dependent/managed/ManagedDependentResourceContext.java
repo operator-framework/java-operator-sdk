@@ -36,8 +36,10 @@ public interface ManagedDependentResourceContext {
    *        associated with the specified key
    * @return an Optional containing the previous value associated with the key or
    *         {@link Optional#empty()} if none existed
+   * @deprecated use {@link #putOrRemove(Object, Object)} instead
    */
   @SuppressWarnings("unchecked")
+  @Deprecated(forRemoval = true)
   <T> T put(Object key, T value);
 
   /**
@@ -52,7 +54,6 @@ public interface ManagedDependentResourceContext {
    * @return an Optional containing the previous value associated with the key or
    *         {@link Optional#empty()} if none existed
    */
-  @SuppressWarnings("unchecked")
   <T> Optional<T> putOrRemove(Object key, T value);
 
   /**

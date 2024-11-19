@@ -93,7 +93,7 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
         new WorkflowReconcileExecutor<>(this, primary, context);
     var result = workflowReconcileExecutor.reconcile();
     context.managedDependentResourceContext()
-        .put(DefaultManagedDependentResourceContext.RECONCILE_RESULT_KEY, result);
+        .putOrRemove(DefaultManagedDependentResourceContext.RECONCILE_RESULT_KEY, result);
     if (throwExceptionAutomatically) {
       result.throwAggregateExceptionIfErrorsPresent();
     }
@@ -106,7 +106,7 @@ public class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
         new WorkflowCleanupExecutor<>(this, primary, context);
     var result = workflowCleanupExecutor.cleanup();
     context.managedDependentResourceContext()
-        .put(DefaultManagedDependentResourceContext.CLEANUP_RESULT_KEY, result);
+        .putOrRemove(DefaultManagedDependentResourceContext.CLEANUP_RESULT_KEY, result);
     if (throwExceptionAutomatically) {
       result.throwAggregateExceptionIfErrorsPresent();
     }
