@@ -76,7 +76,7 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   public Workflow<P> resolve(KubernetesClient client,
       ControllerConfiguration<P> configuration) {
     final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
-    for (DependentResourceSpec spec : orderedSpecs) {
+    for (DependentResourceSpec<?, P, ?> spec : orderedSpecs) {
       final var dependentResource = resolve(spec, client, configuration);
       final var node = new DependentResourceNode(
           spec.getReconcileCondition(),
