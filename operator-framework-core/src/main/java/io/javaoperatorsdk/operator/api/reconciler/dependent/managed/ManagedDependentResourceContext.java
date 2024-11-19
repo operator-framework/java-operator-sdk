@@ -41,6 +41,21 @@ public interface ManagedDependentResourceContext {
   <T> T put(Object key, T value);
 
   /**
+   * Associates the specified contextual value to the specified key. If the value is {@code null},
+   * the semantics of this operation is defined as removing the mapping associated with the
+   * specified key.
+   *
+   * @param <T> object type
+   * @param key the key identifying which contextual object to add or remove from the context
+   * @param value the value to add to the context or {@code null} to remove an existing entry
+   *        associated with the specified key
+   * @return an Optional containing the previous value associated with the key or
+   *         {@link Optional#empty()} if none existed
+   */
+  @SuppressWarnings("unchecked")
+  <T> Optional<T> putOrRemove(Object key, T value);
+
+  /**
    * Retrieves the value associated with the key or fail with an exception if none exists.
    *
    * @param key the key identifying which contextual object to retrieve

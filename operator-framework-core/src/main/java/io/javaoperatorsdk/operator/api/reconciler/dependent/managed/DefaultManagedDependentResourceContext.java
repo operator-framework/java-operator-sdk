@@ -29,6 +29,15 @@ public class DefaultManagedDependentResourceContext implements ManagedDependentR
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public <T> Optional<T> putOrRemove(Object key, T value) {
+    if (value == null) {
+      return (Optional<T>) Optional.ofNullable(attributes.remove(key));
+    }
+    return (Optional<T>) Optional.ofNullable(attributes.put(key, value));
+  }
+
+  @Override
   @SuppressWarnings("unused")
   public <T> T getMandatory(Object key, Class<T> expectedType) {
     return get(key, expectedType).orElseThrow(() -> new IllegalStateException(
