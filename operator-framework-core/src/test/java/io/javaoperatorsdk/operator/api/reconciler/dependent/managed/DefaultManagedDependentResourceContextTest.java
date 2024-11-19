@@ -14,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DefaultManagedDependentResourceContextTest {
 
-  private ManagedDependentResourceContext context = new DefaultManagedDependentResourceContext();
+  private final ManagedDependentResourceContext context =
+      new DefaultManagedDependentResourceContext();
 
   @Test
   void getWhenEmpty() {
@@ -38,25 +39,28 @@ class DefaultManagedDependentResourceContextTest {
   }
 
   @Test
-  void putOrRemoveNewValueOverwrites() {
-    context.putOrRemove("key", "value");
-    context.putOrRemove("key", "valueB");
-    Optional<String> actual = context.get("key", String.class);
-    assertThat(actual).contains("valueB");
-  }
-
-  @Test
   void putNewValueReturnsPriorValue() {
-    context.put("key", "value");
-    Optional<String> actual = (Optional<String>) (Object) context.put("key", "valueB");
-    assertThat(actual).contains("value");
+    final var prior = "value";
+    context.put("key", prior);
+    String actual = context.put("key", "valueB");
+    assertThat(actual).isEqualTo(prior);
   }
 
   @Test
-  void putOrRemoveNewValueReturnsPriorValue() {
-    context.put("key", "value");
-    Optional<String> actual = context.putOrRemove("key", "valueB");
-    assertThat(actual).contains("value");
+  void putNewValueThrowsExceptionIfTypesDiffer() {
+    // to check that we properly log things without setting up a complex fixture
+    final String[] messages = new String[1];
+    var context = new DefaultManagedDependentResourceContext() {
+      @Override
+      void logWarning(String message) {
+        messages[0] = message;
+      }
+    };
+    final var prior = "value";
+    final var key = "key";
+    context.put(key, prior);
+    context.put(key, 10);
+    assertThat(messages[0]).contains(key).contains(prior).contains("put(" + key + ", null)");
   }
 
   @Test
@@ -67,25 +71,11 @@ class DefaultManagedDependentResourceContextTest {
     assertThat(actual).isEmpty();
   }
 
-  @Test
-  void putOrRemoveNullRemoves() {
-    context.putOrRemove("key", "value");
-    context.putOrRemove("key", null);
-    Optional<String> actual = context.get("key", String.class);
-    assertThat(actual).isEmpty();
-  }
 
   @Test
   void putNullReturnsPriorValue() {
     context.put("key", "value");
-    Optional<String> actual = context.put("key", null);
-    assertThat(actual).contains("value");
-  }
-
-  @Test
-  void putOrRemoveNullReturnsPriorValue() {
-    context.putOrRemove("key", "value");
-    Optional<String> actual = context.putOrRemove("key", null);
+    String actual = context.put("key", null);
     assertThat(actual).contains("value");
   }
 
@@ -113,5 +103,4 @@ class DefaultManagedDependentResourceContextTest {
     Optional<WorkflowReconcileResult> actual = context.getWorkflowReconcileResult();
     assertThat(actual).containsSame(result);
   }
-
 }
