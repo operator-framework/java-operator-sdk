@@ -47,7 +47,7 @@ class DefaultManagedDependentResourceContextTest {
   }
 
   @Test
-  void putNewValueThrowsExceptionIfTypesDiffer() {
+  void putNewValueLogsWarningIfTypesDiffer() {
     // to check that we properly log things without setting up a complex fixture
     final String[] messages = new String[1];
     var context = new DefaultManagedDependentResourceContext() {
