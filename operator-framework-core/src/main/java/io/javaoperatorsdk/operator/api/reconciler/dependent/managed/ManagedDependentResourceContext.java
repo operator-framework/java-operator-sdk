@@ -30,14 +30,23 @@ public interface ManagedDependentResourceContext {
    * the semantics of this operation is defined as removing the mapping associated with the
    * specified key.
    *
+   * <p>
+   * Note that, while implementations shouldn't throw a {@link ClassCastException} when the new
+   * value type differs from the type of the existing value, calling sites might encounter such
+   * exceptions if they bind the return value to a specific type. Users are either expected to
+   * disregard the return value (most common case) or "reset" the value type associated with the
+   * specified key by first calling {@code put(key, null)} if they want to ensure some level of type
+   * safety in their code (where attempting to store values of different types under the same key
+   * might be indicative of an issue).
+   * </p>
+   *
    * @param <T> object type
    * @param key the key identifying which contextual object to add or remove from the context
    * @param value the value to add to the context or {@code null} to remove an existing entry
    *        associated with the specified key
-   * @return an Optional containing the previous value associated with the key or
-   *         {@link Optional#empty()} if none existed
+   * @return the previous value if one was associated with the specified key, {@code null}
+   *         otherwise.
    */
-  @SuppressWarnings("unchecked")
   <T> T put(Object key, T value);
 
   /**
