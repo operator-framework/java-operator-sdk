@@ -3,19 +3,20 @@ package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.Controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 
 @SuppressWarnings("rawtypes")
 public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMetadata>
     implements ManagedWorkflowAndDependentResourceContext {
-  private static final Logger log = LoggerFactory.getLogger(DefaultManagedWorkflowAndDependentResourceContext.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(DefaultManagedWorkflowAndDependentResourceContext.class);
   public static final Object RECONCILE_RESULT_KEY = new Object();
   public static final Object CLEANUP_RESULT_KEY = new Object();
   private final ConcurrentHashMap attributes = new ConcurrentHashMap();

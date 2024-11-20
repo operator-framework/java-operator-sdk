@@ -1,21 +1,16 @@
 package io.javaoperatorsdk.operator.api.reconciler.dependent.managed;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
-
-import static io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext.RECONCILE_RESULT_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DefaultManagedDependentResourceContextTest {
 
-  private final ManagedDependentResourceContext context =
-      new DefaultManagedDependentResourceContext();
+  private final ManagedWorkflowAndDependentResourceContext context =
+      new DefaultManagedWorkflowAndDependentResourceContext<>(null, null, null);
 
   @Test
   void getWhenEmpty() {
@@ -50,7 +45,7 @@ class DefaultManagedDependentResourceContextTest {
   void putNewValueLogsWarningIfTypesDiffer() {
     // to check that we properly log things without setting up a complex fixture
     final String[] messages = new String[1];
-    var context = new DefaultManagedDependentResourceContext() {
+    var context = new DefaultManagedWorkflowAndDependentResourceContext<>(null, null, null) {
       @Override
       void logWarning(String message) {
         messages[0] = message;
@@ -92,14 +87,5 @@ class DefaultManagedDependentResourceContextTest {
     }).isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "Mandatory attribute (key: key, type: java.lang.String) is missing or not of the expected type");
-  }
-
-  @Test
-  void getWorkflowReconcileResult() {
-    WorkflowReconcileResult result =
-        new WorkflowReconcileResult(List.of(), List.of(), Map.of(), Map.of());
-    context.put(RECONCILE_RESULT_KEY, result);
-    Optional<WorkflowReconcileResult> actual = context.getWorkflowReconcileResult();
-    assertThat(actual).containsSame(result);
   }
 }
