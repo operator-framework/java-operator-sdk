@@ -127,6 +127,6 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
   }
 
   private WorkflowCleanupResult createCleanupResult() {
-    return new WorkflowCleanupResult(asDetails());
+    return new DefaultWorkflowCleanupResult(asDetails());
   }
 }

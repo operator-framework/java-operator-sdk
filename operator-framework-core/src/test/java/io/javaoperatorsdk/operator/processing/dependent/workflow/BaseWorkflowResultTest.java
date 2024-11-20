@@ -12,14 +12,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class WorkflowResultTest {
-  private final static WorkflowResult.Detail<?> detail =
-      new WorkflowResult.Detail<>(new RuntimeException(), null, null, null, null, null, false,
+class BaseWorkflowResultTest {
+  private final static BaseWorkflowResult.Detail<?> detail =
+      new BaseWorkflowResult.Detail<>(new RuntimeException(), null, null, null, null, null, false,
           false, false);
 
   @Test
   void throwsExceptionWithoutNumberingIfAllDifferentClass() {
-    var res = new WorkflowResult(Map.of(new DependentA(), detail,
+    var res = new BaseWorkflowResult(Map.of(new DependentA(), detail,
         new DependentB(), detail));
     try {
       res.throwAggregateExceptionIfErrorsPresent();
@@ -31,7 +31,7 @@ class WorkflowResultTest {
 
   @Test
   void numbersDependentClassNamesIfMoreOfSameType() {
-    var res = new WorkflowResult(Map.of(new DependentA("name1"), detail,
+    var res = new BaseWorkflowResult(Map.of(new DependentA("name1"), detail,
         new DependentA("name2"), detail));
     try {
       res.throwAggregateExceptionIfErrorsPresent();

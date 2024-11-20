@@ -63,19 +63,18 @@ public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMeta
   }
 
   @Override
-  public void reconcileManagedWorkflow() {
+  public WorkflowReconcileResult reconcileManagedWorkflow() {
     if (!controller.isWorkflowExplicitInvocation()) {
       throw new IllegalStateException("Workflow explicit invocation is not set.");
     }
-    controller.reconcileManagedWorkflow(primaryResource, context);
+    return controller.reconcileManagedWorkflow(primaryResource, context);
   }
 
   @Override
-  public void cleanupManageWorkflow() {
+  public WorkflowCleanupResult cleanupManageWorkflow() {
     if (!controller.isWorkflowExplicitInvocation()) {
       throw new IllegalStateException("Workflow explicit invocation is not set.");
     }
-    controller.cleanupManagedWorkflow(primaryResource, context);
+    return controller.cleanupManagedWorkflow(primaryResource, context);
   }
-
 }
