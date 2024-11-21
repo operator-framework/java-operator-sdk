@@ -11,6 +11,8 @@ a rationale behind the changes if necessary.
 We will omit descriptions of changes that should only require simple code updates; please do contact
 us if you encounter issues anyway.
 
+You can see an introduction and some important changes and rationale behind them from [KubeCon](https://youtu.be/V0NYHt2yjcM?t=1238).
+
 ## Various Changes
 
 - From this release, the minimal Java version is 17.
