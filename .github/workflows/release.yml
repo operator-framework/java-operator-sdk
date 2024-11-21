@@ -36,7 +36,7 @@ jobs:
           exit 1
       - id: set-version-branch
         name: Set version_branch if matched
-        run: echo "::set-output name=version_branch::$tmp_version_branch"
+        run: echo "version_branch=${{env.tmp_version_branch}}" >> $GITHUB_OUTPUT
 
   release-sdk:
     needs: prepare-release
