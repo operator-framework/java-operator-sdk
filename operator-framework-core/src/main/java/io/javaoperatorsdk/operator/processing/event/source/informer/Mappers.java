@@ -21,7 +21,7 @@ public class Mappers {
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
       String nameKey, String typeKey, Class<? extends HasMetadata> primaryResourceType) {
-    return fromMetadata(nameKey, null, typeKey, primaryResourceType, false);
+    return fromAnnotation(nameKey, null, typeKey, primaryResourceType);
   }
 
   @SuppressWarnings("unused")
@@ -35,14 +35,13 @@ public class Mappers {
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(String nameKey,
       String typeKey,
       Class<? extends HasMetadata> primaryResourceType) {
-    return fromMetadata(nameKey, null, typeKey, primaryResourceType, true);
+    return fromLabel(nameKey, null, typeKey, primaryResourceType);
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromDefaultAnnotations(
       Class<? extends HasMetadata> primaryResourceType) {
-    return fromMetadata(DEFAULT_ANNOTATION_FOR_NAME, DEFAULT_ANNOTATION_FOR_NAMESPACE,
-        DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE,
-        primaryResourceType, false);
+    return fromAnnotation(DEFAULT_ANNOTATION_FOR_NAME, DEFAULT_ANNOTATION_FOR_NAMESPACE,
+        DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE, primaryResourceType);
   }
 
   @SuppressWarnings("unused")
@@ -125,14 +124,11 @@ public class Mappers {
     }
 
     final String[] split = cacheKey.split("/");
-    switch (split.length) {
-      case 1:
-        return new ResourceID(split[0]);
-      case 2:
-        return new ResourceID(split[1], split[0]);
-      default:
-        throw new IllegalArgumentException("Cannot extract a ResourceID from " + cacheKey);
-    }
+    return switch (split.length) {
+      case 1 -> new ResourceID(split[0]);
+      case 2 -> new ResourceID(split[1], split[0]);
+      default -> throw new IllegalArgumentException("Cannot extract a ResourceID from " + cacheKey);
+    };
   }
 
   /**
@@ -160,7 +156,7 @@ public class Mappers {
   public static class SecondaryToPrimaryFromDefaultAnnotation
       implements SecondaryToPrimaryMapper<HasMetadata> {
 
-    private Class<? extends HasMetadata> primaryResourceType;
+    private final Class<? extends HasMetadata> primaryResourceType;
 
     public SecondaryToPrimaryFromDefaultAnnotation(
         Class<? extends HasMetadata> primaryResourceType) {
