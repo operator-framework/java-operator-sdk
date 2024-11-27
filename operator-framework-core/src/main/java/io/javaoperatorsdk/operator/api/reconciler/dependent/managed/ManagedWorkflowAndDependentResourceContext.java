@@ -70,9 +70,10 @@ public interface ManagedWorkflowAndDependentResourceContext {
    * Explicitly reconcile the declared workflow for the associated
    * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}
    *
+   * @return the result of the workflow reconciliation
    * @throws IllegalStateException if called when explicit invocation is not requested
    */
-  void reconcileManagedWorkflow();
+  WorkflowReconcileResult reconcileManagedWorkflow();
 
   /**
    * Explicitly clean-up dependent resources in the declared workflow for the associated
@@ -80,8 +81,9 @@ public interface ManagedWorkflowAndDependentResourceContext {
    * only needed if the associated reconciler implements the
    * {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner} interface.
    *
+   * @return the result of the workflow reconciliation on cleanup
    * @throws IllegalStateException if called when explicit invocation is not requested
    */
-  void cleanupManageWorkflow();
+  WorkflowCleanupResult cleanupManageWorkflow();
 
 }
