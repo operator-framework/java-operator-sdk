@@ -74,7 +74,7 @@ public class GroupVersionKind {
    *
    * @return gvk encoded in simple string.
    */
-  public String toSimpleString() {
+  public String toGVKString() {
     if (group != null) {
       return group + SEPARATOR + version + SEPARATOR + kind;
     } else {

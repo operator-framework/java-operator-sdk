@@ -220,7 +220,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     if (primaryNamespaces != null) {
       annotations.put(namespaceKey, primary.getMetadata().getNamespace());
     }
-    annotations.put(typeKey, GroupVersionKind.gvkFor(primary.getClass()).toSimpleString());
+    annotations.put(typeKey, GroupVersionKind.gvkFor(primary.getClass()).toGVKString());
   }
 
   @Override

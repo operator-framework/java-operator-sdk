@@ -77,14 +77,14 @@ class GroupVersionKindTest {
   }
 
   @Test
-  void encodesGVKToSimpleString() {
+  void encodesToGVKString() {
     final var deploymentGVK = "apps/v1/Deployment";
     var gvk = GroupVersionKind.fromString(deploymentGVK);
-    assertThat(gvk.toSimpleString()).isEqualTo(deploymentGVK);
-    assertThat(gvk).isEqualTo(GroupVersionKind.fromString(gvk.toSimpleString()));
+    assertThat(gvk.toGVKString()).isEqualTo(deploymentGVK);
+    assertThat(gvk).isEqualTo(GroupVersionKind.fromString(gvk.toGVKString()));
 
     gvk = GroupVersionKind.fromString("v1/ConfigMap");
-    assertThat(gvk.toSimpleString()).isEqualTo("v1/ConfigMap");
-    assertThat(gvk).isEqualTo(GroupVersionKind.fromString(gvk.toSimpleString()));
+    assertThat(gvk.toGVKString()).isEqualTo("v1/ConfigMap");
+    assertThat(gvk).isEqualTo(GroupVersionKind.fromString(gvk.toGVKString()));
   }
 }
