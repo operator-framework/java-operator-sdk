@@ -26,6 +26,7 @@ public class InformerEventSourceTestCustomReconciler
       LoggerFactory.getLogger(InformerEventSourceTestCustomReconciler.class);
 
   public static final String RELATED_RESOURCE_NAME = "relatedResourceName";
+  public static final String RELATED_RESOURCE_TYPE = "relatedResourceType";
   public static final String TARGET_CONFIG_MAP_KEY = "targetStatus";
   public static final String MISSING_CONFIG_MAP = "Missing Config Map";
 
@@ -38,7 +39,9 @@ public class InformerEventSourceTestCustomReconciler
     InformerEventSourceConfiguration<ConfigMap> config =
         InformerEventSourceConfiguration
             .from(ConfigMap.class, InformerEventSourceTestCustomResource.class)
-            .withSecondaryToPrimaryMapper(Mappers.fromAnnotation(RELATED_RESOURCE_NAME))
+            .withSecondaryToPrimaryMapper(
+                Mappers.fromAnnotation(RELATED_RESOURCE_NAME, RELATED_RESOURCE_TYPE,
+                    InformerEventSourceTestCustomResource.class))
             .build();
 
     return List.of(new InformerEventSource<>(config, context));

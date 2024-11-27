@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
@@ -13,33 +14,41 @@ public class Mappers {
   public static final String DEFAULT_ANNOTATION_FOR_NAME = "io.javaoperatorsdk/primary-name";
   public static final String DEFAULT_ANNOTATION_FOR_NAMESPACE =
       "io.javaoperatorsdk/primary-namespace";
+  public static final String DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE =
+      "io.javaoperatorsdk/primary-type";
 
   private Mappers() {}
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
-      String nameKey) {
-    return fromMetadata(nameKey, null, false);
+      String nameKey, String typeKey, Class<? extends HasMetadata> primaryResourceType) {
+    return fromAnnotation(nameKey, null, typeKey, primaryResourceType);
   }
 
   @SuppressWarnings("unused")
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
-      String nameKey, String namespaceKey) {
-    return fromMetadata(nameKey, namespaceKey, false);
+      String nameKey, String namespaceKey, String typeKey,
+      Class<? extends HasMetadata> primaryResourceType) {
+    return fromMetadata(nameKey, namespaceKey, typeKey, primaryResourceType, false);
   }
 
   @SuppressWarnings("unused")
-  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(String nameKey) {
-    return fromMetadata(nameKey, null, true);
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(String nameKey,
+      String typeKey,
+      Class<? extends HasMetadata> primaryResourceType) {
+    return fromLabel(nameKey, null, typeKey, primaryResourceType);
   }
 
-  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromDefaultAnnotations() {
-    return fromMetadata(DEFAULT_ANNOTATION_FOR_NAME, DEFAULT_ANNOTATION_FOR_NAMESPACE, false);
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromDefaultAnnotations(
+      Class<? extends HasMetadata> primaryResourceType) {
+    return fromAnnotation(DEFAULT_ANNOTATION_FOR_NAME, DEFAULT_ANNOTATION_FOR_NAMESPACE,
+        DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE, primaryResourceType);
   }
 
   @SuppressWarnings("unused")
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
-      String nameKey, String namespaceKey) {
-    return fromMetadata(nameKey, namespaceKey, true);
+      String nameKey, String namespaceKey, String typeKey,
+      Class<? extends HasMetadata> primaryResourceType) {
+    return fromMetadata(nameKey, namespaceKey, typeKey, primaryResourceType, true);
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
@@ -78,7 +87,8 @@ public class Mappers {
   }
 
   private static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromMetadata(
-      String nameKey, String namespaceKey, boolean isLabel) {
+      String nameKey, String namespaceKey, String typeKey,
+      Class<? extends HasMetadata> primaryResourceType, boolean isLabel) {
     return resource -> {
       final var metadata = resource.getMetadata();
       if (metadata == null) {
@@ -94,6 +104,15 @@ public class Mappers {
         }
         var namespace =
             namespaceKey == null ? resource.getMetadata().getNamespace() : map.get(namespaceKey);
+
+        String gvkSimple = map.get(typeKey);
+
+        if (gvkSimple != null &&
+            !GroupVersionKind.fromString(gvkSimple)
+                .equals(GroupVersionKind.gvkFor(primaryResourceType))) {
+          return Set.of();
+        }
+
         return Set.of(new ResourceID(name, namespace));
       }
     };
@@ -105,14 +124,11 @@ public class Mappers {
     }
 
     final String[] split = cacheKey.split("/");
-    switch (split.length) {
-      case 1:
-        return new ResourceID(split[0]);
-      case 2:
-        return new ResourceID(split[1], split[0]);
-      default:
-        throw new IllegalArgumentException("Cannot extract a ResourceID from " + cacheKey);
-    }
+    return switch (split.length) {
+      case 1 -> new ResourceID(split[0]);
+      case 2 -> new ResourceID(split[1], split[0]);
+      default -> throw new IllegalArgumentException("Cannot extract a ResourceID from " + cacheKey);
+    };
   }
 
   /**
@@ -139,9 +155,17 @@ public class Mappers {
 
   public static class SecondaryToPrimaryFromDefaultAnnotation
       implements SecondaryToPrimaryMapper<HasMetadata> {
+
+    private final Class<? extends HasMetadata> primaryResourceType;
+
+    public SecondaryToPrimaryFromDefaultAnnotation(
+        Class<? extends HasMetadata> primaryResourceType) {
+      this.primaryResourceType = primaryResourceType;
+    }
+
     @Override
     public Set<ResourceID> toPrimaryResourceIDs(HasMetadata resource) {
-      return Mappers.fromDefaultAnnotations().toPrimaryResourceIDs(resource);
+      return Mappers.fromDefaultAnnotations(primaryResourceType).toPrimaryResourceIDs(resource);
     }
   }
 
