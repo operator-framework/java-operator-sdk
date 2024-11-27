@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class GroupVersionKind {
+  private static final String SEPARATOR = "/";
   private final String group;
   private final String version;
   private final String kind;
@@ -16,7 +17,7 @@ public class GroupVersionKind {
 
   public GroupVersionKind(String apiVersion, String kind) {
     this.kind = kind;
-    String[] groupAndVersion = apiVersion.split("/");
+    String[] groupAndVersion = apiVersion.split(SEPARATOR);
     if (groupAndVersion.length == 1) {
       this.group = null;
       this.version = groupAndVersion[0];
@@ -40,24 +41,24 @@ public class GroupVersionKind {
     this.group = group;
     this.version = version;
     this.kind = kind;
-    this.apiVersion = (group == null || group.isBlank()) ? version : group + "/" + version;
+    this.apiVersion = (group == null || group.isBlank()) ? version : group + SEPARATOR + version;
   }
 
   /**
    * Parse GVK from a String representation. Expected format is: [group]/[version]/[kind]
-   * 
+   *
    * <pre>
    *   Sample: "apps/v1/Deployment"
    * </pre>
-   * 
+   *
    * or: [version]/[kind]
-   * 
+   *
    * <pre>
    *     Sample: v1/ConfigMap
    * </pre>
    **/
   public static GroupVersionKind fromString(String gvk) {
-    String[] parts = gvk.split("/");
+    String[] parts = gvk.split(SEPARATOR);
     if (parts.length == 3) {
       return new GroupVersionKind(parts[0], parts[1], parts[2]);
     } else if (parts.length == 2) {
@@ -70,15 +71,15 @@ public class GroupVersionKind {
 
   /**
    * Reverse to {@link #fromString(String)}.
-   * 
+   *
    * @return gvk encoded in simple string.
    */
   public String toSimpleString() {
-    var res = "";
     if (group != null) {
-      res += group + "/";
+      return group + SEPARATOR + version + SEPARATOR + kind;
+    } else {
+      return version + SEPARATOR + kind;
     }
-    return res + version + "/" + kind;
   }
 
   public String getGroup() {
