@@ -13,5 +13,5 @@ public abstract class AbstractSecondaryToPrimaryMapper<R> implements SecondaryTo
     public void setPrimaryResourceType(Class<? extends HasMetadata> primaryResourceType) {
         this.primaryResourceType = primaryResourceType;
     }
-    
+
 }
