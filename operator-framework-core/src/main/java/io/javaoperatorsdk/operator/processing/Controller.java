@@ -40,6 +40,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceReference
 import io.javaoperatorsdk.operator.health.ControllerHealthInfo;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanupResult;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 import io.javaoperatorsdk.operator.processing.event.EventProcessor;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -449,16 +450,18 @@ public class Controller<P extends HasMetadata>
     return eventSourceContext;
   }
 
-  public void reconcileManagedWorkflow(P primary, Context<P> context) {
+  public WorkflowReconcileResult reconcileManagedWorkflow(P primary, Context<P> context) {
     if (!managedWorkflow.isEmpty()) {
-      managedWorkflow.reconcile(primary, context);
+      return managedWorkflow.reconcile(primary, context);
     }
+    return WorkflowReconcileResult.EMPTY;
   }
 
-  public void cleanupManagedWorkflow(P resource, Context<P> context) {
+  public WorkflowCleanupResult cleanupManagedWorkflow(P resource, Context<P> context) {
     if (managedWorkflow.hasCleaner()) {
-      managedWorkflow.cleanup(resource, context);
+      return managedWorkflow.cleanup(resource, context);
     }
+    return WorkflowCleanupResult.EMPTY;
   }
 
   public boolean isWorkflowExplicitInvocation() {

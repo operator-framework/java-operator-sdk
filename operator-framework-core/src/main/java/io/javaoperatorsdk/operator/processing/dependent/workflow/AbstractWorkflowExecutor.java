@@ -24,7 +24,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected final P primary;
   protected final ResourceID primaryID;
   protected final Context<P> context;
-  protected final Map<DependentResourceNode<?, P>, WorkflowResult.DetailBuilder<?>> results;
+  protected final Map<DependentResourceNode<?, P>, BaseWorkflowResult.DetailBuilder<?>> results;
   /**
    * Covers both deleted and reconciled
    */
@@ -74,30 +74,30 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected boolean alreadyVisited(DependentResourceNode<?, P> dependentResourceNode) {
-    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::isVisited);
+    return getResultFlagFor(dependentResourceNode, BaseWorkflowResult.DetailBuilder::isVisited);
   }
 
   protected boolean postDeleteConditionNotMet(DependentResourceNode<?, P> drn) {
-    return getResultFlagFor(drn, WorkflowResult.DetailBuilder::hasPostDeleteConditionNotMet);
+    return getResultFlagFor(drn, BaseWorkflowResult.DetailBuilder::hasPostDeleteConditionNotMet);
   }
 
   protected boolean isMarkedForDelete(DependentResourceNode<?, P> drn) {
-    return getResultFlagFor(drn, WorkflowResult.DetailBuilder::isMarkedForDelete);
+    return getResultFlagFor(drn, BaseWorkflowResult.DetailBuilder::isMarkedForDelete);
   }
 
-  protected synchronized WorkflowResult.DetailBuilder createOrGetResultFor(
+  protected synchronized BaseWorkflowResult.DetailBuilder createOrGetResultFor(
       DependentResourceNode<?, P> dependentResourceNode) {
     return results.computeIfAbsent(dependentResourceNode,
-        unused -> new WorkflowResult.DetailBuilder());
+        unused -> new BaseWorkflowResult.DetailBuilder());
   }
 
-  protected synchronized Optional<WorkflowResult.DetailBuilder<?>> getResultFor(
+  protected synchronized Optional<BaseWorkflowResult.DetailBuilder<?>> getResultFor(
       DependentResourceNode<?, P> dependentResourceNode) {
     return Optional.ofNullable(results.get(dependentResourceNode));
   }
 
   protected boolean getResultFlagFor(DependentResourceNode<?, P> dependentResourceNode,
-      Function<WorkflowResult.DetailBuilder<?>, Boolean> flag) {
+      Function<BaseWorkflowResult.DetailBuilder<?>, Boolean> flag) {
     return getResultFor(dependentResourceNode).map(flag).orElse(false);
   }
 
@@ -117,11 +117,11 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected boolean isReady(DependentResourceNode<?, P> dependentResourceNode) {
-    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::isReady);
+    return getResultFlagFor(dependentResourceNode, BaseWorkflowResult.DetailBuilder::isReady);
   }
 
   protected boolean isInError(DependentResourceNode<?, P> dependentResourceNode) {
-    return getResultFlagFor(dependentResourceNode, WorkflowResult.DetailBuilder::hasError);
+    return getResultFlagFor(dependentResourceNode, BaseWorkflowResult.DetailBuilder::hasError);
   }
 
   protected synchronized void handleNodeExecutionFinish(
@@ -141,7 +141,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     return condition.map(c -> {
       final DetailedCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
       synchronized (this) {
-        results.computeIfAbsent(dependentResource, unused -> new WorkflowResult.DetailBuilder())
+        results.computeIfAbsent(dependentResource, unused -> new BaseWorkflowResult.DetailBuilder())
             .withResultForCondition(c, r);
       }
       return r;
@@ -173,7 +173,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     }
   }
 
-  protected synchronized Map<DependentResource, WorkflowResult.Detail<?>> asDetails() {
+  protected synchronized Map<DependentResource, BaseWorkflowResult.Detail<?>> asDetails() {
     return results.entrySet().stream()
         .collect(
             Collectors.toMap(e -> e.getKey().getDependentResource(), e -> e.getValue().build()));

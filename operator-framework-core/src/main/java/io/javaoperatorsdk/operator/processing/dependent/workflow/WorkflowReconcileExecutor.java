@@ -241,6 +241,6 @@ class WorkflowReconcileExecutor<P extends HasMetadata> extends AbstractWorkflowE
   }
 
   private WorkflowReconcileResult createReconcileResult() {
-    return new WorkflowReconcileResult(asDetails());
+    return new DefaultWorkflowReconcileResult(asDetails());
   }
 }

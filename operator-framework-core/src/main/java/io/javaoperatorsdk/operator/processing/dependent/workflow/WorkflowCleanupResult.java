@@ -1,30 +1,22 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
-import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public class WorkflowCleanupResult extends WorkflowResult {
-  private Boolean allPostConditionsMet;
+public interface WorkflowCleanupResult extends WorkflowResult {
+  WorkflowCleanupResult EMPTY = new WorkflowCleanupResult() {};
 
-  WorkflowCleanupResult(Map<DependentResource, Detail<?>> results) {
-    super(results);
+  default List<DependentResource> getDeleteCalledOnDependents() {
+    return List.of();
   }
 
-  public List<DependentResource> getDeleteCalledOnDependents() {
-    return listFilteredBy(Detail::deleted);
+  default List<DependentResource> getPostConditionNotMetDependents() {
+    return List.of();
   }
 
-  public List<DependentResource> getPostConditionNotMetDependents() {
-    return listFilteredBy(detail -> !detail.isConditionWithTypeMet(Condition.Type.DELETE));
-  }
-
-  public boolean allPostConditionsMet() {
-    if (allPostConditionsMet == null) {
-      allPostConditionsMet = getPostConditionNotMetDependents().isEmpty();
-    }
-    return allPostConditionsMet;
+  default boolean allPostConditionsMet() {
+    return true;
   }
 }

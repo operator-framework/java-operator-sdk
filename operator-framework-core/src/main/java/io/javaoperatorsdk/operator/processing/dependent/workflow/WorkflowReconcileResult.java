@@ -1,32 +1,28 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
 @SuppressWarnings("rawtypes")
-public class WorkflowReconcileResult extends WorkflowResult {
+public interface WorkflowReconcileResult extends WorkflowResult {
+  WorkflowReconcileResult EMPTY = new WorkflowReconcileResult() {};
 
-  WorkflowReconcileResult(Map<DependentResource, Detail<?>> results) {
-    super(results);
+  default List<DependentResource> getReconciledDependents() {
+    return List.of();
   }
 
-  public List<DependentResource> getReconciledDependents() {
-    return listFilteredBy(detail -> detail.reconcileResult() != null);
+  default List<DependentResource> getNotReadyDependents() {
+    return List.of();
   }
 
-  public List<DependentResource> getNotReadyDependents() {
-    return listFilteredBy(detail -> !detail.isConditionWithTypeMet(Condition.Type.READY));
-  }
-
-  public <T> Optional<T> getNotReadyDependentResult(DependentResource dependentResource,
+  default <T> Optional<T> getNotReadyDependentResult(DependentResource dependentResource,
       Class<T> expectedResultType) {
-    return getDependentConditionResult(dependentResource, Condition.Type.READY, expectedResultType);
+    return Optional.empty();
   }
 
-  public boolean allDependentResourcesReady() {
+  default boolean allDependentResourcesReady() {
     return getNotReadyDependents().isEmpty();
   }
 }
