@@ -304,17 +304,18 @@ resource matching the desired state associated with the primary resource. This m
 state computation already needs to be able to discriminate among multiple related secondary resources to tell JOSDK how
 they should be reconciled.
 
-There might be casees, though, where it might be problematic to call the `desired` method several times (for example, because it is costly to do so), it is always possible to override this automated discrimination using several means:
+There might be cases, though, where it might be problematic to call the `desired` method several times (for example, because it is costly to do so),
+it is always possible to override this automated discrimination using several means (consider in this priority order):
 
-- Implement your own `getSecondaryResource` method on your `DependentResource` implementation from scratch.
-- Override the `selectManagedSecondaryResource` method, if your `DependentResource` extends `AbstractDependentResource`.
+- Override the `targetSecondaryResourceID` method, if your `DependentResource` extends `KubernetesDependentResource`,
+  where it's very often possible to easily determine the `ResourceID` of the secondary resource. This would probably be
+  the easiest solution if you're working with Kubernetes resources.
+- Override the `selectTargetSecondaryResource` method, if your `DependentResource` extends `AbstractDependentResource`.
   This should be relatively simple to override this method to optimize the matching to your needs. You can see an
   example of such an implementation in
   the [`ExternalWithStateDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/externalstate/ExternalWithStateDependentResource.java)
-  class.
-- Override the `managedSecondaryResourceID` method, if your `DependentResource` extends `KubernetesDependentResource`,
-  where it's very often possible to easily determine the `ResourceID` of the secondary resource. This would probably be
-  the easiest solution if you're working with Kubernetes resources.
+  class. 
+- As last resort, you can implement your own `getSecondaryResource` method on your `DependentResource` implementation from scratch.
 
 ### Sharing an Event Source Between Dependent Resources
 
