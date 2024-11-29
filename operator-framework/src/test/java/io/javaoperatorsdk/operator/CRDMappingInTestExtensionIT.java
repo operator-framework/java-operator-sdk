@@ -43,7 +43,7 @@ public class CRDMappingInTestExtensionIT {
   @Group("crd.example")
   @Version("v1")
   @Kind("Test")
-  private static class TestCR extends CustomResource<Void, Void> implements Namespaced {
+  public static class TestCR extends CustomResource<Void, Void> implements Namespaced {
   }
 
   @ControllerConfiguration

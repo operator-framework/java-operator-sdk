@@ -86,9 +86,6 @@
                         <goals>
                             <goal>generate</goal>
                         </goals>
-                        <configuration>
-                            <classpath>WITH_ALL_DEPENDENCIES_AND_TESTS</classpath>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
