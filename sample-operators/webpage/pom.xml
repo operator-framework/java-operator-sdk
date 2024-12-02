@@ -45,11 +45,6 @@
       <version>1.24.4</version>
     </dependency>
     <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>crd-generator-apt</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <scope>compile</scope>
@@ -74,6 +69,22 @@
             <image>webpage-operator</image>
           </to>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>crd-generator-maven-plugin</artifactId>
+        <version>${fabric8-client.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

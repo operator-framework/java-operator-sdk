@@ -109,6 +109,23 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>crd-generator-maven-plugin</artifactId>
+        <version>${fabric8-client.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <phase>process-test-classes</phase>
+            <configuration>
+              <classesToScan>${project.build.testOutputDirectory}</classesToScan>
+              <classpath>WITH_ALL_DEPENDENCIES_AND_TESTS</classpath>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
       </plugin>
