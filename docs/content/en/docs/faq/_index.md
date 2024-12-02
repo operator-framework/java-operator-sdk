@@ -74,6 +74,24 @@ is `true` (`false` by default). To disable, set it to `false` at [Operator-level
 Operator operator = new Operator( override -> override.checkingCRDAndValidateLocalModel(false));
 ```
 
+### Q: I'm managing an external resource that has a generated ID, where should I store that?
+
+It is common that a non-Kubernetes or external resource is managed from a controller. Those external resources might
+have a generated ID, so are not simply addressable based on the spec of a custom resources. Therefore, the 
+generated ID needs to be stored somewhere in order to address the resource during the subsequent reconciliations.
+
+Usually there are two options you can consider to store the ID:
+
+1. Create a separate resource (usually ConfigMap, Secret or dedicated CustomResource) where you store the ID.
+2. Store the ID in the status of the custom resource.
+
+Note that both approaches are a bit tricky, since you have to guarantee the resources are cached for the next
+reconciliation. For example if you patch the status at the end of the reconciliation (`UpdateControl.patchStatus(...)`)
+it is not guaranteed that during the next reconciliation you will see the fresh resource. Therefore, controllers
+which do this, usually cache the updated status in memory to make sure it is present for next reconciliation.
+
+Dependent Resources supports explicitly the [first approach](../dependent-resources/_index.md#external-state-tracking-dependent-resources).
+
 ### Q: How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
 
 It's a common issue when using k3d and the fabric8 client tries to connect to the cluster an exception is thrown:
