@@ -90,7 +90,7 @@ reconciliation. For example if you patch the status at the end of the reconcilia
 it is not guaranteed that during the next reconciliation you will see the fresh resource. Therefore, controllers
 which do this, usually cache the updated status in memory to make sure it is present for next reconciliation.
 
-Dependent Resources supports explicitly the [first approach](../dependent-resources/_index.md#external-state-tracking-dependent-resources).
+Dependent Resources feature supports the [first approach](../dependent-resources/_index.md#external-state-tracking-dependent-resources).
 
 ### Q: How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
 
