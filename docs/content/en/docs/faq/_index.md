@@ -56,7 +56,7 @@ io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: GET a
 ```
 
 To restrict the operator to a set of namespaces, you may override which namespaces are watched by a reconciler
-at [Reconciler-level configuration](./configuration.md#reconciler-level-configuration):
+at [Reconciler-level configuration](../configuration.md#reconciler-level-configuration):
 
 ```java
 Operator operator;
@@ -68,7 +68,7 @@ operator.register(reconciler, configOverrider ->
 Note that configuring the watched namespaces can also be done using the `@ControllerConfiguration` annotation.
 
 Furthermore, you may not be able to list CRDs at startup which is required when `checkingCRDAndValidateLocalModel`
-is `true` (`false` by default). To disable, set it to `false` at [Operator-level configuration](./configuration.md#operator-level-configuration):
+is `true` (`false` by default). To disable, set it to `false` at [Operator-level configuration](../configuration#operator-level-configuration):
 
 ```java
 Operator operator = new Operator( override -> override.checkingCRDAndValidateLocalModel(false));
