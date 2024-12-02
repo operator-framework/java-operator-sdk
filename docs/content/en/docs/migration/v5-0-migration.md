@@ -5,7 +5,58 @@ description: Migrating from v4.7 to v5.0
 
 # Migrating from v4.7 to v5.0
 
-## API Tweaks
+## Fabric8 client updated to 7.0
+
+The Fabric8 client has been updated to version 7.0.0. This is a new major version which implies that some API might have
+changed. Please take a look at the [Fabric8 client 7.0.0 migration guide](https://github.com/fabric8io/kubernetes-client/blob/main/doc/MIGRATION-v7.md).
+
+### CRD generator changes
+
+Starting with v5.0 (in accordance with changes made to the Fabric8 client in version 7.0.0), the CRD generator will use the maven plugin instead of the annotation processor as was previously the case. 
+In many instances, you can simply configure the plugin by adding the following stanza to your project's POM build configuration:
+
+```xml
+<plugin>
+    <groupId>io.fabric8</groupId>
+    <artifactId>crd-generator-maven-plugin</artifactId>
+    <version>${fabric8-client.version}</version>
+    <executions>
+      <execution>
+        <goals>
+          <goal>generate</goal>
+        </goals>
+      </execution>
+    </executions>
+</plugin>
+
+```
+*NOTE*: If you use the SDK's JUnit extension for your tests, you might also need to configure the CRD generator plugin to access your test `CustomResource` implementations as follows:
+```xml
+
+<plugin>
+    <groupId>io.fabric8</groupId>
+    <artifactId>crd-generator-maven-plugin</artifactId>
+    <version>${fabric8-client.version}</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <phase>process-test-classes</phase>
+            <configuration>
+                <classesToScan>${project.build.testOutputDirectory}</classesToScan>
+                <classpath>WITH_ALL_DEPENDENCIES_AND_TESTS</classpath>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+
+```
+
+Please refer to the [CRD generator documentation](https://github.com/fabric8io/kubernetes-client/blob/main/doc/CRD-generator.md) for more details. 
+
+
+## API tweaks
 
 1. [Result of managed dependent resources](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/dependent/managed/ManagedDependentResourceContext.java#L55-L57)
    is not `Optional` anymore. In case you use this result, simply use the result
