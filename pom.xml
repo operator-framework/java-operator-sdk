@@ -61,7 +61,7 @@
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
 
     <junit.version>5.10.1</junit.version>
-    <fabric8-client.version>6.13.4</fabric8-client.version>
+    <fabric8-client.version>7.0-SNAPSHOT</fabric8-client.version>
     <slf4j.version>2.0.12</slf4j.version>
     <log4j.version>2.24.2</log4j.version>
     <mokito.version>5.14.2</mokito.version>
@@ -239,6 +239,7 @@
 
   <repositories>
     <repository>
+      <!-- todo: remove before merging to main -->
       <snapshots>
         <enabled>true</enabled>
         <updatePolicy>always</updatePolicy>
@@ -247,6 +248,19 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
     </repository>
   </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <!--  todo: remove before merging to main -->
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </pluginRepository>
+  </pluginRepositories>
+
   <build>
     <pluginManagement>
       <plugins>
