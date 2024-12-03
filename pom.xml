@@ -237,30 +237,6 @@
     </dependencies>
   </dependencyManagement>
 
-  <repositories>
-    <repository>
-      <!-- todo: remove before merging to main -->
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </repository>
-  </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <!--  todo: remove before merging to main -->
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </pluginRepository>
-  </pluginRepositories>
-
   <build>
     <pluginManagement>
       <plugins>
