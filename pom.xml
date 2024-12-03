@@ -244,11 +244,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${maven-compiler-plugin.version}</version>
-          <configuration>
-            <compilerArgs>
-              <arg>-Aio.fabric8.crd.generator.parallel=true</arg>
-            </compilerArgs>
-          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -361,13 +356,6 @@
   <profiles>
     <profile>
       <id>integration-tests</id>
-      <dependencies>
-        <dependency>
-          <groupId>io.fabric8</groupId>
-          <artifactId>crd-generator-apt</artifactId>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -388,13 +376,6 @@
     </profile>
     <profile>
       <id>integration-tests-baseapi</id>
-      <dependencies>
-        <dependency>
-          <groupId>io.fabric8</groupId>
-          <artifactId>crd-generator-apt</artifactId>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -415,13 +396,6 @@
     </profile>
     <profile>
       <id>integration-tests-dependent</id>
-      <dependencies>
-        <dependency>
-          <groupId>io.fabric8</groupId>
-          <artifactId>crd-generator-apt</artifactId>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -442,13 +416,6 @@
     </profile>
     <profile>
       <id>integration-tests-workflow</id>
-      <dependencies>
-        <dependency>
-          <groupId>io.fabric8</groupId>
-          <artifactId>crd-generator-apt</artifactId>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -470,13 +437,6 @@
     <!--     Special category of tests. See usage in source code.   -->
     <profile>
       <id>minimal-watch-timeout-dependent-it</id>
-      <dependencies>
-        <dependency>
-          <groupId>io.fabric8</groupId>
-          <artifactId>crd-generator-apt</artifactId>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -498,13 +458,6 @@
     </profile>
     <profile>
       <id>end-to-end-tests</id>
-      <dependencies>
-        <dependency>
-          <groupId>io.fabric8</groupId>
-          <artifactId>crd-generator-apt</artifactId>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
