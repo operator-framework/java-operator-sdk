@@ -594,7 +594,7 @@ to support caching.
 See [MySQL Schema sample](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/mysql-schema/src/main/java/io/javaoperatorsdk/operator/sample/MySQLSchemaReconciler.java)
 for usage.
 
-#### `PollingeEventSource`
+#### `PollingEventSource`
 
 [PollingEventSource](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/polling/PollingEventSource.java)
 is similar to `PerResourceCachingEventSource` except that, contrary to that event source, it
