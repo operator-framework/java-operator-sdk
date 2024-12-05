@@ -14,17 +14,19 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
-import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerResourceEventSource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.ConfigMapDependentResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestCustomResource;
 import io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler;
+
+import com.dajudge.kindcontainer.ApiServerContainer;
 
 import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE;
 import static io.javaoperatorsdk.operator.sample.informerrelatedbehavior.InformerRelatedBehaviorTestReconciler.INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER;
@@ -46,7 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * The test ends with "ITS" (Special) since it needs to run separately from other ITs
  * </p>
  */
-@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"}, updateKubeConfigFile = true)
+// @EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"}, updateKubeConfigFile =
+// true)
 class InformerRelatedBehaviorITS {
 
   private static final Logger log = LoggerFactory.getLogger(InformerRelatedBehaviorITS.class);
@@ -54,15 +57,21 @@ class InformerRelatedBehaviorITS {
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String ADDITIONAL_NAMESPACE_SUFFIX = "-additional";
 
-  KubernetesClient adminClient = new KubernetesClientBuilder().build();
+  KubernetesClient adminClient;
   InformerRelatedBehaviorTestReconciler reconciler;
   String actualNamespace;
   String additionalNamespace;
   Operator operator;
+  ApiServerContainer<?> apiServerContainer = new ApiServerContainer<>();
   volatile boolean replacementStopHandlerCalled = false;
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
+    apiServerContainer.start();
+
+    adminClient = new KubernetesClientBuilder()
+        .withConfig(Config.fromKubeconfig(apiServerContainer.getKubeconfig()))
+        .build();
     LocallyRunOperatorExtension.applyCrd(InformerRelatedBehaviorTestCustomResource.class,
         adminClient);
     testInfo.getTestMethod().ifPresent(method -> {
@@ -81,6 +90,7 @@ class InformerRelatedBehaviorITS {
     }
     adminClient.resource(dependentConfigMap()).delete();
     adminClient.resource(testCustomResource()).delete();
+    apiServerContainer.stop();
   }
 
   @Test
@@ -299,13 +309,12 @@ class InformerRelatedBehaviorITS {
   }
 
   KubernetesClient clientUsingServiceAccount() {
-    KubernetesClient client = new KubernetesClientBuilder()
-        .withConfig(new ConfigBuilder()
+    return new KubernetesClientBuilder()
+        .withConfig(new ConfigBuilder(Config.fromKubeconfig(apiServerContainer.getKubeconfig()))
             .withImpersonateUsername("rbac-test-user")
             .withNamespace(actualNamespace)
             .build())
         .build();
-    return client;
   }
 
   Operator startOperator(boolean stopOnInformerErrorDuringStartup) {
