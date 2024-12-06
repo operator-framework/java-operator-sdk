@@ -18,9 +18,9 @@ You can see an introduction and some important changes and rationale behind them
 - From this release, the minimal Java version is 17.
 - Various deprecated APIs are removed. Migration should be easy.
 
-## Naming changes
+## All Changes
 
-TODO add handy diff links here
+You can see all changes [here](https://github.com/operator-framework/java-operator-sdk/compare/v4.9.7...main).
 
 ## Changes in low-level APIs
 
