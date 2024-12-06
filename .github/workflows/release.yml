@@ -27,6 +27,10 @@ jobs:
           echo "tmp_version_branch=v3" >> "$GITHUB_ENV"
       - if: ${{ startsWith(github.event.release.tag_name, 'v4.' ) }}
         run: |
+          echo "Setting version_branch to v4"
+          echo "tmp_version_branch=v4" >> "$GITHUB_ENV"
+      - if: ${{ startsWith(github.event.release.tag_name, 'v5.' ) }}
+        run: |
           echo "Setting version_branch to main"
           echo "tmp_version_branch=main" >> "$GITHUB_ENV"
       - if: ${{ env.tmp_version_branch == '' }}
