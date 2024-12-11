@@ -73,7 +73,7 @@
     <spring-boot.version>2.7.3</spring-boot.version>
     <micrometer-core.version>1.14.3</micrometer-core.version>
     <caffeine.version>3.2.0</caffeine.version>
-    <mustache.version>0.9.11</mustache.version>
+    <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.18.0</commons.io.version>
     <java.diff.version>4.15</java.diff.version>
 
