@@ -16,6 +16,7 @@ public class ReadOnlyBulkReconciler implements Reconciler<BulkDependentTestCusto
 
     var nonReadyDependents =
         context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
+            .orElseThrow()
             .getNotReadyDependents();
 
 
