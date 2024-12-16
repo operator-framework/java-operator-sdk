@@ -63,7 +63,7 @@
     <junit.version>5.11.3</junit.version>
     <fabric8-client.version>7.0.0</fabric8-client.version>
     <slf4j.version>2.0.12</slf4j.version>
-    <log4j.version>2.24.2</log4j.version>
+    <log4j.version>2.24.3</log4j.version>
     <mokito.version>5.14.2</mokito.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
     <compile-testing.version>0.21.0</compile-testing.version>
