@@ -115,8 +115,8 @@ public class SampleWorkflowReconciler implements Reconciler<WorkflowAllFeatureCu
 
     resource.getStatus()
         .setReady(
-            context.managedDependentResourceContext()  // accessing workflow reconciliation results
-                .getWorkflowReconcileResult().orElseThrow()
+            context.managedWorkflowAndDependentResourceContext()  // accessing workflow reconciliation results
+                .getWorkflowReconcileResult()
                 .allDependentResourcesReady());
     return UpdateControl.patchStatus(resource);
   }

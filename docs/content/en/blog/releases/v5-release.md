@@ -55,7 +55,7 @@ Such an informer behaves exactly as a regular one. Owner references won't work i
 specify a `SecondaryToPrimaryMapper` (probably based on labels or annotations).
 
 See related integration
-test [here](https://github.com/operator-framework/java-operator-sdk/tree/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/informerremotecluster)
+test [here](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/informerremotecluster)
 
 #### SecondaryToPrimaryMapper now checks resource types
 
