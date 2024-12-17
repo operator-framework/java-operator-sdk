@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         java: [ 17, 21 ]
-        kubernetes: [ 'v1.29.11','1.30.7', '1.31.3', '1.32.0' ]
+        kubernetes: [ 'v1.29.12','1.30.8', '1.31.4', '1.32.0' ]
         it-category: [ 'baseapi', 'dependent', 'workflow' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         java: [ 17, 21 ]
-        kubernetes: [ 'v1.29.11','1.30.7', '1.31.3', '1.32.0' ]
+        kubernetes: [ 'v1.29.12','1.30.8', '1.31.4', '1.32.0' ]
         it-category: [ 'baseapi' ]
         httpclient: [ 'vertx', 'jdk', 'jetty' ]
     uses: ./.github/workflows/integration-tests.yml
