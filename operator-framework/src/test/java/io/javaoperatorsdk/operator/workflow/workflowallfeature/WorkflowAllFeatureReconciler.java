@@ -43,12 +43,12 @@ public class WorkflowAllFeatureReconciler
     }
     final var reconcileResult = context.managedWorkflowAndDependentResourceContext()
         .getWorkflowReconcileResult();
-    final var msgFromCondition = reconcileResult.getDependentConditionResult(
+    final var msgFromCondition = reconcileResult.orElseThrow().getDependentConditionResult(
         DependentResource.defaultNameFor(ConfigMapDependentResource.class),
         Condition.Type.RECONCILE, String.class)
         .orElse(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
     resource.getStatus()
-        .withReady(reconcileResult.allDependentResourcesReady())
+        .withReady(reconcileResult.orElseThrow().allDependentResourcesReady())
         .withMsgFromCondition(msgFromCondition);
     return UpdateControl.patchStatus(resource);
   }

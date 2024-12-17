@@ -45,6 +45,7 @@ public class ComplexWorkflowReconciler implements Reconciler<ComplexWorkflowCust
       ComplexWorkflowCustomResource resource,
       Context<ComplexWorkflowCustomResource> context) throws Exception {
     var ready = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
+        .orElseThrow()
         .allDependentResourcesReady();
 
     var status = Objects.requireNonNullElseGet(resource.getStatus(), ComplexWorkflowStatus::new);

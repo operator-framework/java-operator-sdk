@@ -61,10 +61,10 @@ public interface ManagedWorkflowAndDependentResourceContext {
   @SuppressWarnings("unused")
   <T> T getMandatory(Object key, Class<T> expectedType);
 
-  WorkflowReconcileResult getWorkflowReconcileResult();
+  Optional<WorkflowReconcileResult> getWorkflowReconcileResult();
 
   @SuppressWarnings("unused")
-  WorkflowCleanupResult getWorkflowCleanupResult();
+  Optional<WorkflowCleanupResult> getWorkflowCleanupResult();
 
   /**
    * Explicitly reconcile the declared workflow for the associated

@@ -23,6 +23,7 @@ public class ManagedBulkDependentWithReadyConditionReconciler
     numberOfExecutions.incrementAndGet();
 
     var ready = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
+        .orElseThrow()
         .allDependentResourcesReady();
 
 

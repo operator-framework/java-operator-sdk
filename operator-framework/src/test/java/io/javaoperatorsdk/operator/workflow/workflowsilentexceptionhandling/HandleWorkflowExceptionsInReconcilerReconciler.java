@@ -25,7 +25,7 @@ public class HandleWorkflowExceptionsInReconcilerReconciler
       Context<HandleWorkflowExceptionsInReconcilerCustomResource> context) {
 
     errorsFoundInReconcilerResult = context.managedWorkflowAndDependentResourceContext()
-        .getWorkflowReconcileResult().erroredDependentsExist();
+        .getWorkflowReconcileResult().orElseThrow().erroredDependentsExist();
 
 
     return UpdateControl.noUpdate();
@@ -36,7 +36,7 @@ public class HandleWorkflowExceptionsInReconcilerReconciler
       Context<HandleWorkflowExceptionsInReconcilerCustomResource> context) {
 
     errorsFoundInCleanupResult = context.managedWorkflowAndDependentResourceContext()
-        .getWorkflowCleanupResult().erroredDependentsExist();
+        .getWorkflowCleanupResult().orElseThrow().erroredDependentsExist();
     return DeleteControl.defaultDelete();
   }
 
