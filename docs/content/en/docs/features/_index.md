@@ -473,7 +473,7 @@ public class WebappReconciler
    @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
         InformerConfiguration<Tomcat> configuration =
-                InformerConfiguration.from(Tomcat.class, context)
+                InformerEventSourceConfiguration.from(Tomcat.class, Tomcat.class)
                         .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
                         .withPrimaryToSecondaryMapper(
                                 (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
@@ -672,7 +672,7 @@ public class MyReconciler implements Reconciler<TestCustomResource> {
       EventSourceContext<ChangeNamespaceTestCustomResource> context) {
 
     InformerEventSource<ConfigMap, TestCustomResource> configMapES =
-        new InformerEventSource<>(InformerConfiguration.from(ConfigMap.class)
+        new InformerEventSource<>(InformerEventSourceConfiguration.from(ConfigMap.class, TestCustomResource.class)
             .withNamespacesInheritedFromController(context)
             .build(), context);
 
