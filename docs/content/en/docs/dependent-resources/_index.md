@@ -3,8 +3,6 @@ title: Dependent Resources
 weight: 60
 ---
 
-# Dependent Resources
-
 ## Motivations and Goals
 
 Most operators need to deal with secondary resources when trying to realize the desired state
