@@ -49,7 +49,7 @@ For all features and their usage see the [related section on the website](https:
 
 * Quarkus Extension: https://github.com/quarkiverse/quarkus-operator-sdk
 * Spring Boot Starter: https://github.com/java-operator-sdk/operator-framework-spring-boot-starter
-* Kubernetes Glue Operator: https://github.com/csviri/kubernetes-glue-operator 
+* Kubernetes Glue Operator: https://github.com/java-operator-sdk/kubernetes-glue-operator 
   Meta-operator that builds upon to use JOSDK Workflows and Dependent Resources features and 
   allows to create operators by simply applying a custom resource, thus, is a language independent way. 
 * Kubernetes Webhooks Framework: https://github.com/java-operator-sdk/kubernetes-webooks-framework
