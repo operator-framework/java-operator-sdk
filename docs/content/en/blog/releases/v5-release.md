@@ -1,6 +1,6 @@
 ---
 title: Version 5 Released!
-date: 2024-12-06
+date: 2025-01-06
 ---
 
 (RC1 version)
