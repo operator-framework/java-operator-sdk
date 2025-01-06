@@ -1,5 +1,5 @@
 ---
-title: Version 5 Released! (beta1)
+title: Version 5 Released!
 date: 2024-12-06
 ---
 
