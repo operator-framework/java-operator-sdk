@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.junit;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ class LocallyRunOperatorExtensionTest {
 
   @Test
   void getAdditionalCRDsFromFiles() {
+    System.out.println(Path.of("").toAbsolutePath());
+    System.out.println(Path.of("src/test/crd/test.crd").toAbsolutePath());
     final var crds = LocallyRunOperatorExtension.getAdditionalCRDsFromFiles(
         List.of("src/test/resources/crd/test.crd", "src/test/crd/test.crd"),
         new KubernetesClientBuilder().build());

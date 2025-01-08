@@ -178,12 +178,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
    */
   public void applyCrd(String resourceTypeName) {
     // first attempt to use a manually defined CRD
-    final var path = crdMappings.get(resourceTypeName);
-    if (path != null) {
+    final var pathAsString = crdMappings.get(resourceTypeName);
+    if (pathAsString != null) {
+      final var path = Path.of(pathAsString);
       try {
-        applyCrd(Files.readString(Path.of(path)), path, getKubernetesClient());
+        applyCrd(Files.readString(path), pathAsString, getKubernetesClient());
       } catch (IOException e) {
-        throw new IllegalStateException("Cannot open CRD file at " + path, e);
+        throw new IllegalStateException("Cannot open CRD file at " + path.toAbsolutePath(), e);
       }
     } else {
       // if no manually defined CRD matches the resource type, apply the generated one
