@@ -28,16 +28,22 @@ public class CRDMappingInTestExtensionIT {
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new TestReconciler())
-          .withAdditionalCRD("src/test/resources/crd/test.crd")
+          .withAdditionalCRD("src/test/resources/crd/test.crd", "src/test/crd/test.crd")
           .build();
 
   @Test
   void correctlyAppliesManuallySpecifiedCRD() {
-    operator.applyCrd(TestCR.class);
-
     final var crdClient = client.apiextensions().v1().customResourceDefinitions();
     await().pollDelay(Duration.ofMillis(150))
-        .untilAsserted(() -> assertThat(crdClient.withName("tests.crd.example").get()).isNotNull());
+        .untilAsserted(() -> {
+          final var actual = crdClient.withName("tests.crd.example").get();
+          assertThat(actual).isNotNull();
+          assertThat(actual.getSpec().getVersions().get(0).getSchema().getOpenAPIV3Schema()
+              .getProperties().containsKey("foo")).isTrue();
+        });
+    await().pollDelay(Duration.ofMillis(150))
+        .untilAsserted(
+            () -> assertThat(crdClient.withName("externals.crd.example").get()).isNotNull());
   }
 
   @Group("crd.example")

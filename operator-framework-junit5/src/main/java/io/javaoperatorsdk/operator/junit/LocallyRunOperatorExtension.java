@@ -2,10 +2,11 @@ package io.javaoperatorsdk.operator.junit;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -47,7 +47,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final List<LocalPortForward> localPortForwards;
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
-  private final List<String> additionalCrds;
+  private final Map<String, String> crdMappings;
 
   private LocallyRunOperatorExtension(
       List<ReconcilerSpec> reconcilers,
@@ -82,7 +82,24 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         : overrider -> overrider.withKubernetesClient(kubernetesClient);
     this.operator = new Operator(configurationServiceOverrider);
     this.registeredControllers = new HashMap<>();
-    this.additionalCrds = additionalCrds;
+    crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
+  }
+
+  static Map<String, String> getAdditionalCRDsFromFiles(Iterable<String> additionalCrds,
+      KubernetesClient client) {
+    Map<String, String> crdMappings = new HashMap<>();
+    additionalCrds.forEach(p -> {
+      try (InputStream is = new FileInputStream(p)) {
+        client.load(is).items().stream()
+            // only consider CRDs to avoid applying random resources to the cluster
+            .filter(CustomResourceDefinition.class::isInstance)
+            .map(CustomResourceDefinition.class::cast)
+            .forEach(crd -> crdMappings.put(crd.getMetadata().getName(), p));
+      } catch (Exception e) {
+        throw new RuntimeException("Couldn't load CRD at " + p, e);
+      }
+    });
+    return crdMappings;
   }
 
   /**
@@ -112,25 +129,18 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   public static void applyCrd(String resourceTypeName, KubernetesClient client) {
     String path = "/META-INF/fabric8/" + resourceTypeName + "-v1.yml";
     try (InputStream is = LocallyRunOperatorExtension.class.getResourceAsStream(path)) {
-      applyCrd(is, path, client);
-    } catch (IllegalStateException e) {
-      // rethrow directly
-      throw e;
+      if (is == null) {
+        throw new IllegalStateException("Cannot find CRD at " + path);
+      }
+      var crdString = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+      applyCrd(crdString, path, client);
     } catch (IOException e) {
       throw new IllegalStateException("Cannot apply CRD yaml: " + path, e);
     }
   }
 
-  public static void applyCrd(CustomResourceDefinition crd, KubernetesClient client) {
-    client.resource(crd).serverSideApply();
-  }
-
-  private static void applyCrd(InputStream is, String path, KubernetesClient client) {
+  private static void applyCrd(String crdString, String path, KubernetesClient client) {
     try {
-      if (is == null) {
-        throw new IllegalStateException("Cannot find CRD at " + path);
-      }
-      var crdString = new String(is.readAllBytes(), StandardCharsets.UTF_8);
       LOGGER.debug("Applying CRD: {}", crdString);
       final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
       crd.serverSideApply();
@@ -144,14 +154,40 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
   }
 
-  public static List<CustomResourceDefinition> parseCrds(String path, KubernetesClient client) {
-    try (InputStream is = new FileInputStream(path)) {
-      return client.load(new ByteArrayInputStream(is.readAllBytes()))
-          .items().stream().map(i -> (CustomResourceDefinition) i).collect(Collectors.toList());
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+  /**
+   * Applies the CRD associated with the specified custom resource, first checking if a CRD has been
+   * manually specified using {@link Builder#withAdditionalCRD}, otherwise assuming that its CRD
+   * should be found in the standard location as explained in
+   * {@link LocallyRunOperatorExtension#applyCrd(String, KubernetesClient)}
+   *
+   * @param crClass the custom resource class for which we want to apply the CRD
+   */
+  public void applyCrd(Class<? extends CustomResource> crClass) {
+    applyCrd(ReconcilerUtils.getResourceTypeName(crClass));
+  }
+
+  /**
+   * Applies the CRD associated with the specified resource type name, first checking if a CRD has
+   * been manually specified using {@link Builder#withAdditionalCRD}, otherwise assuming that its
+   * CRD should be found in the standard location as explained in
+   * {@link LocallyRunOperatorExtension#applyCrd(String, KubernetesClient)}
+   *
+   * @param resourceTypeName the resource type name associated with the CRD to be applied,
+   *        typically, given a resource type, its name would be obtained using
+   *        {@link ReconcilerUtils#getResourceTypeName(Class)}
+   */
+  public void applyCrd(String resourceTypeName) {
+    // first attempt to use a manually defined CRD
+    final var path = crdMappings.get(resourceTypeName);
+    if (path != null) {
+      try {
+        applyCrd(Files.readString(Path.of(path)), path, getKubernetesClient());
+      } catch (IOException e) {
+        throw new IllegalStateException("Cannot open CRD file at " + path, e);
+      }
+    } else {
+      // if no manually defined CRD matches the resource type, apply the generated one
+      applyCrd(resourceTypeName, getKubernetesClient());
     }
   }
 
@@ -160,7 +196,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   public List<Reconciler> getReconcilers() {
-    return reconcilers().collect(Collectors.toUnmodifiableList());
+    return reconcilers().toList();
   }
 
   public Reconciler getFirstReconciler() {
@@ -207,7 +243,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     additionalCustomResourceDefinitions.forEach(this::applyCrd);
-    Map<String, CustomResourceDefinition> unappliedCRDs = getAdditionalCRDsFromFiles();
     for (var ref : reconcilers) {
       final var config = operator.getConfigurationService().getConfigurationFor(ref.reconciler);
       final var oconfig = override(config);
@@ -227,11 +262,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       final var resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
       // only try to apply a CRD for the reconciler if it is associated to a CR
       if (CustomResource.class.isAssignableFrom(resourceClass)) {
-        if (unappliedCRDs.get(resourceTypeName) != null) {
+        if (crdMappings.get(resourceTypeName) != null) {
           applyCrd(resourceTypeName);
-          unappliedCRDs.remove(resourceTypeName);
-        } else {
-          applyCrd(resourceClass);
+          crdMappings.remove(resourceTypeName);
         }
       }
 
@@ -239,35 +272,18 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       var registeredController = this.operator.register(ref.reconciler, oconfig.build());
       registeredControllers.put(ref.reconciler, registeredController);
     }
-    unappliedCRDs.keySet().forEach(this::applyCrd);
+    crdMappings.forEach((crdName, path) -> {
+      final String crdString;
+      try {
+        crdString = Files.readString(Path.of(path));
+      } catch (IOException e) {
+        throw new IllegalArgumentException("Couldn't read CRD located at " + path, e);
+      }
+      applyCrd(crdString, path, getKubernetesClient());
+    });
 
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
-  }
-
-  private Map<String, CustomResourceDefinition> getAdditionalCRDsFromFiles() {
-    Map<String, CustomResourceDefinition> crdMappings = new HashMap<>();
-    additionalCrds.forEach(p -> {
-      var crds = parseCrds(p, getKubernetesClient());
-      crds.forEach(c -> crdMappings.put(c.getMetadata().getName(), c));
-    });
-    return crdMappings;
-  }
-
-  /**
-   * Applies the CRD associated with the specified custom resource, first checking if a CRD has been
-   * manually specified using {@link Builder#withAdditionalCRD(String)}, otherwise assuming that its
-   * CRD should be found in the standard location as explained in
-   * {@link LocallyRunOperatorExtension#applyCrd(String, KubernetesClient)}
-   *
-   * @param crClass the custom resource class for which we want to apply the CRD
-   */
-  public void applyCrd(Class<? extends CustomResource> crClass) {
-    applyCrd(ReconcilerUtils.getResourceTypeName(crClass));
-  }
-
-  public void applyCrd(String resourceTypeName) {
-    applyCrd(resourceTypeName, getKubernetesClient());
   }
 
   @Override
@@ -295,7 +311,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<ReconcilerSpec> reconcilers;
     private final List<PortForwardSpec> portForwards;
     private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
-    private final Map<String, String> crdMappings;
     private final List<String> additionalCRDs = new ArrayList<>();
     private KubernetesClient kubernetesClient;
 
@@ -304,7 +319,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       this.reconcilers = new ArrayList<>();
       this.portForwards = new ArrayList<>();
       this.additionalCustomResourceDefinitions = new ArrayList<>();
-      this.crdMappings = new HashMap<>();
     }
 
     public Builder withReconciler(
@@ -359,8 +373,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
-    public Builder withAdditionalCRD(String path) {
-      additionalCRDs.add(path);
+    public Builder withAdditionalCRD(String... paths) {
+      if (paths != null) {
+        additionalCRDs.addAll(List.of(paths));
+      }
       return this;
     }
 
