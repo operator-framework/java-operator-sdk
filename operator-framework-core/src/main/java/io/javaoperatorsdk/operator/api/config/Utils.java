@@ -97,19 +97,8 @@ public class Utils {
     return getBooleanFromSystemPropsOrDefault(DEBUG_THREAD_POOL_ENV_KEY, false);
   }
 
-  static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
-    var property = System.getProperty(propertyName);
-    if (property == null) {
-      return defaultValue;
-    } else {
-      property = property.trim().toLowerCase();
-      return switch (property) {
-        case "true" -> true;
-        case "false" -> false;
-        default -> defaultValue;
-      };
-    }
-  }
+  static boolean getBooleanFromSystemPropsOrDefault(String propertyName,
+      boolean defaultValue) {var property=System.getProperty(propertyName);if(property==null){return defaultValue;}else{property=property.trim().toLowerCase();return switch(property){case"true"->true;case"false"->false;default->defaultValue;};}}
 
   public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
     return getTypeArgumentFromExtendedClassByIndex(clazz, 0);

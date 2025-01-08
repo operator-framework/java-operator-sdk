@@ -168,19 +168,26 @@ class BaseWorkflowResult implements WorkflowResult {
   }
 
 
-  record Detail<R>(Exception error, ReconcileResult<R> reconcileResult,
-      DetailedCondition.Result activationConditionResult,
-      DetailedCondition.Result deletePostconditionResult,
-      DetailedCondition.Result readyPostconditionResult,
-      DetailedCondition.Result reconcilePostconditionResult,
-      boolean deleted, boolean visited, boolean markedForDelete) {
+  record Detail<R>(
+  Exception error, ReconcileResult<R>reconcileResult,
+  DetailedCondition.Result activationConditionResult,
+      DetailedCondition.
+  Result deletePostconditionResult,
+      DetailedCondition.
+  Result readyPostconditionResult,
+      DetailedCondition.
+  Result reconcilePostconditionResult,
+  boolean deleted,
+  boolean visited,
+  boolean markedForDelete)
+  {
 
-    boolean isConditionWithTypeMet(Condition.Type conditionType) {
-      return getResultForConditionWithType(conditionType).map(DetailedCondition.Result::isSuccess)
-          .orElse(true);
-    }
+  boolean isConditionWithTypeMet(Condition.Type conditionType) {
+    return getResultForConditionWithType(conditionType).map(DetailedCondition.Result::isSuccess)
+        .orElse(true);
+  }
 
-    Optional<DetailedCondition.Result<?>> getResultForConditionWithType(
+  Optional<DetailedCondition.Result<?>> getResultForConditionWithType(
         Condition.Type conditionType) {
       return switch (conditionType) {
         case ACTIVATION -> Optional.ofNullable(activationConditionResult);
@@ -189,5 +196,4 @@ class BaseWorkflowResult implements WorkflowResult {
         case RECONCILE -> Optional.ofNullable(reconcilePostconditionResult);
       };
     }
-  }
-}
+}}

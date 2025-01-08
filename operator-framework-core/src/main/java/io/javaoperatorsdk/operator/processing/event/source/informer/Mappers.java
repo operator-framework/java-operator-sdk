@@ -119,16 +119,9 @@ public class Mappers {
   }
 
   public static ResourceID fromString(String cacheKey) {
-    if (cacheKey == null) {
-      return null;
-    }
+    if(cacheKey==null){return null;}
 
-    final String[] split = cacheKey.split("/");
-    return switch (split.length) {
-      case 1 -> new ResourceID(split[0]);
-      case 2 -> new ResourceID(split[1], split[0]);
-      default -> throw new IllegalArgumentException("Cannot extract a ResourceID from " + cacheKey);
-    };
+    final String[]split=cacheKey.split("/");return switch(split.length){case 1->new ResourceID(split[0]);case 2->new ResourceID(split[1],split[0]);default->throw new IllegalArgumentException("Cannot extract a ResourceID from "+cacheKey);};
   }
 
   /**
