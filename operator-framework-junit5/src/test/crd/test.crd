@@ -1,0 +1,21 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: externals.crd.example
+spec:
+  group: crd.example
+  names:
+    kind: External
+    singular: external
+    plural: externals
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+            foo:
+                type: "string"
+        type: "object"
+    served: true
+    storage: true
