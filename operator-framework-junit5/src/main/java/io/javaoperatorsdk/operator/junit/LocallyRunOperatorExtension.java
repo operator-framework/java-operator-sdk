@@ -186,6 +186,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       } catch (IOException e) {
         throw new IllegalStateException("Cannot open CRD file at " + path.toAbsolutePath(), e);
       }
+      crdMappings.remove(resourceTypeName);
     } else {
       // if no manually defined CRD matches the resource type, apply the generated one
       applyCrd(resourceTypeName, getKubernetesClient());
@@ -263,10 +264,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       final var resourceTypeName = ReconcilerUtils.getResourceTypeName(resourceClass);
       // only try to apply a CRD for the reconciler if it is associated to a CR
       if (CustomResource.class.isAssignableFrom(resourceClass)) {
-        if (crdMappings.get(resourceTypeName) != null) {
-          applyCrd(resourceTypeName);
-          crdMappings.remove(resourceTypeName);
-        }
+        applyCrd(resourceTypeName);
       }
 
       // apply yet unapplied CRDs
@@ -282,6 +280,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       }
       applyCrd(crdString, path, getKubernetesClient());
     });
+    crdMappings.clear();
 
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
