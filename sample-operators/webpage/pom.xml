@@ -54,6 +54,10 @@
       <artifactId>operator-framework-junit-5</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>crd-generator-api-v2</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
