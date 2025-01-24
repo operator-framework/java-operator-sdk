@@ -62,7 +62,7 @@ class InformerConfigurationTest {
   void shouldFollowControllerNamespacesByDefaultForInformerEventSource() {
     final var informerConfig =
         InformerConfiguration.builder(ConfigMap.class).buildForInformerEventSource();
-    assertTrue(informerConfig.getFollowControllerNamespacesChanges());
+    assertTrue(informerConfig.getFollowsControllerNamespaceChanges());
   }
 
   @Test
