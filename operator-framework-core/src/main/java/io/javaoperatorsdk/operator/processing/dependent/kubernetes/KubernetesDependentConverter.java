@@ -53,6 +53,6 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
           configAnnotation.annotationType());
       config = config.initFromAnnotation(informerConfig, context);
     }
-    return config.buildForInformerEventSource();
+    return config.build();
   }
 }

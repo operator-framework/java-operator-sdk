@@ -88,7 +88,7 @@ public class WebPageDependentsWorkflowReconciler
         .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
             .withKubernetesDependentInformerConfig(InformerConfiguration.builder(dr.resourceType())
                 .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
-                .buildForInformerEventSource())
+                .build())
             .build()));
   }
 
