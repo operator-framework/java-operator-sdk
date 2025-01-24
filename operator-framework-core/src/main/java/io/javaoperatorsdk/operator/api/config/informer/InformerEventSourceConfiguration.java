@@ -35,7 +35,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
    * @return if namespace changes should be followed
    */
   default boolean followControllerNamespaceChanges() {
-    return getInformerConfig().isFollowControllerNamespacesOnChange();
+    return getInformerConfig().getFollowControllerNamespacesChanges();
   }
 
   /**
@@ -194,8 +194,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
           this.name = informerConfigName;
         }
         config.withNamespaces(informerConfig.getNamespaces())
-            .withFollowControllerNamespacesOnChange(
-                informerConfig.isFollowControllerNamespacesOnChange())
+            .withFollowControllerNamespacesChanges(
+                informerConfig.getFollowControllerNamespacesChanges())
             .withLabelSelector(informerConfig.getLabelSelector())
             .withItemStore(informerConfig.getItemStore())
             .withOnAddFilter(informerConfig.getOnAddFilter())
