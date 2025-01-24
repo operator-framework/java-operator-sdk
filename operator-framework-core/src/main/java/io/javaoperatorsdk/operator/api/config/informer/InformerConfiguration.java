@@ -29,7 +29,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private final String resourceTypeName;
   private String name;
   private Set<String> namespaces;
-  private Boolean followControllerNamespacesChanges;
+  private Boolean followsControllerNamespaceChanges;
   private String labelSelector;
   private OnAddFilter<? super R> onAddFilter;
   private OnUpdateFilter<? super R> onUpdateFilter;
@@ -46,7 +46,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
-    this.followControllerNamespacesChanges = followControllerNamespacesOnChange;
+    this.followsControllerNamespaceChanges = followControllerNamespacesOnChange;
     this.labelSelector = labelSelector;
     this.onAddFilter = onAddFilter;
     this.onUpdateFilter = onUpdateFilter;
@@ -75,7 +75,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   public static <R extends HasMetadata> InformerConfiguration<R>.Builder builder(
       InformerConfiguration<R> original) {
     return new InformerConfiguration(original.resourceClass, original.name, original.namespaces,
-        original.followControllerNamespacesChanges, original.labelSelector, original.onAddFilter,
+        original.followsControllerNamespaceChanges, original.labelSelector, original.onAddFilter,
         original.onUpdateFilter, original.onDeleteFilter, original.genericFilter,
         original.itemStore, original.informerListLimit).builder;
   }
@@ -184,8 +184,8 @@ public class InformerConfiguration<R extends HasMetadata> {
    *
    * @return if namespace changes should be followed
    */
-  public boolean getFollowControllerNamespacesChanges() {
-    return followControllerNamespacesChanges;
+  public boolean getFollowsControllerNamespaceChanges() {
+    return followsControllerNamespaceChanges;
   }
 
   /**
@@ -258,7 +258,7 @@ public class InformerConfiguration<R extends HasMetadata> {
         namespaces = Constants.DEFAULT_NAMESPACES_SET;
       }
       // to avoid potential NPE
-      followControllerNamespacesChanges = false;
+      followsControllerNamespaceChanges = false;
       return InformerConfiguration.this;
     }
 
@@ -267,9 +267,9 @@ public class InformerConfiguration<R extends HasMetadata> {
       if (namespaces == null || namespaces.isEmpty()) {
         namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
       }
-      if (followControllerNamespacesChanges == null) {
-        followControllerNamespacesChanges =
-            DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+      if (followsControllerNamespaceChanges == null) {
+        followsControllerNamespaceChanges =
+            DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
       }
       return InformerConfiguration.this;
     }
@@ -305,7 +305,7 @@ public class InformerConfiguration<R extends HasMetadata> {
             context));
 
         withFollowControllerNamespacesChanges(
-            informerConfig.followControllerNamespacesOnChange());
+            informerConfig.followControllerNamespaceChanges());
 
         withItemStore(Utils.instantiate(informerConfig.itemStore(),
             ItemStore.class, context));
@@ -373,7 +373,7 @@ public class InformerConfiguration<R extends HasMetadata> {
      * @return the builder instance so that calls can be chained fluently
      */
     public Builder withFollowControllerNamespacesChanges(boolean followChanges) {
-      InformerConfiguration.this.followControllerNamespacesChanges =
+      InformerConfiguration.this.followsControllerNamespaceChanges =
           followChanges;
       return this;
     }
