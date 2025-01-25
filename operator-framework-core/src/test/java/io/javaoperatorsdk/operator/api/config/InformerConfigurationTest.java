@@ -47,8 +47,7 @@ class InformerConfigurationTest {
 
   @Test
   void nullLabelSelectorByDefault() {
-    final var informerConfig =
-        InformerConfiguration.builder(ConfigMap.class).build();
+    final var informerConfig = InformerConfiguration.builder(ConfigMap.class).build();
     assertNull(informerConfig.getLabelSelector());
   }
 
@@ -60,9 +59,8 @@ class InformerConfigurationTest {
 
   @Test
   void shouldFollowControllerNamespacesByDefaultForInformerEventSource() {
-    final var informerConfig =
-        InformerConfiguration.builder(ConfigMap.class).build();
-    assertTrue(informerConfig.isFollowControllerNamespacesOnChange());
+    final var informerConfig = InformerConfiguration.builder(ConfigMap.class).build();
+    assertTrue(informerConfig.getFollowControllerNamespaceChanges());
   }
 
   @Test

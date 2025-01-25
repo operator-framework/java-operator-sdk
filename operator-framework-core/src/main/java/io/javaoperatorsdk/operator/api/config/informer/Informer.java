@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
@@ -88,7 +88,7 @@ public @interface Informer {
    * Set that in case of a runtime controller namespace changes, the informer should also follow the
    * new namespace set.
    */
-  boolean followControllerNamespacesOnChange() default DEFAULT_FOLLOW_CONTROLLER_NAMESPACES_ON_CHANGE;
+  boolean followControllerNamespaceChanges() default DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
 
   /**
    * Replaces the item store used by the informer for the associated primary resource controller.
