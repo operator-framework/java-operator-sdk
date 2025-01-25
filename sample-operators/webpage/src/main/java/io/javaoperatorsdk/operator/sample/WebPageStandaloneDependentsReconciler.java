@@ -98,7 +98,7 @@ public class WebPageStandaloneDependentsReconciler
         .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
             .withKubernetesDependentInformerConfig(InformerConfiguration.builder(dr.resourceType())
                 .withLabelSelector(SELECTOR + "=true")
-                .buildForInformerEventSource())
+                .build())
             .build()));
 
     // connect the dependent resources into a workflow, configuring them as we go

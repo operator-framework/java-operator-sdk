@@ -219,7 +219,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceClass),
                   HasMetadata.getKind(primaryResourceClass), false)),
-          config.buildForInformerEventSource(), kubernetesClient);
+          config.build(), kubernetesClient);
     }
   }
 }

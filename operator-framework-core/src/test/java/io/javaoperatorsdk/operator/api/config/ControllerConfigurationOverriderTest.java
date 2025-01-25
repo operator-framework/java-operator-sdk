@@ -279,7 +279,7 @@ class ControllerConfigurationOverriderTest {
     final var overridingInformerConfig = InformerConfiguration.builder(ConfigMap.class)
         .withNamespaces(Set.of(overriddenNS))
         .withLabelSelector(labelSelector)
-        .buildForInformerEventSource();
+        .build();
     final var overridden = ControllerConfigurationOverrider.override(configuration)
         .replacingNamedDependentResourceConfig(
             dependentResourceName,
