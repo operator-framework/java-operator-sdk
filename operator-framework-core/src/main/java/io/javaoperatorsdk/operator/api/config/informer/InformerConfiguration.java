@@ -249,7 +249,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
-    /** For internal usage only. Use build method for building for InformerEventSource */
+    /** For internal usage only. Use {@link #build()} method for building for InformerEventSource */
     public InformerConfiguration<R> buildForController() {
       // if the informer config uses the default "same as controller" value, reset the namespaces to
       // the default set for controllers
