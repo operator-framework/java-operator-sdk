@@ -421,13 +421,13 @@ class EventProcessorTest {
           o.withConcurrentReconciliationThreads(1);
         });
     eventProcessor =
-            spy(new EventProcessor(controllerConfiguration(null, rateLimiterMock, configurationService),
-                    reconciliationDispatcherMock,
-                    eventSourceManagerMock, null));
+        spy(new EventProcessor(controllerConfiguration(null, rateLimiterMock, configurationService),
+            reconciliationDispatcherMock,
+            eventSourceManagerMock, null));
     eventProcessor.start();
 
-    eventProcessor.handleEvent(prepareCREvent(new ResourceID("test1","default")));
-    eventProcessor.handleEvent(prepareCREvent(new ResourceID("test1","default")));
+    eventProcessor.handleEvent(prepareCREvent(new ResourceID("test1", "default")));
+    eventProcessor.handleEvent(prepareCREvent(new ResourceID("test1", "default")));
     eventProcessor.stop();
 
     // wait until both event should be handled
