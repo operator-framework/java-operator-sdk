@@ -5,7 +5,6 @@ import java.util.List;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -57,8 +56,7 @@ public class InformerRemoteClusterReconciler
             Mappers.fromDefaultAnnotations(InformerRemoteClusterCustomResource.class))
         // setting remote client for informer
         .withKubernetesClient(remoteClient)
-        .withInformerConfiguration(
-            InformerConfiguration.Builder::withWatchAllNamespaces)
+        .withWatchAllNamespaces()
         .build(), context);
 
     return List.of(es);
