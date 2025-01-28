@@ -472,7 +472,7 @@ public class WebappReconciler
     
    @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
-        InformerConfiguration<Tomcat> configuration =
+      InformerEventSourceConfiguration<Tomcat> configuration =
                 InformerEventSourceConfiguration.from(Tomcat.class, Tomcat.class)
                         .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
                         .withPrimaryToSecondaryMapper(
@@ -547,7 +547,7 @@ fabric8 Kubernetes client class, that will listen for events associated with the
 you configured your `InformerEventSource` with. If you want to listen to Kubernetes resource
 events, `InformerEventSource` is probably the only thing you need to use. It's highly
 configurable so you can tune it to your needs. Take a look at
-[InformerConfiguration](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/InformerConfiguration.java)
+[InformerEventSourceConfiguration](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/informer/InformerEventSourceConfiguration.java)
 and associated classes for more details but some interesting features we can mention here is the
 ability to filter events so that you can only get notified for events you care about. A
 particularly interesting feature of the `InformerEventSource`, as opposed to using your own
