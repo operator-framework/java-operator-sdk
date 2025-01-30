@@ -2,16 +2,25 @@ package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
+
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACE_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
 public interface InformerEventSourceConfiguration<R extends HasMetadata>
     extends Informable<R> {
@@ -145,12 +154,6 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       this.config = InformerConfiguration.builder(resourceClass);
     }
 
-    public Builder<R> withInformerConfiguration(
-        Consumer<InformerConfiguration<R>.Builder> configurator) {
-      configurator.accept(config);
-      return this;
-    }
-
     public Builder<R> withName(String name) {
       this.name = name;
       config.withName(name);
@@ -185,6 +188,79 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
 
     public SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper() {
       return secondaryToPrimaryMapper;
+    }
+
+    public Builder<R> withNamespaces(Set<String> namespaces) {
+      config.withNamespaces(namespaces);
+      return this;
+    }
+
+    public Builder<R> withNamespacesInheritedFromController() {
+      withNamespaces(SAME_AS_CONTROLLER_NAMESPACES_SET);
+      return this;
+    }
+
+    public Builder<R> withWatchAllNamespaces() {
+      withNamespaces(WATCH_ALL_NAMESPACE_SET);
+      return this;
+    }
+
+    public Builder<R> withWatchCurrentNamespace() {
+      withNamespaces(WATCH_CURRENT_NAMESPACE_SET);
+      return this;
+    }
+
+
+    /**
+     * Whether the associated informer should track changes made to the parent
+     * {@link io.javaoperatorsdk.operator.processing.Controller}'s namespaces configuration.
+     *
+     * @param followChanges {@code true} to reconfigure the associated informer when the parent
+     *        controller's namespaces are reconfigured, {@code false} otherwise
+     * @return the builder instance so that calls can be chained fluently
+     */
+    public Builder<R> withFollowControllerNamespacesChanges(boolean followChanges) {
+      config.withFollowControllerNamespacesChanges(followChanges);
+      return this;
+    }
+
+    public Builder<R> withLabelSelector(String labelSelector) {
+      config.withLabelSelector(labelSelector);
+      return this;
+    }
+
+    public Builder<R> withOnAddFilter(
+        OnAddFilter<? super R> onAddFilter) {
+      config.withOnAddFilter(onAddFilter);
+      return this;
+    }
+
+    public Builder<R> withOnUpdateFilter(
+        OnUpdateFilter<? super R> onUpdateFilter) {
+      config.withOnUpdateFilter(onUpdateFilter);
+      return this;
+    }
+
+    public Builder<R> withOnDeleteFilter(
+        OnDeleteFilter<? super R> onDeleteFilter) {
+      config.withOnDeleteFilter(onDeleteFilter);
+      return this;
+    }
+
+    public Builder<R> withGenericFilter(
+        GenericFilter<? super R> genericFilter) {
+      config.withGenericFilter(genericFilter);
+      return this;
+    }
+
+    public Builder<R> withItemStore(ItemStore<R> itemStore) {
+      config.withItemStore(itemStore);
+      return this;
+    }
+
+    public Builder<R> withInformerListLimit(Long informerListLimit) {
+      config.withInformerListLimit(informerListLimit);
+      return this;
     }
 
     public void updateFrom(InformerConfiguration<R> informerConfig) {

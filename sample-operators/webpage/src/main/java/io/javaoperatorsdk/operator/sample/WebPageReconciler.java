@@ -43,25 +43,25 @@ public class WebPageReconciler
     var configMapEventSource =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(ConfigMap.class, WebPage.class)
-                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .withLabelSelector(SELECTOR)
                 .build(),
             context);
     var deploymentEventSource =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(Deployment.class, WebPage.class)
-                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .withLabelSelector(SELECTOR)
                 .build(),
             context);
     var serviceEventSource =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(Service.class, WebPage.class)
-                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .withLabelSelector(SELECTOR)
                 .build(),
             context);
     var ingressEventSource =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(Ingress.class, WebPage.class)
-                .withInformerConfiguration(c -> c.withLabelSelector(SELECTOR))
+                .withLabelSelector(SELECTOR)
                 .build(),
             context);
     return List.of(configMapEventSource, deploymentEventSource,

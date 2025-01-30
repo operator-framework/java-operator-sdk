@@ -79,7 +79,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
 
     var es = new InformerEventSource<>(
         InformerEventSourceConfiguration.from(ConfigMap.class, primaryClass())
-            .withInformerConfiguration(c -> c.withItemStore(boundedItemStore))
+            .withItemStore(boundedItemStore)
             .withSecondaryToPrimaryMapper(
                 Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
                     this instanceof BoundedCacheClusterScopeTestReconciler))

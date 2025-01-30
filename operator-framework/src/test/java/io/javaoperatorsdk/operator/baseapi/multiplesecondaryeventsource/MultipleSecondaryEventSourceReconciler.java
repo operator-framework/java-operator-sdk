@@ -70,12 +70,8 @@ public class MultipleSecondaryEventSourceReconciler
 
     var config = InformerEventSourceConfiguration
         .from(ConfigMap.class, MultipleSecondaryEventSourceCustomResource.class)
-        .withInformerConfiguration(c -> c
-            // TODO: this shouldn't be needed since this should be the default behavior (tracking
-            // the controller's namespaces)
-            .withNamespaces(
-                context.getControllerConfiguration().getInformerConfig().getNamespaces())
-            .withLabelSelector("multisecondary"))
+        .withNamespacesInheritedFromController()
+        .withLabelSelector("multisecondary")
         .withSecondaryToPrimaryMapper(s -> {
           var name =
               s.getMetadata().getName().subSequence(0, s.getMetadata().getName().length() - 1);
