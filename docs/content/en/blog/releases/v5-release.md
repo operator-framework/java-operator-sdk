@@ -3,8 +3,6 @@ title: Version 5 Released!
 date: 2025-01-06
 ---
 
-(RC1 version)
-
 We are excited to announce that Java Operator SDK v5 has been released. This significant effort contains
 various features and enhancements accumulated since the last major release and required changes in our APIs.
 Within this post, we will go through all the main changes and help you upgrade to this new version, and provide
@@ -22,7 +20,7 @@ You can see an introduction and some important changes and rationale behind them
 
 ## All Changes
 
-You can see all changes [here](https://github.com/operator-framework/java-operator-sdk/compare/v4.9.7...main).
+You can see all changes [here](https://github.com/operator-framework/java-operator-sdk/compare/v4.9.7...v5.0.0).
 
 ## Changes in low-level APIs
 
