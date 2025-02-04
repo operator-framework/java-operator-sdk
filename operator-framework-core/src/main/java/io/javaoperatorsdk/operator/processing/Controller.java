@@ -195,7 +195,7 @@ public class Controller<P extends HasMetadata>
 
               // The cleanup is called also when explicit invocation is true, but the cleaner is not
               // implemented
-              if (managedWorkflow.hasCleaner() && !explicitWorkflowInvocation) {
+              if (managedWorkflow.hasCleaner() && (!explicitWorkflowInvocation || !isCleaner)) {
                 workflowCleanupResult = managedWorkflow.cleanup(resource, context);
               }
 
