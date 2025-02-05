@@ -23,9 +23,9 @@ use it as is with real databases.
 ### Try 
 
 To try how the operator works you will need the following:
-* JDK installed (minimum version 11, tested with 11 and 15)
+* JDK installed (minimum version 11, tested with 11, 15, and 23)
 * Maven installed (tested with 3.6.3)
-* A working Kubernetes cluster (tested with v1.15.9-gke.24)
+* A working Kubernetes cluster (tested with v1.15.9-gke.24 and minikube v1.35.0)
 * kubectl installed (tested with v1.15.5)
 * Docker installed (tested with 19.03.8)
 * Container image registry
@@ -59,18 +59,45 @@ you want to use, you can skip this step, but you will have to configure the oper
    `kubectl apply -f k8s/mysql-db.yaml`
 1. Deploy the CRD: 
 
-   `kubectl apply -f k8s/crd.yaml`
+   `kubectl apply -f target/classes/META-INF/fabric8/mysqlschemas.mysql.sample.javaoperatorsdk-v1.yml`
    
-1. Make a copy of `k8s/operator.yaml` and replace ${DOCKER_REGISTRY} and ${OPERATOR_VERSION} to the 
-right values. You will want to set `OPERATOR_VERSION` to the one used for building the Docker image. `DOCKER_REGISTRY` should
-be the same as you set the docker-registry property in your `pom.xml`.
+1. Make a copy of `k8s/operator.yaml` and replace `spec.template.spec.containers[0].image` (`$ yq 'select(di == 1).spec.template.spec.containers[0].image' k8s/operator.yaml`) with the operator image that you pushed to your registry. This should be the same as you set the docker-registry 
+   property in your `pom.xml`.
 If you look at the environment variables you will notice this is where the access to the MySQL server is configured.
 The default values assume the server is running in another Kubernetes namespace (called `mysql`), uses the `root` user
 with a not very secure password. In case you want to use a different MySQL server, this is where you configure it. 
 
 1. Run `kubectl apply -f copy-of-operator.yaml` to deploy the operator. You can wait for the deployment to succeed using
-this command: `kubectl rollout status deployment mysql-schema-operator -w`. `-w` will cause kubectl to continuously monitor 
-the deployment until you stop it.
+this command: `kubectl rollout status deployment -n mysql-schema-operator mysql-schema-operator -w`. `-w` will cause kubectl to continuously monitor the deployment until you stop it.
 
 1. Now you are ready to create some databases! To create a database schema called `mydb` just apply the `k8s/schema.yaml`
-file with kubectl: `kubectl apply -f k8s/schema.yaml`. You can modify the database name in the file to create more schemas.
+file with kubectl: `kubectl apply -f k8s/schema.yaml`. You can modify the database name in the file to create more schemas. To verify, that the schema is installed you need to expose your `LoadBalancer` `mysql` service and you can use the `mysql` 
+   CLI to run `show schemas;` command. For instance, with minikube, this can be done like this: 
+
+```
+$ minikube service mysql -n mysql --url
+http://192.168.49.2:30317
+
+$ mysql -h 192.168.49.2 -P 30317 --protocol=tcp -u root -ppassword
+...
+
+MariaDB [(none)]> show schemas;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mydb               |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.000 sec)
+```
+
+Or you can verify it directly with `kubectl` like this:
+
+```
+$ kubectl get mysqlschemas
+NAME   AGE
+mydb   102s
+```
