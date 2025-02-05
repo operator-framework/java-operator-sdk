@@ -88,9 +88,12 @@ class ControllerTest {
       boolean workflowIsCleaner,
       boolean isExplicitWorkflowInvocation,
       boolean workflowCleanerExecuted) throws Exception {
-    Reconciler reconciler = mock(Reconciler.class);
+
+    Reconciler reconciler;
     if (reconcilerIsCleaner) {
       reconciler = mock(Reconciler.class, withSettings().extraInterfaces(Cleaner.class));
+    } else {
+      reconciler = mock(Reconciler.class);
     }
 
     final var configuration = MockControllerConfiguration.forResource(Secret.class);
