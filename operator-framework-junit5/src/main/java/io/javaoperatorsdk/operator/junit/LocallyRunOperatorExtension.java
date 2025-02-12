@@ -10,12 +10,14 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.fabric8.kubernetes.client.dsl.NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,7 @@ import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOver
 public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LocallyRunOperatorExtension.class);
+  private static final int CRD_DELETE_TIMEOUT = 1000;
 
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
@@ -48,6 +51,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
   private final Map<String, String> crdMappings;
+  private static final LinkedList<AppliedCRD> appliedCRDs = new LinkedList<>();
 
   private LocallyRunOperatorExtension(
       List<ReconcilerSpec> reconcilers,
@@ -144,6 +148,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       LOGGER.debug("Applying CRD: {}", crdString);
       final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
       crd.serverSideApply();
+      appliedCRDs.add(new AppliedCRD(crdString, path));
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
       LOGGER.debug("Applied CRD with path: {}", path);
     } catch (InterruptedException ex) {
@@ -290,6 +295,14 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   protected void after(ExtensionContext context) {
     super.after(context);
 
+    var kubernetesClient = getKubernetesClient();
+
+    while (!appliedCRDs.isEmpty()) {
+      deleteCrd(appliedCRDs.poll(), kubernetesClient);
+    }
+
+    kubernetesClient.close();
+
     try {
       this.operator.stop();
     } catch (Exception e) {
@@ -305,6 +318,19 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
     localPortForwards.clear();
   }
+
+  private void deleteCrd(AppliedCRD appliedCRD, KubernetesClient client) {
+    try {
+      LOGGER.debug("Deleting CRD: {}", appliedCRD.crdString);
+      final var crd = client.load(new ByteArrayInputStream(appliedCRD.crdString.getBytes()));
+      crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
+      LOGGER.debug("Deleted CRD with path: {}", appliedCRD.path);
+    } catch (Exception ex) {
+      throw new IllegalStateException("Cannot delete CRD yaml: " + appliedCRD.path, ex);
+    }
+  }
+
+  private record AppliedCRD(String crdString, String path) {}
 
   @SuppressWarnings("rawtypes")
   public static class Builder extends AbstractBuilder<Builder> {
