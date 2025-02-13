@@ -668,7 +668,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void contextUsesTheSameInstanceOfResourceAsParam() {
+  void reconcilerContextUsesTheSameInstanceOfResourceAsParam() {
     initConfigService(false,false);
 
     final ReconciliationDispatcher<TestCustomResource> dispatcher =

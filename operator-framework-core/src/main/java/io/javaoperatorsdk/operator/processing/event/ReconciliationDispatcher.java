@@ -246,7 +246,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     final var useFinalizer = controller.useFinalizer();
     if (useFinalizer) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
-      // cleanup is finished, nothing left to done
+      // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resourceForExecution.hasFinalizer(finalizerName)) {
         P customResource = conflictRetryingPatch(resourceForExecution, originalResource, r -> {
