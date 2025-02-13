@@ -234,29 +234,29 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
-  private PostExecutionControl<P> handleCleanup(P resource,
+  private PostExecutionControl<P> handleCleanup(P resourceForExecution,
       P originalResource, Context<P> context) {
     if (log.isDebugEnabled()) {
       log.debug(
           "Executing delete for resource: {} with version: {}",
-          ResourceID.fromResource(resource),
-          getVersion(resource));
+          ResourceID.fromResource(resourceForExecution),
+          getVersion(resourceForExecution));
     }
-    DeleteControl deleteControl = controller.cleanup(resource, context);
+    DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
     if (useFinalizer) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to done
       final var finalizerName = configuration().getFinalizerName();
-      if (deleteControl.isRemoveFinalizer() && resource.hasFinalizer(finalizerName)) {
-        P customResource = conflictRetryingPatch(resource, originalResource, r -> {
+      if (deleteControl.isRemoveFinalizer() && resourceForExecution.hasFinalizer(finalizerName)) {
+        P customResource = conflictRetryingPatch(resourceForExecution, originalResource, r -> {
           // the operator might not be allowed to retrieve the resource on a retry, e.g. when its
           // permissions are removed by deleting the namespace concurrently
           if (r == null) {
             log.warn(
                 "Could not remove finalizer on null resource: {} with version: {}",
-                getUID(resource),
-                getVersion(resource));
+                getUID(resourceForExecution),
+                getVersion(resourceForExecution));
             return false;
           }
           return r.removeFinalizer(finalizerName);
@@ -266,8 +266,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
     log.debug(
         "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, uses finalizer: {}",
-        getUID(resource),
-        getVersion(resource),
+        getUID(resourceForExecution),
+        getVersion(resourceForExecution),
         deleteControl,
         useFinalizer);
     PostExecutionControl<P> postExecutionControl = PostExecutionControl.defaultDispatch();
