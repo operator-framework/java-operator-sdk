@@ -117,6 +117,11 @@ class TomcatOperatorE2E {
         throw new AssertionError(ex);
       }
     });
+
+    log.info("Deleting test Tomcat object: {}", tomcat);
+    tomcatClient.inNamespace(operator.getNamespace()).resource(tomcat).delete();
+    log.info("Deleting test Webapp object: {}", webapp1);
+    webappClient.inNamespace(operator.getNamespace()).resource(webapp1).delete();
   }
 
 }
