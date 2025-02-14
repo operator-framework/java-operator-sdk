@@ -73,7 +73,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
        * If a workflow has an activation condition there can be event sources which are only
        * registered if the activation condition holds, but to provide a consistent API we return an
        * Optional instead of throwing an exception.
-       * 
+       *
        * Note that not only the resource which has an activation condition might not be registered
        * but dependents which depend on it.
        */
@@ -116,4 +116,8 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     this.retryInfo = retryInfo;
     return this;
   }
+
+    public P getPrimaryResource() {
+        return primaryResource;
+    }
 }
