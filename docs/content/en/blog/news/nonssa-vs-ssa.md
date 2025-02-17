@@ -36,8 +36,10 @@ So usually the implementation of reconciler looked something like this:
 
 In other words, after reconciliation of managed resources the reconcile updated the status on the
 primary resource passed as argument to the reconciler.
-Such changes on primary are fine, since we don't work directly with the cached object, the argument is
+Such changes on primary are fine since we don't work directly with the cached object, the argument is
 already cloned.
 
-## Migrating to SSA
+So how does this change with SSA?
+
+
 
