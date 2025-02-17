@@ -8,11 +8,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -43,6 +48,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LocallyRunOperatorExtension.class);
   private static final int CRD_DELETE_TIMEOUT = 1000;
+  private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
+  private static final boolean deleteCRDs = Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
 
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
@@ -51,7 +58,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
   private final Map<String, String> crdMappings;
-  private static final LinkedList<AppliedCRD> appliedCRDs = new LinkedList<>();
 
   private LocallyRunOperatorExtension(
       List<ReconcilerSpec> reconcilers,
@@ -297,8 +303,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     var kubernetesClient = getKubernetesClient();
 
-    while (!appliedCRDs.isEmpty()) {
-      deleteCrd(appliedCRDs.poll(), kubernetesClient);
+    var iterator = appliedCRDs.iterator();
+    while (iterator.hasNext()) {
+      deleteCrd(iterator.next(), kubernetesClient);
+      iterator.remove();
     }
 
     kubernetesClient.close();
@@ -320,6 +328,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   private void deleteCrd(AppliedCRD appliedCRD, KubernetesClient client) {
+    if (!deleteCRDs) {
+      LOGGER.debug("Skipping deleting CRD because of configuration: {}", appliedCRD);
+      return;
+    }
     try {
       LOGGER.debug("Deleting CRD: {}", appliedCRD.crdString);
       final var crd = client.load(new ByteArrayInputStream(appliedCRD.crdString.getBytes()));
