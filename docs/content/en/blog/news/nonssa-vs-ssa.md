@@ -1,5 +1,5 @@
 ---
-title: From client side to server side apply
+title: From client side to server-side apply
 date: 2025-02-17
 ---
 
@@ -18,6 +18,26 @@ For dependent resources a separate flag exists (this was true also before v5) to
 
 ## Resource handling without and with SSA
 
+Until version 5 changing primary resource through `UpdateControl` did not use server-side apply. 
+So usually the implementation of reconciler looked something like this:
+
+```java
+
+ @Override
+  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+        
+    reconcileLogicForManagedResources(webPage);
+    webPage.setStatus(updatedStatusForWebPage(webPage));
+    
+    return UpdateControl.patchStatus(webPage);
+  }
+
+```
+
+In other words, after reconciliation of managed resources the reconcile updated the status on the
+primary resource passed as argument to the reconciler.
+Such changes on primary are fine, since we don't work directly with the cached object, the argument is
+already cloned.
 
 ## Migrating to SSA
 
