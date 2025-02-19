@@ -2,8 +2,12 @@ approvers:
 - csviri
 - metacosm
 - andreaTP
+- xstefank
 reviewers:
 - gyfora
 - mbalassi
-- adam-sandor
 - scrocquesel
+- csviri
+- metacosm
+- xstefank
+
