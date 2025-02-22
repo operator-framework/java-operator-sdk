@@ -14,13 +14,14 @@ import static io.javaoperatorsdk.operator.baseapi.statusupdatelocking.StatusUpda
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-class StatusPatchNotLockingIT {
+class StatusPatchNotLockingForNonSSAIT {
 
   public static final String TEST_RESOURCE_NAME = "test";
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(StatusPatchLockingReconciler.class)
+              .withConfigurationService(o->o.withUseSSAToPatchPrimaryResource(false))
           .build();
 
   @Test

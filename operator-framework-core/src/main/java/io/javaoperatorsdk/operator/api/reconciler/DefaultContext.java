@@ -117,7 +117,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return this;
   }
 
-    public P getPrimaryResource() {
-        return primaryResource;
-    }
+  public P getPrimaryResource() {
+    return primaryResource;
+  }
 }

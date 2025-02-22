@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.baseapi.statuspatchnonlocking;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -21,6 +22,7 @@ public class StatusPatchLockingReconciler
       throws InterruptedException {
     numberOfExecutions.addAndGet(1);
     Thread.sleep(WAIT_TIME);
+
     if (resource.getStatus() == null) {
       resource.setStatus(new StatusPatchLockingCustomResourceStatus());
     }

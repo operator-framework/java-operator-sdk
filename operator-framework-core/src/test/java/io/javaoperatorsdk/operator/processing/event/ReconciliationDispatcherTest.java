@@ -7,8 +7,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
-import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -19,6 +17,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.TestUtils;
@@ -29,6 +28,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -70,8 +70,9 @@ class ReconciliationDispatcherTest {
   }
 
   static void initConfigService(boolean useSSA) {
-      initConfigService(useSSA,true);
+    initConfigService(useSSA, true);
   }
+
   static void initConfigService(boolean useSSA, boolean noCloning) {
     /*
      * We need this for mock reconcilers to properly generate the expected UpdateControl: without
@@ -82,18 +83,19 @@ class ReconciliationDispatcherTest {
      */
     configurationService =
         ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
-            overrider ->  overrider.checkingCRDAndValidateLocalModel(false)
+            overrider -> overrider.checkingCRDAndValidateLocalModel(false)
 
                 .withResourceCloner(new Cloner() {
                   @Override
                   public <R extends HasMetadata> R clone(R object) {
-                  if (noCloning) {
-                    return object;
-                  }else {
-                    return new KubernetesSerialization().clone(object);
+                    if (noCloning) {
+                      return object;
+                    } else {
+                      return new KubernetesSerialization().clone(object);
+                    }
                   }
-                }})
-                    .withUseSSAToPatchPrimaryResource(useSSA));
+                })
+                .withUseSSAToPatchPrimaryResource(useSSA));
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(R customResource,
@@ -669,22 +671,24 @@ class ReconciliationDispatcherTest {
 
   @Test
   void reconcilerContextUsesTheSameInstanceOfResourceAsParam() {
-    initConfigService(false,false);
+    initConfigService(false, false);
 
     final ReconciliationDispatcher<TestCustomResource> dispatcher =
-            init(testCustomResource, reconciler, null, customResourceFacade, true);
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
 
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
-    ArgumentCaptor<DefaultContext> contextArgumentCaptor = ArgumentCaptor.forClass(DefaultContext.class);
-    ArgumentCaptor<TestCustomResource> customResourceCaptor = ArgumentCaptor.forClass(TestCustomResource.class);
+    ArgumentCaptor<DefaultContext> contextArgumentCaptor =
+        ArgumentCaptor.forClass(DefaultContext.class);
+    ArgumentCaptor<TestCustomResource> customResourceCaptor =
+        ArgumentCaptor.forClass(TestCustomResource.class);
 
     dispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-      verify(reconciler, times(1))
-              .reconcile(customResourceCaptor.capture(), contextArgumentCaptor.capture());
+    verify(reconciler, times(1))
+        .reconcile(customResourceCaptor.capture(), contextArgumentCaptor.capture());
 
-      assertThat(contextArgumentCaptor.getValue().getPrimaryResource())
-              .isSameAs(customResourceCaptor.getValue())
-              .isNotSameAs(testCustomResource);
+    assertThat(contextArgumentCaptor.getValue().getPrimaryResource())
+        .isSameAs(customResourceCaptor.getValue())
+        .isNotSameAs(testCustomResource);
   }
 
   private ObservedGenCustomResource createObservedGenCustomResource() {
