@@ -49,7 +49,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
     final var configuration = controller.getConfiguration();
-        this.cloner = configuration.getConfigurationService().getResourceCloner();
+    this.cloner = configuration.getConfigurationService().getResourceCloner();
 
     var retry = configuration.getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
@@ -402,22 +402,22 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     public R patchStatus(R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
-        if (useSSA) {
-          var managedFields = resource.getMetadata().getManagedFields();
-          try {
-            resource.getMetadata().setManagedFields(null);
-            var res = resource(resource);
-            return res.subresource("status").patch(new PatchContext.Builder()
-                .withFieldManager(fieldManager)
-                .withForce(true)
-                .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                .build());
-          } finally {
-            resource.getMetadata().setManagedFields(managedFields);
-          }
-        } else {
-          return editStatus(resource, originalResource);
+      if (useSSA) {
+        var managedFields = resource.getMetadata().getManagedFields();
+        try {
+          resource.getMetadata().setManagedFields(null);
+          var res = resource(resource);
+          return res.subresource("status").patch(new PatchContext.Builder()
+              .withFieldManager(fieldManager)
+              .withForce(true)
+              .withPatchType(PatchType.SERVER_SIDE_APPLY)
+              .build());
+        } finally {
+          resource.getMetadata().setManagedFields(managedFields);
         }
+      } else {
+        return editStatus(resource, originalResource);
+      }
     }
 
     private R editStatus(R resource, R originalResource) {

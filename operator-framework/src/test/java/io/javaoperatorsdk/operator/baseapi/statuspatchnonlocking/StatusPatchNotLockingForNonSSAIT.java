@@ -21,7 +21,7 @@ class StatusPatchNotLockingForNonSSAIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(StatusPatchLockingReconciler.class)
-              .withConfigurationService(o->o.withUseSSAToPatchPrimaryResource(false))
+          .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
           .build();
 
   @Test
