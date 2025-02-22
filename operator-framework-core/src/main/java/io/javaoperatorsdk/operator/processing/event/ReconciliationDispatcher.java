@@ -49,7 +49,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     this.controller = controller;
     this.customResourceFacade = customResourceFacade;
     final var configuration = controller.getConfiguration();
-    this.cloner = configuration.getConfigurationService().getResourceCloner();
+        this.cloner = configuration.getConfigurationService().getResourceCloner();
 
     var retry = configuration.getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
@@ -402,10 +402,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     public R patchStatus(R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
-      String resourceVersion = resource.getMetadata().getResourceVersion();
-      originalResource.getMetadata().setResourceVersion(null);
-      resource.getMetadata().setResourceVersion(null);
-      try {
         if (useSSA) {
           var managedFields = resource.getMetadata().getManagedFields();
           try {
@@ -420,9 +416,17 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             resource.getMetadata().setManagedFields(managedFields);
           }
         } else {
-          var res = resource(originalResource);
-          return res.editStatus(r -> resource);
+          return editStatus(resource, originalResource);
         }
+    }
+
+    private R editStatus(R resource, R originalResource) {
+      String resourceVersion = resource.getMetadata().getResourceVersion();
+      try {
+        originalResource.getMetadata().setResourceVersion(null);
+        resource.getMetadata().setResourceVersion(null);
+        var res = resource(originalResource);
+        return res.editStatus(r -> resource);
       } finally {
         // restore initial resource version
         originalResource.getMetadata().setResourceVersion(resourceVersion);
