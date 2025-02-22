@@ -1,39 +1,73 @@
-name: Build
+name: Build with Kubernetes
 
 env:
   MAVEN_ARGS: -V -ntp -e
 
 on:
   workflow_call:
+    inputs:
+      kube-version:
+        type: string
+        required: true
 
 jobs:
+  set_up_kubernetes:
+    name: Set up Kubernetes ${{ inputs.kube-version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Minikube
+        uses: manusa/actions-setup-minikube@v2.13.1
+        with:
+          minikube version: 'v1.34.0'
+          kubernetes version: '${{ inputs.kube-version }}'
+          driver: 'docker'
+          github token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save minikube directory
+        id: minikube
+        run: |
+          echo "minikube-dir=$MINIKUBE_HOME" >> $GITHUB_OUTPUT
+
+      - name: Upload minikube
+        uses: actions/upload-artifact@v4
+        with:
+          name: minikube-${{ inputs.kube-version }}
+          path: ${{ steps.minikube.outputs.minikube-dir }}
+          include-hidden-files: true
+
   integration_tests:
+    name: "JDK: ${{ matrix.java }}, IT category: ${{ matrix.it-category }}"
+    needs: set_up_kubernetes
     strategy:
       matrix:
         java: [ 17, 21 ]
-        kubernetes: [ 'v1.29.12','1.30.8', '1.31.4', '1.32.0' ]
         it-category: [ 'baseapi', 'dependent', 'workflow' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
+      kube-version: ${{ inputs.kube-version }}
       java-version: ${{ matrix.java }}
-      kube-version: ${{ matrix.kubernetes }}
       it-category: ${{ matrix.it-category }}
 
   http_client_tests:
+    name: "JDK: ${{ matrix.java }}, IT category: ${{ matrix.it-category }}, HTTP client: ${{ matrix.httpclient }}"
+    needs: set_up_kubernetes
     strategy:
       matrix:
         java: [ 17, 21 ]
-        kubernetes: [ 'v1.29.12','1.30.8', '1.31.4', '1.32.0' ]
         it-category: [ 'baseapi' ]
         httpclient: [ 'vertx', 'jdk', 'jetty' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
+      kube-version: ${{ inputs.kube-version }}
       java-version: ${{ matrix.java }}
-      kube-version: ${{ matrix.kubernetes }}
       it-category: ${{ matrix.it-category }}
       http-client: ${{ matrix.httpclient }}
 
   special_integration_tests:
+    name: "Special integration tests (${{ matrix.java }})"
+    needs: set_up_kubernetes
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -47,3 +81,13 @@ jobs:
           java-version: ${{ matrix.java }}
       - name: Run Special Integration Tests
         run: ./mvnw ${MAVEN_ARGS} -B package -P minimal-watch-timeout-dependent-it --file pom.xml
+
+  delete_kubernetes:
+    needs: [ integration_tests, http_client_tests, special_integration_tests ]
+    if: always()
+    name: Delete Kubernetes ${{ inputs.kube-version }} artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+          name: minikube-${{ inputs.kube-version }}
