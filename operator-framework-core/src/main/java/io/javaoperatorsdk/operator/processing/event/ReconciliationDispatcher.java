@@ -58,7 +58,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   public ReconciliationDispatcher(Controller<P> controller) {
     this(controller,
-        new CustomResourceFacade<>(controller.getCRClient(), controller.getConfiguration()));
+        new CustomResourceFacade<>(controller.getCRClient(), controller.getConfiguration(),
+                controller.getConfiguration().getConfigurationService().getResourceCloner()));
   }
 
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
@@ -364,14 +365,16 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
     private final boolean useSSA;
     private final String fieldManager;
+    private final Cloner cloner;
 
     public CustomResourceFacade(
-        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
-        ControllerConfiguration<R> configuration) {
+            MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
+            ControllerConfiguration<R> configuration, Cloner cloner) {
       this.resourceOperation = resourceOperation;
       this.useSSA =
           configuration.getConfigurationService().useSSAToPatchPrimaryResource();
       this.fieldManager = configuration.fieldManager();
+      this.cloner = cloner;
     }
 
     public R getResource(String namespace, String name) {
@@ -422,14 +425,15 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     private R editStatus(R resource, R originalResource) {
       String resourceVersion = resource.getMetadata().getResourceVersion();
+      R clonedOriginal = cloner.clone(originalResource);
       try {
-        originalResource.getMetadata().setResourceVersion(null);
+        clonedOriginal.getMetadata().setResourceVersion(null);
         resource.getMetadata().setResourceVersion(null);
-        var res = resource(originalResource);
+        var res = resource(clonedOriginal);
         return res.editStatus(r -> resource);
       } finally {
         // restore initial resource version
-        originalResource.getMetadata().setResourceVersion(resourceVersion);
+        clonedOriginal.getMetadata().setResourceVersion(resourceVersion);
         resource.getMetadata().setResourceVersion(resourceVersion);
       }
     }
