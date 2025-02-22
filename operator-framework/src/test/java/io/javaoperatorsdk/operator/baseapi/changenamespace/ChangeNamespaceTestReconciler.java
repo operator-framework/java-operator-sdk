@@ -45,13 +45,20 @@ public class ChangeNamespaceTestReconciler
           .create();
     }
 
-    increaseNumberOfResourceExecutions(primary);
     if (primary.getStatus() == null) {
       primary.setStatus(new ChangeNamespaceTestCustomResourceStatus());
     }
+    increaseNumberOfResourceExecutions(primary);
+
+    var statusPatchResource = new ChangeNamespaceTestCustomResource();
+    statusPatchResource.setMetadata(new ObjectMetaBuilder()
+                    .withName(primary.getMetadata().getName())
+                    .withNamespace(primary.getMetadata().getNamespace())
+            .build());
+    statusPatchResource.setStatus(new ChangeNamespaceTestCustomResourceStatus());
     var statusUpdates = primary.getStatus().getNumberOfStatusUpdates();
-    primary.getStatus().setNumberOfStatusUpdates(statusUpdates + 1);
-    return UpdateControl.patchStatus(primary);
+    statusPatchResource.getStatus().setNumberOfStatusUpdates(statusUpdates + 1);
+    return UpdateControl.patchStatus(statusPatchResource);
   }
 
   private void increaseNumberOfResourceExecutions(ChangeNamespaceTestCustomResource primary) {

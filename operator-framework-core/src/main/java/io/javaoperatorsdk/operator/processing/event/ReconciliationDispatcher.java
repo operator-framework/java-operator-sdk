@@ -58,7 +58,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   public ReconciliationDispatcher(Controller<P> controller) {
     this(controller,
-        new CustomResourceFacade<>(controller.getCRClient(), controller.getConfiguration()));
+        new CustomResourceFacade<>(controller.getCRClient(), controller.getConfiguration(),
+                controller.getConfiguration().getConfigurationService().getResourceCloner()));
   }
 
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
@@ -364,14 +365,16 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
     private final boolean useSSA;
     private final String fieldManager;
+    private final Cloner cloner;
 
     public CustomResourceFacade(
-        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
-        ControllerConfiguration<R> configuration) {
+            MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
+            ControllerConfiguration<R> configuration, Cloner cloner) {
       this.resourceOperation = resourceOperation;
       this.useSSA =
           configuration.getConfigurationService().useSSAToPatchPrimaryResource();
       this.fieldManager = configuration.fieldManager();
+      this.cloner = cloner;
     }
 
     public R getResource(String namespace, String name) {
@@ -402,30 +405,37 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     public R patchStatus(R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
-      String resourceVersion = resource.getMetadata().getResourceVersion();
-      originalResource.getMetadata().setResourceVersion(null);
-      resource.getMetadata().setResourceVersion(null);
-      try {
-        if (useSSA) {
-          var managedFields = resource.getMetadata().getManagedFields();
-          try {
-            resource.getMetadata().setManagedFields(null);
-            var res = resource(resource);
-            return res.subresource("status").patch(new PatchContext.Builder()
-                .withFieldManager(fieldManager)
-                .withForce(true)
-                .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                .build());
-          } finally {
-            resource.getMetadata().setManagedFields(managedFields);
-          }
-        } else {
-          var res = resource(originalResource);
-          return res.editStatus(r -> resource);
+      if (useSSA) {
+        var managedFields = resource.getMetadata().getManagedFields();
+        try {
+          resource.getMetadata().setManagedFields(null);
+          var res = resource(resource);
+          return res.subresource("status").patch(new PatchContext.Builder()
+              .withFieldManager(fieldManager)
+              .withForce(true)
+              .withPatchType(PatchType.SERVER_SIDE_APPLY)
+              .build());
+        } finally {
+          resource.getMetadata().setManagedFields(managedFields);
         }
+      } else {
+        return editStatus(resource, originalResource);
+      }
+    }
+
+    private R editStatus(R resource, R originalResource) {
+      String resourceVersion = resource.getMetadata().getResourceVersion();
+      // the cached resource should not be changed in any circumstances
+      // that can lead to all kinds of race conditions.
+      R clonedOriginal = cloner.clone(originalResource);
+      try {
+        clonedOriginal.getMetadata().setResourceVersion(null);
+        resource.getMetadata().setResourceVersion(null);
+        var res = resource(clonedOriginal);
+        return res.editStatus(r -> resource);
       } finally {
         // restore initial resource version
-        originalResource.getMetadata().setResourceVersion(resourceVersion);
+        clonedOriginal.getMetadata().setResourceVersion(resourceVersion);
         resource.getMetadata().setResourceVersion(resourceVersion);
       }
     }

@@ -8,13 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,7 +18,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import io.fabric8.kubernetes.client.dsl.NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +44,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private static final Logger LOGGER = LoggerFactory.getLogger(LocallyRunOperatorExtension.class);
   private static final int CRD_DELETE_TIMEOUT = 1000;
   private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
-  private static final boolean deleteCRDs = Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
+  private static final boolean deleteCRDs =
+      Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
 
   private final Operator operator;
   private final List<ReconcilerSpec> reconcilers;
