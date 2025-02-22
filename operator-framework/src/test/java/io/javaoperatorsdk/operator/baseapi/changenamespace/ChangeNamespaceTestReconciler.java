@@ -45,6 +45,9 @@ public class ChangeNamespaceTestReconciler
           .create();
     }
 
+    if (primary.getStatus() == null) {
+      primary.setStatus(new ChangeNamespaceTestCustomResourceStatus());
+    }
     increaseNumberOfResourceExecutions(primary);
 
     var statusPatchResource = new ChangeNamespaceTestCustomResource();
