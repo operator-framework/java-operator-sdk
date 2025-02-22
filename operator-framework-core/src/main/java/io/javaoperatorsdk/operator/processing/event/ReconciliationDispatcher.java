@@ -425,6 +425,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     private R editStatus(R resource, R originalResource) {
       String resourceVersion = resource.getMetadata().getResourceVersion();
+      // the cached resource should not be changed in any circumstances
+      // that can lead to all kinds of race conditions.
       R clonedOriginal = cloner.clone(originalResource);
       try {
         clonedOriginal.getMetadata().setResourceVersion(null);
