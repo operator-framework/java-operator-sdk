@@ -23,6 +23,7 @@ public class Utils {
   private static final Logger log = LoggerFactory.getLogger(Utils.class);
   public static final String CHECK_CRD_ENV_KEY = "JAVA_OPERATOR_SDK_CHECK_CRD";
   public static final String DEBUG_THREAD_POOL_ENV_KEY = "JAVA_OPERATOR_SDK_DEBUG_THREAD_POOL";
+  public static final String USE_MDC_ENV_KEY = "JAVA_OPERATOR_SDK_USE_MDC";
   public static final String GENERIC_PARAMETER_TYPE_ERROR_PREFIX =
       "Couldn't retrieve generic parameter type from ";
 
@@ -97,7 +98,7 @@ public class Utils {
     return getBooleanFromSystemPropsOrDefault(DEBUG_THREAD_POOL_ENV_KEY, false);
   }
 
-  static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
+  public static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
     var property = System.getProperty(propertyName);
     if (property == null) {
       return defaultValue;

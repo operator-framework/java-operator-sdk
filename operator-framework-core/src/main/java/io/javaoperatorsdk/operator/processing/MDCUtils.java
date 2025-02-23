@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import org.slf4j.MDC;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -15,38 +17,50 @@ public class MDCUtils {
   private static final String GENERATION = "resource.generation";
   private static final String UID = "resource.uid";
   private static final String NO_NAMESPACE = "no namespace";
+  private static final boolean enabled = Utils.getBooleanFromSystemPropsOrDefault(Utils.USE_MDC_ENV_KEY, true);
 
   public static void addResourceIDInfo(ResourceID resourceID) {
-    MDC.put(NAME, resourceID.getName());
-    MDC.put(NAMESPACE, resourceID.getNamespace().orElse(NO_NAMESPACE));
+      if (enabled) {
+          MDC.put(NAME, resourceID.getName());
+          MDC.put(NAMESPACE, resourceID.getNamespace().orElse(NO_NAMESPACE));
+      }
   }
 
   public static void removeResourceIDInfo() {
-    MDC.remove(NAME);
-    MDC.remove(NAMESPACE);
+      if (enabled) {
+          MDC.remove(NAME);
+          MDC.remove(NAMESPACE);
+      }
   }
 
   public static void addResourceInfo(HasMetadata resource) {
-    MDC.put(API_VERSION, resource.getApiVersion());
-    MDC.put(KIND, resource.getKind());
-    MDC.put(NAME, resource.getMetadata().getName());
-    if (resource.getMetadata().getNamespace() != null) {
-      MDC.put(NAMESPACE, resource.getMetadata().getNamespace());
-    }
-    MDC.put(RESOURCE_VERSION, resource.getMetadata().getResourceVersion());
-    if (resource.getMetadata().getGeneration() != null) {
-      MDC.put(GENERATION, resource.getMetadata().getGeneration().toString());
-    }
-    MDC.put(UID, resource.getMetadata().getUid());
+      if (enabled) {
+          MDC.put(API_VERSION, resource.getApiVersion());
+          MDC.put(KIND, resource.getKind());
+          final var metadata = resource.getMetadata();
+          if (metadata != null) {
+              MDC.put(NAME, metadata.getName());
+              if (metadata.getNamespace() != null) {
+                MDC.put(NAMESPACE, metadata.getNamespace());
+              }
+              MDC.put(RESOURCE_VERSION, metadata.getResourceVersion());
+              if (metadata.getGeneration() != null) {
+                MDC.put(GENERATION, metadata.getGeneration().toString());
+              }
+              MDC.put(UID, metadata.getUid());
+          }
+      }
   }
 
   public static void removeResourceInfo() {
-    MDC.remove(API_VERSION);
-    MDC.remove(KIND);
-    MDC.remove(NAME);
-    MDC.remove(NAMESPACE);
-    MDC.remove(RESOURCE_VERSION);
-    MDC.remove(GENERATION);
-    MDC.remove(UID);
+      if (enabled) {
+          MDC.remove(API_VERSION);
+          MDC.remove(KIND);
+          MDC.remove(NAME);
+          MDC.remove(NAMESPACE);
+          MDC.remove(RESOURCE_VERSION);
+          MDC.remove(GENERATION);
+          MDC.remove(UID);
+      }
   }
 }
