@@ -1,6 +1,6 @@
 ---
 title: From client side to server-side apply
-date: 2025-02-17
+date: 2025-02-25
 ---
 
 From version 5 of Java Operator SDK [server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/)
@@ -81,7 +81,7 @@ a custom resource is created using legacy approach is getting managed by new app
 We prepared an integration test to demonstrate how such migration even in a simple case can go wrong,
 and how to fix it.
 
-Note that fixing might that you need to [strip managed fields](https://kubernetes.io/docs/reference/using-api/server-side-apply/#clearing-managedfields)
+To fix some cases, you might need to [strip managed fields](https://kubernetes.io/docs/reference/using-api/server-side-apply/#clearing-managedfields)
 from the custom resource.
 
 See [`StatusPatchSSAMigrationIT`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuspatchnonlocking/StatusPatchSSAMigrationIT.java) for details.
