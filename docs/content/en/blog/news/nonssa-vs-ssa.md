@@ -1,5 +1,5 @@
 ---
-title: From client side to server-side apply
+title: From legacy approach to server-side apply
 date: 2025-02-25
 ---
 
