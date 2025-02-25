@@ -4,15 +4,15 @@ date: 2025-02-25
 ---
 
 From version 5 of Java Operator SDK [server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/)
-is a first-class feature, and used by default to update resources.
-As we will see, unfortunately (or fortunately) to use of it requires changes for your reconciler implementation.
+is a first-class feature and is used by default to update resources.
+As we will see, unfortunately (or fortunately), using it requires changes for your reconciler implementation.
 
-For this reason, we prepared a feature flag, which you can flip if not prepared to migrate yet:
+For this reason, we prepared a feature flag, which you can flip if you are not prepared to migrate yet:
 [`ConfigurationService.useSSAToPatchPrimaryResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L493)
 
 Setting this flag to false will make the operations done by `UpdateControl` using the former approach (not SSA).
 Similarly, the finalizer handling won't utilize SSA handling. 
-The plan is to keep this flag and allow to use the former approach (non-SSA) also in future releases. 
+The plan is to keep this flag and allow the use of the former approach (non-SSA) also in future releases. 
 
 For dependent resources, a separate flag exists (this was true also before v5) to use SSA or not:
 [`ConfigurationService.ssaBasedCreateUpdateMatchForDependentResources`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ConfigurationService.java#L373)
@@ -20,8 +20,8 @@ For dependent resources, a separate flag exists (this was true also before v5) t
 
 ## Resource handling without and with SSA
 
-Until version 5 changing primary resource through `UpdateControl` did not use server-side apply. 
-So usually the implementation of reconciler looked something like this:
+Until version 5, changing primary resources through `UpdateControl` did not use server-side apply. 
+So usually, the implementation of the reconciler looked something like this:
 
 ```java
 
@@ -36,15 +36,15 @@ So usually the implementation of reconciler looked something like this:
 
 ```
 
-In other words, after reconciliation of managed resources, the reconciler updates the status on the
-primary resource passed as argument to the reconciler.
-Such changes on primary are fine since we don't work directly with the cached object, the argument is
+In other words, after the reconciliation of managed resources, the reconciler updates the status of the
+primary resource passed as an argument to the reconciler.
+Such changes on the primary are fine since we don't work directly with the cached object, the argument is
 already cloned.
 
-So how does this change with SSA?
+So, how does this change with SSA?
 For SSA, the updates should contain (only) the "fully specified intent".
-In other words, we should fill only the values that we care about.
-In practice means creating a **fresh copy** of the resource and setting only what is necessary:
+In other words, we should only fill in the values we care about.
+In practice, it means creating a **fresh copy** of the resource and setting only what is necessary:
 
 ```java
 
@@ -64,21 +64,21 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
 }
 ```
 
-Note that we just filled the status here, since we patch the status (not the resource spec).
+Note that we just filled out the status here since we patched the status (not the resource spec).
 Since the status is a sub-resource in Kubernetes, it will only update the status part.
 
-Every controller you register will have its own default [field manager](https://kubernetes.io/docs/reference/using-api/server-side-apply/#managers).
+Every controller you register will have its default [field manager](https://kubernetes.io/docs/reference/using-api/server-side-apply/#managers).
 You can override the field manager name using [`ControllerConfiguration.fieldManager`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/config/ControllerConfiguration.java#L89).
-That will set the field manager for the updates of the primary resource and dependent resources.
+That will set the field manager for the primary resource and dependent resources as well.
 
 ## Migrating to SSA
 
 Using the legacy or the new SSA way of resource management works well.
 However, migrating existing resources to SSA might be a challenge. 
-So we strongly encourage everyone to test the migration, thus write an integration test where 
-a custom resource is created using legacy approach is getting managed by new approach.
+We strongly recommend testing the migration, thus implementing an integration test where 
+a custom resource is created using the legacy approach and is managed by the new approach.
 
-We prepared an integration test to demonstrate how such migration even in a simple case can go wrong,
+We prepared an integration test to demonstrate how such migration, even in a simple case, can go wrong,
 and how to fix it.
 
 To fix some cases, you might need to [strip managed fields](https://kubernetes.io/docs/reference/using-api/server-side-apply/#clearing-managedfields)
@@ -86,13 +86,4 @@ from the custom resource.
 
 See [`StatusPatchSSAMigrationIT`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuspatchnonlocking/StatusPatchSSAMigrationIT.java) for details.
 
-Also feel free to report common issues, so we can in case prepare some utilities to handle them.
-
-
-
-
-
-
-
-
-
+Feel free to report common issues, so we can prepare some utilities to handle them.
