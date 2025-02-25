@@ -58,7 +58,7 @@ public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> contex
             .withName(webPage.getMetadata().getName())
             .withNamespace(webPage.getMetadata().getNamespace())
             .build());
-    statusPatch.setStatus(createStatus(configMapName));
+    statusPatch.setStatus(updatedStatusForWebPage(webPage));
 
     return UpdateControl.patchStatus(statusPatch);
 }
