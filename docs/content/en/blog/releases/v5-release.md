@@ -41,7 +41,7 @@ to `false`.
 See some identified problematic migration cases and how to handle them
 in [StatusPatchSSAMigrationIT](https://github.com/operator-framework/java-operator-sdk/blob/1635c9ea338f8e89bacc547808d2b409de8734cf/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuspatchnonlocking/StatusPatchSSAMigrationIT.java).
 
-TODO using new instance to update status always,
+For more detailed description, see our [blog post](../news/nonssa-vs-ssa.md) on SSA.
 
 ### Event Sources related changes
 
