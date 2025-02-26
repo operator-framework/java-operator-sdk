@@ -14,8 +14,9 @@ import static org.awaitility.Awaitility.await;
 class MaxIntervalIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new MaxIntervalTestReconciler()).build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MaxIntervalTestReconciler())
+      .build();
 
   @Test
   void reconciliationTriggeredBasedOnMaxInterval() {
@@ -26,10 +27,10 @@ class MaxIntervalIT {
     await()
         .pollInterval(50, TimeUnit.MILLISECONDS)
         .atMost(500, TimeUnit.MILLISECONDS)
-        .untilAsserted(
-            () -> assertThat(operator.getReconcilerOfType(MaxIntervalTestReconciler.class)
+        .untilAsserted(() -> assertThat(operator
+                .getReconcilerOfType(MaxIntervalTestReconciler.class)
                 .getNumberOfExecutions())
-                .isGreaterThan(3));
+            .isGreaterThan(3));
   }
 
   private MaxIntervalTestCustomResource createTestResource() {

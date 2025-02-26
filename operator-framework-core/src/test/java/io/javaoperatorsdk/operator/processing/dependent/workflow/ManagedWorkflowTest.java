@@ -36,21 +36,24 @@ class ManagedWorkflowTest {
 
   @Test
   void isNotCleanerIfGarbageCollected() {
-    assertThat(managedWorkflow(createDRSWithTraits(NAME, GarbageCollected.class))
-        .hasCleaner()).isFalse();
+    assertThat(
+            managedWorkflow(createDRSWithTraits(NAME, GarbageCollected.class)).hasCleaner())
+        .isFalse();
   }
 
   @Test
   void isCleanerShouldWork() {
     assertThat(managedWorkflow(
-        createDRSWithTraits(NAME, GarbageCollected.class),
-        createDRSWithTraits("foo", Deleter.class))
-        .hasCleaner()).isTrue();
+                createDRSWithTraits(NAME, GarbageCollected.class),
+                createDRSWithTraits("foo", Deleter.class))
+            .hasCleaner())
+        .isTrue();
 
     assertThat(managedWorkflow(
-        createDRSWithTraits("foo", Deleter.class),
-        createDRSWithTraits(NAME, GarbageCollected.class))
-        .hasCleaner()).isTrue();
+                createDRSWithTraits("foo", Deleter.class),
+                createDRSWithTraits(NAME, GarbageCollected.class))
+            .hasCleaner())
+        .isTrue();
   }
 
   @Test
@@ -81,8 +84,6 @@ class ManagedWorkflowTest {
     };
     when(configuration.getWorkflowSpec()).thenReturn(Optional.of(ws));
 
-    return new BaseConfigurationService().getWorkflowFactory()
-        .workflowFor(configuration);
+    return new BaseConfigurationService().getWorkflowFactory().workflowFor(configuration);
   }
-
 }

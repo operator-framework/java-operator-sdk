@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 @ControllerConfiguration
 public class UpdateStatusInCleanupAndRescheduleReconciler
     implements Reconciler<UpdateStatusInCleanupAndRescheduleCustomResource>,
-    Cleaner<UpdateStatusInCleanupAndRescheduleCustomResource> {
+        Cleaner<UpdateStatusInCleanupAndRescheduleCustomResource> {
 
   public static final Integer DELAY = 150;
 
@@ -30,7 +30,8 @@ public class UpdateStatusInCleanupAndRescheduleReconciler
   }
 
   @Override
-  public DeleteControl cleanup(UpdateStatusInCleanupAndRescheduleCustomResource resource,
+  public DeleteControl cleanup(
+      UpdateStatusInCleanupAndRescheduleCustomResource resource,
       Context<UpdateStatusInCleanupAndRescheduleCustomResource> context) {
 
     var status = resource.getStatus();

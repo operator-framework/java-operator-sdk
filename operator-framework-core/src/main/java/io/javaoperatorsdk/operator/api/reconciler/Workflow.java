@@ -38,5 +38,4 @@ public @interface Workflow {
    * aggregated view of what happened.
    */
   boolean handleExceptionsInReconciler() default false;
-
 }

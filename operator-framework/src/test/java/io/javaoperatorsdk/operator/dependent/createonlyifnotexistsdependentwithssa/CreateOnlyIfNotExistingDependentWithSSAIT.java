@@ -20,17 +20,14 @@ class CreateOnlyIfNotExistingDependentWithSSAIT {
   public static final String KEY = "key";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new CreateOnlyIfNotExistingDependentWithSSAReconciler())
-          .build();
-
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new CreateOnlyIfNotExistingDependentWithSSAReconciler())
+      .build();
 
   @Test
   void createsResourceOnlyIfNotExisting() {
-    var cm = new ConfigMapBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build())
+    var cm = new ConfigMapBuilder()
+        .withMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build())
         .withData(Map.of(KEY, "val"))
         .build();
 
@@ -45,11 +42,8 @@ class CreateOnlyIfNotExistingDependentWithSSAIT {
 
   CreateOnlyIfNotExistingDependentWithSSACustomResource testResource() {
     var res = new CreateOnlyIfNotExistingDependentWithSSACustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     return res;
   }
-
 }

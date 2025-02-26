@@ -9,12 +9,13 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
 
-public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMetadata> implements
-    ConfigurationConverter<KubernetesDependent, KubernetesDependentResourceConfig<R>> {
+public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMetadata>
+    implements ConfigurationConverter<KubernetesDependent, KubernetesDependentResourceConfig<R>> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public KubernetesDependentResourceConfig<R> configFrom(KubernetesDependent configAnnotation,
+  public KubernetesDependentResourceConfig<R> configFrom(
+      KubernetesDependent configAnnotation,
       DependentResourceSpec<?, ?, KubernetesDependentResourceConfig<R>> spec,
       ControllerConfiguration<?> controllerConfig) {
     var createResourceOnlyIfNotExistingWithSSA =
@@ -27,12 +28,13 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
       useSSA = configAnnotation.useSSA().asBoolean();
     }
 
-    var informerConfiguration = createInformerConfig(configAnnotation,
+    var informerConfiguration = createInformerConfig(
+        configAnnotation,
         (DependentResourceSpec<R, P, KubernetesDependentResourceConfig<R>>) spec,
         controllerConfig);
 
-    return new KubernetesDependentResourceConfig<>(useSSA, createResourceOnlyIfNotExistingWithSSA,
-        informerConfiguration);
+    return new KubernetesDependentResourceConfig<>(
+        useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfiguration);
   }
 
   @SuppressWarnings({"unchecked"})
@@ -43,14 +45,16 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     Class<? extends KubernetesDependentResource<?, ?>> dependentResourceClass =
         (Class<? extends KubernetesDependentResource<?, ?>>) spec.getDependentResourceClass();
 
-    final var resourceType = controllerConfig.getConfigurationService().dependentResourceFactory()
+    final var resourceType = controllerConfig
+        .getConfigurationService()
+        .dependentResourceFactory()
         .associatedResourceType(spec);
 
     InformerConfiguration<R>.Builder config = InformerConfiguration.builder(resourceType);
     if (configAnnotation != null) {
       final var informerConfig = configAnnotation.informer();
-      final var context = Utils.contextFor(controllerConfig, dependentResourceClass,
-          configAnnotation.annotationType());
+      final var context = Utils.contextFor(
+          controllerConfig, dependentResourceClass, configAnnotation.annotationType());
       config = config.initFromAnnotation(informerConfig, context);
     }
     return config.build();

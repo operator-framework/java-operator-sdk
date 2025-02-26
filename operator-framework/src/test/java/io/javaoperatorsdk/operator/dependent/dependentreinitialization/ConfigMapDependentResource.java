@@ -16,7 +16,8 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(DependentReInitializationCustomResource primary,
+  protected ConfigMap desired(
+      DependentReInitializationCustomResource primary,
       Context<DependentReInitializationCustomResource> context) {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()

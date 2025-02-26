@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event;
 
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,12 +30,13 @@ class EventSources<P extends HasMetadata> {
     final var name = eventSource.name();
     var existing = sourceByName.get(name);
     if (existing != null) {
-      throw new IllegalArgumentException("Event source " + existing
-          + " is already registered with name: " + name);
+      throw new IllegalArgumentException(
+          "Event source " + existing + " is already registered with name: " + name);
     }
     sourceByName.put(name, eventSource);
-    sources.computeIfAbsent(keyFor(eventSource), k -> new ConcurrentHashMap<>()).put(name,
-        eventSource);
+    sources
+        .computeIfAbsent(keyFor(eventSource), k -> new ConcurrentHashMap<>())
+        .put(name, eventSource);
   }
 
   public EventSource remove(String name) {
@@ -76,15 +76,12 @@ class EventSources<P extends HasMetadata> {
   @SuppressWarnings("rawtypes")
   Stream<EventSource> additionalEventSources() {
     return Stream.concat(
-        Stream.of(retryEventSource()).filter(Objects::nonNull),
-        flatMappedSources());
+        Stream.of(retryEventSource()).filter(Objects::nonNull), flatMappedSources());
   }
 
   Stream<EventSource<?, P>> flatMappedSources() {
     return sources.values().stream().flatMap(c -> c.values().stream());
   }
-
-
 
   private <R> String keyFor(EventSource<R, P> source) {
     return keyFor(source.resourceType());
@@ -119,8 +116,8 @@ class EventSources<P extends HasMetadata> {
       source = (EventSource<S, P>) sourcesForType.get(name);
 
       if (source == null) {
-        throw new IllegalArgumentException("There is no event source found for class:" +
-            " " + dependentType.getName() + ", name:" + name);
+        throw new IllegalArgumentException("There is no event source found for class:" + " "
+            + dependentType.getName() + ", name:" + name);
       }
     }
 
@@ -147,7 +144,6 @@ class EventSources<P extends HasMetadata> {
     if (sourcesForType == null) {
       return Collections.emptyList();
     }
-    return sourcesForType.values().stream()
-        .map(es -> (EventSource<S, P>) es).toList();
+    return sourcesForType.values().stream().map(es -> (EventSource<S, P>) es).toList();
   }
 }

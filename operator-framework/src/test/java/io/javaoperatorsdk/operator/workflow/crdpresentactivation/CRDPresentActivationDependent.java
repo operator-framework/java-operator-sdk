@@ -5,8 +5,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
 public class CRDPresentActivationDependent
-    extends
-    CRUDNoGCKubernetesDependentResource<CRDPresentActivationDependentCustomResource, CRDPresentActivationCustomResource> {
+    extends CRUDNoGCKubernetesDependentResource<
+        CRDPresentActivationDependentCustomResource, CRDPresentActivationCustomResource> {
 
   public CRDPresentActivationDependent() {
     super(CRDPresentActivationDependentCustomResource.class);

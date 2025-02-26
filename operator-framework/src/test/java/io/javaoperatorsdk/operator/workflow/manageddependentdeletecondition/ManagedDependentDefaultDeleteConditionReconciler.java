@@ -7,11 +7,14 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.KubernetesResourceDeletedCondition;
 
-@Workflow(dependents = {
-    @Dependent(name = "ConfigMap", type = ConfigMapDependent.class),
-    @Dependent(type = SecretDependent.class, dependsOn = "ConfigMap",
-        deletePostcondition = KubernetesResourceDeletedCondition.class)
-})
+@Workflow(
+    dependents = {
+      @Dependent(name = "ConfigMap", type = ConfigMapDependent.class),
+      @Dependent(
+          type = SecretDependent.class,
+          dependsOn = "ConfigMap",
+          deletePostcondition = KubernetesResourceDeletedCondition.class)
+    })
 @ControllerConfiguration
 public class ManagedDependentDefaultDeleteConditionReconciler
     implements Reconciler<ManagedDependentDefaultDeleteConditionCustomResource> {
@@ -28,5 +31,4 @@ public class ManagedDependentDefaultDeleteConditionReconciler
 
     return UpdateControl.noUpdate();
   }
-
 }

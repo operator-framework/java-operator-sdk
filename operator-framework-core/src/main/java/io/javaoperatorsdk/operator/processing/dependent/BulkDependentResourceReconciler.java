@@ -29,9 +29,8 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     if (!(bulkDependentResource instanceof Creator<?, ?>)
         && !(bulkDependentResource instanceof Deleter<?>)
         && !(bulkDependentResource instanceof Updater<?, ?>)) {
-      return ReconcileResult
-          .aggregatedResult(actualResources.values().stream().map(ReconcileResult::noOperation)
-              .toList());
+      return ReconcileResult.aggregatedResult(
+          actualResources.values().stream().map(ReconcileResult::noOperation).toList());
     }
 
     final var desiredResources = bulkDependentResource.desiredResources(primary, context);
@@ -56,8 +55,8 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     deleteExtraResources(Collections.emptySet(), actualResources, primary, context);
   }
 
-  private void deleteExtraResources(Set<String> expectedKeys,
-      Map<String, R> actualResources, P primary, Context<P> context) {
+  private void deleteExtraResources(
+      Set<String> expectedKeys, Map<String, R> actualResources, P primary, Context<P> context) {
     actualResources.forEach((key, value) -> {
       if (!expectedKeys.contains(key)) {
         bulkDependentResource.deleteTargetResource(primary, value, key, context);
@@ -74,13 +73,12 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
    */
   @Ignore
   private static class BulkDependentResourceInstance<R, P extends HasMetadata>
-      extends AbstractDependentResource<R, P>
-      implements Creator<R, P>, Deleter<P>, Updater<R, P> {
+      extends AbstractDependentResource<R, P> implements Creator<R, P>, Deleter<P>, Updater<R, P> {
     private final BulkDependentResource<R, P> bulkDependentResource;
     private final R desired;
 
-    private BulkDependentResourceInstance(BulkDependentResource<R, P> bulkDependentResource,
-        R desired) {
+    private BulkDependentResourceInstance(
+        BulkDependentResource<R, P> bulkDependentResource, R desired) {
       this.bulkDependentResource = bulkDependentResource;
       this.desired = desired;
     }

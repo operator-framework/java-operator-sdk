@@ -17,10 +17,9 @@ public class WorkflowActivationConditionIT {
   public static final String TEST_DATA = "test data";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(WorkflowActivationConditionReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(WorkflowActivationConditionReconciler.class)
+      .build();
 
   // Without activation condition this would fail / there would be errors.
   @Test
@@ -36,12 +35,9 @@ public class WorkflowActivationConditionIT {
 
   private WorkflowActivationConditionCustomResource testResource() {
     var res = new WorkflowActivationConditionCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     res.setSpec(new WorkflowActivationConditionSpec());
     res.getSpec().setValue(TEST_DATA);
     return res;
   }
-
 }

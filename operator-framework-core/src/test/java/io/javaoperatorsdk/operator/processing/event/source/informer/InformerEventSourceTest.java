@@ -93,8 +93,8 @@ class InformerEventSourceTest {
 
   @Test
   void skipsUpdateEventPropagationViaAnnotation() {
-    informerEventSource.onUpdate(testDeployment(),
-        informerEventSource.addPreviousAnnotation("1", testDeployment()));
+    informerEventSource.onUpdate(
+        testDeployment(), informerEventSource.addPreviousAnnotation("1", testDeployment()));
 
     verify(eventHandlerMock, never()).handleEvent(any());
   }
@@ -108,9 +108,11 @@ class InformerEventSourceTest {
 
   @Test
   void processEventPropagationWithIncorrectAnnotation() {
-    informerEventSource.onAdd(new DeploymentBuilder(testDeployment()).editMetadata()
+    informerEventSource.onAdd(new DeploymentBuilder(testDeployment())
+        .editMetadata()
         .addToAnnotations(InformerEventSource.PREVIOUS_ANNOTATION_KEY, "invalid")
-        .endMetadata().build());
+        .endMetadata()
+        .build());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
   }
@@ -122,7 +124,6 @@ class InformerEventSourceTest {
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(cachedDeployment));
 
-
     informerEventSource.onUpdate(cachedDeployment, testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
@@ -132,8 +133,7 @@ class InformerEventSourceTest {
   @Test
   void genericFilterForEvents() {
     informerEventSource.setGenericFilter(r -> false);
-    when(temporaryResourceCacheMock.getResourceFromCache(any()))
-        .thenReturn(Optional.empty());
+    when(temporaryResourceCacheMock.getResourceFromCache(any())).thenReturn(Optional.empty());
 
     informerEventSource.onAdd(testDeployment());
     informerEventSource.onUpdate(testDeployment(), testDeployment());
@@ -145,8 +145,7 @@ class InformerEventSourceTest {
   @Test
   void filtersOnAddEvents() {
     informerEventSource.setOnAddFilter(r -> false);
-    when(temporaryResourceCacheMock.getResourceFromCache(any()))
-        .thenReturn(Optional.empty());
+    when(temporaryResourceCacheMock.getResourceFromCache(any())).thenReturn(Optional.empty());
 
     informerEventSource.onAdd(testDeployment());
 
@@ -156,8 +155,7 @@ class InformerEventSourceTest {
   @Test
   void filtersOnUpdateEvents() {
     informerEventSource.setOnUpdateFilter((r1, r2) -> false);
-    when(temporaryResourceCacheMock.getResourceFromCache(any()))
-        .thenReturn(Optional.empty());
+    when(temporaryResourceCacheMock.getResourceFromCache(any())).thenReturn(Optional.empty());
 
     informerEventSource.onUpdate(testDeployment(), testDeployment());
 
@@ -167,8 +165,7 @@ class InformerEventSourceTest {
   @Test
   void filtersOnDeleteEvents() {
     informerEventSource.setOnDeleteFilter((r, b) -> false);
-    when(temporaryResourceCacheMock.getResourceFromCache(any()))
-        .thenReturn(Optional.empty());
+    when(temporaryResourceCacheMock.getResourceFromCache(any())).thenReturn(Optional.empty());
 
     informerEventSource.onDelete(testDeployment(), true);
 
@@ -179,15 +176,14 @@ class InformerEventSourceTest {
   void informerStoppedHandlerShouldBeCalledWhenInformerStops() {
     final var exception = new RuntimeException("Informer stopped exceptionally!");
     final var informerStoppedHandler = mock(InformerStoppedHandler.class);
-    var configuration =
-        ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
-            o -> o.withInformerStoppedHandler(informerStoppedHandler));
+    var configuration = ConfigurationService.newOverriddenConfigurationService(
+        new BaseConfigurationService(), o -> o.withInformerStoppedHandler(informerStoppedHandler));
 
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(configuration);
 
-    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration,
-        MockKubernetesClient.client(Deployment.class, unused -> {
+    informerEventSource = new InformerEventSource<>(
+        informerEventSourceConfiguration, MockKubernetesClient.client(Deployment.class, unused -> {
           throw exception;
         }));
     informerEventSource.setControllerConfiguration(mockControllerConfig);
@@ -205,5 +201,4 @@ class InformerEventSourceTest {
     deployment.getMetadata().setName("test");
     return deployment;
   }
-
 }

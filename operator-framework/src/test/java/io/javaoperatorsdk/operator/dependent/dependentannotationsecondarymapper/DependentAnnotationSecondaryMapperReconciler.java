@@ -13,8 +13,10 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@Workflow(dependents = @Dependent(
-    type = DependentAnnotationSecondaryMapperReconciler.ConfigMapDependentResource.class))
+@Workflow(
+    dependents =
+        @Dependent(
+            type = DependentAnnotationSecondaryMapperReconciler.ConfigMapDependentResource.class))
 @ControllerConfiguration
 public class DependentAnnotationSecondaryMapperReconciler
     implements Reconciler<DependentAnnotationSecondaryMapperResource>, TestExecutionInfoProvider {
@@ -33,18 +35,19 @@ public class DependentAnnotationSecondaryMapperReconciler
     return numberOfExecutions.get();
   }
 
-  public static class ConfigMapDependentResource extends
-      KubernetesDependentResource<ConfigMap, DependentAnnotationSecondaryMapperResource>
+  public static class ConfigMapDependentResource
+      extends KubernetesDependentResource<ConfigMap, DependentAnnotationSecondaryMapperResource>
       implements Creator<ConfigMap, DependentAnnotationSecondaryMapperResource>,
-      Updater<ConfigMap, DependentAnnotationSecondaryMapperResource>,
-      Deleter<DependentAnnotationSecondaryMapperResource> {
+          Updater<ConfigMap, DependentAnnotationSecondaryMapperResource>,
+          Deleter<DependentAnnotationSecondaryMapperResource> {
 
     public ConfigMapDependentResource() {
       super(ConfigMap.class);
     }
 
     @Override
-    protected ConfigMap desired(DependentAnnotationSecondaryMapperResource primary,
+    protected ConfigMap desired(
+        DependentAnnotationSecondaryMapperResource primary,
         Context<DependentAnnotationSecondaryMapperResource> context) {
       ConfigMap configMap = new ConfigMap();
       configMap.setMetadata(new ObjectMetaBuilder()
@@ -55,5 +58,4 @@ public class DependentAnnotationSecondaryMapperReconciler
       return configMap;
     }
   }
-
 }

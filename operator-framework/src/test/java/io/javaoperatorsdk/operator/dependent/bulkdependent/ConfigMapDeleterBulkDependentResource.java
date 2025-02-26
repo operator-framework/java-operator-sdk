@@ -15,8 +15,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
  * Not using CRUDKubernetesDependentResource so the delete functionality can be tested.
  */
 public class ConfigMapDeleterBulkDependentResource
-    extends
-    KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
+    extends KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
     implements CRUDBulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
 
   public static final String LABEL_KEY = "bulk";
@@ -29,8 +28,8 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
-  public Map<String, ConfigMap> desiredResources(BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
+  public Map<String, ConfigMap> desiredResources(
+      BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
     Map<String, ConfigMap> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
@@ -53,9 +52,10 @@ public class ConfigMapDeleterBulkDependentResource
   }
 
   @Override
-  public Map<String, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
-    return context.getSecondaryResourcesAsStream(ConfigMap.class)
+  public Map<String, ConfigMap> getSecondaryResources(
+      BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
+    return context
+        .getSecondaryResourcesAsStream(ConfigMap.class)
         .filter(cm -> getName(cm).startsWith(primary.getMetadata().getName()))
         .collect(Collectors.toMap(
             cm -> getName(cm).substring(getName(cm).lastIndexOf(INDEX_DELIMITER) + 1),

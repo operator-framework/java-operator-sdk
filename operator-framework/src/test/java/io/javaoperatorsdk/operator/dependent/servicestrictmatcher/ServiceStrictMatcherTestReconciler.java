@@ -10,7 +10,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 public class ServiceStrictMatcherTestReconciler
     implements Reconciler<ServiceStrictMatcherTestCustomResource> {
 
-
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override

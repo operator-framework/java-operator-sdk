@@ -13,7 +13,8 @@ public class RouteDependentResource
   }
 
   @Override
-  protected Route desired(GetNonActiveSecondaryCustomResource primary,
+  protected Route desired(
+      GetNonActiveSecondaryCustomResource primary,
       Context<GetNonActiveSecondaryCustomResource> context) {
     // basically does not matter since this should not be called
     Route route = new Route();

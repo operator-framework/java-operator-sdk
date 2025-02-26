@@ -32,11 +32,13 @@ public class ClusterScopedCustomResourceReconciler
     var optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
 
     final var client = context.getClient();
-    optionalConfigMap.ifPresentOrElse(cm -> {
-      if (!resource.getSpec().getData().equals(cm.getData().get(DATA_KEY))) {
-        client.configMaps().resource(desired(resource)).replace();
-      }
-    }, () -> client.configMaps().resource(desired(resource)).create());
+    optionalConfigMap.ifPresentOrElse(
+        cm -> {
+          if (!resource.getSpec().getData().equals(cm.getData().get(DATA_KEY))) {
+            client.configMaps().resource(desired(resource)).replace();
+          }
+        },
+        () -> client.configMaps().resource(desired(resource)).create());
 
     resource.setStatus(new ClusterScopedCustomResourceStatus());
     resource.getStatus().setCreated(true);

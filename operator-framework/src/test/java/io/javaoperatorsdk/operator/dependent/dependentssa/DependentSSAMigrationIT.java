@@ -34,17 +34,23 @@ class DependentSSAMigrationIT {
     testInfo.getTestMethod().ifPresent(method -> {
       namespace = KubernetesResourceUtil.sanitizeName(method.getName());
       cleanup();
-      client.namespaces().resource(new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-          .withName(namespace)
-          .build()).build()).create();
+      client
+          .namespaces()
+          .resource(new NamespaceBuilder()
+              .withMetadata(new ObjectMetaBuilder().withName(namespace).build())
+              .build())
+          .create();
     });
   }
 
   @AfterEach
   void cleanup() {
-    client.namespaces().resource(new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(namespace)
-        .build()).build()).delete();
+    client
+        .namespaces()
+        .resource(new NamespaceBuilder()
+            .withMetadata(new ObjectMetaBuilder().withName(namespace).build())
+            .build())
+        .delete();
   }
 
   @Test
@@ -65,8 +71,7 @@ class DependentSSAMigrationIT {
     var legacyOperator = createOperator(client, true, null);
     DependentSSACustomResource testResource = reconcileWithLegacyOperator(legacyOperator);
 
-    var operator = createOperator(client, false,
-        FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER);
+    var operator = createOperator(client, false, FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER);
     reconcileWithNewApproach(testResource, operator);
 
     var cm = getDependentConfigMap();
@@ -79,8 +84,8 @@ class DependentSSAMigrationIT {
             || fm.getManager().equals("Jetty"));
   }
 
-  private void reconcileAgainWithLegacy(Operator legacyOperator,
-      DependentSSACustomResource testResource) {
+  private void reconcileAgainWithLegacy(
+      Operator legacyOperator, DependentSSACustomResource testResource) {
     legacyOperator.start();
 
     testResource.getSpec().setValue(INITIAL_VALUE);
@@ -118,7 +123,11 @@ class DependentSSAMigrationIT {
   }
 
   private ConfigMap getDependentConfigMap() {
-    return client.configMaps().inNamespace(namespace).withName(TEST_RESOURCE_NAME).get();
+    return client
+        .configMaps()
+        .inNamespace(namespace)
+        .withName(TEST_RESOURCE_NAME)
+        .get();
   }
 
   private DependentSSACustomResource reconcileWithLegacyOperator(Operator legacyOperator) {
@@ -137,9 +146,8 @@ class DependentSSAMigrationIT {
     return testResource;
   }
 
-
-  private Operator createOperator(KubernetesClient client, boolean legacyDependentHandling,
-      String fieldManager) {
+  private Operator createOperator(
+      KubernetesClient client, boolean legacyDependentHandling, String fieldManager) {
     Operator operator =
         new Operator(o -> o.withKubernetesClient(client).withCloseClientOnStop(false));
     var reconciler = new DependentSSAReconciler(!legacyDependentHandling);
@@ -162,5 +170,4 @@ class DependentSSAMigrationIT {
     resource.getSpec().setValue(INITIAL_VALUE);
     return resource;
   }
-
 }

@@ -20,9 +20,9 @@ class DependentFilterIT {
   public static final String RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(DependentFilterTestReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(DependentFilterTestReconciler.class)
+      .build();
 
   @Test
   void filtersUpdateOnConfigMap() {
@@ -30,8 +30,10 @@ class DependentFilterIT {
     operator.create(resource);
 
     await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(DependentFilterTestReconciler.class)
-          .getNumberOfExecutions()).isEqualTo(1);
+      assertThat(operator
+              .getReconcilerOfType(DependentFilterTestReconciler.class)
+              .getNumberOfExecutions())
+          .isEqualTo(1);
     });
 
     var configMap = operator.get(ConfigMap.class, RESOURCE_NAME);
@@ -39,19 +41,18 @@ class DependentFilterIT {
     operator.replace(configMap);
 
     await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(DependentFilterTestReconciler.class)
-          .getNumberOfExecutions()).isEqualTo(1);
+      assertThat(operator
+              .getReconcilerOfType(DependentFilterTestReconciler.class)
+              .getNumberOfExecutions())
+          .isEqualTo(1);
     });
   }
 
   DependentFilterTestCustomResource createResource() {
     DependentFilterTestCustomResource resource = new DependentFilterTestCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     resource.setSpec(new DependentFilterTestResourceSpec());
     resource.getSpec().setValue("value1");
     return resource;
   }
-
 }

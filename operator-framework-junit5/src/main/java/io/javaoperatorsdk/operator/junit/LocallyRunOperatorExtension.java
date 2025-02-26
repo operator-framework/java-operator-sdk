@@ -83,16 +83,16 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
     configurationServiceOverrider = configurationServiceOverrider != null
-        ? configurationServiceOverrider
-            .andThen(overrider -> overrider.withKubernetesClient(kubernetesClient))
+        ? configurationServiceOverrider.andThen(
+            overrider -> overrider.withKubernetesClient(kubernetesClient))
         : overrider -> overrider.withKubernetesClient(kubernetesClient);
     this.operator = new Operator(configurationServiceOverrider);
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
   }
 
-  static Map<String, String> getAdditionalCRDsFromFiles(Iterable<String> additionalCrds,
-      KubernetesClient client) {
+  static Map<String, String> getAdditionalCRDsFromFiles(
+      Iterable<String> additionalCrds, KubernetesClient client) {
     Map<String, String> crdMappings = new HashMap<>();
     additionalCrds.forEach(p -> {
       try (InputStream is = new FileInputStream(p)) {
@@ -238,7 +238,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     final var kubernetesClient = getKubernetesClient();
 
     for (var ref : portForwards) {
-      String podName = kubernetesClient.pods()
+      String podName = kubernetesClient
+          .pods()
           .inNamespace(ref.getNamespace())
           .withLabel(ref.getLabelKey(), ref.getLabelValue())
           .list()
@@ -247,8 +248,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           .getMetadata()
           .getName();
 
-      localPortForwards.add(kubernetesClient.pods().inNamespace(ref.getNamespace())
-          .withName(podName).portForward(ref.getPort(), ref.getLocalPort()));
+      localPortForwards.add(kubernetesClient
+          .pods()
+          .inNamespace(ref.getNamespace())
+          .withName(podName)
+          .portForward(ref.getPort(), ref.getLocalPort()));
     }
 
     additionalCustomResourceDefinitions.forEach(this::applyCrd);
@@ -390,8 +394,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
-    public Builder withPortForward(String namespace, String labelKey, String labelValue, int port,
-        int localPort) {
+    public Builder withPortForward(
+        String namespace, String labelKey, String labelValue, int port, int localPort) {
       portForwards.add(new PortForwardSpec(namespace, labelKey, labelValue, port, localPort));
       return this;
     }
@@ -425,7 +429,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient,
-          configurationServiceOverrider, namespaceNameSupplier,
+          configurationServiceOverrider,
+          namespaceNameSupplier,
           perClassNamespaceNameSupplier,
           additionalCRDs);
     }
@@ -438,8 +443,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     final int port;
     final int localPort;
 
-    public PortForwardSpec(String namespace, String labelKey, String labelValue, int port,
-        int localPort) {
+    public PortForwardSpec(
+        String namespace, String labelKey, String labelValue, int port, int localPort) {
       this.namespace = namespace;
       this.labelKey = labelKey;
       this.labelValue = labelValue;

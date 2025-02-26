@@ -15,10 +15,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
  * Runs a specified number of Tomcat app server Pods. It uses a Deployment to create the Pods. Also
  * creates a Service over which the Pods can be accessed.
  */
-@Workflow(dependents = {
-    @Dependent(type = DeploymentDependentResource.class),
-    @Dependent(type = ServiceDependentResource.class)
-})
+@Workflow(
+    dependents = {
+      @Dependent(type = DeploymentDependentResource.class),
+      @Dependent(type = ServiceDependentResource.class)
+    })
 @ControllerConfiguration
 public class TomcatReconciler implements Reconciler<Tomcat> {
 
@@ -26,15 +27,18 @@ public class TomcatReconciler implements Reconciler<Tomcat> {
 
   @Override
   public UpdateControl<Tomcat> reconcile(Tomcat tomcat, Context<Tomcat> context) {
-    return context.getSecondaryResource(Deployment.class).map(deployment -> {
-      Tomcat updatedTomcat = createTomcatForStatusUpdate(tomcat, deployment);
-      log.info(
-          "Updating status of Tomcat {} in namespace {} to {} ready replicas",
-          tomcat.getMetadata().getName(),
-          tomcat.getMetadata().getNamespace(),
-          tomcat.getStatus() == null ? 0 : tomcat.getStatus().getReadyReplicas());
-      return UpdateControl.patchStatus(updatedTomcat);
-    }).orElseGet(UpdateControl::noUpdate);
+    return context
+        .getSecondaryResource(Deployment.class)
+        .map(deployment -> {
+          Tomcat updatedTomcat = createTomcatForStatusUpdate(tomcat, deployment);
+          log.info(
+              "Updating status of Tomcat {} in namespace {} to {} ready replicas",
+              tomcat.getMetadata().getName(),
+              tomcat.getMetadata().getNamespace(),
+              tomcat.getStatus() == null ? 0 : tomcat.getStatus().getReadyReplicas());
+          return UpdateControl.patchStatus(updatedTomcat);
+        })
+        .orElseGet(UpdateControl::noUpdate);
   }
 
   private Tomcat createTomcatForStatusUpdate(Tomcat tomcat, Deployment deployment) {

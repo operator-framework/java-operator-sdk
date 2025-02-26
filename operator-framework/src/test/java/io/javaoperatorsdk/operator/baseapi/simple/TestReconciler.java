@@ -16,8 +16,9 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class TestReconciler
-    implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<TestCustomResource>,
+        Cleaner<TestCustomResource>,
+        TestExecutionInfoProvider {
 
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
 
@@ -28,7 +29,6 @@ public class TestReconciler
   private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
   private volatile boolean updateStatus;
 
-
   public TestReconciler(boolean updateStatus) {
     this.updateStatus = updateStatus;
   }
@@ -38,11 +38,11 @@ public class TestReconciler
   }
 
   @Override
-  public DeleteControl cleanup(
-      TestCustomResource resource, Context<TestCustomResource> context) {
+  public DeleteControl cleanup(TestCustomResource resource, Context<TestCustomResource> context) {
     numberOfCleanupExecutions.incrementAndGet();
 
-    var statusDetail = context.getClient()
+    var statusDetail = context
+        .getClient()
         .configMaps()
         .inNamespace(resource.getMetadata().getNamespace())
         .withName(resource.getSpec().getConfigMapName())
@@ -70,12 +70,11 @@ public class TestReconciler
       throw new IllegalStateException("Finalizer is not present.");
     }
     final var kubernetesClient = context.getClient();
-    ConfigMap existingConfigMap =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .get();
+    ConfigMap existingConfigMap = kubernetesClient
+        .configMaps()
+        .inNamespace(resource.getMetadata().getNamespace())
+        .withName(resource.getSpec().getConfigMapName())
+        .get();
 
     if (existingConfigMap != null) {
       existingConfigMap.setData(configMapData(resource));
@@ -88,19 +87,18 @@ public class TestReconciler
     } else {
       Map<String, String> labels = new HashMap<>();
       labels.put("managedBy", TestReconciler.class.getSimpleName());
-      ConfigMap newConfigMap =
-          new ConfigMapBuilder()
-              .withMetadata(
-                  new ObjectMetaBuilder()
-                      .withName(resource.getSpec().getConfigMapName())
-                      .withNamespace(resource.getMetadata().getNamespace())
-                      .withLabels(labels)
-                      .build())
-              .withData(configMapData(resource))
-              .build();
+      ConfigMap newConfigMap = new ConfigMapBuilder()
+          .withMetadata(new ObjectMetaBuilder()
+              .withName(resource.getSpec().getConfigMapName())
+              .withNamespace(resource.getMetadata().getNamespace())
+              .withLabels(labels)
+              .build())
+          .withData(configMapData(resource))
+          .build();
       kubernetesClient
           .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace()).resource(newConfigMap)
+          .inNamespace(resource.getMetadata().getNamespace())
+          .resource(newConfigMap)
           .createOrReplace();
     }
     if (updateStatus) {

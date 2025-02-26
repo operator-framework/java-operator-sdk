@@ -14,12 +14,11 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubern
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class ConfigMapGenericKubernetesDependent extends
-    GenericKubernetesDependentResource<GenericKubernetesDependentManagedCustomResource>
-    implements
-    Creator<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
-    Updater<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
-    GarbageCollected<GenericKubernetesDependentManagedCustomResource> {
+public class ConfigMapGenericKubernetesDependent
+    extends GenericKubernetesDependentResource<GenericKubernetesDependentManagedCustomResource>
+    implements Creator<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
+        Updater<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
+        GarbageCollected<GenericKubernetesDependentManagedCustomResource> {
 
   public static final String VERSION = "v1";
   public static final String KIND = "ConfigMap";
@@ -35,10 +34,12 @@ public class ConfigMapGenericKubernetesDependent extends
       Context<GenericKubernetesDependentManagedCustomResource> context) {
 
     try (InputStream is = this.getClass().getResourceAsStream("/configmap.yaml")) {
-      var res = context.getClient().genericKubernetesResources(VERSION, KIND).load(is).item();
+      var res =
+          context.getClient().genericKubernetesResources(VERSION, KIND).load(is).item();
       res.getMetadata().setName(primary.getMetadata().getName());
       res.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-      Map<String, String> data = (Map<String, String>) res.getAdditionalProperties().get("data");
+      Map<String, String> data =
+          (Map<String, String>) res.getAdditionalProperties().get("data");
       data.put(KEY, primary.getSpec().getValue());
       return res;
     } catch (IOException e) {

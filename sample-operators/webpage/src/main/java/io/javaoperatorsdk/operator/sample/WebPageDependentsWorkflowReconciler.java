@@ -25,11 +25,11 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
  * Shows how to implement reconciler using standalone dependent resources.
  */
 @ControllerConfiguration(
-    informer = @Informer(
-        labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR))
+    informer =
+        @Informer(
+            labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR))
 @SuppressWarnings("unused")
-public class WebPageDependentsWorkflowReconciler
-    implements Reconciler<WebPage> {
+public class WebPageDependentsWorkflowReconciler implements Reconciler<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
 
@@ -53,9 +53,8 @@ public class WebPageDependentsWorkflowReconciler
 
   @Override
   public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceUtils.dependentEventSources(context, configMapDR,
-        deploymentDR, serviceDR,
-        ingressDR);
+    return EventSourceUtils.dependentEventSources(
+        context, configMapDR, deploymentDR, serviceDR, ingressDR);
   }
 
   @Override
@@ -65,10 +64,13 @@ public class WebPageDependentsWorkflowReconciler
 
     workflow.reconcile(webPage, context);
 
-    return UpdateControl
-        .patchStatus(
-            createWebPageForStatusUpdate(webPage, context.getSecondaryResource(ConfigMap.class)
-                .orElseThrow().getMetadata().getName()));
+    return UpdateControl.patchStatus(createWebPageForStatusUpdate(
+        webPage,
+        context
+            .getSecondaryResource(ConfigMap.class)
+            .orElseThrow()
+            .getMetadata()
+            .getName()));
   }
 
   @Override
@@ -91,5 +93,4 @@ public class WebPageDependentsWorkflowReconciler
                 .build())
             .build()));
   }
-
 }

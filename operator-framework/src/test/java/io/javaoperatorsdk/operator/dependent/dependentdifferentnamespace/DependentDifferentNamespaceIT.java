@@ -18,10 +18,9 @@ class DependentDifferentNamespaceIT {
   public static final String CHANGED_VALUE = "changed_value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(DependentDifferentNamespaceReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(DependentDifferentNamespaceReconciler.class)
+      .build();
 
   @Test
   void managesCRUDOperationsForDependentInDifferentNamespace() {
@@ -49,19 +48,19 @@ class DependentDifferentNamespaceIT {
   }
 
   private ConfigMap getDependentConfigMap() {
-    return extension.getKubernetesClient().configMaps()
+    return extension
+        .getKubernetesClient()
+        .configMaps()
         .inNamespace(ConfigMapDependentResource.NAMESPACE)
-        .withName(TEST_1).get();
+        .withName(TEST_1)
+        .get();
   }
 
   DependentDifferentNamespaceCustomResource testResource() {
     var res = new DependentDifferentNamespaceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_1)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
     res.setSpec(new DependentDifferentNamespaceSpec());
     res.getSpec().setValue(INITIAL_VALUE);
     return res;
   }
-
 }

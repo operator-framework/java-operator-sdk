@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.workflow.getnonactivesecondary;
 
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -16,7 +15,8 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(GetNonActiveSecondaryCustomResource primary,
+  protected ConfigMap desired(
+      GetNonActiveSecondaryCustomResource primary,
       Context<GetNonActiveSecondaryCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()

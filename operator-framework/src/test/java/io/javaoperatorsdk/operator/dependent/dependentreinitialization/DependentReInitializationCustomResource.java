@@ -7,8 +7,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-public class DependentReInitializationCustomResource
-    extends CustomResource<Void, Void>
-    implements Namespaced {
-
-}
+public class DependentReInitializationCustomResource extends CustomResource<Void, Void>
+    implements Namespaced {}

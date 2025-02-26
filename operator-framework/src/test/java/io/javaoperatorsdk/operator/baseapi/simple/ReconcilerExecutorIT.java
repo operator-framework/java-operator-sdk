@@ -16,8 +16,9 @@ import static org.awaitility.Awaitility.await;
 class ReconcilerExecutorIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new TestReconciler(true))
+      .build();
 
   @Test
   void configMapGetsCreatedForTestCustomResource() {
@@ -63,21 +64,18 @@ class ReconcilerExecutorIT {
     awaitStatusUpdated();
     operator.delete(resource);
 
-    await().atMost(Duration.ofSeconds(1))
-        .until(() -> ((TestReconciler) operator.getFirstReconciler())
-            .getNumberOfCleanupExecutions() == 1);
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .until(() ->
+            ((TestReconciler) operator.getFirstReconciler()).getNumberOfCleanupExecutions() == 1);
   }
 
   void awaitResourcesCreatedOrUpdated() {
-    await("config map created")
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> {
-              ConfigMap configMap =
-                  operator.get(ConfigMap.class, "test-config-map");
-              assertThat(configMap).isNotNull();
-              assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
-            });
+    await("config map created").atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+      ConfigMap configMap = operator.get(ConfigMap.class, "test-config-map");
+      assertThat(configMap).isNotNull();
+      assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
+    });
   }
 
   void awaitStatusUpdated() {
@@ -85,16 +83,12 @@ class ReconcilerExecutorIT {
   }
 
   void awaitStatusUpdated(int timeout) {
-    await("cr status updated")
-        .atMost(timeout, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> {
-              TestCustomResource cr =
-                  operator.get(TestCustomResource.class,
-                      TestUtils.TEST_CUSTOM_RESOURCE_NAME);
-              assertThat(cr).isNotNull();
-              assertThat(cr.getStatus()).isNotNull();
-              assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
-            });
+    await("cr status updated").atMost(timeout, TimeUnit.SECONDS).untilAsserted(() -> {
+      TestCustomResource cr =
+          operator.get(TestCustomResource.class, TestUtils.TEST_CUSTOM_RESOURCE_NAME);
+      assertThat(cr).isNotNull();
+      assertThat(cr.getStatus()).isNotNull();
+      assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
+    });
   }
 }

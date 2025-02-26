@@ -47,12 +47,14 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private final Map<String, Object> metricsMetadata;
   private ExecutorService executor;
 
-  public EventProcessor(EventSourceManager<P> eventSourceManager,
-      ConfigurationService configurationService) {
+  public EventProcessor(
+      EventSourceManager<P> eventSourceManager, ConfigurationService configurationService) {
     this(
         eventSourceManager.getController().getConfiguration(),
-        new ReconciliationDispatcher<>(eventSourceManager.getController()), eventSourceManager,
-        configurationService.getMetrics(), eventSourceManager.getControllerEventSource());
+        new ReconciliationDispatcher<>(eventSourceManager.getController()),
+        eventSourceManager,
+        configurationService.getMetrics(),
+        eventSourceManager.getControllerEventSource());
   }
 
   @SuppressWarnings("rawtypes")
@@ -63,7 +65,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       Metrics metrics) {
     this(
         controllerConfiguration,
-        reconciliationDispatcher, eventSourceManager, metrics,
+        reconciliationDispatcher,
+        eventSourceManager,
+        metrics,
         eventSourceManager.getControllerEventSource());
   }
 
@@ -71,7 +75,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private EventProcessor(
       ControllerConfiguration controllerConfiguration,
       ReconciliationDispatcher<P> reconciliationDispatcher,
-      EventSourceManager<P> eventSourceManager, Metrics metrics, Cache<P> cache) {
+      EventSourceManager<P> eventSourceManager,
+      Metrics metrics,
+      Cache<P> cache) {
     this.controllerConfiguration = controllerConfiguration;
     this.running = false;
     this.reconciliationDispatcher = reconciliationDispatcher;
@@ -206,10 +212,11 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   private void handleRateLimitedSubmission(ResourceID resourceID, Duration minimalDuration) {
     var minimalDurationMillis = minimalDuration.toMillis();
-    log.debug("Rate limited resource: {}, rescheduled in {} millis", resourceID,
-        minimalDurationMillis);
-    retryEventSource().scheduleOnce(resourceID,
-        Math.max(minimalDurationMillis, MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION));
+    log.debug(
+        "Rate limited resource: {}, rescheduled in {} millis", resourceID, minimalDurationMillis);
+    retryEventSource()
+        .scheduleOnce(
+            resourceID, Math.max(minimalDurationMillis, MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION));
   }
 
   synchronized void eventProcessingFinished(
@@ -255,10 +262,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   /**
    * In case retry is configured more complex error logging takes place, see handleRetryOnException
    */
-  private void logErrorIfNoRetryConfigured(ExecutionScope<P> executionScope,
-      PostExecutionControl<P> postExecutionControl) {
+  private void logErrorIfNoRetryConfigured(
+      ExecutionScope<P> executionScope, PostExecutionControl<P> postExecutionControl) {
     if (!isRetryConfigured() && postExecutionControl.exceptionDuringExecution()) {
-      log.error("Error during event processing {}", executionScope,
+      log.error(
+          "Error during event processing {}",
+          executionScope,
           postExecutionControl.getRuntimeException().orElseThrow());
     }
   }
@@ -268,24 +277,26 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
     postExecutionControl
         .getReScheduleDelay()
-        .ifPresentOrElse(delay -> {
-          var resourceID = ResourceID.fromResource(customResource);
-          log.debug("Rescheduling event for resource: {} with delay: {}", resourceID, delay);
-          retryEventSource().scheduleOnce(resourceID, delay);
-        }, () -> scheduleExecutionForMaxReconciliationInterval(customResource));
+        .ifPresentOrElse(
+            delay -> {
+              var resourceID = ResourceID.fromResource(customResource);
+              log.debug("Rescheduling event for resource: {} with delay: {}", resourceID, delay);
+              retryEventSource().scheduleOnce(resourceID, delay);
+            },
+            () -> scheduleExecutionForMaxReconciliationInterval(customResource));
   }
 
   private void scheduleExecutionForMaxReconciliationInterval(P customResource) {
-    this.controllerConfiguration
-        .maxReconciliationInterval()
-        .ifPresent(m -> {
-          var resourceID = ResourceID.fromResource(customResource);
-          var delay = m.toMillis();
-          log.debug("Rescheduling event for max reconciliation interval for resource: {} : " +
-              "with delay: {}",
-              resourceID, delay);
-          retryEventSource().scheduleOnce(resourceID, delay);
-        });
+    this.controllerConfiguration.maxReconciliationInterval().ifPresent(m -> {
+      var resourceID = ResourceID.fromResource(customResource);
+      var delay = m.toMillis();
+      log.debug(
+          "Rescheduling event for max reconciliation interval for resource: {} : "
+              + "with delay: {}",
+          resourceID,
+          delay);
+      retryEventSource().scheduleOnce(resourceID, delay);
+    });
   }
 
   TimerEventSource<P> retryEventSource() {
@@ -297,8 +308,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
    * events (received meanwhile retry is in place or already in buffer) instantly or always wait
    * according to the retry timing if there was an exception.
    */
-  private void handleRetryOnException(
-      ExecutionScope<P> executionScope, Exception exception) {
+  private void handleRetryOnException(ExecutionScope<P> executionScope, Exception exception) {
     final var state = getOrInitRetryExecution(executionScope);
     var resourceID = state.getId();
     boolean eventPresent = state.eventPresent();
@@ -315,9 +325,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     nextDelay.ifPresentOrElse(
         delay -> {
           log.debug(
-              "Scheduling timer event for retry with delay:{} for resource: {}",
-              delay,
-              resourceID);
+              "Scheduling timer event for retry with delay:{} for resource: {}", delay, resourceID);
           metrics.failedReconciliation(executionScope.getResource(), exception, metricsMetadata);
           retryEventSource().scheduleOnce(resourceID, delay);
         },
@@ -327,22 +335,25 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         });
   }
 
-  private void retryAwareErrorLogging(RetryExecution retry, boolean eventPresent,
+  private void retryAwareErrorLogging(
+      RetryExecution retry,
+      boolean eventPresent,
       Exception exception,
       ExecutionScope<P> executionScope) {
-    if (!eventPresent && !retry.isLastAttempt()
+    if (!eventPresent
+        && !retry.isLastAttempt()
         && exception instanceof KubernetesClientException ex) {
       if (ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
-        log.debug("Full client conflict error during event processing {}", executionScope,
-            exception);
+        log.debug(
+            "Full client conflict error during event processing {}", executionScope, exception);
         log.warn(
             "Resource Kubernetes Resource Creator/Update Conflict during reconciliation. Message: {} Resource name: {}",
-            ex.getMessage(), ex.getFullResourceName());
+            ex.getMessage(),
+            ex.getFullResourceName());
         return;
       }
     }
-    log.error("Error during event processing {}", executionScope,
-        exception);
+    log.error("Error during event processing {}", executionScope, exception);
   }
 
   private void cleanupOnSuccessfulExecution(ExecutionScope<P> executionScope) {
@@ -391,7 +402,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   public synchronized void start() throws OperatorException {
     log.debug("Starting event processor: {}", this);
     // on restart new executor service is created and needs to be set here
-    executor = controllerConfiguration.getConfigurationService().getExecutorServiceManager()
+    executor = controllerConfiguration
+        .getConfigurationService()
+        .getExecutorServiceManager()
         .reconcileExecutorService();
     this.running = true;
     handleAlreadyMarkedEvents();
@@ -432,8 +445,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       try {
         var actualResource = cache.get(resourceID);
         if (actualResource.isEmpty()) {
-          log.debug("Skipping execution; primary resource missing from cache: {}",
-              resourceID);
+          log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
           return;
         }
         actualResource.ifPresent(executionScope::setResource);

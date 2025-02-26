@@ -65,8 +65,7 @@ public interface ConfigurationService {
    *         with overridden values.
    */
   static ConfigurationService newOverriddenConfigurationService(
-      ConfigurationService baseConfiguration,
-      Consumer<ConfigurationServiceOverrider> overrider) {
+      ConfigurationService baseConfiguration, Consumer<ConfigurationServiceOverrider> overrider) {
     if (overrider != null) {
       final var toOverride = new ConfigurationServiceOverrider(baseConfiguration);
       overrider.accept(toOverride);
@@ -328,10 +327,12 @@ public interface ConfigurationService {
         System.exit(1);
       } else {
         log.debug(
-            "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of " +
-                "stopping the controller, or due to an error on startup." +
-                "See also stopOnInformerErrorDuringStartup configuration.",
-            informer, informer.hasSynced(), ex);
+            "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of "
+                + "stopping the controller, or due to an error on startup."
+                + "See also stopOnInformerErrorDuringStartup configuration.",
+            informer,
+            informer.hasSynced(),
+            ex);
       }
     });
   }
@@ -387,7 +388,9 @@ public interface ConfigurationService {
    */
   default <R extends HasMetadata, P extends HasMetadata> boolean shouldUseSSA(
       KubernetesDependentResource<R, P> dependentResource) {
-    return shouldUseSSA(dependentResource.getClass(), dependentResource.resourceType(),
+    return shouldUseSSA(
+        dependentResource.getClass(),
+        dependentResource.resourceType(),
         dependentResource.configuration().orElse(null));
   }
 
@@ -403,7 +406,8 @@ public interface ConfigurationService {
    * @since 4.9.5
    */
   @SuppressWarnings("rawtypes")
-  default boolean shouldUseSSA(Class<? extends KubernetesDependentResource> dependentResourceType,
+  default boolean shouldUseSSA(
+      Class<? extends KubernetesDependentResource> dependentResourceType,
       Class<? extends HasMetadata> resourceType,
       KubernetesDependentResourceConfig<? extends HasMetadata> config) {
     if (ResourceUpdaterMatcher.class.isAssignableFrom(dependentResourceType)) {
@@ -515,5 +519,4 @@ public interface ConfigurationService {
   default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return false;
   }
-
 }

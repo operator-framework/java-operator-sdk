@@ -23,7 +23,6 @@ import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
-
 /**
  *
  * Polls the supplier for each controlled resource registered. Resource is registered when created
@@ -36,8 +35,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * @param <P> related custom resource
  */
 public class PerResourcePollingEventSource<R, P extends HasMetadata>
-    extends ExternalResourceCachingEventSource<R, P>
-    implements ResourceEventAware<P> {
+    extends ExternalResourceCachingEventSource<R, P> implements ResourceEventAware<P> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
 
@@ -50,9 +48,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final Predicate<P> registerPredicate;
   private final Duration period;
 
-
-
-  public PerResourcePollingEventSource(Class<R> resourceClass,
+  public PerResourcePollingEventSource(
+      Class<R> resourceClass,
       EventSourceContext<P> context,
       PerResourcePollingConfiguration<R, P> config) {
     super(config.name(), resourceClass, config.cacheKeyMapper());
@@ -76,8 +73,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     var fetchDelay = resourceFetcher.fetchDelay(actualResources, primary);
     var fetchDuration = fetchDelay.orElse(period);
 
-    ScheduledFuture<Void> scheduledFuture = (ScheduledFuture<Void>) executorService
-        .schedule(new FetchingExecutor(primaryID), fetchDuration.toMillis(), TimeUnit.MILLISECONDS);
+    ScheduledFuture<Void> scheduledFuture = (ScheduledFuture<Void>) executorService.schedule(
+        new FetchingExecutor(primaryID), fetchDuration.toMillis(), TimeUnit.MILLISECONDS);
     scheduledFutures.put(primaryID, scheduledFuture);
   }
 
@@ -108,8 +105,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   // important because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(P resource) {
     var primaryID = ResourceID.fromResource(resource);
-    if (scheduledFutures.get(primaryID) == null && (registerPredicate == null
-        || registerPredicate.test(resource))) {
+    if (scheduledFutures.get(primaryID) == null
+        && (registerPredicate == null || registerPredicate.test(resource))) {
       var cachedResources = cache.get(primaryID);
       var actualResources =
           cachedResources == null ? null : new HashSet<>(cachedResources.values());

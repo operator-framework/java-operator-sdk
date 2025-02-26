@@ -12,10 +12,9 @@ import static org.awaitility.Awaitility.await;
 public class WorkflowSilentExceptionHandlingIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(HandleWorkflowExceptionsInReconcilerReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(HandleWorkflowExceptionsInReconcilerReconciler.class)
+      .build();
 
   @Test
   void handleExceptionsInReconciler() {
@@ -36,10 +35,7 @@ public class WorkflowSilentExceptionHandlingIT {
 
   HandleWorkflowExceptionsInReconcilerCustomResource testResource() {
     var res = new HandleWorkflowExceptionsInReconcilerCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     return res;
   }
-
 }

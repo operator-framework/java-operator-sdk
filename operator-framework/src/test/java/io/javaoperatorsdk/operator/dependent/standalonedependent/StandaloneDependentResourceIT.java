@@ -21,9 +21,9 @@ public class StandaloneDependentResourceIT {
   public static final String DEPENDENT_TEST_NAME = "dependent-test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new StandaloneDependentTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new StandaloneDependentTestReconciler())
+      .build();
 
   @Test
   void dependentResourceManagesDeployment() {
@@ -37,7 +37,7 @@ public class StandaloneDependentResourceIT {
 
     awaitForDeploymentReadyReplicas(1);
     assertThat(
-        ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
+            ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
         .isFalse();
   }
 
@@ -58,28 +58,23 @@ public class StandaloneDependentResourceIT {
 
     awaitForDeploymentReadyReplicas(2);
     assertThat(
-        ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
+            ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
         .isFalse();
   }
 
   void awaitForDeploymentReadyReplicas(int expectedReplicaCount) {
-    await()
-        .pollInterval(Duration.ofMillis(300))
-        .atMost(Duration.ofSeconds(50))
-        .until(
-            () -> {
-              var deployment =
-                  operator
-                      .getKubernetesClient()
-                      .resources(Deployment.class)
-                      .inNamespace(operator.getNamespace())
-                      .withName(DEPENDENT_TEST_NAME)
-                      .get();
-              return deployment != null
-                  && deployment.getStatus() != null
-                  && deployment.getStatus().getReadyReplicas() != null
-                  && deployment.getStatus().getReadyReplicas() == expectedReplicaCount;
-            });
+    await().pollInterval(Duration.ofMillis(300)).atMost(Duration.ofSeconds(50)).until(() -> {
+      var deployment = operator
+          .getKubernetesClient()
+          .resources(Deployment.class)
+          .inNamespace(operator.getNamespace())
+          .withName(DEPENDENT_TEST_NAME)
+          .get();
+      return deployment != null
+          && deployment.getStatus() != null
+          && deployment.getStatus().getReadyReplicas() != null
+          && deployment.getStatus().getReadyReplicas() == expectedReplicaCount;
+    });
   }
 
   Cloner cloner() {
@@ -101,5 +96,4 @@ public class StandaloneDependentResourceIT {
       }
     }.getResourceCloner();
   }
-
 }

@@ -11,5 +11,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("mog")
 public class ManualObservedGenerationCustomResource
     extends CustomResource<ManualObservedGenerationSpec, ManualObservedGenerationStatus>
-    implements Namespaced {
-}
+    implements Namespaced {}

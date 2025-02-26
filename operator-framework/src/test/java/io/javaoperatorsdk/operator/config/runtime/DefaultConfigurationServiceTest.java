@@ -22,8 +22,8 @@ class DefaultConfigurationServiceTest {
   void returnsValuesFromControllerAnnotationFinalizer() {
     final var reconciler = new TestCustomReconciler();
     final var configuration = configurationService.getConfigurationFor(reconciler);
-    assertEquals(CustomResource.getCRDName(TestCustomResource.class),
-        configuration.getResourceTypeName());
+    assertEquals(
+        CustomResource.getCRDName(TestCustomResource.class), configuration.getResourceTypeName());
     assertEquals(
         ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class),
         configuration.getFinalizerName());
@@ -41,10 +41,9 @@ class DefaultConfigurationServiceTest {
   @Test
   void supportsInnerClassCustomResources() {
     final var reconciler = new TestCustomFinalizerReconciler();
-    assertDoesNotThrow(
-        () -> {
-          configurationService.getConfigurationFor(reconciler).getAssociatedReconcilerClassName();
-        });
+    assertDoesNotThrow(() -> {
+      configurationService.getConfigurationFor(reconciler).getAssociatedReconcilerClassName();
+    });
   }
 
   @ControllerConfiguration(finalizerName = CUSTOM_FINALIZER_NAME)
@@ -59,8 +58,7 @@ class DefaultConfigurationServiceTest {
 
     @Group("test.crd")
     @Version("v1")
-    public static class InnerCustomResource extends CustomResource<Void, Void> {
-    }
+    public static class InnerCustomResource extends CustomResource<Void, Void> {}
   }
 
   @ControllerConfiguration(name = NotAutomaticallyCreated.NAME)

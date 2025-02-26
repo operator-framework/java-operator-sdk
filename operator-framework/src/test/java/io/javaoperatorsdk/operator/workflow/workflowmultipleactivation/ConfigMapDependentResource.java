@@ -8,8 +8,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
 public class ConfigMapDependentResource
-    extends
-    CRUDNoGCKubernetesDependentResource<ConfigMap, WorkflowMultipleActivationCustomResource> {
+    extends CRUDNoGCKubernetesDependentResource<
+        ConfigMap, WorkflowMultipleActivationCustomResource> {
 
   public static final String DATA_KEY = "data";
 
@@ -18,7 +18,8 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(WorkflowMultipleActivationCustomResource primary,
+  protected ConfigMap desired(
+      WorkflowMultipleActivationCustomResource primary,
       Context<WorkflowMultipleActivationCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()

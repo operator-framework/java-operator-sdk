@@ -19,7 +19,8 @@ public class ConfigMapDeletePostCondition
       WorkflowAllFeatureCustomResource primary,
       Context<WorkflowAllFeatureCustomResource> context) {
 
-    var configMapDeleted = dependentResource.getSecondaryResource(primary, context).isEmpty();
+    var configMapDeleted =
+        dependentResource.getSecondaryResource(primary, context).isEmpty();
     log.debug("Config Map Deleted: {}", configMapDeleted);
     return configMapDeleted;
   }

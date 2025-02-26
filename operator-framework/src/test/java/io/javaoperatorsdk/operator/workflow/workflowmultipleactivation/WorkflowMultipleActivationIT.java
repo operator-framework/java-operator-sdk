@@ -23,10 +23,9 @@ public class WorkflowMultipleActivationIT {
   public static final int POLL_DELAY = 300;
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(WorkflowMultipleActivationReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(WorkflowMultipleActivationReconciler.class)
+      .build();
 
   @Test
   void deactivatingAndReactivatingDependent() {
@@ -79,17 +78,19 @@ public class WorkflowMultipleActivationIT {
       assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
     });
 
-    var numOfReconciliation =
-        extension.getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
-            .getNumberOfReconciliationExecution();
+    var numOfReconciliation = extension
+        .getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
+        .getNumberOfReconciliationExecution();
     var actualCM = extension.get(ConfigMap.class, TEST_RESOURCE1);
     actualCM.getData().put("data2", "additionaldata");
     extension.replace(actualCM);
     await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
       // change in config map does not induce reconciliation if inactive (thus informer is not
       // present)
-      assertThat(extension.getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
-          .getNumberOfReconciliationExecution()).isEqualTo(numOfReconciliation);
+      assertThat(extension
+              .getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
+              .getNumberOfReconciliationExecution())
+          .isEqualTo(numOfReconciliation);
     });
 
     extension.delete(cr1);
@@ -101,9 +102,7 @@ public class WorkflowMultipleActivationIT {
 
   WorkflowMultipleActivationCustomResource testResource(String name) {
     var res = new WorkflowMultipleActivationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     res.setSpec(new WorkflowMultipleActivationSpec());
     res.getSpec().setValue(INITIAL_DATA);
     return res;
@@ -132,5 +131,4 @@ public class WorkflowMultipleActivationIT {
       assertThat(cm2.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
     });
   }
-
 }

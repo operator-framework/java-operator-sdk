@@ -44,11 +44,13 @@ class OperatorTest {
     operator.register(reconciler);
     final var maybeController = operator.getRegisteredController(name);
     assertTrue(maybeController.isPresent());
-    assertEquals(name, maybeController.map(rc -> rc.getConfiguration().getName()).orElseThrow());
+    assertEquals(
+        name, maybeController.map(rc -> rc.getConfiguration().getName()).orElseThrow());
 
     registeredControllers = operator.getRegisteredControllers();
     assertEquals(1, registeredControllers.size());
-    assertEquals(maybeController.get(), registeredControllers.stream().findFirst().orElseThrow());
+    assertEquals(
+        maybeController.get(), registeredControllers.stream().findFirst().orElseThrow());
   }
 
   @ControllerConfiguration
@@ -59,5 +61,4 @@ class OperatorTest {
       return UpdateControl.noUpdate();
     }
   }
-
 }

@@ -122,8 +122,8 @@ public class ManagedWorkflowSupport {
     }
   }
 
-  private boolean isReadyForVisit(DependentResourceSpec dr, Set<String> alreadyVisited,
-      String alreadyPresentName) {
+  private boolean isReadyForVisit(
+      DependentResourceSpec dr, Set<String> alreadyVisited, String alreadyPresentName) {
     for (var name : dr.getDependsOn()) {
       if (name.equals(alreadyPresentName)) {
         continue;
@@ -137,7 +137,8 @@ public class ManagedWorkflowSupport {
 
   private Set<DependentResourceSpec> getTopDependentResources(
       List<DependentResourceSpec> dependentResourceSpecs) {
-    return dependentResourceSpecs.stream().filter(r -> r.getDependsOn().isEmpty())
+    return dependentResourceSpecs.stream()
+        .filter(r -> r.getDependsOn().isEmpty())
         .collect(Collectors.toSet());
   }
 
@@ -155,5 +156,4 @@ public class ManagedWorkflowSupport {
 
     return infos;
   }
-
 }

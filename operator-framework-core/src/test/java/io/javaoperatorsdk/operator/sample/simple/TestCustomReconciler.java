@@ -35,14 +35,12 @@ public class TestCustomReconciler
   }
 
   @Override
-  public DeleteControl cleanup(
-      TestCustomResource resource, Context<TestCustomResource> context) {
-    var statusDetails =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .delete();
+  public DeleteControl cleanup(TestCustomResource resource, Context<TestCustomResource> context) {
+    var statusDetails = kubernetesClient
+        .configMaps()
+        .inNamespace(resource.getMetadata().getNamespace())
+        .withName(resource.getSpec().getConfigMapName())
+        .delete();
     if (statusDetails.size() == 1 && statusDetails.get(0).getCauses().isEmpty()) {
       log.info(
           "Deleted ConfigMap {} for resource: {}",
@@ -64,12 +62,11 @@ public class TestCustomReconciler
       throw new IllegalStateException("Finalizer is not present.");
     }
 
-    ConfigMap existingConfigMap =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .get();
+    ConfigMap existingConfigMap = kubernetesClient
+        .configMaps()
+        .inNamespace(resource.getMetadata().getNamespace())
+        .withName(resource.getSpec().getConfigMapName())
+        .get();
 
     if (existingConfigMap != null) {
       existingConfigMap.setData(configMapData(resource));
@@ -82,16 +79,14 @@ public class TestCustomReconciler
     } else {
       Map<String, String> labels = new HashMap<>();
       labels.put("managedBy", TestCustomReconciler.class.getSimpleName());
-      ConfigMap newConfigMap =
-          new ConfigMapBuilder()
-              .withMetadata(
-                  new ObjectMetaBuilder()
-                      .withName(resource.getSpec().getConfigMapName())
-                      .withNamespace(resource.getMetadata().getNamespace())
-                      .withLabels(labels)
-                      .build())
-              .withData(configMapData(resource))
-              .build();
+      ConfigMap newConfigMap = new ConfigMapBuilder()
+          .withMetadata(new ObjectMetaBuilder()
+              .withName(resource.getSpec().getConfigMapName())
+              .withNamespace(resource.getMetadata().getNamespace())
+              .withLabels(labels)
+              .build())
+          .withData(configMapData(resource))
+          .build();
       kubernetesClient
           .configMaps()
           .inNamespace(resource.getMetadata().getNamespace())

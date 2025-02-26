@@ -40,9 +40,9 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
-    controllersResourceWriter =
-        new AccumulativeMappingWriter(RECONCILERS_RESOURCE_PATH, processingEnv)
-            .loadExistingMappings();
+    controllersResourceWriter = new AccumulativeMappingWriter(
+            RECONCILERS_RESOURCE_PATH, processingEnv)
+        .loadExistingMappings();
 
     typeParameterResolver = initializeResolver(processingEnv);
   }
@@ -66,14 +66,11 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
   }
 
   private TypeParameterResolver initializeResolver(ProcessingEnvironment processingEnv) {
-    final DeclaredType resourceControllerType =
-        processingEnv
-            .getTypeUtils()
-            .getDeclaredType(
-                processingEnv
-                    .getElementUtils()
-                    .getTypeElement(Reconciler.class.getCanonicalName()),
-                processingEnv.getTypeUtils().getWildcardType(null, null));
+    final DeclaredType resourceControllerType = processingEnv
+        .getTypeUtils()
+        .getDeclaredType(
+            processingEnv.getElementUtils().getTypeElement(Reconciler.class.getCanonicalName()),
+            processingEnv.getTypeUtils().getWildcardType(null, null));
     return new TypeParameterResolver(resourceControllerType, 0);
   }
 
@@ -84,10 +81,9 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
         controllersResourceWriter.add(
             controllerClassSymbol.getQualifiedName().toString(),
             CustomResource.class.getCanonicalName());
-        System.out.println(
-            "No defined resource type for '"
-                + controllerClassSymbol.getQualifiedName()
-                + "': ignoring!");
+        System.out.println("No defined resource type for '"
+            + controllerClassSymbol.getQualifiedName()
+            + "': ignoring!");
         return;
       }
       final TypeName customResourceType = TypeName.get(resourceType);

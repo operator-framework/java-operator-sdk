@@ -7,14 +7,10 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@Workflow(dependents = {
-    @Dependent(type = ConfigMapDependentResource.class)
-})
-@ControllerConfiguration(
-    informer = @Informer(namespaces = Constants.WATCH_CURRENT_NAMESPACE))
+@Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class)})
+@ControllerConfiguration(informer = @Informer(namespaces = Constants.WATCH_CURRENT_NAMESPACE))
 public class DependentOperationEventFilterCustomResourceTestReconciler
-    implements Reconciler<DependentOperationEventFilterCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<DependentOperationEventFilterCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -29,5 +25,4 @@ public class DependentOperationEventFilterCustomResourceTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

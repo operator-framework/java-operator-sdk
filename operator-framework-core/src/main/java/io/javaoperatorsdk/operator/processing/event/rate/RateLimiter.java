@@ -6,8 +6,7 @@ import java.util.Optional;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 
 public interface RateLimiter<S extends RateLimitState> {
-  interface RateLimitState {
-  }
+  interface RateLimitState {}
 
   /**
    * @param rateLimitState state implementation

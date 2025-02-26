@@ -55,8 +55,10 @@ class GenericResourceUpdaterTest {
 
   @Test
   void checkNamespaces() {
-    var desired = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
-    var actual = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
+    var desired =
+        new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
+    var actual =
+        new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
     actual.getMetadata().setLabels(new HashMap<>());
     actual.getMetadata().getLabels().put("additionalActualKey", "value");
     actual.getMetadata().setResourceVersion("1234");
@@ -72,7 +74,8 @@ class GenericResourceUpdaterTest {
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("1234");
     assertThat(result.getSpec().getFinalizers()).containsExactly("halkyon.io/finalizer");
 
-    desired = new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
+    desired =
+        new NamespaceBuilder().withNewMetadata().withName("foo").endMetadata().build();
 
     result = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(result.getMetadata().getLabels().get("additionalActualKey")).isEqualTo("value");
@@ -82,13 +85,13 @@ class GenericResourceUpdaterTest {
 
   @Test
   void checkSecret() {
-    var desired =
-        new SecretBuilder()
-            .withMetadata(new ObjectMeta())
-            .withImmutable().withType("Opaque").addToData("foo", "bar").build();
-    var actual = new SecretBuilder()
+    var desired = new SecretBuilder()
         .withMetadata(new ObjectMeta())
+        .withImmutable()
+        .withType("Opaque")
+        .addToData("foo", "bar")
         .build();
+    var actual = new SecretBuilder().withMetadata(new ObjectMeta()).build();
 
     final var secret = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(secret.getImmutable()).isTrue();
@@ -103,7 +106,8 @@ class GenericResourceUpdaterTest {
         .build();
     var actual = new ServiceAccountBuilder()
         .withMetadata(new ObjectMetaBuilder().addToLabels("a", "label").build())
-        .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("secret").build())
+        .withImagePullSecrets(
+            new LocalObjectReferenceBuilder().withName("secret").build())
         .build();
 
     final var serviceAccount = GenericResourceUpdater.updateResource(actual, desired, context);
@@ -116,5 +120,4 @@ class GenericResourceUpdaterTest {
     return ReconcilerUtils.loadYaml(
         Deployment.class, GenericResourceUpdaterTest.class, "nginx-deployment.yaml");
   }
-
 }

@@ -23,15 +23,15 @@ public class WorkflowActivationCleanupIT {
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
-    LocallyRunOperatorExtension.applyCrd(WorkflowActivationCleanupCustomResource.class,
-        client);
+    LocallyRunOperatorExtension.applyCrd(WorkflowActivationCleanupCustomResource.class, client);
 
-    testInfo.getTestMethod()
+    testInfo
+        .getTestMethod()
         .ifPresent(method -> testNamespace = KubernetesResourceUtil.sanitizeName(method.getName()));
     client.namespaces().resource(testNamespace(testNamespace)).create();
     operator = new Operator(o -> o.withCloseClientOnStop(false));
-    operator.register(new WorkflowActivationCleanupReconciler(),
-        o -> o.settingNamespaces(testNamespace));
+    operator.register(
+        new WorkflowActivationCleanupReconciler(), o -> o.settingNamespaces(testNamespace));
   }
 
   @AfterEach
@@ -69,9 +69,8 @@ public class WorkflowActivationCleanupIT {
   }
 
   private Namespace testNamespace(String name) {
-    return new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build()).build();
+    return new NamespaceBuilder()
+        .withMetadata(new ObjectMetaBuilder().withName(name).build())
+        .build();
   }
-
 }

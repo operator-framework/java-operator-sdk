@@ -38,7 +38,7 @@ public @interface Informer {
    * <li>{@link Constants#WATCH_CURRENT_NAMESPACE}</li>
    * <li>{@link Constants#SAME_AS_CONTROLLER}</li>
    * </ul>
-   * 
+   *
    * @return the array of namespaces the associated informer monitors
    */
   String[] namespaces() default {Constants.SAME_AS_CONTROLLER};
@@ -115,5 +115,4 @@ public @interface Informer {
    * the informer cache.
    */
   long informerListLimit() default NO_LONG_VALUE_SET;
-
 }

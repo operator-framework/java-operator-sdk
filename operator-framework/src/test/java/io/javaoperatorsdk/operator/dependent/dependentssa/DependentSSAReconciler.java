@@ -44,8 +44,7 @@ public class DependentSSAReconciler
 
   @Override
   public UpdateControl<DependentSSACustomResource> reconcile(
-      DependentSSACustomResource resource,
-      Context<DependentSSACustomResource> context) {
+      DependentSSACustomResource resource, Context<DependentSSACustomResource> context) {
 
     ssaConfigMapDependent.reconcile(resource, context);
     numberOfExecutions.addAndGet(1);
@@ -59,7 +58,6 @@ public class DependentSSAReconciler
   @Override
   public List<EventSource<?, DependentSSACustomResource>> prepareEventSources(
       EventSourceContext<DependentSSACustomResource> context) {
-    return EventSourceUtils.dependentEventSources(context,
-        ssaConfigMapDependent);
+    return EventSourceUtils.dependentEventSources(context, ssaConfigMapDependent);
   }
 }

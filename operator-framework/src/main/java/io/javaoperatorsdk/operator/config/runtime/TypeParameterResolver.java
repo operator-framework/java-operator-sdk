@@ -45,11 +45,10 @@ class TypeParameterResolver {
       return null;
     }
     if (typeArguments.get(interestedTypeArgumentIndex).getKind() == TYPEVAR) {
-      typeName =
-          ((TypeVariable) typeArguments.get(interestedTypeArgumentIndex))
-              .asElement()
-              .getSimpleName()
-              .toString();
+      typeName = ((TypeVariable) typeArguments.get(interestedTypeArgumentIndex))
+          .asElement()
+          .getSimpleName()
+          .toString();
     } else if (typeArguments.get(interestedTypeArgumentIndex).getKind() == DECLARED) {
       return typeArguments.get(0);
     }
@@ -119,11 +118,10 @@ class TypeParameterResolver {
   private ArrayList<DeclaredType> getMatchingInterfaces(Types typeUtils, TypeElement superElement) {
     final var result = new ArrayList<DeclaredType>();
 
-    final var matchedInterfaces =
-        superElement.getInterfaces().stream()
-            .filter(intface -> typeUtils.isAssignable(intface, interestedClass))
-            .map(i -> (DeclaredType) i)
-            .collect(Collectors.toList());
+    final var matchedInterfaces = superElement.getInterfaces().stream()
+        .filter(intface -> typeUtils.isAssignable(intface, interestedClass))
+        .map(i -> (DeclaredType) i)
+        .collect(Collectors.toList());
     if (matchedInterfaces.size() > 0) {
       result.addAll(matchedInterfaces);
       final var lastFoundInterface = result.get(result.size() - 1);
@@ -135,18 +133,16 @@ class TypeParameterResolver {
 
   private List<DeclaredType> findChainOfInterfaces(Types typeUtils, DeclaredType parentInterface) {
     final var result = new ArrayList<DeclaredType>();
-    var matchingInterfaces =
-        ((TypeElement) parentInterface.asElement())
-            .getInterfaces().stream()
+    var matchingInterfaces = ((TypeElement) parentInterface.asElement())
+        .getInterfaces().stream()
             .filter(i -> typeUtils.isAssignable(i, interestedClass))
             .map(i -> (DeclaredType) i)
             .collect(Collectors.toList());
     while (matchingInterfaces.size() > 0) {
       result.addAll(matchingInterfaces);
       final var lastFoundInterface = matchingInterfaces.get(matchingInterfaces.size() - 1);
-      matchingInterfaces =
-          ((TypeElement) lastFoundInterface.asElement())
-              .getInterfaces().stream()
+      matchingInterfaces = ((TypeElement) lastFoundInterface.asElement())
+          .getInterfaces().stream()
               .filter(i -> typeUtils.isAssignable(i, interestedClass))
               .map(i -> (DeclaredType) i)
               .collect(Collectors.toList());

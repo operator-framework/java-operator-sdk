@@ -22,11 +22,9 @@ class MultipleManagedDependentSameTypeIT {
   public static final int SECONDS = 30;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleManagedDependentResourceReconciler())
-          .build();
-
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleManagedDependentResourceReconciler())
+      .build();
 
   @Test
   void handlesCrudOperations() {
@@ -44,8 +42,13 @@ class MultipleManagedDependentSameTypeIT {
 
   private void assertConfigMapsPresent(String expectedData) {
     await().untilAsserted(() -> {
-      var maps = operator.getKubernetesClient().configMaps()
-          .inNamespace(operator.getNamespace()).list().getItems().stream()
+      var maps = operator
+          .getKubernetesClient()
+          .configMaps()
+          .inNamespace(operator.getNamespace())
+          .list()
+          .getItems()
+          .stream()
           .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
           .collect(Collectors.toList());
       assertThat(maps).hasSize(2);
@@ -55,8 +58,13 @@ class MultipleManagedDependentSameTypeIT {
 
   private void assertConfigMapsDeleted() {
     await().atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS)).untilAsserted(() -> {
-      var maps = operator.getKubernetesClient().configMaps()
-          .inNamespace(operator.getNamespace()).list().getItems().stream()
+      var maps = operator
+          .getKubernetesClient()
+          .configMaps()
+          .inNamespace(operator.getNamespace())
+          .list()
+          .getItems()
+          .stream()
           .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
           .collect(Collectors.toList());
       assertThat(maps).hasSize(0);
@@ -65,13 +73,10 @@ class MultipleManagedDependentSameTypeIT {
 
   private MultipleManagedDependentResourceCustomResource testResource() {
     var res = new MultipleManagedDependentResourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new MultipleManagedDependentResourceSpec());
     res.getSpec().setValue(DEFAULT_SPEC_VALUE);
     return res;
   }
-
 }

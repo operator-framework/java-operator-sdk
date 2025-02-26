@@ -17,11 +17,10 @@ class PrimaryToSecondaryIT {
   public static final int MIN_DELAY = 150;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withAdditionalCustomResourceDefinition(Cluster.class)
-          .withReconciler(new JobReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withAdditionalCustomResourceDefinition(Cluster.class)
+      .withReconciler(new JobReconciler())
+      .build();
 
   @Test
   void readsSecondaryInManyToOneCases() throws InterruptedException {
@@ -29,16 +28,14 @@ class PrimaryToSecondaryIT {
     Thread.sleep(MIN_DELAY);
     operator.create(job());
 
-    await().pollDelay(Duration.ofMillis(300)).untilAsserted(
-        () -> assertThat(operator.getReconcilerOfType(JobReconciler.class).getNumberOfExecutions())
-            .isEqualTo(1));
+    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> assertThat(
+            operator.getReconcilerOfType(JobReconciler.class).getNumberOfExecutions())
+        .isEqualTo(1));
   }
 
   public static Job job() {
     var job = new Job();
-    job.setMetadata(new ObjectMetaBuilder()
-        .withName("job1")
-        .build());
+    job.setMetadata(new ObjectMetaBuilder().withName("job1").build());
     job.setSpec(new JobSpec());
     job.getSpec().setClusterName(CLUSTER_NAME);
     return job;
@@ -46,10 +43,7 @@ class PrimaryToSecondaryIT {
 
   public static Cluster cluster() {
     Cluster cluster = new Cluster();
-    cluster.setMetadata(new ObjectMetaBuilder()
-        .withName(CLUSTER_NAME)
-        .build());
+    cluster.setMetadata(new ObjectMetaBuilder().withName(CLUSTER_NAME).build());
     return cluster;
   }
-
 }

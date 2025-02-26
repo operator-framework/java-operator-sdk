@@ -17,7 +17,8 @@ import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.A
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>> {
+public abstract class BoundedCacheTestBase<
+    P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>> {
 
   private static final Logger log = LoggerFactory.getLogger(BoundedCacheTestBase.class);
 
@@ -42,7 +43,8 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   }
 
   private void assertConfigMapsDeleted() {
-    await().atMost(Duration.ofSeconds(30))
+    await()
+        .atMost(Duration.ofSeconds(30))
         .untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
           var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
           assertThat(cm).isNull();
@@ -89,7 +91,4 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   abstract Class<P> customResourceClass();
 
   abstract LocallyRunOperatorExtension extension();
-
-
-
 }

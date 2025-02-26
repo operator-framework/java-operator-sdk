@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 @ControllerConfiguration
 public class PatchResourceWithSSAReconciler
     implements Reconciler<PatchResourceWithSSACustomResource>,
-    Cleaner<PatchResourceWithSSACustomResource> {
+        Cleaner<PatchResourceWithSSACustomResource> {
 
   public static final String ADDED_VALUE = "Added Value";
 
@@ -34,7 +34,8 @@ public class PatchResourceWithSSAReconciler
   }
 
   @Override
-  public DeleteControl cleanup(PatchResourceWithSSACustomResource resource,
+  public DeleteControl cleanup(
+      PatchResourceWithSSACustomResource resource,
       Context<PatchResourceWithSSACustomResource> context) {
     return DeleteControl.defaultDelete();
   }

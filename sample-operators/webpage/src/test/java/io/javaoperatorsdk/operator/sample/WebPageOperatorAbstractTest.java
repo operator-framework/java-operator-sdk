@@ -57,24 +57,26 @@ public abstract class WebPageOperatorAbstractTest {
     await()
         .atMost(Duration.ofSeconds(WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
-        .untilAsserted(
-            () -> {
-              var actual = operator().get(WebPage.class, TEST_PAGE);
-              var deployment = operator().get(Deployment.class, deploymentName(webPage));
-              assertThat(actual.getStatus()).isNotNull();
-              assertThat(actual.getStatus().getAreWeGood()).isTrue();
-              assertThat(deployment.getSpec().getReplicas())
-                  .isEqualTo(deployment.getStatus().getReadyReplicas());
-            });
+        .untilAsserted(() -> {
+          var actual = operator().get(WebPage.class, TEST_PAGE);
+          var deployment = operator().get(Deployment.class, deploymentName(webPage));
+          assertThat(actual.getStatus()).isNotNull();
+          assertThat(actual.getStatus().getAreWeGood()).isTrue();
+          assertThat(deployment.getSpec().getReplicas())
+              .isEqualTo(deployment.getStatus().getReadyReplicas());
+        });
     assertThat(httpGetForWebPage(webPage)).contains(TITLE1);
 
     // update part: changing title
     operator().replace(createWebPage(TITLE2));
 
-    await().atMost(Duration.ofSeconds(LONG_WAIT_SECONDS))
+    await()
+        .atMost(Duration.ofSeconds(LONG_WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
         .untilAsserted(() -> {
-          String page = operator().get(ConfigMap.class, Utils.configMapName(webPage)).getData()
+          String page = operator()
+              .get(ConfigMap.class, Utils.configMapName(webPage))
+              .getData()
               .get(INDEX_HTML);
           // not using portforward here since there were issues with GitHub actions
           // String page = httpGetForWebPage(webPage);
@@ -84,7 +86,8 @@ public abstract class WebPageOperatorAbstractTest {
     // delete part: deleting webpage
     operator().delete(createWebPage(TITLE2));
 
-    await().atMost(Duration.ofSeconds(WAIT_SECONDS))
+    await()
+        .atMost(Duration.ofSeconds(WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
         .untilAsserted(() -> {
           Deployment deployment = operator().get(Deployment.class, deploymentName(webPage));
@@ -95,14 +98,17 @@ public abstract class WebPageOperatorAbstractTest {
   String httpGetForWebPage(WebPage webPage) {
     LocalPortForward portForward = null;
     try {
-      portForward =
-          client.services().inNamespace(webPage.getMetadata().getNamespace())
-              .withName(serviceName(webPage)).portForward(80);
+      portForward = client
+          .services()
+          .inNamespace(webPage.getMetadata().getNamespace())
+          .withName(serviceName(webPage))
+          .portForward(80);
       HttpClient httpClient =
           HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-      HttpRequest request =
-          HttpRequest.newBuilder().GET()
-              .uri(new URI("http://localhost:" + portForward.getLocalPort())).build();
+      HttpRequest request = HttpRequest.newBuilder()
+          .GET()
+          .uri(new URI("http://localhost:" + portForward.getLocalPort()))
+          .build();
       return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
     } catch (URISyntaxException | IOException | InterruptedException e) {
       return null;
@@ -125,19 +131,17 @@ public abstract class WebPageOperatorAbstractTest {
     webPage.setSpec(new WebPageSpec());
     webPage
         .getSpec()
-        .setHtml(
-            "<html>\n"
-                + "      <head>\n"
-                + "        <title>" + title + "</title>\n"
-                + "      </head>\n"
-                + "      <body>\n"
-                + "        Hello World! \n"
-                + "      </body>\n"
-                + "    </html>");
+        .setHtml("<html>\n"
+            + "      <head>\n"
+            + "        <title>" + title + "</title>\n"
+            + "      </head>\n"
+            + "      <body>\n"
+            + "        Hello World! \n"
+            + "      </body>\n"
+            + "    </html>");
 
     return webPage;
   }
 
   abstract AbstractOperatorExtension operator();
-
 }

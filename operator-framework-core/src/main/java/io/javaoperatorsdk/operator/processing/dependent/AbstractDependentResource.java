@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * An abstract implementation of {@link DependentResource} to be used as base for custom
  * implementations, providing, in particular, the core {@link #reconcile(HasMetadata, Context)}
  * logic for dependents
- * 
+ *
  * @param <R> the dependent resource type
  * @param <P> the associated primary resource type
  */
@@ -85,13 +85,15 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
           } else {
-            log.debug("Update skipped for dependent {} as it matched the existing one",
+            log.debug(
+                "Update skipped for dependent {} as it matched the existing one",
                 actualResource instanceof HasMetadata
                     ? ResourceID.fromResource((HasMetadata) actualResource)
                     : getClass().getSimpleName());
           }
         } else {
-          log.debug("Update skipped for dependent {} implement Updater interface to modify it",
+          log.debug(
+              "Update skipped for dependent {} implement Updater interface to modify it",
               actualResource instanceof HasMetadata
                   ? ResourceID.fromResource((HasMetadata) actualResource)
                   : getClass().getSimpleName());
@@ -116,7 +118,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     } else {
       return selectTargetSecondaryResource(secondaryResources, primary, context);
     }
-
   }
 
   /**
@@ -132,10 +133,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @throws IllegalStateException if more than one candidate is found, in which case some other
    *         mechanism might be necessary to distinguish between candidate secondary resources
    */
-  protected Optional<R> selectTargetSecondaryResource(Set<R> secondaryResources, P primary,
-      Context<P> context) {
+  protected Optional<R> selectTargetSecondaryResource(
+      Set<R> secondaryResources, P primary, Context<P> context) {
     R desired = desired(primary, context);
-    var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
+    var targetResources =
+        secondaryResources.stream().filter(r -> r.equals(desired)).toList();
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
           "More than one secondary resource related to primary: " + targetResources);

@@ -28,7 +28,10 @@ public class LeaderElectionConfiguration {
         leaseNamespace,
         LEASE_DURATION_DEFAULT_VALUE,
         RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE, identity, null, true);
+        RETRY_PERIOD_DEFAULT_VALUE,
+        identity,
+        null,
+        true);
   }
 
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace) {
@@ -37,7 +40,10 @@ public class LeaderElectionConfiguration {
         leaseNamespace,
         LEASE_DURATION_DEFAULT_VALUE,
         RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE, null, null, true);
+        RETRY_PERIOD_DEFAULT_VALUE,
+        null,
+        null,
+        true);
   }
 
   public LeaderElectionConfiguration(String leaseName) {
@@ -46,7 +52,10 @@ public class LeaderElectionConfiguration {
         null,
         LEASE_DURATION_DEFAULT_VALUE,
         RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE, null, null, true);
+        RETRY_PERIOD_DEFAULT_VALUE,
+        null,
+        null,
+        true);
   }
 
   public LeaderElectionConfiguration(

@@ -87,7 +87,6 @@ public interface DependentResource<R, P extends HasMetadata> {
     return this instanceof Deleter;
   }
 
-
   /**
    * Retrieves the name identifying this DependentResource implementation, useful to refer to this
    * in {@link io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow} instances
@@ -97,5 +96,4 @@ public interface DependentResource<R, P extends HasMetadata> {
   default String name() {
     return defaultNameFor(getClass());
   }
-
 }

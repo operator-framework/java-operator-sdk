@@ -16,7 +16,8 @@ public class SecretDependentResource
   }
 
   @Override
-  protected Secret desired(MultipleDependentActivationCustomResource primary,
+  protected Secret desired(
+      MultipleDependentActivationCustomResource primary,
       Context<MultipleDependentActivationCustomResource> context) {
     // basically does not matter since this should not be called
     Secret secret = new Secret();
@@ -24,8 +25,8 @@ public class SecretDependentResource
         .withName(primary.getMetadata().getName())
         .withNamespace(primary.getMetadata().getNamespace())
         .build());
-    secret.setData(Map.of("data",
-        Base64.getEncoder().encodeToString(primary.getSpec().getValue().getBytes())));
+    secret.setData(Map.of(
+        "data", Base64.getEncoder().encodeToString(primary.getSpec().getValue().getBytes())));
     return secret;
   }
 }

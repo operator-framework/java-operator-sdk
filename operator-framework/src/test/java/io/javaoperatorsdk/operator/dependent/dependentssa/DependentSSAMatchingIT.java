@@ -27,13 +27,11 @@ public class DependentSSAMatchingIT {
   public static final String ADDITIONAL_KEY = "key2";
   public static final String ADDITIONAL_VALUE = "Additional Value";
 
-
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new DependentSSAReconciler(),
-              o -> o.withFieldManager(CUSTOM_FIELD_MANAGER_NAME))
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(
+          new DependentSSAReconciler(), o -> o.withFieldManager(CUSTOM_FIELD_MANAGER_NAME))
+      .build();
 
   @Test
   void testMatchingAndUpdate() {
@@ -45,7 +43,8 @@ public class DependentSSAMatchingIT {
       assertThat(cm).isNotNull();
       assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, INITIAL_VALUE);
       assertThat(cm.getMetadata().getManagedFields().stream()
-          .filter(fm -> fm.getManager().equals(CUSTOM_FIELD_MANAGER_NAME))).isNotEmpty();
+              .filter(fm -> fm.getManager().equals(CUSTOM_FIELD_MANAGER_NAME)))
+          .isNotEmpty();
       assertThat(SSAConfigMapDependent.NUMBER_OF_UPDATES.get()).isZero();
     });
 
@@ -57,10 +56,14 @@ public class DependentSSAMatchingIT {
         .withData(Map.of(ADDITIONAL_KEY, ADDITIONAL_VALUE))
         .build();
 
-    extension.getKubernetesClient().configMaps().resource(cmPatch).patch(new PatchContext.Builder()
-        .withFieldManager(OTHER_FIELD_MANAGER)
-        .withPatchType(PatchType.SERVER_SIDE_APPLY)
-        .build());
+    extension
+        .getKubernetesClient()
+        .configMaps()
+        .resource(cmPatch)
+        .patch(new PatchContext.Builder()
+            .withFieldManager(OTHER_FIELD_MANAGER)
+            .withPatchType(PatchType.SERVER_SIDE_APPLY)
+            .build());
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
@@ -84,12 +87,9 @@ public class DependentSSAMatchingIT {
 
   public DependentSSACustomResource testResource() {
     DependentSSACustomResource resource = new DependentSSACustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     resource.setSpec(new DependentSSASpec());
     resource.getSpec().setValue(INITIAL_VALUE);
     return resource;
   }
-
 }

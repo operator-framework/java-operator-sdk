@@ -12,12 +12,11 @@ import static org.awaitility.Awaitility.await;
 public class UpdateStatusInCleanupAndRescheduleIT {
 
   public static final String TEST_RESOURCE = "test1";
-  @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(UpdateStatusInCleanupAndRescheduleReconciler.class)
-          .build();
 
+  @RegisterExtension
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(UpdateStatusInCleanupAndRescheduleReconciler.class)
+      .build();
 
   @Test
   void testRescheduleAfterPatch() {
@@ -37,17 +36,15 @@ public class UpdateStatusInCleanupAndRescheduleIT {
       assertThat(resource).isNull();
     });
 
-    assertThat(extension.getReconcilerOfType(UpdateStatusInCleanupAndRescheduleReconciler.class)
-        .getRescheduleDelayWorked())
+    assertThat(extension
+            .getReconcilerOfType(UpdateStatusInCleanupAndRescheduleReconciler.class)
+            .getRescheduleDelayWorked())
         .isTrue();
   }
 
   UpdateStatusInCleanupAndRescheduleCustomResource testResource() {
     var resource = new UpdateStatusInCleanupAndRescheduleCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE).build());
     return resource;
   }
-
 }

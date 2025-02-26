@@ -70,5 +70,4 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   <R> Optional<EventSource<R, P>> dynamicallyDeRegisterEventSource(String name);
 
   EventSourceContext<P> eventSourceContextForDynamicRegistration();
-
 }

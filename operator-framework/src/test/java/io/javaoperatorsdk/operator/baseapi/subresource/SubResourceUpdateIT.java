@@ -20,9 +20,9 @@ class SubResourceUpdateIT {
   public static final int EVENT_RECEIVE_WAIT = 200;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(SubResourceTestCustomReconciler.class)
+      .build();
 
   @Test
   void updatesSubResourceStatus() {
@@ -33,8 +33,7 @@ class SubResourceUpdateIT {
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(2);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   @Test
@@ -48,8 +47,7 @@ class SubResourceUpdateIT {
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(2);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   /** Note that we check on controller impl if there is finalizer on execution. */
@@ -63,8 +61,7 @@ class SubResourceUpdateIT {
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(2);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   /**
@@ -91,25 +88,17 @@ class SubResourceUpdateIT {
   }
 
   void awaitStatusUpdated(String name) {
-    await("cr status updated")
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> {
-              SubResourceTestCustomResource cr =
-                  operator.get(SubResourceTestCustomResource.class, name);
-              assertThat(cr).isNotNull();
-              assertThat(cr.getStatus()).isNotNull();
-              assertThat(cr.getStatus().getState())
-                  .isEqualTo(SUCCESS);
-            });
+    await("cr status updated").atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+      SubResourceTestCustomResource cr = operator.get(SubResourceTestCustomResource.class, name);
+      assertThat(cr).isNotNull();
+      assertThat(cr.getStatus()).isNotNull();
+      assertThat(cr.getStatus().getState()).isEqualTo(SUCCESS);
+    });
   }
 
   public SubResourceTestCustomResource createTestCustomResource(String id) {
     SubResourceTestCustomResource resource = new SubResourceTestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName("subresource-" + id)
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName("subresource-" + id).build());
     resource.setKind("SubresourceSample");
     resource.setSpec(new SubResourceTestCustomResourceSpec());
     resource.getSpec().setValue(id);

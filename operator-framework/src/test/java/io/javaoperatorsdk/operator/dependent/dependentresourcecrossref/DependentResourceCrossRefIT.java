@@ -19,10 +19,9 @@ class DependentResourceCrossRefIT {
   public static final int EXECUTION_NUMBER = 50;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new DependentResourceCrossRefReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new DependentResourceCrossRefReconciler())
+      .build();
 
   @Test
   void dependentResourceCanReferenceEachOther() {
@@ -30,19 +29,16 @@ class DependentResourceCrossRefIT {
     for (int i = 0; i < EXECUTION_NUMBER; i++) {
       operator.create(testResource(i));
     }
-    await()
-        .pollDelay(Duration.ofMillis(150))
-        .untilAsserted(
-            () -> {
-              assertThat(operator
-                  .getReconcilerOfType(DependentResourceCrossRefReconciler.class)
-                  .isErrorHappened()).isFalse();
-              for (int i = 0; i < EXECUTION_NUMBER; i++) {
-                assertThat(operator.get(ConfigMap.class, TEST_RESOURCE_NAME + i)).isNotNull();
-                assertThat(operator.get(Secret.class, TEST_RESOURCE_NAME + i)).isNotNull();
-              }
-            });
-
+    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
+      assertThat(operator
+              .getReconcilerOfType(DependentResourceCrossRefReconciler.class)
+              .isErrorHappened())
+          .isFalse();
+      for (int i = 0; i < EXECUTION_NUMBER; i++) {
+        assertThat(operator.get(ConfigMap.class, TEST_RESOURCE_NAME + i)).isNotNull();
+        assertThat(operator.get(Secret.class, TEST_RESOURCE_NAME + i)).isNotNull();
+      }
+    });
   }
 
   DependentResourceCrossRefResource testResource(int n) {

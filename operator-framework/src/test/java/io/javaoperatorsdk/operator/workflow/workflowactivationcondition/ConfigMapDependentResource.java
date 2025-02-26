@@ -17,7 +17,8 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(WorkflowActivationConditionCustomResource primary,
+  protected ConfigMap desired(
+      WorkflowActivationConditionCustomResource primary,
       Context<WorkflowActivationConditionCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()

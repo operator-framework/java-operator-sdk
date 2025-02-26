@@ -19,37 +19,38 @@ class DependentOperationEventFilterIT {
   public static final String SPEC_VAL_2 = "val2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withNamespaceDeleteTimeout(2)
-          .withReconciler(new DependentOperationEventFilterCustomResourceTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withNamespaceDeleteTimeout(2)
+      .withReconciler(new DependentOperationEventFilterCustomResourceTestReconciler())
+      .build();
 
   @Test
   void reconcileNotTriggeredWithDependentResourceCreateOrUpdate() {
-    var resource =
-        operator.create(createTestResource());
+    var resource = operator.create(createTestResource());
 
-    await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
-        .until(
-            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
-                .getFirstReconciler())
-                .getNumberOfExecutions() == 1);
+    await()
+        .pollDelay(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(3))
+        .until(() -> ((DependentOperationEventFilterCustomResourceTestReconciler)
+                    operator.getFirstReconciler())
+                .getNumberOfExecutions()
+            == 1);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_1);
 
     resource.getSpec().setValue(SPEC_VAL_2);
     operator.replace(resource);
 
-    await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
-        .until(
-            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
-                .getFirstReconciler())
-                .getNumberOfExecutions() == 2);
+    await()
+        .pollDelay(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(3))
+        .until(() -> ((DependentOperationEventFilterCustomResourceTestReconciler)
+                    operator.getFirstReconciler())
+                .getNumberOfExecutions()
+            == 2);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_2);
   }
-
 
   private DependentOperationEventFilterCustomResource createTestResource() {
     DependentOperationEventFilterCustomResource cr =
@@ -60,5 +61,4 @@ class DependentOperationEventFilterIT {
     cr.getSpec().setValue(SPEC_VAL_1);
     return cr;
   }
-
 }

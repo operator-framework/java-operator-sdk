@@ -7,7 +7,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 public interface Condition<R, P extends HasMetadata> {
 
   enum Type {
-    ACTIVATION, DELETE, READY, RECONCILE
+    ACTIVATION,
+    DELETE,
+    READY,
+    RECONCILE
   }
 
   /**

@@ -17,9 +17,7 @@ public abstract class PatchWithSSAITBase {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(reconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(reconciler()).build();
 
   @Test
   void reconcilerPatchesResourceWithSSA() {
@@ -36,9 +34,10 @@ public abstract class PatchWithSSAITBase {
       assertThat(actualResource.getStatus().isSuccessfullyReconciled()).isTrue();
       // one for resource, one for subresource
       assertThat(actualResource.getMetadata().getManagedFields().stream()
-          .filter(mf -> mf.getManager()
-              .equals(reconciler().getClass().getSimpleName().toLowerCase()))
-          .toList()).hasSize(2);
+              .filter(mf ->
+                  mf.getManager().equals(reconciler().getClass().getSimpleName().toLowerCase()))
+              .toList())
+          .hasSize(2);
     });
   }
 
@@ -46,9 +45,7 @@ public abstract class PatchWithSSAITBase {
 
   PatchResourceWithSSACustomResource testResource() {
     var res = new PatchResourceWithSSACustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     res.setSpec(new PatchResourceWithSSASpec());
     res.getSpec().setInitValue(INIT_VALUE);
     return res;

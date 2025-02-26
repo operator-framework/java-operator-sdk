@@ -29,7 +29,6 @@ public class Operator implements LifecycleAware {
   private final ConfigurationService configurationService;
   private volatile boolean started = false;
 
-
   public Operator() {
     this((KubernetesClient) null);
   }
@@ -66,8 +65,8 @@ public class Operator implements LifecycleAware {
     this(initConfigurationService(null, overrider));
   }
 
-  private static ConfigurationService initConfigurationService(KubernetesClient client,
-      Consumer<ConfigurationServiceOverrider> overrider) {
+  private static ConfigurationService initConfigurationService(
+      KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
       var configurationService = ConfigurationService.newOverriddenConfigurationService(overrider);
@@ -152,8 +151,8 @@ public class Operator implements LifecycleAware {
     if (!started) {
       return;
     }
-    log.info("Operator SDK {} is shutting down...",
-        configurationService.getVersion().getSdkVersion());
+    log.info(
+        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
     configurationService.getExecutorServiceManager().stop(reconciliationTerminationTimeout);
@@ -193,20 +192,18 @@ public class Operator implements LifecycleAware {
    * @return registered controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
-      ControllerConfiguration<P> configuration)
-      throws OperatorException {
+  public <P extends HasMetadata> RegisteredController<P> register(
+      Reconciler<P> reconciler, ControllerConfiguration<P> configuration) throws OperatorException {
     if (started) {
       throw new OperatorException("Operator already started. Register all the controllers before.");
     }
 
     if (configuration == null) {
-      throw new OperatorException(
-          "Cannot register reconciler with name " + reconciler.getClass().getCanonicalName() +
-              " reconciler named " + ReconcilerUtils.getNameFor(reconciler)
-              + " because its configuration cannot be found.\n" +
-              " Known reconcilers are: "
-              + configurationService.getKnownReconcilerNames());
+      throw new OperatorException("Cannot register reconciler with name "
+          + reconciler.getClass().getCanonicalName() + " reconciler named "
+          + ReconcilerUtils.getNameFor(reconciler)
+          + " because its configuration cannot be found.\n" + " Known reconcilers are: "
+          + configurationService.getKnownReconcilerNames());
     }
 
     final var controller = new Controller<>(reconciler, configuration, getKubernetesClient());
@@ -214,7 +211,8 @@ public class Operator implements LifecycleAware {
     controllerManager.add(controller);
 
     final var informerConfig = configuration.getInformerConfig();
-    final var watchedNS = informerConfig.watchAllNamespaces() ? "[all namespaces]"
+    final var watchedNS = informerConfig.watchAllNamespaces()
+        ? "[all namespaces]"
         : informerConfig.getEffectiveNamespaces(configuration);
 
     log.info(
@@ -233,10 +231,9 @@ public class Operator implements LifecycleAware {
    * @return registered controller
    * @param <P> the {@code HasMetadata} type associated with the reconciler
    */
-  public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
-      Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
-    final var controllerConfiguration =
-        configurationService.getConfigurationFor(reconciler);
+  public <P extends HasMetadata> RegisteredController<P> register(
+      Reconciler<P> reconciler, Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
+    final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
     return register(reconciler, configToOverride.build());

@@ -18,10 +18,11 @@ class ClusterScopedResourceIT {
   public static final String TEST_NAME = "test1";
   public static final String INITIAL_DATA = "initialData";
   public static final String UPDATED_DATA = "updatedData";
+
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new ClusterScopedCustomResourceReconciler()).build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ClusterScopedCustomResourceReconciler())
+      .build();
 
   @Test
   void crudOperationOnClusterScopedCustomResource() {
@@ -47,21 +48,19 @@ class ClusterScopedResourceIT {
     });
 
     operator.delete(resource);
-    await().atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS))
-        .untilAsserted(() -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
+    await()
+        .atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS))
+        .untilAsserted(
+            () -> assertThat(operator.get(ConfigMap.class, TEST_NAME)).isNull());
   }
-
 
   ClusterScopedCustomResource testResource() {
     var res = new ClusterScopedCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_NAME).build());
     res.setSpec(new ClusterScopedCustomResourceSpec());
     res.getSpec().setTargetNamespace(operator.getNamespace());
     res.getSpec().setData(INITIAL_DATA);
 
     return res;
   }
-
 }

@@ -26,13 +26,13 @@ import static org.hamcrest.Matchers.notNullValue;
 
 class TomcatOperatorE2E {
 
-  final static Logger log = LoggerFactory.getLogger(TomcatOperatorE2E.class);
+  static final Logger log = LoggerFactory.getLogger(TomcatOperatorE2E.class);
 
-  final static KubernetesClient client = new DefaultKubernetesClient();
+  static final KubernetesClient client = new DefaultKubernetesClient();
 
   public TomcatOperatorE2E() throws FileNotFoundException {}
 
-  final static int tomcatReplicas = 2;
+  static final int tomcatReplicas = 2;
 
   boolean isLocal() {
     String deployment = System.getProperty("test.deployment");
@@ -42,11 +42,12 @@ class TomcatOperatorE2E {
   }
 
   @RegisterExtension
-  AbstractOperatorExtension operator = isLocal() ? LocallyRunOperatorExtension.builder()
-      .waitForNamespaceDeletion(false)
-      .withReconciler(new TomcatReconciler())
-      .withReconciler(new WebappReconciler(client))
-      .build()
+  AbstractOperatorExtension operator = isLocal()
+      ? LocallyRunOperatorExtension.builder()
+          .waitForNamespaceDeletion(false)
+          .withReconciler(new TomcatReconciler())
+          .withReconciler(new WebappReconciler(client))
+          .build()
       : ClusterDeployedOperatorExtension.builder()
           .waitForNamespaceDeletion(false)
           .withOperatorDeployment(
@@ -92,12 +93,14 @@ class TomcatOperatorE2E {
 
     log.info("Waiting 5 minutes for Tomcat and Webapp CR statuses to be updated");
     await().atMost(5, MINUTES).untilAsserted(() -> {
-      Tomcat updatedTomcat =
-          tomcatClient.inNamespace(operator.getNamespace()).withName(tomcat.getMetadata().getName())
-              .get();
-      Webapp updatedWebapp =
-          webappClient.inNamespace(operator.getNamespace())
-              .withName(webapp1.getMetadata().getName()).get();
+      Tomcat updatedTomcat = tomcatClient
+          .inNamespace(operator.getNamespace())
+          .withName(tomcat.getMetadata().getName())
+          .get();
+      Webapp updatedWebapp = webappClient
+          .inNamespace(operator.getNamespace())
+          .withName(webapp1.getMetadata().getName())
+          .get();
       assertThat(updatedTomcat.getStatus(), is(notNullValue()));
       assertThat(updatedTomcat.getStatus().getReadyReplicas(), equalTo(tomcatReplicas));
       assertThat(updatedWebapp.getStatus(), is(notNullValue()));
@@ -123,5 +126,4 @@ class TomcatOperatorE2E {
     log.info("Deleting test Webapp object: {}", webapp1);
     webappClient.inNamespace(operator.getNamespace()).resource(webapp1).delete();
   }
-
 }

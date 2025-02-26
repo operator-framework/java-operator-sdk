@@ -25,7 +25,10 @@ public class ErrorStatusHandlerTestReconciler
     if (context.getRetryInfo().isPresent()) {
       retryAttempt = context.getRetryInfo().get().getAttemptCount();
     }
-    log.info("Number of execution: {}  retry attempt: {} , resource: {}", number, retryAttempt,
+    log.info(
+        "Number of execution: {}  retry attempt: {} , resource: {}",
+        number,
+        retryAttempt,
         resource);
     throw new IllegalStateException();
   }
@@ -45,10 +48,13 @@ public class ErrorStatusHandlerTestReconciler
   @Override
   public ErrorStatusUpdateControl<ErrorStatusHandlerTestCustomResource> updateErrorStatus(
       ErrorStatusHandlerTestCustomResource resource,
-      Context<ErrorStatusHandlerTestCustomResource> context, Exception e) {
+      Context<ErrorStatusHandlerTestCustomResource> context,
+      Exception e) {
     log.info("Setting status.");
     ensureStatusExists(resource);
-    resource.getStatus().getMessages()
+    resource
+        .getStatus()
+        .getMessages()
         .add(ERROR_STATUS_MESSAGE + context.getRetryInfo().orElseThrow().getAttemptCount());
     return ErrorStatusUpdateControl.patchStatus(resource);
   }

@@ -18,9 +18,11 @@ public class ManualObservedGenerationReconciler
       Context<ManualObservedGenerationCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     var resourceForStatusPatch = resourceForStatusPatch(resource);
-    if (!Objects.equals(resource.getMetadata().getGeneration(),
+    if (!Objects.equals(
+        resource.getMetadata().getGeneration(),
         resourceForStatusPatch.getStatus().getObservedGeneration())) {
-      resourceForStatusPatch.getStatus()
+      resourceForStatusPatch
+          .getStatus()
           .setObservedGeneration(resource.getMetadata().getGeneration());
       return UpdateControl.patchStatus(resourceForStatusPatch);
     } else {

@@ -28,7 +28,6 @@ class GenericKubernetesResourceMatcherTest {
   Deployment desired = createDeployment();
   TestDependentResource dependentResource = new TestDependentResource(desired);
 
-
   @BeforeAll
   static void setUp() {
     final var client = MockKubernetesClient.client(HasMetadata.class);
@@ -37,7 +36,8 @@ class GenericKubernetesResourceMatcherTest {
 
   @Test
   void matchesTrivialCases() {
-    assertThat(GenericKubernetesResourceMatcher.match(desired, actual, context).matched()).isTrue();
+    assertThat(GenericKubernetesResourceMatcher.match(desired, actual, context).matched())
+        .isTrue();
     assertThat(GenericKubernetesResourceMatcher.match(desired, actual, context).computedDesired())
         .isPresent();
     assertThat(GenericKubernetesResourceMatcher.match(desired, actual, context).computedDesired())
@@ -55,8 +55,7 @@ class GenericKubernetesResourceMatcherTest {
   @Test
   void matchesWithStrongSpecEquality() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
-    assertThat(match(desired, actual, true, true, context)
-        .matched())
+    assertThat(match(desired, actual, true, true, context).matched())
         .withFailMessage("Adding values should fail matching when strong equality is required")
         .isFalse();
   }
@@ -64,9 +63,9 @@ class GenericKubernetesResourceMatcherTest {
   @Test
   void doesNotMatchRemovedValues() {
     actual = createDeployment();
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource.desired(createPrimary("removed"), null), actual, context)
-        .matched())
+    assertThat(GenericKubernetesResourceMatcher.match(
+                dependentResource.desired(createPrimary("removed"), null), actual, context)
+            .matched())
         .withFailMessage("Removing values in metadata should lead to a mismatch")
         .isFalse();
   }
@@ -103,7 +102,8 @@ class GenericKubernetesResourceMatcherTest {
   void doesNotAttemptToMatchIgnoredPaths() {
     actual = createDeployment();
     actual.getSpec().setReplicas(2);
-    assertThat(match(dependentResource, actual, null, context, false, "/spec/replicas").matched())
+    assertThat(match(dependentResource, actual, null, context, false, "/spec/replicas")
+            .matched())
         .withFailMessage("Should not have compared ignored paths")
         .isTrue();
   }
@@ -112,7 +112,8 @@ class GenericKubernetesResourceMatcherTest {
   void ignoresWholeSubPath() {
     actual = createDeployment();
     actual.getSpec().getTemplate().getMetadata().getLabels().put("additional-key", "val");
-    assertThat(match(dependentResource, actual, null, context, false, "/spec/template").matched())
+    assertThat(match(dependentResource, actual, null, context, false, "/spec/template")
+            .matched())
         .withFailMessage("Should match when only changes impact ignored sub-paths")
         .isTrue();
   }
@@ -136,7 +137,6 @@ class GenericKubernetesResourceMatcherTest {
         .withFailMessage(
             "Should match when strong equality is not considered and only additive changes are made")
         .isTrue();
-
   }
 
   @Test
@@ -149,7 +149,8 @@ class GenericKubernetesResourceMatcherTest {
         .build();
 
     assertThat(GenericKubernetesResourceMatcher.match(desired, actual, false, false, context)
-        .matched()).isTrue();
+            .matched())
+        .isTrue();
   }
 
   @Test
@@ -158,17 +159,14 @@ class GenericKubernetesResourceMatcherTest {
     var actual = createConfigMap();
     actual.getData().put("key2", "val2");
 
-    var match = GenericKubernetesResourceMatcher.match(desired, actual,
-        true, false, context);
+    var match = GenericKubernetesResourceMatcher.match(desired, actual, true, false, context);
     assertThat(match.matched()).isTrue();
   }
 
   ConfigMap createConfigMap() {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName("tes1")
-            .withNamespace("default")
-            .build())
+        .withMetadata(
+            new ObjectMetaBuilder().withName("tes1").withNamespace("default").build())
         .withData(Map.of("key1", "val1"))
         .build();
   }
@@ -196,7 +194,9 @@ class GenericKubernetesResourceMatcherTest {
     @Override
     protected ServiceAccount desired(HasMetadata primary, Context<HasMetadata> context) {
       return new ServiceAccountBuilder()
-          .withNewMetadata().withName("foo").endMetadata()
+          .withNewMetadata()
+          .withName("foo")
+          .endMetadata()
           .withAutomountServiceAccountToken()
           .addNewImagePullSecret("imagePullSecret1")
           .addNewImagePullSecret("imagePullSecret2")

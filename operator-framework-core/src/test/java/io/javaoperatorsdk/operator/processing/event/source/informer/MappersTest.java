@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MappersTest {
 
-
   @Test
   void secondaryToPrimaryMapperFromOwnerReference() {
     var primary = TestUtils.testCustomResource();
@@ -25,8 +24,7 @@ class MappersTest {
     var secondary = getConfigMap(primary);
     secondary.addOwnerReference(primary);
 
-    var res = Mappers.fromOwnerReferences(TestCustomResource.class)
-        .toPrimaryResourceIDs(secondary);
+    var res = Mappers.fromOwnerReferences(TestCustomResource.class).toPrimaryResourceIDs(secondary);
 
     assertThat(res).contains(ResourceID.fromResource(primary));
   }
@@ -43,7 +41,6 @@ class MappersTest {
 
     assertThat(res).isEmpty();
   }
-
 
   private static ConfigMap getConfigMap(TestCustomResource primary) {
     return new ConfigMapBuilder()

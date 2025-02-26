@@ -15,13 +15,11 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
-
 @KubernetesDependent
 public class ReadOnlyBulkDependentResource
-    extends
-    KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
+    extends KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
     implements BulkDependentResource<ConfigMap, BulkDependentTestCustomResource>,
-    SecondaryToPrimaryMapper<ConfigMap> {
+        SecondaryToPrimaryMapper<ConfigMap> {
 
   public static final String INDEX_DELIMITER = "-";
 
@@ -30,9 +28,10 @@ public class ReadOnlyBulkDependentResource
   }
 
   @Override
-  public Map<String, ConfigMap> getSecondaryResources(BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
-    return context.getSecondaryResourcesAsStream(ConfigMap.class)
+  public Map<String, ConfigMap> getSecondaryResources(
+      BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
+    return context
+        .getSecondaryResourcesAsStream(ConfigMap.class)
         .filter(cm -> getName(cm).startsWith(primary.getMetadata().getName()))
         .collect(Collectors.toMap(
             cm -> getName(cm).substring(getName(cm).lastIndexOf(INDEX_DELIMITER) + 1),
@@ -48,5 +47,4 @@ public class ReadOnlyBulkDependentResource
     return Mappers.fromOwnerReferences(BulkDependentTestCustomResource.class, false)
         .toPrimaryResourceIDs(resource);
   }
-
 }

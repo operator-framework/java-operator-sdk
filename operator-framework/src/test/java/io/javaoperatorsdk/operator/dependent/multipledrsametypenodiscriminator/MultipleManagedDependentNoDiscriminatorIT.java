@@ -20,19 +20,20 @@ public class MultipleManagedDependentNoDiscriminatorIT {
   public static final String CHANGED_VALUE = "changed_value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleManagedDependentSameTypeNoDiscriminatorReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleManagedDependentSameTypeNoDiscriminatorReconciler())
+      .build();
 
   @Test
   void handlesCRUDOperations() {
     var res = extension.create(testResource());
 
     await().untilAsserted(() -> {
-      var cm1 = extension.get(ConfigMap.class,
+      var cm1 = extension.get(
+          ConfigMap.class,
           RESOURCE_NAME + MultipleManagedDependentNoDiscriminatorConfigMap1.NAME_SUFFIX);
-      var cm2 = extension.get(ConfigMap.class,
+      var cm2 = extension.get(
+          ConfigMap.class,
           RESOURCE_NAME + MultipleManagedDependentNoDiscriminatorConfigMap2.NAME_SUFFIX);
 
       assertThat(cm1).isNotNull();
@@ -45,9 +46,11 @@ public class MultipleManagedDependentNoDiscriminatorIT {
     res = extension.replace(res);
 
     await().untilAsserted(() -> {
-      var cm1 = extension.get(ConfigMap.class,
+      var cm1 = extension.get(
+          ConfigMap.class,
           RESOURCE_NAME + MultipleManagedDependentNoDiscriminatorConfigMap1.NAME_SUFFIX);
-      var cm2 = extension.get(ConfigMap.class,
+      var cm2 = extension.get(
+          ConfigMap.class,
           RESOURCE_NAME + MultipleManagedDependentNoDiscriminatorConfigMap2.NAME_SUFFIX);
 
       assertThat(cm1.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
@@ -57,9 +60,11 @@ public class MultipleManagedDependentNoDiscriminatorIT {
     extension.delete(res);
 
     await().timeout(Duration.ofSeconds(60)).untilAsserted(() -> {
-      var cm1 = extension.get(ConfigMap.class,
+      var cm1 = extension.get(
+          ConfigMap.class,
           RESOURCE_NAME + MultipleManagedDependentNoDiscriminatorConfigMap1.NAME_SUFFIX);
-      var cm2 = extension.get(ConfigMap.class,
+      var cm2 = extension.get(
+          ConfigMap.class,
           RESOURCE_NAME + MultipleManagedDependentNoDiscriminatorConfigMap2.NAME_SUFFIX);
 
       assertThat(cm1).isNull();
@@ -69,12 +74,9 @@ public class MultipleManagedDependentNoDiscriminatorIT {
 
   MultipleManagedDependentNoDiscriminatorCustomResource testResource() {
     var res = new MultipleManagedDependentNoDiscriminatorCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     res.setSpec(new MultipleManagedDependentNoDiscriminatorSpec());
     res.getSpec().setValue(INITIAL_VALUE);
     return res;
   }
-
 }

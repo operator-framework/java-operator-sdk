@@ -25,5 +25,4 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  *
  * @param <P> primary resource type
  */
-public interface GarbageCollected<P extends HasMetadata> extends Deleter<P> {
-}
+public interface GarbageCollected<P extends HasMetadata> extends Deleter<P> {}

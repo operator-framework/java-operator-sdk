@@ -8,15 +8,16 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
-public class ConfigMapDependent extends
-    CRUDNoGCKubernetesDependentResource<ConfigMap, WorkflowExplicitCleanupCustomResource> {
+public class ConfigMapDependent
+    extends CRUDNoGCKubernetesDependentResource<ConfigMap, WorkflowExplicitCleanupCustomResource> {
 
   public ConfigMapDependent() {
     super(ConfigMap.class);
   }
 
   @Override
-  protected ConfigMap desired(WorkflowExplicitCleanupCustomResource primary,
+  protected ConfigMap desired(
+      WorkflowExplicitCleanupCustomResource primary,
       Context<WorkflowExplicitCleanupCustomResource> context) {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()

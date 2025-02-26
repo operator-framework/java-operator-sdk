@@ -27,13 +27,16 @@ class WorkflowTest {
     var dr3 = mockDependent("dr3");
 
     var cyclicWorkflowBuilderSetup = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResourceAndConfigure(dr1).dependsOn()
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
-        .addDependentResourceAndConfigure(dr3).dependsOn(dr2)
-        .addDependentResourceAndConfigure(dr1).dependsOn(dr2);
+        .addDependentResourceAndConfigure(dr1)
+        .dependsOn()
+        .addDependentResourceAndConfigure(dr2)
+        .dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr3)
+        .dependsOn(dr2)
+        .addDependentResourceAndConfigure(dr1)
+        .dependsOn(dr2);
 
-    assertThrows(IllegalStateException.class,
-        cyclicWorkflowBuilderSetup::build);
+    assertThrows(IllegalStateException.class, cyclicWorkflowBuilderSetup::build);
   }
 
   @Test
@@ -45,13 +48,13 @@ class WorkflowTest {
     var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2)
+        .dependsOn(dr1)
         .buildAsDefaultWorkflow();
 
-    Set<DependentResource> topResources =
-        workflow.getTopLevelDependentResources().stream()
-            .map(DependentResourceNode::getDependentResource)
-            .collect(Collectors.toSet());
+    Set<DependentResource> topResources = workflow.getTopLevelDependentResources().stream()
+        .map(DependentResourceNode::getDependentResource)
+        .collect(Collectors.toSet());
 
     assertThat(topResources).containsExactlyInAnyOrder(dr1, independentDR);
   }
@@ -65,17 +68,16 @@ class WorkflowTest {
     final var workflow = new WorkflowBuilder<TestCustomResource>()
         .addDependentResource(independentDR)
         .addDependentResource(dr1)
-        .addDependentResourceAndConfigure(dr2).dependsOn(dr1)
+        .addDependentResourceAndConfigure(dr2)
+        .dependsOn(dr1)
         .buildAsDefaultWorkflow();
 
-    Set<DependentResource> bottomResources =
-        workflow.getBottomLevelDependentResources().stream()
-            .map(DependentResourceNode::getDependentResource)
-            .collect(Collectors.toSet());
+    Set<DependentResource> bottomResources = workflow.getBottomLevelDependentResources().stream()
+        .map(DependentResourceNode::getDependentResource)
+        .collect(Collectors.toSet());
 
     assertThat(bottomResources).containsExactlyInAnyOrder(dr2, independentDR);
   }
-
 
   @Test
   void isDeletableShouldWork() {
@@ -91,8 +93,9 @@ class WorkflowTest {
     dr = mock(KubernetesDependentResource.class, withSettings().extraInterfaces(Deleter.class));
     assertTrue(DefaultWorkflow.isDeletable(dr.getClass()));
 
-    dr = mock(KubernetesDependentResource.class, withSettings().extraInterfaces(Deleter.class,
-        GarbageCollected.class));
+    dr = mock(
+        KubernetesDependentResource.class,
+        withSettings().extraInterfaces(Deleter.class, GarbageCollected.class));
     assertFalse(DefaultWorkflow.isDeletable(dr.getClass()));
   }
 
@@ -101,5 +104,4 @@ class WorkflowTest {
     when(res.name()).thenReturn(name);
     return res;
   }
-
 }

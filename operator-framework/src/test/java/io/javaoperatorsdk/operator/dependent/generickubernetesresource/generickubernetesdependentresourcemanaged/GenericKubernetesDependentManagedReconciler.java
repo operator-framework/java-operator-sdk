@@ -19,5 +19,4 @@ public class GenericKubernetesDependentManagedReconciler
 
     return UpdateControl.noUpdate();
   }
-
 }

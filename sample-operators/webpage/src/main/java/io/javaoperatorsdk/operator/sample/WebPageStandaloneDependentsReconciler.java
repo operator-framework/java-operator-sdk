@@ -30,8 +30,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
  * Shows how to implement reconciler using standalone dependent resources and workflows.
  */
 @ControllerConfiguration
-public class WebPageStandaloneDependentsReconciler
-    implements Reconciler<WebPage> {
+public class WebPageStandaloneDependentsReconciler implements Reconciler<WebPage> {
 
   private final Workflow<WebPage> workflow;
 
@@ -67,9 +66,11 @@ public class WebPageStandaloneDependentsReconciler
 
     // retrieve the name of the ConfigMap secondary resource to update the status if everything went
     // well
-    webPage.setStatus(
-        createStatus(
-            context.getSecondaryResource(ConfigMap.class).orElseThrow().getMetadata().getName()));
+    webPage.setStatus(createStatus(context
+        .getSecondaryResource(ConfigMap.class)
+        .orElseThrow()
+        .getMetadata()
+        .getName()));
     return UpdateControl.patchStatus(webPage);
   }
 
@@ -91,7 +92,6 @@ public class WebPageStandaloneDependentsReconciler
     var deploymentDR = new DeploymentDependentResource();
     var serviceDR = new ServiceDependentResource();
     var ingressDR = new IngressDependentResource();
-
 
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)

@@ -43,8 +43,11 @@ public class AbstractConfigurationService implements ConfigurationService {
    *        {@code null} to lazily initialize one by default when
    *        {@link #getExecutorServiceManager()} is called
    */
-  public AbstractConfigurationService(Version version, Cloner cloner,
-      ExecutorServiceManager executorServiceManager, KubernetesClient client) {
+  public AbstractConfigurationService(
+      Version version,
+      Cloner cloner,
+      ExecutorServiceManager executorServiceManager,
+      KubernetesClient client) {
     this.version = version;
     init(cloner, executorServiceManager, client);
   }
@@ -65,8 +68,8 @@ public class AbstractConfigurationService implements ConfigurationService {
    *        provided by {@link ConfigurationService#getKubernetesClient()} the first time
    *        {@link #getKubernetesClient()} is called
    */
-  protected void init(Cloner cloner, ExecutorServiceManager executorServiceManager,
-      KubernetesClient client) {
+  protected void init(
+      Cloner cloner, ExecutorServiceManager executorServiceManager, KubernetesClient client) {
     this.client = client;
     this.cloner = cloner != null ? cloner : ConfigurationService.super.getResourceCloner();
     this.executorServiceManager = executorServiceManager;
@@ -95,13 +98,12 @@ public class AbstractConfigurationService implements ConfigurationService {
 
   protected <R extends HasMetadata> void throwExceptionOnNameCollision(
       String newReconcilerClassName, ControllerConfiguration<R> existing) {
-    throw new IllegalArgumentException(
-        "Reconciler name '"
-            + existing.getName()
-            + "' is used by both "
-            + existing.getAssociatedReconcilerClassName()
-            + " and "
-            + newReconcilerClassName);
+    throw new IllegalArgumentException("Reconciler name '"
+        + existing.getName()
+        + "' is used by both "
+        + existing.getAssociatedReconcilerClassName()
+        + " and "
+        + newReconcilerClassName);
   }
 
   @SuppressWarnings("unchecked")

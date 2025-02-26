@@ -12,7 +12,7 @@ public enum EventSourceStartPriority {
    * In this situation, it is needed to initialize this event source before the one associated with
    * resources which state is being tracked since that state information might be required to
    * properly retrieve the other resources.
-   * 
+   *
    * <p>
    * For example a {@code ConfigMap} could store the identifier of a fictional external resource
    * {@code A}. In this case, the event source tracking {@code A} resources might need the
@@ -23,5 +23,6 @@ public enum EventSourceStartPriority {
    * started.
    * </p>
    */
-  RESOURCE_STATE_LOADER, DEFAULT
+  RESOURCE_STATE_LOADER,
+  DEFAULT
 }

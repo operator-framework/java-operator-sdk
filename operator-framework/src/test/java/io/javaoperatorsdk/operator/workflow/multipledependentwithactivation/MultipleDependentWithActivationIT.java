@@ -18,10 +18,9 @@ public class MultipleDependentWithActivationIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleDependentActivationReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleDependentActivationReconciler())
+      .build();
 
   @Test
   void bothDependentsWithActivationAreHandled() {
@@ -52,24 +51,23 @@ public class MultipleDependentWithActivationIT {
       assertThat(secret).isNotNull();
       assertThat(cm1).isNotNull();
       assertThat(cm2).isNotNull();
-      assertThat(cm1.getData()).containsEntry(ConfigMapDependentResource1.DATA_KEY,
-          CHANGED_VALUE + ConfigMapDependentResource1.SUFFIX);
-      assertThat(cm2.getData()).containsEntry(ConfigMapDependentResource2.DATA_KEY,
-          CHANGED_VALUE + ConfigMapDependentResource2.SUFFIX);
+      assertThat(cm1.getData())
+          .containsEntry(
+              ConfigMapDependentResource1.DATA_KEY,
+              CHANGED_VALUE + ConfigMapDependentResource1.SUFFIX);
+      assertThat(cm2.getData())
+          .containsEntry(
+              ConfigMapDependentResource2.DATA_KEY,
+              CHANGED_VALUE + ConfigMapDependentResource2.SUFFIX);
     });
-
   }
 
   MultipleDependentActivationCustomResource testResource() {
     var res = new MultipleDependentActivationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     res.setSpec(new MultipleDependentActivationSpec());
     res.getSpec().setValue(INITIAL_VALUE);
 
     return res;
   }
-
-
 }

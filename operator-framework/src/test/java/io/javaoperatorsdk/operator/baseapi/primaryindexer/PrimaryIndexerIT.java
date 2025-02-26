@@ -22,7 +22,8 @@ public class PrimaryIndexerIT {
   LocallyRunOperatorExtension operator = buildOperator();
 
   protected LocallyRunOperatorExtension buildOperator() {
-    return LocallyRunOperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler())
+    return LocallyRunOperatorExtension.builder()
+        .withReconciler(new PrimaryIndexerTestReconciler())
         .build();
   }
 
@@ -32,23 +33,17 @@ public class PrimaryIndexerIT {
     operator.create(createTestResource(RESOURCE_NAME1));
     operator.create(createTestResource(RESOURCE_NAME2));
 
-    await()
-        .pollDelay(Duration.ofMillis(500))
-        .untilAsserted(
-            () -> {
-              assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME1).get()).isEqualTo(1);
-              assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME2).get()).isEqualTo(1);
-            });
+    await().pollDelay(Duration.ofMillis(500)).untilAsserted(() -> {
+      assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME1).get()).isEqualTo(1);
+      assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME2).get()).isEqualTo(1);
+    });
 
     operator.create(configMap());
 
-    await()
-        .pollDelay(Duration.ofMillis(500))
-        .untilAsserted(
-            () -> {
-              assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME1).get()).isEqualTo(2);
-              assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME2).get()).isEqualTo(2);
-            });
+    await().pollDelay(Duration.ofMillis(500)).untilAsserted(() -> {
+      assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME1).get()).isEqualTo(2);
+      assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME2).get()).isEqualTo(2);
+    });
   }
 
   private ConfigMap configMap() {

@@ -26,7 +26,6 @@ import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.CRD_RE
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-
 class ControllerNamespaceDeletionE2E {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerNamespaceDeletionE2E.class);
@@ -47,8 +46,11 @@ class ControllerNamespaceDeletionE2E {
     client.resource(testResource()).serverSideApply();
 
     await().untilAsserted(() -> {
-      var res = client.resources(ControllerNamespaceDeletionCustomResource.class)
-          .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get();
+      var res = client
+          .resources(ControllerNamespaceDeletionCustomResource.class)
+          .inNamespace(namespace)
+          .withName(TEST_RESOURCE_NAME)
+          .get();
       assertThat(res.getStatus()).isNotNull();
       assertThat(res.getStatus().getValue()).isEqualTo(INITIAL_VALUE);
     });
@@ -56,8 +58,11 @@ class ControllerNamespaceDeletionE2E {
     client.namespaces().withName(namespace).delete();
 
     await().timeout(Duration.ofSeconds(20)).untilAsserted(() -> {
-      var ns = client.resources(ControllerNamespaceDeletionCustomResource.class)
-          .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get();
+      var ns = client
+          .resources(ControllerNamespaceDeletionCustomResource.class)
+          .inNamespace(namespace)
+          .withName(TEST_RESOURCE_NAME)
+          .get();
       assertThat(ns).isNull();
     });
 
@@ -71,16 +76,22 @@ class ControllerNamespaceDeletionE2E {
   }
 
   private void removeRoleAndRoleBindingFinalizers() {
-    var rolebinding =
-        client.rbac().roleBindings().inNamespace(namespace).withName(RESOURCE_NAME).get();
+    var rolebinding = client
+        .rbac()
+        .roleBindings()
+        .inNamespace(namespace)
+        .withName(RESOURCE_NAME)
+        .get();
     rolebinding.getFinalizers().clear();
     client.resource(rolebinding).update();
 
-    var role = client.rbac().roles().inNamespace(namespace).withName(RESOURCE_NAME).get();
+    var role =
+        client.rbac().roles().inNamespace(namespace).withName(RESOURCE_NAME).get();
     role.getFinalizers().clear();
     client.resource(role).update();
 
-    var sa = client.serviceAccounts().inNamespace(namespace).withName(RESOURCE_NAME).get();
+    var sa =
+        client.serviceAccounts().inNamespace(namespace).withName(RESOURCE_NAME).get();
     sa.getMetadata().getFinalizers().clear();
     client.resource(sa).update();
   }
@@ -96,21 +107,27 @@ class ControllerNamespaceDeletionE2E {
     return cr;
   }
 
-
   @BeforeEach
   void setup() {
     namespace = "controller-namespace-" + UUID.randomUUID();
-    client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
-        .withNamespace(namespace)
-        .build()).build();
+    client = new KubernetesClientBuilder()
+        .withConfig(new ConfigBuilder().withNamespace(namespace).build())
+        .build();
     applyCRD();
-    client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
-        .endMetadata().build()).create();
+    client
+        .namespaces()
+        .resource(new NamespaceBuilder()
+            .withNewMetadata()
+            .withName(namespace)
+            .endMetadata()
+            .build())
+        .create();
   }
 
   void deployController() {
     try {
-      List<HasMetadata> resources = client.load(new FileInputStream("k8s/operator.yaml")).items();
+      List<HasMetadata> resources =
+          client.load(new FileInputStream("k8s/operator.yaml")).items();
       resources.forEach(hm -> {
         hm.getMetadata().setNamespace(namespace);
         if (hm.getKind().equalsIgnoreCase("rolebinding")) {
@@ -120,9 +137,7 @@ class ControllerNamespaceDeletionE2E {
           }
         }
       });
-      client.resourceList(resources)
-          .inNamespace(namespace)
-          .createOrReplace();
+      client.resourceList(resources).inNamespace(namespace).createOrReplace();
 
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);

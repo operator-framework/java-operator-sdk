@@ -12,7 +12,7 @@ public class GroupVersionKind {
   private final String version;
   private final String kind;
   private final String apiVersion;
-  protected final static Map<Class<? extends HasMetadata>, GroupVersionKind> CACHE =
+  protected static final Map<Class<? extends HasMetadata>, GroupVersionKind> CACHE =
       new ConcurrentHashMap<>();
 
   public GroupVersionKind(String apiVersion, String kind) {
@@ -33,8 +33,8 @@ public class GroupVersionKind {
   }
 
   private static GroupVersionKind computeGVK(Class<? extends HasMetadata> rc) {
-    return new GroupVersionKind(HasMetadata.getGroup(rc),
-        HasMetadata.getVersion(rc), HasMetadata.getKind(rc));
+    return new GroupVersionKind(
+        HasMetadata.getGroup(rc), HasMetadata.getVersion(rc), HasMetadata.getKind(rc));
   }
 
   public GroupVersionKind(String group, String version, String kind) {
@@ -100,10 +100,8 @@ public class GroupVersionKind {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     GroupVersionKind that = (GroupVersionKind) o;
     return Objects.equals(apiVersion, that.apiVersion) && Objects.equals(kind, that.kind);
   }
@@ -115,10 +113,8 @@ public class GroupVersionKind {
 
   @Override
   public String toString() {
-    return "GroupVersionKind{" +
-        "apiVersion='" + apiVersion + '\'' +
-        ", kind='" + kind + '\'' +
-        '}';
+    return "GroupVersionKind{" + "apiVersion='"
+        + apiVersion + '\'' + ", kind='"
+        + kind + '\'' + '}';
   }
-
 }

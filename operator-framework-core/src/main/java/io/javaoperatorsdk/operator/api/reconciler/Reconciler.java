@@ -50,9 +50,8 @@ public interface Reconciler<P extends HasMetadata> {
    * @param e exception thrown from the reconciler
    * @return the updated resource
    */
-  default ErrorStatusUpdateControl<P> updateErrorStatus(P resource, Context<P> context,
-      Exception e) {
+  default ErrorStatusUpdateControl<P> updateErrorStatus(
+      P resource, Context<P> context, Exception e) {
     return ErrorStatusUpdateControl.defaultErrorProcessing();
   }
-
 }

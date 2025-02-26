@@ -25,8 +25,8 @@ public class ChangeNamespaceTestReconciler
 
     InformerEventSource<ConfigMap, ChangeNamespaceTestCustomResource> configMapES =
         new InformerEventSource<>(
-            InformerEventSourceConfiguration
-                .from(ConfigMap.class, ChangeNamespaceTestCustomResource.class)
+            InformerEventSourceConfiguration.from(
+                    ConfigMap.class, ChangeNamespaceTestCustomResource.class)
                 .build(),
             context);
 
@@ -40,7 +40,10 @@ public class ChangeNamespaceTestReconciler
 
     var actualConfigMap = context.getSecondaryResource(ConfigMap.class);
     if (actualConfigMap.isEmpty()) {
-      context.getClient().configMaps().inNamespace(primary.getMetadata().getNamespace())
+      context
+          .getClient()
+          .configMaps()
+          .inNamespace(primary.getMetadata().getNamespace())
           .resource(configMap(primary))
           .create();
     }
@@ -52,9 +55,9 @@ public class ChangeNamespaceTestReconciler
 
     var statusPatchResource = new ChangeNamespaceTestCustomResource();
     statusPatchResource.setMetadata(new ObjectMetaBuilder()
-                    .withName(primary.getMetadata().getName())
-                    .withNamespace(primary.getMetadata().getNamespace())
-            .build());
+        .withName(primary.getMetadata().getName())
+        .withNamespace(primary.getMetadata().getNamespace())
+        .build());
     statusPatchResource.setStatus(new ChangeNamespaceTestCustomResourceStatus());
     var statusUpdates = primary.getStatus().getNumberOfStatusUpdates();
     statusPatchResource.getStatus().setNumberOfStatusUpdates(statusUpdates + 1);
@@ -73,7 +76,8 @@ public class ChangeNamespaceTestReconciler
 
   private ConfigMap configMap(ChangeNamespaceTestCustomResource primary) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+    configMap.setMetadata(new ObjectMetaBuilder()
+        .withName(primary.getMetadata().getName())
         .withNamespace(primary.getMetadata().getNamespace())
         .build());
     configMap.setData(Map.of("data", primary.getMetadata().getName()));

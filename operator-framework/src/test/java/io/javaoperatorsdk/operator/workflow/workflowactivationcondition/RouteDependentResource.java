@@ -13,7 +13,8 @@ public class RouteDependentResource
   }
 
   @Override
-  protected Route desired(WorkflowActivationConditionCustomResource primary,
+  protected Route desired(
+      WorkflowActivationConditionCustomResource primary,
       Context<WorkflowActivationConditionCustomResource> context) {
     // basically does not matter since this should not be called
     Route route = new Route();

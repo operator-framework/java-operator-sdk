@@ -11,8 +11,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean patchResource;
   private final boolean patchStatus;
 
-  private UpdateControl(
-      P resource, boolean patchResource, boolean patchStatus) {
+  private UpdateControl(P resource, boolean patchResource, boolean patchStatus) {
     if ((patchResource || patchStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
@@ -76,5 +75,4 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   public boolean isPatchResourceAndStatus() {
     return patchResource && patchStatus;
   }
-
 }

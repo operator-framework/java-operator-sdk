@@ -23,30 +23,36 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-class PerResourcePollingEventSourceTest extends
-    AbstractEventSourceTestBase<PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
+class PerResourcePollingEventSourceTest
+    extends AbstractEventSourceTestBase<
+        PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
   public static final int PERIOD = 150;
+
   @SuppressWarnings("unchecked")
-  private final PerResourcePollingEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
-      mock(PerResourcePollingEventSource.ResourceFetcher.class);
+  private final PerResourcePollingEventSource.ResourceFetcher<
+          SampleExternalResource, TestCustomResource>
+      supplier = mock(PerResourcePollingEventSource.ResourceFetcher.class);
+
   @SuppressWarnings("unchecked")
   private final IndexerResourceCache<TestCustomResource> resourceCache =
       mock(IndexerResourceCache.class);
+
   private final TestCustomResource testCustomResource = TestUtils.testCustomResource();
   private final EventSourceContext<TestCustomResource> context = mock(EventSourceContext.class);
 
   @BeforeEach
   public void setup() {
     when(resourceCache.get(any())).thenReturn(Optional.of(testCustomResource));
-    when(supplier.fetchResources(any()))
-        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
     when(context.getPrimaryCache()).thenReturn(resourceCache);
 
-    setUpSource(new PerResourcePollingEventSource<>(SampleExternalResource.class, context,
-                    new PerResourcePollingConfigurationBuilder<>(supplier, Duration.ofMillis(PERIOD))
-                            .withCacheKeyMapper(r -> r.getName() + "#" + r.getValue())
-                            .build()));
+    setUpSource(new PerResourcePollingEventSource<>(
+        SampleExternalResource.class,
+        context,
+        new PerResourcePollingConfigurationBuilder<>(supplier, Duration.ofMillis(PERIOD))
+            .withCacheKeyMapper(r -> r.getName() + "#" + r.getValue())
+            .build()));
   }
 
   @Test
@@ -62,9 +68,10 @@ class PerResourcePollingEventSourceTest extends
 
   @Test
   void registeringTaskOnAPredicate() {
-    setUpSource(new PerResourcePollingEventSource<>(SampleExternalResource.class, context,
-        new PerResourcePollingConfigurationBuilder<>(
-            supplier, Duration.ofMillis(PERIOD))
+    setUpSource(new PerResourcePollingEventSource<>(
+        SampleExternalResource.class,
+        context,
+        new PerResourcePollingConfigurationBuilder<>(supplier, Duration.ofMillis(PERIOD))
             .withRegisterPredicate(
                 testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1)
             .withCacheKeyMapper(CacheKeyMapper.singleResourceCacheKeyMapper())
@@ -72,15 +79,14 @@ class PerResourcePollingEventSourceTest extends
 
     source.onResourceCreated(testCustomResource);
 
-
-    await().pollDelay(Duration.ofMillis(2 * PERIOD))
-        .untilAsserted(() -> verify(supplier, times(0)).fetchResources(eq(testCustomResource)));
+    await().pollDelay(Duration.ofMillis(2 * PERIOD)).untilAsserted(() -> verify(supplier, times(0))
+        .fetchResources(eq(testCustomResource)));
 
     testCustomResource.getMetadata().setGeneration(2L);
     source.onResourceUpdated(testCustomResource, testCustomResource);
 
-
-    await().pollDelay(Duration.ofMillis(2 * PERIOD))
+    await()
+        .pollDelay(Duration.ofMillis(2 * PERIOD))
         .untilAsserted(() -> verify(supplier, atLeast(1)).fetchResources(eq(testCustomResource)));
   }
 
@@ -146,45 +152,50 @@ class PerResourcePollingEventSourceTest extends
 
   @Test
   void supportsDynamicPollingDelay() {
-    when(supplier.fetchResources(any()))
-            .thenReturn(Set.of(SampleExternalResource.testResource1()));
-    when(supplier.fetchDelay(any(),any()))
-            .thenReturn(Optional.of(Duration.ofMillis(PERIOD)))
-            .thenReturn(Optional.of(Duration.ofMillis(PERIOD*2)));
+    when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchDelay(any(), any()))
+        .thenReturn(Optional.of(Duration.ofMillis(PERIOD)))
+        .thenReturn(Optional.of(Duration.ofMillis(PERIOD * 2)));
 
     source.onResourceCreated(testCustomResource);
 
-    await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis((long) (1.5 * PERIOD)))
-            .pollInterval(Duration.ofMillis(20))
-            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
+    await()
+        .pollDelay(Duration.ofMillis(PERIOD))
+        .atMost(Duration.ofMillis((long) (1.5 * PERIOD)))
+        .pollInterval(Duration.ofMillis(20))
+        .untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
     // verifying that it is not called as with normal interval
-    await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis((long) (1.5*PERIOD)))
-            .pollInterval(Duration.ofMillis(20))
-            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
-    await().pollDelay(Duration.ofMillis(PERIOD)).atMost(Duration.ofMillis(2 * PERIOD))
-            .pollInterval(Duration.ofMillis(20))
-            .untilAsserted(() -> verify(supplier,times(2)).fetchResources(any()));
+    await()
+        .pollDelay(Duration.ofMillis(PERIOD))
+        .atMost(Duration.ofMillis((long) (1.5 * PERIOD)))
+        .pollInterval(Duration.ofMillis(20))
+        .untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
+    await()
+        .pollDelay(Duration.ofMillis(PERIOD))
+        .atMost(Duration.ofMillis(2 * PERIOD))
+        .pollInterval(Duration.ofMillis(20))
+        .untilAsserted(() -> verify(supplier, times(2)).fetchResources(any()));
   }
 
   @Test
   void deleteEventCancelsTheScheduling() {
-    when(supplier.fetchResources(any()))
-            .thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     source.onResourceCreated(testCustomResource);
 
-    await().pollDelay(Duration.ofMillis(PERIOD))
-            .atMost(Duration.ofMillis((2* PERIOD)))
-            .pollInterval(Duration.ofMillis(20))
-            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
+    await()
+        .pollDelay(Duration.ofMillis(PERIOD))
+        .atMost(Duration.ofMillis((2 * PERIOD)))
+        .pollInterval(Duration.ofMillis(20))
+        .untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
 
     when(resourceCache.get(any())).thenReturn(Optional.empty());
     source.onResourceDeleted(testCustomResource);
 
     // check if not called again
-    await().pollDelay(Duration.ofMillis(2*PERIOD))
-            .atMost(Duration.ofMillis((4* PERIOD)))
-            .untilAsserted(() -> verify(supplier,times(1)).fetchResources(any()));
+    await()
+        .pollDelay(Duration.ofMillis(2 * PERIOD))
+        .atMost(Duration.ofMillis((4 * PERIOD)))
+        .untilAsserted(() -> verify(supplier, times(1)).fetchResources(any()));
   }
-
 }

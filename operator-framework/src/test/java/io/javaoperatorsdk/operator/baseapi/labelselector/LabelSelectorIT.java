@@ -18,9 +18,9 @@ import static org.awaitility.Awaitility.await;
 class LabelSelectorIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new LabelSelectorTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new LabelSelectorTestReconciler())
+      .build();
 
   @Test
   void filtersCustomResourceByLabel() {
@@ -28,8 +28,9 @@ class LabelSelectorIT {
     operator.create(resource("r2", false));
 
     await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(
-          operator.getReconcilerOfType(LabelSelectorTestReconciler.class).getNumberOfExecutions())
+      assertThat(operator
+              .getReconcilerOfType(LabelSelectorTestReconciler.class)
+              .getNumberOfExecutions())
           .isEqualTo(1);
     });
   }
@@ -38,10 +39,8 @@ class LabelSelectorIT {
     var res = new LabelSelectorTestCustomResource();
     res.setMetadata(new ObjectMetaBuilder()
         .withName(name)
-        .withLabels(addLabel ? Map.of(LABEL_KEY, LABEL_VALUE)
-            : Collections.emptyMap())
+        .withLabels(addLabel ? Map.of(LABEL_KEY, LABEL_VALUE) : Collections.emptyMap())
         .build());
     return res;
   }
-
 }

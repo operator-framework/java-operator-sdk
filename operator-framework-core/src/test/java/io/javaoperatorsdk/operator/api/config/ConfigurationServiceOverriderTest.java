@@ -62,25 +62,23 @@ class ConfigurationServiceOverriderTest {
         .withConcurrentReconciliationThreads(25)
         .withMetrics(new Metrics() {})
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("newLease", "newLeaseNS"))
-        .withInformerStoppedHandler((informer, ex) -> {
-        })
+        .withInformerStoppedHandler((informer, ex) -> {})
         .withReconciliationTerminationTimeout(Duration.ofSeconds(30))
         .build();
 
     assertNotEquals(config.closeClientOnStop(), overridden.closeClientOnStop());
-    assertNotEquals(config.checkCRDAndValidateLocalModel(),
-        overridden.checkCRDAndValidateLocalModel());
-    assertNotEquals(config.concurrentReconciliationThreads(),
-        overridden.concurrentReconciliationThreads());
+    assertNotEquals(
+        config.checkCRDAndValidateLocalModel(), overridden.checkCRDAndValidateLocalModel());
+    assertNotEquals(
+        config.concurrentReconciliationThreads(), overridden.concurrentReconciliationThreads());
     assertNotEquals(config.getExecutorService(), overridden.getExecutorService());
     assertNotEquals(config.getWorkflowExecutorService(), overridden.getWorkflowExecutorService());
     assertNotEquals(config.getMetrics(), overridden.getMetrics());
-    assertNotEquals(config.getLeaderElectionConfiguration(),
-        overridden.getLeaderElectionConfiguration());
-    assertNotEquals(config.getInformerStoppedHandler(),
-        overridden.getLeaderElectionConfiguration());
-    assertNotEquals(config.reconciliationTerminationTimeout(),
-        overridden.reconciliationTerminationTimeout());
+    assertNotEquals(
+        config.getLeaderElectionConfiguration(), overridden.getLeaderElectionConfiguration());
+    assertNotEquals(
+        config.getInformerStoppedHandler(), overridden.getLeaderElectionConfiguration());
+    assertNotEquals(
+        config.reconciliationTerminationTimeout(), overridden.reconciliationTerminationTimeout());
   }
-
 }

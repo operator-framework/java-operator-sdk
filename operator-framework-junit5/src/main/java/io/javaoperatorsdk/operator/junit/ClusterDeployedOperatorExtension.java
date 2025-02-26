@@ -41,10 +41,15 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       KubernetesClient kubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
-    super(infrastructure, infrastructureTimeout, oneNamespacePerClass,
+    super(
+        infrastructure,
+        infrastructureTimeout,
+        oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
-        kubernetesClient, namespaceNameSupplier, perClassNamespaceNameSupplier);
+        kubernetesClient,
+        namespaceNameSupplier,
+        perClassNamespaceNameSupplier);
     this.operatorDeployment = operatorDeployment;
     this.operatorDeploymentTimeout = operatorDeploymentTimeout;
   }
@@ -65,8 +70,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     final var crdSuffix = "-v1.yml";
 
     final var kubernetesClient = getKubernetesClient();
-    for (var crdFile : Objects
-        .requireNonNull(new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
+    for (var crdFile : Objects.requireNonNull(
+        new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
       try (InputStream is = new FileInputStream(crdFile)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
@@ -91,10 +96,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       }
     });
 
-    kubernetesClient
-        .resourceList(operatorDeployment)
-        .inNamespace(namespace)
-        .createOrReplace();
+    kubernetesClient.resourceList(operatorDeployment).inNamespace(namespace).createOrReplace();
     kubernetesClient
         .resourceList(operatorDeployment)
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -103,7 +105,10 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
 
   @Override
   protected void deleteOperator() {
-    getKubernetesClient().resourceList(operatorDeployment).inNamespace(namespace).delete();
+    getKubernetesClient()
+        .resourceList(operatorDeployment)
+        .inNamespace(namespace)
+        .delete();
   }
 
   public static class Builder extends AbstractBuilder<Builder> {
@@ -123,8 +128,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       return this;
     }
 
-    public Builder withOperatorDeployment(List<HasMetadata> hm,
-        Consumer<List<HasMetadata>> modifications) {
+    public Builder withOperatorDeployment(
+        List<HasMetadata> hm, Consumer<List<HasMetadata>> modifications) {
       modifications.accept(hm);
       operatorDeployment.addAll(hm);
       return this;

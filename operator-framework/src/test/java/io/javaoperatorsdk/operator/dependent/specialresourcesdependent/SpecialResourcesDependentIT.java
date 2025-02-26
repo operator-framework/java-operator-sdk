@@ -21,9 +21,9 @@ public class SpecialResourcesDependentIT {
   public static final String RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new SpecialResourceTestReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new SpecialResourceTestReconciler())
+      .build();
 
   @Test
   void specialCRUDReconciler() {
@@ -43,17 +43,13 @@ public class SpecialResourcesDependentIT {
       assertThat(sa).isNotNull();
       assertThat(sa.getAutomountServiceAccountToken()).isFalse();
     });
-
   }
 
   SpecialResourceCustomResource testResource() {
     SpecialResourceCustomResource res = new SpecialResourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     res.setSpec(new SpecialResourceSpec());
     res.getSpec().setValue(INITIAL_VALUE);
     return res;
   }
-
 }

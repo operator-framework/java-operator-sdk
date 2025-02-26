@@ -25,32 +25,36 @@ public class CRDMappingInTestExtensionIT {
   private final KubernetesClient client = new KubernetesClientBuilder().build();
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new TestReconciler())
-          .withAdditionalCRD("src/test/resources/crd/test.crd", "src/test/crd/test.crd")
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new TestReconciler())
+      .withAdditionalCRD("src/test/resources/crd/test.crd", "src/test/crd/test.crd")
+      .build();
 
   @Test
   void correctlyAppliesManuallySpecifiedCRD() {
     final var crdClient = client.apiextensions().v1().customResourceDefinitions();
-    await().pollDelay(Duration.ofMillis(150))
-        .untilAsserted(() -> {
-          final var actual = crdClient.withName("tests.crd.example").get();
-          assertThat(actual).isNotNull();
-          assertThat(actual.getSpec().getVersions().get(0).getSchema().getOpenAPIV3Schema()
-              .getProperties().containsKey("foo")).isTrue();
-        });
-    await().pollDelay(Duration.ofMillis(150))
-        .untilAsserted(
-            () -> assertThat(crdClient.withName("externals.crd.example").get()).isNotNull());
+    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
+      final var actual = crdClient.withName("tests.crd.example").get();
+      assertThat(actual).isNotNull();
+      assertThat(actual
+              .getSpec()
+              .getVersions()
+              .get(0)
+              .getSchema()
+              .getOpenAPIV3Schema()
+              .getProperties()
+              .containsKey("foo"))
+          .isTrue();
+    });
+    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> assertThat(
+            crdClient.withName("externals.crd.example").get())
+        .isNotNull());
   }
 
   @Group("crd.example")
   @Version("v1")
   @Kind("Test")
-  private static class TestCR extends CustomResource<Void, Void> implements Namespaced {
-  }
+  private static class TestCR extends CustomResource<Void, Void> implements Namespaced {}
 
   @ControllerConfiguration
   private static class TestReconciler implements Reconciler<TestCR> {

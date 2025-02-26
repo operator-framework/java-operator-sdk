@@ -23,7 +23,6 @@ class ResourceStateManagerTest {
     state2 = manager.getOrCreate(sampleResourceID2);
   }
 
-
   @Test
   public void returnsNoEventPresentIfNotMarkedYet() {
     assertThat(state.noEventPresent()).isTrue();
@@ -86,5 +85,4 @@ class ResourceStateManagerTest {
     assertThat(res).hasSize(1);
     assertThat(res.get(0).getId()).isEqualTo(sampleResourceID2);
   }
-
 }

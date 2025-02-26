@@ -12,7 +12,8 @@ public class DeploymentReadyCondition
       DependentResource<Deployment, WorkflowAllFeatureCustomResource> dependentResource,
       WorkflowAllFeatureCustomResource primary,
       Context<WorkflowAllFeatureCustomResource> context) {
-    return dependentResource.getSecondaryResource(primary, context)
+    return dependentResource
+        .getSecondaryResource(primary, context)
         .map(deployment -> {
           var readyReplicas = deployment.getStatus().getReadyReplicas();
           return readyReplicas != null && deployment.getSpec().getReplicas().equals(readyReplicas);

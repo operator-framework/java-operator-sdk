@@ -17,11 +17,11 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePoll
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 
-public class ExternalWithStateDependentResource extends
-    PerResourcePollingDependentResource<ExternalResource, ExternalStateCustomResource>
-    implements
-    DependentResourceWithExplicitState<ExternalResource, ExternalStateCustomResource, ConfigMap>,
-    Updater<ExternalResource, ExternalStateCustomResource> {
+public class ExternalWithStateDependentResource
+    extends PerResourcePollingDependentResource<ExternalResource, ExternalStateCustomResource>
+    implements DependentResourceWithExplicitState<
+            ExternalResource, ExternalStateCustomResource, ConfigMap>,
+        Updater<ExternalResource, ExternalStateCustomResource> {
 
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
@@ -31,20 +31,23 @@ public class ExternalWithStateDependentResource extends
 
   @Override
   @SuppressWarnings("unchecked")
-  public Set<ExternalResource> fetchResources(
-      ExternalStateCustomResource primaryResource) {
-    return getResourceID(primaryResource).map(id -> {
-      var externalResource = externalService.read(id);
-      return externalResource.map(Set::of).orElseGet(Collections::emptySet);
-    }).orElseGet(Collections::emptySet);
+  public Set<ExternalResource> fetchResources(ExternalStateCustomResource primaryResource) {
+    return getResourceID(primaryResource)
+        .map(id -> {
+          var externalResource = externalService.read(id);
+          return externalResource.map(Set::of).orElseGet(Collections::emptySet);
+        })
+        .orElseGet(Collections::emptySet);
   }
 
   @Override
   protected Optional<ExternalResource> selectTargetSecondaryResource(
       Set<ExternalResource> secondaryResources,
-      ExternalStateCustomResource primary, Context<ExternalStateCustomResource> context) {
+      ExternalStateCustomResource primary,
+      Context<ExternalStateCustomResource> context) {
     var id = getResourceID(primary);
-    return id.flatMap(k -> secondaryResources.stream().filter(e -> e.getId().equals(k)).findAny());
+    return id.flatMap(
+        k -> secondaryResources.stream().filter(e -> e.getId().equals(k)).findAny());
   }
 
   private Optional<String> getResourceID(ExternalStateCustomResource primaryResource) {
@@ -54,8 +57,8 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  protected ExternalResource desired(ExternalStateCustomResource primary,
-      Context<ExternalStateCustomResource> context) {
+  protected ExternalResource desired(
+      ExternalStateCustomResource primary, Context<ExternalStateCustomResource> context) {
     return new ExternalResource(primary.getSpec().getData());
   }
 
@@ -65,8 +68,7 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  public ConfigMap stateResource(ExternalStateCustomResource primary,
-      ExternalResource resource) {
+  public ConfigMap stateResource(ExternalStateCustomResource primary, ExternalResource resource) {
     ConfigMap configMap = new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withName(primary.getMetadata().getName())
@@ -79,28 +81,34 @@ public class ExternalWithStateDependentResource extends
   }
 
   @Override
-  public ExternalResource create(ExternalResource desired,
+  public ExternalResource create(
+      ExternalResource desired,
       ExternalStateCustomResource primary,
       Context<ExternalStateCustomResource> context) {
     return externalService.create(desired);
   }
 
   @Override
-  public ExternalResource update(ExternalResource actual,
-      ExternalResource desired, ExternalStateCustomResource primary,
+  public ExternalResource update(
+      ExternalResource actual,
+      ExternalResource desired,
+      ExternalStateCustomResource primary,
       Context<ExternalStateCustomResource> context) {
     return externalService.update(new ExternalResource(actual.getId(), desired.getData()));
   }
 
   @Override
-  public Matcher.Result<ExternalResource> match(ExternalResource resource,
+  public Matcher.Result<ExternalResource> match(
+      ExternalResource resource,
       ExternalStateCustomResource primary,
       Context<ExternalStateCustomResource> context) {
-    return Matcher.Result.nonComputed(resource.getData().equals(primary.getSpec().getData()));
+    return Matcher.Result.nonComputed(
+        resource.getData().equals(primary.getSpec().getData()));
   }
 
   @Override
-  protected void handleDelete(ExternalStateCustomResource primary,
+  protected void handleDelete(
+      ExternalStateCustomResource primary,
       ExternalResource secondary,
       Context<ExternalStateCustomResource> context) {
     externalService.delete(secondary.getId());

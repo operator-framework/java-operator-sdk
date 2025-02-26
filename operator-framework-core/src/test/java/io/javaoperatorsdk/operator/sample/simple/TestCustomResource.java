@@ -18,5 +18,4 @@ public class TestCustomResource
   protected TestCustomResourceStatus initStatus() {
     return new TestCustomResourceStatus();
   }
-
 }

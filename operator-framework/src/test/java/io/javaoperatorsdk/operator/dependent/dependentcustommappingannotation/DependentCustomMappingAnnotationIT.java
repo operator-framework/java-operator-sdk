@@ -19,11 +19,9 @@ class DependentCustomMappingAnnotationIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(DependentCustomMappingReconciler.class)
-          .build();
-
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(DependentCustomMappingReconciler.class)
+      .build();
 
   @Test
   void testCustomMappingAnnotationForDependent() {
@@ -49,11 +47,10 @@ class DependentCustomMappingAnnotationIT {
       assertThat(resource.getMetadata().getAnnotations())
           .containsKey(CUSTOM_NAME_KEY)
           .containsKey(CUSTOM_NAMESPACE_KEY);
-      assertThat(resource.getData()).containsEntry(CustomMappingConfigMapDependentResource.KEY,
-          val);
+      assertThat(resource.getData())
+          .containsEntry(CustomMappingConfigMapDependentResource.KEY, val);
     });
   }
-
 
   DependentCustomMappingCustomResource testResource() {
     var dr = new DependentCustomMappingCustomResource();
@@ -63,6 +60,4 @@ class DependentCustomMappingAnnotationIT {
 
     return dr;
   }
-
-
 }

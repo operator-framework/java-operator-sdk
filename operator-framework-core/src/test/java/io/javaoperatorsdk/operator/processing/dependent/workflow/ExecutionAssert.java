@@ -8,8 +8,7 @@ import org.assertj.core.api.AbstractAssert;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
-public class ExecutionAssert
-    extends AbstractAssert<ExecutionAssert, List<ReconcileRecord>> {
+public class ExecutionAssert extends AbstractAssert<ExecutionAssert, List<ReconcileRecord>> {
 
   public ExecutionAssert(List<ReconcileRecord> reconcileRecords) {
     super(reconcileRecords, ExecutionAssert.class);
@@ -54,7 +53,9 @@ public class ExecutionAssert
   }
 
   private Optional<ReconcileRecord> getReconcileRecordFor(DependentResource dependentResource) {
-    return actual.stream().filter(rr -> rr.getDependentResource() == dependentResource).findFirst();
+    return actual.stream()
+        .filter(rr -> rr.getDependentResource() == dependentResource)
+        .findFirst();
   }
 
   public ExecutionAssert reconciledInOrder(DependentResource<?, ?>... dependentResources) {
@@ -64,9 +65,8 @@ public class ExecutionAssert
     for (int i = 0; i < dependentResources.length - 1; i++) {
       checkIfReconciled(i, dependentResources);
       checkIfReconciled(i + 1, dependentResources);
-      if (getActualDependentResources()
-          .indexOf(dependentResources[i]) > getActualDependentResources()
-              .indexOf(dependentResources[i + 1])) {
+      if (getActualDependentResources().indexOf(dependentResources[i])
+          > getActualDependentResources().indexOf(dependentResources[i + 1])) {
         failWithMessage(
             "Dependent resource on index %d reconciled after the one on index %d", i, i + 1);
       }

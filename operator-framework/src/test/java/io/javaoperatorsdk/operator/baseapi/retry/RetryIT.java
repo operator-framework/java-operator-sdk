@@ -20,14 +20,14 @@ class RetryIT {
   public static final int NUMBER_FAILED_EXECUTIONS = 3;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(
-              new RetryTestCustomReconciler(NUMBER_FAILED_EXECUTIONS),
-              new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
-                  .setMaxAttempts(MAX_RETRY_ATTEMPTS))
-          .build();
-
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(
+          new RetryTestCustomReconciler(NUMBER_FAILED_EXECUTIONS),
+          new GenericRetry()
+              .setInitialInterval(RETRY_INTERVAL)
+              .withLinearRetry()
+              .setMaxAttempts(MAX_RETRY_ATTEMPTS))
+      .build();
 
   @Test
   void retryFailedExecution() {
@@ -36,21 +36,15 @@ class RetryIT {
     operator.create(resource);
 
     await("cr status updated")
-        .pollDelay(
-            RETRY_INTERVAL * (NUMBER_FAILED_EXECUTIONS + 2),
-            TimeUnit.MILLISECONDS)
-        .pollInterval(
-            RETRY_INTERVAL,
-            TimeUnit.MILLISECONDS)
+        .pollDelay(RETRY_INTERVAL * (NUMBER_FAILED_EXECUTIONS + 2), TimeUnit.MILLISECONDS)
+        .pollInterval(RETRY_INTERVAL, TimeUnit.MILLISECONDS)
         .atMost(5, TimeUnit.SECONDS)
         .untilAsserted(() -> {
-          assertThat(
-              TestUtils.getNumberOfExecutions(operator))
+          assertThat(TestUtils.getNumberOfExecutions(operator))
               .isEqualTo(NUMBER_FAILED_EXECUTIONS + 1);
 
           RetryTestCustomResource finalResource =
-              operator.get(RetryTestCustomResource.class,
-                  resource.getMetadata().getName());
+              operator.get(RetryTestCustomResource.class, resource.getMetadata().getName());
           assertThat(finalResource.getStatus().getState())
               .isEqualTo(RetryTestCustomResourceStatus.State.SUCCESS);
         });
@@ -58,10 +52,7 @@ class RetryIT {
 
   public static RetryTestCustomResource createTestCustomResource(String id) {
     RetryTestCustomResource resource = new RetryTestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName("retrysource-" + id)
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName("retrysource-" + id).build());
     resource.setKind("retrysample");
     resource.setSpec(new RetryTestCustomResourceSpec());
     resource.getSpec().setValue(id);

@@ -34,13 +34,12 @@ public class TestUtils {
 
   public static TestCustomResource testCustomResource(ResourceID id) {
     TestCustomResource resource = new TestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(id.getName())
-            .withResourceVersion("1")
-            .withGeneration(1L)
-            .withNamespace(id.getNamespace().orElse(null))
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder()
+        .withName(id.getName())
+        .withResourceVersion("1")
+        .withGeneration(1L)
+        .withNamespace(id.getNamespace().orElse(null))
+        .build());
     resource.getMetadata().setAnnotations(new HashMap<>());
     resource.setSpec(new TestCustomResourceSpec());
     resource.getSpec().setConfigMapName("test-config-map");
@@ -53,5 +52,4 @@ public class TestUtils {
     customResource.getMetadata().setDeletionTimestamp("2019-8-10");
     return customResource;
   }
-
 }

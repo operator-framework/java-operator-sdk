@@ -28,7 +28,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
-public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
+public abstract class AbstractTestReconciler<
+        P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
     implements Reconciler<P> {
 
   private static final Logger log =
@@ -37,9 +38,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   public static final String DATA_KEY = "dataKey";
 
   @Override
-  public UpdateControl<P> reconcile(
-      P resource,
-      Context<P> context) {
+  public UpdateControl<P> reconcile(P resource, Context<P> context) {
     var maybeConfigMap = context.getSecondaryResource(ConfigMap.class);
     maybeConfigMap.ifPresentOrElse(
         cm -> updateConfigMapIfNeeded(cm, resource, context),
@@ -70,19 +69,20 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   @Override
-  public List<EventSource<?, P>> prepareEventSources(
-      EventSourceContext<P> context) {
+  public List<EventSource<?, P>> prepareEventSources(EventSourceContext<P> context) {
 
-    var boundedItemStore =
-        boundedItemStore(new KubernetesClientBuilder().build(),
-            ConfigMap.class, Duration.ofMinutes(1), 1); // setting max size for testing purposes
+    var boundedItemStore = boundedItemStore(
+        new KubernetesClientBuilder().build(),
+        ConfigMap.class,
+        Duration.ofMinutes(1),
+        1); // setting max size for testing purposes
 
     var es = new InformerEventSource<>(
         InformerEventSourceConfiguration.from(ConfigMap.class, primaryClass())
             .withItemStore(boundedItemStore)
-            .withSecondaryToPrimaryMapper(
-                Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
-                    this instanceof BoundedCacheClusterScopeTestReconciler))
+            .withSecondaryToPrimaryMapper(Mappers.fromOwnerReferences(
+                context.getPrimaryResourceClass(),
+                this instanceof BoundedCacheClusterScopeTestReconciler))
             .build(),
         context);
 
@@ -96,7 +96,8 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   public static <R extends HasMetadata> BoundedItemStore<R> boundedItemStore(
-      KubernetesClient client, Class<R> rClass,
+      KubernetesClient client,
+      Class<R> rClass,
       Duration accessExpireDuration,
       // max size is only for testing purposes
       long cacheMaxSize) {
@@ -108,5 +109,4 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   protected abstract Class<P> primaryClass();
-
 }

@@ -10,5 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("srd")
 public class SpecialResourceCustomResource extends CustomResource<SpecialResourceSpec, Void>
-    implements Namespaced {
-}
+    implements Namespaced {}

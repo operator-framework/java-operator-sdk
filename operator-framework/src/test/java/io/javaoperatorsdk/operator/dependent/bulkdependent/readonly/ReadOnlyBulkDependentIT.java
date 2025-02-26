@@ -20,10 +20,9 @@ public class ReadOnlyBulkDependentIT {
   public static final String TEST = "test";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new ReadOnlyBulkReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ReadOnlyBulkReconciler())
+      .build();
 
   @Test
   void readOnlyBulkDependent() {
@@ -59,13 +58,10 @@ public class ReadOnlyBulkDependentIT {
 
   BulkDependentTestCustomResource testCustomResource() {
     BulkDependentTestCustomResource customResource = new BulkDependentTestCustomResource();
-    customResource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST)
-        .build());
+    customResource.setMetadata(new ObjectMetaBuilder().withName(TEST).build());
     customResource.setSpec(new BulkDependentTestSpec());
     customResource.getSpec().setNumberOfResources(EXPECTED_NUMBER_OF_RESOURCES);
 
     return customResource;
   }
-
 }

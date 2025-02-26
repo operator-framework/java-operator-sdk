@@ -9,8 +9,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(informer = @Informer(
-    labelSelector = "app.kubernetes.io/managed-by=tomcat-operator"))
+@KubernetesDependent(
+    informer = @Informer(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator"))
 public class DeploymentDependentResource
     extends CRUDKubernetesDependentResource<Deployment, Tomcat> {
 
@@ -37,15 +37,21 @@ public class DeploymentDependentResource
         .addToLabels("app.kubernetes.io/managed-by", "tomcat-operator")
         .endMetadata()
         .editSpec()
-        .editSelector().addToMatchLabels("app", tomcatName).endSelector()
+        .editSelector()
+        .addToMatchLabels("app", tomcatName)
+        .endSelector()
         .withReplicas(tomcat.getSpec().getReplicas())
         // set tomcat version
         .editTemplate()
         // make sure label selector matches label (which has to be matched by service selector
         // too)
-        .editMetadata().addToLabels("app", tomcatName).endMetadata()
+        .editMetadata()
+        .addToLabels("app", tomcatName)
+        .endMetadata()
         .editSpec()
-        .editFirstContainer().withImage(tomcatImage(tomcat)).endContainer()
+        .editFirstContainer()
+        .withImage(tomcatImage(tomcat))
+        .endContainer()
         .endSpec()
         .endTemplate()
         .endSpec()

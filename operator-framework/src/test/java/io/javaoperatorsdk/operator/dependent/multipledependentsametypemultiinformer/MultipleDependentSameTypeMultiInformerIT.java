@@ -22,10 +22,9 @@ class MultipleDependentSameTypeMultiInformerIT {
   public static final int SECONDS = 30;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleManagedDependentResourceMultiInformerReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleManagedDependentResourceMultiInformerReconciler())
+      .build();
 
   @Test
   void handlesCrudOperations() {
@@ -41,11 +40,15 @@ class MultipleDependentSameTypeMultiInformerIT {
     assertConfigMapsDeleted();
   }
 
-
   private void assertConfigMapsPresent(String expectedData) {
     await().untilAsserted(() -> {
-      var maps = operator.getKubernetesClient().configMaps()
-          .inNamespace(operator.getNamespace()).list().getItems().stream()
+      var maps = operator
+          .getKubernetesClient()
+          .configMaps()
+          .inNamespace(operator.getNamespace())
+          .list()
+          .getItems()
+          .stream()
           .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
           .collect(Collectors.toList());
       assertThat(maps).hasSize(2);
@@ -55,8 +58,13 @@ class MultipleDependentSameTypeMultiInformerIT {
 
   private void assertConfigMapsDeleted() {
     await().atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS)).untilAsserted(() -> {
-      var maps = operator.getKubernetesClient().configMaps()
-          .inNamespace(operator.getNamespace()).list().getItems().stream()
+      var maps = operator
+          .getKubernetesClient()
+          .configMaps()
+          .inNamespace(operator.getNamespace())
+          .list()
+          .getItems()
+          .stream()
           .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
           .collect(Collectors.toList());
       assertThat(maps).hasSize(0);
@@ -65,9 +73,7 @@ class MultipleDependentSameTypeMultiInformerIT {
 
   private MultipleManagedDependentResourceMultiInformerCustomResource testResource() {
     var res = new MultipleManagedDependentResourceMultiInformerCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new MultipleManagedDependentResourceMultiInformerSpec());
     res.getSpec().setValue(DEFAULT_SPEC_VALUE);

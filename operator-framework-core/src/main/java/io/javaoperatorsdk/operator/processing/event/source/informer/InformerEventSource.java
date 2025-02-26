@@ -78,9 +78,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration,
+    this(
+        configuration,
         configuration.getKubernetesClient().orElse(context.getClient()),
-        context.getControllerConfiguration().getConfigurationService()
+        context
+            .getControllerConfiguration()
+            .getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
 
@@ -89,14 +92,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private InformerEventSource(InformerEventSourceConfiguration<R> configuration,
+  private InformerEventSource(
+      InformerEventSourceConfiguration<R> configuration,
       KubernetesClient client,
       boolean parseResourceVersions) {
-    super(configuration.name(),
-        configuration.getGroupVersionKind()
+    super(
+        configuration.name(),
+        configuration
+            .getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
-        configuration, parseResourceVersions);
+        configuration,
+        parseResourceVersions);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
@@ -117,13 +124,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void onAdd(R newResource) {
     if (log.isDebugEnabled()) {
-      log.debug("On add event received for resource id: {} type: {} version: {}",
+      log.debug(
+          "On add event received for resource id: {} type: {} version: {}",
           ResourceID.fromResource(newResource),
-          resourceType().getSimpleName(), newResource.getMetadata().getResourceVersion());
+          resourceType().getSimpleName(),
+          newResource.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    onAddOrUpdate(Operation.ADD, newResource, null,
-        () -> InformerEventSource.super.onAdd(newResource));
+    onAddOrUpdate(
+        Operation.ADD, newResource, null, () -> InformerEventSource.super.onAdd(newResource));
   }
 
   @Override
@@ -137,14 +146,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           oldObject.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
-    onAddOrUpdate(Operation.UPDATE, newObject, oldObject,
+    onAddOrUpdate(
+        Operation.UPDATE,
+        newObject,
+        oldObject,
         () -> InformerEventSource.super.onUpdate(oldObject, newObject));
   }
 
   @Override
   public void onDelete(R resource, boolean b) {
     if (log.isDebugEnabled()) {
-      log.debug("On delete event received for resource id: {} type: {}",
+      log.debug(
+          "On delete event received for resource id: {} type: {}",
           ResourceID.fromResource(resource),
           resourceType().getSimpleName());
     }
@@ -155,8 +168,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
   }
 
-  private synchronized void onAddOrUpdate(Operation operation, R newObject, R oldObject,
-      Runnable superOnOp) {
+  private synchronized void onAddOrUpdate(
+      Operation operation, R newObject, R oldObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
 
     if (canSkipEvent(newObject, oldObject, resourceID)) {
@@ -187,10 +200,14 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (res.isEmpty()) {
       return isEventKnownFromAnnotation(newObject, oldObject);
     }
-    boolean resVersionsEqual = newObject.getMetadata().getResourceVersion()
+    boolean resVersionsEqual = newObject
+        .getMetadata()
+        .getResourceVersion()
         .equals(res.get().getMetadata().getResourceVersion());
-    log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
-        resourceID, resVersionsEqual);
+    log.debug(
+        "Resource found in temporal cache for id: {} resource versions equal: {}",
+        resourceID,
+        resVersionsEqual);
     return resVersionsEqual;
   }
 
@@ -202,7 +219,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       if (id.equals(parts[0])) {
         if (oldObject == null && parts.length == 1) {
           known = true;
-        } else if (oldObject != null && parts.length == 2
+        } else if (oldObject != null
+            && parts.length == 2
             && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
           known = true;
         }
@@ -217,19 +235,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
-    primaryResourceIdSet.forEach(
-        resourceId -> {
-          Event event = new Event(resourceId);
-          /*
-           * In fabric8 client for certain cases informers can be created on in a way that they are
-           * automatically started, what would cause a NullPointerException here, since an event
-           * might be received between creation and registration.
-           */
-          final EventHandler eventHandler = getEventHandler();
-          if (eventHandler != null) {
-            eventHandler.handleEvent(event);
-          }
-        });
+    primaryResourceIdSet.forEach(resourceId -> {
+      Event event = new Event(resourceId);
+      /*
+       * In fabric8 client for certain cases informers can be created on in a way that they are
+       * automatically started, what would cause a NullPointerException here, since an event
+       * might be received between creation and registration.
+       */
+      final EventHandler eventHandler = getEventHandler();
+      if (eventHandler != null) {
+        eventHandler.handleEvent(event);
+      }
+    });
   }
 
   @Override
@@ -240,20 +257,24 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       secondaryIDs = primaryToSecondaryIndex.getSecondaryResources(primaryResourceID);
       log.debug(
           "Using PrimaryToSecondaryIndex to find secondary resources for primary: {}. Found secondary ids: {} ",
-          primaryResourceID, secondaryIDs);
+          primaryResourceID,
+          secondaryIDs);
     } else {
       secondaryIDs = primaryToSecondaryMapper.toSecondaryResourceIDs(primary);
       log.debug(
           "Using PrimaryToSecondaryMapper to find secondary resources for primary: {}. Found secondary ids: {} ",
-          primary, secondaryIDs);
+          primary,
+          secondaryIDs);
     }
-    return secondaryIDs.stream().map(this::get).flatMap(Optional::stream)
+    return secondaryIDs.stream()
+        .map(this::get)
+        .flatMap(Optional::stream)
         .collect(Collectors.toSet());
   }
 
   @Override
-  public synchronized void handleRecentResourceUpdate(ResourceID resourceID, R resource,
-      R previousVersionOfResource) {
+  public synchronized void handleRecentResourceUpdate(
+      ResourceID resourceID, R resource, R previousVersionOfResource) {
     handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource);
   }
 
@@ -264,8 +285,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    temporaryResourceCache.putResource(newResource, Optional.ofNullable(oldResource)
-        .map(r -> r.getMetadata().getResourceVersion()).orElse(null));
+    temporaryResourceCache.putResource(
+        newResource,
+        Optional.ofNullable(oldResource)
+            .map(r -> r.getMetadata().getResourceVersion())
+            .orElse(null));
   }
 
   private boolean useSecondaryToPrimaryIndex() {
@@ -289,8 +313,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
-    return (onDeleteFilter == null || onDeleteFilter.accept(resource, b)) &&
-        (genericFilter == null || genericFilter.accept(resource));
+    return (onDeleteFilter == null || onDeleteFilter.accept(resource, b))
+        && (genericFilter == null || genericFilter.accept(resource));
   }
 
   /**
@@ -300,12 +324,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
    * @param target mutable resource that will be returned
    */
   public R addPreviousAnnotation(String resourceVersion, R target) {
-    target.getMetadata().getAnnotations().put(PREVIOUS_ANNOTATION_KEY,
-        id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
+    target
+        .getMetadata()
+        .getAnnotations()
+        .put(
+            PREVIOUS_ANNOTATION_KEY,
+            id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
     return target;
   }
 
   private enum Operation {
-    ADD, UPDATE
+    ADD,
+    UPDATE
   }
 }

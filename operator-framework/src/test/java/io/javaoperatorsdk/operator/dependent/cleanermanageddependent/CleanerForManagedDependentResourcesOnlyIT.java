@@ -14,26 +14,27 @@ class CleanerForManagedDependentResourcesOnlyIT {
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new CleanerForManagedDependentTestReconciler())
-          .build();
-
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new CleanerForManagedDependentTestReconciler())
+      .build();
 
   @Test
   void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
     var testResource = createTestResource();
     operator.create(testResource);
 
-    await().until(
-        () -> !operator.get(CleanerForManagedDependentCustomResource.class, TEST_RESOURCE_NAME)
-            .getMetadata().getFinalizers().isEmpty());
+    await().until(() -> !operator
+        .get(CleanerForManagedDependentCustomResource.class, TEST_RESOURCE_NAME)
+        .getMetadata()
+        .getFinalizers()
+        .isEmpty());
 
     operator.delete(testResource);
 
-    await().until(
-        () -> operator.get(CleanerForManagedDependentCustomResource.class,
-            TEST_RESOURCE_NAME) == null);
+    await()
+        .until(
+            () -> operator.get(CleanerForManagedDependentCustomResource.class, TEST_RESOURCE_NAME)
+                == null);
 
     CleanerForManagedDependentTestReconciler reconciler =
         (CleanerForManagedDependentTestReconciler) operator.getFirstReconciler();
@@ -48,5 +49,4 @@ class CleanerForManagedDependentResourcesOnlyIT {
     cr.getMetadata().setName(TEST_RESOURCE_NAME);
     return cr;
   }
-
 }

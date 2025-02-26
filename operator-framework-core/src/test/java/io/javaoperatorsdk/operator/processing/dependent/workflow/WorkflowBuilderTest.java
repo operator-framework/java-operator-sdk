@@ -25,5 +25,4 @@ class WorkflowBuilderTest {
 
     assertThat(workflow.hasCleaner()).isTrue();
   }
-
 }

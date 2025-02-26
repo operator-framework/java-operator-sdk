@@ -31,8 +31,9 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class ExternalStateReconciler
-    implements Reconciler<ExternalStateCustomResource>, Cleaner<ExternalStateCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<ExternalStateCustomResource>,
+        Cleaner<ExternalStateCustomResource>,
+        TestExecutionInfoProvider {
 
   public static final String ID_KEY = "id";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -40,7 +41,8 @@ public class ExternalStateReconciler
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   InformerEventSource<ConfigMap, ExternalStateCustomResource> configMapEventSource;
-  PerResourcePollingEventSource<ExternalResource, ExternalStateCustomResource> externalResourceEventSource;
+  PerResourcePollingEventSource<ExternalResource, ExternalStateCustomResource>
+      externalResourceEventSource;
 
   @Override
   public UpdateControl<ExternalStateCustomResource> reconcile(
@@ -48,30 +50,34 @@ public class ExternalStateReconciler
     numberOfExecutions.addAndGet(1);
 
     var externalResource = context.getSecondaryResource(ExternalResource.class);
-    externalResource.ifPresentOrElse(r -> {
-      if (!r.getData().equals(resource.getSpec().getData())) {
-        updateExternalResource(resource, r, context);
-      }
-    }, () -> {
-      if (externalResource.isEmpty()) {
-        createExternalResource(resource, context);
-      }
-    });
-
+    externalResource.ifPresentOrElse(
+        r -> {
+          if (!r.getData().equals(resource.getSpec().getData())) {
+            updateExternalResource(resource, r, context);
+          }
+        },
+        () -> {
+          if (externalResource.isEmpty()) {
+            createExternalResource(resource, context);
+          }
+        });
 
     return UpdateControl.noUpdate();
   }
 
-  private void updateExternalResource(ExternalStateCustomResource resource,
-      ExternalResource externalResource, Context<ExternalStateCustomResource> context) {
-    var newResource = new ExternalResource(externalResource.getId(), resource.getSpec().getData());
+  private void updateExternalResource(
+      ExternalStateCustomResource resource,
+      ExternalResource externalResource,
+      Context<ExternalStateCustomResource> context) {
+    var newResource =
+        new ExternalResource(externalResource.getId(), resource.getSpec().getData());
     externalService.update(newResource);
-    externalResourceEventSource.handleRecentResourceUpdate(ResourceID.fromResource(resource),
-        newResource, externalResource);
+    externalResourceEventSource.handleRecentResourceUpdate(
+        ResourceID.fromResource(resource), newResource, externalResource);
   }
 
-  private void createExternalResource(ExternalStateCustomResource resource,
-      Context<ExternalStateCustomResource> context) {
+  private void createExternalResource(
+      ExternalStateCustomResource resource, Context<ExternalStateCustomResource> context) {
     var createdResource =
         externalService.create(new ExternalResource(resource.getSpec().getData()));
     var configMap = new ConfigMapBuilder()
@@ -93,12 +99,16 @@ public class ExternalStateReconciler
   }
 
   @Override
-  public DeleteControl cleanup(ExternalStateCustomResource resource,
-      Context<ExternalStateCustomResource> context) {
+  public DeleteControl cleanup(
+      ExternalStateCustomResource resource, Context<ExternalStateCustomResource> context) {
     var externalResource = context.getSecondaryResource(ExternalResource.class);
     externalResource.ifPresent(er -> externalService.delete(er.getId()));
-    context.getClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
-        .withName(resource.getMetadata().getName()).delete();
+    context
+        .getClient()
+        .configMaps()
+        .inNamespace(resource.getMetadata().getNamespace())
+        .withName(resource.getMetadata().getName())
+        .delete();
     return DeleteControl.defaultDelete();
   }
 
@@ -116,8 +126,9 @@ public class ExternalStateReconciler
         context);
     configMapEventSource.setEventSourcePriority(EventSourceStartPriority.RESOURCE_STATE_LOADER);
 
-    final PerResourcePollingEventSource.ResourceFetcher<ExternalResource, ExternalStateCustomResource> fetcher =
-        (ExternalStateCustomResource primaryResource) -> {
+    final PerResourcePollingEventSource.ResourceFetcher<
+            ExternalResource, ExternalStateCustomResource>
+        fetcher = (ExternalStateCustomResource primaryResource) -> {
           var configMap =
               configMapEventSource.getSecondaryResource(primaryResource).orElse(null);
           if (configMap == null) {
@@ -127,11 +138,11 @@ public class ExternalStateReconciler
           var externalResource = externalService.read(id);
           return externalResource.map(Set::of).orElseGet(Collections::emptySet);
         };
-    externalResourceEventSource =
-        new PerResourcePollingEventSource<>(ExternalResource.class, context,
-            new PerResourcePollingConfigurationBuilder<>(fetcher, Duration.ofMillis(300L)).build());
+    externalResourceEventSource = new PerResourcePollingEventSource<>(
+        ExternalResource.class,
+        context,
+        new PerResourcePollingConfigurationBuilder<>(fetcher, Duration.ofMillis(300L)).build());
 
-    return Arrays.asList(configMapEventSource,
-        externalResourceEventSource);
+    return Arrays.asList(configMapEventSource, externalResourceEventSource);
   }
 }

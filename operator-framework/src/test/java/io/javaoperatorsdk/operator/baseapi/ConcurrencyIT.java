@@ -26,8 +26,9 @@ class ConcurrencyIT {
   private static final Logger log = LoggerFactory.getLogger(ConcurrencyIT.class);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new TestReconciler(true))
+      .build();
 
   @Test
   void manyResourcesGetCreatedUpdatedAndDeleted() throws InterruptedException {
@@ -37,28 +38,22 @@ class ConcurrencyIT {
       operator.resources(TestCustomResource.class).resource(tcr).create();
     }
 
-    await()
-        .atMost(1, TimeUnit.MINUTES)
-        .untilAsserted(
-            () -> {
-              List<ConfigMap> items =
-                  operator.resources(ConfigMap.class)
-                      .withLabel(
-                          "managedBy", TestReconciler.class.getSimpleName())
-                      .list()
-                      .getItems();
-              assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
-            });
+    await().atMost(1, TimeUnit.MINUTES).untilAsserted(() -> {
+      List<ConfigMap> items = operator
+          .resources(ConfigMap.class)
+          .withLabel("managedBy", TestReconciler.class.getSimpleName())
+          .list()
+          .getItems();
+      assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
+    });
 
     log.info("Updating {} resources", NUMBER_OF_RESOURCES_UPDATED);
     // update some resources
     for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
       TestCustomResource tcr =
-          operator.get(TestCustomResource.class,
-              TestUtils.TEST_CUSTOM_RESOURCE_PREFIX + i);
+          operator.get(TestCustomResource.class, TestUtils.TEST_CUSTOM_RESOURCE_PREFIX + i);
       tcr.getSpec().setValue(i + UPDATED_SUFFIX);
-      operator.resources(TestCustomResource.class).resource(tcr)
-          .createOrReplace();
+      operator.resources(TestCustomResource.class).resource(tcr).createOrReplace();
     }
     // sleep for a short time to make variability to the test, so some updates are not
     // executed before delete
@@ -70,30 +65,21 @@ class ConcurrencyIT {
       operator.resources(TestCustomResource.class).resource(tcr).delete();
     }
 
-    await()
-        .atMost(1, TimeUnit.MINUTES)
-        .untilAsserted(
-            () -> {
-              List<ConfigMap> items =
-                  operator.resources(ConfigMap.class)
-                      .withLabel(
-                          "managedBy", TestReconciler.class.getSimpleName())
-                      .list()
-                      .getItems();
-              // reducing configmaps to names only - better for debugging
-              List<String> itemDescs =
-                  items.stream()
-                      .map(configMap -> configMap.getMetadata().getName())
-                      .collect(Collectors.toList());
-              assertThat(itemDescs)
-                  .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
+    await().atMost(1, TimeUnit.MINUTES).untilAsserted(() -> {
+      List<ConfigMap> items = operator
+          .resources(ConfigMap.class)
+          .withLabel("managedBy", TestReconciler.class.getSimpleName())
+          .list()
+          .getItems();
+      // reducing configmaps to names only - better for debugging
+      List<String> itemDescs = items.stream()
+          .map(configMap -> configMap.getMetadata().getName())
+          .collect(Collectors.toList());
+      assertThat(itemDescs).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
 
-              List<TestCustomResource> crs =
-                  operator.resources(TestCustomResource.class)
-                      .list()
-                      .getItems();
-              assertThat(crs)
-                  .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
-            });
+      List<TestCustomResource> crs =
+          operator.resources(TestCustomResource.class).list().getItems();
+      assertThat(crs).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
+    });
   }
 }

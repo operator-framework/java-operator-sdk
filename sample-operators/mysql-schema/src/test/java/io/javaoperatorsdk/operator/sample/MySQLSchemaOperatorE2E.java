@@ -36,14 +36,18 @@ class MySQLSchemaOperatorE2E {
 
   static final String MY_SQL_NS = "mysql";
 
-  private final static List<HasMetadata> infrastructure = new ArrayList<>();
+  private static final List<HasMetadata> infrastructure = new ArrayList<>();
   public static final String TEST_RESOURCE_NAME = "mydb1";
 
   static {
-    infrastructure.add(
-        new NamespaceBuilder().withNewMetadata().withName(MY_SQL_NS).endMetadata().build());
+    infrastructure.add(new NamespaceBuilder()
+        .withNewMetadata()
+        .withName(MY_SQL_NS)
+        .endMetadata()
+        .build());
     try {
-      infrastructure.addAll(client.load(new FileInputStream("k8s/mysql-db.yaml")).items());
+      infrastructure.addAll(
+          client.load(new FileInputStream("k8s/mysql-db.yaml")).items());
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
@@ -57,18 +61,18 @@ class MySQLSchemaOperatorE2E {
   }
 
   @RegisterExtension
-  AbstractOperatorExtension operator =
-      isLocal()
-          ? LocallyRunOperatorExtension.builder()
-              .withReconciler(new MySQLSchemaReconciler()) // configuration for schema comes from
-                                                           // SchemaDependentResource annotation
-              .withInfrastructure(infrastructure)
-              .withPortForward(MY_SQL_NS, "app", "mysql", 3306, SchemaDependentResource.LOCAL_PORT)
-              .build()
-          : ClusterDeployedOperatorExtension.builder()
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
-              .withInfrastructure(infrastructure)
-              .build();
+  AbstractOperatorExtension operator = isLocal()
+      ? LocallyRunOperatorExtension.builder()
+          .withReconciler(new MySQLSchemaReconciler()) // configuration for schema comes from
+          // SchemaDependentResource annotation
+          .withInfrastructure(infrastructure)
+          .withPortForward(MY_SQL_NS, "app", "mysql", 3306, SchemaDependentResource.LOCAL_PORT)
+          .build()
+      : ClusterDeployedOperatorExtension.builder()
+          .withOperatorDeployment(
+              client.load(new FileInputStream("k8s/operator.yaml")).items())
+          .withInfrastructure(infrastructure)
+          .build();
 
   public MySQLSchemaOperatorE2E() throws FileNotFoundException {}
 
@@ -76,9 +80,10 @@ class MySQLSchemaOperatorE2E {
   void test() {
 
     MySQLSchema testSchema = new MySQLSchema();
-    testSchema.setMetadata(
-        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(operator.getNamespace())
-            .build());
+    testSchema.setMetadata(new ObjectMetaBuilder()
+        .withName(TEST_RESOURCE_NAME)
+        .withNamespace(operator.getNamespace())
+        .build());
     testSchema.setSpec(new SchemaSpec());
     testSchema.getSpec().setEncoding("utf8");
 
@@ -86,38 +91,31 @@ class MySQLSchemaOperatorE2E {
     client.resource(testSchema).createOrReplace();
 
     log.info("Waiting 2 minutes for expected resources to be created and updated");
-    await()
-        .atMost(2, MINUTES)
-        .ignoreExceptions()
-        .untilAsserted(
-            () -> {
-              MySQLSchema updatedSchema =
-                  client
-                      .resources(MySQLSchema.class)
-                      .inNamespace(operator.getNamespace())
-                      .withName(testSchema.getMetadata().getName())
-                      .get();
-              assertThat(updatedSchema.getStatus(), is(notNullValue()));
-              assertThat(updatedSchema.getStatus().getStatus(), equalTo("CREATED"));
-              assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
-              assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
-            });
+    await().atMost(2, MINUTES).ignoreExceptions().untilAsserted(() -> {
+      MySQLSchema updatedSchema = client
+          .resources(MySQLSchema.class)
+          .inNamespace(operator.getNamespace())
+          .withName(testSchema.getMetadata().getName())
+          .get();
+      assertThat(updatedSchema.getStatus(), is(notNullValue()));
+      assertThat(updatedSchema.getStatus().getStatus(), equalTo("CREATED"));
+      assertThat(updatedSchema.getStatus().getSecretName(), is(notNullValue()));
+      assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
+    });
 
-    client.resources(MySQLSchema.class).inNamespace(operator.getNamespace())
-        .withName(testSchema.getMetadata().getName()).delete();
+    client
+        .resources(MySQLSchema.class)
+        .inNamespace(operator.getNamespace())
+        .withName(testSchema.getMetadata().getName())
+        .delete();
 
-    await()
-        .atMost(2, MINUTES)
-        .ignoreExceptions()
-        .untilAsserted(
-            () -> {
-              MySQLSchema updatedSchema =
-                  client
-                      .resources(MySQLSchema.class)
-                      .inNamespace(operator.getNamespace())
-                      .withName(testSchema.getMetadata().getName())
-                      .get();
-              assertThat(updatedSchema, is(nullValue()));
-            });
+    await().atMost(2, MINUTES).ignoreExceptions().untilAsserted(() -> {
+      MySQLSchema updatedSchema = client
+          .resources(MySQLSchema.class)
+          .inNamespace(operator.getNamespace())
+          .withName(testSchema.getMetadata().getName())
+          .get();
+      assertThat(updatedSchema, is(nullValue()));
+    });
   }
 }

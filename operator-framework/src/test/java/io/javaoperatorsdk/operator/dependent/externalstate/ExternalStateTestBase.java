@@ -42,8 +42,8 @@ public abstract class ExternalStateTestBase {
     });
   }
 
-  private void assertResourcesCreated(ExternalStateCustomResource resource,
-      String initialTestData) {
+  private void assertResourcesCreated(
+      ExternalStateCustomResource resource, String initialTestData) {
     await().untilAsserted(() -> {
       var cm = extension().get(ConfigMap.class, resource.getMetadata().getName());
       var resources = externalService.listResources();
@@ -57,9 +57,7 @@ public abstract class ExternalStateTestBase {
 
   private ExternalStateCustomResource testResource() {
     var res = new ExternalStateCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new ExternalStateSpec());
     res.getSpec().setData(INITIAL_TEST_DATA);
@@ -67,5 +65,4 @@ public abstract class ExternalStateTestBase {
   }
 
   abstract LocallyRunOperatorExtension extension();
-
 }

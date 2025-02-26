@@ -23,16 +23,19 @@ public class CustomMappingConfigMapDependentResource
   public static final String CUSTOM_TYPE_KEY = "customTypeKey";
   public static final String KEY = "key";
 
-  private static final SecondaryToPrimaryMapper<ConfigMap> mapper =
-      Mappers.fromAnnotation(CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY, CUSTOM_TYPE_KEY,
-          DependentCustomMappingCustomResource.class);
+  private static final SecondaryToPrimaryMapper<ConfigMap> mapper = Mappers.fromAnnotation(
+      CUSTOM_NAME_KEY,
+      CUSTOM_NAMESPACE_KEY,
+      CUSTOM_TYPE_KEY,
+      DependentCustomMappingCustomResource.class);
 
   public CustomMappingConfigMapDependentResource() {
     super(ConfigMap.class);
   }
 
   @Override
-  protected ConfigMap desired(DependentCustomMappingCustomResource primary,
+  protected ConfigMap desired(
+      DependentCustomMappingCustomResource primary,
       Context<DependentCustomMappingCustomResource> context) {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder()
@@ -44,17 +47,14 @@ public class CustomMappingConfigMapDependentResource
   }
 
   @Override
-  protected void addSecondaryToPrimaryMapperAnnotations(ConfigMap desired,
-      DependentCustomMappingCustomResource primary) {
-    addSecondaryToPrimaryMapperAnnotations(desired, primary, CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY,
-        CUSTOM_TYPE_KEY);
+  protected void addSecondaryToPrimaryMapperAnnotations(
+      ConfigMap desired, DependentCustomMappingCustomResource primary) {
+    addSecondaryToPrimaryMapperAnnotations(
+        desired, primary, CUSTOM_NAME_KEY, CUSTOM_NAMESPACE_KEY, CUSTOM_TYPE_KEY);
   }
-
 
   @Override
   public Set<ResourceID> toPrimaryResourceIDs(ConfigMap resource) {
     return mapper.toPrimaryResourceIDs(resource);
   }
-
-
 }

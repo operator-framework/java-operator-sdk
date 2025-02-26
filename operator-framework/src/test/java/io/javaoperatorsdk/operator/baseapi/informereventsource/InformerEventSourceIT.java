@@ -24,10 +24,9 @@ class InformerEventSourceIT {
   public static final String UPDATE_STATUS_MESSAGE = "Updated Status";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new InformerEventSourceTestCustomReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new InformerEventSourceTestCustomReconciler())
+      .build();
 
   @Test
   void testUsingInformerToWatchChangesOfConfigMap() {
@@ -58,8 +57,9 @@ class InformerEventSourceIT {
     }
 
     waitForCRStatusValue(MISSING_CONFIG_MAP);
-    assertThat(((InformerEventSourceTestCustomReconciler) operator.getReconcilers().get(0))
-        .getNumberOfExecutions())
+    assertThat(
+            ((InformerEventSourceTestCustomReconciler) operator.getReconcilers().get(0))
+                .getNumberOfExecutions())
         .isEqualTo(3);
   }
 
@@ -87,11 +87,9 @@ class InformerEventSourceIT {
 
   private void waitForCRStatusValue(String value) {
     await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      var cr =
-          operator.get(InformerEventSourceTestCustomResource.class, RESOURCE_NAME);
+      var cr = operator.get(InformerEventSourceTestCustomResource.class, RESOURCE_NAME);
       assertThat(cr.getStatus()).isNotNull();
       assertThat(cr.getStatus().getConfigMapValue()).isEqualTo(value);
     });
   }
-
 }

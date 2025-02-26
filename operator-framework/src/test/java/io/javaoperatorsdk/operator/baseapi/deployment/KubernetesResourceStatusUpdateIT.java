@@ -26,8 +26,9 @@ import static org.awaitility.Awaitility.await;
 class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new DeploymentReconciler()).build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new DeploymentReconciler())
+      .build();
 
   @Test
   void testReconciliationOfNonCustomResourceAndStatusUpdate() {
@@ -39,8 +40,8 @@ class KubernetesResourceStatusUpdateIT {
       // wait until the pod is ready, if not this is causing some test stability issues with
       // namespace cleanup in k8s version 1.22
       assertThat(d.getStatus().getReadyReplicas()).isGreaterThanOrEqualTo(1);
-      assertThat(
-          d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
+      assertThat(d.getStatus().getConditions().stream()
+              .filter(c -> c.getMessage().equals(STATUS_MESSAGE))
               .count())
           .isEqualTo(1);
     });
@@ -51,10 +52,7 @@ class KubernetesResourceStatusUpdateIT {
     Map<String, String> labels = new HashMap<>();
     labels.put("test", "KubernetesResourceStatusUpdateIT");
     resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName("test-deployment")
-            .withLabels(labels)
-            .build());
+        new ObjectMetaBuilder().withName("test-deployment").withLabels(labels).build());
     DeploymentSpec spec = new DeploymentSpec();
     resource.setSpec(spec);
     spec.setReplicas(1);

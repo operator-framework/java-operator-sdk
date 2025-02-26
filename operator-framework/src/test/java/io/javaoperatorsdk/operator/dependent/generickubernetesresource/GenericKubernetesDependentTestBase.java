@@ -13,7 +13,8 @@ import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLE
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public abstract class GenericKubernetesDependentTestBase<R extends CustomResource<GenericKubernetesDependentSpec, Void>> {
+public abstract class GenericKubernetesDependentTestBase<
+    R extends CustomResource<GenericKubernetesDependentSpec, Void>> {
 
   public static final String INITIAL_DATA = "Initial data";
   public static final String CHANGED_DATA = "Changed data";
@@ -48,5 +49,4 @@ public abstract class GenericKubernetesDependentTestBase<R extends CustomResourc
   public abstract LocallyRunOperatorExtension extension();
 
   public abstract R testResource(String name, String data);
-
 }

@@ -36,7 +36,6 @@ public interface Metrics {
    */
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
-
   /**
    * Called right before a resource is dispatched to the ExecutorService for reconciliation.
    *
@@ -44,8 +43,8 @@ public interface Metrics {
    * @param retryInfo the current retry state information for the reconciliation request
    * @param metadata metadata associated with the resource being processed
    */
-  default void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfo,
-      Map<String, Object> metadata) {}
+  default void reconcileCustomResource(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
   /**
    * Called when a precedent reconciliation for the resource associated with the specified
@@ -56,15 +55,13 @@ public interface Metrics {
    * @param exception the exception that caused the failed reconciliation resulting in a retry
    * @param metadata metadata associated with the resource being processed
    */
-  default void failedReconciliation(HasMetadata resource, Exception exception,
-      Map<String, Object> metadata) {}
-
+  default void failedReconciliation(
+      HasMetadata resource, Exception exception, Map<String, Object> metadata) {}
 
   default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
 
-  default void reconciliationExecutionFinished(HasMetadata resource,
-      Map<String, Object> metadata) {}
-
+  default void reconciliationExecutionFinished(
+      HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Called when the resource associated with the specified {@link ResourceID} has been successfully

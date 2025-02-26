@@ -17,11 +17,10 @@ import static org.awaitility.Awaitility.await;
 class PrimaryToSecondaryMissingIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withAdditionalCustomResourceDefinition(Cluster.class)
-          .withReconciler(new JobReconciler(false))
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withAdditionalCustomResourceDefinition(Cluster.class)
+      .withReconciler(new JobReconciler(false))
+      .build();
 
   @Test
   void missingPrimaryToSecondaryCausesIssueAccessingSecondary() throws InterruptedException {
@@ -49,5 +48,4 @@ class PrimaryToSecondaryMissingIT {
       assertThat(reconciler.getNumberOfExecutions()).isPositive();
     });
   }
-
 }

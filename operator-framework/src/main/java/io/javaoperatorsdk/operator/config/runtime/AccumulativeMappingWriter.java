@@ -30,18 +30,16 @@ class AccumulativeMappingWriter {
 
   public AccumulativeMappingWriter loadExistingMappings() {
     try {
-      final var readonlyResource =
-          processingEnvironment
-              .getFiler()
-              .getResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
+      final var readonlyResource = processingEnvironment
+          .getFiler()
+          .getResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
 
       try (BufferedReader bufferedReader =
           new BufferedReader(new InputStreamReader(readonlyResource.openInputStream()))) {
-        final var existingLines =
-            bufferedReader
-                .lines()
-                .map(l -> l.split(","))
-                .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
+        final var existingLines = bufferedReader
+            .lines()
+            .map(l -> l.split(","))
+            .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
         mappings.putAll(existingLines);
       }
     } catch (IOException e) {
@@ -62,10 +60,9 @@ class AccumulativeMappingWriter {
   public void flush() {
     PrintWriter printWriter = null;
     try {
-      final var resource =
-          processingEnvironment
-              .getFiler()
-              .createResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
+      final var resource = processingEnvironment
+          .getFiler()
+          .createResource(StandardLocation.CLASS_OUTPUT, "", resourcePath);
       printWriter = new PrintWriter(resource.openOutputStream());
 
       for (Map.Entry<String, String> entry : mappings.entrySet()) {

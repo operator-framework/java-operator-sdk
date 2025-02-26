@@ -12,10 +12,11 @@ import static org.awaitility.Awaitility.await;
 public class ManualObservedGenerationIT {
 
   public static final String RESOURCE_NAME = "test1";
+
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new ManualObservedGenerationReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ManualObservedGenerationReconciler())
+      .build();
 
   @Test
   void observedGenerationUpdated() {
@@ -25,7 +26,8 @@ public class ManualObservedGenerationIT {
       var r = extension.get(ManualObservedGenerationCustomResource.class, RESOURCE_NAME);
       assertThat(r).isNotNull();
       assertThat(r.getStatus().getObservedGeneration()).isEqualTo(1);
-      assertThat(r.getStatus().getObservedGeneration()).isEqualTo(r.getMetadata().getGeneration());
+      assertThat(r.getStatus().getObservedGeneration())
+          .isEqualTo(r.getMetadata().getGeneration());
     });
 
     var changed = testResource();
@@ -35,15 +37,14 @@ public class ManualObservedGenerationIT {
     await().untilAsserted(() -> {
       var r = extension.get(ManualObservedGenerationCustomResource.class, RESOURCE_NAME);
       assertThat(r.getStatus().getObservedGeneration()).isEqualTo(2);
-      assertThat(r.getStatus().getObservedGeneration()).isEqualTo(r.getMetadata().getGeneration());
+      assertThat(r.getStatus().getObservedGeneration())
+          .isEqualTo(r.getMetadata().getGeneration());
     });
   }
 
   ManualObservedGenerationCustomResource testResource() {
     var res = new ManualObservedGenerationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     res.setSpec(new ManualObservedGenerationSpec());
     res.getSpec().setValue("Initial Value");
     return res;

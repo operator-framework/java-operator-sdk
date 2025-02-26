@@ -18,7 +18,8 @@ public class EventSourceContext<P extends HasMetadata> {
   private final KubernetesClient client;
   private final Class<P> primaryResourceClass;
 
-  public EventSourceContext(IndexerResourceCache<P> primaryCache,
+  public EventSourceContext(
+      IndexerResourceCache<P> primaryCache,
       ControllerConfiguration<P> controllerConfiguration,
       KubernetesClient client,
       Class<P> primaryResourceClass) {

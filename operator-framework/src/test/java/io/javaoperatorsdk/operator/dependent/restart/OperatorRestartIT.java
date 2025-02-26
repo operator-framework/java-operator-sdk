@@ -11,14 +11,14 @@ import static org.awaitility.Awaitility.await;
 
 class OperatorRestartIT {
 
-  private final static Operator operator = new Operator(o -> o.withCloseClientOnStop(false));
-  private final static RestartTestReconciler reconciler = new RestartTestReconciler();
+  private static final Operator operator = new Operator(o -> o.withCloseClientOnStop(false));
+  private static final RestartTestReconciler reconciler = new RestartTestReconciler();
   private static int reconcileNumberBeforeStop = 0;
 
   @BeforeAll
   static void registerReconciler() {
-    LocallyRunOperatorExtension.applyCrd(RestartTestCustomResource.class,
-        operator.getKubernetesClient());
+    LocallyRunOperatorExtension.applyCrd(
+        RestartTestCustomResource.class, operator.getKubernetesClient());
     operator.register(reconciler);
   }
 
@@ -49,9 +49,7 @@ class OperatorRestartIT {
 
   RestartTestCustomResource testCustomResource() {
     RestartTestCustomResource cr = new RestartTestCustomResource();
-    cr.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    cr.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     return cr;
   }
 }

@@ -20,7 +20,8 @@ public class FilteredDependentConfigMap
   }
 
   @Override
-  protected ConfigMap desired(DependentFilterTestCustomResource primary,
+  protected ConfigMap desired(
+      DependentFilterTestCustomResource primary,
       Context<DependentFilterTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()

@@ -27,22 +27,32 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
  */
 class ResourceRequirementsSanitizer {
 
-  static void sanitizeResourceRequirements(final Map<String, Object> actualMap,
-      final PodTemplateSpec actualTemplate, final PodTemplateSpec desiredTemplate) {
+  static void sanitizeResourceRequirements(
+      final Map<String, Object> actualMap,
+      final PodTemplateSpec actualTemplate,
+      final PodTemplateSpec desiredTemplate) {
     if (actualTemplate == null || desiredTemplate == null) {
       return;
     }
     if (actualTemplate.getSpec() == null || desiredTemplate.getSpec() == null) {
       return;
     }
-    sanitizeResourceRequirements(actualMap, actualTemplate.getSpec().getInitContainers(),
-        desiredTemplate.getSpec().getInitContainers(), "initContainers");
-    sanitizeResourceRequirements(actualMap, actualTemplate.getSpec().getContainers(),
-        desiredTemplate.getSpec().getContainers(), "containers");
+    sanitizeResourceRequirements(
+        actualMap,
+        actualTemplate.getSpec().getInitContainers(),
+        desiredTemplate.getSpec().getInitContainers(),
+        "initContainers");
+    sanitizeResourceRequirements(
+        actualMap,
+        actualTemplate.getSpec().getContainers(),
+        desiredTemplate.getSpec().getContainers(),
+        "containers");
   }
 
-  private static void sanitizeResourceRequirements(final Map<String, Object> actualMap,
-      final List<Container> actualContainers, final List<Container> desiredContainers,
+  private static void sanitizeResourceRequirements(
+      final Map<String, Object> actualMap,
+      final List<Container> actualContainers,
+      final List<Container> desiredContainers,
       final String containerPath) {
     int containers = desiredContainers.size();
     if (containers == actualContainers.size()) {
@@ -52,32 +62,58 @@ class ResourceRequirementsSanitizer {
         if (!desiredContainer.getName().equals(actualContainer.getName())) {
           return;
         }
-        sanitizeResourceRequirements(actualMap, actualContainer.getResources(),
+        sanitizeResourceRequirements(
+            actualMap,
+            actualContainer.getResources(),
             desiredContainer.getResources(),
-            containerPath, containerIndex);
+            containerPath,
+            containerIndex);
       }
     }
   }
 
-  private static void sanitizeResourceRequirements(final Map<String, Object> actualMap,
-      final ResourceRequirements actualResource, final ResourceRequirements desiredResource,
-      final String containerPath, final int containerIndex) {
+  private static void sanitizeResourceRequirements(
+      final Map<String, Object> actualMap,
+      final ResourceRequirements actualResource,
+      final ResourceRequirements desiredResource,
+      final String containerPath,
+      final int containerIndex) {
     if (desiredResource == null || actualResource == null) {
       return;
     }
-    sanitizeQuantities(actualMap, actualResource.getRequests(), desiredResource.getRequests(),
-        containerPath, containerIndex, "requests");
-    sanitizeQuantities(actualMap, actualResource.getLimits(), desiredResource.getLimits(),
-        containerPath, containerIndex, "limits");
+    sanitizeQuantities(
+        actualMap,
+        actualResource.getRequests(),
+        desiredResource.getRequests(),
+        containerPath,
+        containerIndex,
+        "requests");
+    sanitizeQuantities(
+        actualMap,
+        actualResource.getLimits(),
+        desiredResource.getLimits(),
+        containerPath,
+        containerIndex,
+        "limits");
   }
 
   @SuppressWarnings("unchecked")
-  private static void sanitizeQuantities(final Map<String, Object> actualMap,
-      final Map<String, Quantity> actualResource, final Map<String, Quantity> desiredResource,
-      final String containerPath, final int containerIndex, final String quantityPath) {
-    Optional.ofNullable(
-        GenericKubernetesResource.get(actualMap, "spec", "template", "spec", containerPath,
-            containerIndex, "resources", quantityPath))
+  private static void sanitizeQuantities(
+      final Map<String, Object> actualMap,
+      final Map<String, Quantity> actualResource,
+      final Map<String, Quantity> desiredResource,
+      final String containerPath,
+      final int containerIndex,
+      final String quantityPath) {
+    Optional.ofNullable(GenericKubernetesResource.get(
+            actualMap,
+            "spec",
+            "template",
+            "spec",
+            containerPath,
+            containerIndex,
+            "resources",
+            quantityPath))
         .map(Map.class::cast)
         .filter(m -> m.size() == desiredResource.size())
         .ifPresent(m -> actualResource.forEach((key, actualQuantity) -> {

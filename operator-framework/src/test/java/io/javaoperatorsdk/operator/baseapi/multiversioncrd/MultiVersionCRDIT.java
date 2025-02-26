@@ -29,13 +29,12 @@ class MultiVersionCRDIT {
   public static final String CR_V2_NAME = "crv2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(MultiVersionCRDTestReconciler1.class)
-          .withReconciler(MultiVersionCRDTestReconciler2.class)
-          .withConfigurationService(
-              overrider -> overrider.withInformerStoppedHandler(informerStoppedHandler))
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(MultiVersionCRDTestReconciler1.class)
+      .withReconciler(MultiVersionCRDTestReconciler2.class)
+      .withConfigurationService(
+          overrider -> overrider.withInformerStoppedHandler(informerStoppedHandler))
+      .build();
 
   private static class TestInformerStoppedHandler implements InformerStoppedHandler {
     private volatile String resourceClassName;
@@ -61,19 +60,25 @@ class MultiVersionCRDIT {
             // version)
             final var unmarshal = Serialization.jsonMapper().readTree(raw);
             final var object = unmarshal.get("object");
-            resourceCreateAsVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(resourceCreateAsVersion,
-                object.get("apiVersion").asText());
+            resourceCreateAsVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(
+                resourceCreateAsVersion, object.get("apiVersion").asText());
             // extract the asked resource version
-            failedResourceVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(failedResourceVersion,
-                object.get("metadata").get("managedFields").get(0).get("apiVersion").asText());
+            failedResourceVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(
+                failedResourceVersion,
+                object
+                    .get("metadata")
+                    .get("managedFields")
+                    .get(0)
+                    .get("apiVersion")
+                    .asText());
           } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
           }
         });
 
         // extract error message
-        errorMessage =
-            acceptOnlyIfUnsetOrEqualToAlreadySet(errorMessage, watcherEx.getCause().getMessage());
+        errorMessage = acceptOnlyIfUnsetOrEqualToAlreadySet(
+            errorMessage, watcherEx.getCause().getMessage());
       }
       final var apiTypeClass = informer.getApiTypeClass();
 
@@ -82,10 +87,10 @@ class MultiVersionCRDIT {
       resourceClassName =
           acceptOnlyIfUnsetOrEqualToAlreadySet(resourceClassName, apiTypeClass.getName());
 
-      log.debug("API Type Class: " + apiTypeClass.getName()
-          + "  -  resource class name: " + resourceClassName);
-      log.info("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
-          + " stopped due to: " + ex.getMessage());
+      log.debug("API Type Class: " + apiTypeClass.getName() + "  -  resource class name: "
+          + resourceClassName);
+      log.info("Informer for " + HasMetadata.getFullResourceName(apiTypeClass) + " stopped due to: "
+          + ex.getMessage());
     }
 
     public String getResourceClassName() {
@@ -109,7 +114,7 @@ class MultiVersionCRDIT {
     }
   }
 
-  private final static TestInformerStoppedHandler informerStoppedHandler =
+  private static final TestInformerStoppedHandler informerStoppedHandler =
       new TestInformerStoppedHandler();
 
   @Test
@@ -118,20 +123,16 @@ class MultiVersionCRDIT {
     operator.create(createTestResourceV1WithoutLabel());
     operator.create(createTestResourceV2WithLabel());
 
-    await()
-        .atMost(Duration.ofSeconds(2))
-        .pollInterval(Duration.ofMillis(50))
-        .untilAsserted(
-            () -> {
-              var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
-              var crV2Now = operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME);
-              assertThat(crV1Now.getStatus()).isNotNull();
-              assertThat(crV2Now.getStatus()).isNotNull();
-              assertThat(crV1Now.getStatus().getReconciledBy())
-                  .containsExactly(MultiVersionCRDTestReconciler1.class.getSimpleName());
-              assertThat(crV2Now.getStatus().getReconciledBy())
-                  .containsExactly(MultiVersionCRDTestReconciler2.class.getSimpleName());
-            });
+    await().atMost(Duration.ofSeconds(2)).pollInterval(Duration.ofMillis(50)).untilAsserted(() -> {
+      var crV1Now = operator.get(MultiVersionCRDTestCustomResource1.class, CR_V1_NAME);
+      var crV2Now = operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME);
+      assertThat(crV1Now.getStatus()).isNotNull();
+      assertThat(crV2Now.getStatus()).isNotNull();
+      assertThat(crV1Now.getStatus().getReconciledBy())
+          .containsExactly(MultiVersionCRDTestReconciler1.class.getSimpleName());
+      assertThat(crV2Now.getStatus().getReconciledBy())
+          .containsExactly(MultiVersionCRDTestReconciler2.class.getSimpleName());
+    });
   }
 
   @Test
@@ -143,31 +144,24 @@ class MultiVersionCRDIT {
     var v1res = createTestResourceV1WithoutLabel();
     operator.create(v1res);
 
-    await()
-        .atMost(Duration.ofSeconds(10))
-        .pollInterval(Duration.ofMillis(50))
-        .untilAsserted(() -> {
-          // v1 is the stored version so trying to create a v2 version should fail because we cannot
-          // convert a String (as defined by the spec of the v2 CRD) to an int (which is what the
-          // spec of the v1 CRD defines)
-          assertThat(informerStoppedHandler.getResourceCreateAsVersion())
-              .isEqualTo(HasMetadata.getApiVersion(
-                  MultiVersionCRDTestCustomResource1.class));
-          assertThat(informerStoppedHandler.getResourceClassName())
-              .isEqualTo(MultiVersionCRDTestCustomResource1.class.getName());
-          assertThat(informerStoppedHandler.getFailedResourceVersion())
-              .isEqualTo(HasMetadata.getApiVersion(
-                  MultiVersionCRDTestCustomResource2.class));
-          assertThat(informerStoppedHandler.getErrorMessage()).contains(
+    await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(50)).untilAsserted(() -> {
+      // v1 is the stored version so trying to create a v2 version should fail because we cannot
+      // convert a String (as defined by the spec of the v2 CRD) to an int (which is what the
+      // spec of the v1 CRD defines)
+      assertThat(informerStoppedHandler.getResourceCreateAsVersion())
+          .isEqualTo(HasMetadata.getApiVersion(MultiVersionCRDTestCustomResource1.class));
+      assertThat(informerStoppedHandler.getResourceClassName())
+          .isEqualTo(MultiVersionCRDTestCustomResource1.class.getName());
+      assertThat(informerStoppedHandler.getFailedResourceVersion())
+          .isEqualTo(HasMetadata.getApiVersion(MultiVersionCRDTestCustomResource2.class));
+      assertThat(informerStoppedHandler.getErrorMessage())
+          .contains(
               "Cannot deserialize value of type `int` from String \"string value\": not a valid `int` value");
-        });
+    });
     assertThat(
-        operator
-            .get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
-            .getStatus())
+            operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME).getStatus())
         .isNull();
   }
-
 
   MultiVersionCRDTestCustomResource1 createTestResourceV1WithoutLabel() {
     MultiVersionCRDTestCustomResource1 cr = new MultiVersionCRDTestCustomResource1();

@@ -22,8 +22,8 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
     this.cacheKeyMapper = cacheKeyMapper;
   }
 
-  public PollingDependentResource(Class<R> resourceType, Duration pollingPeriod,
-      CacheKeyMapper<R> cacheKeyMapper) {
+  public PollingDependentResource(
+      Class<R> resourceType, Duration pollingPeriod, CacheKeyMapper<R> cacheKeyMapper) {
     super(resourceType, pollingPeriod);
     this.cacheKeyMapper = cacheKeyMapper;
   }
@@ -31,8 +31,8 @@ public abstract class PollingDependentResource<R, P extends HasMetadata>
   @Override
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
-    return new PollingEventSource<>(resourceType(),
+    return new PollingEventSource<>(
+        resourceType(),
         new PollingConfiguration<>(name(), this, getPollingPeriod(), cacheKeyMapper));
   }
-
 }

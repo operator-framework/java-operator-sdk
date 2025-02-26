@@ -44,5 +44,4 @@ public interface DependentResourceWithExplicitState<R, P extends HasMetadata, S 
    * @return that stores state
    */
   S stateResource(P primary, R resource);
-
 }

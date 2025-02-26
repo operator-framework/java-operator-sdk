@@ -37,12 +37,7 @@ public class DeploymentDependentResource
     deployment.getMetadata().setLabels(labels);
     deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
 
-    deployment
-        .getSpec()
-        .getTemplate()
-        .getMetadata()
-        .getLabels()
-        .put("app", deploymentName);
+    deployment.getSpec().getTemplate().getMetadata().getLabels().put("app", deploymentName);
     deployment
         .getSpec()
         .getTemplate()

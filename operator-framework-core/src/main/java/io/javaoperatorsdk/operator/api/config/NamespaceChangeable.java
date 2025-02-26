@@ -24,5 +24,4 @@ public interface NamespaceChangeable {
   default boolean allowsNamespaceChanges() {
     return true;
   }
-
 }

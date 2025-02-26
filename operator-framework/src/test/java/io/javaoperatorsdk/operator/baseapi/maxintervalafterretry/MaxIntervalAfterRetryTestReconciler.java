@@ -11,8 +11,9 @@ import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @GradualRetry(maxAttempts = 1, initialInterval = 100)
-@ControllerConfiguration(maxReconciliationInterval = @MaxReconciliationInterval(interval = 50,
-    timeUnit = TimeUnit.MILLISECONDS))
+@ControllerConfiguration(
+    maxReconciliationInterval =
+        @MaxReconciliationInterval(interval = 50, timeUnit = TimeUnit.MILLISECONDS))
 public class MaxIntervalAfterRetryTestReconciler
     implements Reconciler<MaxIntervalAfterRetryTestCustomResource>, TestExecutionInfoProvider {
 
@@ -33,5 +34,4 @@ public class MaxIntervalAfterRetryTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

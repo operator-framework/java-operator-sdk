@@ -25,7 +25,8 @@ public class ControllerNamespaceDeletionOperator {
     }));
 
     Operator operator = new Operator();
-    operator.register(new ControllerNamespaceDeletionReconciler(),
+    operator.register(
+        new ControllerNamespaceDeletionReconciler(),
         ControllerConfigurationOverrider::watchingOnlyCurrentNamespace);
     operator.start();
   }
@@ -34,10 +35,11 @@ public class ControllerNamespaceDeletionOperator {
     try (var client = new KubernetesClientBuilder().build()) {
       var startTime = LocalTime.now();
       while (startTime.until(LocalTime.now(), SECONDS) < 20) {
-        var items =
-            client.resources(ControllerNamespaceDeletionCustomResource.class)
-                .inNamespace(client.getConfiguration().getNamespace())
-                .list().getItems();
+        var items = client
+            .resources(ControllerNamespaceDeletionCustomResource.class)
+            .inNamespace(client.getConfiguration().getNamespace())
+            .list()
+            .getItems();
         log.info("Custom resource in namespace: {}", items);
         if (items.isEmpty()) {
           return true;

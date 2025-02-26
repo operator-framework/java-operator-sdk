@@ -18,5 +18,4 @@ public interface OnDeleteFilter<R> {
   default OnDeleteFilter<R> not() {
     return (resource, deletedFinalStateUnknown) -> !this.accept(resource, deletedFinalStateUnknown);
   }
-
 }

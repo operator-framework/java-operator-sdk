@@ -28,5 +28,4 @@ public interface Cleaner<P extends HasMetadata> {
    * @see DeleteControl#noFinalizerRemoval()
    */
   DeleteControl cleanup(P resource, Context<P> context) throws Exception;
-
 }

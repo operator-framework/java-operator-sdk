@@ -20,9 +20,9 @@ public class DefaultPerClassNamespaceNameSupplier implements Function<ExtensionC
   @Override
   public String apply(ExtensionContext context) {
     String className = context.getRequiredTestClass().getSimpleName();
-    String namespace =
-        className.length() > MAX_CLASS_NAME_LENGTH ? className.substring(0, MAX_CLASS_NAME_LENGTH)
-            : className;
+    String namespace = className.length() > MAX_CLASS_NAME_LENGTH
+        ? className.substring(0, MAX_CLASS_NAME_LENGTH)
+        : className;
     namespace += DELIMITER;
     namespace += UUID.randomUUID().toString().substring(0, RANDOM_SUFFIX_LENGTH);
     namespace = KubernetesResourceUtil.sanitizeName(namespace).toLowerCase(Locale.US);

@@ -35,10 +35,11 @@ public interface WorkflowResult {
    * @return the dependent condition result if it exists or {@link Optional#empty()} otherwise
    * @throws IllegalArgumentException if a result exists but is not of the expected type
    */
-  default <T> Optional<T> getDependentConditionResult(String dependentResourceName,
-      Condition.Type conditionType, Class<T> expectedResultType) {
+  default <T> Optional<T> getDependentConditionResult(
+      String dependentResourceName, Condition.Type conditionType, Class<T> expectedResultType) {
     return getDependentConditionResult(
-        getDependentResourceByName(dependentResourceName).orElse(null), conditionType,
+        getDependentResourceByName(dependentResourceName).orElse(null),
+        conditionType,
         expectedResultType);
   }
 
@@ -54,8 +55,10 @@ public interface WorkflowResult {
    * @return the dependent condition result if it exists or {@link Optional#empty()} otherwise
    * @throws IllegalArgumentException if a result exists but is not of the expected type
    */
-  default <T> Optional<T> getDependentConditionResult(DependentResource dependentResource,
-      Condition.Type conditionType, Class<T> expectedResultType) {
+  default <T> Optional<T> getDependentConditionResult(
+      DependentResource dependentResource,
+      Condition.Type conditionType,
+      Class<T> expectedResultType) {
     return Optional.empty();
   }
 

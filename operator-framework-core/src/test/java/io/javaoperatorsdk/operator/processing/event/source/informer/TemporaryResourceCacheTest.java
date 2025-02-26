@@ -22,8 +22,10 @@ import static org.mockito.Mockito.when;
 class TemporaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
+
   @SuppressWarnings("unchecked")
   private InformerEventSource<ConfigMap, ?> informerEventSource;
+
   private TemporaryResourceCache<ConfigMap> temporaryResourceCache;
 
   @BeforeEach
@@ -99,8 +101,11 @@ class TemporaryResourceCacheTest {
     ConfigMap testResource = propagateTestResourceToCache();
 
     // an event with a newer version will not remove
-    temporaryResourceCache.onAddOrUpdateEvent(new ConfigMapBuilder(testResource).editMetadata()
-        .withResourceVersion("1").endMetadata().build());
+    temporaryResourceCache.onAddOrUpdateEvent(new ConfigMapBuilder(testResource)
+        .editMetadata()
+        .withResourceVersion("1")
+        .endMetadata()
+        .build());
 
     assertThat(temporaryResourceCache.isKnownResourceVersion(testResource)).isTrue();
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
@@ -118,8 +123,13 @@ class TemporaryResourceCacheTest {
     var testResource = testResource();
 
     temporaryResourceCache.onAddOrUpdateEvent(testResource);
-    temporaryResourceCache.onDeleteEvent(new ConfigMapBuilder(testResource).editMetadata()
-        .withResourceVersion("3").endMetadata().build(), false);
+    temporaryResourceCache.onDeleteEvent(
+        new ConfigMapBuilder(testResource)
+            .editMetadata()
+            .withResourceVersion("3")
+            .endMetadata()
+            .build(),
+        false);
     temporaryResourceCache.putAddedResource(testResource);
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
@@ -163,14 +173,11 @@ class TemporaryResourceCacheTest {
 
   ConfigMap testResource() {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withLabels(Map.of("k", "v"))
-        .build());
+    configMap.setMetadata(new ObjectMetaBuilder().withLabels(Map.of("k", "v")).build());
     configMap.getMetadata().setName("test");
     configMap.getMetadata().setNamespace("default");
     configMap.getMetadata().setResourceVersion(RESOURCE_VERSION);
     configMap.getMetadata().setUid("test-uid");
     return configMap;
   }
-
 }

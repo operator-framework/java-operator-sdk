@@ -8,9 +8,9 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 public class BulkDependentDeleterIT extends BulkDependentTestBase {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new ManagedDeleterBulkReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ManagedDeleterBulkReconciler())
+      .build();
 
   @Override
   public LocallyRunOperatorExtension extension() {

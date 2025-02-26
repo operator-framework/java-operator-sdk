@@ -26,9 +26,9 @@ public class StatusPatchSSAMigrationIT {
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
-    LocallyRunOperatorExtension.applyCrd(StatusPatchLockingCustomResource.class,
-        client);
-    testInfo.getTestMethod()
+    LocallyRunOperatorExtension.applyCrd(StatusPatchLockingCustomResource.class, client);
+    testInfo
+        .getTestMethod()
         .ifPresent(method -> testNamespace = KubernetesResourceUtil.sanitizeName(method.getName()));
     client.namespaces().resource(testNamespace(testNamespace)).create();
   }
@@ -42,7 +42,6 @@ public class StatusPatchSSAMigrationIT {
     });
     client.close();
   }
-
 
   @Test
   void testMigratingToSSA() {
@@ -108,9 +107,11 @@ public class StatusPatchSSAMigrationIT {
     var actualResource = client.resource(testResource()).get();
     actualResource.getSpec().setMessageInStatus(false);
     // removing the managed field entry for former method works
-    actualResource.getMetadata().setManagedFields(actualResource.getMetadata().getManagedFields()
-        .stream().filter(r -> !r.getOperation().equals("Update") && r.getSubresource() != null)
-        .toList());
+    actualResource
+        .getMetadata()
+        .setManagedFields(actualResource.getMetadata().getManagedFields().stream()
+            .filter(r -> !r.getOperation().equals("Update") && r.getSubresource() != null)
+            .toList());
     client.resource(actualResource).update();
 
     await().untilAsserted(() -> {
@@ -124,12 +125,10 @@ public class StatusPatchSSAMigrationIT {
     operator.stop();
   }
 
-
   private Operator startOperator(boolean patchStatusWithSSA) {
-    var operator = new Operator(o -> o.withCloseClientOnStop(false)
-        .withUseSSAToPatchPrimaryResource(patchStatusWithSSA));
-    operator.register(new StatusPatchLockingReconciler(),
-        o -> o.settingNamespaces(testNamespace));
+    var operator = new Operator(
+        o -> o.withCloseClientOnStop(false).withUseSSAToPatchPrimaryResource(patchStatusWithSSA));
+    operator.register(new StatusPatchLockingReconciler(), o -> o.settingNamespaces(testNamespace));
 
     operator.start();
     return operator;
@@ -146,8 +145,8 @@ public class StatusPatchSSAMigrationIT {
   }
 
   private Namespace testNamespace(String name) {
-    return new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build()).build();
+    return new NamespaceBuilder()
+        .withMetadata(new ObjectMetaBuilder().withName(name).build())
+        .build();
   }
 }

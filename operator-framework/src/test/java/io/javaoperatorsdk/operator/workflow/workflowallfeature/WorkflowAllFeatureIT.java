@@ -21,29 +21,28 @@ public class WorkflowAllFeatureIT {
   private static final Duration ONE_MINUTE = Duration.ofMinutes(1);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(WorkflowAllFeatureReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(WorkflowAllFeatureReconciler.class)
+      .build();
 
   @Test
   void configMapNotReconciledUntilDeploymentReady() {
     operator.create(customResource(true));
-    await().untilAsserted(
-        () -> {
-          assertThat(operator
+    await().untilAsserted(() -> {
+      assertThat(operator
               .getReconcilerOfType(WorkflowAllFeatureReconciler.class)
               .getNumberOfReconciliationExecution())
-              .isPositive();
-          assertThat(operator.get(Deployment.class, RESOURCE_NAME)).isNotNull();
-          assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
-          assertThat(getPrimaryStatus().getMsgFromCondition())
-              .isEqualTo(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
-        });
+          .isPositive();
+      assertThat(operator.get(Deployment.class, RESOURCE_NAME)).isNotNull();
+      assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
+      assertThat(getPrimaryStatus().getMsgFromCondition())
+          .isEqualTo(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
+    });
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
       assertThat(operator
-          .getReconcilerOfType(WorkflowAllFeatureReconciler.class)
-          .getNumberOfReconciliationExecution())
+              .getReconcilerOfType(WorkflowAllFeatureReconciler.class)
+              .getNumberOfReconciliationExecution())
           .isGreaterThan(1);
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
       final var primaryStatus = getPrimaryStatus();
@@ -56,10 +55,8 @@ public class WorkflowAllFeatureIT {
   }
 
   private WorkflowAllFeatureStatus getPrimaryStatus() {
-    return operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)
-        .getStatus();
+    return operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME).getStatus();
   }
-
 
   @Test
   void configMapNotReconciledIfReconcileConditionNotMet() {
@@ -79,14 +76,12 @@ public class WorkflowAllFeatureIT {
     });
   }
 
-
   @Test
   void configMapNotDeletedUntilNotMarked() {
     var resource = operator.create(customResource(true));
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
-      assertThat(getPrimaryStatus())
-          .isNotNull();
+      assertThat(getPrimaryStatus()).isNotNull();
       assertThat(getPrimaryStatus().getReady()).isTrue();
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
     });
@@ -95,14 +90,16 @@ public class WorkflowAllFeatureIT {
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
-      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)).isNotNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME))
+          .isNotNull();
     });
 
     markConfigMapForDelete();
 
     await().atMost(ONE_MINUTE).untilAsserted(() -> {
       assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();
-      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME)).isNull();
+      assertThat(operator.get(WorkflowAllFeatureCustomResource.class, RESOURCE_NAME))
+          .isNull();
     });
   }
 
@@ -117,12 +114,9 @@ public class WorkflowAllFeatureIT {
 
   private WorkflowAllFeatureCustomResource customResource(boolean createConfigMap) {
     var res = new WorkflowAllFeatureCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     res.setSpec(new WorkflowAllFeatureSpec());
     res.getSpec().setCreateConfigMap(createConfigMap);
     return res;
   }
-
 }

@@ -48,8 +48,8 @@ public @interface ControllerConfiguration {
    *
    * @return the maximal reconciliation interval configuration
    */
-  MaxReconciliationInterval maxReconciliationInterval() default @MaxReconciliationInterval(
-      interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
+  MaxReconciliationInterval maxReconciliationInterval() default
+      @MaxReconciliationInterval(interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
 
   /**
    * Optional {@link Retry} implementation for the associated controller to use.

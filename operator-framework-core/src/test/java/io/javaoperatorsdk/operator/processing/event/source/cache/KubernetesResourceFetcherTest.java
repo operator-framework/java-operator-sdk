@@ -40,9 +40,7 @@ class KubernetesResourceFetcherTest {
 
   private HasMetadata clusterScopedResource() {
     var cm = new CustomResourceDefinition();
-    cm.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    cm.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return cm;
   }
 }

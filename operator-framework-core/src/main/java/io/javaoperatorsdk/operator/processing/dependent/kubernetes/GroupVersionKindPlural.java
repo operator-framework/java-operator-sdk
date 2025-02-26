@@ -24,9 +24,14 @@ public class GroupVersionKindPlural extends GroupVersionKind {
   }
 
   protected GroupVersionKindPlural(GroupVersionKind gvk, String plural) {
-    this(gvk.getGroup(), gvk.getVersion(), gvk.getKind(),
-        plural != null ? plural
-            : (gvk instanceof GroupVersionKindPlural ? ((GroupVersionKindPlural) gvk).plural
+    this(
+        gvk.getGroup(),
+        gvk.getVersion(),
+        gvk.getKind(),
+        plural != null
+            ? plural
+            : (gvk instanceof GroupVersionKindPlural
+                ? ((GroupVersionKindPlural) gvk).plural
                 : null));
   }
 
@@ -37,7 +42,8 @@ public class GroupVersionKindPlural extends GroupVersionKind {
    * @return a new GroupVersionKindPlural object matching the specified {@link GroupVersionKind}
    */
   public static GroupVersionKindPlural from(GroupVersionKind gvk) {
-    return gvk instanceof GroupVersionKindPlural ? ((GroupVersionKindPlural) gvk)
+    return gvk instanceof GroupVersionKindPlural
+        ? ((GroupVersionKindPlural) gvk)
         : gvkWithPlural(gvk, null);
   }
 

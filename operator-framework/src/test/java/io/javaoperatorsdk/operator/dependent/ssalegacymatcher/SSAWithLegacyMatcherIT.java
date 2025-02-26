@@ -15,9 +15,9 @@ public class SSAWithLegacyMatcherIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new SSALegacyMatcherReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new SSALegacyMatcherReconciler())
+      .build();
 
   @Test
   void matchesDependentWithLegacyMatcher() {
@@ -38,12 +38,9 @@ public class SSAWithLegacyMatcherIT {
 
   SSALegacyMatcherCustomResource testResource() {
     SSALegacyMatcherCustomResource res = new SSALegacyMatcherCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     res.setSpec(new SSALegacyMatcherSpec());
     res.getSpec().setValue("initial-value");
     return res;
   }
-
 }

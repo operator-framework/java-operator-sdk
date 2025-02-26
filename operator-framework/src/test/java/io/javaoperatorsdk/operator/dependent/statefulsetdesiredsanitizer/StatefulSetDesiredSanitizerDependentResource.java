@@ -7,8 +7,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class StatefulSetDesiredSanitizerDependentResource
-    extends
-    CRUDKubernetesDependentResource<StatefulSet, StatefulSetDesiredSanitizerCustomResource> {
+    extends CRUDKubernetesDependentResource<
+        StatefulSet, StatefulSetDesiredSanitizerCustomResource> {
 
   public static volatile Boolean nonMatchedAtLeastOnce;
 
@@ -17,11 +17,11 @@ public class StatefulSetDesiredSanitizerDependentResource
   }
 
   @Override
-  protected StatefulSet desired(StatefulSetDesiredSanitizerCustomResource primary,
+  protected StatefulSet desired(
+      StatefulSetDesiredSanitizerCustomResource primary,
       Context<StatefulSetDesiredSanitizerCustomResource> context) {
-    var template =
-        ReconcilerUtils.loadYaml(StatefulSet.class, getClass(),
-            "/io/javaoperatorsdk/operator/statefulset.yaml");
+    var template = ReconcilerUtils.loadYaml(
+        StatefulSet.class, getClass(), "/io/javaoperatorsdk/operator/statefulset.yaml");
     template.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName())
         .withNamespace(primary.getMetadata().getNamespace())
@@ -30,7 +30,8 @@ public class StatefulSetDesiredSanitizerDependentResource
   }
 
   @Override
-  public Result<StatefulSet> match(StatefulSet actualResource,
+  public Result<StatefulSet> match(
+      StatefulSet actualResource,
       StatefulSetDesiredSanitizerCustomResource primary,
       Context<StatefulSetDesiredSanitizerCustomResource> context) {
     var res = super.match(actualResource, primary, context);

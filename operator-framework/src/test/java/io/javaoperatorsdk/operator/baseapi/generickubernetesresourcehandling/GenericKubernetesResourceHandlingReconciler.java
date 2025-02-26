@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 public class GenericKubernetesResourceHandlingReconciler
     implements Reconciler<GenericKubernetesResourceHandlingCustomResource> {
 
-
   public static final String VERSION = "v1";
   public static final String KIND = "ConfigMap";
   public static final String KEY = "key";
@@ -29,13 +28,22 @@ public class GenericKubernetesResourceHandlingReconciler
 
     var secondary = context.getSecondaryResource(GenericKubernetesResource.class);
 
-    secondary.ifPresentOrElse(r -> {
-      var desired = desiredConfigMap(primary, context);
-      if (!matches(r, desired)) {
-        context.getClient().genericKubernetesResources(VERSION, KIND).resource(desired).update();
-      }
-    }, () -> context.getClient().genericKubernetesResources(VERSION, KIND)
-        .resource(desiredConfigMap(primary, context)).create());
+    secondary.ifPresentOrElse(
+        r -> {
+          var desired = desiredConfigMap(primary, context);
+          if (!matches(r, desired)) {
+            context
+                .getClient()
+                .genericKubernetesResources(VERSION, KIND)
+                .resource(desired)
+                .update();
+          }
+        },
+        () -> context
+            .getClient()
+            .genericKubernetesResources(VERSION, KIND)
+            .resource(desiredConfigMap(primary, context))
+            .create());
 
     return UpdateControl.noUpdate();
   }
@@ -43,7 +51,8 @@ public class GenericKubernetesResourceHandlingReconciler
   @SuppressWarnings("unchecked")
   private boolean matches(GenericKubernetesResource actual, GenericKubernetesResource desired) {
     var actualData = (HashMap<String, String>) actual.getAdditionalProperties().get("data");
-    var desiredData = (HashMap<String, String>) desired.getAdditionalProperties().get("data");
+    var desiredData =
+        (HashMap<String, String>) desired.getAdditionalProperties().get("data");
     return actualData.equals(desiredData);
   }
 
@@ -51,10 +60,12 @@ public class GenericKubernetesResourceHandlingReconciler
       GenericKubernetesResourceHandlingCustomResource primary,
       Context<GenericKubernetesResourceHandlingCustomResource> context) {
     try (InputStream is = this.getClass().getResourceAsStream("/configmap.yaml")) {
-      var res = context.getClient().genericKubernetesResources(VERSION, KIND).load(is).item();
+      var res =
+          context.getClient().genericKubernetesResources(VERSION, KIND).load(is).item();
       res.getMetadata().setName(primary.getMetadata().getName());
       res.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-      Map<String, String> data = (Map<String, String>) res.getAdditionalProperties().get("data");
+      Map<String, String> data =
+          (Map<String, String>) res.getAdditionalProperties().get("data");
       data.put(KEY, primary.getSpec().getValue());
       res.addOwnerReference(primary);
       return res;
@@ -63,14 +74,15 @@ public class GenericKubernetesResourceHandlingReconciler
     }
   }
 
-
   @Override
   public List<EventSource<?, GenericKubernetesResourceHandlingCustomResource>> prepareEventSources(
       EventSourceContext<GenericKubernetesResourceHandlingCustomResource> context) {
 
-    var informerEventSource = new InformerEventSource<>(InformerEventSourceConfiguration.from(
-        new GroupVersionKind("", VERSION, KIND),
-        GenericKubernetesResourceHandlingCustomResource.class).build(),
+    var informerEventSource = new InformerEventSource<>(
+        InformerEventSourceConfiguration.from(
+                new GroupVersionKind("", VERSION, KIND),
+                GenericKubernetesResourceHandlingCustomResource.class)
+            .build(),
         context);
 
     return List.of(informerEventSource);

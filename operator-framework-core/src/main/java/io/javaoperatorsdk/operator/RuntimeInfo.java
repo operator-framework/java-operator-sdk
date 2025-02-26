@@ -46,19 +46,19 @@ public class RuntimeInfo {
     checkIfStarted();
     return registeredControllers.stream()
         .filter(rc -> !rc.getControllerHealthInfo().unhealthyEventSources().isEmpty())
-        .findFirst().isEmpty();
+        .findFirst()
+        .isEmpty();
   }
 
   /**
    * @return Aggregated Map with controller related event sources.
    */
-
   public Map<String, Map<String, EventSourceHealthIndicator>> unhealthyEventSources() {
     checkIfStarted();
     Map<String, Map<String, EventSourceHealthIndicator>> res = new HashMap<>();
     for (var rc : registeredControllers) {
-      res.put(rc.getConfiguration().getName(),
-          rc.getControllerHealthInfo().unhealthyEventSources());
+      res.put(
+          rc.getConfiguration().getName(), rc.getControllerHealthInfo().unhealthyEventSources());
     }
     return res;
   }
@@ -68,12 +68,14 @@ public class RuntimeInfo {
    *         either a {@link ControllerEventSource} or an
    *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
    */
-  public Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> unhealthyInformerWrappingEventSourceHealthIndicator() {
+  public Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>>
+      unhealthyInformerWrappingEventSourceHealthIndicator() {
     checkIfStarted();
     Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> res = new HashMap<>();
     for (var rc : registeredControllers) {
-      res.put(rc.getConfiguration().getName(), rc.getControllerHealthInfo()
-          .unhealthyInformerEventSourceHealthIndicators());
+      res.put(
+          rc.getConfiguration().getName(),
+          rc.getControllerHealthInfo().unhealthyInformerEventSourceHealthIndicators());
     }
     return res;
   }

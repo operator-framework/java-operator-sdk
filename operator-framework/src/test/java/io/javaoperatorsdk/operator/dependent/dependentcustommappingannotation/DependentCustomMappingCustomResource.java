@@ -8,7 +8,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 public class DependentCustomMappingCustomResource
-    extends CustomResource<DependentCustomMappingSpec, Void>
-    implements Namespaced {
-
-}
+    extends CustomResource<DependentCustomMappingSpec, Void> implements Namespaced {}

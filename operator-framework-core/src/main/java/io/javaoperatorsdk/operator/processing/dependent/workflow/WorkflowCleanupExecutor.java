@@ -21,8 +21,8 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
   }
 
   public synchronized WorkflowCleanupResult cleanup() {
-    for (DependentResourceNode dependentResourceNode : workflow
-        .getBottomLevelDependentResources()) {
+    for (DependentResourceNode dependentResourceNode :
+        workflow.getBottomLevelDependentResources()) {
       handleCleanup(dependentResourceNode);
     }
     waitForScheduledExecutionsToRun();
@@ -57,15 +57,17 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
         if (hasErroredDependent) {
           causes.add("errored dependent");
         }
-        log.debug("Skipping: {} primaryID: {} causes: {}", dependentResourceNode,
-            primaryID, String.join(", ", causes));
+        log.debug(
+            "Skipping: {} primaryID: {} causes: {}",
+            dependentResourceNode,
+            primaryID,
+            String.join(", ", causes));
       }
       return;
     }
 
     submit(dependentResourceNode, new CleanupExecutor<>(dependentResourceNode), CLEANUP);
   }
-
 
   private class CleanupExecutor<R> extends NodeExecutor<R, P> {
 
@@ -105,8 +107,11 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
     var dependOns = dependentResourceNode.getDependsOn();
     if (dependOns != null) {
       dependOns.forEach(d -> {
-        log.debug("Handle cleanup for dependent: {} of parent: {} primaryID: {}", d,
-            dependentResourceNode, primaryID);
+        log.debug(
+            "Handle cleanup for dependent: {} of parent: {} primaryID: {}",
+            d,
+            dependentResourceNode,
+            primaryID);
         handleCleanup(d);
       });
     }
@@ -116,8 +121,7 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
   private boolean allDependentsCleaned(DependentResourceNode dependentResourceNode) {
     List<DependentResourceNode> parents = dependentResourceNode.getParents();
     return parents.isEmpty()
-        || parents.stream()
-            .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet(d));
+        || parents.stream().allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet(d));
   }
 
   @SuppressWarnings("unchecked")

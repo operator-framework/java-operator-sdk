@@ -19,10 +19,9 @@ public class UnmodifiableDependentPartIT {
   public static final String UPDATED_DATA = "updatedData";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(UnmodifiableDependentPartReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(UnmodifiableDependentPartReconciler.class)
+      .build();
 
   @Test
   void partConfigMapDataUnmodifiable() {
@@ -46,15 +45,11 @@ public class UnmodifiableDependentPartIT {
     });
   }
 
-
   UnmodifiableDependentPartCustomResource testResource() {
     var res = new UnmodifiableDependentPartCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     res.setSpec(new UnmodifiableDependentPartSpec());
     res.getSpec().setData(INITIAL_DATA);
     return res;
   }
-
 }

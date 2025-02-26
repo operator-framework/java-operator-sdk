@@ -85,5 +85,4 @@ public interface ManagedWorkflowAndDependentResourceContext {
    * @throws IllegalStateException if called when explicit invocation is not requested
    */
   WorkflowCleanupResult cleanupManageWorkflow();
-
 }

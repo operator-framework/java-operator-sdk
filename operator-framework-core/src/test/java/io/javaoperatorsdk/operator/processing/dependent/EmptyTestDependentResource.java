@@ -12,8 +12,8 @@ public class EmptyTestDependentResource
   private String name;
 
   @Override
-  public ReconcileResult<Deployment> reconcile(TestCustomResource primary,
-      Context<TestCustomResource> context) {
+  public ReconcileResult<Deployment> reconcile(
+      TestCustomResource primary, Context<TestCustomResource> context) {
     return null;
   }
 

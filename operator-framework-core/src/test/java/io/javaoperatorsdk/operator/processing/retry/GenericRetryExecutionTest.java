@@ -21,12 +21,11 @@ public class GenericRetryExecutionTest {
 
   @Test
   public void canLimitMaxIntervalLength() {
-    RetryExecution retryExecution =
-        GenericRetry.defaultLimitedExponentialRetry()
-            .setInitialInterval(2000)
-            .setMaxInterval(4500)
-            .setIntervalMultiplier(2)
-            .initExecution();
+    RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry()
+        .setInitialInterval(2000)
+        .setMaxInterval(4500)
+        .setIntervalMultiplier(2)
+        .initExecution();
 
     Optional<Long> res = callNextDelayNTimes(retryExecution, 4);
 
@@ -51,7 +50,8 @@ public class GenericRetryExecutionTest {
 
   @Test
   public void returnAttemptIndex() {
-    RetryExecution retryExecution = GenericRetry.defaultLimitedExponentialRetry().initExecution();
+    RetryExecution retryExecution =
+        GenericRetry.defaultLimitedExponentialRetry().initExecution();
 
     assertThat(retryExecution.getAttemptCount()).isEqualTo(0);
     retryExecution.nextDelay();

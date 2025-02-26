@@ -11,8 +11,7 @@ import io.javaoperatorsdk.operator.sample.v1.LeaderElection;
 import io.javaoperatorsdk.operator.sample.v1.LeaderElectionStatus;
 
 @ControllerConfiguration()
-public class LeaderElectionTestReconciler
-    implements Reconciler<LeaderElection> {
+public class LeaderElectionTestReconciler implements Reconciler<LeaderElection> {
 
   private final String reconcilerName;
 
@@ -22,8 +21,7 @@ public class LeaderElectionTestReconciler
 
   @Override
   public UpdateControl<LeaderElection> reconcile(
-      LeaderElection resource,
-      Context<LeaderElection> context) {
+      LeaderElection resource, Context<LeaderElection> context) {
 
     if (resource.getStatus() == null) {
       resource.setStatus(new LeaderElectionStatus());
@@ -36,5 +34,4 @@ public class LeaderElectionTestReconciler
     // update status is with optimistic locking
     return UpdateControl.patchStatus(resource).rescheduleAfter(Duration.ofSeconds(1));
   }
-
 }

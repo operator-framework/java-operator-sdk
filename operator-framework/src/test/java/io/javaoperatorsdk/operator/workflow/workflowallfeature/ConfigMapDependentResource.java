@@ -18,8 +18,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public class ConfigMapDependentResource
     extends KubernetesDependentResource<ConfigMap, WorkflowAllFeatureCustomResource>
     implements Creator<ConfigMap, WorkflowAllFeatureCustomResource>,
-    Updater<ConfigMap, WorkflowAllFeatureCustomResource>,
-    Deleter<WorkflowAllFeatureCustomResource> {
+        Updater<ConfigMap, WorkflowAllFeatureCustomResource>,
+        Deleter<WorkflowAllFeatureCustomResource> {
 
   public static final String READY_TO_DELETE_ANNOTATION = "ready-to-delete";
 
@@ -30,8 +30,8 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(WorkflowAllFeatureCustomResource primary,
-      Context<WorkflowAllFeatureCustomResource> context) {
+  protected ConfigMap desired(
+      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(new ObjectMetaBuilder()
         .withName(primary.getMetadata().getName())
@@ -42,8 +42,8 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  public void delete(WorkflowAllFeatureCustomResource primary,
-      Context<WorkflowAllFeatureCustomResource> context) {
+  public void delete(
+      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
     Optional<ConfigMap> optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
     if (optionalConfigMap.isEmpty()) {
       log.debug("Config Map not found for primary: {}", ResourceID.fromResource(primary));

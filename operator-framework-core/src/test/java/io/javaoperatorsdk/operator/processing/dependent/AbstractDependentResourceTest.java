@@ -21,9 +21,9 @@ class AbstractDependentResourceTest {
     testDependentResource.setSecondary(null);
     testDependentResource.setDesired(null);
 
-    assertThrows(DependentResourceException.class,
+    assertThrows(
+        DependentResourceException.class,
         () -> testDependentResource.reconcile(new TestCustomResource(), null));
-
   }
 
   @Test
@@ -32,7 +32,8 @@ class AbstractDependentResourceTest {
     testDependentResource.setSecondary(configMap());
     testDependentResource.setDesired(null);
 
-    assertThrows(DependentResourceException.class,
+    assertThrows(
+        DependentResourceException.class,
         () -> testDependentResource.reconcile(new TestCustomResource(), null));
   }
 
@@ -42,7 +43,8 @@ class AbstractDependentResourceTest {
     testDependentResource.setSecondary(null);
     testDependentResource.setDesired(configMap());
 
-    assertThrows(DependentResourceException.class,
+    assertThrows(
+        DependentResourceException.class,
         () -> testDependentResource.reconcile(new TestCustomResource(), null));
   }
 
@@ -52,16 +54,15 @@ class AbstractDependentResourceTest {
     testDependentResource.setSecondary(configMap());
     testDependentResource.setDesired(configMap());
 
-    assertThrows(DependentResourceException.class,
+    assertThrows(
+        DependentResourceException.class,
         () -> testDependentResource.reconcile(new TestCustomResource(), null));
   }
 
   private ConfigMap configMap() {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName("test")
-        .withNamespace("default")
-        .build());
+    configMap.setMetadata(
+        new ObjectMetaBuilder().withName("test").withNamespace("default").build());
     return configMap;
   }
 
@@ -78,17 +79,20 @@ class AbstractDependentResourceTest {
     }
 
     @Override
-    public Optional<ConfigMap> getSecondaryResource(TestCustomResource primary,
-        Context<TestCustomResource> context) {
+    public Optional<ConfigMap> getSecondaryResource(
+        TestCustomResource primary, Context<TestCustomResource> context) {
       return Optional.ofNullable(secondary);
     }
 
     @Override
-    protected void onCreated(TestCustomResource primary, ConfigMap created,
-        Context<TestCustomResource> context) {}
+    protected void onCreated(
+        TestCustomResource primary, ConfigMap created, Context<TestCustomResource> context) {}
 
     @Override
-    protected void onUpdated(TestCustomResource primary, ConfigMap updated, ConfigMap actual,
+    protected void onUpdated(
+        TestCustomResource primary,
+        ConfigMap updated,
+        ConfigMap actual,
         Context<TestCustomResource> context) {}
 
     @Override
@@ -115,21 +119,24 @@ class AbstractDependentResourceTest {
     }
 
     @Override
-    public ConfigMap create(ConfigMap desired, TestCustomResource primary,
-        Context<TestCustomResource> context) {
+    public ConfigMap create(
+        ConfigMap desired, TestCustomResource primary, Context<TestCustomResource> context) {
       return null;
     }
 
     @Override
-    public ConfigMap update(ConfigMap actual, ConfigMap desired, TestCustomResource primary,
+    public ConfigMap update(
+        ConfigMap actual,
+        ConfigMap desired,
+        TestCustomResource primary,
         Context<TestCustomResource> context) {
       return null;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Matcher.Result<ConfigMap> match(ConfigMap actualResource, TestCustomResource primary,
-        Context<TestCustomResource> context) {
+    public Matcher.Result<ConfigMap> match(
+        ConfigMap actualResource, TestCustomResource primary, Context<TestCustomResource> context) {
       var result = mock(Matcher.Result.class);
       when(result.matched()).thenReturn(false);
       return result;

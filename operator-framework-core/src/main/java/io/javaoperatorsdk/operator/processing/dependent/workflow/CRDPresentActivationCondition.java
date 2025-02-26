@@ -42,27 +42,24 @@ public class CRDPresentActivationCondition<R extends HasMetadata, P extends HasM
   }
 
   // for testing purposes only
-  CRDPresentActivationCondition(CRDPresentChecker crdPresentChecker, int checkLimit,
-      Duration crdCheckInterval) {
+  CRDPresentActivationCondition(
+      CRDPresentChecker crdPresentChecker, int checkLimit, Duration crdCheckInterval) {
     this.crdPresentChecker = crdPresentChecker;
     this.checkLimit = checkLimit;
     this.crdCheckInterval = crdCheckInterval;
   }
 
   @Override
-  public boolean isMet(DependentResource<R, P> dependentResource,
-      P primary, Context<P> context) {
+  public boolean isMet(DependentResource<R, P> dependentResource, P primary, Context<P> context) {
 
     var resourceClass = dependentResource.resourceType();
     final var crdName = HasMetadata.getFullResourceName(resourceClass);
 
-    var crdCheckState = crdPresenceCache.computeIfAbsent(crdName,
-        g -> new CRDCheckState());
+    var crdCheckState = crdPresenceCache.computeIfAbsent(crdName, g -> new CRDCheckState());
 
     synchronized (crdCheckState) {
       if (shouldCheckStateNow(crdCheckState)) {
-        boolean isPresent = crdPresentChecker
-            .checkIfCRDPresent(crdName, context.getClient());
+        boolean isPresent = crdPresentChecker.checkIfCRDPresent(crdName, context.getClient());
         crdCheckState.checkedNow(isPresent);
       }
     }
@@ -119,8 +116,7 @@ public class CRDPresentActivationCondition<R extends HasMetadata, P extends HasM
 
   public static class CRDPresentChecker {
     boolean checkIfCRDPresent(String crdName, KubernetesClient client) {
-      return client.resources(CustomResourceDefinition.class)
-          .withName(crdName).get() != null;
+      return client.resources(CustomResourceDefinition.class).withName(crdName).get() != null;
     }
   }
 
@@ -128,5 +124,4 @@ public class CRDPresentActivationCondition<R extends HasMetadata, P extends HasM
   public static void clearState() {
     crdPresenceCache.clear();
   }
-
 }

@@ -6,19 +6,22 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCustomResource;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestStatus;
 
-@Workflow(dependents = @Dependent(type = ReadOnlyBulkDependentResource.class,
-    readyPostcondition = ReadOnlyBulkReadyPostCondition.class))
+@Workflow(
+    dependents =
+        @Dependent(
+            type = ReadOnlyBulkDependentResource.class,
+            readyPostcondition = ReadOnlyBulkReadyPostCondition.class))
 @ControllerConfiguration
 public class ReadOnlyBulkReconciler implements Reconciler<BulkDependentTestCustomResource> {
   @Override
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
       BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context) {
 
-    var nonReadyDependents =
-        context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
-            .orElseThrow()
-            .getNotReadyDependents();
-
+    var nonReadyDependents = context
+        .managedWorkflowAndDependentResourceContext()
+        .getWorkflowReconcileResult()
+        .orElseThrow()
+        .getNotReadyDependents();
 
     BulkDependentTestCustomResource customResource = new BulkDependentTestCustomResource();
     customResource.setMetadata(new ObjectMetaBuilder()

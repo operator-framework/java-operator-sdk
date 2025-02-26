@@ -34,5 +34,4 @@ public @interface MaxReconciliationInterval {
    * @return time unit for max delay between reconciliations
    */
   TimeUnit timeUnit() default TimeUnit.HOURS;
-
 }
