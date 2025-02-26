@@ -15,6 +15,7 @@ on:
   workflow_dispatch:
 jobs:
   check_format_and_unit_tests:
+    name: Check format and unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +32,7 @@ jobs:
         run: ./mvnw ${MAVEN_ARGS} clean install -Pno-apt --file pom.xml
 
   build:
-    name: Integration tests with Kubernetes ${{ matrix.kubernetes }}
+    name: "Integration tests (Kube: ${{ matrix.kubernetes }})"
     strategy:
       matrix:
         kubernetes: [ 'v1.29.12','1.30.8', '1.31.4', '1.32.0' ]
