@@ -59,7 +59,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   public ReconciliationDispatcher(Controller<P> controller) {
     this(controller,
         new CustomResourceFacade<>(controller.getCRClient(), controller.getConfiguration(),
-                controller.getConfiguration().getConfigurationService().getResourceCloner()));
+            controller.getConfiguration().getConfigurationService().getResourceCloner()));
   }
 
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
@@ -368,8 +368,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     private final Cloner cloner;
 
     public CustomResourceFacade(
-            MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
-            ControllerConfiguration<R> configuration, Cloner cloner) {
+        MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
+        ControllerConfiguration<R> configuration, Cloner cloner) {
       this.resourceOperation = resourceOperation;
       this.useSSA =
           configuration.getConfigurationService().useSSAToPatchPrimaryResource();
