@@ -87,3 +87,29 @@ from the custom resource.
 See [`StatusPatchSSAMigrationIT`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuspatchnonlocking/StatusPatchSSAMigrationIT.java) for details.
 
 Feel free to report common issues, so we can prepare some utilities to handle them.
+
+## Optimistic concurrency control
+
+When you create a resource for SSA as mentioned above, the framework will apply changes even if the underlying resource 
+or status subresource is changed while the reconciliation was running.
+First, it always forces the conflicts in the background as advised in [Kubernetes docs](https://kubernetes.io/docs/reference/using-api/server-side-apply/#using-server-side-apply-in-a-controller),
+ in addition to that since the resource version is not set it won't do optimistic locking. If you still
+want to have optimistic locking for the patch, use the resource version of the original resource:
+
+```java
+@Override
+public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+
+    reconcileLogicForManagedResources(webPage);
+
+    WebPage statusPatch = new WebPage();
+    statusPatch.setMetadata(new ObjectMetaBuilder()
+            .withName(webPage.getMetadata().getName())
+            .withNamespace(webPage.getMetadata().getNamespace())
+            .withResourceVersion(webPage.getMetadata().getResourceVersion())
+            .build());
+    statusPatch.setStatus(updatedStatusForWebPage(webPage));
+
+    return UpdateControl.patchStatus(statusPatch);
+}
+```
