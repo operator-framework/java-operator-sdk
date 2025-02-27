@@ -327,53 +327,42 @@
           <excludedGroups>WatchPermissionAwareTest</excludedGroups>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <configuration>
+          <pom>
+            <includes>
+              <include>pom.xml</include>
+              <include>./**/pom.xml</include>
+            </includes>
+            <sortPom>
+              <expandEmptyElements>false</expandEmptyElements>
+            </sortPom>
+          </pom>
+          <java>
+            <googleJavaFormat>
+              <reflowLongStrings>true</reflowLongStrings>
+            </googleJavaFormat>
+            <importOrder>
+              <order>java,javax,org,io,com,,\#</order>
+            </importOrder>
+            <removeUnusedImports/>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>apply</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>spotless</id>
-      <activation>
-        <file>
-          <exists>contributing</exists>
-        </file>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.diffplug.spotless</groupId>
-            <artifactId>spotless-maven-plugin</artifactId>
-            <configuration>
-              <pom>
-                <includes>
-                  <include>pom.xml</include>
-                  <include>./**/pom.xml</include>
-                </includes>
-                <sortPom>
-                  <expandEmptyElements>false</expandEmptyElements>
-                </sortPom>
-              </pom>
-              <java>
-                <eclipse>
-                  <file>contributing/eclipse-google-style.xml</file>
-                </eclipse>
-                <importOrder>
-                  <file>contributing/eclipse.importorder</file>
-                </importOrder>
-                <removeUnusedImports/>
-              </java>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>apply</goal>
-                </goals>
-                <phase>compile</phase>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>integration-tests</id>
       <build>
