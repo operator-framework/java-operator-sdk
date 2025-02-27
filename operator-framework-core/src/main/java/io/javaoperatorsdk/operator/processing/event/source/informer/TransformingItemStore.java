@@ -19,8 +19,8 @@ public class TransformingItemStore<R extends HasMetadata> implements ItemStore<R
     this(Cache::metaNamespaceKeyFunc, transformationFunction);
   }
 
-  public TransformingItemStore(Function<R, String> keyFunction,
-      UnaryOperator<R> transformationFunction) {
+  public TransformingItemStore(
+      Function<R, String> keyFunction, UnaryOperator<R> transformationFunction) {
     this.keyFunction = keyFunction;
     this.transformationFunction = transformationFunction;
   }

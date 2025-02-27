@@ -27,16 +27,13 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 /** Shows how to implement reconciler using the low level api directly. */
 @RateLimited(maxReconciliations = 2, within = 3)
 @ControllerConfiguration
-public class WebPageReconciler
-    implements Reconciler<WebPage> {
+public class WebPageReconciler implements Reconciler<WebPage> {
 
   public static final String INDEX_HTML = "index.html";
 
   private static final Logger log = LoggerFactory.getLogger(WebPageReconciler.class);
 
-  public WebPageReconciler() {
-
-  }
+  public WebPageReconciler() {}
 
   @Override
   public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
@@ -64,8 +61,8 @@ public class WebPageReconciler
                 .withLabelSelector(SELECTOR)
                 .build(),
             context);
-    return List.of(configMapEventSource, deploymentEventSource,
-        serviceEventSource, ingressEventSource);
+    return List.of(
+        configMapEventSource, deploymentEventSource, serviceEventSource, ingressEventSource);
   }
 
   @Override
@@ -82,7 +79,6 @@ public class WebPageReconciler
     String configMapName = configMapName(webPage);
     String deploymentName = deploymentName(webPage);
 
-
     ConfigMap desiredHtmlConfigMap = makeDesiredHtmlConfigMap(ns, configMapName, webPage);
     Deployment desiredDeployment =
         makeDesiredDeployment(webPage, deploymentName, ns, configMapName);
@@ -94,7 +90,11 @@ public class WebPageReconciler
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      context.getClient().configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
+      context
+          .getClient()
+          .configMaps()
+          .inNamespace(ns)
+          .resource(desiredHtmlConfigMap)
           .serverSideApply();
     }
 
@@ -104,7 +104,12 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      context.getClient().apps().deployments().inNamespace(ns).resource(desiredDeployment)
+      context
+          .getClient()
+          .apps()
+          .deployments()
+          .inNamespace(ns)
+          .resource(desiredDeployment)
           .serverSideApply();
     }
 
@@ -114,8 +119,7 @@ public class WebPageReconciler
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      context.getClient().services().inNamespace(ns).resource(desiredService)
-          .serverSideApply();
+      context.getClient().services().inNamespace(ns).resource(desiredService).serverSideApply();
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
@@ -124,16 +128,15 @@ public class WebPageReconciler
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
         context.getClient().resource(desiredIngress).inNamespace(ns).serverSideApply();
       }
-    } else
-      existingIngress.ifPresent(
-          ingress -> context.getClient().resource(ingress).delete());
+    } else existingIngress.ifPresent(ingress -> context.getClient().resource(ingress).delete());
 
     // not that this is not necessary, eventually mounted config map would be updated, just this way
     // is much faster; what is handy for demo purposes.
     // https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
-    if (previousConfigMap != null && !StringUtils.equals(
-        previousConfigMap.getData().get(INDEX_HTML),
-        desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
+    if (previousConfigMap != null
+        && !StringUtils.equals(
+            previousConfigMap.getData().get(INDEX_HTML),
+            desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
       log.info("Restarting pods because HTML has changed in {}", ns);
       context.getClient().pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
@@ -144,11 +147,27 @@ public class WebPageReconciler
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {
     String desiredServiceName =
-        desiredIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
-            .getBackend().getService().getName();
+        desiredIngress
+            .getSpec()
+            .getRules()
+            .get(0)
+            .getHttp()
+            .getPaths()
+            .get(0)
+            .getBackend()
+            .getService()
+            .getName();
     String existingServiceName =
-        existingIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
-            .getBackend().getService().getName();
+        existingIngress
+            .getSpec()
+            .getRules()
+            .get(0)
+            .getHttp()
+            .getPaths()
+            .get(0)
+            .getBackend()
+            .getService()
+            .getName();
     return Objects.equals(desiredServiceName, existingServiceName);
   }
 
@@ -156,8 +175,14 @@ public class WebPageReconciler
     if (deployment == null) {
       return false;
     } else {
-      return desiredDeployment.getSpec().getReplicas().equals(deployment.getSpec().getReplicas()) &&
-          desiredDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+      return desiredDeployment.getSpec().getReplicas().equals(deployment.getSpec().getReplicas())
+          && desiredDeployment
+              .getSpec()
+              .getTemplate()
+              .getSpec()
+              .getContainers()
+              .get(0)
+              .getImage()
               .equals(
                   deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
     }
@@ -190,8 +215,8 @@ public class WebPageReconciler
     return desiredService;
   }
 
-  private Deployment makeDesiredDeployment(WebPage webPage, String deploymentName, String ns,
-      String configMapName) {
+  private Deployment makeDesiredDeployment(
+      WebPage webPage, String deploymentName, String ns, String configMapName) {
     Deployment desiredDeployment =
         ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     desiredDeployment.getMetadata().setName(deploymentName);

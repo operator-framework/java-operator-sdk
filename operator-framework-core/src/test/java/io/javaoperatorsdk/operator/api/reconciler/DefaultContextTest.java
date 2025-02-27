@@ -33,5 +33,4 @@ class DefaultContextTest {
 
     assertThat(res).isEmpty();
   }
-
 }

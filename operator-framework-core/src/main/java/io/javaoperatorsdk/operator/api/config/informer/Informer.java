@@ -27,18 +27,20 @@ public @interface Informer {
    * Specified which namespaces the associated informer monitors for custom resources events. If no
    * namespace is specified then which namespaces the informer will monitor will depend on the
    * context in which the informer is configured:
+   *
    * <ul>
-   * <li>all namespaces if configuring a controller informer</li>
-   * <li>the namespaces configured for the associated controller if configuring an event source</li>
+   *   <li>all namespaces if configuring a controller informer
+   *   <li>the namespaces configured for the associated controller if configuring an event source
    * </ul>
    *
    * You can set a list of namespaces or use the following constants:
+   *
    * <ul>
-   * <li>{@link Constants#WATCH_ALL_NAMESPACES}</li>
-   * <li>{@link Constants#WATCH_CURRENT_NAMESPACE}</li>
-   * <li>{@link Constants#SAME_AS_CONTROLLER}</li>
+   *   <li>{@link Constants#WATCH_ALL_NAMESPACES}
+   *   <li>{@link Constants#WATCH_CURRENT_NAMESPACE}
+   *   <li>{@link Constants#SAME_AS_CONTROLLER}
    * </ul>
-   * 
+   *
    * @return the array of namespaces the associated informer monitors
    */
   String[] namespaces() default {Constants.SAME_AS_CONTROLLER};
@@ -56,7 +58,7 @@ public @interface Informer {
    * Optional {@link OnAddFilter} to filter add events sent to the associated informer
    *
    * @return the {@link OnAddFilter} filter implementation to use, defaulting to the interface
-   *         itself if no value is set
+   *     itself if no value is set
    */
   Class<? extends OnAddFilter> onAddFilter() default OnAddFilter.class;
 
@@ -64,7 +66,7 @@ public @interface Informer {
    * Optional {@link OnUpdateFilter} to filter update events sent to the associated informer
    *
    * @return the {@link OnUpdateFilter} filter implementation to use, defaulting to the interface
-   *         itself if no value is set
+   *     itself if no value is set
    */
   Class<? extends OnUpdateFilter> onUpdateFilter() default OnUpdateFilter.class;
 
@@ -72,7 +74,7 @@ public @interface Informer {
    * Optional {@link OnDeleteFilter} to filter delete events sent to the associated informer
    *
    * @return the {@link OnDeleteFilter} filter implementation to use, defaulting to the interface
-   *         itself if no value is set
+   *     itself if no value is set
    */
   Class<? extends OnDeleteFilter> onDeleteFilter() default OnDeleteFilter.class;
 
@@ -80,7 +82,7 @@ public @interface Informer {
    * Optional {@link GenericFilter} to filter events sent to the associated informer
    *
    * @return the {@link GenericFilter} filter implementation to use, defaulting to the interface
-   *         itself if no value is set
+   *     itself if no value is set
    */
   Class<? extends GenericFilter> genericFilter() default GenericFilter.class;
 
@@ -96,14 +98,10 @@ public @interface Informer {
    * "https://github.com/fabric8io/kubernetes-client/blob/43b67939fde91046ab7fb0c362f500c2b46eb59e/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java#L273">
    * method</a> in fabric8 client informer implementation.
    *
-   * <p>
-   * The main goal, is to be able to use limited caches or provide any custom implementation.
-   * </p>
+   * <p>The main goal, is to be able to use limited caches or provide any custom implementation.
    *
-   * <p>
-   * See {@link BoundedItemStore} and <a href=
+   * <p>See {@link BoundedItemStore} and <a href=
    * "https://github.com/operator-framework/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedCache.java">CaffeinBoundedCache</a>
-   * </p>
    *
    * @return the class of the {@link ItemStore} implementation to use
    */
@@ -115,5 +113,4 @@ public @interface Informer {
    * the informer cache.
    */
   long informerListLimit() default NO_LONG_VALUE_SET;
-
 }

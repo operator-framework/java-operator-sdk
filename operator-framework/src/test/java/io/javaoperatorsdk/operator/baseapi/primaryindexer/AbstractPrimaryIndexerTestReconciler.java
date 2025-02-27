@@ -12,8 +12,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration
-public class AbstractPrimaryIndexerTestReconciler implements
-    Reconciler<PrimaryIndexerTestCustomResource> {
+public class AbstractPrimaryIndexerTestReconciler
+    implements Reconciler<PrimaryIndexerTestCustomResource> {
 
   public static final String CONFIG_MAP_NAME = "common-config-map";
 
@@ -36,5 +36,4 @@ public class AbstractPrimaryIndexerTestReconciler implements
   public Map<String, AtomicInteger> getNumberOfExecutions() {
     return numberOfExecutions;
   }
-
 }

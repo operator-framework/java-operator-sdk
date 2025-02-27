@@ -17,43 +17,50 @@ import static org.awaitility.Awaitility.await;
 
 class RateLimitIT {
 
-  private final static Logger log = LoggerFactory.getLogger(RateLimitIT.class);
+  private static final Logger log = LoggerFactory.getLogger(RateLimitIT.class);
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new RateLimitReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(new RateLimitReconciler()).build();
 
   @Test
   void rateLimitsExecution() {
     var res = operator.create(createResource());
-    IntStream.rangeClosed(1, 5).forEach(i -> {
-      log.debug("replacing resource version: {}", i);
-      var resource = createResource();
-      resource.getSpec().setNumber(i);
-      operator.replace(resource);
-    });
-    await().pollInterval(Duration.ofMillis(100))
+    IntStream.rangeClosed(1, 5)
+        .forEach(
+            i -> {
+              log.debug("replacing resource version: {}", i);
+              var resource = createResource();
+              resource.getSpec().setNumber(i);
+              operator.replace(resource);
+            });
+    await()
+        .pollInterval(Duration.ofMillis(100))
         .pollDelay(Duration.ofMillis(REFRESH_PERIOD / 2))
-        .untilAsserted(() -> assertThat(
-            operator.getReconcilerOfType(RateLimitReconciler.class).getNumberOfExecutions())
-            .isEqualTo(1));
+        .untilAsserted(
+            () ->
+                assertThat(
+                        operator
+                            .getReconcilerOfType(RateLimitReconciler.class)
+                            .getNumberOfExecutions())
+                    .isEqualTo(1));
 
-    await().pollDelay(Duration.ofMillis(REFRESH_PERIOD))
-        .untilAsserted(() -> assertThat(
-            operator.getReconcilerOfType(RateLimitReconciler.class).getNumberOfExecutions())
-            .isEqualTo(2));
+    await()
+        .pollDelay(Duration.ofMillis(REFRESH_PERIOD))
+        .untilAsserted(
+            () ->
+                assertThat(
+                        operator
+                            .getReconcilerOfType(RateLimitReconciler.class)
+                            .getNumberOfExecutions())
+                    .isEqualTo(2));
   }
 
   public RateLimitCustomResource createResource() {
     RateLimitCustomResource res = new RateLimitCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName("test")
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName("test").build());
     res.setSpec(new RateLimitCustomResourceSpec());
     res.getSpec().setNumber(0);
     return res;
   }
-
 }

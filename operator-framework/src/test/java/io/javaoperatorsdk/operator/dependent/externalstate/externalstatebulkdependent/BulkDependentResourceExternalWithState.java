@@ -17,12 +17,13 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePoll
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 
-public class BulkDependentResourceExternalWithState extends
-    PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>
-    implements
-    BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
-    CRUDBulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
-    DependentResourceWithExplicitState<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap> {
+public class BulkDependentResourceExternalWithState
+    extends PerResourcePollingDependentResource<
+        ExternalResource, ExternalStateBulkDependentCustomResource>
+    implements BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
+        CRUDBulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
+        DependentResourceWithExplicitState<
+            ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap> {
 
   public static final String DELIMITER = "-";
   ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
@@ -39,11 +40,12 @@ public class BulkDependentResourceExternalWithState extends
         getExternalStateEventSource().getSecondaryResources(primaryResource);
     Set<ExternalResource> res = new HashSet<>();
 
-    configMaps.forEach(cm -> {
-      var id = cm.getData().get(ExternalStateDependentReconciler.ID_KEY);
-      var externalResource = externalService.read(id);
-      externalResource.ifPresent(res::add);
-    });
+    configMaps.forEach(
+        cm -> {
+          var id = cm.getData().get(ExternalStateDependentReconciler.ID_KEY);
+          var externalResource = externalService.read(id);
+          externalResource.ifPresent(res::add);
+        });
     return res;
   }
 
@@ -53,42 +55,49 @@ public class BulkDependentResourceExternalWithState extends
   }
 
   @Override
-  public ConfigMap stateResource(ExternalStateBulkDependentCustomResource primary,
-      ExternalResource resource) {
-    ConfigMap configMap = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(configMapName(primary, resource))
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(ExternalStateDependentReconciler.ID_KEY, resource.getId()))
-        .build();
+  public ConfigMap stateResource(
+      ExternalStateBulkDependentCustomResource primary, ExternalResource resource) {
+    ConfigMap configMap =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(configMapName(primary, resource))
+                    .withNamespace(primary.getMetadata().getNamespace())
+                    .build())
+            .withData(Map.of(ExternalStateDependentReconciler.ID_KEY, resource.getId()))
+            .build();
     configMap.addOwnerReference(primary);
     return configMap;
   }
 
   @Override
-  public ExternalResource create(ExternalResource desired,
+  public ExternalResource create(
+      ExternalResource desired,
       ExternalStateBulkDependentCustomResource primary,
       Context<ExternalStateBulkDependentCustomResource> context) {
     return externalService.create(desired);
   }
 
   @Override
-  public ExternalResource update(ExternalResource actual,
-      ExternalResource desired, ExternalStateBulkDependentCustomResource primary,
+  public ExternalResource update(
+      ExternalResource actual,
+      ExternalResource desired,
+      ExternalStateBulkDependentCustomResource primary,
       Context<ExternalStateBulkDependentCustomResource> context) {
     return externalService.update(new ExternalResource(actual.getId(), desired.getData()));
   }
 
   @Override
-  protected void handleDelete(ExternalStateBulkDependentCustomResource primary,
+  protected void handleDelete(
+      ExternalStateBulkDependentCustomResource primary,
       ExternalResource secondary,
       Context<ExternalStateBulkDependentCustomResource> context) {
     externalService.delete(secondary.getId());
   }
 
   @Override
-  public Matcher.Result<ExternalResource> match(ExternalResource actualResource,
+  public Matcher.Result<ExternalResource> match(
+      ExternalResource actualResource,
       ExternalResource desired,
       ExternalStateBulkDependentCustomResource primary,
       Context<ExternalStateBulkDependentCustomResource> context) {
@@ -102,8 +111,8 @@ public class BulkDependentResourceExternalWithState extends
     int number = primary.getSpec().getNumber();
     Map<String, ExternalResource> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
-      res.put(Integer.toString(i),
-          new ExternalResource(primary.getSpec().getData() + DELIMITER + i));
+      res.put(
+          Integer.toString(i), new ExternalResource(primary.getSpec().getData() + DELIMITER + i));
     }
     return res;
   }
@@ -117,19 +126,22 @@ public class BulkDependentResourceExternalWithState extends
   }
 
   @Override
-  public void handleDeleteTargetResource(ExternalStateBulkDependentCustomResource primary,
-      ExternalResource resource, String key,
+  public void handleDeleteTargetResource(
+      ExternalStateBulkDependentCustomResource primary,
+      ExternalResource resource,
+      String key,
       Context<ExternalStateBulkDependentCustomResource> context) {
     externalService.delete(resource.getId());
   }
 
   private String externalResourceIndex(ExternalResource externalResource) {
-    return externalResource.getData()
+    return externalResource
+        .getData()
         .substring(externalResource.getData().lastIndexOf(DELIMITER) + 1);
   }
 
-  private String configMapName(ExternalStateBulkDependentCustomResource primary,
-      ExternalResource resource) {
+  private String configMapName(
+      ExternalStateBulkDependentCustomResource primary, ExternalResource resource) {
     return primary.getMetadata().getName() + DELIMITER + externalResourceIndex(resource);
   }
 

@@ -13,14 +13,16 @@ public class RouteDependentResource
   }
 
   @Override
-  protected Route desired(WorkflowActivationConditionCustomResource primary,
+  protected Route desired(
+      WorkflowActivationConditionCustomResource primary,
       Context<WorkflowActivationConditionCustomResource> context) {
     // basically does not matter since this should not be called
     Route route = new Route();
-    route.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    route.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace())
+            .build());
 
     return route;
   }

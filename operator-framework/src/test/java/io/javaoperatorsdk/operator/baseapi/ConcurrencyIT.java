@@ -42,9 +42,9 @@ class ConcurrencyIT {
         .untilAsserted(
             () -> {
               List<ConfigMap> items =
-                  operator.resources(ConfigMap.class)
-                      .withLabel(
-                          "managedBy", TestReconciler.class.getSimpleName())
+                  operator
+                      .resources(ConfigMap.class)
+                      .withLabel("managedBy", TestReconciler.class.getSimpleName())
                       .list()
                       .getItems();
               assertThat(items).hasSize(NUMBER_OF_RESOURCES_CREATED);
@@ -54,11 +54,9 @@ class ConcurrencyIT {
     // update some resources
     for (int i = 0; i < NUMBER_OF_RESOURCES_UPDATED; i++) {
       TestCustomResource tcr =
-          operator.get(TestCustomResource.class,
-              TestUtils.TEST_CUSTOM_RESOURCE_PREFIX + i);
+          operator.get(TestCustomResource.class, TestUtils.TEST_CUSTOM_RESOURCE_PREFIX + i);
       tcr.getSpec().setValue(i + UPDATED_SUFFIX);
-      operator.resources(TestCustomResource.class).resource(tcr)
-          .createOrReplace();
+      operator.resources(TestCustomResource.class).resource(tcr).createOrReplace();
     }
     // sleep for a short time to make variability to the test, so some updates are not
     // executed before delete
@@ -75,9 +73,9 @@ class ConcurrencyIT {
         .untilAsserted(
             () -> {
               List<ConfigMap> items =
-                  operator.resources(ConfigMap.class)
-                      .withLabel(
-                          "managedBy", TestReconciler.class.getSimpleName())
+                  operator
+                      .resources(ConfigMap.class)
+                      .withLabel("managedBy", TestReconciler.class.getSimpleName())
                       .list()
                       .getItems();
               // reducing configmaps to names only - better for debugging
@@ -89,11 +87,8 @@ class ConcurrencyIT {
                   .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
 
               List<TestCustomResource> crs =
-                  operator.resources(TestCustomResource.class)
-                      .list()
-                      .getItems();
-              assertThat(crs)
-                  .hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
+                  operator.resources(TestCustomResource.class).list().getItems();
+              assertThat(crs).hasSize(NUMBER_OF_RESOURCES_CREATED - NUMBER_OF_RESOURCES_DELETED);
             });
   }
 }

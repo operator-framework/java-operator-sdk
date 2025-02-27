@@ -8,7 +8,7 @@ public interface RetryInfo {
 
   /**
    * @return true, if the current attempt is the last one in regard to the retry limit
-   *         configuration.
+   *     configuration.
    */
   boolean isLastAttempt();
 }

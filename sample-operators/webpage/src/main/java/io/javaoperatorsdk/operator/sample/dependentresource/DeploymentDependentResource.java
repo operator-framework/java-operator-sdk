@@ -37,20 +37,14 @@ public class DeploymentDependentResource
     deployment.getMetadata().setLabels(labels);
     deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
 
-    deployment
-        .getSpec()
-        .getTemplate()
-        .getMetadata()
-        .getLabels()
-        .put("app", deploymentName);
+    deployment.getSpec().getTemplate().getMetadata().getLabels().put("app", deploymentName);
     deployment
         .getSpec()
         .getTemplate()
         .getSpec()
         .getVolumes()
         .get(0)
-        .setConfigMap(
-            new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
+        .setConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
 
     return deployment;
   }

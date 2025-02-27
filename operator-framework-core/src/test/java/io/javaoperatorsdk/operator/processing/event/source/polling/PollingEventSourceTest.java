@@ -21,8 +21,8 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.*;
 
 class PollingEventSourceTest
-    extends
-    AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
+    extends AbstractEventSourceTestBase<
+        PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   public static final int DEFAULT_WAIT_PERIOD = 100;
   public static final Duration POLL_PERIOD = Duration.ofMillis(30L);
@@ -30,9 +30,14 @@ class PollingEventSourceTest
   @SuppressWarnings("unchecked")
   private final PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
+
   private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
-      new PollingEventSource<>(SampleExternalResource.class,
-          new PollingConfiguration<>(null, resourceFetcher, POLL_PERIOD,
+      new PollingEventSource<>(
+          SampleExternalResource.class,
+          new PollingConfiguration<>(
+              null,
+              resourceFetcher,
+              POLL_PERIOD,
               (SampleExternalResource er) -> er.getName() + "#" + er.getValue()));
 
   @BeforeEach
@@ -51,7 +56,8 @@ class PollingEventSourceTest
 
   @Test
   void propagatesEventForRemovedResources() throws InterruptedException {
-    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithTwoValues())
+    when(resourceFetcher.fetchResources())
+        .thenReturn(testResponseWithTwoValues())
         .thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
     Thread.sleep(DEFAULT_WAIT_PERIOD);
@@ -82,8 +88,7 @@ class PollingEventSourceTest
 
   @Test
   void updatesHealthIndicatorBasedOnExceptionsInFetcher() throws InterruptedException {
-    when(resourceFetcher.fetchResources())
-        .thenReturn(testResponseWithOneValue());
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
     assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY);
 
@@ -93,8 +98,10 @@ class PollingEventSourceTest
         .thenThrow(new RuntimeException("test exception"))
         .thenReturn(testResponseWithOneValue());
 
-    await().pollInterval(POLL_PERIOD).untilAsserted(
-        () -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.UNHEALTHY));
+    await()
+        .pollInterval(POLL_PERIOD)
+        .untilAsserted(
+            () -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.UNHEALTHY));
 
     await()
         .untilAsserted(() -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY));
@@ -118,5 +125,4 @@ class PollingEventSourceTest
     res.put(primaryID2(), Set.of(testResource2()));
     return res;
   }
-
 }

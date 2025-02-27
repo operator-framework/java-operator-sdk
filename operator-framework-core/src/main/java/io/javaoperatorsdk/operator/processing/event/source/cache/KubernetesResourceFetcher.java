@@ -17,9 +17,8 @@ public class KubernetesResourceFetcher<R extends HasMetadata>
     this(rClass, client, inverseNamespaceKeyFunction());
   }
 
-  public KubernetesResourceFetcher(Class<R> rClass,
-      KubernetesClient client,
-      Function<String, ResourceID> resourceIDFunction) {
+  public KubernetesResourceFetcher(
+      Class<R> rClass, KubernetesClient client, Function<String, ResourceID> resourceIDFunction) {
     this.rClass = rClass;
     this.client = client;
     this.resourceIDFunction = resourceIDFunction;
@@ -28,8 +27,9 @@ public class KubernetesResourceFetcher<R extends HasMetadata>
   @Override
   public R fetchResource(String key) {
     var resourceId = resourceIDFunction.apply(key);
-    return resourceId.getNamespace().map(ns -> client.resources(rClass).inNamespace(ns)
-        .withName(resourceId.getName()).get())
+    return resourceId
+        .getNamespace()
+        .map(ns -> client.resources(rClass).inNamespace(ns).withName(resourceId.getName()).get())
         .orElse(client.resources(rClass).withName(resourceId.getName()).get());
   }
 
@@ -43,5 +43,4 @@ public class KubernetesResourceFetcher<R extends HasMetadata>
       }
     };
   }
-
 }

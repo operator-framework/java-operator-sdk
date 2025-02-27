@@ -37,9 +37,7 @@ public class TestUtils {
   public static TestCustomResource testCustomResourceWithPrefix(String id) {
     TestCustomResource resource = new TestCustomResource();
     resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(TEST_CUSTOM_RESOURCE_PREFIX + id)
-            .build());
+        new ObjectMetaBuilder().withName(TEST_CUSTOM_RESOURCE_PREFIX + id).build());
     resource.setKind("CustomService");
     resource.setSpec(new TestCustomResourceSpec());
     resource.getSpec().setConfigMapName("test-config-map-" + id);

@@ -12,12 +12,13 @@ public class NamespaceNamingTestUtils {
   public static final String SHORT_CLASS_NAME = Method.class.getSimpleName().toLowerCase();
   public static final String SHORT_METHOD_NAME = "short";
   public static final String LONG_METHOD_NAME = "longmethodnametotestifistruncatedcorrectly";
-  public static final String LONG_CLASS_NAME = VeryLongClassNameForSakeOfThisTestIfItWorks.class
-      .getSimpleName().toLowerCase();
+  public static final String LONG_CLASS_NAME =
+      VeryLongClassNameForSakeOfThisTestIfItWorks.class.getSimpleName().toLowerCase();
   // longer then 63
   public static final String VERY_LONG_CLASS_NAME =
       VeryVeryVeryVeryVeryVeryLongClassNameForSakeOfThisTestIfItWorks.class
-          .getSimpleName().toLowerCase();
+          .getSimpleName()
+          .toLowerCase();
 
   public static ExtensionContext mockExtensionContext(String className, String methodName) {
     ExtensionContext extensionContext = mock(ExtensionContext.class);
@@ -41,13 +42,7 @@ public class NamespaceNamingTestUtils {
     return extensionContext;
   }
 
+  public static class VeryVeryVeryVeryVeryVeryLongClassNameForSakeOfThisTestIfItWorks {}
 
-  public static class VeryVeryVeryVeryVeryVeryLongClassNameForSakeOfThisTestIfItWorks {
-
-  }
-
-  public static class VeryLongClassNameForSakeOfThisTestIfItWorks {
-
-  }
-
+  public static class VeryLongClassNameForSakeOfThisTestIfItWorks {}
 }

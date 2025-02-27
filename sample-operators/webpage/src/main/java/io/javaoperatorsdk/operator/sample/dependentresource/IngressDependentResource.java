@@ -23,5 +23,4 @@ public class IngressDependentResource extends CRUDKubernetesDependentResource<In
   protected Ingress desired(WebPage webPage, Context<WebPage> context) {
     return makeDesiredIngress(webPage);
   }
-
 }

@@ -33,77 +33,97 @@ public class WorkflowMultipleActivationIT {
     ActivationCondition.MET = true;
     var cr1 = extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
-      var secret = extension.get(Secret.class, TEST_RESOURCE1);
-      assertThat(cm).isNotNull();
-      assertThat(secret).isNotNull();
-      assertThat(cm.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+              var secret = extension.get(Secret.class, TEST_RESOURCE1);
+              assertThat(cm).isNotNull();
+              assertThat(secret).isNotNull();
+              assertThat(cm.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
+            });
 
     extension.delete(cr1);
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
-      assertThat(cm).isNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+              assertThat(cm).isNull();
+            });
 
     ActivationCondition.MET = false;
     cr1 = extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
-      var secret = extension.get(Secret.class, TEST_RESOURCE1);
-      assertThat(cm).isNull();
-      assertThat(secret).isNotNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+              var secret = extension.get(Secret.class, TEST_RESOURCE1);
+              assertThat(cm).isNull();
+              assertThat(secret).isNotNull();
+            });
 
     ActivationCondition.MET = true;
     cr1.getSpec().setValue(CHANGED_VALUE);
     extension.replace(cr1);
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
-      assertThat(cm).isNotNull();
-      assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+              assertThat(cm).isNotNull();
+              assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
+            });
 
     ActivationCondition.MET = false;
     cr1.getSpec().setValue(INITIAL_DATA);
     extension.replace(cr1);
 
-    await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
-      assertThat(cm).isNotNull();
-      // data not changed
-      assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(POLL_DELAY))
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+              assertThat(cm).isNotNull();
+              // data not changed
+              assertThat(cm.getData()).containsEntry(DATA_KEY, CHANGED_VALUE);
+            });
 
     var numOfReconciliation =
-        extension.getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
+        extension
+            .getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
             .getNumberOfReconciliationExecution();
     var actualCM = extension.get(ConfigMap.class, TEST_RESOURCE1);
     actualCM.getData().put("data2", "additionaldata");
     extension.replace(actualCM);
-    await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
-      // change in config map does not induce reconciliation if inactive (thus informer is not
-      // present)
-      assertThat(extension.getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
-          .getNumberOfReconciliationExecution()).isEqualTo(numOfReconciliation);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(POLL_DELAY))
+        .untilAsserted(
+            () -> {
+              // change in config map does not induce reconciliation if inactive (thus informer is
+              // not
+              // present)
+              assertThat(
+                      extension
+                          .getReconcilerOfType(WorkflowMultipleActivationReconciler.class)
+                          .getNumberOfReconciliationExecution())
+                  .isEqualTo(numOfReconciliation);
+            });
 
     extension.delete(cr1);
-    await().pollDelay(Duration.ofMillis(POLL_DELAY)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
-      assertThat(cm).isNotNull();
-    });
+    await()
+        .pollDelay(Duration.ofMillis(POLL_DELAY))
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+              assertThat(cm).isNotNull();
+            });
   }
 
   WorkflowMultipleActivationCustomResource testResource(String name) {
     var res = new WorkflowMultipleActivationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     res.setSpec(new WorkflowMultipleActivationSpec());
     res.getSpec().setValue(INITIAL_DATA);
     return res;
@@ -123,14 +143,15 @@ public class WorkflowMultipleActivationIT {
     extension.create(testResource());
     extension.create(testResource2());
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
-      var cm2 = extension.get(ConfigMap.class, TEST_RESOURCE2);
-      assertThat(cm).isNotNull();
-      assertThat(cm2).isNotNull();
-      assertThat(cm.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
-      assertThat(cm2.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE1);
+              var cm2 = extension.get(ConfigMap.class, TEST_RESOURCE2);
+              assertThat(cm).isNotNull();
+              assertThat(cm2).isNotNull();
+              assertThat(cm.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
+              assertThat(cm2.getData()).containsEntry(DATA_KEY, INITIAL_DATA);
+            });
   }
-
 }

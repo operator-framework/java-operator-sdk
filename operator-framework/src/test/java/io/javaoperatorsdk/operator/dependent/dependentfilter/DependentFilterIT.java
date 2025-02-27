@@ -21,7 +21,8 @@ class DependentFilterIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(DependentFilterTestReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(DependentFilterTestReconciler.class)
           .build();
 
   @Test
@@ -29,29 +30,38 @@ class DependentFilterIT {
     var resource = createResource();
     operator.create(resource);
 
-    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(DependentFilterTestReconciler.class)
-          .getNumberOfExecutions()).isEqualTo(1);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(150))
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      operator
+                          .getReconcilerOfType(DependentFilterTestReconciler.class)
+                          .getNumberOfExecutions())
+                  .isEqualTo(1);
+            });
 
     var configMap = operator.get(ConfigMap.class, RESOURCE_NAME);
     configMap.setData(Map.of(CM_VALUE_KEY, CONFIG_MAP_FILTER_VALUE));
     operator.replace(configMap);
 
-    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(DependentFilterTestReconciler.class)
-          .getNumberOfExecutions()).isEqualTo(1);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(150))
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      operator
+                          .getReconcilerOfType(DependentFilterTestReconciler.class)
+                          .getNumberOfExecutions())
+                  .isEqualTo(1);
+            });
   }
 
   DependentFilterTestCustomResource createResource() {
     DependentFilterTestCustomResource resource = new DependentFilterTestCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     resource.setSpec(new DependentFilterTestResourceSpec());
     resource.getSpec().setValue("value1");
     return resource;
   }
-
 }

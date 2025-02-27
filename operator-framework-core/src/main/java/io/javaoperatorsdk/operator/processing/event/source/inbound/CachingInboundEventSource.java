@@ -12,14 +12,14 @@ import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachi
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
 public class CachingInboundEventSource<R, P extends HasMetadata>
-    extends ExternalResourceCachingEventSource<R, P>
-    implements ResourceEventAware<P> {
+    extends ExternalResourceCachingEventSource<R, P> implements ResourceEventAware<P> {
 
   private final ResourceFetcher<R, P> resourceFetcher;
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
 
   public CachingInboundEventSource(
-      ResourceFetcher<R, P> resourceFetcher, Class<R> resourceClass,
+      ResourceFetcher<R, P> resourceFetcher,
+      Class<R> resourceClass,
       CacheKeyMapper<R> cacheKeyMapper) {
     super(resourceClass, cacheKeyMapper);
     this.resourceFetcher = resourceFetcher;

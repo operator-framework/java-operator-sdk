@@ -23,9 +23,12 @@ class DependentResourceNode<R, P extends HasMetadata> {
     this(null, null, null, null, dependentResource);
   }
 
-  public DependentResourceNode(Condition<R, P> reconcilePrecondition,
-      Condition<R, P> deletePostcondition, Condition<R, P> readyPostcondition,
-      Condition<R, P> activationCondition, DependentResource<R, P> dependentResource) {
+  public DependentResourceNode(
+      Condition<R, P> reconcilePrecondition,
+      Condition<R, P> deletePostcondition,
+      Condition<R, P> readyPostcondition,
+      Condition<R, P> activationCondition,
+      DependentResource<R, P> dependentResource) {
     setReconcilePrecondition(reconcilePrecondition);
     setDeletePostcondition(deletePostcondition);
     setReadyPostcondition(readyPostcondition);
@@ -67,23 +70,31 @@ class DependentResourceNode<R, P extends HasMetadata> {
   }
 
   void setReconcilePrecondition(Condition<R, P> reconcilePrecondition) {
-    this.reconcilePrecondition = reconcilePrecondition == null ? null
-        : new ConditionWithType<>(reconcilePrecondition, Condition.Type.RECONCILE);
+    this.reconcilePrecondition =
+        reconcilePrecondition == null
+            ? null
+            : new ConditionWithType<>(reconcilePrecondition, Condition.Type.RECONCILE);
   }
 
   void setDeletePostcondition(Condition<R, P> deletePostcondition) {
-    this.deletePostcondition = deletePostcondition == null ? null
-        : new ConditionWithType<>(deletePostcondition, Condition.Type.DELETE);
+    this.deletePostcondition =
+        deletePostcondition == null
+            ? null
+            : new ConditionWithType<>(deletePostcondition, Condition.Type.DELETE);
   }
 
   void setActivationCondition(Condition<R, P> activationCondition) {
-    this.activationCondition = activationCondition == null ? null
-        : new ConditionWithType<>(activationCondition, Condition.Type.ACTIVATION);
+    this.activationCondition =
+        activationCondition == null
+            ? null
+            : new ConditionWithType<>(activationCondition, Condition.Type.ACTIVATION);
   }
 
   void setReadyPostcondition(Condition<R, P> readyPostcondition) {
-    this.readyPostcondition = readyPostcondition == null ? null
-        : new ConditionWithType<>(readyPostcondition, Condition.Type.READY);
+    this.readyPostcondition =
+        readyPostcondition == null
+            ? null
+            : new ConditionWithType<>(readyPostcondition, Condition.Type.READY);
   }
 
   public DependentResource<R, P> getDependentResource() {

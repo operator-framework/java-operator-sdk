@@ -9,8 +9,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
 public class MultipleDependentResourceConfigMap
-    extends
-    CRUDKubernetesDependentResource<ConfigMap, MultipleDependentResourceCustomResourceNoDiscriminator> {
+    extends CRUDKubernetesDependentResource<
+        ConfigMap, MultipleDependentResourceCustomResourceNoDiscriminator> {
 
   public static final String DATA_KEY = "key";
   private final int value;
@@ -21,7 +21,8 @@ public class MultipleDependentResourceConfigMap
   }
 
   @Override
-  protected ConfigMap desired(MultipleDependentResourceCustomResourceNoDiscriminator primary,
+  protected ConfigMap desired(
+      MultipleDependentResourceCustomResourceNoDiscriminator primary,
       Context<MultipleDependentResourceCustomResourceNoDiscriminator> context) {
     Map<String, String> data = new HashMap<>();
     data.put(DATA_KEY, String.valueOf(value));

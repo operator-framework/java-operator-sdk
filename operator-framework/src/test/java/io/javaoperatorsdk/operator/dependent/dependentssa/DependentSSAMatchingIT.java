@@ -27,12 +27,11 @@ public class DependentSSAMatchingIT {
   public static final String ADDITIONAL_KEY = "key2";
   public static final String ADDITIONAL_VALUE = "Additional Value";
 
-
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(new DependentSSAReconciler(),
-              o -> o.withFieldManager(CUSTOM_FIELD_MANAGER_NAME))
+          .withReconciler(
+              new DependentSSAReconciler(), o -> o.withFieldManager(CUSTOM_FIELD_MANAGER_NAME))
           .build();
 
   @Test
@@ -40,56 +39,69 @@ public class DependentSSAMatchingIT {
     SSAConfigMapDependent.NUMBER_OF_UPDATES.set(0);
     var resource = extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(cm).isNotNull();
-      assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, INITIAL_VALUE);
-      assertThat(cm.getMetadata().getManagedFields().stream()
-          .filter(fm -> fm.getManager().equals(CUSTOM_FIELD_MANAGER_NAME))).isNotEmpty();
-      assertThat(SSAConfigMapDependent.NUMBER_OF_UPDATES.get()).isZero();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              assertThat(cm).isNotNull();
+              assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, INITIAL_VALUE);
+              assertThat(
+                      cm.getMetadata().getManagedFields().stream()
+                          .filter(fm -> fm.getManager().equals(CUSTOM_FIELD_MANAGER_NAME)))
+                  .isNotEmpty();
+              assertThat(SSAConfigMapDependent.NUMBER_OF_UPDATES.get()).isZero();
+            });
 
-    ConfigMap cmPatch = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(TEST_RESOURCE_NAME)
-            .withNamespace(resource.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(ADDITIONAL_KEY, ADDITIONAL_VALUE))
-        .build();
+    ConfigMap cmPatch =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(TEST_RESOURCE_NAME)
+                    .withNamespace(resource.getMetadata().getNamespace())
+                    .build())
+            .withData(Map.of(ADDITIONAL_KEY, ADDITIONAL_VALUE))
+            .build();
 
-    extension.getKubernetesClient().configMaps().resource(cmPatch).patch(new PatchContext.Builder()
-        .withFieldManager(OTHER_FIELD_MANAGER)
-        .withPatchType(PatchType.SERVER_SIDE_APPLY)
-        .build());
+    extension
+        .getKubernetesClient()
+        .configMaps()
+        .resource(cmPatch)
+        .patch(
+            new PatchContext.Builder()
+                .withFieldManager(OTHER_FIELD_MANAGER)
+                .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                .build());
 
-    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(cm.getData()).hasSize(2);
-      assertThat(SSAConfigMapDependent.NUMBER_OF_UPDATES.get()).isZero();
-      assertThat(cm.getMetadata().getManagedFields()).hasSize(2);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(300))
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              assertThat(cm.getData()).hasSize(2);
+              assertThat(SSAConfigMapDependent.NUMBER_OF_UPDATES.get()).isZero();
+              assertThat(cm.getMetadata().getManagedFields()).hasSize(2);
+            });
 
     resource.getSpec().setValue(CHANGED_VALUE);
     extension.replace(resource);
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(cm.getData()).hasSize(2);
-      assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, CHANGED_VALUE);
-      assertThat(cm.getData()).containsEntry(ADDITIONAL_KEY, ADDITIONAL_VALUE);
-      assertThat(cm.getMetadata().getManagedFields()).hasSize(2);
-      assertThat(SSAConfigMapDependent.NUMBER_OF_UPDATES.get()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              assertThat(cm.getData()).hasSize(2);
+              assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, CHANGED_VALUE);
+              assertThat(cm.getData()).containsEntry(ADDITIONAL_KEY, ADDITIONAL_VALUE);
+              assertThat(cm.getMetadata().getManagedFields()).hasSize(2);
+              assertThat(SSAConfigMapDependent.NUMBER_OF_UPDATES.get()).isEqualTo(1);
+            });
   }
 
   public DependentSSACustomResource testResource() {
     DependentSSACustomResource resource = new DependentSSACustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     resource.setSpec(new DependentSSASpec());
     resource.getSpec().setValue(INITIAL_VALUE);
     return resource;
   }
-
 }

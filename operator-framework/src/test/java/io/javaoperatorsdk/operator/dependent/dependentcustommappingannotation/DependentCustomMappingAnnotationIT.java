@@ -24,7 +24,6 @@ class DependentCustomMappingAnnotationIT {
           .withReconciler(DependentCustomMappingReconciler.class)
           .build();
 
-
   @Test
   void testCustomMappingAnnotationForDependent() {
     var cr = extension.create(testResource());
@@ -36,24 +35,27 @@ class DependentCustomMappingAnnotationIT {
 
     extension.delete(cr);
 
-    await().untilAsserted(() -> {
-      var resource = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(resource).isNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var resource = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              assertThat(resource).isNull();
+            });
   }
 
   private void assertConfigMapData(String val) {
-    await().untilAsserted(() -> {
-      var resource = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(resource).isNotNull();
-      assertThat(resource.getMetadata().getAnnotations())
-          .containsKey(CUSTOM_NAME_KEY)
-          .containsKey(CUSTOM_NAMESPACE_KEY);
-      assertThat(resource.getData()).containsEntry(CustomMappingConfigMapDependentResource.KEY,
-          val);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var resource = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              assertThat(resource).isNotNull();
+              assertThat(resource.getMetadata().getAnnotations())
+                  .containsKey(CUSTOM_NAME_KEY)
+                  .containsKey(CUSTOM_NAMESPACE_KEY);
+              assertThat(resource.getData())
+                  .containsEntry(CustomMappingConfigMapDependentResource.KEY, val);
+            });
   }
-
 
   DependentCustomMappingCustomResource testResource() {
     var dr = new DependentCustomMappingCustomResource();
@@ -63,6 +65,4 @@ class DependentCustomMappingAnnotationIT {
 
     return dr;
   }
-
-
 }

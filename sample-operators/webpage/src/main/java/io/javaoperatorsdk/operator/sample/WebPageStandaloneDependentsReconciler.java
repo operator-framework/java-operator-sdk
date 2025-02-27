@@ -26,12 +26,9 @@ import io.javaoperatorsdk.operator.sample.dependentresource.ServiceDependentReso
 import static io.javaoperatorsdk.operator.sample.Utils.*;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
 
-/**
- * Shows how to implement reconciler using standalone dependent resources and workflows.
- */
+/** Shows how to implement reconciler using standalone dependent resources and workflows. */
 @ControllerConfiguration
-public class WebPageStandaloneDependentsReconciler
-    implements Reconciler<WebPage> {
+public class WebPageStandaloneDependentsReconciler implements Reconciler<WebPage> {
 
   private final Workflow<WebPage> workflow;
 
@@ -92,14 +89,17 @@ public class WebPageStandaloneDependentsReconciler
     var serviceDR = new ServiceDependentResource();
     var ingressDR = new IngressDependentResource();
 
-
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
-        .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-            .withKubernetesDependentInformerConfig(InformerConfiguration.builder(dr.resourceType())
-                .withLabelSelector(SELECTOR + "=true")
-                .build())
-            .build()));
+        .forEach(
+            dr ->
+                dr.configureWith(
+                    new KubernetesDependentResourceConfigBuilder()
+                        .withKubernetesDependentInformerConfig(
+                            InformerConfiguration.builder(dr.resourceType())
+                                .withLabelSelector(SELECTOR + "=true")
+                                .build())
+                        .build()));
 
     // connect the dependent resources into a workflow, configuring them as we go
     // Note the method call order is significant and configuration applies to the dependent being

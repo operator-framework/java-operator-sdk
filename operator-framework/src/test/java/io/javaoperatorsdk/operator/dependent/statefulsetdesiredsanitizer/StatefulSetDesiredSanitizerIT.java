@@ -26,28 +26,30 @@ public class StatefulSetDesiredSanitizerIT {
   void testSSAMatcher() {
     var resource = extension.create(testResource());
 
-    await().pollDelay(Duration.ofMillis(200)).untilAsserted(() -> {
-      var statefulSet = extension.get(StatefulSet.class, TEST_1);
-      assertThat(statefulSet).isNotNull();
-    });
+    await()
+        .pollDelay(Duration.ofMillis(200))
+        .untilAsserted(
+            () -> {
+              var statefulSet = extension.get(StatefulSet.class, TEST_1);
+              assertThat(statefulSet).isNotNull();
+            });
     // make sure reconciliation happens at least once more
     resource.getSpec().setValue("changed value");
     extension.replace(resource);
 
-    await().untilAsserted(
-        () -> assertThat(StatefulSetDesiredSanitizerDependentResource.nonMatchedAtLeastOnce)
-            .isFalse());
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(StatefulSetDesiredSanitizerDependentResource.nonMatchedAtLeastOnce)
+                    .isFalse());
   }
 
   StatefulSetDesiredSanitizerCustomResource testResource() {
     var res = new StatefulSetDesiredSanitizerCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_1)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
     res.setSpec(new StatefulSetDesiredSanitizerSpec());
     res.getSpec().setValue("initial value");
 
     return res;
   }
-
 }

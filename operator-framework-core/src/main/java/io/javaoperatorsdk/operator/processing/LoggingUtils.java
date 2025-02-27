@@ -10,5 +10,4 @@ public class LoggingUtils {
   public static boolean isNotSensitiveResource(HasMetadata resource) {
     return !(resource instanceof Secret);
   }
-
 }

@@ -25,5 +25,4 @@ public class LeaderElectionChangeNamespaceReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

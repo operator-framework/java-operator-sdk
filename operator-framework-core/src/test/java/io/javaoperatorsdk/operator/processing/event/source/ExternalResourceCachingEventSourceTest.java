@@ -13,8 +13,9 @@ import static io.javaoperatorsdk.operator.processing.event.source.SampleExternal
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class ExternalResourceCachingEventSourceTest extends
-    AbstractEventSourceTestBase<ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
+class ExternalResourceCachingEventSourceTest
+    extends AbstractEventSourceTestBase<
+        ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   @BeforeEach
   public void setup() {
@@ -200,5 +201,4 @@ class ExternalResourceCachingEventSourceTest extends
       super(SampleExternalResource.class, SampleExternalResource::getName);
     }
   }
-
 }

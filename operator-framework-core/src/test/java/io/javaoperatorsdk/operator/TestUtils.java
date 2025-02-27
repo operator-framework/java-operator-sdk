@@ -53,5 +53,4 @@ public class TestUtils {
     customResource.getMetadata().setDeletionTimestamp("2019-8-10");
     return customResource;
   }
-
 }

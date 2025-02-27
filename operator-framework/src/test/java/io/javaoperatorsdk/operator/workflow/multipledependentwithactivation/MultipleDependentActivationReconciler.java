@@ -5,13 +5,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(dependents = {
-    @Dependent(type = ConfigMapDependentResource1.class,
-        activationCondition = ActivationCondition.class),
-    @Dependent(type = ConfigMapDependentResource2.class,
-        activationCondition = ActivationCondition.class),
-    @Dependent(type = SecretDependentResource.class)
-})
+@Workflow(
+    dependents = {
+      @Dependent(
+          type = ConfigMapDependentResource1.class,
+          activationCondition = ActivationCondition.class),
+      @Dependent(
+          type = ConfigMapDependentResource2.class,
+          activationCondition = ActivationCondition.class),
+      @Dependent(type = SecretDependentResource.class)
+    })
 @ControllerConfiguration
 public class MultipleDependentActivationReconciler
     implements Reconciler<MultipleDependentActivationCustomResource> {

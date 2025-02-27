@@ -29,8 +29,9 @@ public class GenericKubernetesDependentStandaloneReconciler
   }
 
   @Override
-  public List<EventSource<?, GenericKubernetesDependentStandaloneCustomResource>> prepareEventSources(
-      EventSourceContext<GenericKubernetesDependentStandaloneCustomResource> context) {
+  public List<EventSource<?, GenericKubernetesDependentStandaloneCustomResource>>
+      prepareEventSources(
+          EventSourceContext<GenericKubernetesDependentStandaloneCustomResource> context) {
     return List.of(dependent.eventSource(context).orElseThrow());
   }
 }

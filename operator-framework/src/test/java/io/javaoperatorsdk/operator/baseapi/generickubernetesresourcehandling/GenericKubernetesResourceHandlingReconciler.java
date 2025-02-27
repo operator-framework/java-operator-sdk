@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 public class GenericKubernetesResourceHandlingReconciler
     implements Reconciler<GenericKubernetesResourceHandlingCustomResource> {
 
-
   public static final String VERSION = "v1";
   public static final String KIND = "ConfigMap";
   public static final String KEY = "key";
@@ -29,13 +28,23 @@ public class GenericKubernetesResourceHandlingReconciler
 
     var secondary = context.getSecondaryResource(GenericKubernetesResource.class);
 
-    secondary.ifPresentOrElse(r -> {
-      var desired = desiredConfigMap(primary, context);
-      if (!matches(r, desired)) {
-        context.getClient().genericKubernetesResources(VERSION, KIND).resource(desired).update();
-      }
-    }, () -> context.getClient().genericKubernetesResources(VERSION, KIND)
-        .resource(desiredConfigMap(primary, context)).create());
+    secondary.ifPresentOrElse(
+        r -> {
+          var desired = desiredConfigMap(primary, context);
+          if (!matches(r, desired)) {
+            context
+                .getClient()
+                .genericKubernetesResources(VERSION, KIND)
+                .resource(desired)
+                .update();
+          }
+        },
+        () ->
+            context
+                .getClient()
+                .genericKubernetesResources(VERSION, KIND)
+                .resource(desiredConfigMap(primary, context))
+                .create());
 
     return UpdateControl.noUpdate();
   }
@@ -63,15 +72,17 @@ public class GenericKubernetesResourceHandlingReconciler
     }
   }
 
-
   @Override
   public List<EventSource<?, GenericKubernetesResourceHandlingCustomResource>> prepareEventSources(
       EventSourceContext<GenericKubernetesResourceHandlingCustomResource> context) {
 
-    var informerEventSource = new InformerEventSource<>(InformerEventSourceConfiguration.from(
-        new GroupVersionKind("", VERSION, KIND),
-        GenericKubernetesResourceHandlingCustomResource.class).build(),
-        context);
+    var informerEventSource =
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(
+                    new GroupVersionKind("", VERSION, KIND),
+                    GenericKubernetesResourceHandlingCustomResource.class)
+                .build(),
+            context);
 
     return List.of(informerEventSource);
   }

@@ -23,21 +23,18 @@ import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
-
 /**
- *
  * Polls the supplier for each controlled resource registered. Resource is registered when created
  * if there is no registerPredicate provided. If register predicate provided it is evaluated on
  * resource create and/or update to register polling for the event source.
- * <p>
- * For other behavior see {@link ExternalResourceCachingEventSource}
+ *
+ * <p>For other behavior see {@link ExternalResourceCachingEventSource}
  *
  * @param <R> the resource polled by the event source
  * @param <P> related custom resource
  */
 public class PerResourcePollingEventSource<R, P extends HasMetadata>
-    extends ExternalResourceCachingEventSource<R, P>
-    implements ResourceEventAware<P> {
+    extends ExternalResourceCachingEventSource<R, P> implements ResourceEventAware<P> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
 
@@ -50,9 +47,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   private final Predicate<P> registerPredicate;
   private final Duration period;
 
-
-
-  public PerResourcePollingEventSource(Class<R> resourceClass,
+  public PerResourcePollingEventSource(
+      Class<R> resourceClass,
       EventSourceContext<P> context,
       PerResourcePollingConfiguration<R, P> config) {
     super(config.name(), resourceClass, config.cacheKeyMapper());
@@ -76,8 +72,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
     var fetchDelay = resourceFetcher.fetchDelay(actualResources, primary);
     var fetchDuration = fetchDelay.orElse(period);
 
-    ScheduledFuture<Void> scheduledFuture = (ScheduledFuture<Void>) executorService
-        .schedule(new FetchingExecutor(primaryID), fetchDuration.toMillis(), TimeUnit.MILLISECONDS);
+    ScheduledFuture<Void> scheduledFuture =
+        (ScheduledFuture<Void>)
+            executorService.schedule(
+                new FetchingExecutor(primaryID), fetchDuration.toMillis(), TimeUnit.MILLISECONDS);
     scheduledFutures.put(primaryID, scheduledFuture);
   }
 
@@ -108,8 +106,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   // important because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(P resource) {
     var primaryID = ResourceID.fromResource(resource);
-    if (scheduledFutures.get(primaryID) == null && (registerPredicate == null
-        || registerPredicate.test(resource))) {
+    if (scheduledFutures.get(primaryID) == null
+        && (registerPredicate == null || registerPredicate.test(resource))) {
       var cachedResources = cache.get(primaryID);
       var actualResources =
           cachedResources == null ? null : new HashSet<>(cachedResources.values());
@@ -177,10 +175,10 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
      * with a lower frequency, compared to the phase when it is being initialized.
      *
      * @param lastFetchedResource might be null, in case no fetch happened before. Empty set if
-     *        fetch happened but no resources were found.
+     *     fetch happened but no resources were found.
      * @param primary related primary resource
      * @return an Optional containing the Duration to wait until the next fetch. If an empty
-     *         Optional is returned, the default polling period will be used.
+     *     Optional is returned, the default polling period will be used.
      */
     default Optional<Duration> fetchDelay(Set<R> lastFetchedResource, P primary) {
       return Optional.empty();

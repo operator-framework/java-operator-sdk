@@ -15,18 +15,22 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import static io.javaoperatorsdk.operator.workflow.workflowallfeature.WorkflowAllFeatureReconciler.DEPLOYMENT_NAME;
 
-@Workflow(dependents = {
-    @Dependent(name = DEPLOYMENT_NAME, type = DeploymentDependentResource.class,
-        readyPostcondition = DeploymentReadyCondition.class),
-    @Dependent(type = ConfigMapDependentResource.class,
-        reconcilePrecondition = ConfigMapReconcileCondition.class,
-        deletePostcondition = ConfigMapDeletePostCondition.class,
-        dependsOn = DEPLOYMENT_NAME)
-})
+@Workflow(
+    dependents = {
+      @Dependent(
+          name = DEPLOYMENT_NAME,
+          type = DeploymentDependentResource.class,
+          readyPostcondition = DeploymentReadyCondition.class),
+      @Dependent(
+          type = ConfigMapDependentResource.class,
+          reconcilePrecondition = ConfigMapReconcileCondition.class,
+          deletePostcondition = ConfigMapDeletePostCondition.class,
+          dependsOn = DEPLOYMENT_NAME)
+    })
 @ControllerConfiguration
 public class WorkflowAllFeatureReconciler
     implements Reconciler<WorkflowAllFeatureCustomResource>,
-    Cleaner<WorkflowAllFeatureCustomResource> {
+        Cleaner<WorkflowAllFeatureCustomResource> {
 
   public static final String DEPLOYMENT_NAME = "deployment";
 
@@ -41,13 +45,18 @@ public class WorkflowAllFeatureReconciler
     if (resource.getStatus() == null) {
       resource.setStatus(new WorkflowAllFeatureStatus());
     }
-    final var reconcileResult = context.managedWorkflowAndDependentResourceContext()
-        .getWorkflowReconcileResult();
-    final var msgFromCondition = reconcileResult.orElseThrow().getDependentConditionResult(
-        DependentResource.defaultNameFor(ConfigMapDependentResource.class),
-        Condition.Type.RECONCILE, String.class)
-        .orElse(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
-    resource.getStatus()
+    final var reconcileResult =
+        context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult();
+    final var msgFromCondition =
+        reconcileResult
+            .orElseThrow()
+            .getDependentConditionResult(
+                DependentResource.defaultNameFor(ConfigMapDependentResource.class),
+                Condition.Type.RECONCILE,
+                String.class)
+            .orElse(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
+    resource
+        .getStatus()
         .withReady(reconcileResult.orElseThrow().allDependentResourcesReady())
         .withMsgFromCondition(msgFromCondition);
     return UpdateControl.patchStatus(resource);
@@ -62,7 +71,8 @@ public class WorkflowAllFeatureReconciler
   }
 
   @Override
-  public DeleteControl cleanup(WorkflowAllFeatureCustomResource resource,
+  public DeleteControl cleanup(
+      WorkflowAllFeatureCustomResource resource,
       Context<WorkflowAllFeatureCustomResource> context) {
     numberOfCleanupExecution.addAndGet(1);
     return DeleteControl.defaultDelete();

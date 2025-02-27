@@ -11,5 +11,4 @@ import io.javaoperatorsdk.operator.processing.event.source.cache.sample.namespac
 @Version("v1")
 @ShortNames("bccs")
 public class BoundedCacheClusterScopeTestCustomResource
-    extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus> {
-}
+    extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus> {}

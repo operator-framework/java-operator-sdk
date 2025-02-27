@@ -23,10 +23,8 @@ public class Schema implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     Schema schema = (Schema) o;
     return Objects.equals(name, schema.name);
   }
@@ -38,9 +36,6 @@ public class Schema implements Serializable {
 
   @Override
   public String toString() {
-    return "Schema{" +
-        "name='" + name + '\'' +
-        ", characterSet='" + characterSet + '\'' +
-        '}';
+    return "Schema{" + "name='" + name + '\'' + ", characterSet='" + characterSet + '\'' + '}';
   }
 }

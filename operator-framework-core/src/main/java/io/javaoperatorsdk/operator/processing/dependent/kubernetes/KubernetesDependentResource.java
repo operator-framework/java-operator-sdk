@@ -28,7 +28,9 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 @Ignore
-@Configured(by = KubernetesDependent.class, with = KubernetesDependentResourceConfig.class,
+@Configured(
+    by = KubernetesDependent.class,
+    with = KubernetesDependentResourceConfig.class,
     converter = KubernetesDependentConverter.class)
 public abstract class KubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends AbstractEventSourceHolderDependentResource<R, P, InformerEventSource<R, P>>
@@ -56,9 +58,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   public R create(R desired, P primary, Context<P> context) {
     if (useSSA(context)) {
       // setting resource version for SSA so only created if it doesn't exist already
-      var createIfNotExisting = kubernetesDependentResourceConfig == null
-          ? KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA
-          : kubernetesDependentResourceConfig.createResourceOnlyIfNotExistingWithSSA();
+      var createIfNotExisting =
+          kubernetesDependentResourceConfig == null
+              ? KubernetesDependentResourceConfig
+                  .DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA
+              : kubernetesDependentResourceConfig.createResourceOnlyIfNotExistingWithSSA();
       if (createIfNotExisting) {
         desired.getMetadata().setResourceVersion("1");
       }
@@ -75,21 +79,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   public R update(R actual, R desired, P primary, Context<P> context) {
     if (log.isDebugEnabled()) {
-      log.debug("Updating actual resource: {} version: {}", ResourceID.fromResource(actual),
+      log.debug(
+          "Updating actual resource: {} version: {}",
+          ResourceID.fromResource(actual),
           actual.getMetadata().getResourceVersion());
     }
     R updatedResource;
     addMetadata(false, actual, desired, primary, context);
     if (useSSA(context)) {
-      updatedResource = prepare(context, desired, primary, "Updating")
-          .fieldManager(context.getControllerConfiguration().fieldManager())
-          .forceConflicts().serverSideApply();
+      updatedResource =
+          prepare(context, desired, primary, "Updating")
+              .fieldManager(context.getControllerConfiguration().fieldManager())
+              .forceConflicts()
+              .serverSideApply();
     } else {
       var updatedActual = GenericResourceUpdater.updateResource(actual, desired, context);
       updatedResource = prepare(context, updatedActual, primary, "Updating").update();
     }
-    log.debug("Resource version after update: {}",
-        updatedResource.getMetadata().getResourceVersion());
+    log.debug(
+        "Resource version after update: {}", updatedResource.getMetadata().getResourceVersion());
     return updatedResource;
   }
 
@@ -99,25 +107,29 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return match(actualResource, desired, primary, context);
   }
 
-  public Result<R> match(R actualResource, R desired, P primary,
-      Context<P> context) {
+  public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     final boolean matches;
     addMetadata(true, actualResource, desired, primary, context);
     if (useSSA(context)) {
-      matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
-          .matches(actualResource, desired, context);
+      matches =
+          SSABasedGenericKubernetesResourceMatcher.getInstance()
+              .matches(actualResource, desired, context);
     } else {
-      matches = GenericKubernetesResourceMatcher.match(desired, actualResource,
-          false, false, context).matched();
+      matches =
+          GenericKubernetesResourceMatcher.match(desired, actualResource, false, false, context)
+              .matched();
     }
     return Result.computed(matches, desired);
   }
 
-  protected void addMetadata(boolean forMatch, R actualResource, final R target, P primary,
-      Context<P> context) {
+  protected void addMetadata(
+      boolean forMatch, R actualResource, final R target, P primary, Context<P> context) {
     if (forMatch) { // keep the current previous annotation
-      String actual = actualResource.getMetadata().getAnnotations()
-          .get(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
+      String actual =
+          actualResource
+              .getMetadata()
+              .getAnnotations()
+              .get(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       Map<String, String> annotations = target.getMetadata().getAnnotations();
       if (actual != null) {
         annotations.put(InformerEventSource.PREVIOUS_ANNOTATION_KEY, actual);
@@ -125,24 +137,32 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
     } else if (usePreviousAnnotation(context)) { // set a new one
-      eventSource().orElseThrow().addPreviousAnnotation(
-          Optional.ofNullable(actualResource).map(r -> r.getMetadata().getResourceVersion())
-              .orElse(null),
-          target);
+      eventSource()
+          .orElseThrow()
+          .addPreviousAnnotation(
+              Optional.ofNullable(actualResource)
+                  .map(r -> r.getMetadata().getResourceVersion())
+                  .orElse(null),
+              target);
     }
     addReferenceHandlingMetadata(target, primary);
   }
 
   protected boolean useSSA(Context<P> context) {
     if (useSSA == null) {
-      useSSA = context.getControllerConfiguration().getConfigurationService()
-          .shouldUseSSA(getClass(), resourceType(), configuration().orElse(null));
+      useSSA =
+          context
+              .getControllerConfiguration()
+              .getConfigurationService()
+              .shouldUseSSA(getClass(), resourceType(), configuration().orElse(null));
     }
     return useSSA;
   }
 
   private boolean usePreviousAnnotation(Context<P> context) {
-    return context.getControllerConfiguration().getConfigurationService()
+    return context
+        .getControllerConfiguration()
+        .getConfigurationService()
         .previousAnnotationForDependentResourcesEventFiltering();
   }
 
@@ -160,7 +180,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   protected Resource<R> prepare(Context<P> context, R desired, P primary, String actionName) {
-    log.debug("{} target resource with type: {}, with id: {}",
+    log.debug(
+        "{} target resource with type: {}, with id: {}",
         actionName,
         desired.getClass(),
         ResourceID.fromResource(desired));
@@ -208,12 +229,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   protected void addSecondaryToPrimaryMapperAnnotations(R desired, P primary) {
-    addSecondaryToPrimaryMapperAnnotations(desired, primary, Mappers.DEFAULT_ANNOTATION_FOR_NAME,
-        Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE, Mappers.DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE);
+    addSecondaryToPrimaryMapperAnnotations(
+        desired,
+        primary,
+        Mappers.DEFAULT_ANNOTATION_FOR_NAME,
+        Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE,
+        Mappers.DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE);
   }
 
-  protected void addSecondaryToPrimaryMapperAnnotations(R desired, P primary, String nameKey,
-      String namespaceKey, String typeKey) {
+  protected void addSecondaryToPrimaryMapperAnnotations(
+      R desired, P primary, String nameKey, String namespaceKey, String typeKey) {
     var annotations = desired.getMetadata().getAnnotations();
     annotations.put(nameKey, primary.getMetadata().getName());
     var primaryNamespaces = primary.getMetadata().getNamespace();
@@ -224,13 +249,16 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected Optional<R> selectTargetSecondaryResource(Set<R> secondaryResources, P primary,
-      Context<P> context) {
+  protected Optional<R> selectTargetSecondaryResource(
+      Set<R> secondaryResources, P primary, Context<P> context) {
     ResourceID managedResourceID = targetSecondaryResourceID(primary, context);
     return secondaryResources.stream()
-        .filter(r -> r.getMetadata().getName().equals(managedResourceID.getName()) &&
-            Objects.equals(r.getMetadata().getNamespace(),
-                managedResourceID.getNamespace().orElse(null)))
+        .filter(
+            r ->
+                r.getMetadata().getName().equals(managedResourceID.getName())
+                    && Objects.equals(
+                        r.getMetadata().getNamespace(),
+                        managedResourceID.getNamespace().orElse(null)))
         .findFirst();
   }
 
@@ -273,8 +301,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     } else {
       var clustered = !Namespaced.class.isAssignableFrom(context.getPrimaryResourceClass());
       if (garbageCollected) {
-        return Optional
-            .of(Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), clustered));
+        return Optional.of(
+            Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), clustered));
       } else if (isCreatable()) {
         return Optional.of(Mappers.fromDefaultAnnotations(context.getPrimaryResourceClass()));
       }

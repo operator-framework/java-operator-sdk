@@ -26,53 +26,58 @@ class MultiOwnerDependentTriggeringIT {
           .withReconciler(MultipleOwnerDependentReconciler.class)
           .build();
 
-
   @Test
   void multiOwnerTriggeringAndManagement() {
     var res1 = extension.create(testResource("res1", VALUE_1));
     var res2 = extension.create(testResource("res2", VALUE_2));
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
+    await()
+        .untilAsserted(
+            () -> {
+              var cm =
+                  extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
 
-      assertThat(cm).isNotNull();
-      assertThat(cm.getData())
-          .containsEntry(VALUE_1, VALUE_1)
-          .containsEntry(VALUE_2, VALUE_2);
-      assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
-    });
+              assertThat(cm).isNotNull();
+              assertThat(cm.getData())
+                  .containsEntry(VALUE_1, VALUE_1)
+                  .containsEntry(VALUE_2, VALUE_2);
+              assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
+            });
 
     res1.getSpec().setValue(NEW_VALUE_1);
     extension.replace(res1);
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
-      assertThat(cm.getData())
-          .containsEntry(NEW_VALUE_1, NEW_VALUE_1)
-          // note that it will still contain the old value too
-          .containsEntry(VALUE_1, VALUE_1);
-      assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm =
+                  extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
+              assertThat(cm.getData())
+                  .containsEntry(NEW_VALUE_1, NEW_VALUE_1)
+                  // note that it will still contain the old value too
+                  .containsEntry(VALUE_1, VALUE_1);
+              assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
+            });
 
     res2.getSpec().setValue(NEW_VALUE_2);
     extension.replace(res2);
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
-      assertThat(cm.getData()).containsEntry(NEW_VALUE_2, NEW_VALUE_2);
-      assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm =
+                  extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
+              assertThat(cm.getData()).containsEntry(NEW_VALUE_2, NEW_VALUE_2);
+              assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
+            });
   }
 
   MultipleOwnerDependentCustomResource testResource(String name, String value) {
     var res = new MultipleOwnerDependentCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     res.setSpec(new MultipleOwnerDependentSpec());
     res.getSpec().setValue(value);
 
     return res;
   }
-
 }

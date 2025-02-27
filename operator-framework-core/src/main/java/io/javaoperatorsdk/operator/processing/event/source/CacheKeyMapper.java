@@ -14,5 +14,4 @@ public interface CacheKeyMapper<R> {
   static <T> CacheKeyMapper<T> singleResourceCacheKeyMapper() {
     return r -> "id";
   }
-
 }

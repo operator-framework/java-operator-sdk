@@ -23,12 +23,12 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 /**
  * Handles caching and related operation of external event sources. It can handle multiple secondary
  * resources for a single primary resources.
- * <p>
- * There are two related concepts to understand:
+ *
+ * <p>There are two related concepts to understand:
+ *
  * <ul>
- * <li>CacheKeyMapper - maps/extracts a key used to reference the associated resource in the
- * cache</li>
- * <li>Object equals usage - compares if the two resources are the same or same version.</li>
+ *   <li>CacheKeyMapper - maps/extracts a key used to reference the associated resource in the cache
+ *   <li>Object equals usage - compares if the two resources are the same or same version.
  * </ul>
  *
  * When a resource is added for a primary resource its key is used to put in a map. Equals is used
@@ -49,13 +49,13 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   protected Map<ResourceID, Map<String, R>> cache = new ConcurrentHashMap<>();
 
-  protected ExternalResourceCachingEventSource(Class<R> resourceClass,
-      CacheKeyMapper<R> cacheKeyMapper) {
+  protected ExternalResourceCachingEventSource(
+      Class<R> resourceClass, CacheKeyMapper<R> cacheKeyMapper) {
     this(null, resourceClass, cacheKeyMapper);
   }
 
-  protected ExternalResourceCachingEventSource(String name, Class<R> resourceClass,
-      CacheKeyMapper<R> cacheKeyMapper) {
+  protected ExternalResourceCachingEventSource(
+      String name, Class<R> resourceClass, CacheKeyMapper<R> cacheKeyMapper) {
     super(resourceClass, name);
     this.cacheKeyMapper = cacheKeyMapper;
   }
@@ -68,8 +68,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   protected synchronized void handleDeletes(ResourceID primaryID, Set<R> resource) {
-    handleDelete(primaryID,
-        resource.stream().map(cacheKeyMapper::keyFor).collect(Collectors.toSet()));
+    handleDelete(
+        primaryID, resource.stream().map(cacheKeyMapper::keyFor).collect(Collectors.toSet()));
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, R resource) {
@@ -81,9 +81,12 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return;
     }
     var cachedValues = cache.get(primaryID);
-    List<R> removedResources = cachedValues == null ? Collections.emptyList()
-        : resourceIDs.stream()
-            .flatMap(id -> Stream.ofNullable(cachedValues.remove(id))).collect(Collectors.toList());
+    List<R> removedResources =
+        cachedValues == null
+            ? Collections.emptyList()
+            : resourceIDs.stream()
+                .flatMap(id -> Stream.ofNullable(cachedValues.remove(id)))
+                .collect(Collectors.toList());
 
     if (cachedValues != null && cachedValues.isEmpty()) {
       cache.remove(primaryID);
@@ -107,10 +110,10 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     allNewResources.forEach(this::handleResources);
   }
 
-  protected synchronized void handleResources(ResourceID primaryID, Set<R> newResources,
-      boolean propagateEvent) {
-    log.debug("Handling resources update for: {} numberOfResources: {} ", primaryID,
-        newResources.size());
+  protected synchronized void handleResources(
+      ResourceID primaryID, Set<R> newResources, boolean propagateEvent) {
+    log.debug(
+        "Handling resources update for: {} numberOfResources: {} ", primaryID, newResources.size());
     if (!isRunning()) {
       return;
     }
@@ -121,21 +124,22 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     var newResourcesMap =
         newResources.stream().collect(Collectors.toMap(cacheKeyMapper::keyFor, r -> r));
     cache.put(primaryID, newResourcesMap);
-    if (propagateEvent && !newResourcesMap.equals(cachedResources)
+    if (propagateEvent
+        && !newResourcesMap.equals(cachedResources)
         && acceptedByFiler(cachedResources, newResourcesMap)) {
       getEventHandler().handleEvent(new Event(primaryID));
     }
   }
 
-  private boolean acceptedByFiler(Map<String, R> cachedResourceMap,
-      Map<String, R> newResourcesMap) {
+  private boolean acceptedByFiler(
+      Map<String, R> cachedResourceMap, Map<String, R> newResourcesMap) {
 
     var addedResources = new HashMap<>(newResourcesMap);
     addedResources.keySet().removeAll(cachedResourceMap.keySet());
     if (onAddFilter != null || genericFilter != null) {
       var anyAddAccepted =
-          addedResources.values().stream().anyMatch(r -> acceptedByGenericFiler(r) &&
-              onAddFilter.accept(r));
+          addedResources.values().stream()
+              .anyMatch(r -> acceptedByGenericFiler(r) && onAddFilter.accept(r));
       if (anyAddAccepted) {
         return true;
       }
@@ -158,21 +162,20 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
     Map<String, R> possibleUpdatedResources = new HashMap<>(cachedResourceMap);
     possibleUpdatedResources.keySet().retainAll(newResourcesMap.keySet());
-    possibleUpdatedResources = possibleUpdatedResources.entrySet().stream()
-        .filter(entry -> !newResourcesMap
-            .get(entry.getKey()).equals(entry.getValue()))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    possibleUpdatedResources =
+        possibleUpdatedResources.entrySet().stream()
+            .filter(entry -> !newResourcesMap.get(entry.getKey()).equals(entry.getValue()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     if (onUpdateFilter != null || genericFilter != null) {
       return possibleUpdatedResources.entrySet().stream()
           .anyMatch(
               entry -> {
                 var newResource = newResourcesMap.get(entry.getKey());
-                return acceptedByGenericFiler(newResource) &&
-                    onUpdateFilter.accept(newResource, entry.getValue());
+                return acceptedByGenericFiler(newResource)
+                    && onUpdateFilter.accept(newResource, entry.getValue());
               });
-    } else
-      return !possibleUpdatedResources.isEmpty();
+    } else return !possibleUpdatedResources.isEmpty();
   }
 
   private boolean acceptedByGenericFiler(R resource) {

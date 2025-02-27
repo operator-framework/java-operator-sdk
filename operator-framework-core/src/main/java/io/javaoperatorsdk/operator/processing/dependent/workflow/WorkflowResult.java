@@ -12,12 +12,12 @@ public interface WorkflowResult {
   }
 
   /**
-   * Retrieves the {@link DependentResource} associated with the specified name if it exists,
-   * {@link Optional#empty()} otherwise.
+   * Retrieves the {@link DependentResource} associated with the specified name if it exists, {@link
+   * Optional#empty()} otherwise.
    *
    * @param name the name of the {@link DependentResource} to retrieve
-   * @return the {@link DependentResource} associated with the specified name if it exists,
-   *         {@link Optional#empty()} otherwise
+   * @return the {@link DependentResource} associated with the specified name if it exists, {@link
+   *     Optional#empty()} otherwise
    */
   default Optional<DependentResource> getDependentResourceByName(String name) {
     return Optional.empty();
@@ -29,16 +29,17 @@ public interface WorkflowResult {
    *
    * @param <T> the expected result type of the condition
    * @param dependentResourceName the dependent resource for which we want to retrieve a condition
-   *        result
+   *     result
    * @param conditionType the condition type which result we're interested in
    * @param expectedResultType the expected result type of the condition
    * @return the dependent condition result if it exists or {@link Optional#empty()} otherwise
    * @throws IllegalArgumentException if a result exists but is not of the expected type
    */
-  default <T> Optional<T> getDependentConditionResult(String dependentResourceName,
-      Condition.Type conditionType, Class<T> expectedResultType) {
+  default <T> Optional<T> getDependentConditionResult(
+      String dependentResourceName, Condition.Type conditionType, Class<T> expectedResultType) {
     return getDependentConditionResult(
-        getDependentResourceByName(dependentResourceName).orElse(null), conditionType,
+        getDependentResourceByName(dependentResourceName).orElse(null),
+        conditionType,
         expectedResultType);
   }
 
@@ -48,14 +49,16 @@ public interface WorkflowResult {
    *
    * @param <T> the expected result type of the condition
    * @param dependentResource the dependent resource for which we want to retrieve a condition
-   *        result
+   *     result
    * @param conditionType the condition type which result we're interested in
    * @param expectedResultType the expected result type of the condition
    * @return the dependent condition result if it exists or {@link Optional#empty()} otherwise
    * @throws IllegalArgumentException if a result exists but is not of the expected type
    */
-  default <T> Optional<T> getDependentConditionResult(DependentResource dependentResource,
-      Condition.Type conditionType, Class<T> expectedResultType) {
+  default <T> Optional<T> getDependentConditionResult(
+      DependentResource dependentResource,
+      Condition.Type conditionType,
+      Class<T> expectedResultType) {
     return Optional.empty();
   }
 

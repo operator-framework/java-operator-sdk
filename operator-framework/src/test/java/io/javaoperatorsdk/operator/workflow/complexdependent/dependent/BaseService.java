@@ -15,10 +15,13 @@ public abstract class BaseService extends BaseDependentResource<Service> {
   }
 
   @Override
-  protected Service desired(ComplexWorkflowCustomResource primary,
-      Context<ComplexWorkflowCustomResource> context) {
-    var template = ReconcilerUtils.loadYaml(Service.class, getClass(),
-        "/io/javaoperatorsdk/operator/workflow/complexdependent/service.yaml");
+  protected Service desired(
+      ComplexWorkflowCustomResource primary, Context<ComplexWorkflowCustomResource> context) {
+    var template =
+        ReconcilerUtils.loadYaml(
+            Service.class,
+            getClass(),
+            "/io/javaoperatorsdk/operator/workflow/complexdependent/service.yaml");
 
     return new ServiceBuilder(template)
         .withMetadata(createMeta(primary).build())

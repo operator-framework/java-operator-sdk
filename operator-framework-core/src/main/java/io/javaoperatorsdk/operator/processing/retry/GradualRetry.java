@@ -15,8 +15,10 @@ public @interface GradualRetry {
   long DEFAULT_INITIAL_INTERVAL = 2000L;
   double DEFAULT_MULTIPLIER = 1.5D;
 
-  long DEFAULT_MAX_INTERVAL = (long) (GradualRetry.DEFAULT_INITIAL_INTERVAL * Math.pow(
-      GradualRetry.DEFAULT_MULTIPLIER, GradualRetry.DEFAULT_MAX_ATTEMPTS));
+  long DEFAULT_MAX_INTERVAL =
+      (long)
+          (GradualRetry.DEFAULT_INITIAL_INTERVAL
+              * Math.pow(GradualRetry.DEFAULT_MULTIPLIER, GradualRetry.DEFAULT_MAX_ATTEMPTS));
 
   long UNSET_VALUE = Long.MAX_VALUE;
 

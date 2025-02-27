@@ -11,7 +11,4 @@ import io.javaoperatorsdk.operator.dependent.multiplemanageddependentsametype.Mu
 @Version("v1")
 @ShortNames("mme")
 public class MultipleManagedExternalDependentResourceCustomResource
-    extends CustomResource<MultipleManagedDependentResourceSpec, Void>
-    implements Namespaced {
-
-}
+    extends CustomResource<MultipleManagedDependentResourceSpec, Void> implements Namespaced {}

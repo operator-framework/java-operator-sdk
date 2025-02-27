@@ -14,7 +14,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @Ignore
-public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends EventSource<R, P>>
+public abstract class AbstractEventSourceHolderDependentResource<
+        R, P extends HasMetadata, T extends EventSource<R, P>>
     extends AbstractDependentResource<R, P> implements EventSourceReferencer<P> {
 
   private T eventSource;
@@ -99,15 +100,15 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   protected void onCreated(P primary, R created, Context<P> context) {
     if (isCacheFillerEventSource) {
-      recentOperationCacheFiller().handleRecentResourceCreate(ResourceID.fromResource(primary),
-          created);
+      recentOperationCacheFiller()
+          .handleRecentResourceCreate(ResourceID.fromResource(primary), created);
     }
   }
 
   protected void onUpdated(P primary, R updated, R actual, Context<P> context) {
     if (isCacheFillerEventSource) {
-      recentOperationCacheFiller().handleRecentResourceUpdate(ResourceID.fromResource(primary),
-          updated, actual);
+      recentOperationCacheFiller()
+          .handleRecentResourceUpdate(ResourceID.fromResource(primary), updated, actual);
     }
   }
 
@@ -115,5 +116,4 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   private RecentOperationCacheFiller<R> recentOperationCacheFiller() {
     return (RecentOperationCacheFiller<R>) eventSource;
   }
-
 }

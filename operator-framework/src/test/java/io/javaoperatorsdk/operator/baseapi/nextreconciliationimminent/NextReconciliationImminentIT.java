@@ -15,8 +15,7 @@ import static org.awaitility.Awaitility.await;
 
 public class NextReconciliationImminentIT {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(NextReconciliationImminentIT.class);
+  private static final Logger log = LoggerFactory.getLogger(NextReconciliationImminentIT.class);
 
   public static final int WAIT_FOR_EVENT = 300;
   public static final String TEST_RESOURCE_NAME = "test1";
@@ -46,19 +45,22 @@ public class NextReconciliationImminentIT {
     await().untilAsserted(() -> assertThat(reconciler.isReconciliationWaiting()).isTrue());
     reconciler.allowReconciliationToProceed();
 
-    await().pollDelay(Duration.ofMillis(WAIT_FOR_EVENT)).untilAsserted(() -> {
-      assertThat(extension.get(NextReconciliationImminentCustomResource.class, TEST_RESOURCE_NAME)
-          .getStatus().getUpdateNumber()).isEqualTo(1);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(WAIT_FOR_EVENT))
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      extension
+                          .get(NextReconciliationImminentCustomResource.class, TEST_RESOURCE_NAME)
+                          .getStatus()
+                          .getUpdateNumber())
+                  .isEqualTo(1);
+            });
   }
-
 
   NextReconciliationImminentCustomResource testResource() {
     var res = new NextReconciliationImminentCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }
-
 }

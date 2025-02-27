@@ -33,8 +33,7 @@ class InformerEventSourceIT {
   void testUsingInformerToWatchChangesOfConfigMap() {
     var customResource = initialCustomResource();
     customResource = operator.create(customResource);
-    ConfigMap configMap =
-        operator.create(relatedConfigMap(customResource.getMetadata().getName()));
+    ConfigMap configMap = operator.create(relatedConfigMap(customResource.getMetadata().getName()));
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
 
     configMap.getData().put(TARGET_CONFIG_MAP_KEY, UPDATE_STATUS_MESSAGE);
@@ -48,8 +47,7 @@ class InformerEventSourceIT {
     var customResource = initialCustomResource();
     customResource = operator.create(customResource);
     waitForCRStatusValue(MISSING_CONFIG_MAP);
-    ConfigMap configMap =
-        operator.create(relatedConfigMap(customResource.getMetadata().getName()));
+    ConfigMap configMap = operator.create(relatedConfigMap(customResource.getMetadata().getName()));
     waitForCRStatusValue(INITIAL_STATUS_MESSAGE);
 
     boolean res = operator.delete(configMap);
@@ -58,8 +56,9 @@ class InformerEventSourceIT {
     }
 
     waitForCRStatusValue(MISSING_CONFIG_MAP);
-    assertThat(((InformerEventSourceTestCustomReconciler) operator.getReconcilers().get(0))
-        .getNumberOfExecutions())
+    assertThat(
+            ((InformerEventSourceTestCustomReconciler) operator.getReconcilers().get(0))
+                .getNumberOfExecutions())
         .isEqualTo(3);
   }
 
@@ -86,12 +85,13 @@ class InformerEventSourceIT {
   }
 
   private void waitForCRStatusValue(String value) {
-    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-      var cr =
-          operator.get(InformerEventSourceTestCustomResource.class, RESOURCE_NAME);
-      assertThat(cr.getStatus()).isNotNull();
-      assertThat(cr.getStatus().getConfigMapValue()).isEqualTo(value);
-    });
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var cr = operator.get(InformerEventSourceTestCustomResource.class, RESOURCE_NAME);
+              assertThat(cr.getStatus()).isNotNull();
+              assertThat(cr.getStatus().getConfigMapValue()).isEqualTo(value);
+            });
   }
-
 }

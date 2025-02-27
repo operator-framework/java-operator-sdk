@@ -33,7 +33,8 @@ public class CreateUpdateEventFilterTestReconciler
     numberOfExecutions.incrementAndGet();
 
     ConfigMap configMap =
-        context.getClient()
+        context
+            .getClient()
             .configMaps()
             .inNamespace(resource.getMetadata().getNamespace())
             .withName(resource.getMetadata().getName())
@@ -70,14 +71,12 @@ public class CreateUpdateEventFilterTestReconciler
   public List<EventSource<?, CreateUpdateEventFilterTestCustomResource>> prepareEventSources(
       EventSourceContext<CreateUpdateEventFilterTestCustomResource> context) {
     InformerEventSourceConfiguration<ConfigMap> informerConfiguration =
-        InformerEventSourceConfiguration
-            .from(ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
+        InformerEventSourceConfiguration.from(
+                ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
             .build();
 
-    final var informerEventSource =
-        new InformerEventSource<>(
-            informerConfiguration, context);
+    final var informerEventSource = new InformerEventSource<>(informerConfiguration, context);
     this.configMapDR.setEventSource(informerEventSource);
 
     return List.of(informerEventSource);
@@ -88,8 +87,8 @@ public class CreateUpdateEventFilterTestReconciler
   }
 
   private static final class DirectConfigMapDependentResource
-      extends
-      CRUDKubernetesDependentResource<ConfigMap, CreateUpdateEventFilterTestCustomResource> {
+      extends CRUDKubernetesDependentResource<
+          ConfigMap, CreateUpdateEventFilterTestCustomResource> {
 
     private ConfigMap desired;
 
@@ -98,14 +97,17 @@ public class CreateUpdateEventFilterTestReconciler
     }
 
     @Override
-    protected ConfigMap desired(CreateUpdateEventFilterTestCustomResource primary,
+    protected ConfigMap desired(
+        CreateUpdateEventFilterTestCustomResource primary,
         Context<CreateUpdateEventFilterTestCustomResource> context) {
       return desired;
     }
 
     @Override
     public void setEventSource(
-        io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource<ConfigMap, CreateUpdateEventFilterTestCustomResource> eventSource) {
+        io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource<
+                ConfigMap, CreateUpdateEventFilterTestCustomResource>
+            eventSource) {
       super.setEventSource(eventSource);
     }
   }

@@ -25,11 +25,12 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Utils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 
-public abstract class AbstractOperatorExtension implements HasKubernetesClient,
-    BeforeAllCallback,
-    BeforeEachCallback,
-    AfterAllCallback,
-    AfterEachCallback {
+public abstract class AbstractOperatorExtension
+    implements HasKubernetesClient,
+        BeforeAllCallback,
+        BeforeEachCallback,
+        AfterAllCallback,
+        AfterEachCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractOperatorExtension.class);
   public static final int MAX_NAMESPACE_NAME_LENGTH = 63;
@@ -57,8 +58,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       KubernetesClient kubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
-    this.kubernetesClient = kubernetesClient != null ? kubernetesClient
-        : new KubernetesClientBuilder().build();
+    this.kubernetesClient =
+        kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
     this.oneNamespacePerClass = oneNamespacePerClass;
@@ -67,7 +68,6 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     this.namespaceNameSupplier = namespaceNameSupplier;
     this.perClassNamespaceNameSupplier = perClassNamespaceNameSupplier;
   }
-
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -98,8 +98,8 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     return namespace;
   }
 
-  public <T extends HasMetadata> NonNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> resources(
-      Class<T> type) {
+  public <T extends HasMetadata>
+      NonNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> resources(Class<T> type) {
     return kubernetesClient.resources(type).inNamespace(namespace);
   }
 
@@ -140,13 +140,12 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
     kubernetesClient
         .namespaces()
         .resource(
-            new NamespaceBuilder().withMetadata(new ObjectMetaBuilder().withName(namespace).build())
+            new NamespaceBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName(namespace).build())
                 .build())
         .serverSideApply();
 
-    kubernetesClient
-        .resourceList(infrastructure)
-        .serverSideApply();
+    kubernetesClient.resourceList(infrastructure).serverSideApply();
     kubernetesClient
         .resourceList(infrastructure)
         .waitUntilReady(infrastructureTimeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -189,7 +188,7 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
   }
 
   @SuppressWarnings("unchecked")
-  public static abstract class AbstractBuilder<T extends AbstractBuilder<T>> {
+  public abstract static class AbstractBuilder<T extends AbstractBuilder<T>> {
     protected final List<HasMetadata> infrastructure;
     protected Duration infrastructureTimeout;
     protected boolean preserveNamespaceOnError;
@@ -206,21 +205,18 @@ public abstract class AbstractOperatorExtension implements HasKubernetesClient,
       this.infrastructure = new ArrayList<>();
       this.infrastructureTimeout = Duration.ofMinutes(1);
 
-      this.preserveNamespaceOnError = Utils.getSystemPropertyOrEnvVar(
-          "josdk.it.preserveNamespaceOnError",
-          false);
+      this.preserveNamespaceOnError =
+          Utils.getSystemPropertyOrEnvVar("josdk.it.preserveNamespaceOnError", false);
 
-      this.waitForNamespaceDeletion = Utils.getSystemPropertyOrEnvVar(
-          "josdk.it.waitForNamespaceDeletion",
-          true);
+      this.waitForNamespaceDeletion =
+          Utils.getSystemPropertyOrEnvVar("josdk.it.waitForNamespaceDeletion", true);
 
-      this.oneNamespacePerClass = Utils.getSystemPropertyOrEnvVar(
-          "josdk.it.oneNamespacePerClass",
-          false);
+      this.oneNamespacePerClass =
+          Utils.getSystemPropertyOrEnvVar("josdk.it.oneNamespacePerClass", false);
 
-      this.namespaceDeleteTimeout = Utils.getSystemPropertyOrEnvVar(
-          "josdk.it.namespaceDeleteTimeout",
-          DEFAULT_NAMESPACE_DELETE_TIMEOUT);
+      this.namespaceDeleteTimeout =
+          Utils.getSystemPropertyOrEnvVar(
+              "josdk.it.namespaceDeleteTimeout", DEFAULT_NAMESPACE_DELETE_TIMEOUT);
     }
 
     public T preserveNamespaceOnError(boolean value) {

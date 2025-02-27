@@ -10,5 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("bct")
 public class BoundedCacheTestCustomResource
-    extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus> implements Namespaced {
-}
+    extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus> implements Namespaced {}

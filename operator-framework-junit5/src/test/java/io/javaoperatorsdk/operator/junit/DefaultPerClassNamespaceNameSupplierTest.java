@@ -40,5 +40,4 @@ class DefaultPerClassNamespaceNameSupplierTest {
     assertThat(ns.length()).isLessThanOrEqualTo(MAX_NAMESPACE_NAME_LENGTH);
     assertThat(ns.split("-")[1]).hasSize(RANDOM_SUFFIX_LENGTH);
   }
-
 }

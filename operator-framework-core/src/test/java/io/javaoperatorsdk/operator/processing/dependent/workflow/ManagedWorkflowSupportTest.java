@@ -36,27 +36,32 @@ class ManagedWorkflowSupportTest {
     final var drs2 = createDRS(NAME_2);
     final var drs1 = createDRS(NAME_1);
 
-    Assertions.assertThrows(OperatorException.class, () -> managedWorkflowSupport
-        .checkForNameDuplication(List.of(drs2, drs2)));
+    Assertions.assertThrows(
+        OperatorException.class,
+        () -> managedWorkflowSupport.checkForNameDuplication(List.of(drs2, drs2)));
 
-    Assertions.assertThrows(OperatorException.class,
-        () -> managedWorkflowSupport.checkForNameDuplication(
-            List.of(drs1, drs2, drs2)));
+    Assertions.assertThrows(
+        OperatorException.class,
+        () -> managedWorkflowSupport.checkForNameDuplication(List.of(drs1, drs2, drs2)));
 
-    final var exception = Assertions.assertThrows(OperatorException.class,
-        () -> managedWorkflowSupport.checkForNameDuplication(
-            List.of(drs1, drs2, drs2, drs1)));
+    final var exception =
+        Assertions.assertThrows(
+            OperatorException.class,
+            () -> managedWorkflowSupport.checkForNameDuplication(List.of(drs1, drs2, drs2, drs1)));
     assertThat(exception.getMessage()).contains(NAME_1, NAME_2);
   }
 
   @Test
   void orderingTrivialCases() {
     assertThat(managedWorkflowSupport.orderAndDetectCycles(List.of(createDRS(NAME_1))))
-        .map(DependentResourceSpec::getName).containsExactly(NAME_1);
+        .map(DependentResourceSpec::getName)
+        .containsExactly(NAME_1);
 
-    assertThat(managedWorkflowSupport
-        .orderAndDetectCycles(List.of(createDRS(NAME_2, NAME_1), createDRS(NAME_1))))
-        .map(DependentResourceSpec::getName).containsExactly(NAME_1, NAME_2);
+    assertThat(
+            managedWorkflowSupport.orderAndDetectCycles(
+                List.of(createDRS(NAME_2, NAME_1), createDRS(NAME_1))))
+        .map(DependentResourceSpec::getName)
+        .containsExactly(NAME_1, NAME_2);
   }
 
   @Test
@@ -64,17 +69,23 @@ class ManagedWorkflowSupportTest {
     String NAME_3 = "name3";
     String NAME_4 = "name4";
 
-    var res = managedWorkflowSupport
-        .orderAndDetectCycles(List.of(createDRS(NAME_2, NAME_1), createDRS(NAME_1),
-            createDRS(NAME_3, NAME_1), createDRS(NAME_4, NAME_2, NAME_3)))
-        .stream().map(DependentResourceSpec::getName).collect(Collectors.toList());
+    var res =
+        managedWorkflowSupport
+            .orderAndDetectCycles(
+                List.of(
+                    createDRS(NAME_2, NAME_1),
+                    createDRS(NAME_1),
+                    createDRS(NAME_3, NAME_1),
+                    createDRS(NAME_4, NAME_2, NAME_3)))
+            .stream()
+            .map(DependentResourceSpec::getName)
+            .collect(Collectors.toList());
 
     assertThat(res)
         .containsExactlyInAnyOrder(NAME_1, NAME_2, NAME_3, NAME_4)
         .contains(NAME_1, Index.atIndex(0))
         .contains(NAME_4, Index.atIndex(3));
   }
-
 
   @Test
   void orderingMultipleRoots() {
@@ -83,15 +94,19 @@ class ManagedWorkflowSupportTest {
     final var NAME_5 = "name5";
     final var NAME_6 = "name6";
 
-    var res = managedWorkflowSupport
-        .orderAndDetectCycles(List.of(
-            createDRS(NAME_2, NAME_1, NAME_5),
-            createDRS(NAME_1),
-            createDRS(NAME_3, NAME_1),
-            createDRS(NAME_4, NAME_2, NAME_3),
-            createDRS(NAME_5, NAME_1, NAME_6),
-            createDRS(NAME_6)))
-        .stream().map(DependentResourceSpec::getName).collect(Collectors.toList());
+    var res =
+        managedWorkflowSupport
+            .orderAndDetectCycles(
+                List.of(
+                    createDRS(NAME_2, NAME_1, NAME_5),
+                    createDRS(NAME_1),
+                    createDRS(NAME_3, NAME_1),
+                    createDRS(NAME_4, NAME_2, NAME_3),
+                    createDRS(NAME_5, NAME_1, NAME_6),
+                    createDRS(NAME_6)))
+            .stream()
+            .map(DependentResourceSpec::getName)
+            .collect(Collectors.toList());
 
     assertThat(res)
         .containsExactlyInAnyOrder(NAME_1, NAME_5, NAME_6, NAME_2, NAME_3, NAME_4)
@@ -106,44 +121,58 @@ class ManagedWorkflowSupportTest {
   @Test
   void detectsCyclesTrivialCases() {
     String NAME_3 = "name3";
-    Assertions.assertThrows(OperatorException.class, () -> managedWorkflowSupport
-        .orderAndDetectCycles(List.of(createDRS(NAME_2, NAME_1), createDRS(NAME_1, NAME_2))));
-    Assertions.assertThrows(OperatorException.class,
-        () -> managedWorkflowSupport
-            .orderAndDetectCycles(List.of(createDRS(NAME_2, NAME_1), createDRS(NAME_1, NAME_3),
-                createDRS(NAME_3, NAME_2))));
+    Assertions.assertThrows(
+        OperatorException.class,
+        () ->
+            managedWorkflowSupport.orderAndDetectCycles(
+                List.of(createDRS(NAME_2, NAME_1), createDRS(NAME_1, NAME_2))));
+    Assertions.assertThrows(
+        OperatorException.class,
+        () ->
+            managedWorkflowSupport.orderAndDetectCycles(
+                List.of(
+                    createDRS(NAME_2, NAME_1),
+                    createDRS(NAME_1, NAME_3),
+                    createDRS(NAME_3, NAME_2))));
   }
 
   @Test
   void detectsCycleOnSubTree() {
 
-    Assertions.assertThrows(OperatorException.class,
-        () -> managedWorkflowSupport.orderAndDetectCycles(List.of(createDRS(NAME_1),
-            createDRS(NAME_2, NAME_1),
-            createDRS(NAME_3, NAME_1, NAME_4),
-            createDRS(NAME_4, NAME_3))));
+    Assertions.assertThrows(
+        OperatorException.class,
+        () ->
+            managedWorkflowSupport.orderAndDetectCycles(
+                List.of(
+                    createDRS(NAME_1),
+                    createDRS(NAME_2, NAME_1),
+                    createDRS(NAME_3, NAME_1, NAME_4),
+                    createDRS(NAME_4, NAME_3))));
 
-    Assertions.assertThrows(OperatorException.class,
-        () -> managedWorkflowSupport.orderAndDetectCycles(List.of(
-            createDRS(NAME_1),
-            createDRS(NAME_2, NAME_1, NAME_4),
-            createDRS(NAME_3, NAME_2),
-            createDRS(NAME_4, NAME_3))));
+    Assertions.assertThrows(
+        OperatorException.class,
+        () ->
+            managedWorkflowSupport.orderAndDetectCycles(
+                List.of(
+                    createDRS(NAME_1),
+                    createDRS(NAME_2, NAME_1, NAME_4),
+                    createDRS(NAME_3, NAME_2),
+                    createDRS(NAME_4, NAME_3))));
   }
 
   @Test
   void createsWorkflow() {
-    var specs = List.of(createDRS(NAME_1),
-        createDRS(NAME_2, NAME_1),
-        createDRS(NAME_3, NAME_1),
-        createDRS(NAME_4, NAME_3, NAME_2));
+    var specs =
+        List.of(
+            createDRS(NAME_1),
+            createDRS(NAME_2, NAME_1),
+            createDRS(NAME_3, NAME_1),
+            createDRS(NAME_4, NAME_3, NAME_2));
 
     var workflow = managedWorkflowSupport.createAsDefault(specs);
 
-    assertThat(workflow.nodeNames())
-        .containsExactlyInAnyOrder(NAME_1, NAME_2, NAME_3, NAME_4);
+    assertThat(workflow.nodeNames()).containsExactlyInAnyOrder(NAME_1, NAME_2, NAME_3, NAME_4);
     assertThat(workflow.getTopLevelResources()).containsExactly(NAME_1);
     assertThat(workflow.getBottomLevelResources()).containsExactly(NAME_4);
   }
-
 }

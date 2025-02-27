@@ -17,8 +17,8 @@ public interface WorkflowReconcileResult extends WorkflowResult {
     return List.of();
   }
 
-  default <T> Optional<T> getNotReadyDependentResult(DependentResource dependentResource,
-      Class<T> expectedResultType) {
+  default <T> Optional<T> getNotReadyDependentResult(
+      DependentResource dependentResource, Class<T> expectedResultType) {
     return Optional.empty();
   }
 

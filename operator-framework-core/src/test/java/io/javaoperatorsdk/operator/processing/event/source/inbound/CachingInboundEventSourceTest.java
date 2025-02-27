@@ -22,30 +22,30 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class CachingInboundEventSourceTest extends
-    AbstractEventSourceTestBase<CachingInboundEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
+class CachingInboundEventSourceTest
+    extends AbstractEventSourceTestBase<
+        CachingInboundEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
 
   @SuppressWarnings("unchecked")
-  private final CachingInboundEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
-      mock(
-          CachingInboundEventSource.ResourceFetcher.class);
+  private final CachingInboundEventSource.ResourceFetcher<
+          SampleExternalResource, TestCustomResource>
+      supplier = mock(CachingInboundEventSource.ResourceFetcher.class);
+
   private final TestCustomResource testCustomResource = TestUtils.testCustomResource();
   private final CacheKeyMapper<SampleExternalResource> cacheKeyMapper =
       r -> r.getName() + "#" + r.getValue();
 
   @BeforeEach
   public void setup() {
-    when(supplier.fetchResources(any()))
-        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
 
-    setUpSource(new CachingInboundEventSource<>(supplier,
-        SampleExternalResource.class, cacheKeyMapper));
+    setUpSource(
+        new CachingInboundEventSource<>(supplier, SampleExternalResource.class, cacheKeyMapper));
   }
 
   @Test
   void getSecondaryResourceFromCacheOrSupplier() throws InterruptedException {
-    when(supplier.fetchResources(any()))
-        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     var value = source.getSecondaryResources(testCustomResource);
 
@@ -59,7 +59,8 @@ class CachingInboundEventSourceTest extends
     verify(supplier, times(1)).fetchResources(eq(testCustomResource));
     verify(eventHandler, never()).handleEvent(any());
 
-    source.handleResourceEvent(ResourceID.fromResource(testCustomResource),
+    source.handleResourceEvent(
+        ResourceID.fromResource(testCustomResource),
         Set.of(SampleExternalResource.testResource1(), SampleExternalResource.testResource2()));
 
     verify(supplier, times(1)).fetchResources(eq(testCustomResource));
@@ -69,11 +70,13 @@ class CachingInboundEventSourceTest extends
 
   @Test
   void propagateEventOnDeletedResource() throws InterruptedException {
-    source.handleResourceEvent(ResourceID.fromResource(testCustomResource),
-        SampleExternalResource.testResource1());
-    source.handleResourceDeleteEvent(ResourceID.fromResource(testCustomResource),
+    source.handleResourceEvent(
+        ResourceID.fromResource(testCustomResource), SampleExternalResource.testResource1());
+    source.handleResourceDeleteEvent(
+        ResourceID.fromResource(testCustomResource),
         cacheKeyMapper.keyFor(SampleExternalResource.testResource1()));
-    source.handleResourceDeleteEvent(ResourceID.fromResource(testCustomResource),
+    source.handleResourceDeleteEvent(
+        ResourceID.fromResource(testCustomResource),
         cacheKeyMapper.keyFor(SampleExternalResource.testResource2()));
 
     verify(eventHandler, times(2)).handleEvent(any());
@@ -81,7 +84,8 @@ class CachingInboundEventSourceTest extends
 
   @Test
   void propagateEventOnUpdateResources() throws InterruptedException {
-    source.handleResourceEvent(ResourceID.fromResource(testCustomResource),
+    source.handleResourceEvent(
+        ResourceID.fromResource(testCustomResource),
         Set.of(SampleExternalResource.testResource1(), SampleExternalResource.testResource2()));
 
     verify(eventHandler, times(1)).handleEvent(any());

@@ -27,7 +27,8 @@ public class PerResourcePollingEventSourceTestReconciler
   @Override
   public UpdateControl<PerResourceEventSourceCustomResource> reconcile(
       PerResourceEventSourceCustomResource resource,
-      Context<PerResourceEventSourceCustomResource> context) throws Exception {
+      Context<PerResourceEventSourceCustomResource> context)
+      throws Exception {
     numberOfExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
     numberOfExecutions.compute(resource.getMetadata().getName(), (s, v) -> v + 1);
     return UpdateControl.noUpdate();
@@ -37,14 +38,18 @@ public class PerResourcePollingEventSourceTestReconciler
   public List<EventSource<?, PerResourceEventSourceCustomResource>> prepareEventSources(
       EventSourceContext<PerResourceEventSourceCustomResource> context) {
     PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource =
-        new PerResourcePollingEventSource<>(String.class, context,
+        new PerResourcePollingEventSource<>(
+            String.class,
+            context,
             new PerResourcePollingConfigurationBuilder<>(
-                (PerResourceEventSourceCustomResource resource) -> {
-                  numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
-                  numberOfFetchExecutions.compute(resource.getMetadata().getName(),
-                      (s, v) -> v + 1);
-                  return Set.of(UUID.randomUUID().toString());
-                }, Duration.ofMillis(POLL_PERIOD)).build());
+                    (PerResourceEventSourceCustomResource resource) -> {
+                      numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
+                      numberOfFetchExecutions.compute(
+                          resource.getMetadata().getName(), (s, v) -> v + 1);
+                      return Set.of(UUID.randomUUID().toString());
+                    },
+                    Duration.ofMillis(POLL_PERIOD))
+                .build());
     return List.of(eventSource);
   }
 
@@ -56,5 +61,4 @@ public class PerResourcePollingEventSourceTestReconciler
   public int getNumberOfFetchExecution(String name) {
     return numberOfFetchExecutions.get(name);
   }
-
 }

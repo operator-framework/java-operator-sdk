@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
-
 @SuppressWarnings({"rawtypes", "unused", "UnusedReturnValue"})
 public class ControllerConfigurationOverrider<R extends HasMetadata> {
 
@@ -150,12 +149,10 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withFieldManager(
-      String dependentFieldManager) {
+  public ControllerConfigurationOverrider<R> withFieldManager(String dependentFieldManager) {
     this.fieldManager = dependentFieldManager;
     return this;
   }
-
 
   /**
    * Sets a max page size limit when starting the informer. This will result in pagination while
@@ -164,20 +161,22 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
    *
    * @param informerListLimit null (the default) results in no pagination
    */
-  public ControllerConfigurationOverrider<R> withInformerListLimit(
-      Long informerListLimit) {
+  public ControllerConfigurationOverrider<R> withInformerListLimit(Long informerListLimit) {
     config.withInformerListLimit(informerListLimit);
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(String name,
-      Object dependentResourceConfig) {
+  public ControllerConfigurationOverrider<R> replacingNamedDependentResourceConfig(
+      String name, Object dependentResourceConfig) {
 
     final var specs = original.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
-    final var spec = specs.stream()
-        .filter(drs -> drs.getName().equals(name)).findFirst()
-        .orElseThrow(
-            () -> new IllegalArgumentException("Cannot find a DependentResource named: " + name));
+    final var spec =
+        specs.stream()
+            .filter(drs -> drs.getName().equals(name))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException("Cannot find a DependentResource named: " + name));
 
     if (configurations == null) {
       configurations = new HashMap<>(specs.size());
@@ -189,9 +188,14 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   public ControllerConfiguration<R> build() {
     return new ResolvedControllerConfiguration<>(
         name,
-        generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
+        generationAware,
+        original.getAssociatedReconcilerClassName(),
+        retry,
+        rateLimiter,
         reconciliationMaxInterval,
-        finalizer, configurations, fieldManager,
+        finalizer,
+        configurations,
+        fieldManager,
         original.getConfigurationService(),
         config.buildForController(),
         original.getWorkflowSpec().orElse(null));

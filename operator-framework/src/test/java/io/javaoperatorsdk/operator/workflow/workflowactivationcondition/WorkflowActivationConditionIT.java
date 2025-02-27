@@ -27,21 +27,20 @@ public class WorkflowActivationConditionIT {
   void reconciledOnVanillaKubernetesDespiteRouteInWorkflow() {
     extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(cm).isNotNull();
-      assertThat(cm.getData()).containsEntry(DATA_KEY, TEST_DATA);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              assertThat(cm).isNotNull();
+              assertThat(cm.getData()).containsEntry(DATA_KEY, TEST_DATA);
+            });
   }
 
   private WorkflowActivationConditionCustomResource testResource() {
     var res = new WorkflowActivationConditionCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     res.setSpec(new WorkflowActivationConditionSpec());
     res.getSpec().setValue(TEST_DATA);
     return res;
   }
-
 }

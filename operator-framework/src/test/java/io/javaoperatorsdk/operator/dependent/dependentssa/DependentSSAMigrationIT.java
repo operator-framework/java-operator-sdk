@@ -31,20 +31,31 @@ class DependentSSAMigrationIT {
   void setup(TestInfo testInfo) {
     SSAConfigMapDependent.NUMBER_OF_UPDATES.set(0);
     LocallyRunOperatorExtension.applyCrd(DependentSSACustomResource.class, client);
-    testInfo.getTestMethod().ifPresent(method -> {
-      namespace = KubernetesResourceUtil.sanitizeName(method.getName());
-      cleanup();
-      client.namespaces().resource(new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-          .withName(namespace)
-          .build()).build()).create();
-    });
+    testInfo
+        .getTestMethod()
+        .ifPresent(
+            method -> {
+              namespace = KubernetesResourceUtil.sanitizeName(method.getName());
+              cleanup();
+              client
+                  .namespaces()
+                  .resource(
+                      new NamespaceBuilder()
+                          .withMetadata(new ObjectMetaBuilder().withName(namespace).build())
+                          .build())
+                  .create();
+            });
   }
 
   @AfterEach
   void cleanup() {
-    client.namespaces().resource(new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(namespace)
-        .build()).build()).delete();
+    client
+        .namespaces()
+        .resource(
+            new NamespaceBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName(namespace).build())
+                .build())
+        .delete();
   }
 
   @Test
@@ -65,8 +76,7 @@ class DependentSSAMigrationIT {
     var legacyOperator = createOperator(client, true, null);
     DependentSSACustomResource testResource = reconcileWithLegacyOperator(legacyOperator);
 
-    var operator = createOperator(client, false,
-        FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER);
+    var operator = createOperator(client, false, FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER);
     reconcileWithNewApproach(testResource, operator);
 
     var cm = getDependentConfigMap();
@@ -75,22 +85,26 @@ class DependentSSAMigrationIT {
     assertThat(cm.getMetadata().getManagedFields())
         // Jetty seems to be a bug in fabric8 client, it is only the default fieldManager if Jetty
         // is used as http client
-        .allMatch(fm -> fm.getManager().equals(FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER)
-            || fm.getManager().equals("Jetty"));
+        .allMatch(
+            fm ->
+                fm.getManager().equals(FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER)
+                    || fm.getManager().equals("Jetty"));
   }
 
-  private void reconcileAgainWithLegacy(Operator legacyOperator,
-      DependentSSACustomResource testResource) {
+  private void reconcileAgainWithLegacy(
+      Operator legacyOperator, DependentSSACustomResource testResource) {
     legacyOperator.start();
 
     testResource.getSpec().setValue(INITIAL_VALUE);
     testResource.getMetadata().setResourceVersion(null);
     client.resource(testResource).update();
 
-    await().untilAsserted(() -> {
-      var cm = getDependentConfigMap();
-      assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, INITIAL_VALUE);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = getDependentConfigMap();
+              assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, INITIAL_VALUE);
+            });
 
     legacyOperator.stop();
   }
@@ -99,20 +113,24 @@ class DependentSSAMigrationIT {
       DependentSSACustomResource testResource, Operator operator) {
     operator.start();
 
-    await().untilAsserted(() -> {
-      var cm = getDependentConfigMap();
-      assertThat(cm).isNotNull();
-      assertThat(cm.getData()).hasSize(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = getDependentConfigMap();
+              assertThat(cm).isNotNull();
+              assertThat(cm.getData()).hasSize(1);
+            });
 
     testResource.getSpec().setValue(CHANGED_VALUE);
     testResource.getMetadata().setResourceVersion(null);
     testResource = client.resource(testResource).update();
 
-    await().untilAsserted(() -> {
-      var cm = getDependentConfigMap();
-      assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, CHANGED_VALUE);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = getDependentConfigMap();
+              assertThat(cm.getData()).containsEntry(SSAConfigMapDependent.DATA_KEY, CHANGED_VALUE);
+            });
     operator.stop();
     return testResource;
   }
@@ -126,41 +144,41 @@ class DependentSSAMigrationIT {
 
     var testResource = client.resource(testResource()).create();
 
-    await().untilAsserted(() -> {
-      var cm = getDependentConfigMap();
-      assertThat(cm).isNotNull();
-      assertThat(cm.getMetadata().getManagedFields()).hasSize(1);
-      assertThat(cm.getData()).hasSize(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = getDependentConfigMap();
+              assertThat(cm).isNotNull();
+              assertThat(cm.getMetadata().getManagedFields()).hasSize(1);
+              assertThat(cm.getData()).hasSize(1);
+            });
 
     legacyOperator.stop();
     return testResource;
   }
 
-
-  private Operator createOperator(KubernetesClient client, boolean legacyDependentHandling,
-      String fieldManager) {
+  private Operator createOperator(
+      KubernetesClient client, boolean legacyDependentHandling, String fieldManager) {
     Operator operator =
         new Operator(o -> o.withKubernetesClient(client).withCloseClientOnStop(false));
     var reconciler = new DependentSSAReconciler(!legacyDependentHandling);
-    operator.register(reconciler, o -> {
-      o.settingNamespace(namespace);
-      if (fieldManager != null) {
-        o.withFieldManager(fieldManager);
-      }
-    });
+    operator.register(
+        reconciler,
+        o -> {
+          o.settingNamespace(namespace);
+          if (fieldManager != null) {
+            o.withFieldManager(fieldManager);
+          }
+        });
     return operator;
   }
 
   public DependentSSACustomResource testResource() {
     DependentSSACustomResource resource = new DependentSSACustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withNamespace(namespace)
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    resource.setMetadata(
+        new ObjectMetaBuilder().withNamespace(namespace).withName(TEST_RESOURCE_NAME).build());
     resource.setSpec(new DependentSSASpec());
     resource.getSpec().setValue(INITIAL_VALUE);
     return resource;
   }
-
 }

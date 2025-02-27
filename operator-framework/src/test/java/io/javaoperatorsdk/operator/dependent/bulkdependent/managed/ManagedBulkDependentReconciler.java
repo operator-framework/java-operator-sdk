@@ -9,15 +9,14 @@ import io.javaoperatorsdk.operator.dependent.bulkdependent.CRUDConfigMapBulkDepe
 
 @Workflow(dependents = @Dependent(type = CRUDConfigMapBulkDependentResource.class))
 @ControllerConfiguration
-public class ManagedBulkDependentReconciler
-    implements Reconciler<BulkDependentTestCustomResource> {
+public class ManagedBulkDependentReconciler implements Reconciler<BulkDependentTestCustomResource> {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
-      BulkDependentTestCustomResource resource,
-      Context<BulkDependentTestCustomResource> context) throws Exception {
+      BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context)
+      throws Exception {
 
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();

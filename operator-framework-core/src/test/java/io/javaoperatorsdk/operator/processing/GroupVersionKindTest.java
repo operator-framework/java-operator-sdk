@@ -29,15 +29,14 @@ class GroupVersionKindTest {
     assertThat(gvk.getVersion()).isEqualTo("v1");
     assertThat(gvk.getKind()).isEqualTo("Deployment");
 
-
     gvk = GroupVersionKind.fromString("v1/ConfigMap");
     assertThat(gvk.getGroup()).isNull();
     assertThat(gvk.getVersion()).isEqualTo("v1");
     assertThat(gvk.getKind()).isEqualTo("ConfigMap");
 
     assertThrows(IllegalArgumentException.class, () -> GroupVersionKind.fromString("v1#ConfigMap"));
-    assertThrows(IllegalArgumentException.class,
-        () -> GroupVersionKind.fromString("api/beta/v1/ConfigMap"));
+    assertThrows(
+        IllegalArgumentException.class, () -> GroupVersionKind.fromString("api/beta/v1/ConfigMap"));
   }
 
   @Test
@@ -71,8 +70,9 @@ class GroupVersionKindTest {
 
   @Test
   void pluralShouldOverrideDefaultComputedVersionIfProvided() {
-    var gvk = GroupVersionKindPlural.gvkWithPlural(new GroupVersionKind("josdk.io", "v1", "MyKind"),
-        "MyPlural");
+    var gvk =
+        GroupVersionKindPlural.gvkWithPlural(
+            new GroupVersionKind("josdk.io", "v1", "MyKind"), "MyPlural");
     assertThat(gvk.getPlural()).hasValue("MyPlural");
   }
 

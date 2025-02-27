@@ -9,6 +9,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 public class ControllerNamespaceDeletionCustomResource
     extends CustomResource<ControllerNamespaceDeletionSpec, ControllerNamespaceDeletionStatus>
-    implements Namespaced {
-
-}
+    implements Namespaced {}

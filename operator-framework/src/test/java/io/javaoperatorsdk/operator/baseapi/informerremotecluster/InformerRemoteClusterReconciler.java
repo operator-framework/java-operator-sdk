@@ -30,34 +30,43 @@ public class InformerRemoteClusterReconciler
   @Override
   public UpdateControl<InformerRemoteClusterCustomResource> reconcile(
       InformerRemoteClusterCustomResource resource,
-      Context<InformerRemoteClusterCustomResource> context) throws Exception {
+      Context<InformerRemoteClusterCustomResource> context)
+      throws Exception {
 
-    return context.getSecondaryResource(ConfigMap.class).map(cm -> {
-      var r = new InformerRemoteClusterCustomResource();
-      r.setMetadata(new ObjectMetaBuilder()
-          .withName(resource.getMetadata().getName())
-          .withNamespace(resource.getMetadata().getNamespace())
-          .build());
-      r.setStatus(new InformerRemoteClusterStatus());
-      r.getStatus().setRemoteConfigMapMessage(cm.getData().get(DATA_KEY));
-      return UpdateControl.patchStatus(r);
-    }).orElseGet(UpdateControl::noUpdate);
+    return context
+        .getSecondaryResource(ConfigMap.class)
+        .map(
+            cm -> {
+              var r = new InformerRemoteClusterCustomResource();
+              r.setMetadata(
+                  new ObjectMetaBuilder()
+                      .withName(resource.getMetadata().getName())
+                      .withNamespace(resource.getMetadata().getNamespace())
+                      .build());
+              r.setStatus(new InformerRemoteClusterStatus());
+              r.getStatus().setRemoteConfigMapMessage(cm.getData().get(DATA_KEY));
+              return UpdateControl.patchStatus(r);
+            })
+        .orElseGet(UpdateControl::noUpdate);
   }
 
   @Override
   public List<EventSource<?, InformerRemoteClusterCustomResource>> prepareEventSources(
       EventSourceContext<InformerRemoteClusterCustomResource> context) {
 
-    var es = new InformerEventSource<>(InformerEventSourceConfiguration
-        .from(ConfigMap.class, InformerRemoteClusterCustomResource.class)
-        // owner references do not work cross cluster, using
-        // annotations here to reference primary resource
-        .withSecondaryToPrimaryMapper(
-            Mappers.fromDefaultAnnotations(InformerRemoteClusterCustomResource.class))
-        // setting remote client for informer
-        .withKubernetesClient(remoteClient)
-        .withWatchAllNamespaces()
-        .build(), context);
+    var es =
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(
+                    ConfigMap.class, InformerRemoteClusterCustomResource.class)
+                // owner references do not work cross cluster, using
+                // annotations here to reference primary resource
+                .withSecondaryToPrimaryMapper(
+                    Mappers.fromDefaultAnnotations(InformerRemoteClusterCustomResource.class))
+                // setting remote client for informer
+                .withKubernetesClient(remoteClient)
+                .withWatchAllNamespaces()
+                .build(),
+            context);
 
     return List.of(es);
   }
