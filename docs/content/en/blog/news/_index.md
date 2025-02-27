@@ -1,4 +1,4 @@
 ---
-title: News
+title: Posts
 weight: 20
 ---
