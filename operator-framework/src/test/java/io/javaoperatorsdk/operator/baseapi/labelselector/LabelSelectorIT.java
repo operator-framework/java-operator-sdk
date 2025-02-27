@@ -19,7 +19,8 @@ class LabelSelectorIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new LabelSelectorTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new LabelSelectorTestReconciler())
           .build();
 
   @Test
@@ -27,21 +28,25 @@ class LabelSelectorIT {
     operator.create(resource("r1", true));
     operator.create(resource("r2", false));
 
-    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      assertThat(
-          operator.getReconcilerOfType(LabelSelectorTestReconciler.class).getNumberOfExecutions())
-          .isEqualTo(1);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(150))
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      operator
+                          .getReconcilerOfType(LabelSelectorTestReconciler.class)
+                          .getNumberOfExecutions())
+                  .isEqualTo(1);
+            });
   }
 
   LabelSelectorTestCustomResource resource(String name, boolean addLabel) {
     var res = new LabelSelectorTestCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .withLabels(addLabel ? Map.of(LABEL_KEY, LABEL_VALUE)
-            : Collections.emptyMap())
-        .build());
+    res.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(name)
+            .withLabels(addLabel ? Map.of(LABEL_KEY, LABEL_VALUE) : Collections.emptyMap())
+            .build());
     return res;
   }
-
 }

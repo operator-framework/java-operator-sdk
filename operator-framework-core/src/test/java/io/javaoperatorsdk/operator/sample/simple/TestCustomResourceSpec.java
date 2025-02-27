@@ -58,8 +58,9 @@ public class TestCustomResourceSpec {
       return false;
     }
     TestCustomResourceSpec that = (TestCustomResourceSpec) o;
-    return Objects.equals(configMapName, that.configMapName) && Objects.equals(
-        key, that.key) && Objects.equals(value, that.value);
+    return Objects.equals(configMapName, that.configMapName)
+        && Objects.equals(key, that.key)
+        && Objects.equals(value, that.value);
   }
 
   @Override

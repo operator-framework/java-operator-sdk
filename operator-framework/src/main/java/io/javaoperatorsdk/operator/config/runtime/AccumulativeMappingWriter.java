@@ -56,8 +56,8 @@ class AccumulativeMappingWriter {
   }
 
   /**
-   * Generates or override the resource file with the given path
-   * ({@link AccumulativeMappingWriter#resourcePath})
+   * Generates or override the resource file with the given path ({@link
+   * AccumulativeMappingWriter#resourcePath})
    */
   public void flush() {
     PrintWriter printWriter = null;

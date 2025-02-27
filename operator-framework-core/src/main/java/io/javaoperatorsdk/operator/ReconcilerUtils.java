@@ -81,20 +81,26 @@ public class ReconcilerUtils {
     if (owner instanceof Namespaced) {
       if (!(resource instanceof Namespaced)) {
         throw new OperatorException(
-            "Cannot add owner reference from a cluster scoped to a namespace scoped resource." +
-                resourcesIdentifierDescription(owner, resource));
-      } else if (!Objects.equals(owner.getMetadata().getNamespace(),
-          resource.getMetadata().getNamespace())) {
+            "Cannot add owner reference from a cluster scoped to a namespace scoped resource."
+                + resourcesIdentifierDescription(owner, resource));
+      } else if (!Objects.equals(
+          owner.getMetadata().getNamespace(), resource.getMetadata().getNamespace())) {
         throw new OperatorException(
-            "Cannot add owner reference between two resource in different namespaces." +
-                resourcesIdentifierDescription(owner, resource));
+            "Cannot add owner reference between two resource in different namespaces."
+                + resourcesIdentifierDescription(owner, resource));
       }
     }
   }
 
   private static String resourcesIdentifierDescription(HasMetadata owner, HasMetadata resource) {
-    return " Owner name: " + owner.getMetadata().getName() + " Kind: " + owner.getKind()
-        + ", Resource name: " + resource.getMetadata().getName() + " Kind: " + resource.getKind();
+    return " Owner name: "
+        + owner.getMetadata().getName()
+        + " Kind: "
+        + owner.getKind()
+        + ", Resource name: "
+        + resource.getMetadata().getName()
+        + " Kind: "
+        + resource.getKind();
   }
 
   public static String getNameFor(Reconciler reconciler) {
@@ -153,10 +159,11 @@ public class ReconcilerUtils {
       if (spec != null) {
         setSpecMethod = resourceClass.getMethod(SET_SPEC, spec.getClass());
       } else {
-        setSpecMethod = Arrays.stream(resourceClass.getMethods())
-            .filter(method -> SET_SPEC.equals(method.getName()))
-            .findFirst()
-            .orElseThrow(() -> noSpecException(resource, null));
+        setSpecMethod =
+            Arrays.stream(resourceClass.getMethods())
+                .filter(method -> SET_SPEC.equals(method.getName()))
+                .findFirst()
+                .orElseThrow(() -> noSpecException(resource, null));
       }
 
       return setSpecMethod.invoke(resource, spec);
@@ -165,17 +172,17 @@ public class ReconcilerUtils {
     }
   }
 
-  private static IllegalStateException noSpecException(HasMetadata resource,
-      ReflectiveOperationException e) {
-    return new IllegalStateException("No spec found on resource " + resource.getClass().getName(),
-        e);
+  private static IllegalStateException noSpecException(
+      HasMetadata resource, ReflectiveOperationException e) {
+    return new IllegalStateException(
+        "No spec found on resource " + resource.getClass().getName(), e);
   }
 
   public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {
     try (InputStream is = loader.getResourceAsStream(yaml)) {
       if (Builder.class.isAssignableFrom(clazz)) {
-        return BuilderUtils.newBuilder(clazz,
-            Serialization.unmarshal(is, BuilderUtils.builderTargetType(clazz)));
+        return BuilderUtils.newBuilder(
+            clazz, Serialization.unmarshal(is, BuilderUtils.builderTargetType(clazz)));
       }
       return Serialization.unmarshal(is, clazz);
     } catch (IOException ex) {
@@ -190,16 +197,16 @@ public class ReconcilerUtils {
 
     if (e instanceof KubernetesClientException ke) {
       // only throw MissingCRDException if the 404 error occurs on the target CRD
-      if (404 == ke.getCode() &&
-          (resourceTypeName.equals(ke.getFullResourceName())
+      if (404 == ke.getCode()
+          && (resourceTypeName.equals(ke.getFullResourceName())
               || matchesResourceType(resourceTypeName, ke))) {
         throw new MissingCRDException(resourceTypeName, ke.getVersion(), e.getMessage(), e);
       }
     }
   }
 
-  private static boolean matchesResourceType(String resourceTypeName,
-      KubernetesClientException exception) {
+  private static boolean matchesResourceType(
+      String resourceTypeName, KubernetesClientException exception) {
     final var fullResourceName = exception.getFullResourceName();
     if (fullResourceName != null) {
       return resourceTypeName.equals(fullResourceName);
@@ -212,8 +219,8 @@ public class ReconcilerUtils {
         if (group.endsWith(".")) {
           group = group.substring(0, group.length() - 1);
         }
-        final var segments = Arrays.stream(group.split("/")).filter(Predicate.not(String::isEmpty))
-            .toList();
+        final var segments =
+            Arrays.stream(group.split("/")).filter(Predicate.not(String::isEmpty)).toList();
         if (segments.size() != 3) {
           return false;
         }

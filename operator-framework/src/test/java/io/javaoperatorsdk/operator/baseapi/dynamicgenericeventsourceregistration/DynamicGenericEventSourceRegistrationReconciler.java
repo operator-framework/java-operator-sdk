@@ -28,51 +28,59 @@ public class DynamicGenericEventSourceRegistrationReconciler
 
     numberOfExecutions.addAndGet(1);
 
-    context.eventSourceRetriever().dynamicallyRegisterEventSource(
-        genericInformerFor(ConfigMap.class, context));
-    context.eventSourceRetriever().dynamicallyRegisterEventSource(
-        genericInformerFor(Secret.class, context));
+    context
+        .eventSourceRetriever()
+        .dynamicallyRegisterEventSource(genericInformerFor(ConfigMap.class, context));
+    context
+        .eventSourceRetriever()
+        .dynamicallyRegisterEventSource(genericInformerFor(Secret.class, context));
 
     context.getClient().resource(secret(primary)).createOr(NonDeletingOperation::update);
     context.getClient().resource(configMap(primary)).createOr(NonDeletingOperation::update);
 
-    numberOfEventSources.set(context.eventSourceRetriever()
-        .getEventSourcesFor(GenericKubernetesResource.class).size());
+    numberOfEventSources.set(
+        context.eventSourceRetriever().getEventSourcesFor(GenericKubernetesResource.class).size());
 
     return UpdateControl.noUpdate();
   }
 
   private Secret secret(DynamicGenericEventSourceRegistrationCustomResource primary) {
-    var secret = new SecretBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of("key", Base64.getEncoder().encodeToString("val".getBytes())))
-        .build();
+    var secret =
+        new SecretBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(primary.getMetadata().getName())
+                    .withNamespace(primary.getMetadata().getNamespace())
+                    .build())
+            .withData(Map.of("key", Base64.getEncoder().encodeToString("val".getBytes())))
+            .build();
     secret.addOwnerReference(primary);
     return secret;
   }
 
   private ConfigMap configMap(DynamicGenericEventSourceRegistrationCustomResource primary) {
-    var cm = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of("key", "val"))
-        .build();
+    var cm =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(primary.getMetadata().getName())
+                    .withNamespace(primary.getMetadata().getNamespace())
+                    .build())
+            .withData(Map.of("key", "val"))
+            .build();
     cm.addOwnerReference(primary);
     return cm;
   }
 
-  private InformerEventSource<GenericKubernetesResource, DynamicGenericEventSourceRegistrationCustomResource> genericInformerFor(
-      Class<? extends HasMetadata> clazz,
-      Context<DynamicGenericEventSourceRegistrationCustomResource> context) {
+  private InformerEventSource<
+          GenericKubernetesResource, DynamicGenericEventSourceRegistrationCustomResource>
+      genericInformerFor(
+          Class<? extends HasMetadata> clazz,
+          Context<DynamicGenericEventSourceRegistrationCustomResource> context) {
 
     return new InformerEventSource<>(
-        InformerEventSourceConfiguration
-            .from(GroupVersionKind.gvkFor(clazz),
+        InformerEventSourceConfiguration.from(
+                GroupVersionKind.gvkFor(clazz),
                 DynamicGenericEventSourceRegistrationCustomResource.class)
             .withName(clazz.getSimpleName())
             .build(),

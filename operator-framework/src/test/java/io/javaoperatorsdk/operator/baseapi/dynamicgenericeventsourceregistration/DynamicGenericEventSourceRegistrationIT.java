@@ -16,6 +16,7 @@ import static org.awaitility.Awaitility.await;
 class DynamicGenericEventSourceRegistrationIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
+
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
@@ -28,12 +29,15 @@ class DynamicGenericEventSourceRegistrationIT {
         extension.getReconcilerOfType(DynamicGenericEventSourceRegistrationReconciler.class);
     extension.create(testResource());
 
-    await().pollDelay(Duration.ofMillis(150)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      var secret = extension.get(Secret.class, TEST_RESOURCE_NAME);
-      assertThat(cm).isNotNull();
-      assertThat(secret).isNotNull();
-    });
+    await()
+        .pollDelay(Duration.ofMillis(150))
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              var secret = extension.get(Secret.class, TEST_RESOURCE_NAME);
+              assertThat(cm).isNotNull();
+              assertThat(secret).isNotNull();
+            });
     var executions = reconciler.getNumberOfExecutions();
     assertThat(reconciler.getNumberOfEventSources()).isEqualTo(2);
     assertThat(executions).isLessThanOrEqualTo(3);
@@ -43,18 +47,17 @@ class DynamicGenericEventSourceRegistrationIT {
 
     extension.replace(cm); // triggers the reconciliation
 
-    await().untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions() - executions).isEqualTo(2);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getNumberOfExecutions() - executions).isEqualTo(2);
+            });
     assertThat(reconciler.getNumberOfEventSources()).isEqualTo(2);
   }
 
-
   DynamicGenericEventSourceRegistrationCustomResource testResource() {
     var res = new DynamicGenericEventSourceRegistrationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }
 }

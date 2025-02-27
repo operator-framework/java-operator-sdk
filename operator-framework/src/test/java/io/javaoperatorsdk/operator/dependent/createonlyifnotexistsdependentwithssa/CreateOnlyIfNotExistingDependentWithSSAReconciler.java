@@ -5,8 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(dependents = {
-    @Dependent(type = ConfigMapDependentResource.class)})
+@Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class)})
 @ControllerConfiguration()
 public class CreateOnlyIfNotExistingDependentWithSSAReconciler
     implements Reconciler<CreateOnlyIfNotExistingDependentWithSSACustomResource> {
@@ -24,7 +23,4 @@ public class CreateOnlyIfNotExistingDependentWithSSAReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
-
-
 }

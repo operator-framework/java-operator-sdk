@@ -17,8 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration(informer = @Informer(onUpdateFilter = UpdateFilter.class))
-public class FilterTestReconciler
-    implements Reconciler<FilterTestCustomResource> {
+public class FilterTestReconciler implements Reconciler<FilterTestCustomResource> {
 
   public static final String CONFIG_MAP_FILTER_VALUE = "config_map_skip_this";
   public static final String CUSTOM_RESOURCE_FILTER_VALUE = "custom_resource_skip_this";
@@ -28,10 +27,12 @@ public class FilterTestReconciler
 
   @Override
   public UpdateControl<FilterTestCustomResource> reconcile(
-      FilterTestCustomResource resource,
-      Context<FilterTestCustomResource> context) {
+      FilterTestCustomResource resource, Context<FilterTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    context.getClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
+    context
+        .getClient()
+        .configMaps()
+        .inNamespace(resource.getMetadata().getNamespace())
         .resource(createConfigMap(resource))
         .createOrReplace();
     return UpdateControl.noUpdate();
@@ -39,15 +40,15 @@ public class FilterTestReconciler
 
   private ConfigMap createConfigMap(FilterTestCustomResource resource) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(resource.getMetadata().getName())
-        .withNamespace(resource.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(resource.getMetadata().getName())
+            .withNamespace(resource.getMetadata().getNamespace())
+            .build());
     configMap.addOwnerReference(resource);
     configMap.setData(Map.of(CM_VALUE_KEY, resource.getSpec().getValue()));
     return configMap;
   }
-
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
@@ -57,12 +58,12 @@ public class FilterTestReconciler
   public List<EventSource<?, FilterTestCustomResource>> prepareEventSources(
       EventSourceContext<FilterTestCustomResource> context) {
 
-    final var informerConfiguration = InformerEventSourceConfiguration
-        .from(ConfigMap.class, FilterTestCustomResource.class)
-        .withOnUpdateFilter((newCM,
-            oldCM) -> !newCM.getData().get(CM_VALUE_KEY)
-                .equals(CONFIG_MAP_FILTER_VALUE))
-        .build();
+    final var informerConfiguration =
+        InformerEventSourceConfiguration.from(ConfigMap.class, FilterTestCustomResource.class)
+            .withOnUpdateFilter(
+                (newCM, oldCM) ->
+                    !newCM.getData().get(CM_VALUE_KEY).equals(CONFIG_MAP_FILTER_VALUE))
+            .build();
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
         new InformerEventSource<>(informerConfiguration, context);
 

@@ -10,8 +10,7 @@ import io.javaoperatorsdk.operator.dependent.bulkdependent.ConfigMapDeleterBulkD
 public class ManagedDeleterBulkReconciler implements Reconciler<BulkDependentTestCustomResource> {
   @Override
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
-      BulkDependentTestCustomResource resource,
-      Context<BulkDependentTestCustomResource> context)
+      BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context)
       throws Exception {
 
     return UpdateControl.noUpdate();

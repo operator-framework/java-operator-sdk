@@ -38,7 +38,8 @@ public class RuntimeInfo {
   private void checkIfStarted() {
     if (!isStarted()) {
       log.warn(
-          "Operator not started yet while accessing runtime info, this might lead to an unreliable behavior");
+          "Operator not started yet while accessing runtime info, this might lead to an unreliable"
+              + " behavior");
     }
   }
 
@@ -46,34 +47,36 @@ public class RuntimeInfo {
     checkIfStarted();
     return registeredControllers.stream()
         .filter(rc -> !rc.getControllerHealthInfo().unhealthyEventSources().isEmpty())
-        .findFirst().isEmpty();
+        .findFirst()
+        .isEmpty();
   }
 
   /**
    * @return Aggregated Map with controller related event sources.
    */
-
   public Map<String, Map<String, EventSourceHealthIndicator>> unhealthyEventSources() {
     checkIfStarted();
     Map<String, Map<String, EventSourceHealthIndicator>> res = new HashMap<>();
     for (var rc : registeredControllers) {
-      res.put(rc.getConfiguration().getName(),
-          rc.getControllerHealthInfo().unhealthyEventSources());
+      res.put(
+          rc.getConfiguration().getName(), rc.getControllerHealthInfo().unhealthyEventSources());
     }
     return res;
   }
 
   /**
    * @return Aggregated Map with controller related event sources that wraps an informer. Thus,
-   *         either a {@link ControllerEventSource} or an
-   *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
+   *     either a {@link ControllerEventSource} or an {@link
+   *     io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
    */
-  public Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> unhealthyInformerWrappingEventSourceHealthIndicator() {
+  public Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>>
+      unhealthyInformerWrappingEventSourceHealthIndicator() {
     checkIfStarted();
     Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> res = new HashMap<>();
     for (var rc : registeredControllers) {
-      res.put(rc.getConfiguration().getName(), rc.getControllerHealthInfo()
-          .unhealthyInformerEventSourceHealthIndicators());
+      res.put(
+          rc.getConfiguration().getName(),
+          rc.getControllerHealthInfo().unhealthyInformerEventSourceHealthIndicators());
     }
     return res;
   }

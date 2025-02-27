@@ -36,7 +36,8 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     this(dependentResourceNodes, THROW_EXCEPTION_AUTOMATICALLY_DEFAULT, false);
   }
 
-  DefaultWorkflow(Set<DependentResourceNode> dependentResourceNodes,
+  DefaultWorkflow(
+      Set<DependentResourceNode> dependentResourceNodes,
       boolean throwExceptionAutomatically,
       boolean hasCleaner) {
     this.throwExceptionAutomatically = throwExceptionAutomatically;
@@ -53,8 +54,10 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     }
   }
 
-  protected DefaultWorkflow(Map<String, DependentResourceNode> dependentResourceNodes,
-      Set<DependentResourceNode> bottomLevelResource, Set<DependentResourceNode> topLevelResources,
+  protected DefaultWorkflow(
+      Map<String, DependentResourceNode> dependentResourceNodes,
+      Set<DependentResourceNode> bottomLevelResource,
+      Set<DependentResourceNode> topLevelResources,
       boolean throwExceptionAutomatically,
       boolean hasCleaner) {
     this.throwExceptionAutomatically = throwExceptionAutomatically;
@@ -84,7 +87,8 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
     }
     if (topLevelResources.isEmpty()) {
       throw new IllegalStateException(
-          "No top-level dependent resources found. This might indicate a cyclic Set of DependentResourceNode has been provided.");
+          "No top-level dependent resources found. This might indicate a cyclic Set of"
+              + " DependentResourceNode has been provided.");
     }
     return map;
   }
@@ -151,8 +155,8 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   @Override
   public Map<String, DependentResource> getDependentResourcesByName() {
     final var resources = new HashMap<String, DependentResource>(dependentResourceNodes.size());
-    dependentResourceNodes
-        .forEach((name, node) -> resources.put(name, node.getDependentResource()));
+    dependentResourceNodes.forEach(
+        (name, node) -> resources.put(name, node.getDependentResource()));
     return resources;
   }
 

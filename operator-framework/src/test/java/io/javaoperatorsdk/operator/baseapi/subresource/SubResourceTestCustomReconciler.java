@@ -19,10 +19,8 @@ public class SubResourceTestCustomReconciler
 
   public static final int RECONCILER_MIN_EXEC_TIME = 300;
 
-  private static final Logger log =
-      LoggerFactory.getLogger(SubResourceTestCustomReconciler.class);
+  private static final Logger log = LoggerFactory.getLogger(SubResourceTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
-
 
   @Override
   public UpdateControl<SubResourceTestCustomResource> reconcile(

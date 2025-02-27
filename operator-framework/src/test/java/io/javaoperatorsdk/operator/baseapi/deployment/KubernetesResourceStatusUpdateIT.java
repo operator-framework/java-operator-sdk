@@ -32,18 +32,22 @@ class KubernetesResourceStatusUpdateIT {
   @Test
   void testReconciliationOfNonCustomResourceAndStatusUpdate() {
     var deployment = operator.create(testDeployment());
-    await().atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-      var d = operator.get(Deployment.class, deployment.getMetadata().getName());
-      assertThat(d.getStatus()).isNotNull();
-      assertThat(d.getStatus().getConditions()).isNotNull();
-      // wait until the pod is ready, if not this is causing some test stability issues with
-      // namespace cleanup in k8s version 1.22
-      assertThat(d.getStatus().getReadyReplicas()).isGreaterThanOrEqualTo(1);
-      assertThat(
-          d.getStatus().getConditions().stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE))
-              .count())
-          .isEqualTo(1);
-    });
+    await()
+        .atMost(120, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var d = operator.get(Deployment.class, deployment.getMetadata().getName());
+              assertThat(d.getStatus()).isNotNull();
+              assertThat(d.getStatus().getConditions()).isNotNull();
+              // wait until the pod is ready, if not this is causing some test stability issues with
+              // namespace cleanup in k8s version 1.22
+              assertThat(d.getStatus().getReadyReplicas()).isGreaterThanOrEqualTo(1);
+              assertThat(
+                      d.getStatus().getConditions().stream()
+                          .filter(c -> c.getMessage().equals(STATUS_MESSAGE))
+                          .count())
+                  .isEqualTo(1);
+            });
   }
 
   private Deployment testDeployment() {
@@ -51,10 +55,7 @@ class KubernetesResourceStatusUpdateIT {
     Map<String, String> labels = new HashMap<>();
     labels.put("test", "KubernetesResourceStatusUpdateIT");
     resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName("test-deployment")
-            .withLabels(labels)
-            .build());
+        new ObjectMetaBuilder().withName("test-deployment").withLabels(labels).build());
     DeploymentSpec spec = new DeploymentSpec();
     resource.setSpec(spec);
     spec.setReplicas(1);

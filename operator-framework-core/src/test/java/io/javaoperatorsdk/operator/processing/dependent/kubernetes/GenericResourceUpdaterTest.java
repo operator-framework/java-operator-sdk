@@ -85,10 +85,11 @@ class GenericResourceUpdaterTest {
     var desired =
         new SecretBuilder()
             .withMetadata(new ObjectMeta())
-            .withImmutable().withType("Opaque").addToData("foo", "bar").build();
-    var actual = new SecretBuilder()
-        .withMetadata(new ObjectMeta())
-        .build();
+            .withImmutable()
+            .withType("Opaque")
+            .addToData("foo", "bar")
+            .build();
+    var actual = new SecretBuilder().withMetadata(new ObjectMeta()).build();
 
     final var secret = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(secret.getImmutable()).isTrue();
@@ -98,13 +99,15 @@ class GenericResourceUpdaterTest {
 
   @Test
   void checkServiceAccount() {
-    var desired = new ServiceAccountBuilder()
-        .withMetadata(new ObjectMetaBuilder().addToLabels("new", "label").build())
-        .build();
-    var actual = new ServiceAccountBuilder()
-        .withMetadata(new ObjectMetaBuilder().addToLabels("a", "label").build())
-        .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("secret").build())
-        .build();
+    var desired =
+        new ServiceAccountBuilder()
+            .withMetadata(new ObjectMetaBuilder().addToLabels("new", "label").build())
+            .build();
+    var actual =
+        new ServiceAccountBuilder()
+            .withMetadata(new ObjectMetaBuilder().addToLabels("a", "label").build())
+            .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("secret").build())
+            .build();
 
     final var serviceAccount = GenericResourceUpdater.updateResource(actual, desired, context);
     assertThat(serviceAccount.getMetadata().getLabels())
@@ -116,5 +119,4 @@ class GenericResourceUpdaterTest {
     return ReconcilerUtils.loadYaml(
         Deployment.class, GenericResourceUpdaterTest.class, "nginx-deployment.yaml");
   }
-
 }

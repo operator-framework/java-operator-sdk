@@ -9,7 +9,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 public class RuntimeControllerMetadata {
 
   public static final String RECONCILERS_RESOURCE_PATH = "javaoperatorsdk/reconcilers";
-  private static final Map<Class<? extends Reconciler>, Class<? extends HasMetadata>> controllerToCustomResourceMappings;
+  private static final Map<Class<? extends Reconciler>, Class<? extends HasMetadata>>
+      controllerToCustomResourceMappings;
 
   static {
     controllerToCustomResourceMappings =

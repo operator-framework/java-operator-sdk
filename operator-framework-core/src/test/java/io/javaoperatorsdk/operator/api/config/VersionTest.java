@@ -13,5 +13,4 @@ class VersionTest {
 
     assertEquals(versionFromProperties, versionFromMaven);
   }
-
 }

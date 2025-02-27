@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.sample;
 
-
 public class ControllerNamespaceDeletionStatus {
 
   private String value;

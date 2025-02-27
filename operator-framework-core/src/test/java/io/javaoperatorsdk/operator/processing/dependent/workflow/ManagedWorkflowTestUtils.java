@@ -18,18 +18,19 @@ public class ManagedWorkflowTestUtils {
 
   @SuppressWarnings("unchecked")
   public static DependentResourceSpec createDRS(String name, String... dependOns) {
-    return new DependentResourceSpec(EmptyTestDependentResource.class, name, Set.of(dependOns),
-        null, null, null, null, null);
+    return new DependentResourceSpec(
+        EmptyTestDependentResource.class, name, Set.of(dependOns), null, null, null, null, null);
   }
 
-  public static DependentResourceSpec createDRSWithTraits(String name,
-      Class<?>... dependentResourceTraits) {
+  public static DependentResourceSpec createDRSWithTraits(
+      String name, Class<?>... dependentResourceTraits) {
     final var spy = Mockito.mock(DependentResourceSpec.class);
     when(spy.getName()).thenReturn(name);
 
     Class<? extends DependentResource> toMock = DependentResource.class;
-    final var garbageCollected = dependentResourceTraits != null &&
-        Arrays.asList(dependentResourceTraits).contains(GarbageCollected.class);
+    final var garbageCollected =
+        dependentResourceTraits != null
+            && Arrays.asList(dependentResourceTraits).contains(GarbageCollected.class);
     if (garbageCollected) {
       toMock = KubernetesDependentResource.class;
     }
@@ -38,5 +39,4 @@ public class ManagedWorkflowTestUtils {
     when(spy.getDependentResourceClass()).thenReturn(dr.getClass());
     return spy;
   }
-
 }

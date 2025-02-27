@@ -9,9 +9,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("crdp")
-public class CRDPresentActivationCustomResource
-    extends CustomResource<Void, Void>
-    implements Namespaced {
-
-
-}
+public class CRDPresentActivationCustomResource extends CustomResource<Void, Void>
+    implements Namespaced {}

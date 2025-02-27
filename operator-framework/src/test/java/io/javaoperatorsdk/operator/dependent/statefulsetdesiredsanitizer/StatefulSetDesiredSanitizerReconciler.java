@@ -11,7 +11,8 @@ public class StatefulSetDesiredSanitizerReconciler
   @Override
   public UpdateControl<StatefulSetDesiredSanitizerCustomResource> reconcile(
       StatefulSetDesiredSanitizerCustomResource resource,
-      Context<StatefulSetDesiredSanitizerCustomResource> context) throws Exception {
+      Context<StatefulSetDesiredSanitizerCustomResource> context)
+      throws Exception {
     return UpdateControl.noUpdate();
   }
 }

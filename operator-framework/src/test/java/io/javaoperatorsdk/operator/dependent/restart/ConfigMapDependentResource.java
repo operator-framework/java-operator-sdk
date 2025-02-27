@@ -21,16 +21,16 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(RestartTestCustomResource primary,
-      Context<RestartTestCustomResource> context) {
+  protected ConfigMap desired(
+      RestartTestCustomResource primary, Context<RestartTestCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withLabels(Map.of("app", "restart-test"))
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
+        .withMetadata(
+            new ObjectMetaBuilder()
+                .withLabels(Map.of("app", "restart-test"))
+                .withName(primary.getMetadata().getName())
+                .withNamespace(primary.getMetadata().getNamespace())
+                .build())
         .withData(Map.of(DATA_KEY, primary.getMetadata().getName()))
         .build();
-
   }
 }

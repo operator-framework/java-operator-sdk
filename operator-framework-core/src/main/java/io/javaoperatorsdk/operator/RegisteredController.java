@@ -10,5 +10,4 @@ public interface RegisteredController<P extends HasMetadata> extends NamespaceCh
   ControllerConfiguration<P> getConfiguration();
 
   ControllerHealthInfo getControllerHealthInfo();
-
 }

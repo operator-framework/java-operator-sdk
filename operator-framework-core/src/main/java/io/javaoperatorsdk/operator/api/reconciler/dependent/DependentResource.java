@@ -19,7 +19,7 @@ public interface DependentResource<R, P extends HasMetadata> {
    * Computes a default name for the specified DependentResource class
    *
    * @param dependentResourceClass the DependentResource class for which we want to compute a
-   *        default name
+   *     default name
    * @return the default name for the specified DependentResource class
    */
   @SuppressWarnings("rawtypes")
@@ -46,11 +46,12 @@ public interface DependentResource<R, P extends HasMetadata> {
   /**
    * Dependent resources are designed to provide event sources by default. There are, however, cases
    * where they might not:
+   *
    * <ul>
-   * <li>If an event source is shared between multiple dependent resources. In this case only one or
-   * none of the dependent resources sharing the event source should provide one, if any.</li>
-   * <li>Some special implementation of an event source that just executes some action might not
-   * provide one.</li>
+   *   <li>If an event source is shared between multiple dependent resources. In this case only one
+   *       or none of the dependent resources sharing the event source should provide one, if any.
+   *   <li>Some special implementation of an event source that just executes some action might not
+   *       provide one.
    * </ul>
    *
    * @param eventSourceContext context of event source initialization
@@ -67,7 +68,7 @@ public interface DependentResource<R, P extends HasMetadata> {
    * for this DependentResource.
    *
    * @param primary the primary resource for which we want to retrieve the secondary resource
-   *        associated with this DependentResource
+   *     associated with this DependentResource
    * @param context the current {@link Context} in which the operation is called
    * @return the secondary resource or {@link Optional#empty()} if it doesn't exist
    * @throws IllegalStateException if more than one secondary is found to match the primary resource
@@ -81,12 +82,11 @@ public interface DependentResource<R, P extends HasMetadata> {
    * deleted, usually meaning that the dependent implements {@link Deleter}
    *
    * @return {@code true} if explicit handling of resource deletion is needed, {@code false}
-   *         otherwise
+   *     otherwise
    */
   default boolean isDeletable() {
     return this instanceof Deleter;
   }
-
 
   /**
    * Retrieves the name identifying this DependentResource implementation, useful to refer to this
@@ -97,5 +97,4 @@ public interface DependentResource<R, P extends HasMetadata> {
   default String name() {
     return defaultNameFor(getClass());
   }
-
 }

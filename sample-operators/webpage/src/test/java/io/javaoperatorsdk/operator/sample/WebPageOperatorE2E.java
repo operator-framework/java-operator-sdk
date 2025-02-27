@@ -31,21 +31,29 @@ class WebPageOperatorE2E extends WebPageOperatorAbstractTest {
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .waitForNamespaceDeletion(false)
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items(),
+              .withOperatorDeployment(
+                  client.load(new FileInputStream("k8s/operator.yaml")).items(),
                   resources -> {
-                    Deployment deployment = (Deployment) resources.stream()
-                        .filter(r -> r instanceof Deployment).findFirst().orElseThrow();
+                    Deployment deployment =
+                        (Deployment)
+                            resources.stream()
+                                .filter(r -> r instanceof Deployment)
+                                .findFirst()
+                                .orElseThrow();
                     Container container =
                         deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
                     if (container.getEnv() == null) {
                       container.setEnv(new ArrayList<>());
                     }
-                    container.getEnv().add(
-                        new EnvVar(WEBPAGE_RECONCILER_ENV, WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE,
-                            null));
+                    container
+                        .getEnv()
+                        .add(
+                            new EnvVar(
+                                WEBPAGE_RECONCILER_ENV,
+                                WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE,
+                                null));
                   })
               .build();
-
 
   @Override
   AbstractOperatorExtension operator() {

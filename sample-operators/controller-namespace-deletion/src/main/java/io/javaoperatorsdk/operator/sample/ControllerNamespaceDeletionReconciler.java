@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 public class ControllerNamespaceDeletionReconciler
     implements Reconciler<ControllerNamespaceDeletionCustomResource>,
-    Cleaner<ControllerNamespaceDeletionCustomResource> {
+        Cleaner<ControllerNamespaceDeletionCustomResource> {
 
   private static final Logger log =
       LoggerFactory.getLogger(ControllerNamespaceDeletionReconciler.class);
@@ -25,7 +25,9 @@ public class ControllerNamespaceDeletionReconciler
   public UpdateControl<ControllerNamespaceDeletionCustomResource> reconcile(
       ControllerNamespaceDeletionCustomResource resource,
       Context<ControllerNamespaceDeletionCustomResource> context) {
-    log.info("Reconciling: {} in namespace: {}", resource.getMetadata().getName(),
+    log.info(
+        "Reconciling: {} in namespace: {}",
+        resource.getMetadata().getName(),
         resource.getMetadata().getNamespace());
 
     var response = createResponseResource(resource);
@@ -37,16 +39,18 @@ public class ControllerNamespaceDeletionReconciler
   private ControllerNamespaceDeletionCustomResource createResponseResource(
       ControllerNamespaceDeletionCustomResource resource) {
     var res = new ControllerNamespaceDeletionCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(resource.getMetadata().getName())
-        .withNamespace(resource.getMetadata().getNamespace())
-        .build());
+    res.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(resource.getMetadata().getName())
+            .withNamespace(resource.getMetadata().getNamespace())
+            .build());
     res.setStatus(new ControllerNamespaceDeletionStatus());
     return res;
   }
 
   @Override
-  public DeleteControl cleanup(ControllerNamespaceDeletionCustomResource resource,
+  public DeleteControl cleanup(
+      ControllerNamespaceDeletionCustomResource resource,
       Context<ControllerNamespaceDeletionCustomResource> context) {
     log.info("Cleaning up resource");
     try {

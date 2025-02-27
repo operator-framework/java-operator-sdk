@@ -16,7 +16,8 @@ class EventSourceIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(EventSourceTestCustomReconciler.class)
           .build();
 
   @Test
@@ -27,11 +28,9 @@ class EventSourceIT {
 
     await()
         .atMost(5, TimeUnit.SECONDS)
-        .pollInterval(
-            EventSourceTestCustomReconciler.TIMER_PERIOD / 2, TimeUnit.MILLISECONDS)
+        .pollInterval(EventSourceTestCustomReconciler.TIMER_PERIOD / 2, TimeUnit.MILLISECONDS)
         .untilAsserted(
-            () -> assertThat(TestUtils.getNumberOfExecutions(operator))
-                .isGreaterThanOrEqualTo(4));
+            () -> assertThat(TestUtils.getNumberOfExecutions(operator)).isGreaterThanOrEqualTo(4));
   }
 
   public EventSourceTestCustomResource createTestCustomResource(String id) {

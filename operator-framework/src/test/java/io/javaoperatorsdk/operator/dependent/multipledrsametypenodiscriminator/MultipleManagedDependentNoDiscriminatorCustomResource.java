@@ -11,6 +11,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("mnd")
 public class MultipleManagedDependentNoDiscriminatorCustomResource
     extends CustomResource<MultipleManagedDependentNoDiscriminatorSpec, Void>
-    implements Namespaced {
-
-}
+    implements Namespaced {}

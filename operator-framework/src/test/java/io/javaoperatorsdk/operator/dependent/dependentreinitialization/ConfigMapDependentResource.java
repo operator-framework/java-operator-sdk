@@ -16,13 +16,15 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(DependentReInitializationCustomResource primary,
+  protected ConfigMap desired(
+      DependentReInitializationCustomResource primary,
       Context<DependentReInitializationCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
+        .withMetadata(
+            new ObjectMetaBuilder()
+                .withName(primary.getMetadata().getName())
+                .withNamespace(primary.getMetadata().getNamespace())
+                .build())
         .withData(Map.of("key", "val"))
         .build();
   }

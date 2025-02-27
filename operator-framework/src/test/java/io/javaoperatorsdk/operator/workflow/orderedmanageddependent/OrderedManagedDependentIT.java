@@ -23,9 +23,14 @@ class OrderedManagedDependentIT {
   void managedDependentsAreReconciledInOrder() {
     operator.create(createTestResource());
 
-    await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(5))
-        .until(() -> ((OrderedManagedDependentTestReconciler) operator.getFirstReconciler())
-            .getNumberOfExecutions() == 1);
+    await()
+        .pollDelay(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(5))
+        .until(
+            () ->
+                ((OrderedManagedDependentTestReconciler) operator.getFirstReconciler())
+                        .getNumberOfExecutions()
+                    == 1);
 
     assertThat(OrderedManagedDependentTestReconciler.dependentExecution.get(0))
         .isEqualTo(ConfigMapDependentResource1.class);
@@ -33,12 +38,10 @@ class OrderedManagedDependentIT {
         .isEqualTo(ConfigMapDependentResource2.class);
   }
 
-
   private OrderedManagedDependentCustomResource createTestResource() {
     OrderedManagedDependentCustomResource cr = new OrderedManagedDependentCustomResource();
     cr.setMetadata(new ObjectMeta());
     cr.getMetadata().setName("test");
     return cr;
   }
-
 }

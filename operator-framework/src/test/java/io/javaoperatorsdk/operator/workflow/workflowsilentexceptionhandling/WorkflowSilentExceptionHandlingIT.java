@@ -23,23 +23,24 @@ public class WorkflowSilentExceptionHandlingIT {
     var reconciler =
         extension.getReconcilerOfType(HandleWorkflowExceptionsInReconcilerReconciler.class);
 
-    await().untilAsserted(() -> {
-      assertThat(reconciler.isErrorsFoundInReconcilerResult()).isTrue();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.isErrorsFoundInReconcilerResult()).isTrue();
+            });
 
     extension.delete(testResource());
 
-    await().untilAsserted(() -> {
-      assertThat(reconciler.isErrorsFoundInCleanupResult()).isTrue();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.isErrorsFoundInCleanupResult()).isTrue();
+            });
   }
 
   HandleWorkflowExceptionsInReconcilerCustomResource testResource() {
     var res = new HandleWorkflowExceptionsInReconcilerCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     return res;
   }
-
 }

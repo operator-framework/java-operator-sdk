@@ -40,29 +40,30 @@ class MultipleManagedExternalDependentSameTypeIT {
   }
 
   private void assertExternalResourceDeleted() {
-    await().untilAsserted(() -> {
-      var resources = externalServiceMock.listResources();
-      assertThat(resources).hasSize(0);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var resources = externalServiceMock.listResources();
+              assertThat(resources).hasSize(0);
+            });
   }
 
   private void assertResourceCreatedWithData(String expectedData) {
-    await().untilAsserted(() -> {
-      var resources = externalServiceMock.listResources();
-      assertThat(resources).hasSize(2);
-      assertThat(resources).allMatch(er -> er.getData().equals(expectedData));
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var resources = externalServiceMock.listResources();
+              assertThat(resources).hasSize(2);
+              assertThat(resources).allMatch(er -> er.getData().equals(expectedData));
+            });
   }
 
   private MultipleManagedExternalDependentResourceCustomResource testResource() {
     var res = new MultipleManagedExternalDependentResourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new MultipleManagedDependentResourceSpec());
     res.getSpec().setValue(DEFAULT_SPEC_VALUE);
     return res;
   }
-
 }

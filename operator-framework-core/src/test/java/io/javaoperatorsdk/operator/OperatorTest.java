@@ -59,5 +59,4 @@ class OperatorTest {
       return UpdateControl.noUpdate();
     }
   }
-
 }

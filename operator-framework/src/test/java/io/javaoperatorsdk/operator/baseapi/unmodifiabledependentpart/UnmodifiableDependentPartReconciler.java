@@ -24,5 +24,4 @@ public class UnmodifiableDependentPartReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

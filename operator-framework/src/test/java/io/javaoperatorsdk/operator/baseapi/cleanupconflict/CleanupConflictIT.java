@@ -19,8 +19,7 @@ class CleanupConflictIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new CleanupConflictReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(new CleanupConflictReconciler()).build();
 
   @Test
   void cleanupRemovesFinalizerWithoutConflict() throws InterruptedException {
@@ -28,9 +27,14 @@ class CleanupConflictIT {
     testResource.addFinalizer(ADDITIONAL_FINALIZER);
     testResource = operator.create(testResource);
 
-    await().untilAsserted(
-        () -> assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
-            .getNumberReconcileExecutions()).isEqualTo(1));
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(
+                        operator
+                            .getReconcilerOfType(CleanupConflictReconciler.class)
+                            .getNumberReconcileExecutions())
+                    .isEqualTo(1));
 
     operator.delete(testResource);
     Thread.sleep(WAIT_TIME / 2);
@@ -39,9 +43,15 @@ class CleanupConflictIT {
     testResource.getMetadata().setResourceVersion(null);
     operator.replace(testResource);
 
-    await().pollDelay(Duration.ofMillis(WAIT_TIME * 2)).untilAsserted(
-        () -> assertThat(operator.getReconcilerOfType(CleanupConflictReconciler.class)
-            .getNumberOfCleanupExecutions()).isEqualTo(1));
+    await()
+        .pollDelay(Duration.ofMillis(WAIT_TIME * 2))
+        .untilAsserted(
+            () ->
+                assertThat(
+                        operator
+                            .getReconcilerOfType(CleanupConflictReconciler.class)
+                            .getNumberOfCleanupExecutions())
+                    .isEqualTo(1));
   }
 
   private CleanupConflictCustomResource createTestResource() {

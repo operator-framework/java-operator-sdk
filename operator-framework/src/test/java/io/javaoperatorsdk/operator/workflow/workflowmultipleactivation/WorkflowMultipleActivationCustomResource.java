@@ -10,8 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("mwac")
 public class WorkflowMultipleActivationCustomResource
-    extends CustomResource<WorkflowMultipleActivationSpec, Void>
-    implements Namespaced {
-
-
-}
+    extends CustomResource<WorkflowMultipleActivationSpec, Void> implements Namespaced {}

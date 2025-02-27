@@ -25,31 +25,30 @@ class CreateOnlyIfNotExistingDependentWithSSAIT {
           .withReconciler(new CreateOnlyIfNotExistingDependentWithSSAReconciler())
           .build();
 
-
   @Test
   void createsResourceOnlyIfNotExisting() {
-    var cm = new ConfigMapBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build())
-        .withData(Map.of(KEY, "val"))
-        .build();
+    var cm =
+        new ConfigMapBuilder()
+            .withMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build())
+            .withData(Map.of(KEY, "val"))
+            .build();
 
     extension.create(cm);
     extension.create(testResource());
 
-    await().pollDelay(Duration.ofMillis(200)).untilAsserted(() -> {
-      var currentCM = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-      assertThat(currentCM.getData()).containsKey(KEY);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(200))
+        .untilAsserted(
+            () -> {
+              var currentCM = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
+              assertThat(currentCM.getData()).containsKey(KEY);
+            });
   }
 
   CreateOnlyIfNotExistingDependentWithSSACustomResource testResource() {
     var res = new CreateOnlyIfNotExistingDependentWithSSACustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     return res;
   }
-
 }

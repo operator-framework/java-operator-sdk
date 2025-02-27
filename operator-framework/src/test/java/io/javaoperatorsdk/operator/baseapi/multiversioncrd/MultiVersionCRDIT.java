@@ -55,21 +55,33 @@ class MultiVersionCRDIT {
     @SuppressWarnings("rawtypes")
     public void onStop(SharedIndexInformer informer, Throwable ex) {
       if (ex instanceof WatcherException watcherEx) {
-        watcherEx.getRawWatchMessage().ifPresent(raw -> {
-          try {
-            // extract the resource at which the version is attempted to be created (i.e. the stored
-            // version)
-            final var unmarshal = Serialization.jsonMapper().readTree(raw);
-            final var object = unmarshal.get("object");
-            resourceCreateAsVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(resourceCreateAsVersion,
-                object.get("apiVersion").asText());
-            // extract the asked resource version
-            failedResourceVersion = acceptOnlyIfUnsetOrEqualToAlreadySet(failedResourceVersion,
-                object.get("metadata").get("managedFields").get(0).get("apiVersion").asText());
-          } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-          }
-        });
+        watcherEx
+            .getRawWatchMessage()
+            .ifPresent(
+                raw -> {
+                  try {
+                    // extract the resource at which the version is attempted to be created (i.e.
+                    // the stored
+                    // version)
+                    final var unmarshal = Serialization.jsonMapper().readTree(raw);
+                    final var object = unmarshal.get("object");
+                    resourceCreateAsVersion =
+                        acceptOnlyIfUnsetOrEqualToAlreadySet(
+                            resourceCreateAsVersion, object.get("apiVersion").asText());
+                    // extract the asked resource version
+                    failedResourceVersion =
+                        acceptOnlyIfUnsetOrEqualToAlreadySet(
+                            failedResourceVersion,
+                            object
+                                .get("metadata")
+                                .get("managedFields")
+                                .get(0)
+                                .get("apiVersion")
+                                .asText());
+                  } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                  }
+                });
 
         // extract error message
         errorMessage =
@@ -82,10 +94,16 @@ class MultiVersionCRDIT {
       resourceClassName =
           acceptOnlyIfUnsetOrEqualToAlreadySet(resourceClassName, apiTypeClass.getName());
 
-      log.debug("API Type Class: " + apiTypeClass.getName()
-          + "  -  resource class name: " + resourceClassName);
-      log.info("Informer for " + HasMetadata.getFullResourceName(apiTypeClass)
-          + " stopped due to: " + ex.getMessage());
+      log.debug(
+          "API Type Class: "
+              + apiTypeClass.getName()
+              + "  -  resource class name: "
+              + resourceClassName);
+      log.info(
+          "Informer for "
+              + HasMetadata.getFullResourceName(apiTypeClass)
+              + " stopped due to: "
+              + ex.getMessage());
     }
 
     public String getResourceClassName() {
@@ -109,7 +127,7 @@ class MultiVersionCRDIT {
     }
   }
 
-  private final static TestInformerStoppedHandler informerStoppedHandler =
+  private static final TestInformerStoppedHandler informerStoppedHandler =
       new TestInformerStoppedHandler();
 
   @Test
@@ -146,28 +164,27 @@ class MultiVersionCRDIT {
     await()
         .atMost(Duration.ofSeconds(10))
         .pollInterval(Duration.ofMillis(50))
-        .untilAsserted(() -> {
-          // v1 is the stored version so trying to create a v2 version should fail because we cannot
-          // convert a String (as defined by the spec of the v2 CRD) to an int (which is what the
-          // spec of the v1 CRD defines)
-          assertThat(informerStoppedHandler.getResourceCreateAsVersion())
-              .isEqualTo(HasMetadata.getApiVersion(
-                  MultiVersionCRDTestCustomResource1.class));
-          assertThat(informerStoppedHandler.getResourceClassName())
-              .isEqualTo(MultiVersionCRDTestCustomResource1.class.getName());
-          assertThat(informerStoppedHandler.getFailedResourceVersion())
-              .isEqualTo(HasMetadata.getApiVersion(
-                  MultiVersionCRDTestCustomResource2.class));
-          assertThat(informerStoppedHandler.getErrorMessage()).contains(
-              "Cannot deserialize value of type `int` from String \"string value\": not a valid `int` value");
-        });
-    assertThat(
-        operator
-            .get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME)
-            .getStatus())
+        .untilAsserted(
+            () -> {
+              // v1 is the stored version so trying to create a v2 version should fail because we
+              // cannot
+              // convert a String (as defined by the spec of the v2 CRD) to an int (which is what
+              // the
+              // spec of the v1 CRD defines)
+              assertThat(informerStoppedHandler.getResourceCreateAsVersion())
+                  .isEqualTo(HasMetadata.getApiVersion(MultiVersionCRDTestCustomResource1.class));
+              assertThat(informerStoppedHandler.getResourceClassName())
+                  .isEqualTo(MultiVersionCRDTestCustomResource1.class.getName());
+              assertThat(informerStoppedHandler.getFailedResourceVersion())
+                  .isEqualTo(HasMetadata.getApiVersion(MultiVersionCRDTestCustomResource2.class));
+              assertThat(informerStoppedHandler.getErrorMessage())
+                  .contains(
+                      "Cannot deserialize value of type `int` from String \"string value\": not a"
+                          + " valid `int` value");
+            });
+    assertThat(operator.get(MultiVersionCRDTestCustomResource2.class, CR_V2_NAME).getStatus())
         .isNull();
   }
-
 
   MultiVersionCRDTestCustomResource1 createTestResourceV1WithoutLabel() {
     MultiVersionCRDTestCustomResource1 cr = new MultiVersionCRDTestCustomResource1();

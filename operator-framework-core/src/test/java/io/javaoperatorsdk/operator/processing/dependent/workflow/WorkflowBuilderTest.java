@@ -18,12 +18,12 @@ class WorkflowBuilderTest {
     when(deleter.isDeletable()).thenReturn(true);
     when(deleter.name()).thenReturn("deleter");
 
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(deleter)
-        .addDependentResource(dr)
-        .build();
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>()
+            .addDependentResource(deleter)
+            .addDependentResource(dr)
+            .build();
 
     assertThat(workflow.hasCleaner()).isTrue();
   }
-
 }

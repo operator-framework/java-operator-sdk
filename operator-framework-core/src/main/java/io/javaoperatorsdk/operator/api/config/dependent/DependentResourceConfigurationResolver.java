@@ -16,9 +16,8 @@ public class DependentResourceConfigurationResolver {
 
   private static final Map<Class<? extends DependentResource>, ConverterAnnotationPair> converters =
       new HashMap<>();
-  private static final Map<Class<? extends ConfigurationConverter>, ConfigurationConverter> knownConverters =
-      new HashMap<>();
-
+  private static final Map<Class<? extends ConfigurationConverter>, ConfigurationConverter>
+      knownConverters = new HashMap<>();
 
   public static <C extends ControllerConfiguration<?>> void configureSpecFromConfigured(
       DependentResourceSpec spec,
@@ -38,7 +37,9 @@ public class DependentResourceConfigurationResolver {
       if (converterAnnotationPair == null) {
         final var configured = configuredClassPair.configured;
         converterAnnotationPair =
-            getOrCreateConverter(dependentResourceClass, parentConfiguration,
+            getOrCreateConverter(
+                dependentResourceClass,
+                parentConfiguration,
                 configured.converter(),
                 configured.by());
       } else {
@@ -74,18 +75,22 @@ public class DependentResourceConfigurationResolver {
     return result;
   }
 
-  private static <C extends ControllerConfiguration<? extends HasMetadata>> ConverterAnnotationPair getOrCreateConverter(
-      Class<? extends DependentResource> dependentResourceClass, C parentConfiguration,
-      Class<? extends ConfigurationConverter> converterClass,
-      Class<? extends Annotation> annotationClass) {
+  private static <C extends ControllerConfiguration<? extends HasMetadata>>
+      ConverterAnnotationPair getOrCreateConverter(
+          Class<? extends DependentResource> dependentResourceClass,
+          C parentConfiguration,
+          Class<? extends ConfigurationConverter> converterClass,
+          Class<? extends Annotation> annotationClass) {
     var converterPair = converters.get(dependentResourceClass);
     if (converterPair == null) {
       // only instantiate a new converter if we haven't done so already for this converter type
       var converter = knownConverters.get(converterClass);
       if (converter == null) {
-        converter = Utils.instantiate(converterClass,
-            ConfigurationConverter.class,
-            Utils.contextFor(parentConfiguration, dependentResourceClass, Configured.class));
+        converter =
+            Utils.instantiate(
+                converterClass,
+                ConfigurationConverter.class,
+                Utils.contextFor(parentConfiguration, dependentResourceClass, Configured.class));
         knownConverters.put(converterClass, converter);
       }
       // record dependent class - converter association for faster future retrieval
@@ -102,13 +107,16 @@ public class DependentResourceConfigurationResolver {
   }
 
   @SuppressWarnings("unused")
-  public static void registerConverter(Class<? extends DependentResource> dependentResourceClass,
-      ConfigurationConverter converter) {
+  public static void registerConverter(
+      Class<? extends DependentResource> dependentResourceClass, ConfigurationConverter converter) {
     var configured = getConfigured(dependentResourceClass);
     if (configured == null) {
-      throw new IllegalArgumentException("There is no @" + Configured.class.getSimpleName()
-          + " annotation on " + dependentResourceClass.getName()
-          + " or its superclasses and thus doesn't need to be associated with a converter");
+      throw new IllegalArgumentException(
+          "There is no @"
+              + Configured.class.getSimpleName()
+              + " annotation on "
+              + dependentResourceClass.getName()
+              + " or its superclasses and thus doesn't need to be associated with a converter");
     }
 
     // find the associated configuration annotation
@@ -134,8 +142,8 @@ public class DependentResourceConfigurationResolver {
     private final Configured configured;
     private final Class<? extends DependentResource> annotatedClass;
 
-    private ConfiguredClassPair(Configured configured,
-        Class<? extends DependentResource> annotatedClass) {
+    private ConfiguredClassPair(
+        Configured configured, Class<? extends DependentResource> annotatedClass) {
       this.configured = configured;
       this.annotatedClass = annotatedClass;
     }
@@ -150,8 +158,8 @@ public class DependentResourceConfigurationResolver {
     private final ConfigurationConverter converter;
     private final Class<? extends Annotation> annotationClass;
 
-    private ConverterAnnotationPair(ConfigurationConverter converter,
-        Class<? extends Annotation> annotationClass) {
+    private ConverterAnnotationPair(
+        ConfigurationConverter converter, Class<? extends Annotation> annotationClass) {
       this.converter = converter;
       this.annotationClass = annotationClass;
     }

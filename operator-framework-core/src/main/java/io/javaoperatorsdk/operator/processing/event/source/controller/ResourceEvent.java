@@ -12,8 +12,7 @@ public class ResourceEvent extends Event {
   private final ResourceAction action;
   private final HasMetadata resource;
 
-  public ResourceEvent(ResourceAction action,
-      ResourceID resourceID, HasMetadata resource) {
+  public ResourceEvent(ResourceAction action, ResourceID resourceID, HasMetadata resource) {
     super(resourceID);
     this.action = action;
     this.resource = resource;
@@ -21,10 +20,12 @@ public class ResourceEvent extends Event {
 
   @Override
   public String toString() {
-    return "ResourceEvent{" +
-        "action=" + action +
-        ", associated resource id=" + getRelatedCustomResourceID() +
-        '}';
+    return "ResourceEvent{"
+        + "action="
+        + action
+        + ", associated resource id="
+        + getRelatedCustomResourceID()
+        + '}';
   }
 
   public ResourceAction getAction() {
@@ -37,12 +38,9 @@ public class ResourceEvent extends Event {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-    if (!super.equals(o))
-      return false;
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
     ResourceEvent that = (ResourceEvent) o;
     return action == that.action;
   }

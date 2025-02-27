@@ -70,9 +70,7 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
         processingEnv
             .getTypeUtils()
             .getDeclaredType(
-                processingEnv
-                    .getElementUtils()
-                    .getTypeElement(Reconciler.class.getCanonicalName()),
+                processingEnv.getElementUtils().getTypeElement(Reconciler.class.getCanonicalName()),
                 processingEnv.getTypeUtils().getWildcardType(null, null));
     return new TypeParameterResolver(resourceControllerType, 0);
   }

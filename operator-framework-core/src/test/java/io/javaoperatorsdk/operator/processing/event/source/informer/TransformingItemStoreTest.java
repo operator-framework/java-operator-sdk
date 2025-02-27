@@ -14,10 +14,12 @@ class TransformingItemStoreTest {
 
   @Test
   void cachedObjectTransformed() {
-    TransformingItemStore<ConfigMap> transformingItemStore = new TransformingItemStore<>(r -> {
-      r.getMetadata().setLabels(null);
-      return r;
-    });
+    TransformingItemStore<ConfigMap> transformingItemStore =
+        new TransformingItemStore<>(
+            r -> {
+              r.getMetadata().setLabels(null);
+              return r;
+            });
 
     var cm = configMap();
     cm.getMetadata().setLabels(Map.of("k", "v"));
@@ -29,12 +31,14 @@ class TransformingItemStoreTest {
 
   @Test
   void preservesSelectedAttributes() {
-    TransformingItemStore<ConfigMap> transformingItemStore = new TransformingItemStore<>(r -> {
-      r.getMetadata().setName(null);
-      r.getMetadata().setNamespace(null);
-      r.getMetadata().setResourceVersion(null);
-      return r;
-    });
+    TransformingItemStore<ConfigMap> transformingItemStore =
+        new TransformingItemStore<>(
+            r -> {
+              r.getMetadata().setName(null);
+              r.getMetadata().setNamespace(null);
+              r.getMetadata().setResourceVersion(null);
+              return r;
+            });
     var cm = configMap();
     transformingItemStore.put(metaNamespaceKeyFunc(cm), cm);
 
@@ -43,17 +47,18 @@ class TransformingItemStoreTest {
     assertThat(transformingItemStore.get(metaNamespaceKeyFunc(cm)).getMetadata().getNamespace())
         .isNotNull();
     assertThat(
-        transformingItemStore.get(metaNamespaceKeyFunc(cm)).getMetadata().getResourceVersion())
+            transformingItemStore.get(metaNamespaceKeyFunc(cm)).getMetadata().getResourceVersion())
         .isNotNull();
   }
 
   ConfigMap configMap() {
     var cm = new ConfigMap();
-    cm.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .withNamespace("default").withResourceVersion("1")
-        .build());
+    cm.setMetadata(
+        new ObjectMetaBuilder()
+            .withName("test1")
+            .withNamespace("default")
+            .withResourceVersion("1")
+            .build());
     return cm;
   }
-
 }

@@ -15,7 +15,9 @@ public class DelayedMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsT
   @Override
   protected MicrometerMetrics getMetrics() {
     return MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
-        .withCleanUpDelayInSeconds(testDelay).withCleaningThreadNumber(2).build();
+        .withCleanUpDelayInSeconds(testDelay)
+        .withCleaningThreadNumber(2)
+        .build();
   }
 
   @Override

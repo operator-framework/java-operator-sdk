@@ -24,9 +24,11 @@ public class AggregatedOperatorException extends OperatorException {
 
   @Override
   public String getMessage() {
-    return super.getMessage() + " " + causes.entrySet().stream()
-        .map(entry -> entry.getKey() + " -> " + exceptionDescription(entry))
-        .collect(Collectors.joining("\n - ", "Details:\n - ", ""));
+    return super.getMessage()
+        + " "
+        + causes.entrySet().stream()
+            .map(entry -> entry.getKey() + " -> " + exceptionDescription(entry))
+            .collect(Collectors.joining("\n - ", "Details:\n - ", ""));
   }
 
   private static String exceptionDescription(Entry<String, Exception> entry) {

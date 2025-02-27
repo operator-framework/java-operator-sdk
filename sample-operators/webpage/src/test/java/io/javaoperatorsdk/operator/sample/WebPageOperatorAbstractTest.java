@@ -71,38 +71,50 @@ public abstract class WebPageOperatorAbstractTest {
     // update part: changing title
     operator().replace(createWebPage(TITLE2));
 
-    await().atMost(Duration.ofSeconds(LONG_WAIT_SECONDS))
+    await()
+        .atMost(Duration.ofSeconds(LONG_WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
-        .untilAsserted(() -> {
-          String page = operator().get(ConfigMap.class, Utils.configMapName(webPage)).getData()
-              .get(INDEX_HTML);
-          // not using portforward here since there were issues with GitHub actions
-          // String page = httpGetForWebPage(webPage);
-          assertThat(page).isNotNull().contains(TITLE2);
-        });
+        .untilAsserted(
+            () -> {
+              String page =
+                  operator()
+                      .get(ConfigMap.class, Utils.configMapName(webPage))
+                      .getData()
+                      .get(INDEX_HTML);
+              // not using portforward here since there were issues with GitHub actions
+              // String page = httpGetForWebPage(webPage);
+              assertThat(page).isNotNull().contains(TITLE2);
+            });
 
     // delete part: deleting webpage
     operator().delete(createWebPage(TITLE2));
 
-    await().atMost(Duration.ofSeconds(WAIT_SECONDS))
+    await()
+        .atMost(Duration.ofSeconds(WAIT_SECONDS))
         .pollInterval(POLL_INTERVAL)
-        .untilAsserted(() -> {
-          Deployment deployment = operator().get(Deployment.class, deploymentName(webPage));
-          assertThat(deployment).isNull();
-        });
+        .untilAsserted(
+            () -> {
+              Deployment deployment = operator().get(Deployment.class, deploymentName(webPage));
+              assertThat(deployment).isNull();
+            });
   }
 
   String httpGetForWebPage(WebPage webPage) {
     LocalPortForward portForward = null;
     try {
       portForward =
-          client.services().inNamespace(webPage.getMetadata().getNamespace())
-              .withName(serviceName(webPage)).portForward(80);
+          client
+              .services()
+              .inNamespace(webPage.getMetadata().getNamespace())
+              .withName(serviceName(webPage))
+              .portForward(80);
       HttpClient httpClient =
           HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
       HttpRequest request =
-          HttpRequest.newBuilder().GET()
-              .uri(new URI("http://localhost:" + portForward.getLocalPort())).build();
+          HttpRequest.newBuilder()
+              .GET()
+              .uri(new URI("http://localhost:" + portForward.getLocalPort()))
+              .build();
       return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
     } catch (URISyntaxException | IOException | InterruptedException e) {
       return null;
@@ -128,7 +140,9 @@ public abstract class WebPageOperatorAbstractTest {
         .setHtml(
             "<html>\n"
                 + "      <head>\n"
-                + "        <title>" + title + "</title>\n"
+                + "        <title>"
+                + title
+                + "</title>\n"
                 + "      </head>\n"
                 + "      <body>\n"
                 + "        Hello World! \n"
@@ -139,5 +153,4 @@ public abstract class WebPageOperatorAbstractTest {
   }
 
   abstract AbstractOperatorExtension operator();
-
 }

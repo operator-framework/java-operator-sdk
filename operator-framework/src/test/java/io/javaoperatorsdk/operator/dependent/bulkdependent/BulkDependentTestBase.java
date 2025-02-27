@@ -47,29 +47,43 @@ public abstract class BulkDependentTestBase {
   private void assertNumberOfConfigMaps(int n) {
     // this test was failing with a lower timeout on GitHub, probably the garbage collection was
     // slower there.
-    await().atMost(Duration.ofSeconds(30))
-        .untilAsserted(() -> {
-          var cms =
-              extension().getKubernetesClient().configMaps().inNamespace(extension().getNamespace())
-                  .withLabel(LABEL_KEY, LABEL_VALUE)
-                  .list().getItems();
-          assertThat(cms).withFailMessage("Number of items is still: " + cms.size())
-              .hasSize(n);
-        });
+    await()
+        .atMost(Duration.ofSeconds(30))
+        .untilAsserted(
+            () -> {
+              var cms =
+                  extension()
+                      .getKubernetesClient()
+                      .configMaps()
+                      .inNamespace(extension().getNamespace())
+                      .withLabel(LABEL_KEY, LABEL_VALUE)
+                      .list()
+                      .getItems();
+              assertThat(cms).withFailMessage("Number of items is still: " + cms.size()).hasSize(n);
+            });
   }
 
   private void assertAdditionalDataOnConfigMaps(String expectedValue) {
-    await().atMost(Duration.ofSeconds(30))
-        .untilAsserted(() -> {
-          var cms =
-              extension().getKubernetesClient().configMaps().inNamespace(extension().getNamespace())
-                  .withLabel(LABEL_KEY, LABEL_VALUE)
-                  .list().getItems();
-          cms.forEach(cm -> {
-            assertThat(cm.getData().get(ConfigMapDeleterBulkDependentResource.ADDITIONAL_DATA_KEY))
-                .isEqualTo(expectedValue);
-          });
-        });
+    await()
+        .atMost(Duration.ofSeconds(30))
+        .untilAsserted(
+            () -> {
+              var cms =
+                  extension()
+                      .getKubernetesClient()
+                      .configMaps()
+                      .inNamespace(extension().getNamespace())
+                      .withLabel(LABEL_KEY, LABEL_VALUE)
+                      .list()
+                      .getItems();
+              cms.forEach(
+                  cm -> {
+                    assertThat(
+                            cm.getData()
+                                .get(ConfigMapDeleterBulkDependentResource.ADDITIONAL_DATA_KEY))
+                        .isEqualTo(expectedValue);
+                  });
+            });
   }
 
   public static BulkDependentTestCustomResource testResource() {
@@ -88,8 +102,8 @@ public abstract class BulkDependentTestBase {
     extension().replace(resource);
   }
 
-  public static void updateSpecWithNewAdditionalData(LocallyRunOperatorExtension extension,
-      String data) {
+  public static void updateSpecWithNewAdditionalData(
+      LocallyRunOperatorExtension extension, String data) {
     var resource = testResource();
     resource.getSpec().setAdditionalData(data);
     extension.replace(resource);

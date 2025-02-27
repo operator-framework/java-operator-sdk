@@ -62,7 +62,14 @@ public final class LeaderElectionConfigurationBuilder {
   }
 
   public LeaderElectionConfiguration build() {
-    return new LeaderElectionConfiguration(leaseName, leaseNamespace, leaseDuration, renewDeadline,
-        retryPeriod, identity, leaderCallbacks, exitOnStopLeading);
+    return new LeaderElectionConfiguration(
+        leaseName,
+        leaseNamespace,
+        leaseDuration,
+        renewDeadline,
+        retryPeriod,
+        identity,
+        leaderCallbacks,
+        exitOnStopLeading);
   }
 }

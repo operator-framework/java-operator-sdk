@@ -11,7 +11,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("OrderedManagedDependentCustomResource")
 @ShortNames("omd")
-public class OrderedManagedDependentCustomResource
-    extends CustomResource<Void, String>
-    implements Namespaced {
-}
+public class OrderedManagedDependentCustomResource extends CustomResource<Void, String>
+    implements Namespaced {}

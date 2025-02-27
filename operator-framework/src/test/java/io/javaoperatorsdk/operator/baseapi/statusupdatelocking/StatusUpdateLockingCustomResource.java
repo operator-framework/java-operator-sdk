@@ -12,7 +12,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("StatusUpdateLockingCustomResource")
 @ShortNames("sul")
 public class StatusUpdateLockingCustomResource
-    extends CustomResource<Void, StatusUpdateLockingCustomResourceStatus>
-    implements Namespaced {
-
-}
+    extends CustomResource<Void, StatusUpdateLockingCustomResourceStatus> implements Namespaced {}

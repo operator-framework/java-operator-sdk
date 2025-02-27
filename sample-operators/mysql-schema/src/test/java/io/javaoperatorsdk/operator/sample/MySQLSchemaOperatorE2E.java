@@ -36,7 +36,7 @@ class MySQLSchemaOperatorE2E {
 
   static final String MY_SQL_NS = "mysql";
 
-  private final static List<HasMetadata> infrastructure = new ArrayList<>();
+  private static final List<HasMetadata> infrastructure = new ArrayList<>();
   public static final String TEST_RESOURCE_NAME = "mydb1";
 
   static {
@@ -61,7 +61,7 @@ class MySQLSchemaOperatorE2E {
       isLocal()
           ? LocallyRunOperatorExtension.builder()
               .withReconciler(new MySQLSchemaReconciler()) // configuration for schema comes from
-                                                           // SchemaDependentResource annotation
+              // SchemaDependentResource annotation
               .withInfrastructure(infrastructure)
               .withPortForward(MY_SQL_NS, "app", "mysql", 3306, SchemaDependentResource.LOCAL_PORT)
               .build()
@@ -77,7 +77,9 @@ class MySQLSchemaOperatorE2E {
 
     MySQLSchema testSchema = new MySQLSchema();
     testSchema.setMetadata(
-        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(operator.getNamespace())
+        new ObjectMetaBuilder()
+            .withName(TEST_RESOURCE_NAME)
+            .withNamespace(operator.getNamespace())
             .build());
     testSchema.setSpec(new SchemaSpec());
     testSchema.getSpec().setEncoding("utf8");
@@ -103,8 +105,11 @@ class MySQLSchemaOperatorE2E {
               assertThat(updatedSchema.getStatus().getUserName(), is(notNullValue()));
             });
 
-    client.resources(MySQLSchema.class).inNamespace(operator.getNamespace())
-        .withName(testSchema.getMetadata().getName()).delete();
+    client
+        .resources(MySQLSchema.class)
+        .inNamespace(operator.getNamespace())
+        .withName(testSchema.getMetadata().getName())
+        .delete();
 
     await()
         .atMost(2, MINUTES)

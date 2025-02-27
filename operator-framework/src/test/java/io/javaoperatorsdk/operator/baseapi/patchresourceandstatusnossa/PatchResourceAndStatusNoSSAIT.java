@@ -15,7 +15,6 @@ import static org.awaitility.Awaitility.await;
 class PatchResourceAndStatusNoSSAIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
           .withReconciler(PatchResourceAndStatusNoSSAReconciler.class)
@@ -31,19 +30,17 @@ class PatchResourceAndStatusNoSSAIT {
     TestUtils.waitXms(300);
 
     PatchResourceAndStatusNoSSACustomResource customResource =
-        operator
-            .get(PatchResourceAndStatusNoSSACustomResource.class,
-                resource.getMetadata().getName());
+        operator.get(
+            PatchResourceAndStatusNoSSACustomResource.class, resource.getMetadata().getName());
 
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(1);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);
     assertThat(customResource.getStatus().getState())
         .isEqualTo(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
     assertThat(
-        customResource
-            .getMetadata()
-            .getAnnotations()
-            .get(PatchResourceAndStatusNoSSAReconciler.TEST_ANNOTATION))
+            customResource
+                .getMetadata()
+                .getAnnotations()
+                .get(PatchResourceAndStatusNoSSAReconciler.TEST_ANNOTATION))
         .isNotNull();
   }
 
@@ -54,10 +51,8 @@ class PatchResourceAndStatusNoSSAIT {
             () -> {
               PatchResourceAndStatusNoSSACustomResource cr =
                   operator.get(PatchResourceAndStatusNoSSACustomResource.class, name);
-              assertThat(cr)
-                  .isNotNull();
-              assertThat(cr.getStatus())
-                  .isNotNull();
+              assertThat(cr).isNotNull();
+              assertThat(cr.getStatus()).isNotNull();
               assertThat(cr.getStatus().getState())
                   .isEqualTo(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
             });

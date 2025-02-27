@@ -12,5 +12,4 @@ public class CreateUpdateEventFilterTestCustomResourceSpec {
     this.value = value;
     return this;
   }
-
 }

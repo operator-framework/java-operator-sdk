@@ -9,5 +9,4 @@ public interface ResourceEventAware<T extends HasMetadata> {
   default void onResourceUpdated(T newResource, T oldResource) {}
 
   default void onResourceDeleted(T resource) {}
-
 }

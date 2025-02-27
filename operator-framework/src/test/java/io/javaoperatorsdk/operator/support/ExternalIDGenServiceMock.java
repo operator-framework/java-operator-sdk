@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ExternalIDGenServiceMock {
 
-  private final static ExternalIDGenServiceMock serviceMock = new ExternalIDGenServiceMock();
+  private static final ExternalIDGenServiceMock serviceMock = new ExternalIDGenServiceMock();
 
   private final Map<String, ExternalResource> resourceMap = new ConcurrentHashMap<>();
 
@@ -38,5 +38,4 @@ public class ExternalIDGenServiceMock {
   public static ExternalIDGenServiceMock getInstance() {
     return serviceMock;
   }
-
 }

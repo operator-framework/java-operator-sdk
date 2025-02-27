@@ -19,21 +19,22 @@ public class CaffeineBoundedCacheClusterScopeIT
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(new BoundedCacheClusterScopeTestReconciler(), o -> {
-            o.withItemStore(boundedItemStore(
-                new KubernetesClientBuilder().build(),
-                BoundedCacheClusterScopeTestCustomResource.class,
-                Duration.ofMinutes(1),
-                1));
-          })
+          .withReconciler(
+              new BoundedCacheClusterScopeTestReconciler(),
+              o -> {
+                o.withItemStore(
+                    boundedItemStore(
+                        new KubernetesClientBuilder().build(),
+                        BoundedCacheClusterScopeTestCustomResource.class,
+                        Duration.ofMinutes(1),
+                        1));
+              })
           .build();
 
   @Override
   BoundedCacheClusterScopeTestCustomResource createTestResource(int index) {
     var res = new BoundedCacheClusterScopeTestCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME_PREFIX + index)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME_PREFIX + index).build());
     res.setSpec(new BoundedCacheTestSpec());
     res.getSpec().setData(INITIAL_DATA_PREFIX + index);
     res.getSpec().setTargetNamespace(extension.getNamespace());

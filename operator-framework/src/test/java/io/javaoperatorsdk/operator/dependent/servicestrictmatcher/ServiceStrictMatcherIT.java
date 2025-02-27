@@ -15,39 +15,46 @@ public class ServiceStrictMatcherIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new ServiceStrictMatcherTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new ServiceStrictMatcherTestReconciler())
           .build();
-
 
   @Test
   void testTheMatchingDoesNoTTriggersFurtherUpdates() {
     var resource = operator.create(testResource());
 
-    await().untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(ServiceStrictMatcherTestReconciler.class)
-          .getNumberOfExecutions()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      operator
+                          .getReconcilerOfType(ServiceStrictMatcherTestReconciler.class)
+                          .getNumberOfExecutions())
+                  .isEqualTo(1);
+            });
 
     // make an update to spec to reconcile again
     resource.getSpec().setValue(2);
     operator.replace(resource);
 
-    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(ServiceStrictMatcherTestReconciler.class)
-          .getNumberOfExecutions()).isEqualTo(2);
-      assertThat(ServiceDependentResource.updated.get()).isZero();
-    });
+    await()
+        .pollDelay(Duration.ofMillis(300))
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      operator
+                          .getReconcilerOfType(ServiceStrictMatcherTestReconciler.class)
+                          .getNumberOfExecutions())
+                  .isEqualTo(2);
+              assertThat(ServiceDependentResource.updated.get()).isZero();
+            });
   }
-
 
   ServiceStrictMatcherTestCustomResource testResource() {
     var res = new ServiceStrictMatcherTestCustomResource();
     res.setSpec(new ServiceStrictMatcherSpec());
     res.getSpec().setValue(1);
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     return res;
   }
-
 }

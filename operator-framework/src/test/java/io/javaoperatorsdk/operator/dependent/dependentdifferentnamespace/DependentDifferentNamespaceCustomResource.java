@@ -10,6 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("ddn")
 public class DependentDifferentNamespaceCustomResource
-    extends CustomResource<DependentDifferentNamespaceSpec, Void>
-    implements Namespaced {
-}
+    extends CustomResource<DependentDifferentNamespaceSpec, Void> implements Namespaced {}

@@ -15,20 +15,18 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class RetryTestCustomReconciler
     implements Reconciler<RetryTestCustomResource>, TestExecutionInfoProvider {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(RetryTestCustomReconciler.class);
+  private static final Logger log = LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   private final AtomicInteger numberOfExecutionFails;
-
 
   public RetryTestCustomReconciler(int numberOfExecutionFails) {
     this.numberOfExecutionFails = new AtomicInteger(numberOfExecutionFails);
   }
 
   @Override
-  public UpdateControl<RetryTestCustomResource> reconcile(RetryTestCustomResource resource,
-      Context<RetryTestCustomResource> context) {
+  public UpdateControl<RetryTestCustomResource> reconcile(
+      RetryTestCustomResource resource, Context<RetryTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
     log.info("Value: " + resource.getSpec().getValue());

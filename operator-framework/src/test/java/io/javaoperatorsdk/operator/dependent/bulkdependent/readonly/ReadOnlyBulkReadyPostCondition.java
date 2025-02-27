@@ -12,7 +12,8 @@ public class ReadOnlyBulkReadyPostCondition
   @Override
   public boolean isMet(
       DependentResource<ConfigMap, BulkDependentTestCustomResource> dependentResource,
-      BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
+      BulkDependentTestCustomResource primary,
+      Context<BulkDependentTestCustomResource> context) {
     var minResourceNumber = primary.getSpec().getNumberOfResources();
     @SuppressWarnings("unchecked")
     var secondaryResources =
