@@ -54,25 +54,21 @@ public abstract class WebPageOperatorAbstractTest {
     var webPage = createWebPage(TITLE1);
     operator().create(webPage);
 
-    await()
-        .atMost(Duration.ofSeconds(WAIT_SECONDS))
-        .pollInterval(POLL_INTERVAL)
-        .untilAsserted(
-            () -> {
-              var actual = operator().get(WebPage.class, TEST_PAGE);
-              var deployment = operator().get(Deployment.class, deploymentName(webPage));
-              assertThat(actual.getStatus()).isNotNull();
-              assertThat(actual.getStatus().getAreWeGood()).isTrue();
-              assertThat(deployment.getSpec().getReplicas())
-                  .isEqualTo(deployment.getStatus().getReadyReplicas());
-            });
+    await().atMost(Duration.ofSeconds(WAIT_SECONDS)).pollInterval(POLL_INTERVAL)
+        .untilAsserted(() -> {
+          var actual = operator().get(WebPage.class, TEST_PAGE);
+          var deployment = operator().get(Deployment.class, deploymentName(webPage));
+          assertThat(actual.getStatus()).isNotNull();
+          assertThat(actual.getStatus().getAreWeGood()).isTrue();
+          assertThat(deployment.getSpec().getReplicas())
+              .isEqualTo(deployment.getStatus().getReadyReplicas());
+        });
     assertThat(httpGetForWebPage(webPage)).contains(TITLE1);
 
     // update part: changing title
     operator().replace(createWebPage(TITLE2));
 
-    await().atMost(Duration.ofSeconds(LONG_WAIT_SECONDS))
-        .pollInterval(POLL_INTERVAL)
+    await().atMost(Duration.ofSeconds(LONG_WAIT_SECONDS)).pollInterval(POLL_INTERVAL)
         .untilAsserted(() -> {
           String page = operator().get(ConfigMap.class, Utils.configMapName(webPage)).getData()
               .get(INDEX_HTML);
@@ -84,8 +80,7 @@ public abstract class WebPageOperatorAbstractTest {
     // delete part: deleting webpage
     operator().delete(createWebPage(TITLE2));
 
-    await().atMost(Duration.ofSeconds(WAIT_SECONDS))
-        .pollInterval(POLL_INTERVAL)
+    await().atMost(Duration.ofSeconds(WAIT_SECONDS)).pollInterval(POLL_INTERVAL)
         .untilAsserted(() -> {
           Deployment deployment = operator().get(Deployment.class, deploymentName(webPage));
           assertThat(deployment).isNull();
@@ -95,14 +90,12 @@ public abstract class WebPageOperatorAbstractTest {
   String httpGetForWebPage(WebPage webPage) {
     LocalPortForward portForward = null;
     try {
-      portForward =
-          client.services().inNamespace(webPage.getMetadata().getNamespace())
-              .withName(serviceName(webPage)).portForward(80);
+      portForward = client.services().inNamespace(webPage.getMetadata().getNamespace())
+          .withName(serviceName(webPage)).portForward(80);
       HttpClient httpClient =
           HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-      HttpRequest request =
-          HttpRequest.newBuilder().GET()
-              .uri(new URI("http://localhost:" + portForward.getLocalPort())).build();
+      HttpRequest request = HttpRequest.newBuilder().GET()
+          .uri(new URI("http://localhost:" + portForward.getLocalPort())).build();
       return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
     } catch (URISyntaxException | IOException | InterruptedException e) {
       return null;
@@ -123,17 +116,10 @@ public abstract class WebPageOperatorAbstractTest {
     webPage.getMetadata().setName(TEST_PAGE);
     webPage.getMetadata().setNamespace(operator().getNamespace());
     webPage.setSpec(new WebPageSpec());
-    webPage
-        .getSpec()
-        .setHtml(
-            "<html>\n"
-                + "      <head>\n"
-                + "        <title>" + title + "</title>\n"
-                + "      </head>\n"
-                + "      <body>\n"
-                + "        Hello World! \n"
-                + "      </body>\n"
-                + "    </html>");
+    webPage.getSpec()
+        .setHtml("<html>\n" + "      <head>\n" + "        <title>" + title + "</title>\n"
+            + "      </head>\n" + "      <body>\n" + "        Hello World! \n" + "      </body>\n"
+            + "    </html>");
 
     return webPage;
   }

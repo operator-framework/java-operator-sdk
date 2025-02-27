@@ -18,11 +18,9 @@ class StatusUpdateLockingIT {
   public static final String TEST_RESOURCE_NAME = "test";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
-          .withReconciler(StatusUpdateLockingReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
+      .withReconciler(StatusUpdateLockingReconciler.class).build();
 
   @Test
   void noOptimisticLockingDoneOnStatusPatch() throws InterruptedException {
@@ -33,10 +31,8 @@ class StatusUpdateLockingIT {
 
     await().pollDelay(Duration.ofMillis(WAIT_TIME)).timeout(Duration.ofSeconds(460))
         .untilAsserted(() -> {
-          assertThat(
-              operator.getReconcilerOfType(StatusUpdateLockingReconciler.class)
-                  .getNumberOfExecutions())
-              .isEqualTo(1);
+          assertThat(operator.getReconcilerOfType(StatusUpdateLockingReconciler.class)
+              .getNumberOfExecutions()).isEqualTo(1);
           assertThat(operator.get(StatusUpdateLockingCustomResource.class, TEST_RESOURCE_NAME)
               .getStatus().getValue()).isEqualTo(1);
         });

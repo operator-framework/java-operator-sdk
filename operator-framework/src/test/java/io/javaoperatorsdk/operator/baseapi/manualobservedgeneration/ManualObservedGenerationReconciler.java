@@ -31,10 +31,8 @@ public class ManualObservedGenerationReconciler
   private ManualObservedGenerationCustomResource resourceForStatusPatch(
       ManualObservedGenerationCustomResource original) {
     var res = new ManualObservedGenerationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(original.getMetadata().getName())
-        .withNamespace(original.getMetadata().getNamespace())
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(original.getMetadata().getName())
+        .withNamespace(original.getMetadata().getNamespace()).build());
     res.setStatus(original.getStatus());
     if (res.getStatus() == null) {
       res.setStatus(new ManualObservedGenerationStatus());

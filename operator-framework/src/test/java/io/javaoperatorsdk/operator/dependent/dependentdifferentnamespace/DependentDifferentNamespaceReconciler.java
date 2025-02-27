@@ -6,13 +6,10 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@Workflow(dependents = {
-    @Dependent(type = ConfigMapDependentResource.class),
-})
+@Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class),})
 @ControllerConfiguration
 public class DependentDifferentNamespaceReconciler
-    implements Reconciler<DependentDifferentNamespaceCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<DependentDifferentNamespaceCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 

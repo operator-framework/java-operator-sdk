@@ -37,8 +37,7 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   }
 
   DefaultWorkflow(Set<DependentResourceNode> dependentResourceNodes,
-      boolean throwExceptionAutomatically,
-      boolean hasCleaner) {
+      boolean throwExceptionAutomatically, boolean hasCleaner) {
     this.throwExceptionAutomatically = throwExceptionAutomatically;
     this.hasCleaner = hasCleaner;
 
@@ -55,8 +54,7 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
 
   protected DefaultWorkflow(Map<String, DependentResourceNode> dependentResourceNodes,
       Set<DependentResourceNode> bottomLevelResource, Set<DependentResourceNode> topLevelResources,
-      boolean throwExceptionAutomatically,
-      boolean hasCleaner) {
+      boolean throwExceptionAutomatically, boolean hasCleaner) {
     this.throwExceptionAutomatically = throwExceptionAutomatically;
     this.hasCleaner = hasCleaner;
     this.topLevelResources = topLevelResources;
@@ -159,7 +157,6 @@ class DefaultWorkflow<P extends HasMetadata> implements Workflow<P> {
   public List<DependentResource> getDependentResourcesWithoutActivationCondition() {
     return dependentResourceNodes.values().stream()
         .filter(n -> n.getActivationCondition().isEmpty())
-        .map(DependentResourceNode::getDependentResource)
-        .toList();
+        .map(DependentResourceNode::getDependentResource).toList();
   }
 }

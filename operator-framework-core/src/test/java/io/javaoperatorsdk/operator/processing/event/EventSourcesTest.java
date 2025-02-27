@@ -65,9 +65,8 @@ class EventSourcesTest {
 
     eventSources.add(source);
 
-    assertThat(eventSources.additionalEventSources()).containsExactly(
-        eventSources.retryEventSource(),
-        source);
+    assertThat(eventSources.additionalEventSources())
+        .containsExactly(eventSources.retryEventSource(), source);
   }
 
   @Test
@@ -79,8 +78,8 @@ class EventSourcesTest {
     eventSources.add(source);
 
 
-    assertThat(eventSources.additionalEventSources()).containsExactly(
-        eventSources.retryEventSource(), source);
+    assertThat(eventSources.additionalEventSources())
+        .containsExactly(eventSources.retryEventSource(), source);
   }
 
   @Test
@@ -95,17 +94,14 @@ class EventSourcesTest {
     assertNotNull(controllerEventSource);
     assertEquals(HasMetadata.class, controllerEventSource.resourceType());
 
-    assertEquals(controllerEventSource,
-        eventSources.controllerEventSource());
+    assertEquals(controllerEventSource, eventSources.controllerEventSource());
   }
 
   @Test
   void flatMappedSourcesShouldReturnOnlyUserRegisteredEventSources() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -118,10 +114,8 @@ class EventSourcesTest {
   @Test
   void clearShouldWork() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -135,10 +129,8 @@ class EventSourcesTest {
   @Test
   void getShouldWork() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -161,10 +153,8 @@ class EventSourcesTest {
   @Test
   void getEventSourcesShouldWork() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -189,9 +179,9 @@ class EventSourcesTest {
 
     for (int i = 0; i < 1000 && !concurrentExceptionFound.get(); i++) {
       final var eventSources = new EventSources();
-      var eventSourceList =
-          IntStream.range(1, 20).mapToObj(n -> eventSourceMockWithName(EventSource.class,
-              "name" + n, HasMetadata.class)).toList();
+      var eventSourceList = IntStream.range(1, 20)
+          .mapToObj(n -> eventSourceMockWithName(EventSource.class, "name" + n, HasMetadata.class))
+          .toList();
 
       IntStream.range(1, 10).forEach(n -> eventSources.add(eventSourceList.get(n - 1)));
 
@@ -215,8 +205,7 @@ class EventSourcesTest {
       t2.join();
     }
 
-    assertThat(concurrentExceptionFound)
-        .withFailMessage("ConcurrentModificationException thrown")
+    assertThat(concurrentExceptionFound).withFailMessage("ConcurrentModificationException thrown")
         .isFalse();
   }
 

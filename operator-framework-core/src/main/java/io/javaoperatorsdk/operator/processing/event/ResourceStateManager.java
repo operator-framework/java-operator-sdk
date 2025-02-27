@@ -25,8 +25,7 @@ class ResourceStateManager {
   }
 
   public List<ResourceState> resourcesWithEventPresent() {
-    return states.values().stream()
-        .filter(state -> !state.noEventPresent())
+    return states.values().stream().filter(state -> !state.noEventPresent())
         .collect(Collectors.toList());
   }
 }

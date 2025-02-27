@@ -58,10 +58,8 @@ class AbstractDependentResourceTest {
 
   private ConfigMap configMap() {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName("test")
-        .withNamespace("default")
-        .build());
+    configMap
+        .setMetadata(new ObjectMetaBuilder().withName("test").withNamespace("default").build());
     return configMap;
   }
 

@@ -18,12 +18,8 @@ public class ConfigMapDependent extends
   protected ConfigMap desired(ManagedDependentDefaultDeleteConditionCustomResource primary,
       Context<ManagedDependentDefaultDeleteConditionCustomResource> context) {
 
-    return new ConfigMapBuilder()
-        .withNewMetadata()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .endMetadata()
-        .withData(Map.of("key", "val"))
-        .build();
+    return new ConfigMapBuilder().withNewMetadata().withName(primary.getMetadata().getName())
+        .withNamespace(primary.getMetadata().getNamespace()).endMetadata()
+        .withData(Map.of("key", "val")).build();
   }
 }

@@ -52,10 +52,9 @@ class DependentResourceConfigurationResolverTest {
   private static Object extractDependentKubernetesResourceConfig(
       io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> configuration,
       Class<? extends DependentResource> target) {
-    final var spec =
-        configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().stream()
-            .filter(s -> target.isAssignableFrom(s.getDependentResourceClass()))
-            .findFirst().orElseThrow();
+    final var spec = configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs()
+        .stream().filter(s -> target.isAssignableFrom(s.getDependentResourceClass())).findFirst()
+        .orElseThrow();
     return configuration.getConfigurationFor(spec);
   }
 
@@ -69,12 +68,9 @@ class DependentResourceConfigurationResolverTest {
     assertEquals(CustomAnnotatedDep.PROVIDED_VALUE, ((CustomConfig) customConfig).getValue());
     final var newConfig = new CustomConfig(72);
     final var overridden = ControllerConfigurationOverrider.override(cfg)
-        .replacingNamedDependentResourceConfig(DR_NAME, newConfig)
-        .build();
+        .replacingNamedDependentResourceConfig(DR_NAME, newConfig).build();
     final var spec = cfg.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().stream()
-        .filter(s -> DR_NAME.equals(s.getName()))
-        .findFirst()
-        .orElseThrow();
+        .filter(s -> DR_NAME.equals(s.getName())).findFirst().orElseThrow();
     assertEquals(newConfig, overridden.getConfigurationFor(spec));
   }
 
@@ -104,8 +100,7 @@ class DependentResourceConfigurationResolverTest {
         return null;
       }
     };
-    DependentResourceConfigurationResolver.registerConverter(ServiceDep.class,
-        overriddenConverter);
+    DependentResourceConfigurationResolver.registerConverter(ServiceDep.class, overriddenConverter);
     configFor(new CustomAnnotationReconciler());
 
     // non overridden dependents should use the default converter
@@ -117,12 +112,9 @@ class DependentResourceConfigurationResolverTest {
     assertEquals(overriddenConverter, converter);
   }
 
-  @Workflow(dependents = {
-      @Dependent(type = CustomAnnotatedDep.class, name = DR_NAME),
-      @Dependent(type = ChildCustomAnnotatedDep.class),
-      @Dependent(type = ConfigMapDep.class),
-      @Dependent(type = ServiceDep.class)
-  })
+  @Workflow(dependents = {@Dependent(type = CustomAnnotatedDep.class, name = DR_NAME),
+      @Dependent(type = ChildCustomAnnotatedDep.class), @Dependent(type = ConfigMapDep.class),
+      @Dependent(type = ServiceDep.class)})
   @ControllerConfiguration
   static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
 

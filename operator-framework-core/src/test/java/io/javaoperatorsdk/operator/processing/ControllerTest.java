@@ -77,16 +77,10 @@ class ControllerTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "true, true, true, false",
-      "true, true, false, true",
-      "false, true, true, true",
-      "false, true, false, true",
-      "true, false, true, false",
-  })
+  @CsvSource({"true, true, true, false", "true, true, false, true", "false, true, true, true",
+      "false, true, false, true", "true, false, true, false",})
   void callsCleanupOnWorkflowWhenHasCleanerAndReconcilerIsNotCleaner(boolean reconcilerIsCleaner,
-      boolean workflowIsCleaner,
-      boolean isExplicitWorkflowInvocation,
+      boolean workflowIsCleaner, boolean isExplicitWorkflowInvocation,
       boolean workflowCleanerExecuted) throws Exception {
 
     Reconciler reconciler;

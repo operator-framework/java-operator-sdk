@@ -14,8 +14,7 @@ public class StatusUpdateLockingReconciler
   @Override
   public UpdateControl<StatusUpdateLockingCustomResource> reconcile(
       StatusUpdateLockingCustomResource resource,
-      Context<StatusUpdateLockingCustomResource> context)
-      throws InterruptedException {
+      Context<StatusUpdateLockingCustomResource> context) throws InterruptedException {
     numberOfExecutions.addAndGet(1);
     Thread.sleep(WAIT_TIME);
     resource.setStatus(new StatusUpdateLockingCustomResourceStatus());

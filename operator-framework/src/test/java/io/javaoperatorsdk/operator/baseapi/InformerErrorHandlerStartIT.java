@@ -23,15 +23,11 @@ class InformerErrorHandlerStartIT {
   @Timeout(5)
   void operatorStart() {
     KubernetesClient client = new KubernetesClientBuilder()
-        .withConfig(new ConfigBuilder()
-            .withImpersonateUsername("user-with-no-rights")
-            .build())
+        .withConfig(new ConfigBuilder().withImpersonateUsername("user-with-no-rights").build())
         .build();
 
-    Operator operator = new Operator(o -> o
-        .withKubernetesClient(client)
-        .withStopOnInformerErrorDuringStartup(false)
-        .withCacheSyncTimeout(Duration.ofSeconds(2)));
+    Operator operator = new Operator(o -> o.withKubernetesClient(client)
+        .withStopOnInformerErrorDuringStartup(false).withCacheSyncTimeout(Duration.ofSeconds(2)));
     operator.register(new ConfigMapReconciler());
     operator.start();
   }

@@ -32,15 +32,14 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
-@SchemaConfig(pollPeriod = 400, host = "127.0.0.1",
-    port = SchemaDependentResource.LOCAL_PORT,
+@SchemaConfig(pollPeriod = 400, host = "127.0.0.1", port = SchemaDependentResource.LOCAL_PORT,
     user = "root", password = "password") // NOSONAR: password is only used locally, example only
 @Configured(by = SchemaConfig.class, with = ResourcePollerConfig.class,
     converter = ResourcePollerConfigConverter.class)
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
-    implements ConfiguredDependentResource<ResourcePollerConfig>,
-    Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
+    implements ConfiguredDependentResource<ResourcePollerConfig>, Creator<Schema, MySQLSchema>,
+    Deleter<MySQLSchema> {
 
   public static final String NAME = "schema";
   public static final int LOCAL_PORT = 3307;
@@ -77,9 +76,7 @@ public class SchemaDependentResource
       var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
       var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
       log.debug("Creating schema: {}", target);
-      return SchemaService.createSchemaAndRelatedUser(
-          connection,
-          target.getName(),
+      return SchemaService.createSchemaAndRelatedUser(connection, target.getName(),
           target.getCharacterSet(), username, password);
     } catch (SQLException e) {
       log.error("Error while creating Schema", e);
@@ -89,8 +86,7 @@ public class SchemaDependentResource
 
   private Connection getConnection() throws SQLException {
     String connectURL = format("jdbc:mysql://%1$s:%2$s", dbConfig.getHost(), dbConfig.getPort());
-    log.debug("Connecting to '{}' with user '{}'", connectURL,
-        dbConfig.getUser());
+    log.debug("Connecting to '{}' with user '{}'", connectURL, dbConfig.getUser());
     return DriverManager.getConnection(connectURL, dbConfig.getUser(), dbConfig.getPassword());
   }
 
@@ -121,8 +117,8 @@ public class SchemaDependentResource
     }
   }
 
-  static class ResourcePollerConfigConverter implements
-      ConfigurationConverter<SchemaConfig, ResourcePollerConfig> {
+  static class ResourcePollerConfigConverter
+      implements ConfigurationConverter<SchemaConfig, ResourcePollerConfig> {
 
     @Override
     public ResourcePollerConfig configFrom(SchemaConfig configAnnotation,

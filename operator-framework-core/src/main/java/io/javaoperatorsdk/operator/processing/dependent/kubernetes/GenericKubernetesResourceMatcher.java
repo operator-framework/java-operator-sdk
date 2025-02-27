@@ -49,17 +49,15 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @return results of matching
    */
   public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
-      R actualResource,
-      boolean labelsAndAnnotationsEquality,
-      boolean valuesEquality, Context<P> context) {
-    return match(desired, actualResource,
-        labelsAndAnnotationsEquality, valuesEquality, context, EMPTY_ARRAY);
+      R actualResource, boolean labelsAndAnnotationsEquality, boolean valuesEquality,
+      Context<P> context) {
+    return match(desired, actualResource, labelsAndAnnotationsEquality, valuesEquality, context,
+        EMPTY_ARRAY);
   }
 
   public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
       R actualResource, Context<P> context) {
-    return match(desired, actualResource,
-        false, false, context, EMPTY_ARRAY);
+    return match(desired, actualResource, false, false, context, EMPTY_ARRAY);
   }
 
   /**
@@ -79,11 +77,10 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    * @return results of matching
    */
   public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
-      R actualResource,
-      boolean labelsAndAnnotationsEquality,
-      Context<P> context, String... ignorePaths) {
-    return match(desired, actualResource,
-        labelsAndAnnotationsEquality, false, context, ignorePaths);
+      R actualResource, boolean labelsAndAnnotationsEquality, Context<P> context,
+      String... ignorePaths) {
+    return match(desired, actualResource, labelsAndAnnotationsEquality, false, context,
+        ignorePaths);
   }
 
   /**
@@ -111,30 +108,23 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
    */
   public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
-      Context<P> context,
-      boolean labelsAndAnnotationsEquality,
-      String... ignorePaths) {
+      Context<P> context, boolean labelsAndAnnotationsEquality, String... ignorePaths) {
     final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource,
-        labelsAndAnnotationsEquality, context,
-        ignorePaths);
+    return match(desired, actualResource, labelsAndAnnotationsEquality, context, ignorePaths);
   }
 
   public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(
       KubernetesDependentResource<R, P> dependentResource, R actualResource, P primary,
-      Context<P> context,
-      boolean specEquality,
-      boolean labelsAndAnnotationsEquality,
+      Context<P> context, boolean specEquality, boolean labelsAndAnnotationsEquality,
       String... ignorePaths) {
     final var desired = dependentResource.desired(primary, context);
-    return match(desired, actualResource,
-        labelsAndAnnotationsEquality, specEquality, context, ignorePaths);
+    return match(desired, actualResource, labelsAndAnnotationsEquality, specEquality, context,
+        ignorePaths);
   }
 
   public static <R extends HasMetadata, P extends HasMetadata> Matcher.Result<R> match(R desired,
       R actualResource, boolean labelsAndAnnotationsEquality, boolean valuesEquality,
-      Context<P> context,
-      String... ignoredPaths) {
+      Context<P> context, String... ignoredPaths) {
     final List<String> ignoreList =
         ignoredPaths != null && ignoredPaths.length > 0 ? Arrays.asList(ignoredPaths)
             : Collections.emptyList();
@@ -167,8 +157,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     return Matcher.Result.computed(matched, desired);
   }
 
-  private static boolean match(boolean equality, JsonNode diff,
-      final List<String> ignoreList) {
+  private static boolean match(boolean equality, JsonNode diff, final List<String> ignoreList) {
     if (equality) {
       return false;
     }

@@ -60,8 +60,7 @@ class InformerWrapper<T extends HasMetadata>
           });
         } else {
           final var apiTypeClass = informer.getApiTypeClass();
-          final var fullResourceName =
-              HasMetadata.getFullResourceName(apiTypeClass);
+          final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
           final var version = HasMetadata.getVersion(apiTypeClass);
           throw new IllegalStateException(
               "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
@@ -141,8 +140,8 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
-    final var stream = cache.list().stream()
-        .filter(r -> namespace.equals(r.getMetadata().getNamespace()));
+    final var stream =
+        cache.list().stream().filter(r -> namespace.equals(r.getMetadata().getNamespace()));
     return predicate != null ? stream.filter(predicate) : stream;
   }
 

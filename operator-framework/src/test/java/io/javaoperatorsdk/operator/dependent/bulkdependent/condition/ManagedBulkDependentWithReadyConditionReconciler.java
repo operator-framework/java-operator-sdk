@@ -18,13 +18,12 @@ public class ManagedBulkDependentWithReadyConditionReconciler
 
   @Override
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
-      BulkDependentTestCustomResource resource,
-      Context<BulkDependentTestCustomResource> context) throws Exception {
+      BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context)
+      throws Exception {
     numberOfExecutions.incrementAndGet();
 
     var ready = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
-        .orElseThrow()
-        .allDependentResourcesReady();
+        .orElseThrow().allDependentResourcesReady();
 
 
     resource.setStatus(new BulkDependentTestStatus());

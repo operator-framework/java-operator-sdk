@@ -31,13 +31,8 @@ public class ConfigMapDependentResource
     Map<String, String> labels = new HashMap<>();
     labels.put(SELECTOR, "true");
     return new ConfigMapBuilder()
-        .withMetadata(
-            new ObjectMetaBuilder()
-                .withName(configMapName(webPage))
-                .withNamespace(webPage.getMetadata().getNamespace())
-                .withLabels(labels)
-                .build())
-        .withData(data)
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withName(configMapName(webPage))
+            .withNamespace(webPage.getMetadata().getNamespace()).withLabels(labels).build())
+        .withData(data).build();
   }
 }

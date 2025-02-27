@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("ssm")
 public class ServiceStrictMatcherTestCustomResource
-    extends CustomResource<ServiceStrictMatcherSpec, Void>
-    implements Namespaced {
+    extends CustomResource<ServiceStrictMatcherSpec, Void> implements Namespaced {
 
 }

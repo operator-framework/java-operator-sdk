@@ -29,9 +29,8 @@ class ChangeNamespaceIT {
   public static final String ADDITIONAL_TEST_NAMESPACE = "additional-test-namespace";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new ChangeNamespaceTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ChangeNamespaceTestReconciler()).build();
 
   @BeforeEach
   void setup() {
@@ -84,8 +83,7 @@ class ChangeNamespaceIT {
     var registeredController =
         operator.getRegisteredControllerForReconcile(ChangeNamespaceTestReconciler.class);
 
-    registeredController
-        .changeNamespaces(Set.of(Constants.WATCH_ALL_NAMESPACES));
+    registeredController.changeNamespaces(Set.of(Constants.WATCH_ALL_NAMESPACES));
 
     assertReconciled(reconciler, resourceInAdditionalTestNamespace);
 
@@ -99,16 +97,15 @@ class ChangeNamespaceIT {
 
   private static void assertReconciled(ChangeNamespaceTestReconciler reconciler,
       ChangeNamespaceTestCustomResource resourceInAdditionalTestNamespace) {
-    await().untilAsserted(
-        () -> assertThat(
-            reconciler.numberOfResourceReconciliations(resourceInAdditionalTestNamespace))
-            .isEqualTo(2));
+    await().untilAsserted(() -> assertThat(
+        reconciler.numberOfResourceReconciliations(resourceInAdditionalTestNamespace))
+        .isEqualTo(2));
   }
 
   private static void assertNotReconciled(ChangeNamespaceTestReconciler reconciler,
       ChangeNamespaceTestCustomResource resourceInAdditionalTestNamespace) {
-    await().pollDelay(Duration.ofMillis(200)).untilAsserted(
-        () -> assertThat(
+    await().pollDelay(Duration.ofMillis(200))
+        .untilAsserted(() -> assertThat(
             reconciler.numberOfResourceReconciliations(resourceInAdditionalTestNamespace))
             .isZero());
   }
@@ -120,9 +117,7 @@ class ChangeNamespaceIT {
   private ChangeNamespaceTestCustomResource createResourceInAdditionalNamespace(String name) {
     var res = customResource(name);
     return client().resources(ChangeNamespaceTestCustomResource.class)
-        .inNamespace(ADDITIONAL_TEST_NAMESPACE)
-        .resource(res)
-        .create();
+        .inNamespace(ADDITIONAL_TEST_NAMESPACE).resource(res).create();
   }
 
   private KubernetesClient client() {
@@ -130,15 +125,13 @@ class ChangeNamespaceIT {
   }
 
   private Namespace additionalTestNamespace() {
-    return new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(ADDITIONAL_TEST_NAMESPACE)
-        .build()).build();
+    return new NamespaceBuilder()
+        .withMetadata(new ObjectMetaBuilder().withName(ADDITIONAL_TEST_NAMESPACE).build()).build();
   }
 
   private ChangeNamespaceTestCustomResource customResource(String name) {
     ChangeNamespaceTestCustomResource customResource = new ChangeNamespaceTestCustomResource();
-    customResource.setMetadata(
-        new ObjectMetaBuilder().withName(name).build());
+    customResource.setMetadata(new ObjectMetaBuilder().withName(name).build());
     return customResource;
   }
 }

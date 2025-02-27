@@ -14,16 +14,12 @@ class WebPageOperatorStandaloneDependentResourcesE2E extends WebPageOperatorAbst
   public WebPageOperatorStandaloneDependentResourcesE2E() throws FileNotFoundException {}
 
   @RegisterExtension
-  AbstractOperatorExtension operator =
-      isLocal()
-          ? LocallyRunOperatorExtension.builder()
-              .waitForNamespaceDeletion(false)
-              .withReconciler(new WebPageStandaloneDependentsReconciler())
-              .build()
-          : ClusterDeployedOperatorExtension.builder()
-              .waitForNamespaceDeletion(false)
-              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
-              .build();
+  AbstractOperatorExtension operator = isLocal()
+      ? LocallyRunOperatorExtension.builder().waitForNamespaceDeletion(false)
+          .withReconciler(new WebPageStandaloneDependentsReconciler()).build()
+      : ClusterDeployedOperatorExtension.builder().waitForNamespaceDeletion(false)
+          .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
+          .build();
 
   @Override
   AbstractOperatorExtension operator() {

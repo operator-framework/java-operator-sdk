@@ -76,10 +76,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private final String id = UUID.randomUUID().toString();
 
-  public InformerEventSource(
-      InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(configuration,
-        configuration.getKubernetesClient().orElse(context.getClient()),
+  public InformerEventSource(InformerEventSourceConfiguration<R> configuration,
+      EventSourceContext<P> context) {
+    this(configuration, configuration.getKubernetesClient().orElse(context.getClient()),
         context.getControllerConfiguration().getConfigurationService()
             .parseResourceVersionsForEventFilteringAndCaching());
   }
@@ -90,8 +89,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private InformerEventSource(InformerEventSourceConfiguration<R> configuration,
-      KubernetesClient client,
-      boolean parseResourceVersions) {
+      KubernetesClient client, boolean parseResourceVersions) {
     super(configuration.name(),
         configuration.getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
@@ -118,8 +116,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void onAdd(R newResource) {
     if (log.isDebugEnabled()) {
       log.debug("On add event received for resource id: {} type: {} version: {}",
-          ResourceID.fromResource(newResource),
-          resourceType().getSimpleName(), newResource.getMetadata().getResourceVersion());
+          ResourceID.fromResource(newResource), resourceType().getSimpleName(),
+          newResource.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     onAddOrUpdate(Operation.ADD, newResource, null,
@@ -131,8 +129,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (log.isDebugEnabled()) {
       log.debug(
           "On update event received for resource id: {} type: {} version: {} old version: {} ",
-          ResourceID.fromResource(newObject),
-          resourceType().getSimpleName(),
+          ResourceID.fromResource(newObject), resourceType().getSimpleName(),
           newObject.getMetadata().getResourceVersion(),
           oldObject.getMetadata().getResourceVersion());
     }
@@ -145,8 +142,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   public void onDelete(R resource, boolean b) {
     if (log.isDebugEnabled()) {
       log.debug("On delete event received for resource id: {} type: {}",
-          ResourceID.fromResource(resource),
-          resourceType().getSimpleName());
+          ResourceID.fromResource(resource), resourceType().getSimpleName());
     }
     primaryToSecondaryIndex.onDelete(resource);
     super.onDelete(resource, b);
@@ -162,16 +158,14 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (canSkipEvent(newObject, oldObject, resourceID)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource ID: {}",
-          operation,
-          ResourceID.fromResource(newObject));
+          operation, ResourceID.fromResource(newObject));
       superOnOp.run();
     } else {
       superOnOp.run();
       if (eventAcceptedByFilter(operation, newObject, oldObject)) {
         log.debug(
             "Propagating event for {}, resource with same version not result of a reconciliation. Resource ID: {}",
-            operation,
-            resourceID);
+            operation, resourceID);
         propagateEvent(newObject);
       } else {
         log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
@@ -189,8 +183,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     boolean resVersionsEqual = newObject.getMetadata().getResourceVersion()
         .equals(res.get().getMetadata().getResourceVersion());
-    log.debug("Resource found in temporal cache for id: {} resource versions equal: {}",
-        resourceID, resVersionsEqual);
+    log.debug("Resource found in temporal cache for id: {} resource versions equal: {}", resourceID,
+        resVersionsEqual);
     return resVersionsEqual;
   }
 
@@ -217,19 +211,18 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (primaryResourceIdSet.isEmpty()) {
       return;
     }
-    primaryResourceIdSet.forEach(
-        resourceId -> {
-          Event event = new Event(resourceId);
-          /*
-           * In fabric8 client for certain cases informers can be created on in a way that they are
-           * automatically started, what would cause a NullPointerException here, since an event
-           * might be received between creation and registration.
-           */
-          final EventHandler eventHandler = getEventHandler();
-          if (eventHandler != null) {
-            eventHandler.handleEvent(event);
-          }
-        });
+    primaryResourceIdSet.forEach(resourceId -> {
+      Event event = new Event(resourceId);
+      /*
+       * In fabric8 client for certain cases informers can be created on in a way that they are
+       * automatically started, what would cause a NullPointerException here, since an event might
+       * be received between creation and registration.
+       */
+      final EventHandler eventHandler = getEventHandler();
+      if (eventHandler != null) {
+        eventHandler.handleEvent(event);
+      }
+    });
   }
 
   @Override
@@ -289,8 +282,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
-    return (onDeleteFilter == null || onDeleteFilter.accept(resource, b)) &&
-        (genericFilter == null || genericFilter.accept(resource));
+    return (onDeleteFilter == null || onDeleteFilter.accept(resource, b))
+        && (genericFilter == null || genericFilter.accept(resource));
   }
 
   /**

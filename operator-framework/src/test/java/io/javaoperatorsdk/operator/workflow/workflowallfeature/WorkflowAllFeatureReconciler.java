@@ -20,12 +20,9 @@ import static io.javaoperatorsdk.operator.workflow.workflowallfeature.WorkflowAl
         readyPostcondition = DeploymentReadyCondition.class),
     @Dependent(type = ConfigMapDependentResource.class,
         reconcilePrecondition = ConfigMapReconcileCondition.class,
-        deletePostcondition = ConfigMapDeletePostCondition.class,
-        dependsOn = DEPLOYMENT_NAME)
-})
+        deletePostcondition = ConfigMapDeletePostCondition.class, dependsOn = DEPLOYMENT_NAME)})
 @ControllerConfiguration
-public class WorkflowAllFeatureReconciler
-    implements Reconciler<WorkflowAllFeatureCustomResource>,
+public class WorkflowAllFeatureReconciler implements Reconciler<WorkflowAllFeatureCustomResource>,
     Cleaner<WorkflowAllFeatureCustomResource> {
 
   public static final String DEPLOYMENT_NAME = "deployment";
@@ -41,14 +38,14 @@ public class WorkflowAllFeatureReconciler
     if (resource.getStatus() == null) {
       resource.setStatus(new WorkflowAllFeatureStatus());
     }
-    final var reconcileResult = context.managedWorkflowAndDependentResourceContext()
-        .getWorkflowReconcileResult();
-    final var msgFromCondition = reconcileResult.orElseThrow().getDependentConditionResult(
-        DependentResource.defaultNameFor(ConfigMapDependentResource.class),
-        Condition.Type.RECONCILE, String.class)
+    final var reconcileResult =
+        context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult();
+    final var msgFromCondition = reconcileResult.orElseThrow()
+        .getDependentConditionResult(
+            DependentResource.defaultNameFor(ConfigMapDependentResource.class),
+            Condition.Type.RECONCILE, String.class)
         .orElse(ConfigMapReconcileCondition.NOT_RECONCILED_YET);
-    resource.getStatus()
-        .withReady(reconcileResult.orElseThrow().allDependentResourcesReady())
+    resource.getStatus().withReady(reconcileResult.orElseThrow().allDependentResourcesReady())
         .withMsgFromCondition(msgFromCondition);
     return UpdateControl.patchStatus(resource);
   }

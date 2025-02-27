@@ -17,17 +17,14 @@ class KubernetesDependentGarbageCollectionIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new DependentGarbageCollectionTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new DependentGarbageCollectionTestReconciler()).build();
 
 
   @Test
   void resourceSecondaryResourceIsGarbageCollected() {
     var resource = customResource();
-    var createdResources =
-        operator.create(resource);
+    var createdResources = operator.create(resource);
 
     await().untilAsserted(() -> {
       ConfigMap configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
@@ -51,8 +48,7 @@ class KubernetesDependentGarbageCollectionIT {
   @Test
   void deletesSecondaryResource() {
     var resource = customResource();
-    var createdResources =
-        operator.create(resource);
+    var createdResources = operator.create(resource);
 
     await().untilAsserted(() -> {
       ConfigMap configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
@@ -71,9 +67,7 @@ class KubernetesDependentGarbageCollectionIT {
   DependentGarbageCollectionTestCustomResource customResource() {
     DependentGarbageCollectionTestCustomResource resource =
         new DependentGarbageCollectionTestCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     resource.setSpec(new DependentGarbageCollectionTestCustomResourceSpec());
     resource.getSpec().setCreateConfigMap(true);
     return resource;

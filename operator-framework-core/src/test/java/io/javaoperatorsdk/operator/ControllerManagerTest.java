@@ -20,8 +20,7 @@ class ControllerManagerTest {
   @Test
   void addingReconcilerWithSameNameShouldNotWork() {
     final var controllerConfiguration =
-        new TestControllerConfiguration<>(new TestCustomReconciler(null),
-            TestCustomResource.class);
+        new TestControllerConfiguration<>(new TestCustomReconciler(null), TestCustomResource.class);
     var controller = new Controller<>(controllerConfiguration.reconciler, controllerConfiguration,
         MockKubernetesClient.client(controllerConfiguration.getResourceClass()));
     ConfigurationService configurationService = new BaseConfigurationService();
@@ -46,8 +45,7 @@ class ControllerManagerTest {
       this.reconciler = reconciler;
     }
 
-    static <R extends HasMetadata> String getControllerName(
-        Reconciler<R> controller) {
+    static <R extends HasMetadata> String getControllerName(Reconciler<R> controller) {
       return controller.getClass().getSimpleName() + "Controller";
     }
   }

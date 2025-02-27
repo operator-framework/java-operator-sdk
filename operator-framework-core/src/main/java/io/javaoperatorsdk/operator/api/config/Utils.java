@@ -62,9 +62,7 @@ public class Utils {
       log.debug("Couldn't parse git.build.time property", e);
       builtTime = Date.from(Instant.EPOCH);
     }
-    return new Version(
-        properties.getProperty("git.commit.id.abbrev", "unknown"),
-        builtTime);
+    return new Version(properties.getProperty("git.commit.id.abbrev", "unknown"), builtTime);
   }
 
   public static int ensureValid(int value, String description, int minValue) {
@@ -98,19 +96,8 @@ public class Utils {
     return getBooleanFromSystemPropsOrDefault(DEBUG_THREAD_POOL_ENV_KEY, false);
   }
 
-  public static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
-    var property = System.getProperty(propertyName);
-    if (property == null) {
-      return defaultValue;
-    } else {
-      property = property.trim().toLowerCase();
-      return switch (property) {
-        case "true" -> true;
-        case "false" -> false;
-        default -> defaultValue;
-      };
-    }
-  }
+  public static boolean getBooleanFromSystemPropsOrDefault(String propertyName,
+      boolean defaultValue) {var property=System.getProperty(propertyName);if(property==null){return defaultValue;}else{property=property.trim().toLowerCase();return switch(property){case"true"->true;case"false"->false;default->defaultValue;};}}
 
   public static Class<?> getFirstTypeArgumentFromExtendedClass(Class<?> clazz) {
     return getTypeArgumentFromExtendedClassByIndex(clazz, 0);
@@ -121,8 +108,7 @@ public class Utils {
       Type type = clazz.getGenericSuperclass();
       return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[index];
     } catch (Exception e) {
-      throw new RuntimeException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
-          + clazz.getSimpleName()
+      throw new RuntimeException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX + clazz.getSimpleName()
           + " because it doesn't extend a class that is parameterized with the type we want to retrieve",
           e);
     }
@@ -149,8 +135,8 @@ public class Utils {
         return getTypeArgumentFromInterfaceByIndex(parent, expectedImplementedInterface, index);
       }
     }
-    throw new IllegalArgumentException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
-        + clazz.getSimpleName() + " because it or its superclasses don't implement "
+    throw new IllegalArgumentException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX + clazz.getSimpleName()
+        + " because it or its superclasses don't implement "
         + expectedImplementedInterface.getSimpleName());
   }
 
@@ -162,9 +148,7 @@ public class Utils {
       target = Arrays.stream(genericInterfaces)
           .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
               && type instanceof ParameterizedType)
-          .map(ParameterizedType.class::cast)
-          .findFirst()
-          .map(t -> {
+          .map(ParameterizedType.class::cast).findFirst().map(t -> {
             final Type argument = t.getActualTypeArguments()[index];
             if (argument instanceof Class) {
               return (Class<?>) argument;
@@ -235,8 +219,7 @@ public class Utils {
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException
         | IllegalStateException e) {
       throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
-          + targetClass.getName() + "'."
-          + (context != null ? " Context: " + context : ""), e);
+          + targetClass.getName() + "'." + (context != null ? " Context: " + context : ""), e);
     }
   }
 
@@ -277,10 +260,9 @@ public class Utils {
   public static String contextFor(String reconcilerName,
       Class<? extends DependentResource> dependentType,
       Class<? extends Annotation> configurationAnnotation) {
-    final var annotationName =
-        configurationAnnotation != null ? configurationAnnotation.getSimpleName()
-            : io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class
-                .getSimpleName();
+    final var annotationName = configurationAnnotation != null
+        ? configurationAnnotation.getSimpleName()
+        : io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class.getSimpleName();
     var context = "annotation: " + annotationName + ", ";
     if (dependentType != null) {
       context += "DependentResource: " + dependentType.getName() + ", ";

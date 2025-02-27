@@ -20,8 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.*;
 
-class PollingEventSourceTest
-    extends
+class PollingEventSourceTest extends
     AbstractEventSourceTestBase<PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
 
   public static final int DEFAULT_WAIT_PERIOD = 100;
@@ -70,8 +69,7 @@ class PollingEventSourceTest
 
   @Test
   void propagatesEventOnNewResourceForPrimary() throws InterruptedException {
-    when(resourceFetcher.fetchResources())
-        .thenReturn(testResponseWithOneValue())
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue())
         .thenReturn(testResponseWithTwoValueForSameId());
 
     pollingEventSource.start();
@@ -82,16 +80,14 @@ class PollingEventSourceTest
 
   @Test
   void updatesHealthIndicatorBasedOnExceptionsInFetcher() throws InterruptedException {
-    when(resourceFetcher.fetchResources())
-        .thenReturn(testResponseWithOneValue());
+    when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
     assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY);
 
     when(resourceFetcher.fetchResources())
         // 2x - to make sure to catch the health indicator change
         .thenThrow(new RuntimeException("test exception"))
-        .thenThrow(new RuntimeException("test exception"))
-        .thenReturn(testResponseWithOneValue());
+        .thenThrow(new RuntimeException("test exception")).thenReturn(testResponseWithOneValue());
 
     await().pollInterval(POLL_PERIOD).untilAsserted(
         () -> assertThat(pollingEventSource.getStatus()).isEqualTo(Status.UNHEALTHY));

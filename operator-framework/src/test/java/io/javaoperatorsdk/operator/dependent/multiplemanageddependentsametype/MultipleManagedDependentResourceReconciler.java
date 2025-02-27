@@ -17,12 +17,10 @@ import static io.javaoperatorsdk.operator.dependent.multiplemanageddependentsame
     @Dependent(type = MultipleManagedDependentResourceConfigMap1.class,
         useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
     @Dependent(type = MultipleManagedDependentResourceConfigMap2.class,
-        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
-})
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)})
 @ControllerConfiguration
-public class MultipleManagedDependentResourceReconciler
-    implements Reconciler<MultipleManagedDependentResourceCustomResource>,
-    TestExecutionInfoProvider {
+public class MultipleManagedDependentResourceReconciler implements
+    Reconciler<MultipleManagedDependentResourceCustomResource>, TestExecutionInfoProvider {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
   public static final String DATA_KEY = "key";
@@ -49,12 +47,9 @@ public class MultipleManagedDependentResourceReconciler
   public List<EventSource<?, MultipleManagedDependentResourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleManagedDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentResourceCustomResource> ies =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration
-                .from(ConfigMap.class, MultipleManagedDependentResourceCustomResource.class)
-                .withName(CONFIG_MAP_EVENT_SOURCE)
-                .build(),
-            context);
+        new InformerEventSource<>(InformerEventSourceConfiguration
+            .from(ConfigMap.class, MultipleManagedDependentResourceCustomResource.class)
+            .withName(CONFIG_MAP_EVENT_SOURCE).build(), context);
     return List.of(ies);
   }
 }

@@ -65,8 +65,7 @@ public interface ConfigurationService {
    *         with overridden values.
    */
   static ConfigurationService newOverriddenConfigurationService(
-      ConfigurationService baseConfiguration,
-      Consumer<ConfigurationServiceOverrider> overrider) {
+      ConfigurationService baseConfiguration, Consumer<ConfigurationServiceOverrider> overrider) {
     if (overrider != null) {
       final var toOverride = new ConfigurationServiceOverrider(baseConfiguration);
       overrider.accept(toOverride);
@@ -157,10 +156,8 @@ public interface ConfigurationService {
   default KubernetesClient getKubernetesClient() {
     return new KubernetesClientBuilder()
         .withConfig(new ConfigBuilder(Config.autoConfigure(null))
-            .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
-            .build())
-        .withKubernetesSerialization(new KubernetesSerialization())
-        .build();
+            .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST).build())
+        .withKubernetesSerialization(new KubernetesSerialization()).build();
   }
 
   /**
@@ -328,9 +325,9 @@ public interface ConfigurationService {
         System.exit(1);
       } else {
         log.debug(
-            "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of " +
-                "stopping the controller, or due to an error on startup." +
-                "See also stopOnInformerErrorDuringStartup configuration.",
+            "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of "
+                + "stopping the controller, or due to an error on startup."
+                + "See also stopOnInformerErrorDuringStartup configuration.",
             informer, informer.hasSynced(), ex);
       }
     });
@@ -409,9 +406,8 @@ public interface ConfigurationService {
     if (ResourceUpdaterMatcher.class.isAssignableFrom(dependentResourceType)) {
       return false;
     }
-    Boolean useSSAConfig = Optional.ofNullable(config)
-        .map(KubernetesDependentResourceConfig::useSSA)
-        .orElse(null);
+    Boolean useSSAConfig =
+        Optional.ofNullable(config).map(KubernetesDependentResourceConfig::useSSA).orElse(null);
     // don't use SSA for certain resources by default, only if explicitly overridden
     if (useSSAConfig == null) {
       if (defaultNonSSAResources().contains(resourceType)) {

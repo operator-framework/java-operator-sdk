@@ -11,9 +11,8 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfig
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
 @Ignore
-public abstract class PollingDependentResource<R, P extends HasMetadata>
-    extends AbstractPollingDependentResource<R, P>
-    implements PollingEventSource.GenericResourceFetcher<R> {
+public abstract class PollingDependentResource<R, P extends HasMetadata> extends
+    AbstractPollingDependentResource<R, P> implements PollingEventSource.GenericResourceFetcher<R> {
 
   private final CacheKeyMapper<R> cacheKeyMapper;
 

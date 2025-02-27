@@ -23,50 +23,28 @@ public class LeaderElectionConfiguration {
   private final boolean exitOnStopLeading;
 
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace, String identity) {
-    this(
-        leaseName,
-        leaseNamespace,
-        LEASE_DURATION_DEFAULT_VALUE,
-        RENEW_DEADLINE_DEFAULT_VALUE,
+    this(leaseName, leaseNamespace, LEASE_DURATION_DEFAULT_VALUE, RENEW_DEADLINE_DEFAULT_VALUE,
         RETRY_PERIOD_DEFAULT_VALUE, identity, null, true);
   }
 
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace) {
-    this(
-        leaseName,
-        leaseNamespace,
-        LEASE_DURATION_DEFAULT_VALUE,
-        RENEW_DEADLINE_DEFAULT_VALUE,
+    this(leaseName, leaseNamespace, LEASE_DURATION_DEFAULT_VALUE, RENEW_DEADLINE_DEFAULT_VALUE,
         RETRY_PERIOD_DEFAULT_VALUE, null, null, true);
   }
 
   public LeaderElectionConfiguration(String leaseName) {
-    this(
-        leaseName,
-        null,
-        LEASE_DURATION_DEFAULT_VALUE,
-        RENEW_DEADLINE_DEFAULT_VALUE,
+    this(leaseName, null, LEASE_DURATION_DEFAULT_VALUE, RENEW_DEADLINE_DEFAULT_VALUE,
         RETRY_PERIOD_DEFAULT_VALUE, null, null, true);
   }
 
-  public LeaderElectionConfiguration(
-      String leaseName,
-      String leaseNamespace,
-      Duration leaseDuration,
-      Duration renewDeadline,
-      Duration retryPeriod) {
+  public LeaderElectionConfiguration(String leaseName, String leaseNamespace,
+      Duration leaseDuration, Duration renewDeadline, Duration retryPeriod) {
     this(leaseName, leaseNamespace, leaseDuration, renewDeadline, retryPeriod, null, null, true);
   }
 
-  public LeaderElectionConfiguration(
-      String leaseName,
-      String leaseNamespace,
-      Duration leaseDuration,
-      Duration renewDeadline,
-      Duration retryPeriod,
-      String identity,
-      LeaderCallbacks leaderCallbacks,
-      boolean exitOnStopLeading) {
+  public LeaderElectionConfiguration(String leaseName, String leaseNamespace,
+      Duration leaseDuration, Duration renewDeadline, Duration retryPeriod, String identity,
+      LeaderCallbacks leaderCallbacks, boolean exitOnStopLeading) {
     this.leaseName = leaseName;
     this.leaseNamespace = leaseNamespace;
     this.leaseDuration = leaseDuration;

@@ -21,8 +21,7 @@ public class DependentResourceConfigurationResolver {
 
 
   public static <C extends ControllerConfiguration<?>> void configureSpecFromConfigured(
-      DependentResourceSpec spec,
-      C parentConfiguration,
+      DependentResourceSpec spec, C parentConfiguration,
       Class<? extends DependentResource> dependentResourceClass) {
     var converterAnnotationPair = converters.get(dependentResourceClass);
 
@@ -37,10 +36,8 @@ public class DependentResourceConfigurationResolver {
       converterAnnotationPair = converters.get(configuredClassPair.annotatedClass);
       if (converterAnnotationPair == null) {
         final var configured = configuredClassPair.configured;
-        converterAnnotationPair =
-            getOrCreateConverter(dependentResourceClass, parentConfiguration,
-                configured.converter(),
-                configured.by());
+        converterAnnotationPair = getOrCreateConverter(dependentResourceClass, parentConfiguration,
+            configured.converter(), configured.by());
       } else {
         // only register the converter pair for this dependent resource class as well
         converters.put(dependentResourceClass, converterAnnotationPair);
@@ -83,8 +80,7 @@ public class DependentResourceConfigurationResolver {
       // only instantiate a new converter if we haven't done so already for this converter type
       var converter = knownConverters.get(converterClass);
       if (converter == null) {
-        converter = Utils.instantiate(converterClass,
-            ConfigurationConverter.class,
+        converter = Utils.instantiate(converterClass, ConfigurationConverter.class,
             Utils.contextFor(parentConfiguration, dependentResourceClass, Configured.class));
         knownConverters.put(converterClass, converter);
       }

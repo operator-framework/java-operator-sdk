@@ -23,10 +23,10 @@ import static io.javaoperatorsdk.operator.dependent.primarytosecondaydependent.P
  * Note that this is usually just used with read only resources. So it has limited usage, one reason
  * to use it is to have nice condition on that resource within a workflow.
  */
-@Workflow(dependents = {@Dependent(type = ConfigMapDependent.class,
-    name = CONFIG_MAP,
-    reconcilePrecondition = ConfigMapReconcilePrecondition.class,
-    useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+@Workflow(dependents = {
+    @Dependent(type = ConfigMapDependent.class, name = CONFIG_MAP,
+        reconcilePrecondition = ConfigMapReconcilePrecondition.class,
+        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
     @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)})
 @ControllerConfiguration()
 public class PrimaryToSecondaryDependentReconciler
@@ -77,11 +77,10 @@ public class PrimaryToSecondaryDependentReconciler
         // the index is used to trigger reconciliation of related custom resources if config map
         // changes
         .withSecondaryToPrimaryMapper(cm -> context.getPrimaryCache()
-            .byIndex(CONFIG_MAP_INDEX, indexKey(cm.getMetadata().getName(),
-                cm.getMetadata().getNamespace()))
+            .byIndex(CONFIG_MAP_INDEX,
+                indexKey(cm.getMetadata().getName(), cm.getMetadata().getNamespace()))
             .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
-        .build(),
-        context);
+        .build(), context);
 
     return List.of(es);
   }

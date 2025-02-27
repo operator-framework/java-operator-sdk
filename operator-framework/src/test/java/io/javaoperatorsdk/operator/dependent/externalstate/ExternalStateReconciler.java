@@ -30,9 +30,8 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
-public class ExternalStateReconciler
-    implements Reconciler<ExternalStateCustomResource>, Cleaner<ExternalStateCustomResource>,
-    TestExecutionInfoProvider {
+public class ExternalStateReconciler implements Reconciler<ExternalStateCustomResource>,
+    Cleaner<ExternalStateCustomResource>, TestExecutionInfoProvider {
 
   public static final String ID_KEY = "id";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -43,8 +42,8 @@ public class ExternalStateReconciler
   PerResourcePollingEventSource<ExternalResource, ExternalStateCustomResource> externalResourceEventSource;
 
   @Override
-  public UpdateControl<ExternalStateCustomResource> reconcile(
-      ExternalStateCustomResource resource, Context<ExternalStateCustomResource> context) {
+  public UpdateControl<ExternalStateCustomResource> reconcile(ExternalStateCustomResource resource,
+      Context<ExternalStateCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
     var externalResource = context.getSecondaryResource(ExternalResource.class);
@@ -75,12 +74,9 @@ public class ExternalStateReconciler
     var createdResource =
         externalService.create(new ExternalResource(resource.getSpec().getData()));
     var configMap = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(resource.getMetadata().getName())
-            .withNamespace(resource.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(ID_KEY, createdResource.getId()))
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withName(resource.getMetadata().getName())
+            .withNamespace(resource.getMetadata().getNamespace()).build())
+        .withData(Map.of(ID_KEY, createdResource.getId())).build();
     configMap.addOwnerReference(resource);
     context.getClient().configMaps().resource(configMap).create();
 
@@ -110,16 +106,13 @@ public class ExternalStateReconciler
   public List<EventSource<?, ExternalStateCustomResource>> prepareEventSources(
       EventSourceContext<ExternalStateCustomResource> context) {
 
-    configMapEventSource = new InformerEventSource<>(
-        InformerEventSourceConfiguration.from(ConfigMap.class, ExternalStateCustomResource.class)
-            .build(),
-        context);
+    configMapEventSource = new InformerEventSource<>(InformerEventSourceConfiguration
+        .from(ConfigMap.class, ExternalStateCustomResource.class).build(), context);
     configMapEventSource.setEventSourcePriority(EventSourceStartPriority.RESOURCE_STATE_LOADER);
 
     final PerResourcePollingEventSource.ResourceFetcher<ExternalResource, ExternalStateCustomResource> fetcher =
         (ExternalStateCustomResource primaryResource) -> {
-          var configMap =
-              configMapEventSource.getSecondaryResource(primaryResource).orElse(null);
+          var configMap = configMapEventSource.getSecondaryResource(primaryResource).orElse(null);
           if (configMap == null) {
             return Collections.emptySet();
           }
@@ -131,7 +124,6 @@ public class ExternalStateReconciler
         new PerResourcePollingEventSource<>(ExternalResource.class, context,
             new PerResourcePollingConfigurationBuilder<>(fetcher, Duration.ofMillis(300L)).build());
 
-    return Arrays.asList(configMapEventSource,
-        externalResourceEventSource);
+    return Arrays.asList(configMapEventSource, externalResourceEventSource);
   }
 }

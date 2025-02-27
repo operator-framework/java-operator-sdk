@@ -21,9 +21,7 @@ public class ReadOnlyBulkDependentIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new ReadOnlyBulkReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(new ReadOnlyBulkReconciler()).build();
 
   @Test
   void readOnlyBulkDependent() {
@@ -49,19 +47,16 @@ public class ReadOnlyBulkDependentIT {
 
   private ConfigMap createConfigMap(int i, BulkDependentTestCustomResource primary) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST + ReadOnlyBulkDependentResource.INDEX_DELIMITER + i)
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(
+        new ObjectMetaBuilder().withName(TEST + ReadOnlyBulkDependentResource.INDEX_DELIMITER + i)
+            .withNamespace(primary.getMetadata().getNamespace()).build());
     configMap.addOwnerReference(primary);
     return configMap;
   }
 
   BulkDependentTestCustomResource testCustomResource() {
     BulkDependentTestCustomResource customResource = new BulkDependentTestCustomResource();
-    customResource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST)
-        .build());
+    customResource.setMetadata(new ObjectMetaBuilder().withName(TEST).build());
     customResource.setSpec(new BulkDependentTestSpec());
     customResource.getSpec().setNumberOfResources(EXPECTED_NUMBER_OF_RESOURCES);
 

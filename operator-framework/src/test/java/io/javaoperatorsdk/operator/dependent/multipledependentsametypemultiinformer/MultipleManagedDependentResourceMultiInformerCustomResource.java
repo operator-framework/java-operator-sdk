@@ -9,8 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("mmi")
-public class MultipleManagedDependentResourceMultiInformerCustomResource
-    extends CustomResource<MultipleManagedDependentResourceMultiInformerSpec, Void>
-    implements Namespaced {
+public class MultipleManagedDependentResourceMultiInformerCustomResource extends
+    CustomResource<MultipleManagedDependentResourceMultiInformerSpec, Void> implements Namespaced {
 
 }

@@ -23,10 +23,8 @@ public class WorkflowMultipleActivationIT {
   public static final int POLL_DELAY = 300;
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(WorkflowMultipleActivationReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(WorkflowMultipleActivationReconciler.class).build();
 
   @Test
   void deactivatingAndReactivatingDependent() {
@@ -101,9 +99,7 @@ public class WorkflowMultipleActivationIT {
 
   WorkflowMultipleActivationCustomResource testResource(String name) {
     var res = new WorkflowMultipleActivationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     res.setSpec(new WorkflowMultipleActivationSpec());
     res.getSpec().setValue(INITIAL_DATA);
     return res;

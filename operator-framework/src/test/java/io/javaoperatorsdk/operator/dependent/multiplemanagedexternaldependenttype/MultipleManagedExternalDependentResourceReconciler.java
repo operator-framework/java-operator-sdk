@@ -26,15 +26,12 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import static io.javaoperatorsdk.operator.dependent.multiplemanagedexternaldependenttype.MultipleManagedExternalDependentResourceReconciler.EVENT_SOURCE_NAME;
 
 @Workflow(dependents = {
-    @Dependent(type = ExternalDependentResource1.class,
-        useEventSourceWithName = EVENT_SOURCE_NAME),
+    @Dependent(type = ExternalDependentResource1.class, useEventSourceWithName = EVENT_SOURCE_NAME),
     @Dependent(type = ExternalDependentResource2.class,
-        useEventSourceWithName = EVENT_SOURCE_NAME)
-})
+        useEventSourceWithName = EVENT_SOURCE_NAME)})
 @ControllerConfiguration()
-public class MultipleManagedExternalDependentResourceReconciler
-    implements Reconciler<MultipleManagedExternalDependentResourceCustomResource>,
-    TestExecutionInfoProvider {
+public class MultipleManagedExternalDependentResourceReconciler implements
+    Reconciler<MultipleManagedExternalDependentResourceCustomResource>, TestExecutionInfoProvider {
 
   public static final String EVENT_SOURCE_NAME = "ConfigMapEventSource";
   protected ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
@@ -73,9 +70,7 @@ public class MultipleManagedExternalDependentResourceReconciler
     PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource> pollingEventSource =
         new PollingEventSource<>(ExternalResource.class,
             new PollingConfigurationBuilder<>(fetcher, Duration.ofMillis(1000L))
-                .withName(EVENT_SOURCE_NAME)
-                .withCacheKeyMapper(ExternalResource::getId)
-                .build());
+                .withName(EVENT_SOURCE_NAME).withCacheKeyMapper(ExternalResource::getId).build());
 
     return List.of(pollingEventSource);
   }

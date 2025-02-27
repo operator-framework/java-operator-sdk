@@ -10,6 +10,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("sbd")
 public class BulkDependentTestCustomResource
-    extends CustomResource<BulkDependentTestSpec, BulkDependentTestStatus>
-    implements Namespaced {
+    extends CustomResource<BulkDependentTestSpec, BulkDependentTestStatus> implements Namespaced {
 }

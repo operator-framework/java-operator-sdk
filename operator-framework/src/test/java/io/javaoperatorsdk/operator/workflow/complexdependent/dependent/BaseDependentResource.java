@@ -22,9 +22,7 @@ public abstract class BaseDependentResource<R extends HasMetadata>
 
   protected ObjectMetaBuilder createMeta(ComplexWorkflowCustomResource primary) {
     String name = name(primary);
-    return new ObjectMetaBuilder()
-        .withName(name)
-        .withNamespace(primary.getMetadata().getNamespace())
-        .addToLabels(K8S_NAME, name);
+    return new ObjectMetaBuilder().withName(name)
+        .withNamespace(primary.getMetadata().getNamespace()).addToLabels(K8S_NAME, name);
   }
 }

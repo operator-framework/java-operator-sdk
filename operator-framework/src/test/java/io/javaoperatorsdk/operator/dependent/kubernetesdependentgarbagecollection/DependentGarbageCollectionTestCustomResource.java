@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("dgc")
-public class DependentGarbageCollectionTestCustomResource
-    extends
-    CustomResource<DependentGarbageCollectionTestCustomResourceSpec, Void>
-    implements Namespaced {
+public class DependentGarbageCollectionTestCustomResource extends
+    CustomResource<DependentGarbageCollectionTestCustomResourceSpec, Void> implements Namespaced {
 }

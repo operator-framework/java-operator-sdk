@@ -11,9 +11,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
-public class MultipleDependentResourceWithDiscriminatorReconciler
-    implements Reconciler<MultipleDependentResourceCustomResourceNoDiscriminator>,
-    TestExecutionInfoProvider {
+public class MultipleDependentResourceWithDiscriminatorReconciler implements
+    Reconciler<MultipleDependentResourceCustomResourceNoDiscriminator>, TestExecutionInfoProvider {
 
   public static final int FIRST_CONFIG_MAP_ID = 1;
   public static final int SECOND_CONFIG_MAP_ID = 2;
@@ -46,8 +45,8 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
   public List<EventSource<?, MultipleDependentResourceCustomResourceNoDiscriminator>> prepareEventSources(
       EventSourceContext<MultipleDependentResourceCustomResourceNoDiscriminator> context) {
     InformerEventSource<ConfigMap, MultipleDependentResourceCustomResourceNoDiscriminator> eventSource =
-        new InformerEventSource<>(InformerEventSourceConfiguration.from(ConfigMap.class,
-            MultipleDependentResourceCustomResourceNoDiscriminator.class)
+        new InformerEventSource<>(InformerEventSourceConfiguration
+            .from(ConfigMap.class, MultipleDependentResourceCustomResourceNoDiscriminator.class)
             .build(), context);
     firstDependentResourceConfigMap.setEventSource(eventSource);
     secondDependentResourceConfigMap.setEventSource(eventSource);

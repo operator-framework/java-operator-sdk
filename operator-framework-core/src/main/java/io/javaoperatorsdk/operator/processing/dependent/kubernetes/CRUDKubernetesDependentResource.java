@@ -15,8 +15,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
  */
 @Ignore
 public abstract class CRUDKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends
-    KubernetesDependentResource<R, P>
+    extends KubernetesDependentResource<R, P>
     implements Creator<R, P>, Updater<R, P>, GarbageCollected<P> {
 
   public CRUDKubernetesDependentResource(Class<R> resourceType) {

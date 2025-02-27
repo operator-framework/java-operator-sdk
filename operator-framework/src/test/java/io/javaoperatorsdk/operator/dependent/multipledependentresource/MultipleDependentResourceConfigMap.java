@@ -22,13 +22,9 @@ public class MultipleDependentResourceConfigMap
   protected ConfigMap desired(MultipleDependentResourceCustomResource primary,
       Context<MultipleDependentResourceCustomResource> context) {
 
-    return new ConfigMapBuilder()
-        .withNewMetadata()
-        .withName(getConfigMapName(value))
-        .withNamespace(primary.getMetadata().getNamespace())
-        .endMetadata()
-        .withData(Map.of(DATA_KEY, primary.getSpec().getValue()))
-        .build();
+    return new ConfigMapBuilder().withNewMetadata().withName(getConfigMapName(value))
+        .withNamespace(primary.getMetadata().getNamespace()).endMetadata()
+        .withData(Map.of(DATA_KEY, primary.getSpec().getValue())).build();
   }
 
   public static String getConfigMapName(String id) {

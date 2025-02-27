@@ -10,6 +10,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("wei")
 public class WorkflowExplicitInvocationCustomResource
-    extends CustomResource<WorkflowExplicitInvocationSpec, Void>
-    implements Namespaced {
+    extends CustomResource<WorkflowExplicitInvocationSpec, Void> implements Namespaced {
 }

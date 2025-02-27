@@ -18,8 +18,7 @@ public class EventSourceUtils {
 
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> List<EventSource<?, P>> eventSourcesFromWorkflow(
-      EventSourceContext<P> context,
-      Workflow<P> workflow) {
+      EventSourceContext<P> context, Workflow<P> workflow) {
     return workflow.getDependentResourcesWithoutActivationCondition().stream()
         .flatMap(dr -> dr.eventSource(context).stream()).toList();
   }

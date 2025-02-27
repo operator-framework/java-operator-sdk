@@ -51,8 +51,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, LifecycleAware, Cleaner<P>,
-    RegisteredController<P> {
+    implements Reconciler<P>, LifecycleAware, Cleaner<P>, RegisteredController<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
   private static final String CLEANUP = "cleanup";
@@ -78,8 +77,7 @@ public class Controller<P extends HasMetadata>
   private final ControllerHealthInfo controllerHealthInfo;
   private final EventSourceContext<P> eventSourceContext;
 
-  public Controller(Reconciler<P> reconciler,
-      ControllerConfiguration<P> configuration,
+  public Controller(Reconciler<P> reconciler, ControllerConfiguration<P> configuration,
       KubernetesClient kubernetesClient) {
     // needs to be initialized early since it's used in other downstream classes
     associatedGVK = GroupVersionKind.gvkFor(configuration.getResourceClass());
@@ -95,124 +93,120 @@ public class Controller<P extends HasMetadata>
     final var managed = configurationService.getWorkflowFactory().workflowFor(configuration);
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
     explicitWorkflowInvocation =
-        configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
-            .orElse(false);
+        configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation).orElse(false);
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
-    eventSourceContext = new EventSourceContext<>(
-        eventSourceManager.getControllerEventSource(), configuration, kubernetesClient,
-        configuration.getResourceClass());
+    eventSourceContext = new EventSourceContext<>(eventSourceManager.getControllerEventSource(),
+        configuration, kubernetesClient, configuration.getResourceClass());
     initAndRegisterEventSources(eventSourceContext);
     configurationService.getMetrics().controllerRegistered(this);
   }
 
   @Override
   public UpdateControl<P> reconcile(P resource, Context<P> context) throws Exception {
-    return metrics.timeControllerExecution(
-        new ControllerExecution<>() {
-          @Override
-          public String name() {
-            return RECONCILE;
-          }
+    return metrics.timeControllerExecution(new ControllerExecution<>() {
+      @Override
+      public String name() {
+        return RECONCILE;
+      }
 
-          @Override
-          public String controllerName() {
-            return configuration.getName();
-          }
+      @Override
+      public String controllerName() {
+        return configuration.getName();
+      }
 
-          @Override
-          public String successTypeName(UpdateControl<P> result) {
-            String successType = RESOURCE;
-            if (result.isPatchStatus()) {
-              successType = STATUS;
-            }
-            if (result.isPatchResourceAndStatus()) {
-              successType = BOTH;
-            }
-            return successType;
-          }
+      @Override
+      public String successTypeName(UpdateControl<P> result) {
+        String successType = RESOURCE;
+        if (result.isPatchStatus()) {
+          successType = STATUS;
+        }
+        if (result.isPatchResourceAndStatus()) {
+          successType = BOTH;
+        }
+        return successType;
+      }
 
-          @Override
-          public ResourceID resourceID() {
-            return ResourceID.fromResource(resource);
-          }
+      @Override
+      public ResourceID resourceID() {
+        return ResourceID.fromResource(resource);
+      }
 
-          @Override
-          public Map<String, Object> metadata() {
-            return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
-          }
+      @Override
+      public Map<String, Object> metadata() {
+        return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
+      }
 
-          @Override
-          public UpdateControl<P> execute() throws Exception {
-            initContextIfNeeded(resource, context);
-            configuration.getWorkflowSpec().ifPresent(ws -> {
-              if (!managedWorkflow.isEmpty() && !explicitWorkflowInvocation) {
-                managedWorkflow.reconcile(resource, context);
-              }
-            });
-            return reconciler.reconcile(resource, context);
+      @Override
+      public UpdateControl<P> execute() throws Exception {
+        initContextIfNeeded(resource, context);
+        configuration.getWorkflowSpec().ifPresent(ws -> {
+          if (!managedWorkflow.isEmpty() && !explicitWorkflowInvocation) {
+            managedWorkflow.reconcile(resource, context);
           }
         });
+        return reconciler.reconcile(resource, context);
+      }
+    });
   }
 
   @Override
   public DeleteControl cleanup(P resource, Context<P> context) {
     try {
-      return metrics.timeControllerExecution(
-          new ControllerExecution<>() {
-            @Override
-            public String name() {
-              return CLEANUP;
+      return metrics.timeControllerExecution(new ControllerExecution<>() {
+        @Override
+        public String name() {
+          return CLEANUP;
+        }
+
+        @Override
+        public String controllerName() {
+          return configuration.getName();
+        }
+
+        @Override
+        public String successTypeName(DeleteControl deleteControl) {
+          return deleteControl.isRemoveFinalizer() ? DELETE : FINALIZER_NOT_REMOVED;
+        }
+
+        @Override
+        public ResourceID resourceID() {
+          return ResourceID.fromResource(resource);
+        }
+
+        @Override
+        public Map<String, Object> metadata() {
+          return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
+        }
+
+        @Override
+        public DeleteControl execute() throws Exception {
+          initContextIfNeeded(resource, context);
+          WorkflowCleanupResult workflowCleanupResult = null;
+
+          // The cleanup is called also when explicit invocation is true, but the cleaner is not
+          // implemented, also in case when explicit invocation is false, but there is cleaner
+          // implemented.
+          if (managedWorkflow.hasCleaner() && (!explicitWorkflowInvocation || !isCleaner)) {
+            workflowCleanupResult = managedWorkflow.cleanup(resource, context);
+          }
+
+          if (isCleaner) {
+            var cleanupResult = ((Cleaner<P>) reconciler).cleanup(resource, context);
+            if (!cleanupResult.isRemoveFinalizer()) {
+              return cleanupResult;
+            } else {
+              // this means there is no reschedule
+              return workflowCleanupResultToDefaultDelete(workflowCleanupResult);
             }
-
-            @Override
-            public String controllerName() {
-              return configuration.getName();
-            }
-
-            @Override
-            public String successTypeName(DeleteControl deleteControl) {
-              return deleteControl.isRemoveFinalizer() ? DELETE : FINALIZER_NOT_REMOVED;
-            }
-
-            @Override
-            public ResourceID resourceID() {
-              return ResourceID.fromResource(resource);
-            }
-
-            @Override
-            public Map<String, Object> metadata() {
-              return Map.of(Constants.RESOURCE_GVK_KEY, associatedGVK);
-            }
-
-            @Override
-            public DeleteControl execute() throws Exception {
-              initContextIfNeeded(resource, context);
-              WorkflowCleanupResult workflowCleanupResult = null;
-
-              // The cleanup is called also when explicit invocation is true, but the cleaner is not
-              // implemented, also in case when explicit invocation is false, but there is cleaner
-              // implemented.
-              if (managedWorkflow.hasCleaner() && (!explicitWorkflowInvocation || !isCleaner)) {
-                workflowCleanupResult = managedWorkflow.cleanup(resource, context);
-              }
-
-              if (isCleaner) {
-                var cleanupResult = ((Cleaner<P>) reconciler).cleanup(resource, context);
-                if (!cleanupResult.isRemoveFinalizer()) {
-                  return cleanupResult;
-                } else {
-                  // this means there is no reschedule
-                  return workflowCleanupResultToDefaultDelete(workflowCleanupResult);
-                }
-              } else {
-                return workflowCleanupResultToDefaultDelete(workflowCleanupResult);
-              }
-            }
-          });
+          } else {
+            return workflowCleanupResultToDefaultDelete(workflowCleanupResult);
+          }
+        }
+      });
     } catch (Exception e) {
       throw new OperatorException(e);
     }
@@ -250,10 +244,8 @@ public class Controller<P extends HasMetadata>
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
       final Map<String, List<EventSourceReferencer>> unresolvable = new HashMap<>(size);
-      dependentResourcesByName.stream()
-          .filter(EventSourceReferencer.class::isInstance)
-          .map(EventSourceReferencer.class::cast)
-          .forEach(dr -> {
+      dependentResourcesByName.stream().filter(EventSourceReferencer.class::isInstance)
+          .map(EventSourceReferencer.class::cast).forEach(dr -> {
             try {
               ((EventSourceReferencer<P>) dr).resolveEventSource(eventSourceManager);
             } catch (EventSourceNotFoundException e) {
@@ -354,8 +346,8 @@ public class Controller<P extends HasMetadata>
     final CustomResourceDefinition crd;
     if (getConfiguration().getConfigurationService().checkCRDAndValidateLocalModel()
         && CustomResource.class.isAssignableFrom(resClass)) {
-      crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
-          .get();
+      crd =
+          kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
       if (crd == null) {
         throwMissingCRDException(crdName, specVersion, controllerName);
       }
@@ -391,16 +383,9 @@ public class Controller<P extends HasMetadata>
   }
 
   private void throwMissingCRDException(String crdName, String specVersion, String controllerName) {
-    throw new MissingCRDException(
-        crdName,
-        specVersion,
-        "'"
-            + crdName
-            + "' "
-            + specVersion
-            + " CRD was not found on the cluster, controller '"
-            + controllerName
-            + "' cannot be registered");
+    throw new MissingCRDException(crdName, specVersion,
+        "'" + crdName + "' " + specVersion + " CRD was not found on the cluster, controller '"
+            + controllerName + "' cannot be registered");
   }
 
   /**
@@ -411,10 +396,8 @@ public class Controller<P extends HasMetadata>
     try {
       configuration.getEffectiveNamespaces();
     } catch (OperatorException e) {
-      throw new OperatorException(
-          "Controller '"
-              + configuration.getName()
-              + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
+      throw new OperatorException("Controller '" + configuration.getName()
+          + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
     }
   }
 

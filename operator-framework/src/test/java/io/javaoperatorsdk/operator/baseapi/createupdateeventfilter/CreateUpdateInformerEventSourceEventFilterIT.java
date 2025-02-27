@@ -16,23 +16,19 @@ import static org.awaitility.Awaitility.await;
 class CreateUpdateInformerEventSourceEventFilterIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new CreateUpdateEventFilterTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new CreateUpdateEventFilterTestReconciler()).build();
 
   @Test
   void updateEventNotReceivedAfterCreateOrUpdate() {
     CreateUpdateEventFilterTestCustomResource resource =
         CreateUpdateInformerEventSourceEventFilterIT.prepareTestResource();
-    var createdResource =
-        operator.create(resource);
+    var createdResource = operator.create(resource);
 
     assertData(operator, createdResource, 1, 1);
 
-    CreateUpdateEventFilterTestCustomResource actualCreatedResource =
-        operator.get(CreateUpdateEventFilterTestCustomResource.class,
-            resource.getMetadata().getName());
+    CreateUpdateEventFilterTestCustomResource actualCreatedResource = operator
+        .get(CreateUpdateEventFilterTestCustomResource.class, resource.getMetadata().getName());
     actualCreatedResource.getSpec().setValue("2");
     operator.replace(actualCreatedResource);
 
@@ -41,17 +37,13 @@ class CreateUpdateInformerEventSourceEventFilterIT {
 
   static void assertData(LocallyRunOperatorExtension operator,
       CreateUpdateEventFilterTestCustomResource resource, int minExecutions, int maxExecutions) {
-    await()
-        .atMost(Duration.ofSeconds(1))
-        .until(() -> {
-          var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
-          if (cm == null) {
-            return false;
-          }
-          return cm.getData()
-              .get(CONFIG_MAP_TEST_DATA_KEY)
-              .equals(resource.getSpec().getValue());
-        });
+    await().atMost(Duration.ofSeconds(1)).until(() -> {
+      var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
+      if (cm == null) {
+        return false;
+      }
+      return cm.getData().get(CONFIG_MAP_TEST_DATA_KEY).equals(resource.getSpec().getValue());
+    });
 
     int numberOfExecutions = ((CreateUpdateEventFilterTestReconciler) operator.getFirstReconciler())
         .getNumberOfExecutions();

@@ -14,10 +14,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubern
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class ConfigMapGenericKubernetesDependent extends
-    GenericKubernetesDependentResource<GenericKubernetesDependentManagedCustomResource>
-    implements
-    Creator<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
+public class ConfigMapGenericKubernetesDependent
+    extends GenericKubernetesDependentResource<GenericKubernetesDependentManagedCustomResource>
+    implements Creator<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
     Updater<GenericKubernetesResource, GenericKubernetesDependentManagedCustomResource>,
     GarbageCollected<GenericKubernetesDependentManagedCustomResource> {
 

@@ -10,6 +10,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("esb")
 public class ExternalStateBulkDependentCustomResource
-    extends CustomResource<ExternalStateBulkSpec, Void>
-    implements Namespaced {
+    extends CustomResource<ExternalStateBulkSpec, Void> implements Namespaced {
 }

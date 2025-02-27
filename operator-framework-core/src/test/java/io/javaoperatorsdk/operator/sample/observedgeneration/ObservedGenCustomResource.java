@@ -6,8 +6,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk.io")
 @Version("v1")
-public class ObservedGenCustomResource
-    extends CustomResource<ObservedGenSpec, ObservedGenStatus> {
+public class ObservedGenCustomResource extends CustomResource<ObservedGenSpec, ObservedGenStatus> {
 
   @Override
   protected ObservedGenSpec initSpec() {

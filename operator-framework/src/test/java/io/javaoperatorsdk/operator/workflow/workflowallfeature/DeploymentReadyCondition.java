@@ -10,13 +10,10 @@ public class DeploymentReadyCondition
   @Override
   public boolean isMet(
       DependentResource<Deployment, WorkflowAllFeatureCustomResource> dependentResource,
-      WorkflowAllFeatureCustomResource primary,
-      Context<WorkflowAllFeatureCustomResource> context) {
-    return dependentResource.getSecondaryResource(primary, context)
-        .map(deployment -> {
-          var readyReplicas = deployment.getStatus().getReadyReplicas();
-          return readyReplicas != null && deployment.getSpec().getReplicas().equals(readyReplicas);
-        })
-        .orElse(false);
+      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
+    return dependentResource.getSecondaryResource(primary, context).map(deployment -> {
+      var readyReplicas = deployment.getStatus().getReadyReplicas();
+      return readyReplicas != null && deployment.getSpec().getReplicas().equals(readyReplicas);
+    }).orElse(false);
   }
 }

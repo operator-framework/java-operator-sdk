@@ -26,8 +26,8 @@ public class ClusterScopedCustomResourceReconciler
   public static final String TEST_LABEL_KEY = "test";
 
   @Override
-  public UpdateControl<ClusterScopedCustomResource> reconcile(
-      ClusterScopedCustomResource resource, Context<ClusterScopedCustomResource> context) {
+  public UpdateControl<ClusterScopedCustomResource> reconcile(ClusterScopedCustomResource resource,
+      Context<ClusterScopedCustomResource> context) {
 
     var optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
 
@@ -45,13 +45,10 @@ public class ClusterScopedCustomResourceReconciler
 
   private ConfigMap desired(ClusterScopedCustomResource resource) {
     var cm = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(resource.getMetadata().getName())
+        .withMetadata(new ObjectMetaBuilder().withName(resource.getMetadata().getName())
             .withNamespace(resource.getSpec().getTargetNamespace())
-            .withLabels(Map.of(TEST_LABEL_KEY, TEST_LABEL_VALUE))
-            .build())
-        .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
-        .build();
+            .withLabels(Map.of(TEST_LABEL_KEY, TEST_LABEL_VALUE)).build())
+        .withData(Map.of(DATA_KEY, resource.getSpec().getData())).build();
     cm.addOwnerReference(resource);
     return cm;
   }
@@ -63,8 +60,7 @@ public class ClusterScopedCustomResourceReconciler
         InformerEventSourceConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)
             .withSecondaryToPrimaryMapper(
                 Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
-            .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
-            .build(),
+            .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE).build(),
         context);
     return List.of(ies);
   }

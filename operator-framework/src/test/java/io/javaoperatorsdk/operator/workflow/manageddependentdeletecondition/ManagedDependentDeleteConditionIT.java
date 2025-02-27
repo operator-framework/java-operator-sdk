@@ -20,18 +20,15 @@ public class ManagedDependentDeleteConditionIT {
   public static final String CUSTOM_FINALIZER = "test/customfinalizer";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
-          .withReconciler(new ManagedDependentDefaultDeleteConditionReconciler()).build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
+      .withReconciler(new ManagedDependentDefaultDeleteConditionReconciler()).build();
 
 
   @Test
   void resourceNotDeletedUntilDependentDeleted() {
     var resource = new ManagedDependentDefaultDeleteConditionCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     resource = extension.create(resource);
 
     await().timeout(Duration.ofSeconds(300)).untilAsserted(() -> {

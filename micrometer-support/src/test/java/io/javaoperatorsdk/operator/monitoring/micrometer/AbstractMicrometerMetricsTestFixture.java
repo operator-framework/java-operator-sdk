@@ -27,27 +27,22 @@ public abstract class AbstractMicrometerMetricsTestFixture {
 
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withConfigurationService(overrider -> overrider.withMetrics(metrics))
-          .withReconciler(new MetricsCleaningTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withConfigurationService(overrider -> overrider.withMetrics(metrics))
+      .withReconciler(new MetricsCleaningTestReconciler()).build();
 
 
   protected abstract MicrometerMetrics getMetrics();
 
   @Test
   void properlyHandlesResourceDeletion() throws Exception {
-    var testResource = new ConfigMapBuilder()
-        .withNewMetadata()
-        .withName(testResourceName)
-        .endMetadata()
-        .build();
+    var testResource =
+        new ConfigMapBuilder().withNewMetadata().withName(testResourceName).endMetadata().build();
     final var created = operator.create(testResource);
 
     // make sure the resource is created
-    await().until(() -> !operator.get(ConfigMap.class, testResourceName)
-        .getMetadata().getFinalizers().isEmpty());
+    await().until(() -> !operator.get(ConfigMap.class, testResourceName).getMetadata()
+        .getFinalizers().isEmpty());
 
     final var resourceID = ResourceID.fromResource(created);
     final var meters = preDeleteChecks(resourceID);

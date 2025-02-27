@@ -42,23 +42,18 @@ class TomcatOperatorE2E {
   }
 
   @RegisterExtension
-  AbstractOperatorExtension operator = isLocal() ? LocallyRunOperatorExtension.builder()
-      .waitForNamespaceDeletion(false)
-      .withReconciler(new TomcatReconciler())
-      .withReconciler(new WebappReconciler(client))
-      .build()
-      : ClusterDeployedOperatorExtension.builder()
-          .waitForNamespaceDeletion(false)
-          .withOperatorDeployment(
-              client.load(new FileInputStream("k8s/operator.yaml")).items())
+  AbstractOperatorExtension operator = isLocal()
+      ? LocallyRunOperatorExtension.builder().waitForNamespaceDeletion(false)
+          .withReconciler(new TomcatReconciler()).withReconciler(new WebappReconciler(client))
+          .build()
+      : ClusterDeployedOperatorExtension.builder().waitForNamespaceDeletion(false)
+          .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
           .build();
 
   Tomcat getTomcat() {
     Tomcat tomcat = new Tomcat();
-    tomcat.setMetadata(new ObjectMetaBuilder()
-        .withName("test-tomcat1")
-        .withNamespace(operator.getNamespace())
-        .build());
+    tomcat.setMetadata(new ObjectMetaBuilder().withName("test-tomcat1")
+        .withNamespace(operator.getNamespace()).build());
     tomcat.setSpec(new TomcatSpec());
     tomcat.getSpec().setReplicas(tomcatReplicas);
     tomcat.getSpec().setVersion(9);
@@ -67,10 +62,8 @@ class TomcatOperatorE2E {
 
   Webapp getWebapp() {
     Webapp webapp1 = new Webapp();
-    webapp1.setMetadata(new ObjectMetaBuilder()
-        .withName("test-webapp1")
-        .withNamespace(operator.getNamespace())
-        .build());
+    webapp1.setMetadata(new ObjectMetaBuilder().withName("test-webapp1")
+        .withNamespace(operator.getNamespace()).build());
     webapp1.setSpec(new WebappSpec());
     webapp1.getSpec().setContextPath("webapp1");
     webapp1.getSpec().setTomcat(getTomcat().getMetadata().getName());
@@ -92,12 +85,10 @@ class TomcatOperatorE2E {
 
     log.info("Waiting 5 minutes for Tomcat and Webapp CR statuses to be updated");
     await().atMost(5, MINUTES).untilAsserted(() -> {
-      Tomcat updatedTomcat =
-          tomcatClient.inNamespace(operator.getNamespace()).withName(tomcat.getMetadata().getName())
-              .get();
-      Webapp updatedWebapp =
-          webappClient.inNamespace(operator.getNamespace())
-              .withName(webapp1.getMetadata().getName()).get();
+      Tomcat updatedTomcat = tomcatClient.inNamespace(operator.getNamespace())
+          .withName(tomcat.getMetadata().getName()).get();
+      Webapp updatedWebapp = webappClient.inNamespace(operator.getNamespace())
+          .withName(webapp1.getMetadata().getName()).get();
       assertThat(updatedTomcat.getStatus(), is(notNullValue()));
       assertThat(updatedTomcat.getStatus().getReadyReplicas(), equalTo(tomcatReplicas));
       assertThat(updatedWebapp.getStatus(), is(notNullValue()));

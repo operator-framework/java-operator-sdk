@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 public class StatefulSetDesiredSanitizerCustomResource
-    extends CustomResource<StatefulSetDesiredSanitizerSpec, Void>
-    implements Namespaced {
+    extends CustomResource<StatefulSetDesiredSanitizerSpec, Void> implements Namespaced {
 
 }

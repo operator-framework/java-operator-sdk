@@ -27,9 +27,8 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
   protected DefaultManagedWorkflow(List<DependentResourceSpec> orderedSpecs, boolean hasCleaner) {
     this.hasCleaner = hasCleaner;
     topLevelResources = new HashSet<>(orderedSpecs.size());
-    bottomLevelResources = orderedSpecs.stream()
-        .map(DependentResourceSpec::getName)
-        .collect(Collectors.toSet());
+    bottomLevelResources =
+        orderedSpecs.stream().map(DependentResourceSpec::getName).collect(Collectors.toSet());
     this.orderedSpecs = orderedSpecs;
     for (DependentResourceSpec<?, ?, ?> spec : orderedSpecs) {
       // add cycle detection?
@@ -73,20 +72,15 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
 
   @Override
   @SuppressWarnings("unchecked")
-  public Workflow<P> resolve(KubernetesClient client,
-      ControllerConfiguration<P> configuration) {
+  public Workflow<P> resolve(KubernetesClient client, ControllerConfiguration<P> configuration) {
     final var alreadyResolved = new HashMap<String, DependentResourceNode>(orderedSpecs.size());
     for (DependentResourceSpec<?, P, ?> spec : orderedSpecs) {
       final var dependentResource = resolve(spec, client, configuration);
-      final var node = new DependentResourceNode(
-          spec.getReconcileCondition(),
-          spec.getDeletePostCondition(),
-          spec.getReadyCondition(),
-          spec.getActivationCondition(),
-          dependentResource);
+      final var node =
+          new DependentResourceNode(spec.getReconcileCondition(), spec.getDeletePostCondition(),
+              spec.getReadyCondition(), spec.getActivationCondition(), dependentResource);
       alreadyResolved.put(dependentResource.name(), node);
-      spec.getDependsOn()
-          .forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
+      spec.getDependsOn().forEach(depend -> node.addDependsOnRelation(alreadyResolved.get(depend)));
     }
 
     final var bottom =
@@ -100,28 +94,25 @@ public class DefaultManagedWorkflow<P extends HasMetadata> implements ManagedWor
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   private <R> DependentResource<R, P> resolve(DependentResourceSpec<R, P, ?> spec,
-      KubernetesClient client,
-      ControllerConfiguration<P> configuration) {
-    final DependentResource<R, P> dependentResource =
-        configuration.getConfigurationService().dependentResourceFactory()
-            .createFrom(spec, configuration);
+      KubernetesClient client, ControllerConfiguration<P> configuration) {
+    final DependentResource<R, P> dependentResource = configuration.getConfigurationService()
+        .dependentResourceFactory().createFrom(spec, configuration);
 
     final var name = spec.getName();
     if (name != null && !NO_VALUE_SET.equals(name) && dependentResource instanceof NameSetter) {
       ((NameSetter) dependentResource).setName(name);
     }
 
-    spec.getUseEventSourceWithName()
-        .ifPresent(esName -> {
-          if (dependentResource instanceof EventSourceReferencer) {
-            ((EventSourceReferencer) dependentResource).useEventSourceWithName(esName);
-          } else {
-            throw new IllegalStateException(
-                "DependentResource " + spec + " wants to use EventSource named " + esName
-                    + " but doesn't implement support for this feature by implementing "
-                    + EventSourceReferencer.class.getSimpleName());
-          }
-        });
+    spec.getUseEventSourceWithName().ifPresent(esName -> {
+      if (dependentResource instanceof EventSourceReferencer) {
+        ((EventSourceReferencer) dependentResource).useEventSourceWithName(esName);
+      } else {
+        throw new IllegalStateException(
+            "DependentResource " + spec + " wants to use EventSource named " + esName
+                + " but doesn't implement support for this feature by implementing "
+                + EventSourceReferencer.class.getSimpleName());
+      }
+    });
 
     return dependentResource;
   }

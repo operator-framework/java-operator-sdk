@@ -10,8 +10,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
     @Dependent(name = MultipleManagedDependentResourceMultiInformerReconciler.CONFIG_MAP_1_DR,
         type = MultipleManagedDependentResourceMultiInformerConfigMap1.class),
     @Dependent(name = MultipleManagedDependentResourceMultiInformerReconciler.CONFIG_MAP_2_DR,
-        type = MultipleManagedDependentResourceMultiInformerConfigMap2.class)
-})
+        type = MultipleManagedDependentResourceMultiInformerConfigMap2.class)})
 @ControllerConfiguration
 public class MultipleManagedDependentResourceMultiInformerReconciler
     implements Reconciler<MultipleManagedDependentResourceMultiInformerCustomResource>,

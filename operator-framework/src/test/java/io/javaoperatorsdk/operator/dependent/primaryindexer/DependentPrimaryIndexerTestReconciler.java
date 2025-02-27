@@ -26,8 +26,7 @@ import static io.javaoperatorsdk.operator.dependent.primaryindexer.DependentPrim
     type = DependentPrimaryIndexerTestReconciler.ReadOnlyConfigMapDependent.class))
 @ControllerConfiguration
 public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexerTestReconciler
-    implements
-    Reconciler<PrimaryIndexerTestCustomResource> {
+    implements Reconciler<PrimaryIndexerTestCustomResource> {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "configMapEventSource";
 
@@ -39,17 +38,13 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
     cache.addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);
 
     InformerEventSource<ConfigMap, PrimaryIndexerTestCustomResource> es =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration
-                .from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
-                .withName(CONFIG_MAP_EVENT_SOURCE)
-                .withSecondaryToPrimaryMapper(resource -> cache
-                    .byIndex(CONFIG_MAP_RELATION_INDEXER, resource.getMetadata().getName())
-                    .stream()
-                    .map(ResourceID::fromResource)
-                    .collect(Collectors.toSet()))
-                .build(),
-            context);
+        new InformerEventSource<>(InformerEventSourceConfiguration
+            .from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
+            .withName(CONFIG_MAP_EVENT_SOURCE)
+            .withSecondaryToPrimaryMapper(resource -> cache
+                .byIndex(CONFIG_MAP_RELATION_INDEXER, resource.getMetadata().getName()).stream()
+                .map(ResourceID::fromResource).collect(Collectors.toSet()))
+            .build(), context);
 
     return List.of(es);
   }
@@ -64,12 +59,8 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
     @Override
     protected ConfigMap desired(PrimaryIndexerTestCustomResource primary,
         Context<PrimaryIndexerTestCustomResource> context) {
-      return new ConfigMapBuilder()
-          .withMetadata(new ObjectMetaBuilder()
-              .withName(CONFIG_MAP_NAME)
-              .withNamespace(primary.getMetadata().getNamespace())
-              .build())
-          .build();
+      return new ConfigMapBuilder().withMetadata(new ObjectMetaBuilder().withName(CONFIG_MAP_NAME)
+          .withNamespace(primary.getMetadata().getNamespace()).build()).build();
     }
   }
 }

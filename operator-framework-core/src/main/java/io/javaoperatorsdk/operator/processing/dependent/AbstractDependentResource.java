@@ -151,10 +151,11 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   private void logForOperation(String operation, P primary, R desired) {
-    final var desiredDesc = desired instanceof HasMetadata
-        ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
-            + ((HasMetadata) desired).getKind()
-        : desired.getClass().getSimpleName();
+    final var desiredDesc =
+        desired instanceof HasMetadata
+            ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
+                + ((HasMetadata) desired).getKind()
+            : desired.getClass().getSimpleName();
     log.debug("{} {} for primary {}", operation, desiredDesc, ResourceID.fromResource(primary));
   }
 

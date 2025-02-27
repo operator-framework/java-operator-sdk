@@ -137,12 +137,8 @@ public class MicrometerMetrics implements Metrics {
     final var tags = new ArrayList<Tag>(16);
     tags.add(Tag.of(CONTROLLER, name));
     addMetadataTags(resourceID, metadata, tags, true);
-    final var timer =
-        Timer.builder(execName)
-            .tags(tags)
-            .publishPercentiles(0.3, 0.5, 0.95)
-            .publishPercentileHistogram()
-            .register(registry);
+    final var timer = Timer.builder(execName).tags(tags).publishPercentiles(0.3, 0.5, 0.95)
+        .publishPercentileHistogram().register(registry);
     try {
       final var result = timer.record(() -> {
         try {
@@ -152,14 +148,11 @@ public class MicrometerMetrics implements Metrics {
         }
       });
       final var successType = execution.successTypeName(result);
-      registry
-          .counter(execName + SUCCESS_SUFFIX, CONTROLLER, name, TYPE, successType)
-          .increment();
+      registry.counter(execName + SUCCESS_SUFFIX, CONTROLLER, name, TYPE, successType).increment();
       return result;
     } catch (Exception e) {
       final var exception = e.getClass().getSimpleName();
-      registry
-          .counter(execName + FAILURE_SUFFIX, CONTROLLER, name, EXCEPTION, exception)
+      registry.counter(execName + FAILURE_SUFFIX, CONTROLLER, name, EXCEPTION, exception)
           .increment();
       throw e;
     }
@@ -168,13 +161,11 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
     if (event instanceof ResourceEvent) {
-      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED,
-          metadata,
+      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED, metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
           Tag.of(ACTION, ((ResourceEvent) event).getAction().toString()));
     } else {
-      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED,
-          metadata,
+      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED, metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()));
     }
   }
@@ -190,8 +181,7 @@ public class MicrometerMetrics implements Metrics {
   public void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfoNullable,
       Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_STARTED,
-        metadata,
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_STARTED, metadata,
         Tag.of(RECONCILIATIONS_RETRIES_NUMBER,
             String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0))),
         Tag.of(RECONCILIATIONS_RETRIES_LAST,
@@ -244,8 +234,8 @@ public class MicrometerMetrics implements Metrics {
   }
 
 
-  private void addMetadataTags(ResourceID resourceID, Map<String, Object> metadata,
-      List<Tag> tags, boolean prefixed) {
+  private void addMetadataTags(ResourceID resourceID, Map<String, Object> metadata, List<Tag> tags,
+      boolean prefixed) {
     if (collectPerResourceMetrics) {
       addTag(NAME, resourceID.getName(), tags, prefixed);
       addTagOmittingOnEmptyValue(NAMESPACE, resourceID.getNamespace().orElse(null), tags, prefixed);
@@ -432,8 +422,8 @@ public class MicrometerMetrics implements Metrics {
     @Override
     public void removeMetersFor(ResourceID resourceID) {
       // schedule deletion of meters associated with ResourceID
-      metersCleaner.schedule(() -> super.removeMetersFor(resourceID),
-          cleanUpDelayInSeconds, TimeUnit.SECONDS);
+      metersCleaner.schedule(() -> super.removeMetersFor(resourceID), cleanUpDelayInSeconds,
+          TimeUnit.SECONDS);
     }
   }
 }

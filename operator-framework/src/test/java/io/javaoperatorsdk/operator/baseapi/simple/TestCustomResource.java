@@ -12,6 +12,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("CustomService")
 @ShortNames("cs")
 public class TestCustomResource
-    extends CustomResource<TestCustomResourceSpec, TestCustomResourceStatus>
-    implements Namespaced {
+    extends CustomResource<TestCustomResourceSpec, TestCustomResourceStatus> implements Namespaced {
 }

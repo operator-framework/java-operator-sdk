@@ -18,8 +18,7 @@ class PatchResourceAndStatusNoSSAIT {
 
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
-          .withReconciler(PatchResourceAndStatusNoSSAReconciler.class)
-          .build();
+          .withReconciler(PatchResourceAndStatusNoSSAReconciler.class).build();
 
   @Test
   void updatesSubResourceStatus() {
@@ -30,37 +29,25 @@ class PatchResourceAndStatusNoSSAIT {
     // wait for sure, there are no more events
     TestUtils.waitXms(300);
 
-    PatchResourceAndStatusNoSSACustomResource customResource =
-        operator
-            .get(PatchResourceAndStatusNoSSACustomResource.class,
-                resource.getMetadata().getName());
+    PatchResourceAndStatusNoSSACustomResource customResource = operator
+        .get(PatchResourceAndStatusNoSSACustomResource.class, resource.getMetadata().getName());
 
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(1);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);
     assertThat(customResource.getStatus().getState())
         .isEqualTo(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
-    assertThat(
-        customResource
-            .getMetadata()
-            .getAnnotations()
-            .get(PatchResourceAndStatusNoSSAReconciler.TEST_ANNOTATION))
-        .isNotNull();
+    assertThat(customResource.getMetadata().getAnnotations()
+        .get(PatchResourceAndStatusNoSSAReconciler.TEST_ANNOTATION)).isNotNull();
   }
 
   void awaitStatusUpdated(String name) {
-    await("cr status updated")
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> {
-              PatchResourceAndStatusNoSSACustomResource cr =
-                  operator.get(PatchResourceAndStatusNoSSACustomResource.class, name);
-              assertThat(cr)
-                  .isNotNull();
-              assertThat(cr.getStatus())
-                  .isNotNull();
-              assertThat(cr.getStatus().getState())
-                  .isEqualTo(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
-            });
+    await("cr status updated").atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+      PatchResourceAndStatusNoSSACustomResource cr =
+          operator.get(PatchResourceAndStatusNoSSACustomResource.class, name);
+      assertThat(cr).isNotNull();
+      assertThat(cr.getStatus()).isNotNull();
+      assertThat(cr.getStatus().getState())
+          .isEqualTo(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
+    });
   }
 
   public PatchResourceAndStatusNoSSACustomResource createTestCustomResource(String id) {

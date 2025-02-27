@@ -20,10 +20,8 @@ class BuiltInResourceCleanerIT {
   private static final Logger log = LoggerFactory.getLogger(BuiltInResourceCleanerIT.class);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new BuiltInResourceCleanerReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new BuiltInResourceCleanerReconciler()).build();
 
   /**
    * Issue is with generation, some built in resources like Pod, Service does not seem to use
@@ -34,8 +32,9 @@ class BuiltInResourceCleanerIT {
     var service = operator.create(testService());
 
     await().untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(BuiltInResourceCleanerReconciler.class)
-          .getReconcileCount()).isPositive();
+      assertThat(
+          operator.getReconcilerOfType(BuiltInResourceCleanerReconciler.class).getReconcileCount())
+          .isPositive();
       var actualService = operator.get(Service.class, service.getMetadata().getName());
       assertThat(actualService.getMetadata().getFinalizers()).isNotEmpty();
     });
@@ -43,8 +42,9 @@ class BuiltInResourceCleanerIT {
     operator.delete(service);
 
     await().untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(BuiltInResourceCleanerReconciler.class)
-          .getCleanCount()).isPositive();
+      assertThat(
+          operator.getReconcilerOfType(BuiltInResourceCleanerReconciler.class).getCleanCount())
+          .isPositive();
     });
   }
 

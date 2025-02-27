@@ -41,8 +41,8 @@ public class ServiceDependentResource
       Context<SSALegacyMatcherCustomResource> context) {
     var desired = desired(primary, context);
 
-    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context,
-        false, false);
+    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false,
+        false);
   }
 
   // override just to check the exec count

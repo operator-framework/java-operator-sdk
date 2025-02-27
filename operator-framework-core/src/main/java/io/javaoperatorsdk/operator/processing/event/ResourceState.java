@@ -114,12 +114,7 @@ class ResourceState {
 
   @Override
   public String toString() {
-    return "ResourceState{" +
-        "id=" + id +
-        ", underProcessing=" + underProcessing +
-        ", retry=" + retry +
-        ", eventing=" + eventing +
-        ", rateLimit=" + rateLimit +
-        '}';
+    return "ResourceState{" + "id=" + id + ", underProcessing=" + underProcessing + ", retry="
+        + retry + ", eventing=" + eventing + ", rateLimit=" + rateLimit + '}';
   }
 }

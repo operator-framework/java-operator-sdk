@@ -11,8 +11,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("PrimaryIndexerTestCustomResource")
 @ShortNames("pi")
-public class PrimaryIndexerTestCustomResource
-    extends
+public class PrimaryIndexerTestCustomResource extends
     CustomResource<PrimaryIndexerTestCustomResourceSpec, PrimaryIndexerTestCustomResourceStatus>
     implements Namespaced {
 }

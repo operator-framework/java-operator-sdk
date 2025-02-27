@@ -31,12 +31,8 @@ class ExecutionScope<R extends HasMetadata> {
     if (resource == null) {
       return "ExecutionScope{resource: null}";
     } else
-      return "ExecutionScope{"
-          + " resource id: "
-          + ResourceID.fromResource(resource)
-          + ", version: "
-          + resource.getMetadata().getResourceVersion()
-          + '}';
+      return "ExecutionScope{" + " resource id: " + ResourceID.fromResource(resource)
+          + ", version: " + resource.getMetadata().getResourceVersion() + '}';
   }
 
   public RetryInfo getRetryInfo() {

@@ -11,10 +11,8 @@ public class GenericKubernetesDependentStandaloneIT
     extends GenericKubernetesDependentTestBase<GenericKubernetesDependentStandaloneCustomResource> {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new GenericKubernetesDependentStandaloneReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new GenericKubernetesDependentStandaloneReconciler()).build();
 
   @Override
   public LocallyRunOperatorExtension extension() {
@@ -24,9 +22,7 @@ public class GenericKubernetesDependentStandaloneIT
   @Override
   public GenericKubernetesDependentStandaloneCustomResource testResource(String name, String data) {
     var resource = new GenericKubernetesDependentStandaloneCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(name).build());
     resource.setSpec(new GenericKubernetesDependentSpec());
     resource.getSpec().setValue(INITIAL_DATA);
     return resource;

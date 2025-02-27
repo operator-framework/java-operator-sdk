@@ -19,9 +19,8 @@ class ClusterScopedResourceIT {
   public static final String INITIAL_DATA = "initialData";
   public static final String UPDATED_DATA = "updatedData";
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new ClusterScopedCustomResourceReconciler()).build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ClusterScopedCustomResourceReconciler()).build();
 
   @Test
   void crudOperationOnClusterScopedCustomResource() {
@@ -54,9 +53,7 @@ class ClusterScopedResourceIT {
 
   ClusterScopedCustomResource testResource() {
     var res = new ClusterScopedCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_NAME).build());
     res.setSpec(new ClusterScopedCustomResourceSpec());
     res.getSpec().setTargetNamespace(operator.getNamespace());
     res.getSpec().setData(INITIAL_DATA);

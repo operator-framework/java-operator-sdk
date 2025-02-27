@@ -8,8 +8,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration
 public class CleanerForReconcilerTestReconciler
     implements Reconciler<CleanerForReconcilerCustomResource>,
-    Cleaner<CleanerForReconcilerCustomResource>,
-    TestExecutionInfoProvider {
+    Cleaner<CleanerForReconcilerCustomResource>, TestExecutionInfoProvider {
 
   public static final int RESCHEDULE_DELAY = 150;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);

@@ -19,11 +19,8 @@ public class ConfigMapDependentResource
   protected ConfigMap desired(DependentReInitializationCustomResource primary,
       Context<DependentReInitializationCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of("key", "val"))
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace()).build())
+        .withData(Map.of("key", "val")).build();
   }
 }

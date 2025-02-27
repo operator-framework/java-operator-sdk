@@ -17,10 +17,8 @@ class DynamicGenericEventSourceRegistrationIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(DynamicGenericEventSourceRegistrationReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(DynamicGenericEventSourceRegistrationReconciler.class).build();
 
   @Test
   void registersEventSourcesDynamically() {
@@ -52,9 +50,7 @@ class DynamicGenericEventSourceRegistrationIT {
 
   DynamicGenericEventSourceRegistrationCustomResource testResource() {
     var res = new DynamicGenericEventSourceRegistrationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }
 }

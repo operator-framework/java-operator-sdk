@@ -48,24 +48,20 @@ class ConfigurationServiceOverriderTest {
         return Optional.of(LEADER_ELECTION_CONFIGURATION);
       }
     };
-    final var overridden = new ConfigurationServiceOverrider(config)
-        .checkingCRDAndValidateLocalModel(true)
-        .withExecutorService(Executors.newSingleThreadExecutor())
-        .withWorkflowExecutorService(Executors.newFixedThreadPool(4))
-        .withCloseClientOnStop(false)
-        .withResourceCloner(new Cloner() {
-          @Override
-          public <R extends HasMetadata> R clone(R object) {
-            return null;
-          }
-        })
-        .withConcurrentReconciliationThreads(25)
-        .withMetrics(new Metrics() {})
-        .withLeaderElectionConfiguration(new LeaderElectionConfiguration("newLease", "newLeaseNS"))
-        .withInformerStoppedHandler((informer, ex) -> {
-        })
-        .withReconciliationTerminationTimeout(Duration.ofSeconds(30))
-        .build();
+    final var overridden =
+        new ConfigurationServiceOverrider(config).checkingCRDAndValidateLocalModel(true)
+            .withExecutorService(Executors.newSingleThreadExecutor())
+            .withWorkflowExecutorService(Executors.newFixedThreadPool(4))
+            .withCloseClientOnStop(false).withResourceCloner(new Cloner() {
+              @Override
+              public <R extends HasMetadata> R clone(R object) {
+                return null;
+              }
+            }).withConcurrentReconciliationThreads(25).withMetrics(new Metrics() {})
+            .withLeaderElectionConfiguration(
+                new LeaderElectionConfiguration("newLease", "newLeaseNS"))
+            .withInformerStoppedHandler((informer, ex) -> {
+            }).withReconciliationTerminationTimeout(Duration.ofSeconds(30)).build();
 
     assertNotEquals(config.closeClientOnStop(), overridden.closeClientOnStop());
     assertNotEquals(config.checkCRDAndValidateLocalModel(),

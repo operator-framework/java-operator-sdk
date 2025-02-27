@@ -12,6 +12,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("ErrorStatusHandlerTestCustomResource")
 @ShortNames("esh")
 public class ErrorStatusHandlerTestCustomResource
-    extends CustomResource<Void, ErrorStatusHandlerTestCustomResourceStatus>
-    implements Namespaced {
+    extends CustomResource<Void, ErrorStatusHandlerTestCustomResourceStatus> implements Namespaced {
 }

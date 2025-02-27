@@ -18,10 +18,8 @@ public class MultipleDependentWithActivationIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleDependentActivationReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleDependentActivationReconciler()).build();
 
   @Test
   void bothDependentsWithActivationAreHandled() {
@@ -62,9 +60,7 @@ public class MultipleDependentWithActivationIT {
 
   MultipleDependentActivationCustomResource testResource() {
     var res = new MultipleDependentActivationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     res.setSpec(new MultipleDependentActivationSpec());
     res.getSpec().setValue(INITIAL_VALUE);
 

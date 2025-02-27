@@ -18,10 +18,8 @@ class PrimaryToSecondaryMissingIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withAdditionalCustomResourceDefinition(Cluster.class)
-          .withReconciler(new JobReconciler(false))
-          .build();
+      LocallyRunOperatorExtension.builder().withAdditionalCustomResourceDefinition(Cluster.class)
+          .withReconciler(new JobReconciler(false)).build();
 
   @Test
   void missingPrimaryToSecondaryCausesIssueAccessingSecondary() throws InterruptedException {

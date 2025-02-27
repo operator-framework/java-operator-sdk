@@ -37,10 +37,8 @@ public class ControllerNamespaceDeletionReconciler
   private ControllerNamespaceDeletionCustomResource createResponseResource(
       ControllerNamespaceDeletionCustomResource resource) {
     var res = new ControllerNamespaceDeletionCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(resource.getMetadata().getName())
-        .withNamespace(resource.getMetadata().getNamespace())
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(resource.getMetadata().getName())
+        .withNamespace(resource.getMetadata().getNamespace()).build());
     res.setStatus(new ControllerNamespaceDeletionStatus());
     return res;
   }

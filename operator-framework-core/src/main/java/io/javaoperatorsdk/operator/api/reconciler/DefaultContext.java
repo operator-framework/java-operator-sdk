@@ -57,16 +57,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
     return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
-        .map(es -> es.getSecondaryResources(primaryResource))
-        .flatMap(Set::stream);
+        .map(es -> es.getSecondaryResources(primaryResource)).flatMap(Set::stream);
   }
 
   @Override
   public <T> Optional<T> getSecondaryResource(Class<T> expectedType, String eventSourceName) {
     try {
-      return controller
-          .getEventSourceManager()
-          .getEventSourceFor(expectedType, eventSourceName)
+      return controller.getEventSourceManager().getEventSourceFor(expectedType, eventSourceName)
           .getSecondaryResource(primaryResource);
     } catch (NoEventSourceForClassException e) {
       /*

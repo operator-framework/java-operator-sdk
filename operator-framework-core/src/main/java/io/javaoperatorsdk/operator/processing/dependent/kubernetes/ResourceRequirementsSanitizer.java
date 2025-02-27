@@ -53,8 +53,7 @@ class ResourceRequirementsSanitizer {
           return;
         }
         sanitizeResourceRequirements(actualMap, actualContainer.getResources(),
-            desiredContainer.getResources(),
-            containerPath, containerIndex);
+            desiredContainer.getResources(), containerPath, containerIndex);
       }
     }
   }
@@ -75,11 +74,10 @@ class ResourceRequirementsSanitizer {
   private static void sanitizeQuantities(final Map<String, Object> actualMap,
       final Map<String, Quantity> actualResource, final Map<String, Quantity> desiredResource,
       final String containerPath, final int containerIndex, final String quantityPath) {
-    Optional.ofNullable(
-        GenericKubernetesResource.get(actualMap, "spec", "template", "spec", containerPath,
-            containerIndex, "resources", quantityPath))
-        .map(Map.class::cast)
-        .filter(m -> m.size() == desiredResource.size())
+    Optional
+        .ofNullable(GenericKubernetesResource.get(actualMap, "spec", "template", "spec",
+            containerPath, containerIndex, "resources", quantityPath))
+        .map(Map.class::cast).filter(m -> m.size() == desiredResource.size())
         .ifPresent(m -> actualResource.forEach((key, actualQuantity) -> {
           var desiredQuantity = desiredResource.get(key);
           if (desiredQuantity == null) {

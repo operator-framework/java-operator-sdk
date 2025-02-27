@@ -36,14 +36,11 @@ class ReconcilerUtilsTest {
 
   @Test
   void defaultReconcilerNameShouldWork() {
-    assertEquals(
-        "testcustomreconciler",
+    assertEquals("testcustomreconciler",
         getDefaultReconcilerName(TestCustomReconciler.class.getCanonicalName()));
-    assertEquals(
-        getDefaultNameFor(TestCustomReconciler.class),
+    assertEquals(getDefaultNameFor(TestCustomReconciler.class),
         getDefaultReconcilerName(TestCustomReconciler.class.getCanonicalName()));
-    assertEquals(
-        getDefaultNameFor(TestCustomReconciler.class),
+    assertEquals(getDefaultNameFor(TestCustomReconciler.class),
         getDefaultReconcilerName(TestCustomReconciler.class.getSimpleName()));
   }
 
@@ -140,25 +137,21 @@ class ReconcilerUtilsTest {
   @Test
   void handleKubernetesExceptionShouldThrowMissingCRDExceptionWhenAppropriate() {
     var request = mock(HttpRequest.class);
-    when(request.uri()).thenReturn(URI
-        .create(RESOURCE_URI));
-    assertThrows(MissingCRDException.class, () -> handleKubernetesClientException(
-        new KubernetesClientException(
-            "Failure executing: GET at: " + RESOURCE_URI + ". Message: Not Found.",
-            null, 404, null, request),
-        HasMetadata.getFullResourceName(Tomcat.class)));
+    when(request.uri()).thenReturn(URI.create(RESOURCE_URI));
+    assertThrows(MissingCRDException.class,
+        () -> handleKubernetesClientException(new KubernetesClientException(
+            "Failure executing: GET at: " + RESOURCE_URI + ". Message: Not Found.", null, 404, null,
+            request), HasMetadata.getFullResourceName(Tomcat.class)));
   }
 
 
   @Test
   void checksIfOwnerReferenceCanBeAdded() {
-    assertThrows(OperatorException.class,
-        () -> ReconcilerUtils.checkIfCanAddOwnerReference(namespacedResource(),
-            namespacedResourceFromOtherNamespace()));
+    assertThrows(OperatorException.class, () -> ReconcilerUtils
+        .checkIfCanAddOwnerReference(namespacedResource(), namespacedResourceFromOtherNamespace()));
 
-    assertThrows(OperatorException.class,
-        () -> ReconcilerUtils.checkIfCanAddOwnerReference(namespacedResource(),
-            clusterScopedResource()));
+    assertThrows(OperatorException.class, () -> ReconcilerUtils
+        .checkIfCanAddOwnerReference(namespacedResource(), clusterScopedResource()));
 
     assertDoesNotThrow(() -> {
       ReconcilerUtils.checkIfCanAddOwnerReference(clusterScopedResource(), clusterScopedResource());
@@ -167,26 +160,17 @@ class ReconcilerUtilsTest {
   }
 
   private ClusterRole clusterScopedResource() {
-    return new ClusterRoleBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .build())
-        .build();
+    return new ClusterRoleBuilder().withMetadata(new ObjectMetaBuilder().build()).build();
   }
 
   private ConfigMap namespacedResource() {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withNamespace("testns1")
-            .build())
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withNamespace("testns1").build()).build();
   }
 
   private ConfigMap namespacedResourceFromOtherNamespace() {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withNamespace("testns2")
-            .build())
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withNamespace("testns2").build()).build();
   }
 
   @Group("tomcatoperator.io")

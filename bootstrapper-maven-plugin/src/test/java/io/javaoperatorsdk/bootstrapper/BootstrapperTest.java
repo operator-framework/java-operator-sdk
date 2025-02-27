@@ -30,9 +30,8 @@ class BootstrapperTest {
 
   private void assertProjectCompiles() {
     try {
-      var process = Runtime.getRuntime()
-          .exec(
-              "mvn clean install -f target/test-project/pom.xml -DskipTests -Dspotless.apply.skip");
+      var process = Runtime.getRuntime().exec(
+          "mvn clean install -f target/test-project/pom.xml -DskipTests -Dspotless.apply.skip");
 
       BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
 

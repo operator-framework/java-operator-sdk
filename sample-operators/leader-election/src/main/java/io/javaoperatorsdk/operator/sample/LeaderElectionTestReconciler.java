@@ -11,8 +11,7 @@ import io.javaoperatorsdk.operator.sample.v1.LeaderElection;
 import io.javaoperatorsdk.operator.sample.v1.LeaderElectionStatus;
 
 @ControllerConfiguration()
-public class LeaderElectionTestReconciler
-    implements Reconciler<LeaderElection> {
+public class LeaderElectionTestReconciler implements Reconciler<LeaderElection> {
 
   private final String reconcilerName;
 
@@ -21,8 +20,7 @@ public class LeaderElectionTestReconciler
   }
 
   @Override
-  public UpdateControl<LeaderElection> reconcile(
-      LeaderElection resource,
+  public UpdateControl<LeaderElection> reconcile(LeaderElection resource,
       Context<LeaderElection> context) {
 
     if (resource.getStatus() == null) {

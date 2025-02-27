@@ -12,8 +12,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent(informer = @Informer(labelSelector = "dependent = cm2"))
-public class ConfigMapDependentResource2 extends
-    CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
+public class ConfigMapDependentResource2
+    extends CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 
   public ConfigMapDependentResource2() {
     super(ConfigMap.class);

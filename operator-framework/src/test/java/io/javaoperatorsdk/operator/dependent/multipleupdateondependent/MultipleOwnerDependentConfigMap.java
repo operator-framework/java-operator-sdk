@@ -15,8 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
 public class MultipleOwnerDependentConfigMap
-    extends
-    CRUDKubernetesDependentResource<ConfigMap, MultipleOwnerDependentCustomResource> {
+    extends CRUDKubernetesDependentResource<ConfigMap, MultipleOwnerDependentCustomResource> {
 
   public static final String RESOURCE_NAME = "test1";
 
@@ -33,14 +32,10 @@ public class MultipleOwnerDependentConfigMap
     var data = cm.map(ConfigMap::getData).orElse(new HashMap<>());
     data.put(primary.getSpec().getValue(), primary.getSpec().getValue());
 
-    return new ConfigMapBuilder()
-        .withNewMetadata()
-        .withName(RESOURCE_NAME)
+    return new ConfigMapBuilder().withNewMetadata().withName(RESOURCE_NAME)
         .withNamespace(primary.getMetadata().getNamespace())
         .withOwnerReferences(cm.map(c -> c.getMetadata().getOwnerReferences()).orElse(List.of()))
-        .endMetadata()
-        .withData(data)
-        .build();
+        .endMetadata().withData(data).build();
   }
 
   // need to change this since owner reference is present only for the creator primary resource.

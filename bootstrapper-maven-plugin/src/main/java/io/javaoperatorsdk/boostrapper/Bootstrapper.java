@@ -27,8 +27,7 @@ public class Bootstrapper {
   private static final Map<String, String> TOP_LEVEL_STATIC_FILES =
       Map.of("_.gitignore", ".gitignore", "README.md", "README.md");
   private static final List<String> JAVA_FILES =
-      List.of("CustomResource.java", "Reconciler.java",
-          "Spec.java", "Status.java");
+      List.of("CustomResource.java", "Reconciler.java", "Spec.java", "Status.java");
 
   public void create(File targetDir, String groupId, String artifactId) {
     try {
@@ -67,8 +66,7 @@ public class Bootstrapper {
       addTemplatedFile(projectDir, "Runner.java", groupId, artifactId, targetDir, null);
       addTemplatedFile(projectDir, "ConfigMapDependentResource.java", groupId, artifactId,
           targetDir, null);
-      addTemplatedFile(projectDir, "ReconcilerIntegrationTest.java", groupId,
-          artifactId,
+      addTemplatedFile(projectDir, "ReconcilerIntegrationTest.java", groupId, artifactId,
           targetTestDir, artifactClassId(artifactId) + "ReconcilerIntegrationTest.java");
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -89,10 +87,9 @@ public class Bootstrapper {
   private void addTemplatedFile(File projectDir, String fileName, String groupId, String artifactId,
       File targetDir, String targetFileName) {
     try {
-      var values = Map.of("groupId", groupId, "artifactId", artifactId,
-          "artifactClassId", artifactClassId(artifactId),
-          "josdkVersion", Versions.JOSDK,
-          "fabric8Version", Versions.KUBERNETES_CLIENT);
+      var values = Map.of("groupId", groupId, "artifactId", artifactId, "artifactClassId",
+          artifactClassId(artifactId), "josdkVersion", Versions.JOSDK, "fabric8Version",
+          Versions.KUBERNETES_CLIENT);
 
       var mustache = mustacheFactory.compile("templates/" + fileName);
       var targetFile = new File(targetDir == null ? projectDir : targetDir,
@@ -132,8 +129,7 @@ public class Bootstrapper {
 
   public static String artifactClassId(String artifactId) {
     var parts = artifactId.split("-");
-    return Arrays.stream(parts).map(p -> p.substring(0, 1)
-        .toUpperCase() + p.substring(1))
+    return Arrays.stream(parts).map(p -> p.substring(0, 1).toUpperCase() + p.substring(1))
         .collect(Collectors.joining(""));
   }
 

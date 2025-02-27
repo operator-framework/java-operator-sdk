@@ -30,23 +30,19 @@ class InformerRemoteClusterIT {
   static KubernetesClient kubernetesClient;
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new InformerRemoteClusterReconciler(kubernetesClient))
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new InformerRemoteClusterReconciler(kubernetesClient)).build();
 
   @Test
   void testRemoteClusterInformer() {
     var r = extension.create(testCustomResource());
 
     var cm = kubernetesClient.configMaps()
-        .resource(remoteConfigMap(r.getMetadata().getName(),
-            r.getMetadata().getNamespace()))
+        .resource(remoteConfigMap(r.getMetadata().getName(), r.getMetadata().getNamespace()))
         .create();
 
     // config map does not exist on the primary resource cluster
-    assertThat(extension.getKubernetesClient().configMaps()
-        .inNamespace(CM_NAMESPACE)
+    assertThat(extension.getKubernetesClient().configMaps().inNamespace(CM_NAMESPACE)
         .withName(CONFIG_MAP_NAME).get()).isNull();
 
     await().untilAsserted(() -> {
@@ -66,23 +62,17 @@ class InformerRemoteClusterIT {
 
   InformerRemoteClusterCustomResource testCustomResource() {
     var res = new InformerRemoteClusterCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(NAME).build());
     return res;
   }
 
   ConfigMap remoteConfigMap(String ownerName, String ownerNamespace) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(CONFIG_MAP_NAME)
-            .withNamespace(CM_NAMESPACE)
-            .withAnnotations(Map.of(
-                Mappers.DEFAULT_ANNOTATION_FOR_NAME, ownerName,
+        .withMetadata(new ObjectMetaBuilder().withName(CONFIG_MAP_NAME).withNamespace(CM_NAMESPACE)
+            .withAnnotations(Map.of(Mappers.DEFAULT_ANNOTATION_FOR_NAME, ownerName,
                 Mappers.DEFAULT_ANNOTATION_FOR_NAMESPACE, ownerNamespace))
             .build())
-        .withData(Map.of(DATA_KEY, INITIAL_VALUE))
-        .build();
+        .withData(Map.of(DATA_KEY, INITIAL_VALUE)).build();
   }
 
 }

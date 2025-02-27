@@ -19,8 +19,7 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 
 public class BulkDependentResourceExternalWithState extends
     PerResourcePollingDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>
-    implements
-    BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
+    implements BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
     CRUDBulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
     DependentResourceWithExplicitState<ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap> {
 
@@ -56,12 +55,9 @@ public class BulkDependentResourceExternalWithState extends
   public ConfigMap stateResource(ExternalStateBulkDependentCustomResource primary,
       ExternalResource resource) {
     ConfigMap configMap = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(configMapName(primary, resource))
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(ExternalStateDependentReconciler.ID_KEY, resource.getId()))
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withName(configMapName(primary, resource))
+            .withNamespace(primary.getMetadata().getNamespace()).build())
+        .withData(Map.of(ExternalStateDependentReconciler.ID_KEY, resource.getId())).build();
     configMap.addOwnerReference(primary);
     return configMap;
   }
@@ -74,23 +70,21 @@ public class BulkDependentResourceExternalWithState extends
   }
 
   @Override
-  public ExternalResource update(ExternalResource actual,
-      ExternalResource desired, ExternalStateBulkDependentCustomResource primary,
+  public ExternalResource update(ExternalResource actual, ExternalResource desired,
+      ExternalStateBulkDependentCustomResource primary,
       Context<ExternalStateBulkDependentCustomResource> context) {
     return externalService.update(new ExternalResource(actual.getId(), desired.getData()));
   }
 
   @Override
   protected void handleDelete(ExternalStateBulkDependentCustomResource primary,
-      ExternalResource secondary,
-      Context<ExternalStateBulkDependentCustomResource> context) {
+      ExternalResource secondary, Context<ExternalStateBulkDependentCustomResource> context) {
     externalService.delete(secondary.getId());
   }
 
   @Override
   public Matcher.Result<ExternalResource> match(ExternalResource actualResource,
-      ExternalResource desired,
-      ExternalStateBulkDependentCustomResource primary,
+      ExternalResource desired, ExternalStateBulkDependentCustomResource primary,
       Context<ExternalStateBulkDependentCustomResource> context) {
     return Matcher.Result.computed(desired.getData().equals(actualResource.getData()), desired);
   }

@@ -9,8 +9,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(informer = @Informer(
-    labelSelector = "app.kubernetes.io/managed-by=tomcat-operator"))
+@KubernetesDependent(
+    informer = @Informer(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator"))
 public class ServiceDependentResource extends CRUDKubernetesDependentResource<Service, Tomcat> {
 
   public ServiceDependentResource() {
@@ -21,15 +21,10 @@ public class ServiceDependentResource extends CRUDKubernetesDependentResource<Se
   protected Service desired(Tomcat tomcat, Context<Tomcat> context) {
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
     return new ServiceBuilder(ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml"))
-        .editMetadata()
-        .withName(tomcatMetadata.getName())
+        .editMetadata().withName(tomcatMetadata.getName())
         .withNamespace(tomcatMetadata.getNamespace())
-        .addToLabels("app.kubernetes.io/managed-by", "tomcat-operator")
-        .endMetadata()
-        .editSpec()
-        .addToSelector("app", tomcatMetadata.getName())
-        .endSpec()
-        .build();
+        .addToLabels("app.kubernetes.io/managed-by", "tomcat-operator").endMetadata().editSpec()
+        .addToSelector("app", tomcatMetadata.getName()).endSpec().build();
   }
 
 }

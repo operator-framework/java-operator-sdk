@@ -14,8 +14,7 @@ public class RestartTestReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<RestartTestCustomResource> reconcile(
-      RestartTestCustomResource resource,
+  public UpdateControl<RestartTestCustomResource> reconcile(RestartTestCustomResource resource,
       Context<RestartTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();

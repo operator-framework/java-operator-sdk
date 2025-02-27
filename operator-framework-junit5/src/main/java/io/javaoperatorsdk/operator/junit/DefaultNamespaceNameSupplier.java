@@ -41,8 +41,8 @@ public class DefaultNamespaceNameSupplier implements Function<ExtensionContext, 
       }
     }
 
-    String namespace = classPart + DELIMITER + methodPart + DELIMITER + UUID.randomUUID().toString()
-        .substring(0, RANDOM_SUFFIX_LENGTH);
+    String namespace = classPart + DELIMITER + methodPart + DELIMITER
+        + UUID.randomUUID().toString().substring(0, RANDOM_SUFFIX_LENGTH);
     namespace = KubernetesResourceUtil.sanitizeName(namespace).toLowerCase(Locale.US);
     return namespace;
   }

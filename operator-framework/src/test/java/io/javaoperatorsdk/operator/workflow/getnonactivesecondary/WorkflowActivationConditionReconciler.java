@@ -10,11 +10,9 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(dependents = {
-    @Dependent(type = ConfigMapDependentResource.class),
+@Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class),
     @Dependent(type = RouteDependentResource.class,
-        activationCondition = FalseActivationCondition.class)
-})
+        activationCondition = FalseActivationCondition.class)})
 @ControllerConfiguration
 public class WorkflowActivationConditionReconciler
     implements Reconciler<GetNonActiveSecondaryCustomResource> {

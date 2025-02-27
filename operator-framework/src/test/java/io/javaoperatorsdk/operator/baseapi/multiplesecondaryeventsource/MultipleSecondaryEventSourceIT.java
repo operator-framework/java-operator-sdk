@@ -15,10 +15,8 @@ class MultipleSecondaryEventSourceIT {
 
   public static final String TEST_RESOURCE_NAME = "testresource";
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(MultipleSecondaryEventSourceReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(MultipleSecondaryEventSourceReconciler.class).build();
 
   @Test
   void receivingPeriodicEvents() {
@@ -28,8 +26,7 @@ class MultipleSecondaryEventSourceIT {
 
     var reconciler = operator.getReconcilerOfType(MultipleSecondaryEventSourceReconciler.class);
 
-    await().pollDelay(Duration.ofMillis(300))
-        .until(() -> reconciler.getNumberOfExecutions() <= 3);
+    await().pollDelay(Duration.ofMillis(300)).until(() -> reconciler.getNumberOfExecutions() <= 3);
 
     int numberOfInitialExecutions = reconciler.getNumberOfExecutions();
 
@@ -55,11 +52,8 @@ class MultipleSecondaryEventSourceIT {
   public MultipleSecondaryEventSourceCustomResource createTestCustomResource() {
     MultipleSecondaryEventSourceCustomResource resource =
         new MultipleSecondaryEventSourceCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(TEST_RESOURCE_NAME)
-            .withNamespace(operator.getNamespace())
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME)
+        .withNamespace(operator.getNamespace()).build());
     return resource;
   }
 

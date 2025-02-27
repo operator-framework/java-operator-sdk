@@ -30,21 +30,15 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
   private final List<HasMetadata> operatorDeployment;
   private final Duration operatorDeploymentTimeout;
 
-  private ClusterDeployedOperatorExtension(
-      List<HasMetadata> operatorDeployment,
-      Duration operatorDeploymentTimeout,
-      List<HasMetadata> infrastructure,
-      Duration infrastructureTimeout,
-      boolean preserveNamespaceOnError,
-      boolean waitForNamespaceDeletion,
-      boolean oneNamespacePerClass,
-      KubernetesClient kubernetesClient,
-      Function<ExtensionContext, String> namespaceNameSupplier,
+  private ClusterDeployedOperatorExtension(List<HasMetadata> operatorDeployment,
+      Duration operatorDeploymentTimeout, List<HasMetadata> infrastructure,
+      Duration infrastructureTimeout, boolean preserveNamespaceOnError,
+      boolean waitForNamespaceDeletion, boolean oneNamespacePerClass,
+      KubernetesClient kubernetesClient, Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
-    super(infrastructure, infrastructureTimeout, oneNamespacePerClass,
-        preserveNamespaceOnError,
-        waitForNamespaceDeletion,
-        kubernetesClient, namespaceNameSupplier, perClassNamespaceNameSupplier);
+    super(infrastructure, infrastructureTimeout, oneNamespacePerClass, preserveNamespaceOnError,
+        waitForNamespaceDeletion, kubernetesClient, namespaceNameSupplier,
+        perClassNamespaceNameSupplier);
     this.operatorDeployment = operatorDeployment;
     this.operatorDeploymentTimeout = operatorDeploymentTimeout;
   }
@@ -91,12 +85,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       }
     });
 
-    kubernetesClient
-        .resourceList(operatorDeployment)
-        .inNamespace(namespace)
-        .createOrReplace();
-    kubernetesClient
-        .resourceList(operatorDeployment)
+    kubernetesClient.resourceList(operatorDeployment).inNamespace(namespace).createOrReplace();
+    kubernetesClient.resourceList(operatorDeployment)
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
     LOGGER.debug("Operator resources deployed.");
   }
@@ -147,17 +137,11 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     }
 
     public ClusterDeployedOperatorExtension build() {
-      return new ClusterDeployedOperatorExtension(
-          operatorDeployment,
-          deploymentTimeout,
-          infrastructure,
-          infrastructureTimeout,
-          preserveNamespaceOnError,
-          waitForNamespaceDeletion,
+      return new ClusterDeployedOperatorExtension(operatorDeployment, deploymentTimeout,
+          infrastructure, infrastructureTimeout, preserveNamespaceOnError, waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build(),
-          namespaceNameSupplier,
-          perClassNamespaceNameSupplier);
+          namespaceNameSupplier, perClassNamespaceNameSupplier);
     }
   }
 }

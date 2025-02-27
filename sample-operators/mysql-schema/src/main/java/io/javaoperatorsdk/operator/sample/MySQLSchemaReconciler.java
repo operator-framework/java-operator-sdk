@@ -18,11 +18,9 @@ import static java.lang.String.format;
 @Workflow(dependents = {
     @Dependent(type = SecretDependentResource.class, name = SecretDependentResource.NAME),
     @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME,
-        dependsOn = SecretDependentResource.NAME)
-})
+        dependsOn = SecretDependentResource.NAME)})
 @ControllerConfiguration
-public class MySQLSchemaReconciler
-    implements Reconciler<MySQLSchema> {
+public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
 
   static final Logger log = LoggerFactory.getLogger(MySQLSchemaReconciler.class);
 
@@ -43,8 +41,7 @@ public class MySQLSchemaReconciler
 
   @Override
   public ErrorStatusUpdateControl<MySQLSchema> updateErrorStatus(MySQLSchema schema,
-      Context<MySQLSchema> context,
-      Exception e) {
+      Context<MySQLSchema> context, Exception e) {
     SchemaStatus status = new SchemaStatus();
     status.setUrl(null);
     status.setUserName(null);
@@ -56,18 +53,12 @@ public class MySQLSchemaReconciler
 
 
   private MySQLSchema createForStatusUpdate(MySQLSchema mySQLSchema, Schema schema,
-      String secretName,
-      String userName) {
+      String secretName, String userName) {
     MySQLSchema res = new MySQLSchema();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(mySQLSchema.getMetadata().getName())
-        .withNamespace(mySQLSchema.getMetadata().getNamespace())
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(mySQLSchema.getMetadata().getName())
+        .withNamespace(mySQLSchema.getMetadata().getNamespace()).build());
     SchemaStatus status = new SchemaStatus();
-    status.setUrl(
-        format(
-            "jdbc:mysql://%1$s/%2$s",
-            System.getenv("MYSQL_HOST"), schema.getName()));
+    status.setUrl(format("jdbc:mysql://%1$s/%2$s", System.getenv("MYSQL_HOST"), schema.getName()));
     status.setUserName(userName);
     status.setSecretName(secretName);
     status.setStatus("CREATED");

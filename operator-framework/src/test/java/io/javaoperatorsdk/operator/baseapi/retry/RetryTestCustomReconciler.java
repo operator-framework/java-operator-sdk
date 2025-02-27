@@ -15,8 +15,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class RetryTestCustomReconciler
     implements Reconciler<RetryTestCustomResource>, TestExecutionInfoProvider {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(RetryTestCustomReconciler.class);
+  private static final Logger log = LoggerFactory.getLogger(RetryTestCustomReconciler.class);
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   private final AtomicInteger numberOfExecutionFails;

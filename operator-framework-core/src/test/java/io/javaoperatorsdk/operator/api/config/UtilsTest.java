@@ -88,12 +88,10 @@ class UtilsTest {
   @Test
   void getsFirstTypeArgumentFromInterface() {
     assertThat(Utils.getFirstTypeArgumentFromInterface(EmptyTestDependentResource.class,
-        DependentResource.class))
-        .isEqualTo(Deployment.class);
+        DependentResource.class)).isEqualTo(Deployment.class);
 
-    assertThatIllegalArgumentException().isThrownBy(
-        () -> Utils.getFirstTypeArgumentFromInterface(TestKubernetesDependentResource.class,
-            DependentResource.class));
+    assertThatIllegalArgumentException().isThrownBy(() -> Utils.getFirstTypeArgumentFromInterface(
+        TestKubernetesDependentResource.class, DependentResource.class));
   }
 
   @Test

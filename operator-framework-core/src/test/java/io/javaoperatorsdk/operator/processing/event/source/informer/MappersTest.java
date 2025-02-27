@@ -25,8 +25,7 @@ class MappersTest {
     var secondary = getConfigMap(primary);
     secondary.addOwnerReference(primary);
 
-    var res = Mappers.fromOwnerReferences(TestCustomResource.class)
-        .toPrimaryResourceIDs(secondary);
+    var res = Mappers.fromOwnerReferences(TestCustomResource.class).toPrimaryResourceIDs(secondary);
 
     assertThat(res).contains(ResourceID.fromResource(primary));
   }
@@ -46,11 +45,7 @@ class MappersTest {
 
 
   private static ConfigMap getConfigMap(TestCustomResource primary) {
-    return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName("test1")
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .build();
+    return new ConfigMapBuilder().withMetadata(new ObjectMetaBuilder().withName("test1")
+        .withNamespace(primary.getMetadata().getNamespace()).build()).build();
   }
 }

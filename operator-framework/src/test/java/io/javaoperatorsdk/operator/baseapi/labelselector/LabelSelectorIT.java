@@ -18,9 +18,8 @@ import static org.awaitility.Awaitility.await;
 class LabelSelectorIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new LabelSelectorTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new LabelSelectorTestReconciler()).build();
 
   @Test
   void filtersCustomResourceByLabel() {
@@ -36,11 +35,8 @@ class LabelSelectorIT {
 
   LabelSelectorTestCustomResource resource(String name, boolean addLabel) {
     var res = new LabelSelectorTestCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .withLabels(addLabel ? Map.of(LABEL_KEY, LABEL_VALUE)
-            : Collections.emptyMap())
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name)
+        .withLabels(addLabel ? Map.of(LABEL_KEY, LABEL_VALUE) : Collections.emptyMap()).build());
     return res;
   }
 

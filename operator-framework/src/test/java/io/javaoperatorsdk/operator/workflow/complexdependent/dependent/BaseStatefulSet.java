@@ -21,22 +21,10 @@ public abstract class BaseStatefulSet extends BaseDependentResource<StatefulSet>
     var name = name(primary);
     var metadata = createMeta(primary).build();
 
-    return new StatefulSetBuilder(template)
-        .withMetadata(metadata)
-        .editSpec()
-        .withServiceName(name)
-        .editOrNewSelector()
-        .withMatchLabels(Map.of(K8S_NAME, name))
-        .endSelector()
-        .editTemplate()
-        .withMetadata(metadata)
-        .endTemplate()
-        .editFirstVolumeClaimTemplate()
-        .editMetadata()
-        .withLabels(Map.of(K8S_NAME, name))
-        .endMetadata()
-        .endVolumeClaimTemplate()
-        .endSpec()
+    return new StatefulSetBuilder(template).withMetadata(metadata).editSpec().withServiceName(name)
+        .editOrNewSelector().withMatchLabels(Map.of(K8S_NAME, name)).endSelector().editTemplate()
+        .withMetadata(metadata).endTemplate().editFirstVolumeClaimTemplate().editMetadata()
+        .withLabels(Map.of(K8S_NAME, name)).endMetadata().endVolumeClaimTemplate().endSpec()
         .build();
   }
 }

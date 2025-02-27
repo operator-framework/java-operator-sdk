@@ -41,8 +41,7 @@ class DefaultNamespaceNameSupplierTest {
     String ns = supplier.apply(mockExtensionContext(LONG_CLASS_NAME, LONG_METHOD_NAME));
 
     assertThat(ns).startsWith(LONG_CLASS_NAME.substring(0, PART_RESERVED_NAME_LENGTH) + DELIMITER
-        + LONG_METHOD_NAME.substring(0, PART_RESERVED_NAME_LENGTH)
-        + DELIMITER);
+        + LONG_METHOD_NAME.substring(0, PART_RESERVED_NAME_LENGTH) + DELIMITER);
     shortEnoughAndEndsWithRandomString(ns);
   }
 

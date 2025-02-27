@@ -18,8 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
  * intended to be a reusable code as it is, rather serves for deeper understanding of the problem.
  */
 @ControllerConfiguration()
-public class JobReconciler
-    implements Reconciler<Job> {
+public class JobReconciler implements Reconciler<Job> {
 
   private static final String JOB_CLUSTER_INDEX = "job-cluster-index";
 
@@ -38,8 +37,7 @@ public class JobReconciler
   }
 
   @Override
-  public UpdateControl<Job> reconcile(
-      Job resource, Context<Job> context) {
+  public UpdateControl<Job> reconcile(Job resource, Context<Job> context) {
 
     if (!getResourceDirectlyFromCache) {
       // this is only possible when there is primary to secondary mapper
@@ -49,10 +47,8 @@ public class JobReconciler
       // reading the resource from cache as alternative, works without primary to secondary mapper
       var informerEventSource = (InformerEventSource<Cluster, Job>) context.eventSourceRetriever()
           .getEventSourceFor(Cluster.class);
-      informerEventSource
-          .get(new ResourceID(resource.getSpec().getClusterName(),
-              resource.getMetadata().getNamespace()))
-          .orElseThrow(
+      informerEventSource.get(new ResourceID(resource.getSpec().getClusterName(),
+          resource.getMetadata().getNamespace())).orElseThrow(
               () -> new IllegalStateException("Secondary resource cannot be read from cache"));
     }
     numberOfExecutions.addAndGet(1);
@@ -67,8 +63,8 @@ public class JobReconciler
     InformerEventSourceConfiguration.Builder<Cluster> informerConfiguration =
         InformerEventSourceConfiguration.from(Cluster.class, Job.class)
             .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
-                .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
-                    cluster.getMetadata().getNamespace()))
+                .byIndex(JOB_CLUSTER_INDEX,
+                    indexKey(cluster.getMetadata().getName(), cluster.getMetadata().getNamespace()))
                 .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
             .withNamespacesInheritedFromController();
 

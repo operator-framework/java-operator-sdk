@@ -3,8 +3,7 @@ package io.javaoperatorsdk.operator.workflow.workflowexplicitcleanup;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(explicitInvocation = true,
-    dependents = @Dependent(type = ConfigMapDependent.class))
+@Workflow(explicitInvocation = true, dependents = @Dependent(type = ConfigMapDependent.class))
 @ControllerConfiguration
 public class WorkflowExplicitCleanupReconciler
     implements Reconciler<WorkflowExplicitCleanupCustomResource>,

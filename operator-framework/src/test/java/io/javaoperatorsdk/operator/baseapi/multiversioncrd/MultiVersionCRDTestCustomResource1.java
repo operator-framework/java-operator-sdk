@@ -11,8 +11,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("MultiVersionCRDTestCustomResource")
 @ShortNames("mvc")
-public class MultiVersionCRDTestCustomResource1
-    extends
+public class MultiVersionCRDTestCustomResource1 extends
     CustomResource<MultiVersionCRDTestCustomResourceSpec1, MultiVersionCRDTestCustomResourceStatus1>
     implements Namespaced {
 

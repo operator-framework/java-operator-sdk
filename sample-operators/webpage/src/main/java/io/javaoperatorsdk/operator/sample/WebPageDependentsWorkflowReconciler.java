@@ -24,12 +24,10 @@ import static io.javaoperatorsdk.operator.sample.Utils.*;
 /**
  * Shows how to implement reconciler using standalone dependent resources.
  */
-@ControllerConfiguration(
-    informer = @Informer(
-        labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR))
+@ControllerConfiguration(informer = @Informer(
+    labelSelector = WebPageDependentsWorkflowReconciler.DEPENDENT_RESOURCE_LABEL_SELECTOR))
 @SuppressWarnings("unused")
-public class WebPageDependentsWorkflowReconciler
-    implements Reconciler<WebPage> {
+public class WebPageDependentsWorkflowReconciler implements Reconciler<WebPage> {
 
   public static final String DEPENDENT_RESOURCE_LABEL_SELECTOR = "!low-level";
 
@@ -42,19 +40,15 @@ public class WebPageDependentsWorkflowReconciler
 
   public WebPageDependentsWorkflowReconciler(KubernetesClient kubernetesClient) {
     initDependentResources(kubernetesClient);
-    workflow = new WorkflowBuilder<WebPage>()
-        .addDependentResource(configMapDR)
-        .addDependentResource(deploymentDR)
-        .addDependentResource(serviceDR)
+    workflow = new WorkflowBuilder<WebPage>().addDependentResource(configMapDR)
+        .addDependentResource(deploymentDR).addDependentResource(serviceDR)
         .addDependentResourceAndConfigure(ingressDR)
-        .withReconcilePrecondition(new ExposedIngressCondition())
-        .build();
+        .withReconcilePrecondition(new ExposedIngressCondition()).build();
   }
 
   @Override
   public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
-    return EventSourceUtils.dependentEventSources(context, configMapDR,
-        deploymentDR, serviceDR,
+    return EventSourceUtils.dependentEventSources(context, configMapDR, deploymentDR, serviceDR,
         ingressDR);
   }
 
@@ -65,15 +59,13 @@ public class WebPageDependentsWorkflowReconciler
 
     workflow.reconcile(webPage, context);
 
-    return UpdateControl
-        .patchStatus(
-            createWebPageForStatusUpdate(webPage, context.getSecondaryResource(ConfigMap.class)
-                .orElseThrow().getMetadata().getName()));
+    return UpdateControl.patchStatus(createWebPageForStatusUpdate(webPage,
+        context.getSecondaryResource(ConfigMap.class).orElseThrow().getMetadata().getName()));
   }
 
   @Override
-  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(
-      WebPage resource, Context<WebPage> retryInfo, Exception e) {
+  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(WebPage resource,
+      Context<WebPage> retryInfo, Exception e) {
     return handleError(resource, e);
   }
 
@@ -84,12 +76,16 @@ public class WebPageDependentsWorkflowReconciler
     this.serviceDR = new ServiceDependentResource();
     this.ingressDR = new IngressDependentResource();
 
-    Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
-        .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-            .withKubernetesDependentInformerConfig(InformerConfiguration.builder(dr.resourceType())
-                .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR)
-                .build())
-            .build()));
+    Arrays
+        .asList(configMapDR, deploymentDR, serviceDR,
+            ingressDR)
+        .forEach(
+            dr -> dr
+                .configureWith(new KubernetesDependentResourceConfigBuilder()
+                    .withKubernetesDependentInformerConfig(
+                        InformerConfiguration.builder(dr.resourceType())
+                            .withLabelSelector(DEPENDENT_RESOURCE_LABEL_SELECTOR).build())
+                    .build()));
   }
 
 }

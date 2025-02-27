@@ -9,8 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("gnas")
-public class GetNonActiveSecondaryCustomResource
-    extends CustomResource<Void, Void>
+public class GetNonActiveSecondaryCustomResource extends CustomResource<Void, Void>
     implements Namespaced {
 
 

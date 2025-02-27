@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("lcn")
-public class LeaderElectionChangeNamespaceCustomResource
-    extends CustomResource<Void, Void>
+public class LeaderElectionChangeNamespaceCustomResource extends CustomResource<Void, Void>
     implements Namespaced {
 }

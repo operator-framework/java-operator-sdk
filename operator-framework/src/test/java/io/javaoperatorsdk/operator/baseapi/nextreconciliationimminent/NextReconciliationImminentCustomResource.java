@@ -10,8 +10,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("nri")
 public class NextReconciliationImminentCustomResource
-    extends CustomResource<Void, NextReconciliationImminentStatus>
-    implements Namespaced {
+    extends CustomResource<Void, NextReconciliationImminentStatus> implements Namespaced {
 
 
 

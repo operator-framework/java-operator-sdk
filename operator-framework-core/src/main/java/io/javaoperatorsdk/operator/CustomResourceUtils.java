@@ -19,23 +19,13 @@ public class CustomResourceUtils {
     var namespaced = Namespaced.class.isAssignableFrom(resClass);
 
     if (!namespaced && Namespaced.class.getSimpleName().equals(crd.getSpec().getScope())) {
-      throw new OperatorException(
-          "Custom resource '"
-              + resClass.getName()
-              + "' must implement '"
-              + Namespaced.class.getName()
-              + "' since CRD '"
-              + crd.getMetadata().getName()
-              + "' is scoped as 'Namespaced'");
+      throw new OperatorException("Custom resource '" + resClass.getName() + "' must implement '"
+          + Namespaced.class.getName() + "' since CRD '" + crd.getMetadata().getName()
+          + "' is scoped as 'Namespaced'");
     } else if (namespaced && Cluster.class.getSimpleName().equals(crd.getSpec().getScope())) {
-      throw new OperatorException(
-          "Custom resource '"
-              + resClass.getName()
-              + "' must not implement '"
-              + Namespaced.class.getName()
-              + "' since CRD '"
-              + crd.getMetadata().getName()
-              + "' is scoped as 'Cluster'");
+      throw new OperatorException("Custom resource '" + resClass.getName()
+          + "' must not implement '" + Namespaced.class.getName() + "' since CRD '"
+          + crd.getMetadata().getName() + "' is scoped as 'Cluster'");
     }
   }
 }

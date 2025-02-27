@@ -12,35 +12,28 @@ class ControllerConfigurationAnnotationProcessorTest {
   @Test
   public void generateCorrectDoneableClassIfInterfaceIsSecond() {
     Compilation compilation =
-        Compiler.javac()
-            .withProcessors(new ControllerConfigurationAnnotationProcessor())
-            .compile(
-                JavaFileObjects.forResource(
-                    "compile-fixtures/ReconcilerImplemented2Interfaces.java"));
+        Compiler.javac().withProcessors(new ControllerConfigurationAnnotationProcessor()).compile(
+            JavaFileObjects.forResource("compile-fixtures/ReconcilerImplemented2Interfaces.java"));
     CompilationSubject.assertThat(compilation).succeeded();
   }
 
   @Test
   public void generateCorrectDoneableClassIfThereIsAbstractBaseController() {
     Compilation compilation =
-        Compiler.javac()
-            .withProcessors(new ControllerConfigurationAnnotationProcessor())
-            .compile(
-                JavaFileObjects.forResource("compile-fixtures/AbstractReconciler.java"),
-                JavaFileObjects.forResource(
-                    "compile-fixtures/ReconcilerImplementedIntermediateAbstractClass.java"));
+        Compiler.javac().withProcessors(new ControllerConfigurationAnnotationProcessor()).compile(
+            JavaFileObjects.forResource("compile-fixtures/AbstractReconciler.java"),
+            JavaFileObjects.forResource(
+                "compile-fixtures/ReconcilerImplementedIntermediateAbstractClass.java"));
     CompilationSubject.assertThat(compilation).succeeded();
   }
 
   @Test
   public void generateDoneableClassWithMultilevelHierarchy() {
     Compilation compilation =
-        Compiler.javac()
-            .withProcessors(new ControllerConfigurationAnnotationProcessor())
-            .compile(
-                JavaFileObjects.forResource("compile-fixtures/AdditionalReconcilerInterface.java"),
-                JavaFileObjects.forResource("compile-fixtures/MultilevelAbstractReconciler.java"),
-                JavaFileObjects.forResource("compile-fixtures/MultilevelReconciler.java"));
+        Compiler.javac().withProcessors(new ControllerConfigurationAnnotationProcessor()).compile(
+            JavaFileObjects.forResource("compile-fixtures/AdditionalReconcilerInterface.java"),
+            JavaFileObjects.forResource("compile-fixtures/MultilevelAbstractReconciler.java"),
+            JavaFileObjects.forResource("compile-fixtures/MultilevelReconciler.java"));
     CompilationSubject.assertThat(compilation).succeeded();
   }
 }

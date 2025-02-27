@@ -31,8 +31,7 @@ public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadat
   }
 
   public KubernetesDependentResourceConfig<R> build() {
-    return new KubernetesDependentResourceConfig<>(
-        useSSA, createResourceOnlyIfNotExistingWithSSA,
+    return new KubernetesDependentResourceConfig<>(useSSA, createResourceOnlyIfNotExistingWithSSA,
         informerConfiguration);
   }
 }

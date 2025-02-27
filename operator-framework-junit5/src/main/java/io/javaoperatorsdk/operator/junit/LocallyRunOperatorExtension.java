@@ -55,28 +55,18 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final Map<Reconciler, RegisteredController> registeredControllers;
   private final Map<String, String> crdMappings;
 
-  private LocallyRunOperatorExtension(
-      List<ReconcilerSpec> reconcilers,
-      List<HasMetadata> infrastructure,
-      List<PortForwardSpec> portForwards,
+  private LocallyRunOperatorExtension(List<ReconcilerSpec> reconcilers,
+      List<HasMetadata> infrastructure, List<PortForwardSpec> portForwards,
       List<Class<? extends CustomResource>> additionalCustomResourceDefinitions,
-      Duration infrastructureTimeout,
-      boolean preserveNamespaceOnError,
-      boolean waitForNamespaceDeletion,
-      boolean oneNamespacePerClass,
+      Duration infrastructureTimeout, boolean preserveNamespaceOnError,
+      boolean waitForNamespaceDeletion, boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
       Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
       List<String> additionalCrds) {
-    super(
-        infrastructure,
-        infrastructureTimeout,
-        oneNamespacePerClass,
-        preserveNamespaceOnError,
-        waitForNamespaceDeletion,
-        kubernetesClient,
-        namespaceNameSupplier,
+    super(infrastructure, infrastructureTimeout, oneNamespacePerClass, preserveNamespaceOnError,
+        waitForNamespaceDeletion, kubernetesClient, namespaceNameSupplier,
         perClassNamespaceNameSupplier);
     this.reconcilers = reconcilers;
     this.portForwards = portForwards;
@@ -213,12 +203,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   }
 
   public <T extends Reconciler> T getReconcilerOfType(Class<T> type) {
-    return reconcilers()
-        .filter(type::isInstance)
-        .map(type::cast)
-        .findFirst()
-        .orElseThrow(
-            () -> new IllegalArgumentException("Unable to find a reconciler of type: " + type));
+    return reconcilers().filter(type::isInstance).map(type::cast).findFirst().orElseThrow(
+        () -> new IllegalArgumentException("Unable to find a reconciler of type: " + type));
   }
 
   public RegisteredController getRegisteredControllerForReconcile(
@@ -238,13 +224,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     final var kubernetesClient = getKubernetesClient();
 
     for (var ref : portForwards) {
-      String podName = kubernetesClient.pods()
-          .inNamespace(ref.getNamespace())
-          .withLabel(ref.getLabelKey(), ref.getLabelValue())
-          .list()
-          .getItems()
-          .get(0)
-          .getMetadata()
+      String podName = kubernetesClient.pods().inNamespace(ref.getNamespace())
+          .withLabel(ref.getLabelKey(), ref.getLabelValue()).list().getItems().get(0).getMetadata()
           .getName();
 
       localPortForwards.add(kubernetesClient.pods().inNamespace(ref.getNamespace())
@@ -355,14 +336,12 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       this.additionalCustomResourceDefinitions = new ArrayList<>();
     }
 
-    public Builder withReconciler(
-        Reconciler value, Consumer<ControllerConfigurationOverrider> configurationOverrider) {
+    public Builder withReconciler(Reconciler value,
+        Consumer<ControllerConfigurationOverrider> configurationOverrider) {
       return withReconciler(value, null, configurationOverrider);
     }
 
-    public Builder withReconciler(
-        Reconciler value,
-        Retry retry,
+    public Builder withReconciler(Reconciler value, Retry retry,
         Consumer<ControllerConfigurationOverrider> configurationOverrider) {
       reconcilers.add(new ReconcilerSpec(value, retry, configurationOverrider));
       return this;
@@ -415,18 +394,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     public LocallyRunOperatorExtension build() {
-      return new LocallyRunOperatorExtension(
-          reconcilers,
-          infrastructure,
-          portForwards,
-          additionalCustomResourceDefinitions,
-          infrastructureTimeout,
-          preserveNamespaceOnError,
-          waitForNamespaceDeletion,
-          oneNamespacePerClass,
-          kubernetesClient,
-          configurationServiceOverrider, namespaceNameSupplier,
-          perClassNamespaceNameSupplier,
+      return new LocallyRunOperatorExtension(reconcilers, infrastructure, portForwards,
+          additionalCustomResourceDefinitions, infrastructureTimeout, preserveNamespaceOnError,
+          waitForNamespaceDeletion, oneNamespacePerClass, kubernetesClient,
+          configurationServiceOverrider, namespaceNameSupplier, perClassNamespaceNameSupplier,
           additionalCRDs);
     }
   }
@@ -478,9 +449,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       this(reconciler, retry, null);
     }
 
-    public ReconcilerSpec(
-        Reconciler reconciler,
-        Retry retry,
+    public ReconcilerSpec(Reconciler reconciler, Retry retry,
         Consumer<ControllerConfigurationOverrider> controllerConfigurationOverrider) {
       this.reconciler = reconciler;
       this.retry = retry;

@@ -19,10 +19,8 @@ public class ConfigMapDependentResource
   protected ConfigMap desired(GetNonActiveSecondaryCustomResource primary,
       Context<GetNonActiveSecondaryCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+        .withNamespace(primary.getMetadata().getNamespace()).build());
     return configMap;
   }
 }

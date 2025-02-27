@@ -17,8 +17,7 @@ import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.Utils;
 
-public class BoundedItemStore<R extends HasMetadata>
-    implements ItemStore<R> {
+public class BoundedItemStore<R extends HasMetadata> implements ItemStore<R> {
 
   private static final Logger log = LoggerFactory.getLogger(BoundedItemStore.class);
 
@@ -34,10 +33,8 @@ public class BoundedItemStore<R extends HasMetadata>
         new KubernetesResourceFetcher<>(resourceClass, client));
   }
 
-  public BoundedItemStore(BoundedCache<String, R> cache,
-      Class<R> resourceClass,
-      Function<R, String> keyFunction,
-      ResourceFetcher<String, R> resourceFetcher) {
+  public BoundedItemStore(BoundedCache<String, R> cache, Class<R> resourceClass,
+      Function<R, String> keyFunction, ResourceFetcher<String, R> resourceFetcher) {
     this.resourceFetcher = resourceFetcher;
     this.cache = cache;
     this.keyFunction = keyFunction;
@@ -61,10 +58,8 @@ public class BoundedItemStore<R extends HasMetadata>
     try {
       R minimal = resourceConstructor.newInstance();
       final var metadata = obj.getMetadata();
-      minimal.setMetadata(new ObjectMetaBuilder()
-          .withName(metadata.getName())
-          .withNamespace(metadata.getNamespace())
-          .withResourceVersion(metadata.getResourceVersion())
+      minimal.setMetadata(new ObjectMetaBuilder().withName(metadata.getName())
+          .withNamespace(metadata.getNamespace()).withResourceVersion(metadata.getResourceVersion())
           .build());
       return minimal;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

@@ -13,9 +13,7 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   private Long reScheduleDelay = null;
 
-  private PostExecutionControl(
-      boolean finalizerRemoved,
-      R updatedCustomResource,
+  private PostExecutionControl(boolean finalizerRemoved, R updatedCustomResource,
       boolean updateIsStatusPatch, Exception runtimeException) {
     this.finalizerRemoved = finalizerRemoved;
     this.updatedCustomResource = updatedCustomResource;
@@ -79,14 +77,9 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   @Override
   public String toString() {
-    return "PostExecutionControl{"
-        + "onlyFinalizerHandled="
-        + finalizerRemoved
-        + ", updatedCustomResource="
-        + updatedCustomResource
-        + ", runtimeException="
-        + runtimeException
-        + '}';
+    return "PostExecutionControl{" + "onlyFinalizerHandled=" + finalizerRemoved
+        + ", updatedCustomResource=" + updatedCustomResource + ", runtimeException="
+        + runtimeException + '}';
   }
 
   public boolean isFinalizerRemoved() {

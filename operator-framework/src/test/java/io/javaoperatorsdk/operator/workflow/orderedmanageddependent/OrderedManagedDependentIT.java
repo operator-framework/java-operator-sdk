@@ -14,10 +14,8 @@ import static org.awaitility.Awaitility.await;
 class OrderedManagedDependentIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new OrderedManagedDependentTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new OrderedManagedDependentTestReconciler()).build();
 
   @Test
   void managedDependentsAreReconciledInOrder() {
