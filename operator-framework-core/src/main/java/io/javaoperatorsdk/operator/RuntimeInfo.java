@@ -45,8 +45,8 @@ public class RuntimeInfo {
   public boolean allEventSourcesAreHealthy() {
     checkIfStarted();
     return registeredControllers.stream()
-        .filter(rc -> !rc.getControllerHealthInfo().unhealthyEventSources().isEmpty())
-        .findFirst().isEmpty();
+        .filter(rc -> !rc.getControllerHealthInfo().unhealthyEventSources().isEmpty()).findFirst()
+        .isEmpty();
   }
 
   /**
@@ -72,8 +72,8 @@ public class RuntimeInfo {
     checkIfStarted();
     Map<String, Map<String, InformerWrappingEventSourceHealthIndicator>> res = new HashMap<>();
     for (var rc : registeredControllers) {
-      res.put(rc.getConfiguration().getName(), rc.getControllerHealthInfo()
-          .unhealthyInformerEventSourceHealthIndicators());
+      res.put(rc.getConfiguration().getName(),
+          rc.getControllerHealthInfo().unhealthyInformerEventSourceHealthIndicators());
     }
     return res;
   }

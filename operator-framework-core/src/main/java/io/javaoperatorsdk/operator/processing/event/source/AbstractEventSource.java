@@ -80,13 +80,11 @@ public abstract class AbstractEventSource<R, P extends HasMetadata> implements E
     this.onAddFilter = onAddFilter;
   }
 
-  public void setOnUpdateFilter(
-      OnUpdateFilter<? super R> onUpdateFilter) {
+  public void setOnUpdateFilter(OnUpdateFilter<? super R> onUpdateFilter) {
     this.onUpdateFilter = onUpdateFilter;
   }
 
-  public void setOnDeleteFilter(
-      OnDeleteFilter<? super R> onDeleteFilter) {
+  public void setOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
   }
 

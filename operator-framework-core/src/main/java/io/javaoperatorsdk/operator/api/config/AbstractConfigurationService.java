@@ -81,8 +81,8 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   @SuppressWarnings("unchecked")
-  private <R extends HasMetadata> void put(
-      ControllerConfiguration<R> config, boolean failIfExisting) {
+  private <R extends HasMetadata> void put(ControllerConfiguration<R> config,
+      boolean failIfExisting) {
     final var name = config.getName();
     if (failIfExisting) {
       final var existing = configurations.get(name);
@@ -96,12 +96,8 @@ public class AbstractConfigurationService implements ConfigurationService {
   protected <R extends HasMetadata> void throwExceptionOnNameCollision(
       String newReconcilerClassName, ControllerConfiguration<R> existing) {
     throw new IllegalArgumentException(
-        "Reconciler name '"
-            + existing.getName()
-            + "' is used by both "
-            + existing.getAssociatedReconcilerClassName()
-            + " and "
-            + newReconcilerClassName);
+        "Reconciler name '" + existing.getName() + "' is used by both "
+            + existing.getAssociatedReconcilerClassName() + " and " + newReconcilerClassName);
   }
 
   @SuppressWarnings("unchecked")
@@ -122,8 +118,7 @@ public class AbstractConfigurationService implements ConfigurationService {
 
   private String getReconcilersNameMessage() {
     return "Known reconcilers: "
-        + getKnownReconcilerNames().stream().reduce((s, s2) -> s + ", " + s2).orElse("None")
-        + ".";
+        + getKnownReconcilerNames().stream().reduce((s, s2) -> s + ", " + s2).orElse("None") + ".";
   }
 
   protected <R extends HasMetadata> String keyFor(Reconciler<R> reconciler) {

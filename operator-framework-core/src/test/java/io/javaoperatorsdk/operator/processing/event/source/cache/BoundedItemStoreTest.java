@@ -28,10 +28,8 @@ class BoundedItemStoreTest {
 
   @BeforeEach
   void setup() {
-    boundedItemStore = new BoundedItemStore<>(boundedCache,
-        TestCustomResource.class,
-        namespaceKeyFunc(),
-        resourceFetcher);
+    boundedItemStore = new BoundedItemStore<>(boundedCache, TestCustomResource.class,
+        namespaceKeyFunc(), resourceFetcher);
   }
 
   @Test
@@ -44,10 +42,8 @@ class BoundedItemStoreTest {
 
   @Test
   void getsResourceFromServerIfNotInCache() {
-    boundedItemStore.put(testRes1Key(),
-        TestUtils.testCustomResource1());
-    when(resourceFetcher.fetchResource(testRes1Key()))
-        .thenReturn(TestUtils.testCustomResource1());
+    boundedItemStore.put(testRes1Key(), TestUtils.testCustomResource1());
+    when(resourceFetcher.fetchResource(testRes1Key())).thenReturn(TestUtils.testCustomResource1());
 
     var res = boundedItemStore.get(testRes1Key());
 
@@ -57,10 +53,8 @@ class BoundedItemStoreTest {
 
   @Test
   void removesResourcesNotFoundOnServerFromStore() {
-    boundedItemStore.put(testRes1Key(),
-        TestUtils.testCustomResource1());
-    when(resourceFetcher.fetchResource(testRes1Key()))
-        .thenReturn(null);
+    boundedItemStore.put(testRes1Key(), TestUtils.testCustomResource1());
+    when(resourceFetcher.fetchResource(testRes1Key())).thenReturn(null);
 
     var res = boundedItemStore.get(testRes1Key());
 
@@ -70,8 +64,7 @@ class BoundedItemStoreTest {
 
   @Test
   void removesResourceFromCache() {
-    boundedItemStore.put(testRes1Key(),
-        TestUtils.testCustomResource1());
+    boundedItemStore.put(testRes1Key(), TestUtils.testCustomResource1());
 
     boundedItemStore.remove(testRes1Key());
 
@@ -83,8 +76,7 @@ class BoundedItemStoreTest {
 
   @Test
   void readingKeySetDoesNotReadFromBoundedCache() {
-    boundedItemStore.put(testRes1Key(),
-        TestUtils.testCustomResource1());
+    boundedItemStore.put(testRes1Key(), TestUtils.testCustomResource1());
 
     boundedItemStore.keySet();
 
@@ -93,8 +85,7 @@ class BoundedItemStoreTest {
 
   @Test
   void readingValuesDoesNotReadFromBoundedCache() {
-    boundedItemStore.put(testRes1Key(),
-        TestUtils.testCustomResource1());
+    boundedItemStore.put(testRes1Key(), TestUtils.testCustomResource1());
 
     boundedItemStore.values();
 

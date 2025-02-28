@@ -106,9 +106,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   synchronized void onEvent(T resource, boolean unknownState) {
-    cache.computeIfPresent(ResourceID.fromResource(resource),
-        (id, cached) -> (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null
-            : cached);
+    cache.computeIfPresent(ResourceID.fromResource(resource), (id,
+        cached) -> (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null : cached);
   }
 
   public synchronized void putAddedResource(T newResource) {
@@ -132,9 +131,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     boolean moveAhead = false;
     if (previousResourceVersion == null && cachedResource == null) {
       if (tombstones.contains(newResource.getMetadata().getUid())) {
-        log.debug(
-            "Won't resurrect uid {} for resource id: {}",
-            newResource.getMetadata().getUid(), resourceId);
+        log.debug("Won't resurrect uid {} for resource id: {}", newResource.getMetadata().getUid(),
+            resourceId);
         return;
       }
       // we can skip further checks as this is a simple add and there's no previous entry to
@@ -142,12 +140,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       moveAhead = true;
     }
 
-    if (moveAhead
-        || (cachedResource != null
-            && (cachedResource.getMetadata().getResourceVersion().equals(previousResourceVersion))
-            || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
-      log.debug(
-          "Temporarily moving ahead to target version {} for resource id: {}",
+    if (moveAhead || (cachedResource != null
+        && (cachedResource.getMetadata().getResourceVersion().equals(previousResourceVersion))
+        || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
+      log.debug("Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(), resourceId);
       cache.put(resourceId, newResource);
     } else if (cache.remove(resourceId) != null) {
@@ -173,8 +169,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         return true;
       }
     } catch (NumberFormatException e) {
-      log.debug(
-          "Could not compare resourceVersions {} and {} for {}",
+      log.debug("Could not compare resourceVersions {} and {} for {}",
           newResource.getMetadata().getResourceVersion(),
           cachedResource.getMetadata().getResourceVersion(), resourceId);
     }

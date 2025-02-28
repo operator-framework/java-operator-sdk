@@ -82,8 +82,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
     var cachedValues = cache.get(primaryID);
     List<R> removedResources = cachedValues == null ? Collections.emptyList()
-        : resourceIDs.stream()
-            .flatMap(id -> Stream.ofNullable(cachedValues.remove(id))).collect(Collectors.toList());
+        : resourceIDs.stream().flatMap(id -> Stream.ofNullable(cachedValues.remove(id)))
+            .collect(Collectors.toList());
 
     if (cachedValues != null && cachedValues.isEmpty()) {
       cache.remove(primaryID);
@@ -133,9 +133,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     var addedResources = new HashMap<>(newResourcesMap);
     addedResources.keySet().removeAll(cachedResourceMap.keySet());
     if (onAddFilter != null || genericFilter != null) {
-      var anyAddAccepted =
-          addedResources.values().stream().anyMatch(r -> acceptedByGenericFiler(r) &&
-              onAddFilter.accept(r));
+      var anyAddAccepted = addedResources.values().stream()
+          .anyMatch(r -> acceptedByGenericFiler(r) && onAddFilter.accept(r));
       if (anyAddAccepted) {
         return true;
       }
@@ -146,9 +145,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     var deletedResource = new HashMap<>(cachedResourceMap);
     deletedResource.keySet().removeAll(newResourcesMap.keySet());
     if (onDeleteFilter != null || genericFilter != null) {
-      var anyDeleteAccepted =
-          deletedResource.values().stream()
-              .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.accept(r, false));
+      var anyDeleteAccepted = deletedResource.values().stream()
+          .anyMatch(r -> acceptedByGenericFiler(r) && onDeleteFilter.accept(r, false));
       if (anyDeleteAccepted) {
         return true;
       }
@@ -159,18 +157,15 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     Map<String, R> possibleUpdatedResources = new HashMap<>(cachedResourceMap);
     possibleUpdatedResources.keySet().retainAll(newResourcesMap.keySet());
     possibleUpdatedResources = possibleUpdatedResources.entrySet().stream()
-        .filter(entry -> !newResourcesMap
-            .get(entry.getKey()).equals(entry.getValue()))
+        .filter(entry -> !newResourcesMap.get(entry.getKey()).equals(entry.getValue()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     if (onUpdateFilter != null || genericFilter != null) {
-      return possibleUpdatedResources.entrySet().stream()
-          .anyMatch(
-              entry -> {
-                var newResource = newResourcesMap.get(entry.getKey());
-                return acceptedByGenericFiler(newResource) &&
-                    onUpdateFilter.accept(newResource, entry.getValue());
-              });
+      return possibleUpdatedResources.entrySet().stream().anyMatch(entry -> {
+        var newResource = newResourcesMap.get(entry.getKey());
+        return acceptedByGenericFiler(newResource)
+            && onUpdateFilter.accept(newResource, entry.getValue());
+      });
     } else
       return !possibleUpdatedResources.isEmpty();
   }
@@ -193,8 +188,8 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   }
 
   @Override
-  public synchronized void handleRecentResourceUpdate(
-      ResourceID primaryID, R resource, R previousVersionOfResource) {
+  public synchronized void handleRecentResourceUpdate(ResourceID primaryID, R resource,
+      R previousVersionOfResource) {
     var actualValues = cache.get(primaryID);
     if (actualValues != null) {
       var resourceId = cacheKeyMapper.keyFor(resource);

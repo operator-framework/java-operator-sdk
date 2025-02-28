@@ -18,8 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
 @KubernetesDependent
 public class ReadOnlyBulkDependentResource
-    extends
-    KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
+    extends KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
     implements BulkDependentResource<ConfigMap, BulkDependentTestCustomResource>,
     SecondaryToPrimaryMapper<ConfigMap> {
 

@@ -12,9 +12,8 @@ import static org.awaitility.Awaitility.await;
 class BulkExternalDependentIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new ExternalBulkResourceReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ExternalBulkResourceReconciler()).build();
 
   ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
 

@@ -60,10 +60,9 @@ class LeaderElectionE2E {
 
     log.info("Awaiting custom resource reconciliations");
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
-        .atMost(Duration.ofSeconds(MAX_WAIT_SECONDS))
-        .untilAsserted(() -> {
-          var actualStatus = client.resources(LeaderElection.class)
-              .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
+        .atMost(Duration.ofSeconds(MAX_WAIT_SECONDS)).untilAsserted(() -> {
+          var actualStatus = client.resources(LeaderElection.class).inNamespace(namespace)
+              .withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
           assertThat(actualStatus.getReconciledBy())
@@ -72,31 +71,27 @@ class LeaderElectionE2E {
 
     client.pods().inNamespace(namespace).withName(OPERATOR_1_POD_NAME).delete();
 
-    var actualListSize = client.resources(LeaderElection.class)
-        .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy()
-        .size();
+    var actualListSize = client.resources(LeaderElection.class).inNamespace(namespace)
+        .withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy().size();
 
     await().pollDelay(Duration.ofSeconds(MINIMAL_SECONDS_FOR_RENEWAL))
-        .atMost(Duration.ofSeconds(240))
-        .untilAsserted(() -> {
-          var actualStatus = client.resources(LeaderElection.class)
-              .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get().getStatus();
+        .atMost(Duration.ofSeconds(240)).untilAsserted(() -> {
+          var actualStatus = client.resources(LeaderElection.class).inNamespace(namespace)
+              .withName(TEST_RESOURCE_NAME).get().getStatus();
 
           assertThat(actualStatus).isNotNull();
           assertThat(actualStatus.getReconciledBy())
               .hasSizeGreaterThan(actualListSize + MINIMAL_EXPECTED_RECONCILIATION);
         });
 
-    assertReconciliations(
-        client.resources(LeaderElection.class).inNamespace(namespace)
-            .withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy());
+    assertReconciliations(client.resources(LeaderElection.class).inNamespace(namespace)
+        .withName(TEST_RESOURCE_NAME).get().getStatus().getReconciledBy());
   }
 
   private void assertReconciliations(List<String> reconciledBy) {
     log.info("Reconciled by content: {}", reconciledBy);
     OptionalInt firstO2StatusIndex = IntStream.range(0, reconciledBy.size())
-        .filter(i -> reconciledBy.get(i).equals(OPERATOR_2_POD_NAME))
-        .findFirst();
+        .filter(i -> reconciledBy.get(i).equals(OPERATOR_2_POD_NAME)).findFirst();
     assertThat(firstO2StatusIndex).isPresent();
     assertThat(reconciledBy.subList(0, firstO2StatusIndex.getAsInt() - 1))
         .allMatch(s -> s.equals(OPERATOR_1_POD_NAME));
@@ -106,30 +101,30 @@ class LeaderElectionE2E {
 
   private void applyCustomResource() {
     var res = new LeaderElection();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .withNamespace(namespace)
-        .build());
+    res.setMetadata(
+        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(namespace).build());
     client.resource(res).create();
   }
 
   @BeforeEach
   void setup() {
     namespace = "leader-election-it-" + UUID.randomUUID();
-    client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
-        .withNamespace(namespace)
-        .build()).build();
+    client = new KubernetesClientBuilder()
+        .withConfig(new ConfigBuilder().withNamespace(namespace).build()).build();
     applyCRD();
-    client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
-        .endMetadata().build()).create();
+    client.namespaces()
+        .resource(
+            new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build())
+        .create();
   }
 
   @AfterEach
   void tearDown() {
-    client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
-        .endMetadata().build()).delete();
-    await()
-        .atMost(Duration.ofSeconds(60))
+    client.namespaces()
+        .resource(
+            new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build())
+        .delete();
+    await().atMost(Duration.ofSeconds(60))
         .untilAsserted(() -> assertThat(client.namespaces().withName(namespace).get()).isNull());
   }
 
@@ -152,8 +147,7 @@ class LeaderElectionE2E {
   }
 
   void applyCRD() {
-    String path =
-        "./src/main/resources/kubernetes/leaderelections.sample.javaoperatorsdk-v1.yml";
+    String path = "./src/main/resources/kubernetes/leaderelections.sample.javaoperatorsdk-v1.yml";
     try (InputStream is = new FileInputStream(path)) {
       final var crd = client.load(is);
       crd.createOrReplace();
@@ -176,9 +170,7 @@ class LeaderElectionE2E {
           }
         }
       });
-      client.resourceList(resources)
-          .inNamespace(namespace)
-          .createOrReplace();
+      client.resourceList(resources).inNamespace(namespace).createOrReplace();
 
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);

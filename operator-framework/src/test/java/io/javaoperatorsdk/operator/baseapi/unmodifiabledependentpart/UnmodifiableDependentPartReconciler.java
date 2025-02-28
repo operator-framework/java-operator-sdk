@@ -15,8 +15,7 @@ public class UnmodifiableDependentPartReconciler
   @Override
   public UpdateControl<UnmodifiableDependentPartCustomResource> reconcile(
       UnmodifiableDependentPartCustomResource resource,
-      Context<UnmodifiableDependentPartCustomResource> context)
-      throws InterruptedException {
+      Context<UnmodifiableDependentPartCustomResource> context) throws InterruptedException {
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }

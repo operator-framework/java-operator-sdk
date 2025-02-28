@@ -14,10 +14,8 @@ class CleanerForManagedDependentResourcesOnlyIT {
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new CleanerForManagedDependentTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new CleanerForManagedDependentTestReconciler()).build();
 
 
   @Test
@@ -31,9 +29,8 @@ class CleanerForManagedDependentResourcesOnlyIT {
 
     operator.delete(testResource);
 
-    await().until(
-        () -> operator.get(CleanerForManagedDependentCustomResource.class,
-            TEST_RESOURCE_NAME) == null);
+    await().until(() -> operator.get(CleanerForManagedDependentCustomResource.class,
+        TEST_RESOURCE_NAME) == null);
 
     CleanerForManagedDependentTestReconciler reconciler =
         (CleanerForManagedDependentTestReconciler) operator.getFirstReconciler();

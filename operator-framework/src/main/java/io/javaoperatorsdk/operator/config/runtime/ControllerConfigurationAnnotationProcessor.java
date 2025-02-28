@@ -52,10 +52,8 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
     try {
       for (TypeElement annotation : annotations) {
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
-        annotatedElements.stream()
-            .filter(element -> element.getKind().equals(ElementKind.CLASS))
-            .map(e -> (TypeElement) e)
-            .forEach(this::recordCRType);
+        annotatedElements.stream().filter(element -> element.getKind().equals(ElementKind.CLASS))
+            .map(e -> (TypeElement) e).forEach(this::recordCRType);
       }
     } finally {
       if (roundEnv.processingOver()) {
@@ -66,14 +64,9 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
   }
 
   private TypeParameterResolver initializeResolver(ProcessingEnvironment processingEnv) {
-    final DeclaredType resourceControllerType =
-        processingEnv
-            .getTypeUtils()
-            .getDeclaredType(
-                processingEnv
-                    .getElementUtils()
-                    .getTypeElement(Reconciler.class.getCanonicalName()),
-                processingEnv.getTypeUtils().getWildcardType(null, null));
+    final DeclaredType resourceControllerType = processingEnv.getTypeUtils().getDeclaredType(
+        processingEnv.getElementUtils().getTypeElement(Reconciler.class.getCanonicalName()),
+        processingEnv.getTypeUtils().getWildcardType(null, null));
     return new TypeParameterResolver(resourceControllerType, 0);
   }
 
@@ -81,18 +74,15 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
     try {
       final TypeMirror resourceType = findResourceType(controllerClassSymbol);
       if (resourceType == null) {
-        controllersResourceWriter.add(
-            controllerClassSymbol.getQualifiedName().toString(),
+        controllersResourceWriter.add(controllerClassSymbol.getQualifiedName().toString(),
             CustomResource.class.getCanonicalName());
-        System.out.println(
-            "No defined resource type for '"
-                + controllerClassSymbol.getQualifiedName()
-                + "': ignoring!");
+        System.out.println("No defined resource type for '"
+            + controllerClassSymbol.getQualifiedName() + "': ignoring!");
         return;
       }
       final TypeName customResourceType = TypeName.get(resourceType);
-      controllersResourceWriter.add(
-          controllerClassSymbol.getQualifiedName().toString(), customResourceType.toString());
+      controllersResourceWriter.add(controllerClassSymbol.getQualifiedName().toString(),
+          customResourceType.toString());
 
     } catch (Exception ioException) {
       log.error("Error", ioException);
@@ -102,8 +92,8 @@ public class ControllerConfigurationAnnotationProcessor extends AbstractProcesso
   private TypeMirror findResourceType(TypeElement controllerClassSymbol) {
     try {
 
-      return typeParameterResolver.resolve(
-          processingEnv.getTypeUtils(), (DeclaredType) controllerClassSymbol.asType());
+      return typeParameterResolver.resolve(processingEnv.getTypeUtils(),
+          (DeclaredType) controllerClassSymbol.asType());
     } catch (Exception e) {
       log.error("Error", e);
       return null;

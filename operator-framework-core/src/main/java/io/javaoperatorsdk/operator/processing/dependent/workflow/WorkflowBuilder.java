@@ -44,9 +44,7 @@ public class WorkflowBuilder<P extends HasMetadata> {
       return node;
     } else {
       return dependentResourceNodes.values().stream()
-          .filter(dr -> dr.getDependentResource() == dependentResource)
-          .findFirst()
-          .orElseThrow();
+          .filter(dr -> dr.getDependentResource() == dependentResource).findFirst().orElseThrow();
     }
   }
 

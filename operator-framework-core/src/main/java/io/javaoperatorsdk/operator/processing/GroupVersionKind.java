@@ -33,8 +33,8 @@ public class GroupVersionKind {
   }
 
   private static GroupVersionKind computeGVK(Class<? extends HasMetadata> rc) {
-    return new GroupVersionKind(HasMetadata.getGroup(rc),
-        HasMetadata.getVersion(rc), HasMetadata.getKind(rc));
+    return new GroupVersionKind(HasMetadata.getGroup(rc), HasMetadata.getVersion(rc),
+        HasMetadata.getKind(rc));
   }
 
   public GroupVersionKind(String group, String version, String kind) {
@@ -115,10 +115,8 @@ public class GroupVersionKind {
 
   @Override
   public String toString() {
-    return "GroupVersionKind{" +
-        "apiVersion='" + apiVersion + '\'' +
-        ", kind='" + kind + '\'' +
-        '}';
+    return "GroupVersionKind{" + "apiVersion='" + apiVersion + '\'' + ", kind='" + kind + '\''
+        + '}';
   }
 
 }

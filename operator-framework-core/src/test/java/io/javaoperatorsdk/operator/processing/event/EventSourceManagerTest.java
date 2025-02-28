@@ -119,8 +119,8 @@ class EventSourceManagerTest {
     when(eventSource.name()).thenReturn(name);
     final var source = eventSource;
 
-    final var exception = assertThrows(OperatorException.class,
-        () -> manager.registerEventSource(source));
+    final var exception =
+        assertThrows(OperatorException.class, () -> manager.registerEventSource(source));
     final var cause = exception.getCause();
     assertInstanceOf(IllegalArgumentException.class, cause);
     assertThat(cause.getMessage()).contains("is already registered with name");
@@ -146,10 +146,8 @@ class EventSourceManagerTest {
     assertTrue(exception.getMessage().contains("name1"));
     assertTrue(exception.getMessage().contains("name2"));
 
-    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name2"),
-        eventSource2);
-    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name1"),
-        eventSource);
+    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name2"), eventSource2);
+    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name1"), eventSource);
   }
 
   @Test

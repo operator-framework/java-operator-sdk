@@ -12,8 +12,7 @@ public interface DependentResourceFactory<C extends ControllerConfiguration<?>, 
 
   default DependentResource createFrom(D spec, C controllerConfiguration) {
     final var dependentResourceClass = spec.getDependentResourceClass();
-    return Utils.instantiateAndConfigureIfNeeded(dependentResourceClass,
-        DependentResource.class,
+    return Utils.instantiateAndConfigureIfNeeded(dependentResourceClass, DependentResource.class,
         Utils.contextFor(controllerConfiguration, dependentResourceClass, Dependent.class),
         (instance) -> configure(instance, spec, controllerConfiguration));
   }
@@ -30,8 +29,7 @@ public interface DependentResourceFactory<C extends ControllerConfiguration<?>, 
   default Class<?> associatedResourceType(D spec) {
     final var dependentResourceClass = spec.getDependentResourceClass();
     final var dr = Utils.instantiateAndConfigureIfNeeded(dependentResourceClass,
-        DependentResource.class,
-        null, null);
+        DependentResource.class, null, null);
     return dr != null ? dr.resourceType() : null;
   }
 }

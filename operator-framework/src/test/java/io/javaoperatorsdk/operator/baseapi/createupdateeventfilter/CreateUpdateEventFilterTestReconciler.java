@@ -33,17 +33,14 @@ public class CreateUpdateEventFilterTestReconciler
     numberOfExecutions.incrementAndGet();
 
     ConfigMap configMap =
-        context.getClient()
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getMetadata().getName())
-            .get();
+        context.getClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getMetadata().getName()).get();
     if (configMap == null) {
       configMapDR.desired = createConfigMap(resource);
       configMapDR.reconcile(resource, context);
     } else {
-      if (!Objects.equals(
-          configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY), resource.getSpec().getValue())) {
+      if (!Objects.equals(configMap.getData().get(CONFIG_MAP_TEST_DATA_KEY),
+          resource.getSpec().getValue())) {
         configMap.getData().put(CONFIG_MAP_TEST_DATA_KEY, resource.getSpec().getValue());
         configMapDR.desired = configMap;
         configMapDR.reconcile(resource, context);
@@ -72,12 +69,9 @@ public class CreateUpdateEventFilterTestReconciler
     InformerEventSourceConfiguration<ConfigMap> informerConfiguration =
         InformerEventSourceConfiguration
             .from(ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
-            .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
-            .build();
+            .withLabelSelector("integrationtest = " + this.getClass().getSimpleName()).build();
 
-    final var informerEventSource =
-        new InformerEventSource<>(
-            informerConfiguration, context);
+    final var informerEventSource = new InformerEventSource<>(informerConfiguration, context);
     this.configMapDR.setEventSource(informerEventSource);
 
     return List.of(informerEventSource);
@@ -87,8 +81,7 @@ public class CreateUpdateEventFilterTestReconciler
     return numberOfExecutions.get();
   }
 
-  private static final class DirectConfigMapDependentResource
-      extends
+  private static final class DirectConfigMapDependentResource extends
       CRUDKubernetesDependentResource<ConfigMap, CreateUpdateEventFilterTestCustomResource> {
 
     private ConfigMap desired;

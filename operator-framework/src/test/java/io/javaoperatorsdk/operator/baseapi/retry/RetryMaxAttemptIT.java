@@ -18,12 +18,10 @@ class RetryMaxAttemptIT {
   RetryTestCustomReconciler reconciler = new RetryTestCustomReconciler(ALL_EXECUTION_TO_FAIL);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(reconciler,
-              new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
-                  .setMaxAttempts(MAX_RETRY_ATTEMPTS))
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(reconciler, new GenericRetry().setInitialInterval(RETRY_INTERVAL)
+          .withLinearRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS))
+      .build();
 
 
   @Test

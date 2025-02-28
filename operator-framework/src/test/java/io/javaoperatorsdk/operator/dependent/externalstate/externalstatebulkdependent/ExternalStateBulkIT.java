@@ -25,10 +25,8 @@ class ExternalStateBulkIT {
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(ExternalStateBulkDependentReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(ExternalStateBulkDependentReconciler.class).build();
 
   @Test
   void reconcilesResourceWithPersistentState() {
@@ -53,10 +51,9 @@ class ExternalStateBulkIT {
 
   private void assertResourcesDeleted(ExternalStateBulkDependentCustomResource resource) {
     await().untilAsserted(() -> {
-      var configMaps =
-          operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
-              .list().getItems().stream().filter(
-                  cm -> cm.getMetadata().getName().startsWith(resource.getMetadata().getName()));
+      var configMaps = operator.getKubernetesClient().configMaps()
+          .inNamespace(operator.getNamespace()).list().getItems().stream()
+          .filter(cm -> cm.getMetadata().getName().startsWith(resource.getMetadata().getName()));
       var resources = externalService.listResources();
       assertThat(configMaps).isEmpty();
       assertThat(resources).isEmpty();
@@ -70,19 +67,16 @@ class ExternalStateBulkIT {
       assertThat(resources).hasSize(size);
       assertThat(resources).allMatch(r -> r.getData().startsWith(initialTestData));
 
-      var configMaps =
-          operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
-              .list().getItems().stream().filter(
-                  cm -> cm.getMetadata().getName().startsWith(resource.getMetadata().getName()));
+      var configMaps = operator.getKubernetesClient().configMaps()
+          .inNamespace(operator.getNamespace()).list().getItems().stream()
+          .filter(cm -> cm.getMetadata().getName().startsWith(resource.getMetadata().getName()));
       assertThat(configMaps).hasSize(size);
     });
   }
 
   private ExternalStateBulkDependentCustomResource testResource() {
     var res = new ExternalStateBulkDependentCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new ExternalStateBulkSpec());
     res.getSpec().setNumber(INITIAL_BULK_SIZE);

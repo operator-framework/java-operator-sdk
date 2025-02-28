@@ -41,14 +41,13 @@ public class ExecutorServiceManager {
    * @param threadNamer for naming thread
    * @param <T> type
    */
-  public <T> void boundedExecuteAndWaitForAllToComplete(Stream<T> stream,
-      Function<T, Void> task, Function<T, String> threadNamer) {
+  public <T> void boundedExecuteAndWaitForAllToComplete(Stream<T> stream, Function<T, Void> task,
+      Function<T, String> threadNamer) {
     executeAndWaitForAllToComplete(stream, task, threadNamer, cachingExecutorService());
   }
 
-  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
-      Function<T, Void> task, Function<T, String> threadNamer,
-      ExecutorService executorService) {
+  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream, Function<T, Void> task,
+      Function<T, String> threadNamer, ExecutorService executorService) {
     final var instrumented = new InstrumentedExecutorService(executorService);
     try {
       instrumented.invokeAll(stream.map(item -> (Callable<Void>) () -> {

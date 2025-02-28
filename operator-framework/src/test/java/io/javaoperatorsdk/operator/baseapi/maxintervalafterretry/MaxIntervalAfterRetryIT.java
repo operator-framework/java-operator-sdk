@@ -14,9 +14,8 @@ import static org.awaitility.Awaitility.await;
 class MaxIntervalAfterRetryIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MaxIntervalAfterRetryTestReconciler()).build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MaxIntervalAfterRetryTestReconciler()).build();
 
   @Test
   void reconciliationTriggeredBasedOnMaxInterval() {
@@ -24,12 +23,9 @@ class MaxIntervalAfterRetryIT {
 
     operator.create(cr);
 
-    await()
-        .pollInterval(50, TimeUnit.MILLISECONDS)
-        .atMost(1, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> assertThat(operator.getReconcilerOfType(MaxIntervalAfterRetryTestReconciler.class)
-                .getNumberOfExecutions()).isGreaterThan(5));
+    await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(1, TimeUnit.SECONDS).untilAsserted(
+        () -> assertThat(operator.getReconcilerOfType(MaxIntervalAfterRetryTestReconciler.class)
+            .getNumberOfExecutions()).isGreaterThan(5));
   }
 
   private MaxIntervalAfterRetryTestCustomResource createTestResource() {

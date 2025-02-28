@@ -16,10 +16,8 @@ import static org.awaitility.Awaitility.await;
 class BulkDependentWithConditionIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new ManagedBulkDependentWithReadyConditionReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ManagedBulkDependentWithReadyConditionReconciler()).build();
 
   @Test
   void handlesBulkDependentWithPrecondition() {
@@ -33,8 +31,7 @@ class BulkDependentWithConditionIT {
       assertThat(res.getStatus().getReady()).isTrue();
 
       var cms = extension.getKubernetesClient().configMaps().inNamespace(extension.getNamespace())
-          .withLabel(LABEL_KEY, LABEL_VALUE)
-          .list().getItems();
+          .withLabel(LABEL_KEY, LABEL_VALUE).list().getItems();
       assertThat(cms).hasSize(INITIAL_NUMBER_OF_CONFIG_MAPS);
 
     });

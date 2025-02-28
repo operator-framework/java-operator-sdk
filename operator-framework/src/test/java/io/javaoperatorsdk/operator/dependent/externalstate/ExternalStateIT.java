@@ -23,8 +23,7 @@ class ExternalStateIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(ExternalStateReconciler.class)
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(ExternalStateReconciler.class).build();
 
   @Test
   public void reconcilesResourceWithPersistentState() {
@@ -63,9 +62,7 @@ class ExternalStateIT {
 
   private ExternalStateCustomResource testResource() {
     var res = new ExternalStateCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new ExternalStateSpec());
     res.getSpec().setData(INITIAL_TEST_DATA);

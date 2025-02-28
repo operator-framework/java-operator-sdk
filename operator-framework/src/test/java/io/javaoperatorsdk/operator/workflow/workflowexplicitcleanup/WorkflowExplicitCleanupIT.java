@@ -15,10 +15,8 @@ public class WorkflowExplicitCleanupIT {
   public static final String RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(WorkflowExplicitCleanupReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(WorkflowExplicitCleanupReconciler.class).build();
 
   @Test
   void workflowInvokedExplicitly() {
@@ -39,9 +37,7 @@ public class WorkflowExplicitCleanupIT {
 
   WorkflowExplicitCleanupCustomResource testResource() {
     var res = new WorkflowExplicitCleanupCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     return res;
   }
 

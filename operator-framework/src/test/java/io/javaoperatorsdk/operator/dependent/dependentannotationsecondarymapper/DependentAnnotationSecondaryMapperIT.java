@@ -19,10 +19,8 @@ class DependentAnnotationSecondaryMapperIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(DependentAnnotationSecondaryMapperReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(DependentAnnotationSecondaryMapperReconciler.class).build();
 
   @Test
   void mapsSecondaryByAnnotation() {
@@ -37,8 +35,7 @@ class DependentAnnotationSecondaryMapperIT {
 
     var annotations = configMap.getMetadata().getAnnotations();
 
-    assertThat(annotations)
-        .containsEntry(DEFAULT_ANNOTATION_FOR_NAME, TEST_RESOURCE_NAME)
+    assertThat(annotations).containsEntry(DEFAULT_ANNOTATION_FOR_NAME, TEST_RESOURCE_NAME)
         .containsEntry(DEFAULT_ANNOTATION_FOR_NAMESPACE, operator.getNamespace());
 
     assertThat(configMap.getMetadata().getOwnerReferences()).isEmpty();
@@ -53,9 +50,7 @@ class DependentAnnotationSecondaryMapperIT {
 
   DependentAnnotationSecondaryMapperResource testResource() {
     var res = new DependentAnnotationSecondaryMapperResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }
 

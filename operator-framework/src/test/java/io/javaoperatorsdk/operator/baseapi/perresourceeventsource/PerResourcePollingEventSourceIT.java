@@ -15,10 +15,8 @@ class PerResourcePollingEventSourceIT {
   public static final String NAME_2 = "name2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new PerResourcePollingEventSourceTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new PerResourcePollingEventSourceTestReconciler()).build();
 
   /**
    * This is kinda some test to verify that the implementation of PerResourcePollingEventSource
@@ -41,9 +39,7 @@ class PerResourcePollingEventSourceIT {
 
   private PerResourceEventSourceCustomResource resource(String name) {
     var res = new PerResourceEventSourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     return res;
   }
 

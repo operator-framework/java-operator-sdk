@@ -33,8 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
-public class WebappReconciler
-    implements Reconciler<Webapp>, Cleaner<Webapp> {
+public class WebappReconciler implements Reconciler<Webapp>, Cleaner<Webapp> {
 
   private static final Logger log = LoggerFactory.getLogger(WebappReconciler.class);
 
@@ -55,16 +54,13 @@ public class WebappReconciler
     final SecondaryToPrimaryMapper<Tomcat> webappsMatchingTomcatName =
         (Tomcat t) -> context.getPrimaryCache()
             .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-            .map(ResourceID::fromResource)
-            .collect(Collectors.toSet());
+            .map(ResourceID::fromResource).collect(Collectors.toSet());
 
-    InformerEventSourceConfiguration<Tomcat> configuration =
-        InformerEventSourceConfiguration.from(Tomcat.class, Webapp.class)
-            .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
-            .withPrimaryToSecondaryMapper(
-                (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
-                    primary.getMetadata().getNamespace())))
-            .build();
+    InformerEventSourceConfiguration<Tomcat> configuration = InformerEventSourceConfiguration
+        .from(Tomcat.class, Webapp.class).withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
+        .withPrimaryToSecondaryMapper((Webapp primary) -> Set.of(
+            new ResourceID(primary.getSpec().getTomcat(), primary.getMetadata().getNamespace())))
+        .build();
     return List.of(new InformerEventSource<>(configuration, context));
   }
 
@@ -80,10 +76,9 @@ public class WebappReconciler
     }
 
     Tomcat tomcat = context.getSecondaryResource(Tomcat.class)
-        .orElseThrow(
-            () -> new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
-                + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
-                + webapp.getMetadata().getNamespace()));
+        .orElseThrow(() -> new IllegalStateException("Cannot find Tomcat "
+            + webapp.getSpec().getTomcat() + " for Webapp " + webapp.getMetadata().getName()
+            + " in namespace " + webapp.getMetadata().getNamespace()));
 
     if (tomcat.getStatus() != null
         && Objects.equals(tomcat.getSpec().getReplicas(), tomcat.getStatus().getReadyReplicas())) {
@@ -110,10 +105,8 @@ public class WebappReconciler
 
   private Webapp createWebAppForStatusUpdate(Webapp actual, String[] commandStatusInAllPods) {
     var webapp = new Webapp();
-    webapp.setMetadata(new ObjectMetaBuilder()
-        .withName(actual.getMetadata().getName())
-        .withNamespace(actual.getMetadata().getNamespace())
-        .build());
+    webapp.setMetadata(new ObjectMetaBuilder().withName(actual.getMetadata().getName())
+        .withNamespace(actual.getMetadata().getNamespace()).build());
     webapp.setStatus(new WebappStatus());
     webapp.getStatus().setDeployedArtifact(actual.getSpec().getUrl());
     webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
@@ -132,32 +125,21 @@ public class WebappReconciler
     return DeleteControl.defaultDelete();
   }
 
-  private String[] executeCommandInAllPods(
-      KubernetesClient kubernetesClient, Webapp webapp, String[] command) {
+  private String[] executeCommandInAllPods(KubernetesClient kubernetesClient, Webapp webapp,
+      String[] command) {
     String[] status = new String[0];
 
     Deployment deployment =
-        kubernetesClient
-            .apps()
-            .deployments()
-            .inNamespace(webapp.getMetadata().getNamespace())
-            .withName(webapp.getSpec().getTomcat())
-            .get();
+        kubernetesClient.apps().deployments().inNamespace(webapp.getMetadata().getNamespace())
+            .withName(webapp.getSpec().getTomcat()).get();
 
     if (deployment != null) {
-      List<Pod> pods =
-          kubernetesClient
-              .pods()
-              .inNamespace(webapp.getMetadata().getNamespace())
-              .withLabels(deployment.getSpec().getSelector().getMatchLabels())
-              .list()
-              .getItems();
+      List<Pod> pods = kubernetesClient.pods().inNamespace(webapp.getMetadata().getNamespace())
+          .withLabels(deployment.getSpec().getSelector().getMatchLabels()).list().getItems();
       status = new String[pods.size()];
       for (int i = 0; i < pods.size(); i++) {
         Pod pod = pods.get(i);
-        log.info(
-            "Executing command {} in Pod {}",
-            String.join(" ", command),
+        log.info("Executing command {} in Pod {}", String.join(" ", command),
             pod.getMetadata().getName());
 
         CompletableFuture<String> data = new CompletableFuture<>();
@@ -166,8 +148,7 @@ public class WebappReconciler
         } catch (ExecutionException e) {
           status[i] = pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
         } catch (InterruptedException e) {
-          status[i] =
-              pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
+          status[i] = pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
         } catch (TimeoutException e) {
           status[i] = pod.getMetadata().getName() + ": TimeoutException - " + e.getMessage();
         }
@@ -178,14 +159,9 @@ public class WebappReconciler
 
   private ExecWatch execCmd(Pod pod, CompletableFuture<String> data, String... command) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    return kubernetesClient.pods()
-        .inNamespace(pod.getMetadata().getNamespace())
-        .withName(pod.getMetadata().getName())
-        .inContainer("war-downloader")
-        .writingOutput(baos)
-        .writingError(baos)
-        .usingListener(new SimpleListener(data, baos))
-        .exec(command);
+    return kubernetesClient.pods().inNamespace(pod.getMetadata().getNamespace())
+        .withName(pod.getMetadata().getName()).inContainer("war-downloader").writingOutput(baos)
+        .writingError(baos).usingListener(new SimpleListener(data, baos)).exec(command);
   }
 
   static class SimpleListener implements ExecListener {

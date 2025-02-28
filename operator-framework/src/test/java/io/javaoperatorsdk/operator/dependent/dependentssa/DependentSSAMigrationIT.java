@@ -34,17 +34,15 @@ class DependentSSAMigrationIT {
     testInfo.getTestMethod().ifPresent(method -> {
       namespace = KubernetesResourceUtil.sanitizeName(method.getName());
       cleanup();
-      client.namespaces().resource(new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-          .withName(namespace)
-          .build()).build()).create();
+      client.namespaces().resource(new NamespaceBuilder()
+          .withMetadata(new ObjectMetaBuilder().withName(namespace).build()).build()).create();
     });
   }
 
   @AfterEach
   void cleanup() {
-    client.namespaces().resource(new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(namespace)
-        .build()).build()).delete();
+    client.namespaces().resource(new NamespaceBuilder()
+        .withMetadata(new ObjectMetaBuilder().withName(namespace).build()).build()).delete();
   }
 
   @Test
@@ -65,8 +63,7 @@ class DependentSSAMigrationIT {
     var legacyOperator = createOperator(client, true, null);
     DependentSSACustomResource testResource = reconcileWithLegacyOperator(legacyOperator);
 
-    var operator = createOperator(client, false,
-        FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER);
+    var operator = createOperator(client, false, FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER);
     reconcileWithNewApproach(testResource, operator);
 
     var cm = getDependentConfigMap();
@@ -154,10 +151,8 @@ class DependentSSAMigrationIT {
 
   public DependentSSACustomResource testResource() {
     DependentSSACustomResource resource = new DependentSSACustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withNamespace(namespace)
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    resource.setMetadata(
+        new ObjectMetaBuilder().withNamespace(namespace).withName(TEST_RESOURCE_NAME).build());
     resource.setSpec(new DependentSSASpec());
     resource.getSpec().setValue(INITIAL_VALUE);
     return resource;

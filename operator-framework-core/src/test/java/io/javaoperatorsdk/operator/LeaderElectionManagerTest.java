@@ -32,10 +32,9 @@ class LeaderElectionManagerTest {
     ControllerManager controllerManager = mock(ControllerManager.class);
     final var kubernetesClient = MockKubernetesClient.client(Lease.class, selfSubjectReview);
     when(kubernetesClient.getConfiguration()).thenReturn(Config.autoConfigure(null));
-    var configurationService =
-        ConfigurationService.newOverriddenConfigurationService(
-            o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test"))
-                .withKubernetesClient(kubernetesClient));
+    var configurationService = ConfigurationService.newOverriddenConfigurationService(
+        o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test"))
+            .withKubernetesClient(kubernetesClient));
     return new LeaderElectionManager(controllerManager, configurationService);
   }
 

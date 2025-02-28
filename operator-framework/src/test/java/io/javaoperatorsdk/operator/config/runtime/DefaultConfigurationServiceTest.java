@@ -24,8 +24,7 @@ class DefaultConfigurationServiceTest {
     final var configuration = configurationService.getConfigurationFor(reconciler);
     assertEquals(CustomResource.getCRDName(TestCustomResource.class),
         configuration.getResourceTypeName());
-    assertEquals(
-        ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class),
+    assertEquals(ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class),
         configuration.getFinalizerName());
     assertEquals(TestCustomResource.class, configuration.getResourceClass());
     assertFalse(configuration.isGenerationAware());
@@ -41,10 +40,9 @@ class DefaultConfigurationServiceTest {
   @Test
   void supportsInnerClassCustomResources() {
     final var reconciler = new TestCustomFinalizerReconciler();
-    assertDoesNotThrow(
-        () -> {
-          configurationService.getConfigurationFor(reconciler).getAssociatedReconcilerClassName();
-        });
+    assertDoesNotThrow(() -> {
+      configurationService.getConfigurationFor(reconciler).getAssociatedReconcilerClassName();
+    });
   }
 
   @ControllerConfiguration(finalizerName = CUSTOM_FINALIZER_NAME)
@@ -69,8 +67,8 @@ class DefaultConfigurationServiceTest {
     public static final String NAME = "should-be-logged";
 
     @Override
-    public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context<TestCustomResource> context) {
+    public UpdateControl<TestCustomResource> reconcile(TestCustomResource resource,
+        Context<TestCustomResource> context) {
       return null;
     }
   }
@@ -79,8 +77,8 @@ class DefaultConfigurationServiceTest {
   static class TestCustomReconciler implements Reconciler<TestCustomResource> {
 
     @Override
-    public UpdateControl<TestCustomResource> reconcile(
-        TestCustomResource resource, Context<TestCustomResource> context) {
+    public UpdateControl<TestCustomResource> reconcile(TestCustomResource resource,
+        Context<TestCustomResource> context) {
       return null;
     }
   }

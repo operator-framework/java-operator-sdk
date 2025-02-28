@@ -14,9 +14,8 @@ class CleanerForReconcilerIT {
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new CleanerForReconcilerTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new CleanerForReconcilerTestReconciler()).build();
 
 
   @Test

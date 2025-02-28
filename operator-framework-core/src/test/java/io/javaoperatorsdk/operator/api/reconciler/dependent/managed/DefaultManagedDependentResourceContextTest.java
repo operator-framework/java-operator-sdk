@@ -84,8 +84,7 @@ class DefaultManagedDependentResourceContextTest {
   void getMandatoryWhenEmpty() {
     assertThatThrownBy(() -> {
       context.getMandatory("key", String.class);
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessage(
-            "Mandatory attribute (key: key, type: java.lang.String) is missing or not of the expected type");
+    }).isInstanceOf(IllegalStateException.class).hasMessage(
+        "Mandatory attribute (key: key, type: java.lang.String) is missing or not of the expected type");
   }
 }

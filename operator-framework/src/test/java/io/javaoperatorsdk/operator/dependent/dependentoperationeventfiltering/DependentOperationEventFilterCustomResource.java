@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("OperationEventFilterCustomResource")
 @ShortNames("oef")
-public class DependentOperationEventFilterCustomResource
-    extends CustomResource<DependentOperationEventFilterCustomResourceSpec, String>
-    implements Namespaced {
+public class DependentOperationEventFilterCustomResource extends
+    CustomResource<DependentOperationEventFilterCustomResourceSpec, String> implements Namespaced {
 }

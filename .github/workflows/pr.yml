@@ -26,7 +26,7 @@ jobs:
           cache: 'maven'
       - name: Check code format
         run: |
-          ./mvnw ${MAVEN_ARGS} spotless:check --file pom.xml
+          ./mvnw ${MAVEN_ARGS} spotless:check --file pom.xml -Dhighest-basedir=$PWD
       - name: Run unit tests
         run: ./mvnw ${MAVEN_ARGS} clean install -Pno-apt --file pom.xml
 

@@ -41,14 +41,8 @@ public class ServiceDependentResource
       ServiceStrictMatcherTestCustomResource primary,
       Context<ServiceStrictMatcherTestCustomResource> context) {
     return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, false,
-        false,
-        "/spec/ports",
-        "/spec/clusterIP",
-        "/spec/clusterIPs",
-        "/spec/externalTrafficPolicy",
-        "/spec/internalTrafficPolicy",
-        "/spec/ipFamilies",
-        "/spec/ipFamilyPolicy",
+        false, "/spec/ports", "/spec/clusterIP", "/spec/clusterIPs", "/spec/externalTrafficPolicy",
+        "/spec/internalTrafficPolicy", "/spec/ipFamilies", "/spec/ipFamilyPolicy",
         "/spec/sessionAffinity");
   }
 

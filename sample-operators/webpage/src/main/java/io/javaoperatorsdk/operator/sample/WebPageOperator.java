@@ -30,8 +30,7 @@ public class WebPageOperator {
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler());
-    } else if (WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE
-        .equals(reconcilerEnvVar)) {
+    } else if (WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageManagedDependentsReconciler());
     } else {
       operator.register(new WebPageStandaloneDependentsReconciler());

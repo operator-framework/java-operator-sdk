@@ -14,11 +14,9 @@ public class MultipleReconcilerSameTypeIT {
   public static final String TEST_RESOURCE_1 = "test1";
   public static final String TEST_RESOURCE_2 = "test2";
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(MultipleReconcilerSameTypeReconciler1.class)
-          .withReconciler(MultipleReconcilerSameTypeReconciler2.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(MultipleReconcilerSameTypeReconciler1.class)
+      .withReconciler(MultipleReconcilerSameTypeReconciler2.class).build();
 
 
   @Test
@@ -46,9 +44,7 @@ public class MultipleReconcilerSameTypeIT {
 
   MultipleReconcilerSameTypeCustomResource testResource(String name, boolean type1) {
     var res = new MultipleReconcilerSameTypeCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     if (type1) {
       res.getMetadata().getLabels().put("reconciler", "1");
     }

@@ -35,68 +35,45 @@ public class TestCustomReconciler
   }
 
   @Override
-  public DeleteControl cleanup(
-      TestCustomResource resource, Context<TestCustomResource> context) {
+  public DeleteControl cleanup(TestCustomResource resource, Context<TestCustomResource> context) {
     var statusDetails =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .delete();
+        kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getSpec().getConfigMapName()).delete();
     if (statusDetails.size() == 1 && statusDetails.get(0).getCauses().isEmpty()) {
-      log.info(
-          "Deleted ConfigMap {} for resource: {}",
-          resource.getSpec().getConfigMapName(),
+      log.info("Deleted ConfigMap {} for resource: {}", resource.getSpec().getConfigMapName(),
           resource.getMetadata().getName());
     } else {
-      log.error(
-          "Failed to delete ConfigMap {} for resource: {}",
-          resource.getSpec().getConfigMapName(),
-          resource.getMetadata().getName());
+      log.error("Failed to delete ConfigMap {} for resource: {}",
+          resource.getSpec().getConfigMapName(), resource.getMetadata().getName());
     }
     return DeleteControl.defaultDelete();
   }
 
   @Override
-  public UpdateControl<TestCustomResource> reconcile(
-      TestCustomResource resource, Context<TestCustomResource> context) {
+  public UpdateControl<TestCustomResource> reconcile(TestCustomResource resource,
+      Context<TestCustomResource> context) {
     if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
       throw new IllegalStateException("Finalizer is not present.");
     }
 
     ConfigMap existingConfigMap =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .get();
+        kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getSpec().getConfigMapName()).get();
 
     if (existingConfigMap != null) {
       existingConfigMap.setData(configMapData(resource));
       // existingConfigMap.getMetadata().setResourceVersion(null);
-      kubernetesClient
-          .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace())
-          .resource(existingConfigMap)
-          .createOrReplace();
+      kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
+          .resource(existingConfigMap).createOrReplace();
     } else {
       Map<String, String> labels = new HashMap<>();
       labels.put("managedBy", TestCustomReconciler.class.getSimpleName());
-      ConfigMap newConfigMap =
-          new ConfigMapBuilder()
-              .withMetadata(
-                  new ObjectMetaBuilder()
-                      .withName(resource.getSpec().getConfigMapName())
-                      .withNamespace(resource.getMetadata().getNamespace())
-                      .withLabels(labels)
-                      .build())
-              .withData(configMapData(resource))
-              .build();
-      kubernetesClient
-          .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace())
-          .resource(newConfigMap)
-          .createOrReplace();
+      ConfigMap newConfigMap = new ConfigMapBuilder()
+          .withMetadata(new ObjectMetaBuilder().withName(resource.getSpec().getConfigMapName())
+              .withNamespace(resource.getMetadata().getNamespace()).withLabels(labels).build())
+          .withData(configMapData(resource)).build();
+      kubernetesClient.configMaps().inNamespace(resource.getMetadata().getNamespace())
+          .resource(newConfigMap).createOrReplace();
     }
     if (updateStatus) {
       if (resource.getStatus() == null) {

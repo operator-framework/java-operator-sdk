@@ -24,8 +24,7 @@ class ConditionWithType<R, P extends HasMetadata, T> implements DetailedConditio
     if (condition instanceof DetailedCondition detailedCondition) {
       return detailedCondition.detailedIsMet(dependentResource, primary, context);
     } else {
-      return Result
-          .withoutResult(condition.isMet(dependentResource, primary, context));
+      return Result.withoutResult(condition.isMet(dependentResource, primary, context));
     }
   }
 }

@@ -87,10 +87,8 @@ class ControllerNamespaceDeletionE2E {
 
   ControllerNamespaceDeletionCustomResource testResource() {
     var cr = new ControllerNamespaceDeletionCustomResource();
-    cr.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .withNamespace(namespace)
-        .build());
+    cr.setMetadata(
+        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(namespace).build());
     cr.setSpec(new ControllerNamespaceDeletionSpec());
     cr.getSpec().setValue(INITIAL_VALUE);
     return cr;
@@ -100,12 +98,13 @@ class ControllerNamespaceDeletionE2E {
   @BeforeEach
   void setup() {
     namespace = "controller-namespace-" + UUID.randomUUID();
-    client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
-        .withNamespace(namespace)
-        .build()).build();
+    client = new KubernetesClientBuilder()
+        .withConfig(new ConfigBuilder().withNamespace(namespace).build()).build();
     applyCRD();
-    client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
-        .endMetadata().build()).create();
+    client.namespaces()
+        .resource(
+            new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build())
+        .create();
   }
 
   void deployController() {
@@ -120,9 +119,7 @@ class ControllerNamespaceDeletionE2E {
           }
         }
       });
-      client.resourceList(resources)
-          .inNamespace(namespace)
-          .createOrReplace();
+      client.resourceList(resources).inNamespace(namespace).createOrReplace();
 
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);

@@ -18,10 +18,8 @@ public class ConfigMapDependentResource extends
   protected ConfigMap desired(CreateOnlyIfNotExistingDependentWithSSACustomResource primary,
       Context<CreateOnlyIfNotExistingDependentWithSSACustomResource> context) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+        .withNamespace(primary.getMetadata().getNamespace()).build());
     configMap.setData(Map.of("drkey", "v"));
     return configMap;
   }

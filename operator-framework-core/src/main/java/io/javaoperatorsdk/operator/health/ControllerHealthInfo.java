@@ -29,9 +29,8 @@ public class ControllerHealthInfo {
 
   public Map<String, InformerWrappingEventSourceHealthIndicator> informerEventSourceHealthIndicators() {
     return eventSourceManager.allEventSources().stream()
-        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(Collectors.toMap(EventSource::name,
-            e -> (InformerWrappingEventSourceHealthIndicator) e));
+        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator).collect(Collectors
+            .toMap(EventSource::name, e -> (InformerWrappingEventSourceHealthIndicator) e));
 
   }
 
@@ -43,9 +42,8 @@ public class ControllerHealthInfo {
   public Map<String, InformerWrappingEventSourceHealthIndicator> unhealthyInformerEventSourceHealthIndicators() {
     return eventSourceManager.allEventSources().stream()
         .filter(e -> e.getStatus() == Status.UNHEALTHY)
-        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(Collectors.toMap(EventSource::name,
-            e -> (InformerWrappingEventSourceHealthIndicator) e));
+        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator).collect(Collectors
+            .toMap(EventSource::name, e -> (InformerWrappingEventSourceHealthIndicator) e));
   }
 
 }

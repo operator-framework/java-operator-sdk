@@ -151,8 +151,7 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResources(
-      boolean value) {
+  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResources(boolean value) {
     this.previousAnnotationForDependentResources = value;
     return this;
   }
@@ -161,8 +160,7 @@ public class ConfigurationServiceOverrider {
    * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
    * @return this
    */
-  public ConfigurationServiceOverrider withParseResourceVersions(
-      boolean value) {
+  public ConfigurationServiceOverrider withParseResourceVersions(boolean value) {
     this.parseResourceVersions = value;
     return this;
   }
@@ -173,8 +171,7 @@ public class ConfigurationServiceOverrider {
    * @return this
    */
   @Deprecated(forRemoval = true)
-  public ConfigurationServiceOverrider wihtParseResourceVersions(
-      boolean value) {
+  public ConfigurationServiceOverrider wihtParseResourceVersions(boolean value) {
     this.parseResourceVersions = value;
     return this;
   }
@@ -220,9 +217,7 @@ public class ConfigurationServiceOverrider {
         return Utils.ensureValid(
             overriddenValueOrDefault(concurrentReconciliationThreads,
                 ConfigurationService::concurrentReconciliationThreads),
-            "maximum reconciliation threads",
-            1,
-            original.concurrentReconciliationThreads());
+            "maximum reconciliation threads", 1, original.concurrentReconciliationThreads());
       }
 
       @Override
@@ -230,9 +225,7 @@ public class ConfigurationServiceOverrider {
         return Utils.ensureValid(
             overriddenValueOrDefault(concurrentWorkflowExecutorThreads,
                 ConfigurationService::concurrentWorkflowExecutorThreads),
-            "maximum workflow execution threads",
-            1,
-            original.concurrentWorkflowExecutorThreads());
+            "maximum workflow execution threads", 1, original.concurrentWorkflowExecutorThreads());
       }
 
       @Override

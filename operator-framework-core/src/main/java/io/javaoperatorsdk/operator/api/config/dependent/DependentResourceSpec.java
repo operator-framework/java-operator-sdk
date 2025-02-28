@@ -44,8 +44,8 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
 
   @Override
   public String toString() {
-    return "DependentResourceSpec{ name='" + name +
-        "', type=" + getDependentResourceClass().getCanonicalName() + '}';
+    return "DependentResourceSpec{ name='" + name + "', type="
+        + getDependentResourceClass().getCanonicalName() + '}';
   }
 
   @Override

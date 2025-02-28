@@ -3,10 +3,8 @@ package io.javaoperatorsdk.operator.workflow.workflowactivationcleanup;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(dependents = {
-    @Dependent(type = ConfigMapDependentResource.class,
-        activationCondition = TestActivcationCondition.class),
-})
+@Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class,
+    activationCondition = TestActivcationCondition.class),})
 @ControllerConfiguration
 public class WorkflowActivationCleanupReconciler
     implements Reconciler<WorkflowActivationCleanupCustomResource>,

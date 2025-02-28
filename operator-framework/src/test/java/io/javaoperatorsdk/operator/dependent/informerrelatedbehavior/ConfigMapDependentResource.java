@@ -24,13 +24,10 @@ public class ConfigMapDependentResource
   protected ConfigMap desired(InformerRelatedBehaviorTestCustomResource primary,
       Context<InformerRelatedBehaviorTestCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withLabels(Map.of("app", "rbac-test"))
+        .withMetadata(new ObjectMetaBuilder().withLabels(Map.of("app", "rbac-test"))
             .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(DATA_KEY, primary.getMetadata().getName()))
-        .build();
+            .withNamespace(primary.getMetadata().getNamespace()).build())
+        .withData(Map.of(DATA_KEY, primary.getMetadata().getName())).build();
 
   }
 }

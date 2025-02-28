@@ -10,6 +10,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("mdr")
 public class MultipleDependentResourceCustomResource
-    extends CustomResource<MultipleDependentResourceSpec, Void>
-    implements Namespaced {
+    extends CustomResource<MultipleDependentResourceSpec, Void> implements Namespaced {
 }

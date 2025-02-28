@@ -52,12 +52,9 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void cleanUpDiamondWorkflow() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
-        .addDependentResourceAndConfigure(dr1).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd3).dependsOn(dr1, dd2)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
+        .addDependentResourceAndConfigure(dr1).dependsOn(dd1).addDependentResourceAndConfigure(dd2)
+        .dependsOn(dd1).addDependentResourceAndConfigure(dd3).dependsOn(dr1, dd2).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
@@ -71,17 +68,13 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void dontDeleteIfDependentErrored() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
-        .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd3).dependsOn(dd2)
-        .addDependentResourceAndConfigure(errorDD).dependsOn(dd2)
-        .withThrowExceptionFurther(false)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
+        .addDependentResourceAndConfigure(dd2).dependsOn(dd1).addDependentResourceAndConfigure(dd3)
+        .dependsOn(dd2).addDependentResourceAndConfigure(errorDD).dependsOn(dd2)
+        .withThrowExceptionFurther(false).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
-    assertThrows(AggregatedOperatorException.class,
-        res::throwAggregateExceptionIfErrorsPresent);
+    assertThrows(AggregatedOperatorException.class, res::throwAggregateExceptionIfErrorsPresent);
 
     assertThat(executionHistory).deleted(dd3, errorDD).notReconciled(dd1, dd2);
 
@@ -93,11 +86,9 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void cleanupConditionTrivialCase() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
         .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .withDeletePostcondition(notMetCondition)
-        .build();
+        .withDeletePostcondition(notMetCondition).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
@@ -109,8 +100,7 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void cleanupConditionMet() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
         .addDependentResourceAndConfigure(dd2).dependsOn(dd1).withDeletePostcondition(metCondition)
         .build();
 
@@ -125,19 +115,14 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void cleanupConditionDiamondWorkflow() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
-        .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd3).dependsOn(dd1)
-        .withDeletePostcondition(notMetCondition)
-        .addDependentResourceAndConfigure(dd4).dependsOn(dd2, dd3)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
+        .addDependentResourceAndConfigure(dd2).dependsOn(dd1).addDependentResourceAndConfigure(dd3)
+        .dependsOn(dd1).withDeletePostcondition(notMetCondition)
+        .addDependentResourceAndConfigure(dd4).dependsOn(dd2, dd3).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
-    assertThat(executionHistory)
-        .reconciledInOrder(dd4, dd2)
-        .reconciledInOrder(dd4, dd3)
+    assertThat(executionHistory).reconciledInOrder(dd4, dd2).reconciledInOrder(dd4, dd3)
         .notReconciled(dr1);
 
     Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd4, dd3,
@@ -148,33 +133,26 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void dontDeleteIfGarbageCollected() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(gcDeleter)
-        .build();
+    var workflow =
+        new WorkflowBuilder<TestCustomResource>().addDependentResource(gcDeleter).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
-    assertThat(executionHistory)
-        .notReconciled(gcDeleter);
+    assertThat(executionHistory).notReconciled(gcDeleter);
 
     Assertions.assertThat(res.getDeleteCalledOnDependents()).isEmpty();
   }
 
   @Test
   void ifDependentActiveDependentNormallyDeleted() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
-        .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd3).dependsOn(dd1)
-        .withActivationCondition(metCondition)
-        .addDependentResourceAndConfigure(dd4).dependsOn(dd2, dd3)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
+        .addDependentResourceAndConfigure(dd2).dependsOn(dd1).addDependentResourceAndConfigure(dd3)
+        .dependsOn(dd1).withActivationCondition(metCondition).addDependentResourceAndConfigure(dd4)
+        .dependsOn(dd2, dd3).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
-    assertThat(executionHistory)
-        .reconciledInOrder(dd4, dd2, dd1)
-        .reconciledInOrder(dd4, dd3, dd1);
+    assertThat(executionHistory).reconciledInOrder(dd4, dd2, dd1).reconciledInOrder(dd4, dd3, dd1);
 
     Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd4, dd3,
         dd2, dd1);
@@ -182,20 +160,15 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void ifDependentActiveDeletePostConditionIsChecked() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
-        .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd3).dependsOn(dd1)
-        .withDeletePostcondition(notMetCondition)
-        .withActivationCondition(metCondition)
-        .addDependentResourceAndConfigure(dd4).dependsOn(dd2, dd3)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
+        .addDependentResourceAndConfigure(dd2).dependsOn(dd1).addDependentResourceAndConfigure(dd3)
+        .dependsOn(dd1).withDeletePostcondition(notMetCondition)
+        .withActivationCondition(metCondition).addDependentResourceAndConfigure(dd4)
+        .dependsOn(dd2, dd3).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
-    assertThat(executionHistory)
-        .reconciledInOrder(dd4, dd2)
-        .reconciledInOrder(dd4, dd3)
+    assertThat(executionHistory).reconciledInOrder(dd4, dd2).reconciledInOrder(dd4, dd3)
         .notReconciled(dr1);
 
     Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd4, dd3,
@@ -206,48 +179,38 @@ class WorkflowCleanupExecutorTest extends AbstractWorkflowExecutorTest {
 
   @Test
   void ifDependentInactiveDeleteIsNotCalled() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
-        .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd3).dependsOn(dd1)
-        .withActivationCondition(notMetCondition)
-        .addDependentResourceAndConfigure(dd4).dependsOn(dd2, dd3)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
+        .addDependentResourceAndConfigure(dd2).dependsOn(dd1).addDependentResourceAndConfigure(dd3)
+        .dependsOn(dd1).withActivationCondition(notMetCondition)
+        .addDependentResourceAndConfigure(dd4).dependsOn(dd2, dd3).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
-    assertThat(executionHistory)
-        .reconciledInOrder(dd4, dd2, dd1);
+    assertThat(executionHistory).reconciledInOrder(dd4, dd2, dd1);
 
-    Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd4,
-        dd2, dd1);
+    Assertions.assertThat(res.getDeleteCalledOnDependents()).containsExactlyInAnyOrder(dd4, dd2,
+        dd1);
   }
 
   @Test
   void ifDependentInactiveDeletePostConditionNotChecked() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResource(dd1)
-        .addDependentResourceAndConfigure(dd2).dependsOn(dd1)
-        .addDependentResourceAndConfigure(dd3).dependsOn(dd1)
-        .withDeletePostcondition(notMetCondition)
-        .withActivationCondition(notMetCondition)
-        .addDependentResourceAndConfigure(dd4).dependsOn(dd2, dd3)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResource(dd1)
+        .addDependentResourceAndConfigure(dd2).dependsOn(dd1).addDependentResourceAndConfigure(dd3)
+        .dependsOn(dd1).withDeletePostcondition(notMetCondition)
+        .withActivationCondition(notMetCondition).addDependentResourceAndConfigure(dd4)
+        .dependsOn(dd2, dd3).build();
 
     var res = workflow.cleanup(new TestCustomResource(), mockContext);
 
-    assertThat(executionHistory)
-        .reconciledInOrder(dd4, dd2, dd1);
+    assertThat(executionHistory).reconciledInOrder(dd4, dd2, dd1);
 
     Assertions.assertThat(res.getPostConditionNotMetDependents()).isEmpty();
   }
 
   @Test
   void singleInactiveDependent() {
-    var workflow = new WorkflowBuilder<TestCustomResource>()
-        .addDependentResourceAndConfigure(dd1)
-        .withActivationCondition(notMetCondition)
-        .build();
+    var workflow = new WorkflowBuilder<TestCustomResource>().addDependentResourceAndConfigure(dd1)
+        .withActivationCondition(notMetCondition).build();
 
     workflow.cleanup(new TestCustomResource(), mockContext);
 

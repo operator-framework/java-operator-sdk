@@ -18,8 +18,7 @@ public class CustomResourceUtilsTest {
   public void assertClusterCustomResourceNotNamespaced() {
     var crd = TestUtils.testCRD("Cluster");
 
-    Assertions.assertThrows(
-        OperatorException.class,
+    Assertions.assertThrows(OperatorException.class,
         () -> CustomResourceUtils.assertCustomResource(NamespacedTestCustomResource.class, crd));
   }
 
@@ -34,8 +33,7 @@ public class CustomResourceUtilsTest {
   public void assertNamespacedCustomResourceNotCluster() {
     var crd = TestUtils.testCRD("Namespaced");
 
-    Assertions.assertThrows(
-        OperatorException.class,
+    Assertions.assertThrows(OperatorException.class,
         () -> CustomResourceUtils.assertCustomResource(TestCustomResource.class, crd));
   }
 }

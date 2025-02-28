@@ -9,9 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("usc")
-public class UpdateStatusInCleanupAndRescheduleCustomResource
-    extends
-    CustomResource<Void, UpdateStatusInCleanupAndRescheduleCustomStatus>
-    implements Namespaced {
+public class UpdateStatusInCleanupAndRescheduleCustomResource extends
+    CustomResource<Void, UpdateStatusInCleanupAndRescheduleCustomStatus> implements Namespaced {
 
 }

@@ -51,9 +51,8 @@ public class LeaderElectionManager {
 
   private void init(LeaderElectionConfiguration config) {
     this.identity = identity(config);
-    leaseNamespace =
-        config.getLeaseNamespace().orElseGet(
-            () -> configurationService.getKubernetesClient().getConfiguration().getNamespace());
+    leaseNamespace = config.getLeaseNamespace().orElseGet(
+        () -> configurationService.getKubernetesClient().getConfiguration().getNamespace());
     if (leaseNamespace == null) {
       final var message =
           "Lease namespace is not set and cannot be inferred. Leader election cannot continue.";
@@ -62,39 +61,29 @@ public class LeaderElectionManager {
     }
     leaseName = config.getLeaseName();
     final var lock = new LeaseLock(leaseNamespace, leaseName, identity);
-    leaderElector = new LeaderElectorBuilder(
-        configurationService.getKubernetesClient(),
+    leaderElector = new LeaderElectorBuilder(configurationService.getKubernetesClient(),
         configurationService.getExecutorServiceManager().cachingExecutorService())
-        .withConfig(
-            new LeaderElectionConfig(
-                lock,
-                config.getLeaseDuration(),
-                config.getRenewDeadline(),
-                config.getRetryPeriod(),
-                leaderCallbacks(config),
-                // this is required to be false to receive stop event in all cases, thus stopLeading
-                // is called always when leadership is lost/cancelled
-                false,
-                leaseName))
+        .withConfig(new LeaderElectionConfig(lock, config.getLeaseDuration(),
+            config.getRenewDeadline(), config.getRetryPeriod(), leaderCallbacks(config),
+            // this is required to be false to receive stop event in all cases, thus stopLeading
+            // is called always when leadership is lost/cancelled
+            false, leaseName))
         .build();
   }
 
 
 
   private LeaderCallbacks leaderCallbacks(LeaderElectionConfiguration config) {
-    return new LeaderCallbacks(
-        () -> {
-          config.getLeaderCallbacks().ifPresent(LeaderCallbacks::onStartLeading);
-          LeaderElectionManager.this.startLeading();
-        },
-        () -> {
-          config.getLeaderCallbacks().ifPresent(LeaderCallbacks::onStopLeading);
-          LeaderElectionManager.this.stopLeading();
-        },
-        leader -> {
-          config.getLeaderCallbacks().ifPresent(cb -> cb.onNewLeader(leader));
-          log.info("New leader with identity: {}", leader);
-        });
+    return new LeaderCallbacks(() -> {
+      config.getLeaderCallbacks().ifPresent(LeaderCallbacks::onStartLeading);
+      LeaderElectionManager.this.startLeading();
+    }, () -> {
+      config.getLeaderCallbacks().ifPresent(LeaderCallbacks::onStopLeading);
+      LeaderElectionManager.this.stopLeading();
+    }, leader -> {
+      config.getLeaderCallbacks().ifPresent(cb -> cb.onNewLeader(leader));
+      log.info("New leader with identity: {}", leader);
+    });
   }
 
   private void startLeading() {
@@ -146,20 +135,17 @@ public class LeaderElectionManager {
         .filter(rule -> matchesValue(rule.getResources(), LEASES_RESOURCE))
         .filter(rule -> rule.getResourceNames().isEmpty()
             || rule.getResourceNames().contains(leaseName))
-        .map(ResourceRule::getVerbs)
-        .flatMap(Collection::stream)
-        .distinct()
+        .map(ResourceRule::getVerbs).flatMap(Collection::stream).distinct()
         .collect(Collectors.toList());
     if (verbsAllowed.contains(UNIVERSAL_VALUE) || verbsAllowed.containsAll(verbsRequired)) {
       return;
     }
 
-    var missingVerbs = verbsRequired.stream()
-        .filter(Predicate.not(verbsAllowed::contains))
+    var missingVerbs = verbsRequired.stream().filter(Predicate.not(verbsAllowed::contains))
         .collect(Collectors.toList());
 
-    throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE +
-        " in namespace: " + leaseNamespace + "; missing required verbs: " + missingVerbs);
+    throw new OperatorException(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE + " in namespace: "
+        + leaseNamespace + "; missing required verbs: " + missingVerbs);
   }
 
   private boolean matchesValue(Collection<String> values, String match) {

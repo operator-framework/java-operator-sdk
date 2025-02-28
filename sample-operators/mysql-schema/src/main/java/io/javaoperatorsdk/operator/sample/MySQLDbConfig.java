@@ -17,14 +17,12 @@ public class MySQLDbConfig {
   }
 
   public static MySQLDbConfig loadFromEnvironmentVars() {
-    if (ObjectUtils.anyNull(System.getenv("MYSQL_HOST"),
-        System.getenv("MYSQL_USER"), System.getenv("MYSQL_PASSWORD"))) {
+    if (ObjectUtils.anyNull(System.getenv("MYSQL_HOST"), System.getenv("MYSQL_USER"),
+        System.getenv("MYSQL_PASSWORD"))) {
       throw new IllegalStateException("Mysql server parameters not defined");
     }
-    return new MySQLDbConfig(System.getenv("MYSQL_HOST"),
-        System.getenv("MYSQL_PORT"),
-        System.getenv("MYSQL_USER"),
-        System.getenv("MYSQL_PASSWORD"));
+    return new MySQLDbConfig(System.getenv("MYSQL_HOST"), System.getenv("MYSQL_PORT"),
+        System.getenv("MYSQL_USER"), System.getenv("MYSQL_PASSWORD"));
   }
 
   public String getHost() {

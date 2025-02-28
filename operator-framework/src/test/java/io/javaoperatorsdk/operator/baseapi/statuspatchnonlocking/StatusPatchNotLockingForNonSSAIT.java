@@ -21,8 +21,7 @@ class StatusPatchNotLockingForNonSSAIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(StatusPatchLockingReconciler.class)
-          .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
-          .build();
+          .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false)).build();
 
   @Test
   void noOptimisticLockingDoneOnStatusUpdate() throws InterruptedException {
@@ -35,12 +34,9 @@ class StatusPatchNotLockingForNonSSAIT {
       assertThat(
           operator.getReconcilerOfType(StatusPatchLockingReconciler.class).getNumberOfExecutions())
           .isEqualTo(1);
-      var actual = operator.get(StatusPatchLockingCustomResource.class,
-          TEST_RESOURCE_NAME);
-      assertThat(actual
-          .getStatus().getValue()).isEqualTo(1);
-      assertThat(actual.getMetadata().getGeneration())
-          .isEqualTo(1);
+      var actual = operator.get(StatusPatchLockingCustomResource.class, TEST_RESOURCE_NAME);
+      assertThat(actual.getStatus().getValue()).isEqualTo(1);
+      assertThat(actual.getMetadata().getGeneration()).isEqualTo(1);
     });
   }
 
@@ -50,8 +46,7 @@ class StatusPatchNotLockingForNonSSAIT {
     var resource = operator.create(createResource());
 
     await().untilAsserted(() -> {
-      var actual = operator.get(StatusPatchLockingCustomResource.class,
-          TEST_RESOURCE_NAME);
+      var actual = operator.get(StatusPatchLockingCustomResource.class, TEST_RESOURCE_NAME);
       assertThat(actual.getStatus()).isNotNull();
       assertThat(actual.getStatus().getMessage()).isEqualTo(MESSAGE);
     });
@@ -62,8 +57,7 @@ class StatusPatchNotLockingForNonSSAIT {
     operator.replace(resource);
 
     await().timeout(Duration.ofMinutes(3)).untilAsserted(() -> {
-      var actual = operator.get(StatusPatchLockingCustomResource.class,
-          TEST_RESOURCE_NAME);
+      var actual = operator.get(StatusPatchLockingCustomResource.class, TEST_RESOURCE_NAME);
       assertThat(actual.getStatus()).isNotNull();
       assertThat(actual.getStatus().getMessage()).isNull();
     });

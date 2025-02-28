@@ -20,10 +20,8 @@ public class MultipleManagedDependentNoDiscriminatorIT {
   public static final String CHANGED_VALUE = "changed_value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleManagedDependentSameTypeNoDiscriminatorReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleManagedDependentSameTypeNoDiscriminatorReconciler()).build();
 
   @Test
   void handlesCRUDOperations() {
@@ -69,9 +67,7 @@ public class MultipleManagedDependentNoDiscriminatorIT {
 
   MultipleManagedDependentNoDiscriminatorCustomResource testResource() {
     var res = new MultipleManagedDependentNoDiscriminatorCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     res.setSpec(new MultipleManagedDependentNoDiscriminatorSpec());
     res.getSpec().setValue(INITIAL_VALUE);
     return res;

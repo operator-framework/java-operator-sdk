@@ -138,8 +138,7 @@ class InformerRelatedBehaviorITS {
             .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
 
     InformerHealthIndicator controllerHealthIndicator =
-        (InformerHealthIndicator) unhealthyEventSources
-            .get(ControllerEventSource.NAME)
+        (InformerHealthIndicator) unhealthyEventSources.get(ControllerEventSource.NAME)
             .informerHealthIndicators().get(additionalNamespace);
     assertThat(controllerHealthIndicator).isNotNull();
     assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
@@ -234,19 +233,14 @@ class InformerRelatedBehaviorITS {
   InformerRelatedBehaviorTestCustomResource testCustomResource() {
     InformerRelatedBehaviorTestCustomResource testCustomResource =
         new InformerRelatedBehaviorTestCustomResource();
-    testCustomResource.setMetadata(new ObjectMetaBuilder()
-        .withNamespace(actualNamespace)
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    testCustomResource.setMetadata(new ObjectMetaBuilder().withNamespace(actualNamespace)
+        .withName(TEST_RESOURCE_NAME).build());
     return testCustomResource;
   }
 
   private ConfigMap dependentConfigMap() {
-    return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(TEST_RESOURCE_NAME)
-            .withNamespace(actualNamespace)
-            .build())
+    return new ConfigMapBuilder().withMetadata(
+        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(actualNamespace).build())
         .build();
   }
 
@@ -262,32 +256,28 @@ class InformerRelatedBehaviorITS {
   @SuppressWarnings("unchecked")
   private void assertRuntimeInfoNoCRPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
-    var unhealthyEventSources =
-        operator.getRuntimeInfo().unhealthyEventSources()
-            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
-    assertThat(unhealthyEventSources).isNotEmpty();
-    assertThat(unhealthyEventSources.get(ControllerEventSource.NAME))
-        .isNotNull();
-    var informerHealthIndicators = operator.getRuntimeInfo()
-        .unhealthyInformerWrappingEventSourceHealthIndicator()
+    var unhealthyEventSources = operator.getRuntimeInfo().unhealthyEventSources()
         .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    assertThat(unhealthyEventSources).isNotEmpty();
+    assertThat(unhealthyEventSources.get(ControllerEventSource.NAME)).isNotNull();
+    var informerHealthIndicators =
+        operator.getRuntimeInfo().unhealthyInformerWrappingEventSourceHealthIndicator()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(informerHealthIndicators).isNotEmpty();
-    assertThat(informerHealthIndicators.get(ControllerEventSource.NAME)
-        .informerHealthIndicators())
+    assertThat(informerHealthIndicators.get(ControllerEventSource.NAME).informerHealthIndicators())
         .hasSize(1);
   }
 
   @SuppressWarnings("unchecked")
   private void assertRuntimeInfoForSecondaryPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
-    var unhealthyEventSources =
-        operator.getRuntimeInfo().unhealthyEventSources()
-            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    var unhealthyEventSources = operator.getRuntimeInfo().unhealthyEventSources()
+        .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(unhealthyEventSources).isNotEmpty();
     assertThat(unhealthyEventSources.get(CONFIG_MAP_DEPENDENT_RESOURCE)).isNotNull();
-    var informerHealthIndicators = operator.getRuntimeInfo()
-        .unhealthyInformerWrappingEventSourceHealthIndicator()
-        .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    var informerHealthIndicators =
+        operator.getRuntimeInfo().unhealthyInformerWrappingEventSourceHealthIndicator()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(informerHealthIndicators).isNotEmpty();
     assertThat(
         informerHealthIndicators.get(CONFIG_MAP_DEPENDENT_RESOURCE).informerHealthIndicators())
@@ -295,12 +285,8 @@ class InformerRelatedBehaviorITS {
   }
 
   KubernetesClient clientUsingServiceAccount() {
-    KubernetesClient client = new KubernetesClientBuilder()
-        .withConfig(new ConfigBuilder()
-            .withImpersonateUsername("rbac-test-user")
-            .withNamespace(actualNamespace)
-            .build())
-        .build();
+    KubernetesClient client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
+        .withImpersonateUsername("rbac-test-user").withNamespace(actualNamespace).build()).build();
     return client;
   }
 
@@ -313,16 +299,15 @@ class InformerRelatedBehaviorITS {
 
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
-    Operator operator = new Operator(
-        co -> {
-          co.withKubernetesClient(clientUsingServiceAccount());
-          co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
-          co.withCacheSyncTimeout(Duration.ofMillis(3000));
-          co.withReconciliationTerminationTimeout(Duration.ofSeconds(1));
-          if (addStopHandler) {
-            co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
-          }
-        });
+    Operator operator = new Operator(co -> {
+      co.withKubernetesClient(clientUsingServiceAccount());
+      co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
+      co.withCacheSyncTimeout(Duration.ofMillis(3000));
+      co.withReconciliationTerminationTimeout(Duration.ofSeconds(1));
+      if (addStopHandler) {
+        co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
+      }
+    });
     operator.register(reconciler, o -> {
       if (namespaces.length > 0) {
         o.settingNamespaces(namespaces);
@@ -348,24 +333,22 @@ class InformerRelatedBehaviorITS {
   }
 
   private void addRoleBindingsToTestNamespaces() {
-    var role = ReconcilerUtils
-        .loadYaml(Role.class, this.getClass(), "rback-test-only-main-ns-access.yaml");
+    var role = ReconcilerUtils.loadYaml(Role.class, this.getClass(),
+        "rback-test-only-main-ns-access.yaml");
     adminClient.resource(role).inNamespace(actualNamespace).createOrReplace();
-    var roleBinding = ReconcilerUtils
-        .loadYaml(RoleBinding.class, this.getClass(),
-            "rback-test-only-main-ns-access-binding.yaml");
+    var roleBinding = ReconcilerUtils.loadYaml(RoleBinding.class, this.getClass(),
+        "rback-test-only-main-ns-access-binding.yaml");
     adminClient.resource(roleBinding).inNamespace(actualNamespace).createOrReplace();
   }
 
   private void applyClusterRoleBinding() {
-    var clusterRoleBinding = ReconcilerUtils
-        .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+    var clusterRoleBinding = ReconcilerUtils.loadYaml(ClusterRoleBinding.class, this.getClass(),
+        "rback-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).createOrReplace();
   }
 
   private void applyClusterRole(String filename) {
-    var clusterRole = ReconcilerUtils
-        .loadYaml(ClusterRole.class, this.getClass(), filename);
+    var clusterRole = ReconcilerUtils.loadYaml(ClusterRole.class, this.getClass(), filename);
     adminClient.resource(clusterRole).createOrReplace();
   }
 
@@ -375,15 +358,13 @@ class InformerRelatedBehaviorITS {
 
   private Namespace namespace(String name) {
     Namespace n = new Namespace();
-    n.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    n.setMetadata(new ObjectMetaBuilder().withName(name).build());
     return n;
   }
 
   private void removeClusterRoleBinding() {
-    var clusterRoleBinding = ReconcilerUtils
-        .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+    var clusterRoleBinding = ReconcilerUtils.loadYaml(ClusterRoleBinding.class, this.getClass(),
+        "rback-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).delete();
   }
 }

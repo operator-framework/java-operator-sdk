@@ -17,10 +17,8 @@ public class StatefulSetDesiredSanitizerIT {
   public static final String TEST_1 = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new StatefulSetDesiredSanitizerReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new StatefulSetDesiredSanitizerReconciler()).build();
 
   @Test
   void testSSAMatcher() {
@@ -41,9 +39,7 @@ public class StatefulSetDesiredSanitizerIT {
 
   StatefulSetDesiredSanitizerCustomResource testResource() {
     var res = new StatefulSetDesiredSanitizerCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_1)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
     res.setSpec(new StatefulSetDesiredSanitizerSpec());
     res.getSpec().setValue("initial value");
 

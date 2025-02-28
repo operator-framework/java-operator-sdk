@@ -81,13 +81,13 @@ public class ReconcilerUtils {
     if (owner instanceof Namespaced) {
       if (!(resource instanceof Namespaced)) {
         throw new OperatorException(
-            "Cannot add owner reference from a cluster scoped to a namespace scoped resource." +
-                resourcesIdentifierDescription(owner, resource));
+            "Cannot add owner reference from a cluster scoped to a namespace scoped resource."
+                + resourcesIdentifierDescription(owner, resource));
       } else if (!Objects.equals(owner.getMetadata().getNamespace(),
           resource.getMetadata().getNamespace())) {
         throw new OperatorException(
-            "Cannot add owner reference between two resource in different namespaces." +
-                resourcesIdentifierDescription(owner, resource));
+            "Cannot add owner reference between two resource in different namespaces."
+                + resourcesIdentifierDescription(owner, resource));
       }
     }
   }
@@ -154,8 +154,7 @@ public class ReconcilerUtils {
         setSpecMethod = resourceClass.getMethod(SET_SPEC, spec.getClass());
       } else {
         setSpecMethod = Arrays.stream(resourceClass.getMethods())
-            .filter(method -> SET_SPEC.equals(method.getName()))
-            .findFirst()
+            .filter(method -> SET_SPEC.equals(method.getName())).findFirst()
             .orElseThrow(() -> noSpecException(resource, null));
       }
 
@@ -190,9 +189,8 @@ public class ReconcilerUtils {
 
     if (e instanceof KubernetesClientException ke) {
       // only throw MissingCRDException if the 404 error occurs on the target CRD
-      if (404 == ke.getCode() &&
-          (resourceTypeName.equals(ke.getFullResourceName())
-              || matchesResourceType(resourceTypeName, ke))) {
+      if (404 == ke.getCode() && (resourceTypeName.equals(ke.getFullResourceName())
+          || matchesResourceType(resourceTypeName, ke))) {
         throw new MissingCRDException(resourceTypeName, ke.getVersion(), e.getMessage(), e);
       }
     }
@@ -212,8 +210,8 @@ public class ReconcilerUtils {
         if (group.endsWith(".")) {
           group = group.substring(0, group.length() - 1);
         }
-        final var segments = Arrays.stream(group.split("/")).filter(Predicate.not(String::isEmpty))
-            .toList();
+        final var segments =
+            Arrays.stream(group.split("/")).filter(Predicate.not(String::isEmpty)).toList();
         if (segments.size() != 3) {
           return false;
         }

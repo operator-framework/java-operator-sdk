@@ -49,9 +49,7 @@ class OperatorRestartIT {
 
   RestartTestCustomResource testCustomResource() {
     RestartTestCustomResource cr = new RestartTestCustomResource();
-    cr.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    cr.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     return cr;
   }
 }

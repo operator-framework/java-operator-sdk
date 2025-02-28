@@ -11,8 +11,8 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-public class ConfigMapDependentResource extends
-    KubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource>
+public class ConfigMapDependentResource
+    extends KubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource>
     implements Creator<ConfigMap, CleanerForManagedDependentCustomResource>,
     Updater<ConfigMap, CleanerForManagedDependentCustomResource>,
     Deleter<CleanerForManagedDependentCustomResource> {

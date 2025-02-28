@@ -12,9 +12,8 @@ public class RuntimeControllerMetadata {
   private static final Map<Class<? extends Reconciler>, Class<? extends HasMetadata>> controllerToCustomResourceMappings;
 
   static {
-    controllerToCustomResourceMappings =
-        ClassMappingProvider.provide(
-            RECONCILERS_RESOURCE_PATH, Reconciler.class, HasMetadata.class);
+    controllerToCustomResourceMappings = ClassMappingProvider.provide(RECONCILERS_RESOURCE_PATH,
+        Reconciler.class, HasMetadata.class);
   }
 
   @SuppressWarnings("unchecked")
@@ -23,8 +22,7 @@ public class RuntimeControllerMetadata {
         controllerToCustomResourceMappings.get(reconciler.getClass());
     if (resourceClass == null) {
       throw new IllegalArgumentException(
-          String.format(
-              "No custom resource has been found for controller %s",
+          String.format("No custom resource has been found for controller %s",
               reconciler.getClass().getCanonicalName()));
     }
     return (Class<R>) resourceClass;

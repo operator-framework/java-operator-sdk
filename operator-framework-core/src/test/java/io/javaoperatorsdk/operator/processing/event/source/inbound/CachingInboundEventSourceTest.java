@@ -27,25 +27,22 @@ class CachingInboundEventSourceTest extends
 
   @SuppressWarnings("unchecked")
   private final CachingInboundEventSource.ResourceFetcher<SampleExternalResource, TestCustomResource> supplier =
-      mock(
-          CachingInboundEventSource.ResourceFetcher.class);
+      mock(CachingInboundEventSource.ResourceFetcher.class);
   private final TestCustomResource testCustomResource = TestUtils.testCustomResource();
   private final CacheKeyMapper<SampleExternalResource> cacheKeyMapper =
       r -> r.getName() + "#" + r.getValue();
 
   @BeforeEach
   public void setup() {
-    when(supplier.fetchResources(any()))
-        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
 
-    setUpSource(new CachingInboundEventSource<>(supplier,
-        SampleExternalResource.class, cacheKeyMapper));
+    setUpSource(
+        new CachingInboundEventSource<>(supplier, SampleExternalResource.class, cacheKeyMapper));
   }
 
   @Test
   void getSecondaryResourceFromCacheOrSupplier() throws InterruptedException {
-    when(supplier.fetchResources(any()))
-        .thenReturn(Set.of(SampleExternalResource.testResource1()));
+    when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     var value = source.getSecondaryResources(testCustomResource);
 

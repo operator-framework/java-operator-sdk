@@ -25,8 +25,7 @@ public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMeta
   private final Context<P> context;
 
   public DefaultManagedWorkflowAndDependentResourceContext(Controller<P> controller,
-      P primaryResource,
-      Context<P> context) {
+      P primaryResource, Context<P> context) {
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.context = context;
@@ -34,8 +33,7 @@ public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMeta
 
   @Override
   public <T> Optional<T> get(Object key, Class<T> expectedType) {
-    return Optional.ofNullable(attributes.get(key))
-        .filter(expectedType::isInstance)
+    return Optional.ofNullable(attributes.get(key)).filter(expectedType::isInstance)
         .map(expectedType::cast);
   }
 
@@ -50,11 +48,9 @@ public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMeta
     }
 
     if (previous != null && !previous.getClass().isAssignableFrom(value.getClass())) {
-      logWarning("Previous value (" + previous +
-          ") for key (" + key +
-          ") was not of type " + value.getClass() +
-          ". This might indicate an issue in your code. If not, use put(" + key +
-          ", null) first to remove the previous value.");
+      logWarning("Previous value (" + previous + ") for key (" + key + ") was not of type "
+          + value.getClass() + ". This might indicate an issue in your code. If not, use put(" + key
+          + ", null) first to remove the previous value.");
     }
     return (T) previous;
   }
@@ -67,9 +63,9 @@ public class DefaultManagedWorkflowAndDependentResourceContext<P extends HasMeta
   @Override
   @SuppressWarnings("unused")
   public <T> T getMandatory(Object key, Class<T> expectedType) {
-    return get(key, expectedType).orElseThrow(() -> new IllegalStateException(
-        "Mandatory attribute (key: " + key + ", type: " + expectedType.getName()
-            + ") is missing or not of the expected type"));
+    return get(key, expectedType)
+        .orElseThrow(() -> new IllegalStateException("Mandatory attribute (key: " + key + ", type: "
+            + expectedType.getName() + ") is missing or not of the expected type"));
   }
 
   @Override

@@ -143,8 +143,7 @@ public class ManagedWorkflowSupport {
 
   private Map<String, DRInfo> createDRInfos(List<DependentResourceSpec> dependentResourceSpecs) {
     // first create mappings
-    final var infos = dependentResourceSpecs.stream()
-        .map(DRInfo::new)
+    final var infos = dependentResourceSpecs.stream().map(DRInfo::new)
         .collect(Collectors.toMap(DRInfo::name, Function.identity()));
 
     // then populate the reverse depends on information

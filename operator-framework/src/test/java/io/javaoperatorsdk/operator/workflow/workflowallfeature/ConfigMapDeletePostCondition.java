@@ -16,8 +16,7 @@ public class ConfigMapDeletePostCondition
   @Override
   public boolean isMet(
       DependentResource<ConfigMap, WorkflowAllFeatureCustomResource> dependentResource,
-      WorkflowAllFeatureCustomResource primary,
-      Context<WorkflowAllFeatureCustomResource> context) {
+      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
 
     var configMapDeleted = dependentResource.getSecondaryResource(primary, context).isEmpty();
     log.debug("Config Map Deleted: {}", configMapDeleted);

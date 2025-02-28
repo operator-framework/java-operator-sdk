@@ -20,11 +20,9 @@ class MultiOwnerDependentTriggeringIT {
   public static final String NEW_VALUE_2 = "newValue2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
-          .withReconciler(MultipleOwnerDependentReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
+      .withReconciler(MultipleOwnerDependentReconciler.class).build();
 
 
   @Test
@@ -36,9 +34,7 @@ class MultiOwnerDependentTriggeringIT {
       var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
 
       assertThat(cm).isNotNull();
-      assertThat(cm.getData())
-          .containsEntry(VALUE_1, VALUE_1)
-          .containsEntry(VALUE_2, VALUE_2);
+      assertThat(cm.getData()).containsEntry(VALUE_1, VALUE_1).containsEntry(VALUE_2, VALUE_2);
       assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
     });
 
@@ -47,8 +43,7 @@ class MultiOwnerDependentTriggeringIT {
 
     await().untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, MultipleOwnerDependentConfigMap.RESOURCE_NAME);
-      assertThat(cm.getData())
-          .containsEntry(NEW_VALUE_1, NEW_VALUE_1)
+      assertThat(cm.getData()).containsEntry(NEW_VALUE_1, NEW_VALUE_1)
           // note that it will still contain the old value too
           .containsEntry(VALUE_1, VALUE_1);
       assertThat(cm.getMetadata().getOwnerReferences()).hasSize(2);
@@ -66,9 +61,7 @@ class MultiOwnerDependentTriggeringIT {
 
   MultipleOwnerDependentCustomResource testResource(String name, String value) {
     var res = new MultipleOwnerDependentCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     res.setSpec(new MultipleOwnerDependentSpec());
     res.getSpec().setValue(value);
 

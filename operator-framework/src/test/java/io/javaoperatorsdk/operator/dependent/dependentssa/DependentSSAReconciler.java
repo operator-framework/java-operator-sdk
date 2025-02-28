@@ -28,9 +28,8 @@ public class DependentSSAReconciler
   }
 
   public DependentSSAReconciler(boolean useSSA) {
-    ssaConfigMapDependent.configureWith(new KubernetesDependentResourceConfigBuilder<ConfigMap>()
-        .withUseSSA(useSSA)
-        .build());
+    ssaConfigMapDependent.configureWith(
+        new KubernetesDependentResourceConfigBuilder<ConfigMap>().withUseSSA(useSSA).build());
     this.useSSA = useSSA;
   }
 
@@ -43,8 +42,7 @@ public class DependentSSAReconciler
   }
 
   @Override
-  public UpdateControl<DependentSSACustomResource> reconcile(
-      DependentSSACustomResource resource,
+  public UpdateControl<DependentSSACustomResource> reconcile(DependentSSACustomResource resource,
       Context<DependentSSACustomResource> context) {
 
     ssaConfigMapDependent.reconcile(resource, context);
@@ -59,7 +57,6 @@ public class DependentSSAReconciler
   @Override
   public List<EventSource<?, DependentSSACustomResource>> prepareEventSources(
       EventSourceContext<DependentSSACustomResource> context) {
-    return EventSourceUtils.dependentEventSources(context,
-        ssaConfigMapDependent);
+    return EventSourceUtils.dependentEventSources(context, ssaConfigMapDependent);
   }
 }

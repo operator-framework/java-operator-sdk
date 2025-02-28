@@ -64,25 +64,22 @@ public class PollingEventSource<R, P extends HasMetadata>
   public void start() throws OperatorException {
     super.start();
     getStateAndFillCache();
-    timer.schedule(
-        new TimerTask() {
-          @Override
-          public void run() {
-            try {
-              if (!isRunning()) {
-                log.debug("Event source not yet started. Will not run.");
-                return;
-              }
-              getStateAndFillCache();
-              healthy.set(true);
-            } catch (RuntimeException e) {
-              healthy.set(false);
-              log.error("Error during polling.", e);
-            }
+    timer.schedule(new TimerTask() {
+      @Override
+      public void run() {
+        try {
+          if (!isRunning()) {
+            log.debug("Event source not yet started. Will not run.");
+            return;
           }
-        },
-        period.toMillis(),
-        period.toMillis());
+          getStateAndFillCache();
+          healthy.set(true);
+        } catch (RuntimeException e) {
+          healthy.set(false);
+          log.error("Error during polling.", e);
+        }
+      }
+    }, period.toMillis(), period.toMillis());
   }
 
   protected synchronized void getStateAndFillCache() {

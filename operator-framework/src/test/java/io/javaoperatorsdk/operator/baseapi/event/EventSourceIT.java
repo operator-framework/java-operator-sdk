@@ -15,9 +15,8 @@ import static org.awaitility.Awaitility.await;
 class EventSourceIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(EventSourceTestCustomReconciler.class)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(EventSourceTestCustomReconciler.class).build();
 
   @Test
   void receivingPeriodicEvents() {
@@ -25,22 +24,16 @@ class EventSourceIT {
 
     operator.create(resource);
 
-    await()
-        .atMost(5, TimeUnit.SECONDS)
-        .pollInterval(
-            EventSourceTestCustomReconciler.TIMER_PERIOD / 2, TimeUnit.MILLISECONDS)
+    await().atMost(5, TimeUnit.SECONDS)
+        .pollInterval(EventSourceTestCustomReconciler.TIMER_PERIOD / 2, TimeUnit.MILLISECONDS)
         .untilAsserted(
-            () -> assertThat(TestUtils.getNumberOfExecutions(operator))
-                .isGreaterThanOrEqualTo(4));
+            () -> assertThat(TestUtils.getNumberOfExecutions(operator)).isGreaterThanOrEqualTo(4));
   }
 
   public EventSourceTestCustomResource createTestCustomResource(String id) {
     EventSourceTestCustomResource resource = new EventSourceTestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName("eventsource-" + id)
-            .withNamespace(operator.getNamespace())
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName("eventsource-" + id)
+        .withNamespace(operator.getNamespace()).build());
     resource.setSpec(new EventSourceTestCustomResourceSpec());
     resource.getSpec().setValue(id);
     return resource;

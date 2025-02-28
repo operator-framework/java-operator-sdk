@@ -30,8 +30,7 @@ public class StandaloneDependentTestReconciler
   @Override
   public List<EventSource<?, StandaloneDependentTestCustomResource>> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return EventSourceUtils.dependentEventSources(context,
-        deploymentDependent);
+    return EventSourceUtils.dependentEventSources(context, deploymentDependent);
   }
 
   @Override
@@ -67,8 +66,8 @@ public class StandaloneDependentTestReconciler
     return errorOccurred;
   }
 
-  private static class DeploymentDependentResource extends
-      CRUDKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
+  private static class DeploymentDependentResource
+      extends CRUDKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
     public DeploymentDependentResource() {
       super(Deployment.class);

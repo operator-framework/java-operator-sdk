@@ -14,17 +14,13 @@ public class ReadOnlyBulkReconciler implements Reconciler<BulkDependentTestCusto
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
       BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context) {
 
-    var nonReadyDependents =
-        context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
-            .orElseThrow()
-            .getNotReadyDependents();
+    var nonReadyDependents = context.managedWorkflowAndDependentResourceContext()
+        .getWorkflowReconcileResult().orElseThrow().getNotReadyDependents();
 
 
     BulkDependentTestCustomResource customResource = new BulkDependentTestCustomResource();
-    customResource.setMetadata(new ObjectMetaBuilder()
-        .withName(resource.getMetadata().getName())
-        .withNamespace(resource.getMetadata().getNamespace())
-        .build());
+    customResource.setMetadata(new ObjectMetaBuilder().withName(resource.getMetadata().getName())
+        .withNamespace(resource.getMetadata().getNamespace()).build());
     var status = new BulkDependentTestStatus();
     status.setReady(nonReadyDependents.isEmpty());
     customResource.setStatus(status);

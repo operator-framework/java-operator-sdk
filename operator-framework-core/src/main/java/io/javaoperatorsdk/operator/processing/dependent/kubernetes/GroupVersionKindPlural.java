@@ -24,10 +24,8 @@ public class GroupVersionKindPlural extends GroupVersionKind {
   }
 
   protected GroupVersionKindPlural(GroupVersionKind gvk, String plural) {
-    this(gvk.getGroup(), gvk.getVersion(), gvk.getKind(),
-        plural != null ? plural
-            : (gvk instanceof GroupVersionKindPlural ? ((GroupVersionKindPlural) gvk).plural
-                : null));
+    this(gvk.getGroup(), gvk.getVersion(), gvk.getKind(), plural != null ? plural
+        : (gvk instanceof GroupVersionKindPlural ? ((GroupVersionKindPlural) gvk).plural : null));
   }
 
   /**

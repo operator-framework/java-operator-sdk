@@ -34,16 +34,7 @@ public class TestCustomResourceSpec {
 
   @Override
   public String toString() {
-    return "TestCustomResourceSpec{"
-        + "configMapName='"
-        + configMapName
-        + '\''
-        + ", key='"
-        + key
-        + '\''
-        + ", value='"
-        + value
-        + '\''
-        + '}';
+    return "TestCustomResourceSpec{" + "configMapName='" + configMapName + '\'' + ", key='" + key
+        + '\'' + ", value='" + value + '\'' + '}';
   }
 }

@@ -37,17 +37,16 @@ public class ControllerEventSource<T extends HasMetadata>
 
     final var config = controller.getConfiguration();
     OnUpdateFilter internalOnUpdateFilter =
-        onUpdateFinalizerNeededAndApplied(controller.useFinalizer(),
-            config.getFinalizerName())
+        onUpdateFinalizerNeededAndApplied(controller.useFinalizer(), config.getFinalizerName())
             .or(onUpdateGenerationAware(config.isGenerationAware()))
             .or(onUpdateMarkedForDeletion());
 
     // by default the on add should be processed in all cases regarding internal filters
     final var informerConfig = config.getInformerConfig();
     Optional.ofNullable(informerConfig.getOnAddFilter()).ifPresent(this::setOnAddFilter);
-    Optional.ofNullable(informerConfig.getOnUpdateFilter())
-        .ifPresentOrElse(filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
-            () -> setOnUpdateFilter(internalOnUpdateFilter));
+    Optional.ofNullable(informerConfig.getOnUpdateFilter()).ifPresentOrElse(
+        filter -> setOnUpdateFilter(filter.and(internalOnUpdateFilter)),
+        () -> setOnUpdateFilter(internalOnUpdateFilter));
     Optional.ofNullable(informerConfig.getGenericFilter()).ifPresent(this::setGenericFilter);
     setControllerConfiguration(config);
   }
@@ -66,18 +65,17 @@ public class ControllerEventSource<T extends HasMetadata>
     try {
       if (log.isDebugEnabled()) {
         log.debug("Event received for resource: {} version: {} uuid: {} action: {}",
-            ResourceID.fromResource(resource),
-            getVersion(resource), resource.getMetadata().getUid(), action);
+            ResourceID.fromResource(resource), getVersion(resource),
+            resource.getMetadata().getUid(), action);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
       if (isAcceptedByFilters(action, resource, oldResource)) {
-        getEventHandler().handleEvent(
-            new ResourceEvent(action, ResourceID.fromResource(resource), resource));
+        getEventHandler()
+            .handleEvent(new ResourceEvent(action, ResourceID.fromResource(resource), resource));
       } else {
-        log.debug("Skipping event handling resource {}",
-            ResourceID.fromResource(resource));
+        log.debug("Skipping event handling resource {}", ResourceID.fromResource(resource));
       }
     } finally {
       MDCUtils.removeResourceInfo();

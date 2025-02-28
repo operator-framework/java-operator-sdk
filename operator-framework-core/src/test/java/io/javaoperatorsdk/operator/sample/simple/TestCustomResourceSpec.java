@@ -36,17 +36,8 @@ public class TestCustomResourceSpec {
 
   @Override
   public String toString() {
-    return "TestCustomResourceSpec{"
-        + "configMapName='"
-        + configMapName
-        + '\''
-        + ", key='"
-        + key
-        + '\''
-        + ", value='"
-        + value
-        + '\''
-        + '}';
+    return "TestCustomResourceSpec{" + "configMapName='" + configMapName + '\'' + ", key='" + key
+        + '\'' + ", value='" + value + '\'' + '}';
   }
 
   @Override
@@ -58,8 +49,8 @@ public class TestCustomResourceSpec {
       return false;
     }
     TestCustomResourceSpec that = (TestCustomResourceSpec) o;
-    return Objects.equals(configMapName, that.configMapName) && Objects.equals(
-        key, that.key) && Objects.equals(value, that.value);
+    return Objects.equals(configMapName, that.configMapName) && Objects.equals(key, that.key)
+        && Objects.equals(value, that.value);
   }
 
   @Override

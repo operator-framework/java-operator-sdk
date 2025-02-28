@@ -163,9 +163,7 @@ class TemporaryResourceCacheTest {
 
   ConfigMap testResource() {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withLabels(Map.of("k", "v"))
-        .build());
+    configMap.setMetadata(new ObjectMetaBuilder().withLabels(Map.of("k", "v")).build());
     configMap.getMetadata().setName("test");
     configMap.getMetadata().setNamespace("default");
     configMap.getMetadata().setResourceVersion(RESOURCE_VERSION);

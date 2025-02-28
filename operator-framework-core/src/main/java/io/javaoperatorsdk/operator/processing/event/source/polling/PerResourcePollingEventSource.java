@@ -36,8 +36,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * @param <P> related custom resource
  */
 public class PerResourcePollingEventSource<R, P extends HasMetadata>
-    extends ExternalResourceCachingEventSource<R, P>
-    implements ResourceEventAware<P> {
+    extends ExternalResourceCachingEventSource<R, P> implements ResourceEventAware<P> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
 
@@ -52,8 +51,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
 
 
 
-  public PerResourcePollingEventSource(Class<R> resourceClass,
-      EventSourceContext<P> context,
+  public PerResourcePollingEventSource(Class<R> resourceClass, EventSourceContext<P> context,
       PerResourcePollingConfiguration<R, P> config) {
     super(config.name(), resourceClass, config.cacheKeyMapper());
     this.primaryResourceCache = context.getPrimaryCache();
@@ -108,8 +106,8 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   // important because otherwise there will be a race condition related to the timerTasks.
   private void checkAndRegisterTask(P resource) {
     var primaryID = ResourceID.fromResource(resource);
-    if (scheduledFutures.get(primaryID) == null && (registerPredicate == null
-        || registerPredicate.test(resource))) {
+    if (scheduledFutures.get(primaryID) == null
+        && (registerPredicate == null || registerPredicate.test(resource))) {
       var cachedResources = cache.get(primaryID);
       var actualResources =
           cachedResources == null ? null : new HashSet<>(cachedResources.values());

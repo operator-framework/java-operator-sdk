@@ -29,23 +29,20 @@ class ClassMappingProvider {
         URL url = it.next();
 
         List<String> classNamePairs = retrieveClassNamePairs(url);
-        classNamePairs.forEach(
-            clazzPair -> {
-              try {
-                final String[] classNames = clazzPair.split(",");
-                if (classNames.length != 2) {
-                  throw new IllegalStateException(
-                      String.format(
-                          "%s is not valid Mapping metadata, defined in %s",
-                          clazzPair, url));
-                }
+        classNamePairs.forEach(clazzPair -> {
+          try {
+            final String[] classNames = clazzPair.split(",");
+            if (classNames.length != 2) {
+              throw new IllegalStateException(
+                  String.format("%s is not valid Mapping metadata, defined in %s", clazzPair, url));
+            }
 
-                result.put(
-                    (T) ClassUtils.getClass(classNames[0]), (V) ClassUtils.getClass(classNames[1]));
-              } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-              }
-            });
+            result.put((T) ClassUtils.getClass(classNames[0]),
+                (V) ClassUtils.getClass(classNames[1]));
+          } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+          }
+        });
       }
       log.debug("Loaded Controller to resource mappings {}", result);
       return result;
@@ -56,8 +53,7 @@ class ClassMappingProvider {
 
   private static List<String> retrieveClassNamePairs(URL url) throws IOException {
     try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
-      return br.lines()
-          .collect(Collectors.toList());
+      return br.lines().collect(Collectors.toList());
     }
   }
 }

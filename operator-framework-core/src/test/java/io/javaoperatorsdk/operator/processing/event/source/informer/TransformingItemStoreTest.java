@@ -49,10 +49,8 @@ class TransformingItemStoreTest {
 
   ConfigMap configMap() {
     var cm = new ConfigMap();
-    cm.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .withNamespace("default").withResourceVersion("1")
-        .build());
+    cm.setMetadata(new ObjectMetaBuilder().withName("test1").withNamespace("default")
+        .withResourceVersion("1").build());
     return cm;
   }
 

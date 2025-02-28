@@ -19,18 +19,13 @@ class CaffeineBoundedCacheNamespacedIT
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new BoundedCacheTestReconciler(), o -> {
-        o.withItemStore(boundedItemStore(
-            new KubernetesClientBuilder().build(), BoundedCacheTestCustomResource.class,
-            Duration.ofMinutes(1),
-            1));
-      })
-          .build();
+        o.withItemStore(boundedItemStore(new KubernetesClientBuilder().build(),
+            BoundedCacheTestCustomResource.class, Duration.ofMinutes(1), 1));
+      }).build();
 
   BoundedCacheTestCustomResource createTestResource(int index) {
     var res = new BoundedCacheTestCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME_PREFIX + index)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME_PREFIX + index).build());
     res.setSpec(new BoundedCacheTestSpec());
     res.getSpec().setData(INITIAL_DATA_PREFIX + index);
     res.getSpec().setTargetNamespace(extension.getNamespace());

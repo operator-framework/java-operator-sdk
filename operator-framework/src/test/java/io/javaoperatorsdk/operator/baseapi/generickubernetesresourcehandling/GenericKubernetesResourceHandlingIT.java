@@ -11,10 +11,8 @@ public class GenericKubernetesResourceHandlingIT
     extends GenericKubernetesDependentTestBase<GenericKubernetesResourceHandlingCustomResource> {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new GenericKubernetesResourceHandlingReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new GenericKubernetesResourceHandlingReconciler()).build();
 
   @Override
   public LocallyRunOperatorExtension extension() {
@@ -24,9 +22,7 @@ public class GenericKubernetesResourceHandlingIT
   @Override
   public GenericKubernetesResourceHandlingCustomResource testResource(String name, String data) {
     var resource = new GenericKubernetesResourceHandlingCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(name).build());
     resource.setSpec(new GenericKubernetesDependentSpec());
     resource.getSpec().setValue(INITIAL_DATA);
     return resource;

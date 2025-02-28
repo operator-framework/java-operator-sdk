@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("mdcc")
-public class ManagedDependentDefaultDeleteConditionCustomResource
-    extends CustomResource<Void, Void>
+public class ManagedDependentDefaultDeleteConditionCustomResource extends CustomResource<Void, Void>
     implements Namespaced {
 }

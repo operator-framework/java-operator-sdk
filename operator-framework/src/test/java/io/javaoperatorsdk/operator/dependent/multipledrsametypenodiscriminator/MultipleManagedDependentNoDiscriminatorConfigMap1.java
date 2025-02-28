@@ -11,8 +11,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @KubernetesDependent
-public class MultipleManagedDependentNoDiscriminatorConfigMap1
-    extends
+public class MultipleManagedDependentNoDiscriminatorConfigMap1 extends
     CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> {
 
   public static final String NAME_SUFFIX = "-1";
@@ -41,12 +40,8 @@ public class MultipleManagedDependentNoDiscriminatorConfigMap1
     data.put(MultipleManagedDependentSameTypeNoDiscriminatorReconciler.DATA_KEY,
         primary.getSpec().getValue());
 
-    return new ConfigMapBuilder()
-        .withNewMetadata()
+    return new ConfigMapBuilder().withNewMetadata()
         .withName(primary.getMetadata().getName() + NAME_SUFFIX)
-        .withNamespace(primary.getMetadata().getNamespace())
-        .endMetadata()
-        .withData(data)
-        .build();
+        .withNamespace(primary.getMetadata().getNamespace()).endMetadata().withData(data).build();
   }
 }

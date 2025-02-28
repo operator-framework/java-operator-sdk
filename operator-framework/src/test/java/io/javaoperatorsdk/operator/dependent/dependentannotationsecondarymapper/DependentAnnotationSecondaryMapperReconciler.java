@@ -33,8 +33,8 @@ public class DependentAnnotationSecondaryMapperReconciler
     return numberOfExecutions.get();
   }
 
-  public static class ConfigMapDependentResource extends
-      KubernetesDependentResource<ConfigMap, DependentAnnotationSecondaryMapperResource>
+  public static class ConfigMapDependentResource
+      extends KubernetesDependentResource<ConfigMap, DependentAnnotationSecondaryMapperResource>
       implements Creator<ConfigMap, DependentAnnotationSecondaryMapperResource>,
       Updater<ConfigMap, DependentAnnotationSecondaryMapperResource>,
       Deleter<DependentAnnotationSecondaryMapperResource> {
@@ -47,10 +47,8 @@ public class DependentAnnotationSecondaryMapperReconciler
     protected ConfigMap desired(DependentAnnotationSecondaryMapperResource primary,
         Context<DependentAnnotationSecondaryMapperResource> context) {
       ConfigMap configMap = new ConfigMap();
-      configMap.setMetadata(new ObjectMetaBuilder()
-          .withName(primary.getMetadata().getName())
-          .withNamespace(primary.getMetadata().getNamespace())
-          .build());
+      configMap.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+          .withNamespace(primary.getMetadata().getNamespace()).build());
       configMap.setData(Map.of("data", primary.getMetadata().getName()));
       return configMap;
     }

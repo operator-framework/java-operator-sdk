@@ -51,8 +51,8 @@ public class DependentResourceCrossRefReconciler
     return errorHappened;
   }
 
-  public static class SecretDependentResource extends
-      CRUDKubernetesDependentResource<Secret, DependentResourceCrossRefResource> {
+  public static class SecretDependentResource
+      extends CRUDKubernetesDependentResource<Secret, DependentResourceCrossRefResource> {
 
     public SecretDependentResource() {
       super(Secret.class);
@@ -62,17 +62,15 @@ public class DependentResourceCrossRefReconciler
     protected Secret desired(DependentResourceCrossRefResource primary,
         Context<DependentResourceCrossRefResource> context) {
       Secret secret = new Secret();
-      secret.setMetadata(new ObjectMetaBuilder()
-          .withName(primary.getMetadata().getName())
-          .withNamespace(primary.getMetadata().getNamespace())
-          .build());
+      secret.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+          .withNamespace(primary.getMetadata().getNamespace()).build());
       secret.setData(Map.of("key", Base64.getEncoder().encodeToString("secretData".getBytes())));
       return secret;
     }
   }
 
-  public static class ConfigMapDependentResource extends
-      CRUDKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
+  public static class ConfigMapDependentResource
+      extends CRUDKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
 
     public ConfigMapDependentResource() {
       super(ConfigMap.class);
@@ -86,10 +84,8 @@ public class DependentResourceCrossRefReconciler
         throw new IllegalStateException("Secret is empty");
       }
       ConfigMap configMap = new ConfigMap();
-      configMap.setMetadata(new ObjectMetaBuilder()
-          .withName(primary.getMetadata().getName())
-          .withNamespace(primary.getMetadata().getNamespace())
-          .build());
+      configMap.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+          .withNamespace(primary.getMetadata().getNamespace()).build());
       configMap
           .setData(Map.of("secretKey", new ArrayList<>(secret.get().getData().keySet()).get(0)));
       return configMap;

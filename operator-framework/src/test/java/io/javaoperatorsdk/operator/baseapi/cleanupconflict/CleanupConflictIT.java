@@ -19,8 +19,7 @@ class CleanupConflictIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new CleanupConflictReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(new CleanupConflictReconciler()).build();
 
   @Test
   void cleanupRemovesFinalizerWithoutConflict() throws InterruptedException {

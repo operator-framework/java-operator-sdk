@@ -22,10 +22,8 @@ public class MultipleDependentResourceIT {
   public static final String INITIAL_VALUE = "initial value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleDependentResourceReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleDependentResourceReconciler()).build();
 
   @Test
   void handlesCRUDOperations() {
@@ -65,9 +63,7 @@ public class MultipleDependentResourceIT {
 
   MultipleDependentResourceCustomResource testResource() {
     var res = new MultipleDependentResourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     res.setSpec(new MultipleDependentResourceSpec());
     res.getSpec().setValue(INITIAL_VALUE);
 

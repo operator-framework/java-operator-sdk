@@ -15,8 +15,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
  * Not using CRUDKubernetesDependentResource so the delete functionality can be tested.
  */
 public class ConfigMapDeleterBulkDependentResource
-    extends
-    KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
+    extends KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
     implements CRUDBulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
 
   public static final String LABEL_KEY = "bulk";
@@ -42,13 +41,12 @@ public class ConfigMapDeleterBulkDependentResource
 
   public ConfigMap desired(BulkDependentTestCustomResource primary, String key) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName() + INDEX_DELIMITER + key)
-        .withNamespace(primary.getMetadata().getNamespace())
-        .withLabels(Map.of(LABEL_KEY, LABEL_VALUE))
-        .build());
-    configMap.setData(
-        Map.of("number", key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
+    configMap.setMetadata(
+        new ObjectMetaBuilder().withName(primary.getMetadata().getName() + INDEX_DELIMITER + key)
+            .withNamespace(primary.getMetadata().getNamespace())
+            .withLabels(Map.of(LABEL_KEY, LABEL_VALUE)).build());
+    configMap
+        .setData(Map.of("number", key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
     return configMap;
   }
 

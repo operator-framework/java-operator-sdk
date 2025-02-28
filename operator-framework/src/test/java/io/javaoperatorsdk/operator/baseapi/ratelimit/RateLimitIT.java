@@ -21,9 +21,7 @@ class RateLimitIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new RateLimitReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(new RateLimitReconciler()).build();
 
   @Test
   void rateLimitsExecution() {
@@ -34,8 +32,7 @@ class RateLimitIT {
       resource.getSpec().setNumber(i);
       operator.replace(resource);
     });
-    await().pollInterval(Duration.ofMillis(100))
-        .pollDelay(Duration.ofMillis(REFRESH_PERIOD / 2))
+    await().pollInterval(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(REFRESH_PERIOD / 2))
         .untilAsserted(() -> assertThat(
             operator.getReconcilerOfType(RateLimitReconciler.class).getNumberOfExecutions())
             .isEqualTo(1));
@@ -48,9 +45,7 @@ class RateLimitIT {
 
   public RateLimitCustomResource createResource() {
     RateLimitCustomResource res = new RateLimitCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName("test")
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName("test").build());
     res.setSpec(new RateLimitCustomResourceSpec());
     res.getSpec().setNumber(0);
     return res;

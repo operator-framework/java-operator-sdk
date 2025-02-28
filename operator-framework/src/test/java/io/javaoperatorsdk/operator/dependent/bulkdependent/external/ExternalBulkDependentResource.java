@@ -55,9 +55,8 @@ public class ExternalBulkDependentResource
   }
 
   private static String toExternalResourceId(BulkDependentTestCustomResource primary, String i) {
-    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
-        primary.getMetadata().getNamespace() +
-        EXTERNAL_RESOURCE_NAME_DELIMITER + i;
+    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER
+        + primary.getMetadata().getNamespace() + EXTERNAL_RESOURCE_NAME_DELIMITER + i;
   }
 
   private ResourceID toResourceID(ExternalResource externalResource) {
@@ -80,13 +79,11 @@ public class ExternalBulkDependentResource
 
   @Override
   public Map<String, ExternalResource> getSecondaryResources(
-      BulkDependentTestCustomResource primary,
-      Context<BulkDependentTestCustomResource> context) {
+      BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
     return context.getSecondaryResourcesAsStream(resourceType())
         .filter(r -> r.getId()
-            .startsWith(primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
-                primary.getMetadata().getNamespace() +
-                EXTERNAL_RESOURCE_NAME_DELIMITER))
+            .startsWith(primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER
+                + primary.getMetadata().getNamespace() + EXTERNAL_RESOURCE_NAME_DELIMITER))
         .collect(Collectors.toMap(
             r -> r.getId().substring(r.getId().lastIndexOf(EXTERNAL_RESOURCE_NAME_DELIMITER) + 1),
             r -> r));
@@ -94,9 +91,7 @@ public class ExternalBulkDependentResource
 
   @Override
   public void deleteTargetResource(BulkDependentTestCustomResource primary,
-      ExternalResource resource,
-      String key,
-      Context<BulkDependentTestCustomResource> context) {
+      ExternalResource resource, String key, Context<BulkDependentTestCustomResource> context) {
     externalServiceMock.delete(resource.getId());
   }
 }

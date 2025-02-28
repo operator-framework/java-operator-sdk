@@ -14,10 +14,8 @@ import static org.awaitility.Awaitility.await;
 class MultipleManagedExternalDependentSameTypeIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new MultipleManagedExternalDependentResourceReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new MultipleManagedExternalDependentResourceReconciler()).build();
 
   public static final String TEST_RESOURCE_NAME = "test1";
   public static final String DEFAULT_SPEC_VALUE = "val";
@@ -56,9 +54,7 @@ class MultipleManagedExternalDependentSameTypeIT {
 
   private MultipleManagedExternalDependentResourceCustomResource testResource() {
     var res = new MultipleManagedExternalDependentResourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new MultipleManagedDependentResourceSpec());
     res.getSpec().setValue(DEFAULT_SPEC_VALUE);

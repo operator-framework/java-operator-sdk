@@ -31,11 +31,10 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
     super.resolveEventSource(eventSourceRetriever);
     if (isDependentResourceWithExplicitState) {
-      final var eventSourceName = (String) dependentResourceWithExplicitState
-          .eventSourceName().orElse(null);
-      externalStateEventSource = (InformerEventSource<?, P>) eventSourceRetriever
-          .getEventSourceFor(dependentResourceWithExplicitState.stateResourceClass(),
-              eventSourceName);
+      final var eventSourceName =
+          (String) dependentResourceWithExplicitState.eventSourceName().orElse(null);
+      externalStateEventSource = (InformerEventSource<?, P>) eventSourceRetriever.getEventSourceFor(
+          dependentResourceWithExplicitState.stateResourceClass(), eventSourceName);
     }
 
   }
@@ -83,18 +82,15 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   }
 
   @SuppressWarnings("unchecked")
-  public void deleteTargetResource(P primary, R resource, String key,
-      Context<P> context) {
+  public void deleteTargetResource(P primary, R resource, String key, Context<P> context) {
     if (isDependentResourceWithExplicitState) {
       context.getClient()
-          .resource(dependentResourceWithExplicitState.stateResource(primary, resource))
-          .delete();
+          .resource(dependentResourceWithExplicitState.stateResource(primary, resource)).delete();
     }
     handleDeleteTargetResource(primary, resource, key, context);
   }
 
-  public void handleDeleteTargetResource(P primary, R resource, String key,
-      Context<P> context) {
+  public void handleDeleteTargetResource(P primary, R resource, String key, Context<P> context) {
     throw new IllegalStateException("Override this method in case you manage an bulk resource");
   }
 

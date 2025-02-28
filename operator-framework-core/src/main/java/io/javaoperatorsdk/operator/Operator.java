@@ -122,11 +122,8 @@ public class Operator implements LifecycleAware {
       }
       controllerManager.shouldStart();
       final var version = configurationService.getVersion();
-      log.info(
-          "Operator SDK {} (commit: {}) built on {} starting...",
-          version.getSdkVersion(),
-          version.getCommit(),
-          version.getBuiltTime());
+      log.info("Operator SDK {} (commit: {}) built on {} starting...", version.getSdkVersion(),
+          version.getCommit(), version.getBuiltTime());
       final var clientVersion = Version.clientVersion();
       log.info("Client version: {}", clientVersion);
 
@@ -194,19 +191,16 @@ public class Operator implements LifecycleAware {
    * @throws OperatorException if a problem occurred during the registration process
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
-      ControllerConfiguration<P> configuration)
-      throws OperatorException {
+      ControllerConfiguration<P> configuration) throws OperatorException {
     if (started) {
       throw new OperatorException("Operator already started. Register all the controllers before.");
     }
 
     if (configuration == null) {
-      throw new OperatorException(
-          "Cannot register reconciler with name " + reconciler.getClass().getCanonicalName() +
-              " reconciler named " + ReconcilerUtils.getNameFor(reconciler)
-              + " because its configuration cannot be found.\n" +
-              " Known reconcilers are: "
-              + configurationService.getKnownReconcilerNames());
+      throw new OperatorException("Cannot register reconciler with name "
+          + reconciler.getClass().getCanonicalName() + " reconciler named "
+          + ReconcilerUtils.getNameFor(reconciler) + " because its configuration cannot be found.\n"
+          + " Known reconcilers are: " + configurationService.getKnownReconcilerNames());
     }
 
     final var controller = new Controller<>(reconciler, configuration, getKubernetesClient());
@@ -217,11 +211,8 @@ public class Operator implements LifecycleAware {
     final var watchedNS = informerConfig.watchAllNamespaces() ? "[all namespaces]"
         : informerConfig.getEffectiveNamespaces(configuration);
 
-    log.info(
-        "Registered reconciler: '{}' for resource: '{}' for namespace(s): {}",
-        configuration.getName(),
-        configuration.getResourceClass(),
-        watchedNS);
+    log.info("Registered reconciler: '{}' for resource: '{}' for namespace(s): {}",
+        configuration.getName(), configuration.getResourceClass(), watchedNS);
     return controller;
   }
 
@@ -235,8 +226,7 @@ public class Operator implements LifecycleAware {
    */
   public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
       Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
-    final var controllerConfiguration =
-        configurationService.getConfigurationFor(reconciler);
+    final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
     return register(reconciler, configToOverride.build());

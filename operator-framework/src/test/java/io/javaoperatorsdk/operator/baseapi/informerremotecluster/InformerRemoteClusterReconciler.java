@@ -34,10 +34,8 @@ public class InformerRemoteClusterReconciler
 
     return context.getSecondaryResource(ConfigMap.class).map(cm -> {
       var r = new InformerRemoteClusterCustomResource();
-      r.setMetadata(new ObjectMetaBuilder()
-          .withName(resource.getMetadata().getName())
-          .withNamespace(resource.getMetadata().getNamespace())
-          .build());
+      r.setMetadata(new ObjectMetaBuilder().withName(resource.getMetadata().getName())
+          .withNamespace(resource.getMetadata().getNamespace()).build());
       r.setStatus(new InformerRemoteClusterStatus());
       r.getStatus().setRemoteConfigMapMessage(cm.getData().get(DATA_KEY));
       return UpdateControl.patchStatus(r);
@@ -55,9 +53,7 @@ public class InformerRemoteClusterReconciler
         .withSecondaryToPrimaryMapper(
             Mappers.fromDefaultAnnotations(InformerRemoteClusterCustomResource.class))
         // setting remote client for informer
-        .withKubernetesClient(remoteClient)
-        .withWatchAllNamespaces()
-        .build(), context);
+        .withKubernetesClient(remoteClient).withWatchAllNamespaces().build(), context);
 
     return List.of(es);
   }

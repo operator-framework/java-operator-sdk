@@ -35,8 +35,9 @@ class InternalEventFiltersTest {
 
   @Test
   void acceptsEventIfNoGenerationOnResource() {
-    assertThat(InternalEventFilters.onUpdateGenerationAware(true)
-        .accept(testService(), testService())).isTrue();
+    assertThat(
+        InternalEventFilters.onUpdateGenerationAware(true).accept(testService(), testService()))
+        .isTrue();
   }
 
   @Test
@@ -47,8 +48,9 @@ class InternalEventFiltersTest {
     var res = TestUtils.testCustomResource1();
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
-        .accept(res, res)).isFalse();
+    assertThat(
+        InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER).accept(res, res))
+        .isFalse();
   }
 
   @Test
@@ -56,8 +58,8 @@ class InternalEventFiltersTest {
     var res = TestUtils.testCustomResource1();
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, "finalizer")
-        .accept(res, TestUtils.testCustomResource1())).isTrue();
+    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, "finalizer").accept(res,
+        TestUtils.testCustomResource1())).isTrue();
   }
 
   @Test

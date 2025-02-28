@@ -38,8 +38,7 @@ public abstract class AbstractExternalDependentResource extends
   }
 
   @Override
-  public ExternalResource update(ExternalResource actual,
-      ExternalResource desired,
+  public ExternalResource update(ExternalResource actual, ExternalResource desired,
       MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
     return externalServiceMock.update(desired);
@@ -61,8 +60,7 @@ public abstract class AbstractExternalDependentResource extends
 
   protected ExternalResource desired(MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
-    return new ExternalResource(toExternalResourceID(primary),
-        primary.getSpec().getValue());
+    return new ExternalResource(toExternalResourceID(primary), primary.getSpec().getValue());
   }
 
   protected String toExternalResourceID(

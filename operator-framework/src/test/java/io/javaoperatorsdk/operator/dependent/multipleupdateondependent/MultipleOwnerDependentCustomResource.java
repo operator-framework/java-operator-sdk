@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("mod")
 public class MultipleOwnerDependentCustomResource
-    extends CustomResource<MultipleOwnerDependentSpec, Void>
-    implements Namespaced {
+    extends CustomResource<MultipleOwnerDependentSpec, Void> implements Namespaced {
 
 }

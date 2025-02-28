@@ -60,8 +60,7 @@ public class LinearRateLimiter
 
   @Override
   public void initFrom(RateLimited configuration) {
-    this.refreshPeriod = Duration.of(configuration.within(),
-        configuration.unit().toChronoUnit());
+    this.refreshPeriod = Duration.of(configuration.within(), configuration.unit().toChronoUnit());
     this.limitForPeriod = configuration.maxReconciliations();
   }
 

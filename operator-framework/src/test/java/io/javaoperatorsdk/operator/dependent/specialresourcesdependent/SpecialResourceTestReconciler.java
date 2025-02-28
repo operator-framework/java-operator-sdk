@@ -7,21 +7,16 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@Workflow(dependents = {
-    @Dependent(type = ServiceAccountDependentResource.class),
-})
-@ControllerConfiguration(
-    informer = @Informer(namespaces = Constants.WATCH_CURRENT_NAMESPACE))
+@Workflow(dependents = {@Dependent(type = ServiceAccountDependentResource.class),})
+@ControllerConfiguration(informer = @Informer(namespaces = Constants.WATCH_CURRENT_NAMESPACE))
 public class SpecialResourceTestReconciler
-    implements Reconciler<SpecialResourceCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<SpecialResourceCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
   public UpdateControl<SpecialResourceCustomResource> reconcile(
-      SpecialResourceCustomResource resource,
-      Context<SpecialResourceCustomResource> context) {
+      SpecialResourceCustomResource resource, Context<SpecialResourceCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }

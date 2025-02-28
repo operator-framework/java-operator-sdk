@@ -54,22 +54,18 @@ class BaseWorkflowResult implements WorkflowResult {
     try {
       return Optional.ofNullable(results().get(dependentResource))
           .flatMap(detail -> detail.getResultForConditionWithType(conditionType))
-          .map(r -> result[0] = r.getDetail())
-          .map(expectedResultType::cast);
+          .map(r -> result[0] = r.getDetail()).map(expectedResultType::cast);
     } catch (Exception e) {
-      throw new IllegalArgumentException("Condition " +
-          "result " + result[0] +
-          " for Dependent " + dependentResource.name() + " doesn't match expected type "
-          + expectedResultType.getSimpleName(), e);
+      throw new IllegalArgumentException(
+          "Condition " + "result " + result[0] + " for Dependent " + dependentResource.name()
+              + " doesn't match expected type " + expectedResultType.getSimpleName(),
+          e);
     }
   }
 
-  protected List<DependentResource> listFilteredBy(
-      Function<Detail, Boolean> filter) {
-    return results.entrySet().stream()
-        .filter(e -> filter.apply(e.getValue()))
-        .map(Map.Entry::getKey)
-        .toList();
+  protected List<DependentResource> listFilteredBy(Function<Detail, Boolean> filter) {
+    return results.entrySet().stream().filter(e -> filter.apply(e.getValue()))
+        .map(Map.Entry::getKey).toList();
   }
 
   @Override
@@ -168,19 +164,23 @@ class BaseWorkflowResult implements WorkflowResult {
   }
 
 
-  record Detail<R>(Exception error, ReconcileResult<R> reconcileResult,
-      DetailedCondition.Result activationConditionResult,
-      DetailedCondition.Result deletePostconditionResult,
-      DetailedCondition.Result readyPostconditionResult,
-      DetailedCondition.Result reconcilePostconditionResult,
-      boolean deleted, boolean visited, boolean markedForDelete) {
+  record Detail<R>(
+  Exception error, ReconcileResult<R>reconcileResult,
+  DetailedCondition.Result activationConditionResult, DetailedCondition.
+  Result deletePostconditionResult, DetailedCondition.
+  Result readyPostconditionResult, DetailedCondition.
+  Result reconcilePostconditionResult,
+  boolean deleted,
+  boolean visited,
+  boolean markedForDelete)
+  {
 
-    boolean isConditionWithTypeMet(Condition.Type conditionType) {
-      return getResultForConditionWithType(conditionType).map(DetailedCondition.Result::isSuccess)
-          .orElse(true);
-    }
+  boolean isConditionWithTypeMet(Condition.Type conditionType) {
+    return getResultForConditionWithType(conditionType).map(DetailedCondition.Result::isSuccess)
+        .orElse(true);
+  }
 
-    Optional<DetailedCondition.Result<?>> getResultForConditionWithType(
+  Optional<DetailedCondition.Result<?>> getResultForConditionWithType(
         Condition.Type conditionType) {
       return switch (conditionType) {
         case ACTIVATION -> Optional.ofNullable(activationConditionResult);
@@ -189,5 +189,4 @@ class BaseWorkflowResult implements WorkflowResult {
         case RECONCILE -> Optional.ofNullable(reconcilePostconditionResult);
       };
     }
-  }
-}
+}}

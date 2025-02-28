@@ -55,15 +55,14 @@ public class MockKubernetesClient {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
-      Consumer<Void> informerRunBehavior,
-      Object selfSubjectReview) {
+      Consumer<Void> informerRunBehavior, Object selfSubjectReview) {
     final var client = mock(KubernetesClient.class);
     MixedOperation<T, KubernetesResourceList<T>, Resource<T>> resources =
         mock(MixedOperation.class);
     NonNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> nonNamespaceOperation =
         mock(NonNamespaceOperation.class);
-    AnyNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> inAnyNamespace = mock(
-        AnyNamespaceOperation.class);
+    AnyNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> inAnyNamespace =
+        mock(AnyNamespaceOperation.class);
     FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filterable =
         mock(FilterWatchListDeletable.class);
     when(resources.inNamespace(anyString())).thenReturn(nonNamespaceOperation);
@@ -104,9 +103,8 @@ public class MockKubernetesClient {
     var selfSubjectResourceResourceMock = mock(NamespaceableResource.class);
     when(client.resource(any(SelfSubjectRulesReview.class)))
         .thenReturn(selfSubjectResourceResourceMock);
-    when(selfSubjectResourceResourceMock.create())
-        .thenReturn(Optional.ofNullable(selfSubjectReview)
-            .orElseGet(MockKubernetesClient::allowSelfSubjectReview));
+    when(selfSubjectResourceResourceMock.create()).thenReturn(Optional.ofNullable(selfSubjectReview)
+        .orElseGet(MockKubernetesClient::allowSelfSubjectReview));
 
     final var apiGroupDSL = mock(ApiextensionsAPIGroupDSL.class);
     when(client.apiextensions()).thenReturn(apiGroupDSL);

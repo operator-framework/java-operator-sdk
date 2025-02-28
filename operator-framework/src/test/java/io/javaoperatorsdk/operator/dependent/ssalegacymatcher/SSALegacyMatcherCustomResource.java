@@ -9,8 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("slm")
-public class SSALegacyMatcherCustomResource
-    extends CustomResource<SSALegacyMatcherSpec, Void>
+public class SSALegacyMatcherCustomResource extends CustomResource<SSALegacyMatcherSpec, Void>
     implements Namespaced {
 
 }

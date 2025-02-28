@@ -19,30 +19,27 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
   @Override
   public synchronized void onAddOrUpdate(R resource) {
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
-    primaryResources.forEach(
-        primaryResource -> {
-          var resourceSet =
-              index.computeIfAbsent(primaryResource, pr -> ConcurrentHashMap.newKeySet());
-          resourceSet.add(ResourceID.fromResource(resource));
-        });
+    primaryResources.forEach(primaryResource -> {
+      var resourceSet = index.computeIfAbsent(primaryResource, pr -> ConcurrentHashMap.newKeySet());
+      resourceSet.add(ResourceID.fromResource(resource));
+    });
   }
 
   @Override
   public synchronized void onDelete(R resource) {
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
-    primaryResources.forEach(
-        primaryResource -> {
-          var secondaryResources = index.get(primaryResource);
-          // this can be null in just very special cases, like when the secondaryToPrimaryMapper is
-          // changing dynamically. Like if a list of ResourceIDs mapped dynamically extended in the
-          // mapper between the onAddOrUpdate and onDelete is called.
-          if (secondaryResources != null) {
-            secondaryResources.remove(ResourceID.fromResource(resource));
-            if (secondaryResources.isEmpty()) {
-              index.remove(primaryResource);
-            }
-          }
-        });
+    primaryResources.forEach(primaryResource -> {
+      var secondaryResources = index.get(primaryResource);
+      // this can be null in just very special cases, like when the secondaryToPrimaryMapper is
+      // changing dynamically. Like if a list of ResourceIDs mapped dynamically extended in the
+      // mapper between the onAddOrUpdate and onDelete is called.
+      if (secondaryResources != null) {
+        secondaryResources.remove(ResourceID.fromResource(resource));
+        if (secondaryResources.isEmpty()) {
+          index.remove(primaryResource);
+        }
+      }
+    });
   }
 
   @Override

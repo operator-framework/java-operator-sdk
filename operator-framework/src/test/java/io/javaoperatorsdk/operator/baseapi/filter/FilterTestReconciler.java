@@ -17,8 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration(informer = @Informer(onUpdateFilter = UpdateFilter.class))
-public class FilterTestReconciler
-    implements Reconciler<FilterTestCustomResource> {
+public class FilterTestReconciler implements Reconciler<FilterTestCustomResource> {
 
   public static final String CONFIG_MAP_FILTER_VALUE = "config_map_skip_this";
   public static final String CUSTOM_RESOURCE_FILTER_VALUE = "custom_resource_skip_this";
@@ -27,22 +26,18 @@ public class FilterTestReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<FilterTestCustomResource> reconcile(
-      FilterTestCustomResource resource,
+  public UpdateControl<FilterTestCustomResource> reconcile(FilterTestCustomResource resource,
       Context<FilterTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     context.getClient().configMaps().inNamespace(resource.getMetadata().getNamespace())
-        .resource(createConfigMap(resource))
-        .createOrReplace();
+        .resource(createConfigMap(resource)).createOrReplace();
     return UpdateControl.noUpdate();
   }
 
   private ConfigMap createConfigMap(FilterTestCustomResource resource) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(resource.getMetadata().getName())
-        .withNamespace(resource.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(new ObjectMetaBuilder().withName(resource.getMetadata().getName())
+        .withNamespace(resource.getMetadata().getNamespace()).build());
     configMap.addOwnerReference(resource);
     configMap.setData(Map.of(CM_VALUE_KEY, resource.getSpec().getValue()));
     return configMap;
@@ -59,9 +54,8 @@ public class FilterTestReconciler
 
     final var informerConfiguration = InformerEventSourceConfiguration
         .from(ConfigMap.class, FilterTestCustomResource.class)
-        .withOnUpdateFilter((newCM,
-            oldCM) -> !newCM.getData().get(CM_VALUE_KEY)
-                .equals(CONFIG_MAP_FILTER_VALUE))
+        .withOnUpdateFilter(
+            (newCM, oldCM) -> !newCM.getData().get(CM_VALUE_KEY).equals(CONFIG_MAP_FILTER_VALUE))
         .build();
     InformerEventSource<ConfigMap, FilterTestCustomResource> configMapES =
         new InformerEventSource<>(informerConfiguration, context);

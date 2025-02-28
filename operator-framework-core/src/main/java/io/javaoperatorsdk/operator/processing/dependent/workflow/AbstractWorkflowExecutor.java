@@ -111,8 +111,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected synchronized void handleExceptionInExecutor(
-      DependentResourceNode<?, P> dependentResourceNode,
-      RuntimeException e) {
+      DependentResourceNode<?, P> dependentResourceNode, RuntimeException e) {
     createOrGetResultFor(dependentResourceNode).withError(e);
   }
 
@@ -134,8 +133,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   @SuppressWarnings({"unchecked", "OptionalUsedAsFieldOrParameterType"})
-  protected <R> boolean isConditionMet(
-      Optional<ConditionWithType<R, P, ?>> condition,
+  protected <R> boolean isConditionMet(Optional<ConditionWithType<R, P, ?>> condition,
       DependentResourceNode<R, P> dependentResource) {
     final var dr = dependentResource.getDependentResource();
     return condition.map(c -> {
@@ -157,8 +155,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected <R> void registerOrDeregisterEventSourceBasedOnActivation(
-      boolean activationConditionMet,
-      DependentResourceNode<R, P> dependentResourceNode) {
+      boolean activationConditionMet, DependentResourceNode<R, P> dependentResourceNode) {
     if (dependentResourceNode.getActivationCondition().isPresent()) {
       final var dr = dependentResourceNode.getDependentResource();
       final var eventSourceRetriever = context.eventSourceRetriever();
@@ -174,8 +171,7 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   }
 
   protected synchronized Map<DependentResource, BaseWorkflowResult.Detail<?>> asDetails() {
-    return results.entrySet().stream()
-        .collect(
-            Collectors.toMap(e -> e.getKey().getDependentResource(), e -> e.getValue().build()));
+    return results.entrySet().stream().collect(
+        Collectors.toMap(e -> e.getKey().getDependentResource(), e -> e.getValue().build()));
   }
 }

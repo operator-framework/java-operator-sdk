@@ -9,20 +9,17 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 
-@RateLimited(maxReconciliations = 1,
-    within = RateLimitReconciler.REFRESH_PERIOD,
+@RateLimited(maxReconciliations = 1, within = RateLimitReconciler.REFRESH_PERIOD,
     unit = TimeUnit.MILLISECONDS)
 @ControllerConfiguration
-public class RateLimitReconciler
-    implements Reconciler<RateLimitCustomResource> {
+public class RateLimitReconciler implements Reconciler<RateLimitCustomResource> {
 
   public static final int REFRESH_PERIOD = 3000;
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<RateLimitCustomResource> reconcile(
-      RateLimitCustomResource resource,
+  public UpdateControl<RateLimitCustomResource> reconcile(RateLimitCustomResource resource,
       Context<RateLimitCustomResource> context) {
 
     numberOfExecutions.addAndGet(1);

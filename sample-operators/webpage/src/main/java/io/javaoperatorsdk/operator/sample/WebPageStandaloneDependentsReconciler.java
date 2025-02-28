@@ -30,8 +30,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
  * Shows how to implement reconciler using standalone dependent resources and workflows.
  */
 @ControllerConfiguration
-public class WebPageStandaloneDependentsReconciler
-    implements Reconciler<WebPage> {
+public class WebPageStandaloneDependentsReconciler implements Reconciler<WebPage> {
 
   private final Workflow<WebPage> workflow;
 
@@ -67,15 +66,14 @@ public class WebPageStandaloneDependentsReconciler
 
     // retrieve the name of the ConfigMap secondary resource to update the status if everything went
     // well
-    webPage.setStatus(
-        createStatus(
-            context.getSecondaryResource(ConfigMap.class).orElseThrow().getMetadata().getName()));
+    webPage.setStatus(createStatus(
+        context.getSecondaryResource(ConfigMap.class).orElseThrow().getMetadata().getName()));
     return UpdateControl.patchStatus(webPage);
   }
 
   @Override
-  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(
-      WebPage resource, Context<WebPage> retryInfo, Exception e) {
+  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(WebPage resource,
+      Context<WebPage> retryInfo, Exception e) {
     return handleError(resource, e);
   }
 
@@ -95,25 +93,22 @@ public class WebPageStandaloneDependentsReconciler
 
     // configure them with our label selector
     Arrays.asList(configMapDR, deploymentDR, serviceDR, ingressDR)
-        .forEach(dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
-            .withKubernetesDependentInformerConfig(InformerConfiguration.builder(dr.resourceType())
-                .withLabelSelector(SELECTOR + "=true")
-                .build())
-            .build()));
+        .forEach(
+            dr -> dr.configureWith(new KubernetesDependentResourceConfigBuilder()
+                .withKubernetesDependentInformerConfig(InformerConfiguration
+                    .builder(dr.resourceType()).withLabelSelector(SELECTOR + "=true").build())
+                .build()));
 
     // connect the dependent resources into a workflow, configuring them as we go
     // Note the method call order is significant and configuration applies to the dependent being
     // configured as defined by the method call order (in this example, the reconcile pre-condition
     // that is added applies to the Ingress dependent)
-    return new WorkflowBuilder<WebPage>()
-        .addDependentResource(configMapDR)
-        .addDependentResource(deploymentDR)
-        .addDependentResource(serviceDR)
+    return new WorkflowBuilder<WebPage>().addDependentResource(configMapDR)
+        .addDependentResource(deploymentDR).addDependentResource(serviceDR)
         .addDependentResourceAndConfigure(ingressDR)
         // prevent the Ingress from being created based on the linked condition (here: only if the
         // `exposed` flag is set in the primary resource), delete the Ingress if it already exists
         // and the condition becomes false
-        .withReconcilePrecondition(new ExposedIngressCondition())
-        .build();
+        .withReconcilePrecondition(new ExposedIngressCondition()).build();
   }
 }

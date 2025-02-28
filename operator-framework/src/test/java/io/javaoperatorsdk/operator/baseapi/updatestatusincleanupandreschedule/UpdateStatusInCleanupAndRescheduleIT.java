@@ -13,10 +13,8 @@ public class UpdateStatusInCleanupAndRescheduleIT {
 
   public static final String TEST_RESOURCE = "test1";
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(UpdateStatusInCleanupAndRescheduleReconciler.class)
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(UpdateStatusInCleanupAndRescheduleReconciler.class).build();
 
 
   @Test
@@ -38,15 +36,12 @@ public class UpdateStatusInCleanupAndRescheduleIT {
     });
 
     assertThat(extension.getReconcilerOfType(UpdateStatusInCleanupAndRescheduleReconciler.class)
-        .getRescheduleDelayWorked())
-        .isTrue();
+        .getRescheduleDelayWorked()).isTrue();
   }
 
   UpdateStatusInCleanupAndRescheduleCustomResource testResource() {
     var resource = new UpdateStatusInCleanupAndRescheduleCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE).build());
     return resource;
   }
 

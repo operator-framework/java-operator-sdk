@@ -9,8 +9,8 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig.DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
 
-public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMetadata> implements
-    ConfigurationConverter<KubernetesDependent, KubernetesDependentResourceConfig<R>> {
+public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMetadata>
+    implements ConfigurationConverter<KubernetesDependent, KubernetesDependentResourceConfig<R>> {
 
   @Override
   @SuppressWarnings("unchecked")
@@ -28,16 +28,14 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
     }
 
     var informerConfiguration = createInformerConfig(configAnnotation,
-        (DependentResourceSpec<R, P, KubernetesDependentResourceConfig<R>>) spec,
-        controllerConfig);
+        (DependentResourceSpec<R, P, KubernetesDependentResourceConfig<R>>) spec, controllerConfig);
 
     return new KubernetesDependentResourceConfig<>(useSSA, createResourceOnlyIfNotExistingWithSSA,
         informerConfiguration);
   }
 
   @SuppressWarnings({"unchecked"})
-  private InformerConfiguration<R> createInformerConfig(
-      KubernetesDependent configAnnotation,
+  private InformerConfiguration<R> createInformerConfig(KubernetesDependent configAnnotation,
       DependentResourceSpec<R, P, KubernetesDependentResourceConfig<R>> spec,
       ControllerConfiguration<? extends HasMetadata> controllerConfig) {
     Class<? extends KubernetesDependentResource<?, ?>> dependentResourceClass =

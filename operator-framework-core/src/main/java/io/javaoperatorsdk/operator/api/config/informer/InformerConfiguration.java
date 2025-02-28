@@ -39,10 +39,10 @@ public class InformerConfiguration<R extends HasMetadata> {
   private Long informerListLimit;
 
   protected InformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
-      boolean followControllerNamespaceChanges,
-      String labelSelector, OnAddFilter<? super R> onAddFilter,
-      OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
-      GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit) {
+      boolean followControllerNamespaceChanges, String labelSelector,
+      OnAddFilter<? super R> onAddFilter, OnUpdateFilter<? super R> onUpdateFilter,
+      OnDeleteFilter<? super R> onDeleteFilter, GenericFilter<? super R> genericFilter,
+      ItemStore<R> itemStore, Long informerListLimit) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -97,15 +97,14 @@ public class InformerConfiguration<R extends HasMetadata> {
 
   public static void failIfNotValid(Set<String> namespaces) {
     if (namespaces != null && !namespaces.isEmpty()) {
-      final var present = namespaces.contains(WATCH_CURRENT_NAMESPACE)
-          || namespaces.contains(WATCH_ALL_NAMESPACES);
+      final var present =
+          namespaces.contains(WATCH_CURRENT_NAMESPACE) || namespaces.contains(WATCH_ALL_NAMESPACES);
       if (!present || namespaces.size() == 1) {
         return;
       }
     }
     throw new IllegalArgumentException(
-        "Must specify namespaces. To watch all namespaces, use only '"
-            + WATCH_ALL_NAMESPACES
+        "Must specify namespaces. To watch all namespaces, use only '" + WATCH_ALL_NAMESPACES
             + "'. To watch only the namespace in which the operator is deployed, use only '"
             + WATCH_CURRENT_NAMESPACE + "'");
   }
@@ -164,9 +163,8 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     var targetNamespaces = getNamespaces();
     if (watchCurrentNamespace()) {
-      final String namespace =
-          controllerConfiguration.getConfigurationService().getKubernetesClient().getConfiguration()
-              .getNamespace();
+      final String namespace = controllerConfiguration.getConfigurationService()
+          .getKubernetesClient().getConfiguration().getNamespace();
       if (namespace == null) {
         throw new OperatorException(
             "Couldn't retrieve the currently connected namespace. Make sure it's correctly set in your ~/.kube/config file, using, e.g. 'kubectl config set-context <your context> --namespace=<your namespace>'");
@@ -268,8 +266,7 @@ public class InformerConfiguration<R extends HasMetadata> {
         namespaces = Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
       }
       if (followControllerNamespaceChanges == null) {
-        followControllerNamespaceChanges =
-            DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
+        followControllerNamespaceChanges = DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
       }
       return InformerConfiguration.this;
     }
@@ -291,24 +288,21 @@ public class InformerConfiguration<R extends HasMetadata> {
         var labelSelector = Constants.NO_VALUE_SET.equals(fromAnnotation) ? null : fromAnnotation;
         withLabelSelector(labelSelector);
 
-        withOnAddFilter(Utils.instantiate(informerConfig.onAddFilter(),
-            OnAddFilter.class, context));
+        withOnAddFilter(
+            Utils.instantiate(informerConfig.onAddFilter(), OnAddFilter.class, context));
 
-        withOnUpdateFilter(Utils.instantiate(informerConfig.onUpdateFilter(),
-            OnUpdateFilter.class, context));
+        withOnUpdateFilter(
+            Utils.instantiate(informerConfig.onUpdateFilter(), OnUpdateFilter.class, context));
 
-        withOnDeleteFilter(Utils.instantiate(informerConfig.onDeleteFilter(),
-            OnDeleteFilter.class, context));
+        withOnDeleteFilter(
+            Utils.instantiate(informerConfig.onDeleteFilter(), OnDeleteFilter.class, context));
 
-        withGenericFilter(Utils.instantiate(informerConfig.genericFilter(),
-            GenericFilter.class,
-            context));
+        withGenericFilter(
+            Utils.instantiate(informerConfig.genericFilter(), GenericFilter.class, context));
 
-        withFollowControllerNamespacesChanges(
-            informerConfig.followControllerNamespaceChanges());
+        withFollowControllerNamespacesChanges(informerConfig.followControllerNamespaceChanges());
 
-        withItemStore(Utils.instantiate(informerConfig.itemStore(),
-            ItemStore.class, context));
+        withItemStore(Utils.instantiate(informerConfig.itemStore(), ItemStore.class, context));
 
         final var informerListLimitValue = informerConfig.informerListLimit();
         final var informerListLimit =
@@ -324,8 +318,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     }
 
     public Builder withNamespaces(Set<String> namespaces) {
-      InformerConfiguration.this.namespaces =
-          ensureValidNamespaces(namespaces);
+      InformerConfiguration.this.namespaces = ensureValidNamespaces(namespaces);
       return this;
     }
 
@@ -373,37 +366,31 @@ public class InformerConfiguration<R extends HasMetadata> {
      * @return the builder instance so that calls can be chained fluently
      */
     public Builder withFollowControllerNamespacesChanges(boolean followChanges) {
-      InformerConfiguration.this.followControllerNamespaceChanges =
-          followChanges;
+      InformerConfiguration.this.followControllerNamespaceChanges = followChanges;
       return this;
     }
 
     public Builder withLabelSelector(String labelSelector) {
-      InformerConfiguration.this.labelSelector =
-          ensureValidLabelSelector(labelSelector);
+      InformerConfiguration.this.labelSelector = ensureValidLabelSelector(labelSelector);
       return this;
     }
 
-    public Builder withOnAddFilter(
-        OnAddFilter<? super R> onAddFilter) {
+    public Builder withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
       InformerConfiguration.this.onAddFilter = onAddFilter;
       return this;
     }
 
-    public Builder withOnUpdateFilter(
-        OnUpdateFilter<? super R> onUpdateFilter) {
+    public Builder withOnUpdateFilter(OnUpdateFilter<? super R> onUpdateFilter) {
       InformerConfiguration.this.onUpdateFilter = onUpdateFilter;
       return this;
     }
 
-    public Builder withOnDeleteFilter(
-        OnDeleteFilter<? super R> onDeleteFilter) {
+    public Builder withOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter) {
       InformerConfiguration.this.onDeleteFilter = onDeleteFilter;
       return this;
     }
 
-    public Builder withGenericFilter(
-        GenericFilter<? super R> genericFilter) {
+    public Builder withGenericFilter(GenericFilter<? super R> genericFilter) {
       InformerConfiguration.this.genericFilter = genericFilter;
       return this;
     }

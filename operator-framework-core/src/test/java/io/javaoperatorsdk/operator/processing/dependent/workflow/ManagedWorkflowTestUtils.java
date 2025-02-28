@@ -28,8 +28,8 @@ public class ManagedWorkflowTestUtils {
     when(spy.getName()).thenReturn(name);
 
     Class<? extends DependentResource> toMock = DependentResource.class;
-    final var garbageCollected = dependentResourceTraits != null &&
-        Arrays.asList(dependentResourceTraits).contains(GarbageCollected.class);
+    final var garbageCollected = dependentResourceTraits != null
+        && Arrays.asList(dependentResourceTraits).contains(GarbageCollected.class);
     if (garbageCollected) {
       toMock = KubernetesDependentResource.class;
     }

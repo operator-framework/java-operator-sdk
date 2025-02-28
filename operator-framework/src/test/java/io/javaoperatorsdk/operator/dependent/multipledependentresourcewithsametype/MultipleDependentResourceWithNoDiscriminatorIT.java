@@ -17,11 +17,9 @@ class MultipleDependentResourceWithNoDiscriminatorIT {
 
   public static final String TEST_RESOURCE_NAME = "multipledependentresource-testresource";
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(MultipleDependentResourceWithDiscriminatorReconciler.class)
-          .waitForNamespaceDeletion(true)
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(MultipleDependentResourceWithDiscriminatorReconciler.class)
+      .waitForNamespaceDeletion(true).build();
 
   @Test
   void twoConfigMapsHaveBeenCreated() {
@@ -32,11 +30,11 @@ class MultipleDependentResourceWithNoDiscriminatorIT {
     var reconciler =
         operator.getReconcilerOfType(MultipleDependentResourceWithDiscriminatorReconciler.class);
 
-    await().pollDelay(Duration.ofMillis(300))
-        .until(() -> reconciler.getNumberOfExecutions() <= 1);
+    await().pollDelay(Duration.ofMillis(300)).until(() -> reconciler.getNumberOfExecutions() <= 1);
 
-    IntStream.of(MultipleDependentResourceWithDiscriminatorReconciler.FIRST_CONFIG_MAP_ID,
-        MultipleDependentResourceWithDiscriminatorReconciler.SECOND_CONFIG_MAP_ID)
+    IntStream
+        .of(MultipleDependentResourceWithDiscriminatorReconciler.FIRST_CONFIG_MAP_ID,
+            MultipleDependentResourceWithDiscriminatorReconciler.SECOND_CONFIG_MAP_ID)
         .forEach(configMapId -> {
           ConfigMap configMap =
               operator.get(ConfigMap.class, customResource.getConfigMapName(configMapId));
@@ -51,11 +49,8 @@ class MultipleDependentResourceWithNoDiscriminatorIT {
   public MultipleDependentResourceCustomResourceNoDiscriminator createTestCustomResource() {
     MultipleDependentResourceCustomResourceNoDiscriminator resource =
         new MultipleDependentResourceCustomResourceNoDiscriminator();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(TEST_RESOURCE_NAME)
-            .withNamespace(operator.getNamespace())
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME)
+        .withNamespace(operator.getNamespace()).build());
     return resource;
   }
 

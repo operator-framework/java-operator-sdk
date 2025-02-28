@@ -19,12 +19,8 @@ public class TestUtils {
 
   public static TestCustomResource testCustomResource(String uid) {
     TestCustomResource resource = new TestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(TEST_CUSTOM_RESOURCE_NAME)
-            .withUid(uid)
-            .withGeneration(1L)
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_CUSTOM_RESOURCE_NAME).withUid(uid)
+        .withGeneration(1L).build());
     resource.getMetadata().setAnnotations(new HashMap<>());
     resource.setKind("CustomService");
     resource.setSpec(new TestCustomResourceSpec());
@@ -36,10 +32,8 @@ public class TestUtils {
 
   public static TestCustomResource testCustomResourceWithPrefix(String id) {
     TestCustomResource resource = new TestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(TEST_CUSTOM_RESOURCE_PREFIX + id)
-            .build());
+    resource
+        .setMetadata(new ObjectMetaBuilder().withName(TEST_CUSTOM_RESOURCE_PREFIX + id).build());
     resource.setKind("CustomService");
     resource.setSpec(new TestCustomResourceSpec());
     resource.getSpec().setConfigMapName("test-config-map-" + id);

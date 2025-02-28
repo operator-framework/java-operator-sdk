@@ -24,10 +24,8 @@ class PrimaryToSecondaryDependentIT {
   public static final String TEST_DATA = "testData";
   public
 
-  @RegisterExtension LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new PrimaryToSecondaryDependentReconciler())
-          .build();
+  @RegisterExtension LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new PrimaryToSecondaryDependentReconciler()).build();
 
   @Test
   void testPrimaryToSecondaryInDependentResources() {
@@ -54,9 +52,7 @@ class PrimaryToSecondaryDependentIT {
 
   PrimaryToSecondaryDependentCustomResource testCustomResource() {
     var res = new PrimaryToSecondaryDependentCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_CR_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_CR_NAME).build());
     res.setSpec(new PrimaryToSecondaryDependentSpec());
     res.getSpec().setConfigMapName(TEST_CONFIG_MAP_NAME);
     return res;
@@ -64,9 +60,7 @@ class PrimaryToSecondaryDependentIT {
 
   ConfigMap configMap(String data) {
     var cm = new ConfigMap();
-    cm.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_CONFIG_MAP_NAME)
-        .build());
+    cm.setMetadata(new ObjectMetaBuilder().withName(TEST_CONFIG_MAP_NAME).build());
     cm.setData(Map.of(DATA_KEY, data));
     return cm;
   }

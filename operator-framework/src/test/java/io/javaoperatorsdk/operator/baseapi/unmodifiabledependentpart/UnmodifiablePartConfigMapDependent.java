@@ -23,10 +23,8 @@ public class UnmodifiablePartConfigMapDependent
       Context<UnmodifiableDependentPartCustomResource> context) {
     var actual = context.getSecondaryResource(ConfigMap.class);
     ConfigMap res = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
+        .withMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace()).build())
         .build();
     res.setData(Map.of(ACTUAL_DATA_KEY, primary.getSpec().getData(),
         // setting the old data if available

@@ -10,8 +10,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class MultipleManagedDependentResourceConfigMap1
-    extends
+public class MultipleManagedDependentResourceConfigMap1 extends
     CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentResourceCustomResource> {
 
   public static final String NAME_SUFFIX = "-1";
@@ -26,12 +25,8 @@ public class MultipleManagedDependentResourceConfigMap1
     Map<String, String> data = new HashMap<>();
     data.put(MultipleManagedDependentResourceReconciler.DATA_KEY, primary.getSpec().getValue());
 
-    return new ConfigMapBuilder()
-        .withNewMetadata()
+    return new ConfigMapBuilder().withNewMetadata()
         .withName(primary.getMetadata().getName() + NAME_SUFFIX)
-        .withNamespace(primary.getMetadata().getNamespace())
-        .endMetadata()
-        .withData(data)
-        .build();
+        .withNamespace(primary.getMetadata().getNamespace()).endMetadata().withData(data).build();
   }
 }

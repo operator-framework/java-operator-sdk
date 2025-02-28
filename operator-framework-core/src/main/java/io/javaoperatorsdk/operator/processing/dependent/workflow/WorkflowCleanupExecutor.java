@@ -57,8 +57,8 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
         if (hasErroredDependent) {
           causes.add("errored dependent");
         }
-        log.debug("Skipping: {} primaryID: {} causes: {}", dependentResourceNode,
-            primaryID, String.join(", ", causes));
+        log.debug("Skipping: {} primaryID: {} causes: {}", dependentResourceNode, primaryID,
+            String.join(", ", causes));
       }
       return;
     }
@@ -116,8 +116,7 @@ class WorkflowCleanupExecutor<P extends HasMetadata> extends AbstractWorkflowExe
   private boolean allDependentsCleaned(DependentResourceNode dependentResourceNode) {
     List<DependentResourceNode> parents = dependentResourceNode.getParents();
     return parents.isEmpty()
-        || parents.stream()
-            .allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet(d));
+        || parents.stream().allMatch(d -> alreadyVisited(d) && !postDeleteConditionNotMet(d));
   }
 
   @SuppressWarnings("unchecked")

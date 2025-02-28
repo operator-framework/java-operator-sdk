@@ -7,7 +7,6 @@ public class DependentPrimaryIndexerIT extends PrimaryIndexerIT {
 
   protected LocallyRunOperatorExtension buildOperator() {
     return LocallyRunOperatorExtension.builder()
-        .withReconciler(new DependentPrimaryIndexerTestReconciler())
-        .build();
+        .withReconciler(new DependentPrimaryIndexerTestReconciler()).build();
   }
 }

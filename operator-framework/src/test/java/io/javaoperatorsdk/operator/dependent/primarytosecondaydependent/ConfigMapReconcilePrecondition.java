@@ -18,7 +18,6 @@ public class ConfigMapReconcilePrecondition
     return dependentResource.getSecondaryResource(primary, context).map(cm -> {
       var data = cm.getData().get(PrimaryToSecondaryDependentReconciler.DATA_KEY);
       return data != null && !data.equals(DO_NOT_RECONCILE);
-    })
-        .orElse(false);
+    }).orElse(false);
   }
 }

@@ -14,9 +14,8 @@ import static org.awaitility.Awaitility.await;
 public class ServiceStrictMatcherIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new ServiceStrictMatcherTestReconciler())
-          .build();
+  LocallyRunOperatorExtension operator = LocallyRunOperatorExtension.builder()
+      .withReconciler(new ServiceStrictMatcherTestReconciler()).build();
 
 
   @Test
@@ -44,9 +43,7 @@ public class ServiceStrictMatcherIT {
     var res = new ServiceStrictMatcherTestCustomResource();
     res.setSpec(new ServiceStrictMatcherSpec());
     res.getSpec().setValue(1);
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     return res;
   }
 

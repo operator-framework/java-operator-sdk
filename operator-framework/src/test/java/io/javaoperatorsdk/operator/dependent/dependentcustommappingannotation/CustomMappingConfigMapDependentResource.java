@@ -35,12 +35,9 @@ public class CustomMappingConfigMapDependentResource
   protected ConfigMap desired(DependentCustomMappingCustomResource primary,
       Context<DependentCustomMappingCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(KEY, primary.getSpec().getValue()))
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace()).build())
+        .withData(Map.of(KEY, primary.getSpec().getValue())).build();
   }
 
   @Override

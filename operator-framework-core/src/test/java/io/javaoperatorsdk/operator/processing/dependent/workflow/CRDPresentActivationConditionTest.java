@@ -21,8 +21,7 @@ class CRDPresentActivationConditionTest {
   private final CRDPresentActivationCondition.CRDPresentChecker checkerMock =
       mock(CRDPresentActivationCondition.CRDPresentChecker.class);
   private final CRDPresentActivationCondition condition =
-      new CRDPresentActivationCondition(checkerMock, 2,
-          Duration.ofMillis(TEST_CHECK_INTERVAL));
+      new CRDPresentActivationCondition(checkerMock, 2, Duration.ofMillis(TEST_CHECK_INTERVAL));
   private final DependentResource<TestCustomResource, TestCustomResource> dr =
       mock(DependentResource.class);
   private final Context context = mock(Context.class);
@@ -37,12 +36,12 @@ class CRDPresentActivationConditionTest {
 
 
   @Test
-    void checkCRDIfNotCheckedBefore() {
-        when(checkerMock.checkIfCRDPresent(any(),any())).thenReturn(true);
+  void checkCRDIfNotCheckedBefore() {
+    when(checkerMock.checkIfCRDPresent(any(), any())).thenReturn(true);
 
-        assertThat(condition.isMet(dr,null,context)).isTrue();
-        verify(checkerMock, times(1)).checkIfCRDPresent(any(),any());
-    }
+    assertThat(condition.isMet(dr, null, context)).isTrue();
+    verify(checkerMock, times(1)).checkIfCRDPresent(any(), any());
+  }
 
   @Test
   void instantMetCallSkipsApiCall() {
@@ -65,17 +64,17 @@ class CRDPresentActivationConditionTest {
   }
 
   @Test
-    void crdIsNotCheckedAnymoreIfIfOnceFound() throws InterruptedException {
-        when(checkerMock.checkIfCRDPresent(any(),any())).thenReturn(true);
+  void crdIsNotCheckedAnymoreIfIfOnceFound() throws InterruptedException {
+    when(checkerMock.checkIfCRDPresent(any(), any())).thenReturn(true);
 
-        condition.isMet(dr,null,context);
-        verify(checkerMock, times(1)).checkIfCRDPresent(any(),any());
+    condition.isMet(dr, null, context);
+    verify(checkerMock, times(1)).checkIfCRDPresent(any(), any());
 
-        Thread.sleep(TEST_CHECK_INTERVAL_WITH_SLACK);
+    Thread.sleep(TEST_CHECK_INTERVAL_WITH_SLACK);
 
-        condition.isMet(dr,null,context);
-        verify(checkerMock, times(1)).checkIfCRDPresent(any(),any());
-    }
+    condition.isMet(dr, null, context);
+    verify(checkerMock, times(1)).checkIfCRDPresent(any(), any());
+  }
 
   @Test
   void crdNotCheckedAnymoreIfCountExpires() throws InterruptedException {

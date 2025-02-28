@@ -10,8 +10,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 public class ResourceID implements Serializable {
 
   public static ResourceID fromResource(HasMetadata resource) {
-    return new ResourceID(resource.getMetadata().getName(),
-        resource.getMetadata().getNamespace());
+    return new ResourceID(resource.getMetadata().getName(), resource.getMetadata().getNamespace());
   }
 
   public static ResourceID fromOwnerReference(HasMetadata resource, OwnerReference ownerReference,
@@ -47,14 +46,13 @@ public class ResourceID implements Serializable {
     if (o == null || getClass() != o.getClass())
       return false;
     ResourceID that = (ResourceID) o;
-    return Objects.equals(name, that.name) && Objects.equals(namespace,
-        that.namespace);
+    return Objects.equals(name, that.name) && Objects.equals(namespace, that.namespace);
   }
 
   public boolean isSameResource(HasMetadata hasMetadata) {
     final var metadata = hasMetadata.getMetadata();
-    return getName().equals(metadata.getName()) &&
-        getNamespace().map(ns -> ns.equals(metadata.getNamespace())).orElse(true);
+    return getName().equals(metadata.getName())
+        && getNamespace().map(ns -> ns.equals(metadata.getNamespace())).orElse(true);
   }
 
   @Override
@@ -72,10 +70,7 @@ public class ResourceID implements Serializable {
   }
 
   private static String toString(String name, String namespace) {
-    return "ResourceID{" +
-        "name='" + name + '\'' +
-        ", namespace='" + namespace + '\'' +
-        '}';
+    return "ResourceID{" + "name='" + name + '\'' + ", namespace='" + namespace + '\'' + '}';
   }
 
 }

@@ -42,14 +42,12 @@ public class MultipleSecondaryEventSourceReconciler
     if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
         .withName(getName1(resource)).get() == null) {
       client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-          .resource(configMap(getName1(resource), resource))
-          .createOrReplace();
+          .resource(configMap(getName1(resource), resource)).createOrReplace();
     }
     if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
         .withName(getName2(resource)).get() == null) {
       client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-          .resource(configMap(getName2(resource), resource))
-          .createOrReplace();
+          .resource(configMap(getName2(resource), resource)).createOrReplace();
     }
 
     if (numberOfExecutions.get() >= 3) {
@@ -70,8 +68,7 @@ public class MultipleSecondaryEventSourceReconciler
 
     var config = InformerEventSourceConfiguration
         .from(ConfigMap.class, MultipleSecondaryEventSourceCustomResource.class)
-        .withNamespacesInheritedFromController()
-        .withLabelSelector("multisecondary")
+        .withNamespacesInheritedFromController().withLabelSelector("multisecondary")
         .withSecondaryToPrimaryMapper(s -> {
           var name =
               s.getMetadata().getName().subSequence(0, s.getMetadata().getName().length() - 1);

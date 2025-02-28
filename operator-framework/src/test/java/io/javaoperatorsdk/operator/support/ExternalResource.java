@@ -55,13 +55,12 @@ public class ExternalResource {
   }
 
   public static String toExternalResourceId(HasMetadata primary, int i) {
-    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
-        primary.getMetadata().getNamespace() +
-        EXTERNAL_RESOURCE_NAME_DELIMITER + i;
+    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER
+        + primary.getMetadata().getNamespace() + EXTERNAL_RESOURCE_NAME_DELIMITER + i;
   }
 
   public static String toExternalResourceId(HasMetadata primary) {
-    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
-        primary.getMetadata().getNamespace();
+    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER
+        + primary.getMetadata().getNamespace();
   }
 }

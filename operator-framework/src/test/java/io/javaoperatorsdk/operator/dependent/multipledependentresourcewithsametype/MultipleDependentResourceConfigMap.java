@@ -8,8 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
-public class MultipleDependentResourceConfigMap
-    extends
+public class MultipleDependentResourceConfigMap extends
     CRUDKubernetesDependentResource<ConfigMap, MultipleDependentResourceCustomResourceNoDiscriminator> {
 
   public static final String DATA_KEY = "key";
@@ -26,12 +25,7 @@ public class MultipleDependentResourceConfigMap
     Map<String, String> data = new HashMap<>();
     data.put(DATA_KEY, String.valueOf(value));
 
-    return new ConfigMapBuilder()
-        .withNewMetadata()
-        .withName(primary.getConfigMapName(value))
-        .withNamespace(primary.getMetadata().getNamespace())
-        .endMetadata()
-        .withData(data)
-        .build();
+    return new ConfigMapBuilder().withNewMetadata().withName(primary.getConfigMapName(value))
+        .withNamespace(primary.getMetadata().getNamespace()).endMetadata().withData(data).build();
   }
 }

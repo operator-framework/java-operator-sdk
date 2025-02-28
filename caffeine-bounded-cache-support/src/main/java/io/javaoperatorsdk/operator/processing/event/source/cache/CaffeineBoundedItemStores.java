@@ -39,11 +39,8 @@ public class CaffeineBoundedItemStores {
    */
   @SuppressWarnings("unused")
   public static <R extends HasMetadata> BoundedItemStore<R> boundedItemStore(
-      KubernetesClient client, Class<R> rClass,
-      Duration accessExpireDuration) {
-    Cache<String, R> cache = Caffeine.newBuilder()
-        .expireAfterAccess(accessExpireDuration)
-        .build();
+      KubernetesClient client, Class<R> rClass, Duration accessExpireDuration) {
+    Cache<String, R> cache = Caffeine.newBuilder().expireAfterAccess(accessExpireDuration).build();
     return boundedItemStore(client, rClass, cache);
   }
 

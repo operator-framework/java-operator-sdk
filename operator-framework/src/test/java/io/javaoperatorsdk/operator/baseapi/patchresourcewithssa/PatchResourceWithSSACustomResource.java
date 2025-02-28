@@ -9,8 +9,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("prs")
-public class PatchResourceWithSSACustomResource
-    extends CustomResource<PatchResourceWithSSASpec, PatchResourceWithSSAStatus>
-    implements Namespaced {
+public class PatchResourceWithSSACustomResource extends
+    CustomResource<PatchResourceWithSSASpec, PatchResourceWithSSAStatus> implements Namespaced {
 
 }

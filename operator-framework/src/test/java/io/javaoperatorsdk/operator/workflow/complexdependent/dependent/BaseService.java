@@ -20,11 +20,7 @@ public abstract class BaseService extends BaseDependentResource<Service> {
     var template = ReconcilerUtils.loadYaml(Service.class, getClass(),
         "/io/javaoperatorsdk/operator/workflow/complexdependent/service.yaml");
 
-    return new ServiceBuilder(template)
-        .withMetadata(createMeta(primary).build())
-        .editOrNewSpec()
-        .withSelector(Map.of(K8S_NAME, name(primary)))
-        .endSpec()
-        .build();
+    return new ServiceBuilder(template).withMetadata(createMeta(primary).build()).editOrNewSpec()
+        .withSelector(Map.of(K8S_NAME, name(primary))).endSpec().build();
   }
 }

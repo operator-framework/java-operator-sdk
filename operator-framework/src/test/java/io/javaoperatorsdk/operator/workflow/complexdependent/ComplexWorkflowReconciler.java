@@ -25,15 +25,12 @@ import static io.javaoperatorsdk.operator.workflow.complexdependent.ComplexWorkf
     @Dependent(name = "second-svc", type = SecondService.class,
         useEventSourceWithName = SERVICE_EVENT_SOURCE_NAME),
     @Dependent(name = "first", type = FirstStatefulSet.class,
-        useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
-        dependsOn = {"first-svc"},
+        useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME, dependsOn = {"first-svc"},
         readyPostcondition = StatefulSetReadyCondition.class),
-    @Dependent(name = "second",
-        type = SecondStatefulSet.class,
+    @Dependent(name = "second", type = SecondStatefulSet.class,
         useEventSourceWithName = STATEFUL_SET_EVENT_SOURCE_NAME,
         dependsOn = {"second-svc", "first"},
-        readyPostcondition = StatefulSetReadyCondition.class),
-})
+        readyPostcondition = StatefulSetReadyCondition.class),})
 @ControllerConfiguration(name = "project-operator")
 public class ComplexWorkflowReconciler implements Reconciler<ComplexWorkflowCustomResource> {
 
@@ -42,11 +39,10 @@ public class ComplexWorkflowReconciler implements Reconciler<ComplexWorkflowCust
 
   @Override
   public UpdateControl<ComplexWorkflowCustomResource> reconcile(
-      ComplexWorkflowCustomResource resource,
-      Context<ComplexWorkflowCustomResource> context) throws Exception {
+      ComplexWorkflowCustomResource resource, Context<ComplexWorkflowCustomResource> context)
+      throws Exception {
     var ready = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
-        .orElseThrow()
-        .allDependentResourcesReady();
+        .orElseThrow().allDependentResourcesReady();
 
     var status = Objects.requireNonNullElseGet(resource.getStatus(), ComplexWorkflowStatus::new);
     status.setStatus(ready ? RECONCILE_STATUS.READY : RECONCILE_STATUS.NOT_READY);
@@ -59,19 +55,13 @@ public class ComplexWorkflowReconciler implements Reconciler<ComplexWorkflowCust
   public List<EventSource<?, ComplexWorkflowCustomResource>> prepareEventSources(
       EventSourceContext<ComplexWorkflowCustomResource> context) {
     InformerEventSource<Service, ComplexWorkflowCustomResource> serviceEventSource =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration
-                .from(Service.class, ComplexWorkflowCustomResource.class)
-                .withName(SERVICE_EVENT_SOURCE_NAME)
-                .build(),
-            context);
+        new InformerEventSource<>(InformerEventSourceConfiguration
+            .from(Service.class, ComplexWorkflowCustomResource.class)
+            .withName(SERVICE_EVENT_SOURCE_NAME).build(), context);
     InformerEventSource<StatefulSet, ComplexWorkflowCustomResource> statefulSetEventSource =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration
-                .from(StatefulSet.class, ComplexWorkflowCustomResource.class)
-                .withName(STATEFUL_SET_EVENT_SOURCE_NAME)
-                .build(),
-            context);
+        new InformerEventSource<>(InformerEventSourceConfiguration
+            .from(StatefulSet.class, ComplexWorkflowCustomResource.class)
+            .withName(STATEFUL_SET_EVENT_SOURCE_NAME).build(), context);
     return List.of(serviceEventSource, statefulSetEventSource);
   }
 

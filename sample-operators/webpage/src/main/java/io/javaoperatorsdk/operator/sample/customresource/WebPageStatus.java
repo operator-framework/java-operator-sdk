@@ -35,10 +35,7 @@ public class WebPageStatus {
 
   @Override
   public String toString() {
-    return "WebPageStatus{" +
-        "htmlConfigMap='" + htmlConfigMap + '\'' +
-        ", areWeGood='" + areWeGood + '\'' +
-        ", errorMessage='" + errorMessage + '\'' +
-        '}';
+    return "WebPageStatus{" + "htmlConfigMap='" + htmlConfigMap + '\'' + ", areWeGood='" + areWeGood
+        + '\'' + ", errorMessage='" + errorMessage + '\'' + '}';
   }
 }

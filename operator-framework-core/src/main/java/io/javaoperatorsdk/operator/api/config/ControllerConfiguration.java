@@ -40,9 +40,8 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
       if (ReconcilerUtils.isFinalizerValid(finalizer)) {
         return finalizer;
       } else {
-        throw new IllegalArgumentException(
-            finalizer
-                + " is not a valid finalizer. See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers for details");
+        throw new IllegalArgumentException(finalizer
+            + " is not a valid finalizer. See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers for details");
       }
     } else {
       return ReconcilerUtils.getDefaultFinalizerName(resourceTypeName);

@@ -38,9 +38,10 @@ public class ReconcileResult<R> {
 
   @Override
   public String toString() {
-    return resourceOperations.entrySet().stream().collect(Collectors.toMap(
-        e -> e instanceof HasMetadata ? ResourceID.fromResource((HasMetadata) e) : e,
-        Map.Entry::getValue))
+    return resourceOperations.entrySet().stream()
+        .collect(Collectors.toMap(
+            e -> e instanceof HasMetadata ? ResourceID.fromResource((HasMetadata) e) : e,
+            Map.Entry::getValue))
         .toString();
   }
 

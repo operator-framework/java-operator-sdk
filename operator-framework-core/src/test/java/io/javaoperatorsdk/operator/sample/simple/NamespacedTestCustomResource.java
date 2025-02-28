@@ -8,6 +8,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("namespaced-sample.javaoperatorsdk.io")
 @Version("v1")
 public class NamespacedTestCustomResource
-    extends CustomResource<TestCustomResourceSpec, TestCustomResourceStatus>
-    implements Namespaced {
+    extends CustomResource<TestCustomResourceSpec, TestCustomResourceStatus> implements Namespaced {
 }

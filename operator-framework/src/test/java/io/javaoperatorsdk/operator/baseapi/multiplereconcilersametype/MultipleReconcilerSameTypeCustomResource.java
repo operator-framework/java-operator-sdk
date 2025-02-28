@@ -10,6 +10,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("mrst")
 public class MultipleReconcilerSameTypeCustomResource
-    extends CustomResource<Void, MultipleReconcilerSameTypeStatus>
-    implements Namespaced {
+    extends CustomResource<Void, MultipleReconcilerSameTypeStatus> implements Namespaced {
 }

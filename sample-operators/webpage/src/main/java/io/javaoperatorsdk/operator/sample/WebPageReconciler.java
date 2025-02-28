@@ -27,8 +27,7 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 /** Shows how to implement reconciler using the low level api directly. */
 @RateLimited(maxReconciliations = 2, within = 3)
 @ControllerConfiguration
-public class WebPageReconciler
-    implements Reconciler<WebPage> {
+public class WebPageReconciler implements Reconciler<WebPage> {
 
   public static final String INDEX_HTML = "index.html";
 
@@ -40,32 +39,16 @@ public class WebPageReconciler
 
   @Override
   public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
-    var configMapEventSource =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration.from(ConfigMap.class, WebPage.class)
-                .withLabelSelector(SELECTOR)
-                .build(),
-            context);
-    var deploymentEventSource =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration.from(Deployment.class, WebPage.class)
-                .withLabelSelector(SELECTOR)
-                .build(),
-            context);
-    var serviceEventSource =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration.from(Service.class, WebPage.class)
-                .withLabelSelector(SELECTOR)
-                .build(),
-            context);
-    var ingressEventSource =
-        new InformerEventSource<>(
-            InformerEventSourceConfiguration.from(Ingress.class, WebPage.class)
-                .withLabelSelector(SELECTOR)
-                .build(),
-            context);
-    return List.of(configMapEventSource, deploymentEventSource,
-        serviceEventSource, ingressEventSource);
+    var configMapEventSource = new InformerEventSource<>(InformerEventSourceConfiguration
+        .from(ConfigMap.class, WebPage.class).withLabelSelector(SELECTOR).build(), context);
+    var deploymentEventSource = new InformerEventSource<>(InformerEventSourceConfiguration
+        .from(Deployment.class, WebPage.class).withLabelSelector(SELECTOR).build(), context);
+    var serviceEventSource = new InformerEventSource<>(InformerEventSourceConfiguration
+        .from(Service.class, WebPage.class).withLabelSelector(SELECTOR).build(), context);
+    var ingressEventSource = new InformerEventSource<>(InformerEventSourceConfiguration
+        .from(Ingress.class, WebPage.class).withLabelSelector(SELECTOR).build(), context);
+    return List.of(configMapEventSource, deploymentEventSource, serviceEventSource,
+        ingressEventSource);
   }
 
   @Override
@@ -90,32 +73,25 @@ public class WebPageReconciler
 
     var previousConfigMap = context.getSecondaryResource(ConfigMap.class).orElse(null);
     if (!match(desiredHtmlConfigMap, previousConfigMap)) {
-      log.info(
-          "Creating or updating ConfigMap {} in {}",
-          desiredHtmlConfigMap.getMetadata().getName(),
-          ns);
+      log.info("Creating or updating ConfigMap {} in {}",
+          desiredHtmlConfigMap.getMetadata().getName(), ns);
       context.getClient().configMaps().inNamespace(ns).resource(desiredHtmlConfigMap)
           .serverSideApply();
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
     if (!match(desiredDeployment, existingDeployment)) {
-      log.info(
-          "Creating or updating Deployment {} in {}",
-          desiredDeployment.getMetadata().getName(),
-          ns);
+      log.info("Creating or updating Deployment {} in {}",
+          desiredDeployment.getMetadata().getName(), ns);
       context.getClient().apps().deployments().inNamespace(ns).resource(desiredDeployment)
           .serverSideApply();
     }
 
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
     if (!match(desiredService, existingService)) {
-      log.info(
-          "Creating or updating Deployment {} in {}",
-          desiredDeployment.getMetadata().getName(),
-          ns);
-      context.getClient().services().inNamespace(ns).resource(desiredService)
-          .serverSideApply();
+      log.info("Creating or updating Deployment {} in {}",
+          desiredDeployment.getMetadata().getName(), ns);
+      context.getClient().services().inNamespace(ns).resource(desiredService).serverSideApply();
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
@@ -125,15 +101,14 @@ public class WebPageReconciler
         context.getClient().resource(desiredIngress).inNamespace(ns).serverSideApply();
       }
     } else
-      existingIngress.ifPresent(
-          ingress -> context.getClient().resource(ingress).delete());
+      existingIngress.ifPresent(ingress -> context.getClient().resource(ingress).delete());
 
     // not that this is not necessary, eventually mounted config map would be updated, just this way
     // is much faster; what is handy for demo purposes.
     // https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically
-    if (previousConfigMap != null && !StringUtils.equals(
-        previousConfigMap.getData().get(INDEX_HTML),
-        desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
+    if (previousConfigMap != null
+        && !StringUtils.equals(previousConfigMap.getData().get(INDEX_HTML),
+            desiredHtmlConfigMap.getData().get(INDEX_HTML))) {
       log.info("Restarting pods because HTML has changed in {}", ns);
       context.getClient().pods().inNamespace(ns).withLabel("app", deploymentName(webPage)).delete();
     }
@@ -143,12 +118,10 @@ public class WebPageReconciler
   }
 
   private boolean match(Ingress desiredIngress, Ingress existingIngress) {
-    String desiredServiceName =
-        desiredIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
-            .getBackend().getService().getName();
-    String existingServiceName =
-        existingIngress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
-            .getBackend().getService().getName();
+    String desiredServiceName = desiredIngress.getSpec().getRules().get(0).getHttp().getPaths()
+        .get(0).getBackend().getService().getName();
+    String existingServiceName = existingIngress.getSpec().getRules().get(0).getHttp().getPaths()
+        .get(0).getBackend().getService().getName();
     return Objects.equals(desiredServiceName, existingServiceName);
   }
 
@@ -156,8 +129,8 @@ public class WebPageReconciler
     if (deployment == null) {
       return false;
     } else {
-      return desiredDeployment.getSpec().getReplicas().equals(deployment.getSpec().getReplicas()) &&
-          desiredDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
+      return desiredDeployment.getSpec().getReplicas().equals(deployment.getSpec().getReplicas())
+          && desiredDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage()
               .equals(
                   deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
     }
@@ -183,8 +156,7 @@ public class WebPageReconciler
     desiredService.getMetadata().setName(serviceName(webPage));
     desiredService.getMetadata().setNamespace(ns);
     desiredService.getMetadata().setLabels(lowLevelLabel());
-    desiredService
-        .getSpec()
+    desiredService.getSpec()
         .setSelector(desiredDeployment.getSpec().getTemplate().getMetadata().getLabels());
     desiredService.addOwnerReference(webPage);
     return desiredService;
@@ -199,12 +171,7 @@ public class WebPageReconciler
     desiredDeployment.getMetadata().setLabels(lowLevelLabel());
     desiredDeployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
     desiredDeployment.getSpec().getTemplate().getMetadata().getLabels().put("app", deploymentName);
-    desiredDeployment
-        .getSpec()
-        .getTemplate()
-        .getSpec()
-        .getVolumes()
-        .get(0)
+    desiredDeployment.getSpec().getTemplate().getSpec().getVolumes().get(0)
         .setConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build());
     desiredDeployment.addOwnerReference(webPage);
     return desiredDeployment;
@@ -214,15 +181,8 @@ public class WebPageReconciler
     Map<String, String> data = new HashMap<>();
     data.put(INDEX_HTML, webPage.getSpec().getHtml());
     ConfigMap configMap =
-        new ConfigMapBuilder()
-            .withMetadata(
-                new ObjectMetaBuilder()
-                    .withName(configMapName)
-                    .withNamespace(ns)
-                    .withLabels(lowLevelLabel())
-                    .build())
-            .withData(data)
-            .build();
+        new ConfigMapBuilder().withMetadata(new ObjectMetaBuilder().withName(configMapName)
+            .withNamespace(ns).withLabels(lowLevelLabel()).build()).withData(data).build();
     configMap.addOwnerReference(webPage);
     return configMap;
   }
@@ -234,8 +194,8 @@ public class WebPageReconciler
   }
 
   @Override
-  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(
-      WebPage resource, Context<WebPage> context, Exception e) {
+  public ErrorStatusUpdateControl<WebPage> updateErrorStatus(WebPage resource,
+      Context<WebPage> context, Exception e) {
     return handleError(resource, e);
   }
 }

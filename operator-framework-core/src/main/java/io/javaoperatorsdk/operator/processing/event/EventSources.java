@@ -31,8 +31,8 @@ class EventSources<P extends HasMetadata> {
     final var name = eventSource.name();
     var existing = sourceByName.get(name);
     if (existing != null) {
-      throw new IllegalArgumentException("Event source " + existing
-          + " is already registered with name: " + name);
+      throw new IllegalArgumentException(
+          "Event source " + existing + " is already registered with name: " + name);
     }
     sourceByName.put(name, eventSource);
     sources.computeIfAbsent(keyFor(eventSource), k -> new ConcurrentHashMap<>()).put(name,
@@ -68,15 +68,13 @@ class EventSources<P extends HasMetadata> {
 
   @SuppressWarnings("rawtypes")
   public Stream<EventSource> allEventSources() {
-    return Stream.concat(
-        Stream.of(controllerEventSource(), retryAndRescheduleTimerEventSource),
+    return Stream.concat(Stream.of(controllerEventSource(), retryAndRescheduleTimerEventSource),
         flatMappedSources());
   }
 
   @SuppressWarnings("rawtypes")
   Stream<EventSource> additionalEventSources() {
-    return Stream.concat(
-        Stream.of(retryEventSource()).filter(Objects::nonNull),
+    return Stream.concat(Stream.of(retryEventSource()).filter(Objects::nonNull),
         flatMappedSources());
   }
 
@@ -119,25 +117,23 @@ class EventSources<P extends HasMetadata> {
       source = (EventSource<S, P>) sourcesForType.get(name);
 
       if (source == null) {
-        throw new IllegalArgumentException("There is no event source found for class:" +
-            " " + dependentType.getName() + ", name:" + name);
+        throw new IllegalArgumentException("There is no event source found for class:" + " "
+            + dependentType.getName() + ", name:" + name);
       }
     }
 
     final var resourceClass = source.resourceType();
     if (!resourceClass.isAssignableFrom(dependentType)) {
-      throw new IllegalArgumentException(source + " associated with "
-          + keyAsString(dependentType, name)
-          + " is handling " + resourceClass.getName() + " resources but asked for "
-          + dependentType.getName());
+      throw new IllegalArgumentException(
+          source + " associated with " + keyAsString(dependentType, name) + " is handling "
+              + resourceClass.getName() + " resources but asked for " + dependentType.getName());
     }
     return source;
   }
 
   @SuppressWarnings("rawtypes")
   private String keyAsString(Class dependentType, String name) {
-    return name != null && !name.isEmpty()
-        ? "(" + dependentType.getName() + ", " + name + ")"
+    return name != null && !name.isEmpty() ? "(" + dependentType.getName() + ", " + name + ")"
         : dependentType.getName();
   }
 
@@ -147,7 +143,6 @@ class EventSources<P extends HasMetadata> {
     if (sourcesForType == null) {
       return Collections.emptyList();
     }
-    return sourcesForType.values().stream()
-        .map(es -> (EventSource<S, P>) es).toList();
+    return sourcesForType.values().stream().map(es -> (EventSource<S, P>) es).toList();
   }
 }

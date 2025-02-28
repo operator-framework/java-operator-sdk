@@ -20,17 +20,15 @@ public class CRDPresentActivationConditionIT {
       "crdpresentactivationdependentcustomresources.sample.javaoperatorsdk";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new CRDPresentActivationReconciler())
-          .build();
+  LocallyRunOperatorExtension extension = LocallyRunOperatorExtension.builder()
+      .withReconciler(new CRDPresentActivationReconciler()).build();
 
 
   @Test
   void resourceCreatedOnlyIfCRDPresent() {
     // deleted so test can be repeated
-    extension.getKubernetesClient().resources(CustomResourceDefinition.class)
-        .withName(CRD_NAME).delete();
+    extension.getKubernetesClient().resources(CustomResourceDefinition.class).withName(CRD_NAME)
+        .delete();
 
     var resource = extension.create(testResource());
 
@@ -58,9 +56,7 @@ public class CRDPresentActivationConditionIT {
 
   CRDPresentActivationCustomResource testResource() {
     var res = new CRDPresentActivationCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_1)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
     return res;
   }
 

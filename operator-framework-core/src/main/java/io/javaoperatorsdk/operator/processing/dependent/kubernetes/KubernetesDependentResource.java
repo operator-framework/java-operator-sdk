@@ -66,10 +66,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     addMetadata(false, null, desired, primary, context);
     final var resource = prepare(context, desired, primary, "Creating");
     return useSSA(context)
-        ? resource
-            .fieldManager(context.getControllerConfiguration().fieldManager())
-            .forceConflicts()
-            .serverSideApply()
+        ? resource.fieldManager(context.getControllerConfiguration().fieldManager())
+            .forceConflicts().serverSideApply()
         : resource.create();
   }
 
@@ -82,8 +80,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     addMetadata(false, actual, desired, primary, context);
     if (useSSA(context)) {
       updatedResource = prepare(context, desired, primary, "Updating")
-          .fieldManager(context.getControllerConfiguration().fieldManager())
-          .forceConflicts().serverSideApply();
+          .fieldManager(context.getControllerConfiguration().fieldManager()).forceConflicts()
+          .serverSideApply();
     } else {
       var updatedActual = GenericResourceUpdater.updateResource(actual, desired, context);
       updatedResource = prepare(context, updatedActual, primary, "Updating").update();
@@ -99,16 +97,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return match(actualResource, desired, primary, context);
   }
 
-  public Result<R> match(R actualResource, R desired, P primary,
-      Context<P> context) {
+  public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     final boolean matches;
     addMetadata(true, actualResource, desired, primary, context);
     if (useSSA(context)) {
-      matches = SSABasedGenericKubernetesResourceMatcher.getInstance()
-          .matches(actualResource, desired, context);
+      matches = SSABasedGenericKubernetesResourceMatcher.getInstance().matches(actualResource,
+          desired, context);
     } else {
-      matches = GenericKubernetesResourceMatcher.match(desired, actualResource,
-          false, false, context).matched();
+      matches = GenericKubernetesResourceMatcher
+          .match(desired, actualResource, false, false, context).matched();
     }
     return Result.computed(matches, desired);
   }
@@ -125,10 +122,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
     } else if (usePreviousAnnotation(context)) { // set a new one
-      eventSource().orElseThrow().addPreviousAnnotation(
-          Optional.ofNullable(actualResource).map(r -> r.getMetadata().getResourceVersion())
-              .orElse(null),
-          target);
+      eventSource().orElseThrow().addPreviousAnnotation(Optional.ofNullable(actualResource)
+          .map(r -> r.getMetadata().getResourceVersion()).orElse(null), target);
     }
     addReferenceHandlingMetadata(target, primary);
   }
@@ -160,9 +155,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   protected Resource<R> prepare(Context<P> context, R desired, P primary, String actionName) {
-    log.debug("{} target resource with type: {}, with id: {}",
-        actionName,
-        desired.getClass(),
+    log.debug("{} target resource with type: {}, with id: {}", actionName, desired.getClass(),
         ResourceID.fromResource(desired));
 
     return context.getClient().resource(desired);
@@ -228,9 +221,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       Context<P> context) {
     ResourceID managedResourceID = targetSecondaryResourceID(primary, context);
     return secondaryResources.stream()
-        .filter(r -> r.getMetadata().getName().equals(managedResourceID.getName()) &&
-            Objects.equals(r.getMetadata().getNamespace(),
-                managedResourceID.getNamespace().orElse(null)))
+        .filter(r -> r.getMetadata().getName().equals(managedResourceID.getName()) && Objects
+            .equals(r.getMetadata().getNamespace(), managedResourceID.getNamespace().orElse(null)))
         .findFirst();
   }
 

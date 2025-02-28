@@ -22,16 +22,15 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTR
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
-public interface InformerEventSourceConfiguration<R extends HasMetadata>
-    extends Informable<R> {
+public interface InformerEventSourceConfiguration<R extends HasMetadata> extends Informable<R> {
 
-  static <R extends HasMetadata> Builder<R> from(
-      Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
+  static <R extends HasMetadata> Builder<R> from(Class<R> resourceClass,
+      Class<? extends HasMetadata> primaryResourceClass) {
     return new Builder<>(resourceClass, primaryResourceClass);
   }
 
-  static Builder<GenericKubernetesResource> from(
-      GroupVersionKind groupVersionKind, Class<? extends HasMetadata> primaryResourceClass) {
+  static Builder<GenericKubernetesResource> from(GroupVersionKind groupVersionKind,
+      Class<? extends HasMetadata> primaryResourceClass) {
     return new Builder<>(groupVersionKind, primaryResourceClass);
   }
 
@@ -83,12 +82,10 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     private final InformerConfiguration<R> informerConfig;
     private final KubernetesClient kubernetesClient;
 
-    protected DefaultInformerEventSourceConfiguration(
-        GroupVersionKind groupVersionKind,
+    protected DefaultInformerEventSourceConfiguration(GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
-        InformerConfiguration<R> informerConfig,
-        KubernetesClient kubernetesClient) {
+        InformerConfiguration<R> informerConfig, KubernetesClient kubernetesClient) {
       this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
@@ -135,8 +132,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private KubernetesClient kubernetesClient;
 
-    private Builder(Class<R> resourceClass,
-        Class<? extends HasMetadata> primaryResourceClass) {
+    private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
     }
 
@@ -146,8 +142,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       this((Class<R>) GenericKubernetesResource.class, primaryResourceClass, groupVersionKind);
     }
 
-    private Builder(Class<R> resourceClass,
-        Class<? extends HasMetadata> primaryResourceClass, GroupVersionKind groupVersionKind) {
+    private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass,
+        GroupVersionKind groupVersionKind) {
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
@@ -176,8 +172,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
      * Use this is case want to create an InformerEventSource that handles resources from different
      * cluster.
      */
-    public Builder<R> withKubernetesClient(
-        KubernetesClient kubernetesClient) {
+    public Builder<R> withKubernetesClient(KubernetesClient kubernetesClient) {
       this.kubernetesClient = kubernetesClient;
       return this;
     }
@@ -229,26 +224,22 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public Builder<R> withOnAddFilter(
-        OnAddFilter<? super R> onAddFilter) {
+    public Builder<R> withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
       config.withOnAddFilter(onAddFilter);
       return this;
     }
 
-    public Builder<R> withOnUpdateFilter(
-        OnUpdateFilter<? super R> onUpdateFilter) {
+    public Builder<R> withOnUpdateFilter(OnUpdateFilter<? super R> onUpdateFilter) {
       config.withOnUpdateFilter(onUpdateFilter);
       return this;
     }
 
-    public Builder<R> withOnDeleteFilter(
-        OnDeleteFilter<? super R> onDeleteFilter) {
+    public Builder<R> withOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter) {
       config.withOnDeleteFilter(onDeleteFilter);
       return this;
     }
 
-    public Builder<R> withGenericFilter(
-        GenericFilter<? super R> genericFilter) {
+    public Builder<R> withGenericFilter(GenericFilter<? super R> genericFilter) {
       config.withGenericFilter(genericFilter);
       return this;
     }
@@ -289,8 +280,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
             "If GroupVersionKind is set the resource type must be GenericKubernetesDependentResource");
       }
 
-      return new DefaultInformerEventSourceConfiguration<>(
-          groupVersionKind,
+      return new DefaultInformerEventSourceConfiguration<>(groupVersionKind,
           primaryToSecondaryMapper,
           Objects.requireNonNullElse(secondaryToPrimaryMapper,
               Mappers.fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceClass),

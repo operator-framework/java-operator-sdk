@@ -150,8 +150,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withFieldManager(
-      String dependentFieldManager) {
+  public ControllerConfigurationOverrider<R> withFieldManager(String dependentFieldManager) {
     this.fieldManager = dependentFieldManager;
     return this;
   }
@@ -164,8 +163,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
    *
    * @param informerListLimit null (the default) results in no pagination
    */
-  public ControllerConfigurationOverrider<R> withInformerListLimit(
-      Long informerListLimit) {
+  public ControllerConfigurationOverrider<R> withInformerListLimit(Long informerListLimit) {
     config.withInformerListLimit(informerListLimit);
     return this;
   }
@@ -174,9 +172,8 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
       Object dependentResourceConfig) {
 
     final var specs = original.getWorkflowSpec().orElseThrow().getDependentResourceSpecs();
-    final var spec = specs.stream()
-        .filter(drs -> drs.getName().equals(name)).findFirst()
-        .orElseThrow(
+    final var spec =
+        specs.stream().filter(drs -> drs.getName().equals(name)).findFirst().orElseThrow(
             () -> new IllegalArgumentException("Cannot find a DependentResource named: " + name));
 
     if (configurations == null) {
@@ -187,14 +184,10 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   }
 
   public ControllerConfiguration<R> build() {
-    return new ResolvedControllerConfiguration<>(
-        name,
-        generationAware, original.getAssociatedReconcilerClassName(), retry, rateLimiter,
-        reconciliationMaxInterval,
-        finalizer, configurations, fieldManager,
-        original.getConfigurationService(),
-        config.buildForController(),
-        original.getWorkflowSpec().orElse(null));
+    return new ResolvedControllerConfiguration<>(name, generationAware,
+        original.getAssociatedReconcilerClassName(), retry, rateLimiter, reconciliationMaxInterval,
+        finalizer, configurations, fieldManager, original.getConfigurationService(),
+        config.buildForController(), original.getWorkflowSpec().orElse(null));
   }
 
   public static <R extends HasMetadata> ControllerConfigurationOverrider<R> override(

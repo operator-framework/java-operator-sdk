@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("udp")
 public class UnmodifiableDependentPartCustomResource
-    extends CustomResource<UnmodifiableDependentPartSpec, Void>
-    implements Namespaced {
+    extends CustomResource<UnmodifiableDependentPartSpec, Void> implements Namespaced {
 
 }

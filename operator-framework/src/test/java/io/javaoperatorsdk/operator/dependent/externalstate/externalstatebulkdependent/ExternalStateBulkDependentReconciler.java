@@ -14,8 +14,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @Workflow(dependents = @Dependent(type = BulkDependentResourceExternalWithState.class))
 @ControllerConfiguration
 public class ExternalStateBulkDependentReconciler
-    implements Reconciler<ExternalStateBulkDependentCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<ExternalStateBulkDependentCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -37,8 +36,7 @@ public class ExternalStateBulkDependentReconciler
       EventSourceContext<ExternalStateBulkDependentCustomResource> context) {
     var configMapEventSource = new InformerEventSource<>(
         InformerEventSourceConfiguration
-            .from(ConfigMap.class, ExternalStateBulkDependentCustomResource.class)
-            .build(),
+            .from(ConfigMap.class, ExternalStateBulkDependentCustomResource.class).build(),
         context);
     return List.of(configMapEventSource);
   }

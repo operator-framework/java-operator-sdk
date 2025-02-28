@@ -22,8 +22,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-class TimerEventSourceTest
-    extends
+class TimerEventSourceTest extends
     AbstractEventSourceTestBase<TimerEventSource<TestCustomResource>, CapturingEventHandler> {
 
   public static final int INITIAL_DELAY = 50;
@@ -80,8 +79,8 @@ class TimerEventSourceTest
     var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
     source.stop();
-    assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
-        () -> source.scheduleOnce(resourceID, PERIOD));
+    assertThatExceptionOfType(IllegalStateException.class)
+        .isThrownBy(() -> source.scheduleOnce(resourceID, PERIOD));
   }
 
   @Test

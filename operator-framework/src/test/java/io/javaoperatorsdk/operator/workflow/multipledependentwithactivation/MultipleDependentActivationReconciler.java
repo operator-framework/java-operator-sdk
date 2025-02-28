@@ -10,8 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
         activationCondition = ActivationCondition.class),
     @Dependent(type = ConfigMapDependentResource2.class,
         activationCondition = ActivationCondition.class),
-    @Dependent(type = SecretDependentResource.class)
-})
+    @Dependent(type = SecretDependentResource.class)})
 @ControllerConfiguration
 public class MultipleDependentActivationReconciler
     implements Reconciler<MultipleDependentActivationCustomResource> {

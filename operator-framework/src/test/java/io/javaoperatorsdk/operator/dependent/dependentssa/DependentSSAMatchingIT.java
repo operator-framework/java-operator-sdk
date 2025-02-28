@@ -30,10 +30,8 @@ public class DependentSSAMatchingIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new DependentSSAReconciler(),
-              o -> o.withFieldManager(CUSTOM_FIELD_MANAGER_NAME))
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(new DependentSSAReconciler(),
+          o -> o.withFieldManager(CUSTOM_FIELD_MANAGER_NAME)).build();
 
   @Test
   void testMatchingAndUpdate() {
@@ -50,17 +48,12 @@ public class DependentSSAMatchingIT {
     });
 
     ConfigMap cmPatch = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(TEST_RESOURCE_NAME)
-            .withNamespace(resource.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of(ADDITIONAL_KEY, ADDITIONAL_VALUE))
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME)
+            .withNamespace(resource.getMetadata().getNamespace()).build())
+        .withData(Map.of(ADDITIONAL_KEY, ADDITIONAL_VALUE)).build();
 
     extension.getKubernetesClient().configMaps().resource(cmPatch).patch(new PatchContext.Builder()
-        .withFieldManager(OTHER_FIELD_MANAGER)
-        .withPatchType(PatchType.SERVER_SIDE_APPLY)
-        .build());
+        .withFieldManager(OTHER_FIELD_MANAGER).withPatchType(PatchType.SERVER_SIDE_APPLY).build());
 
     await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
       var cm = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
@@ -84,9 +77,7 @@ public class DependentSSAMatchingIT {
 
   public DependentSSACustomResource testResource() {
     DependentSSACustomResource resource = new DependentSSACustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     resource.setSpec(new DependentSSASpec());
     resource.getSpec().setValue(INITIAL_VALUE);
     return resource;

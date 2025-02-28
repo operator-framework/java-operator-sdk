@@ -20,10 +20,8 @@ public class ConfigMapDependentResource
   protected ConfigMap desired(WorkflowActivationConditionCustomResource primary,
       Context<WorkflowActivationConditionCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+        .withNamespace(primary.getMetadata().getNamespace()).build());
     configMap.setData(Map.of(DATA_KEY, primary.getSpec().getValue()));
     return configMap;
   }

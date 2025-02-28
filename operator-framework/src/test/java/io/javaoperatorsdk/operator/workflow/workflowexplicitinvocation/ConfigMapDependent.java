@@ -19,11 +19,8 @@ public class ConfigMapDependent extends
   protected ConfigMap desired(WorkflowExplicitInvocationCustomResource primary,
       Context<WorkflowExplicitInvocationCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .withData(Map.of("key", primary.getSpec().getValue()))
-        .build();
+        .withMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace()).build())
+        .withData(Map.of("key", primary.getSpec().getValue())).build();
   }
 }

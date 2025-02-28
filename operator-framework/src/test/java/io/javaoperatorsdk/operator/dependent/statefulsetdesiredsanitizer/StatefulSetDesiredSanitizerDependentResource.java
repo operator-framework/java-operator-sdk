@@ -6,8 +6,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
-public class StatefulSetDesiredSanitizerDependentResource
-    extends
+public class StatefulSetDesiredSanitizerDependentResource extends
     CRUDKubernetesDependentResource<StatefulSet, StatefulSetDesiredSanitizerCustomResource> {
 
   public static volatile Boolean nonMatchedAtLeastOnce;
@@ -19,13 +18,10 @@ public class StatefulSetDesiredSanitizerDependentResource
   @Override
   protected StatefulSet desired(StatefulSetDesiredSanitizerCustomResource primary,
       Context<StatefulSetDesiredSanitizerCustomResource> context) {
-    var template =
-        ReconcilerUtils.loadYaml(StatefulSet.class, getClass(),
-            "/io/javaoperatorsdk/operator/statefulset.yaml");
-    template.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    var template = ReconcilerUtils.loadYaml(StatefulSet.class, getClass(),
+        "/io/javaoperatorsdk/operator/statefulset.yaml");
+    template.setMetadata(new ObjectMetaBuilder().withName(primary.getMetadata().getName())
+        .withNamespace(primary.getMetadata().getNamespace()).build());
     return template;
   }
 

@@ -30,15 +30,11 @@ public class SchemaService {
   }
 
   public static Schema createSchemaAndRelatedUser(Connection connection, String schemaName,
-      String encoding,
-      String userName,
-      String password) {
+      String encoding, String userName, String password) {
     try {
       try (Statement statement = connection.createStatement()) {
         statement.execute(
-            format(
-                "CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
-                schemaName, encoding));
+            format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s", schemaName, encoding));
       }
       if (!userExists(connection, userName)) {
         try (Statement statement = connection.createStatement()) {
@@ -46,8 +42,7 @@ public class SchemaService {
         }
       }
       try (Statement statement = connection.createStatement()) {
-        statement.execute(
-            format("GRANT ALL ON `%1$s`.* TO '%2$s'", schemaName, userName));
+        statement.execute(format("GRANT ALL ON `%1$s`.* TO '%2$s'", schemaName, userName));
       }
 
       return new Schema(schemaName, encoding);
@@ -80,8 +75,7 @@ public class SchemaService {
 
   private static boolean userExists(Connection connection, String username) {
     try (PreparedStatement ps =
-        connection.prepareStatement(
-            "SELECT 1 FROM mysql.user WHERE user = ?")) {
+        connection.prepareStatement("SELECT 1 FROM mysql.user WHERE user = ?")) {
       ps.setString(1, username);
       try (ResultSet resultSet = ps.executeQuery()) {
         return resultSet.next();
@@ -96,9 +90,8 @@ public class SchemaService {
   }
 
   public static Optional<Schema> getSchema(Connection connection, String schemaName) {
-    try (PreparedStatement ps =
-        connection.prepareStatement(
-            "SELECT * FROM information_schema.schemata WHERE schema_name = ?")) {
+    try (PreparedStatement ps = connection
+        .prepareStatement("SELECT * FROM information_schema.schemata WHERE schema_name = ?")) {
       ps.setString(1, schemaName);
       try (ResultSet resultSet = ps.executeQuery()) {
         // CATALOG_NAME, SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME, SQL_PATH
