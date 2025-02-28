@@ -238,4 +238,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   protected boolean updatable() {
     return updatable;
   }
+
+  protected Boolean readonly() {
+    return !isCreatable() && !isUpdatable() && !isDeletable();
+  }
 }

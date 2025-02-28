@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,7 +173,15 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected void addReferenceHandlingMetadata(R desired, P primary) {
     if (addOwnerReference()) {
       ReconcilerUtils.checkIfCanAddOwnerReference(primary, desired);
-      desired.addOwnerReference(primary);
+
+      OwnerReferenceBuilder ownerRef = new OwnerReferenceBuilder()
+      .withApiVersion(primary.getApiVersion())
+      .withKind(primary.getKind())
+      .withName(primary.getMetadata().getName())
+      .withUid(primary.getMetadata().getUid())
+      .withController(!readonly());
+
+      desired.addOwnerReference(ownerRef.build());
     } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       addSecondaryToPrimaryMapperAnnotations(desired, primary);
     }
