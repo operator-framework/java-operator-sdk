@@ -52,9 +52,9 @@ public class ChangeNamespaceTestReconciler
 
     var statusPatchResource = new ChangeNamespaceTestCustomResource();
     statusPatchResource.setMetadata(new ObjectMetaBuilder()
-                    .withName(primary.getMetadata().getName())
-                    .withNamespace(primary.getMetadata().getNamespace())
-            .build());
+        .withName(primary.getMetadata().getName())
+        .withNamespace(primary.getMetadata().getNamespace())
+        .build());
     statusPatchResource.setStatus(new ChangeNamespaceTestCustomResourceStatus());
     var statusUpdates = primary.getStatus().getNumberOfStatusUpdates();
     statusPatchResource.getStatus().setNumberOfStatusUpdates(statusUpdates + 1);

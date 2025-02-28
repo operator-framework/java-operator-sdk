@@ -24,7 +24,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Run unit tests
-        run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml
+        run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml -Dhighest-basedir=$PWD
 
   build:
     uses: ./.github/workflows/build.yml

@@ -98,7 +98,8 @@ public class Utils {
     return getBooleanFromSystemPropsOrDefault(DEBUG_THREAD_POOL_ENV_KEY, false);
   }
 
-  public static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
+  public static boolean getBooleanFromSystemPropsOrDefault(String propertyName,
+      boolean defaultValue) {
     var property = System.getProperty(propertyName);
     if (property == null) {
       return defaultValue;
