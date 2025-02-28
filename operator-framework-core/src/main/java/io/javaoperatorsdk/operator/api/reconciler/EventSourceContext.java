@@ -18,7 +18,8 @@ public class EventSourceContext<P extends HasMetadata> {
   private final KubernetesClient client;
   private final Class<P> primaryResourceClass;
 
-  public EventSourceContext(IndexerResourceCache<P> primaryCache,
+  public EventSourceContext(
+      IndexerResourceCache<P> primaryCache,
       ControllerConfiguration<P> controllerConfiguration,
       KubernetesClient client,
       Class<P> primaryResourceClass) {
@@ -48,11 +49,11 @@ public class EventSourceContext<P extends HasMetadata> {
   }
 
   /**
-   * Provides access to the {@link KubernetesClient} used by the current
-   * {@link io.javaoperatorsdk.operator.Operator} instance.
+   * Provides access to the {@link KubernetesClient} used by the current {@link
+   * io.javaoperatorsdk.operator.Operator} instance.
    *
-   * @return the {@link KubernetesClient} used by the current
-   *         {@link io.javaoperatorsdk.operator.Operator} instance.
+   * @return the {@link KubernetesClient} used by the current {@link
+   *     io.javaoperatorsdk.operator.Operator} instance.
    */
   public KubernetesClient getClient() {
     return client;

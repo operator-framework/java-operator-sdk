@@ -7,13 +7,16 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 public interface Condition<R, P extends HasMetadata> {
 
   enum Type {
-    ACTIVATION, DELETE, READY, RECONCILE
+    ACTIVATION,
+    DELETE,
+    READY,
+    RECONCILE
   }
 
   /**
-   * Checks whether a condition holds true for a given
-   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} based on the
-   * observed cluster state.
+   * Checks whether a condition holds true for a given {@link
+   * io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} based on the observed
+   * cluster state.
    *
    * @param dependentResource for which the condition applies to
    * @param primary the primary resource being considered

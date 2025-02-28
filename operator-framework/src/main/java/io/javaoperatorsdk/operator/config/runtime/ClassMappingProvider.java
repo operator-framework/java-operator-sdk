@@ -25,7 +25,7 @@ class ClassMappingProvider {
     try {
       final var classLoader = Thread.currentThread().getContextClassLoader();
       final Enumeration<URL> resourcesMetadataList = classLoader.getResources(resourcePath);
-      for (Iterator<URL> it = resourcesMetadataList.asIterator(); it.hasNext();) {
+      for (Iterator<URL> it = resourcesMetadataList.asIterator(); it.hasNext(); ) {
         URL url = it.next();
 
         List<String> classNamePairs = retrieveClassNamePairs(url);
@@ -36,8 +36,7 @@ class ClassMappingProvider {
                 if (classNames.length != 2) {
                   throw new IllegalStateException(
                       String.format(
-                          "%s is not valid Mapping metadata, defined in %s",
-                          clazzPair, url));
+                          "%s is not valid Mapping metadata, defined in %s", clazzPair, url));
                 }
 
                 result.put(
@@ -56,8 +55,7 @@ class ClassMappingProvider {
 
   private static List<String> retrieveClassNamePairs(URL url) throws IOException {
     try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
-      return br.lines()
-          .collect(Collectors.toList());
+      return br.lines().collect(Collectors.toList());
     }
   }
 }

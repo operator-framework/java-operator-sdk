@@ -20,18 +20,23 @@ class ControllerManagerTest {
   @Test
   void addingReconcilerWithSameNameShouldNotWork() {
     final var controllerConfiguration =
-        new TestControllerConfiguration<>(new TestCustomReconciler(null),
-            TestCustomResource.class);
-    var controller = new Controller<>(controllerConfiguration.reconciler, controllerConfiguration,
-        MockKubernetesClient.client(controllerConfiguration.getResourceClass()));
+        new TestControllerConfiguration<>(new TestCustomReconciler(null), TestCustomResource.class);
+    var controller =
+        new Controller<>(
+            controllerConfiguration.reconciler,
+            controllerConfiguration,
+            MockKubernetesClient.client(controllerConfiguration.getResourceClass()));
     ConfigurationService configurationService = new BaseConfigurationService();
     final var controllerManager =
         new ControllerManager(configurationService.getExecutorServiceManager());
     controllerManager.add(controller);
 
-    var ex = assertThrows(OperatorException.class, () -> {
-      controllerManager.add(controller);
-    });
+    var ex =
+        assertThrows(
+            OperatorException.class,
+            () -> {
+              controllerManager.add(controller);
+            });
     assertTrue(
         ex.getMessage().contains(CANNOT_REGISTER_MULTIPLE_CONTROLLERS_WITH_SAME_NAME_MESSAGE));
   }
@@ -41,13 +46,15 @@ class ControllerManagerTest {
     private final Reconciler<R> reconciler;
 
     public TestControllerConfiguration(Reconciler<R> reconciler, Class<R> crClass) {
-      super(crClass, getControllerName(reconciler), reconciler.getClass(),
+      super(
+          crClass,
+          getControllerName(reconciler),
+          reconciler.getClass(),
           new BaseConfigurationService());
       this.reconciler = reconciler;
     }
 
-    static <R extends HasMetadata> String getControllerName(
-        Reconciler<R> controller) {
+    static <R extends HasMetadata> String getControllerName(Reconciler<R> controller) {
       return controller.getClass().getSimpleName() + "Controller";
     }
   }

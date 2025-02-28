@@ -20,6 +20,7 @@ class PrimaryToSecondaryIndexTest {
   @SuppressWarnings("unchecked")
   private final SecondaryToPrimaryMapper<ConfigMap> secondaryToPrimaryMapperMock =
       mock(SecondaryToPrimaryMapper.class);
+
   private final PrimaryToSecondaryIndex<ConfigMap> primaryToSecondaryIndex =
       new DefaultPrimaryToSecondaryIndex<>(secondaryToPrimaryMapperMock);
 
@@ -59,10 +60,10 @@ class PrimaryToSecondaryIndexTest {
     var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
     var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
 
-    assertThat(secondaryResources1).containsOnly(ResourceID.fromResource(secondary1),
-        ResourceID.fromResource(secondary2));
-    assertThat(secondaryResources2).containsOnly(ResourceID.fromResource(secondary1),
-        ResourceID.fromResource(secondary2));
+    assertThat(secondaryResources1)
+        .containsOnly(ResourceID.fromResource(secondary1), ResourceID.fromResource(secondary2));
+    assertThat(secondaryResources2)
+        .containsOnly(ResourceID.fromResource(secondary1), ResourceID.fromResource(secondary2));
   }
 
   @Test

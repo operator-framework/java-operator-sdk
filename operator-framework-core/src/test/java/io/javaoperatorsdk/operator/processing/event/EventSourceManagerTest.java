@@ -119,8 +119,8 @@ class EventSourceManagerTest {
     when(eventSource.name()).thenReturn(name);
     final var source = eventSource;
 
-    final var exception = assertThrows(OperatorException.class,
-        () -> manager.registerEventSource(source));
+    final var exception =
+        assertThrows(OperatorException.class, () -> manager.registerEventSource(source));
     final var cause = exception.getCause();
     assertInstanceOf(IllegalArgumentException.class, cause);
     assertThat(cause.getMessage()).contains("is already registered with name");
@@ -135,21 +135,20 @@ class EventSourceManagerTest {
     when(eventSource.name()).thenReturn("name1");
     manager.registerEventSource(eventSource);
 
-
     ManagedInformerEventSource eventSource2 = mock(ManagedInformerEventSource.class);
     when(eventSource2.name()).thenReturn("name2");
     when(eventSource2.resourceType()).thenReturn(TestCustomResource.class);
     manager.registerEventSource(eventSource2);
 
-    final var exception = assertThrows(IllegalArgumentException.class,
-        () -> manager.getEventSourceFor(TestCustomResource.class));
+    final var exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> manager.getEventSourceFor(TestCustomResource.class));
     assertTrue(exception.getMessage().contains("name1"));
     assertTrue(exception.getMessage().contains("name2"));
 
-    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name2"),
-        eventSource2);
-    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name1"),
-        eventSource);
+    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name2"), eventSource2);
+    assertEquals(manager.getEventSourceFor(TestCustomResource.class, "name1"), eventSource);
   }
 
   @Test
@@ -161,8 +160,9 @@ class EventSourceManagerTest {
     final var configService = new BaseConfigurationService();
     when(configuration.getConfigurationService()).thenReturn(configService);
 
-    final Controller controller = new Controller(mock(Reconciler.class), configuration,
-        MockKubernetesClient.client(HasMetadata.class));
+    final Controller controller =
+        new Controller(
+            mock(Reconciler.class), configuration, MockKubernetesClient.client(HasMetadata.class));
 
     EventSources eventSources = spy(new EventSources());
     var controllerResourceEventSourceMock = mock(ControllerEventSource.class);
@@ -190,8 +190,9 @@ class EventSourceManagerTest {
     final var configService = new BaseConfigurationService();
     when(configuration.getConfigurationService()).thenReturn(configService);
 
-    final Controller controller = new Controller(mock(Reconciler.class), configuration,
-        MockKubernetesClient.client(ConfigMap.class));
+    final Controller controller =
+        new Controller(
+            mock(Reconciler.class), configuration, MockKubernetesClient.client(ConfigMap.class));
     return new EventSourceManager(controller);
   }
 }

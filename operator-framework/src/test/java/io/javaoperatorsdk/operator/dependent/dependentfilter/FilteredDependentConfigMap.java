@@ -20,13 +20,15 @@ public class FilteredDependentConfigMap
   }
 
   @Override
-  protected ConfigMap desired(DependentFilterTestCustomResource primary,
+  protected ConfigMap desired(
+      DependentFilterTestCustomResource primary,
       Context<DependentFilterTestCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace())
+            .build());
     configMap.setData(Map.of(CM_VALUE_KEY, primary.getSpec().getValue()));
     return configMap;
   }

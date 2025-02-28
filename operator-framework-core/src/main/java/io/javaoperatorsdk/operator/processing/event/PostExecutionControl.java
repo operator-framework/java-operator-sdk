@@ -16,7 +16,8 @@ final class PostExecutionControl<R extends HasMetadata> {
   private PostExecutionControl(
       boolean finalizerRemoved,
       R updatedCustomResource,
-      boolean updateIsStatusPatch, Exception runtimeException) {
+      boolean updateIsStatusPatch,
+      Exception runtimeException) {
     this.finalizerRemoved = finalizerRemoved;
     this.updatedCustomResource = updatedCustomResource;
     this.updateIsStatusPatch = updateIsStatusPatch;

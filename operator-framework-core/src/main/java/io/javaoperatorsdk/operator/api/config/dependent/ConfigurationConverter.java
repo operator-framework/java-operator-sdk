@@ -6,6 +6,8 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 
 public interface ConfigurationConverter<A extends Annotation, C> {
 
-  C configFrom(A configAnnotation, DependentResourceSpec<?, ?, C> spec,
+  C configFrom(
+      A configAnnotation,
+      DependentResourceSpec<?, ?, C> spec,
       ControllerConfiguration<?> parentConfiguration);
 }

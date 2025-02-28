@@ -15,14 +15,11 @@ class ResourceState {
    * for cleanup.
    */
   private enum EventingState {
-    EVENT_PRESENT, NO_EVENT_PRESENT,
-    /**
-     * Resource has been marked for deletion, and cleanup already executed successfully
-     */
+    EVENT_PRESENT,
+    NO_EVENT_PRESENT,
+    /** Resource has been marked for deletion, and cleanup already executed successfully */
     PROCESSED_MARK_FOR_DELETION,
-    /**
-     * Delete event present, from this point other events are not relevant
-     */
+    /** Delete event present, from this point other events are not relevant */
     DELETE_EVENT_PRESENT,
   }
 
@@ -114,12 +111,17 @@ class ResourceState {
 
   @Override
   public String toString() {
-    return "ResourceState{" +
-        "id=" + id +
-        ", underProcessing=" + underProcessing +
-        ", retry=" + retry +
-        ", eventing=" + eventing +
-        ", rateLimit=" + rateLimit +
-        '}';
+    return "ResourceState{"
+        + "id="
+        + id
+        + ", underProcessing="
+        + underProcessing
+        + ", retry="
+        + retry
+        + ", eventing="
+        + eventing
+        + ", rateLimit="
+        + rateLimit
+        + '}';
   }
 }

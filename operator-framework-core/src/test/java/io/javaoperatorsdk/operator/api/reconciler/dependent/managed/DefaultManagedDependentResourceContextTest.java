@@ -45,12 +45,13 @@ class DefaultManagedDependentResourceContextTest {
   void putNewValueLogsWarningIfTypesDiffer() {
     // to check that we properly log things without setting up a complex fixture
     final String[] messages = new String[1];
-    var context = new DefaultManagedWorkflowAndDependentResourceContext<>(null, null, null) {
-      @Override
-      void logWarning(String message) {
-        messages[0] = message;
-      }
-    };
+    var context =
+        new DefaultManagedWorkflowAndDependentResourceContext<>(null, null, null) {
+          @Override
+          void logWarning(String message) {
+            messages[0] = message;
+          }
+        };
     final var prior = "value";
     final var key = "key";
     context.put(key, prior);
@@ -82,10 +83,13 @@ class DefaultManagedDependentResourceContextTest {
 
   @Test
   void getMandatoryWhenEmpty() {
-    assertThatThrownBy(() -> {
-      context.getMandatory("key", String.class);
-    }).isInstanceOf(IllegalStateException.class)
+    assertThatThrownBy(
+            () -> {
+              context.getMandatory("key", String.class);
+            })
+        .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "Mandatory attribute (key: key, type: java.lang.String) is missing or not of the expected type");
+            "Mandatory attribute (key: key, type: java.lang.String) is missing or not of the"
+                + " expected type");
   }
 }

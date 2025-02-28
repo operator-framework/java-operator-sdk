@@ -31,7 +31,8 @@ class DependentAnnotationSecondaryMapperIT {
     var reconciler =
         operator.getReconcilerOfType(DependentAnnotationSecondaryMapperReconciler.class);
 
-    await().pollDelay(Duration.ofMillis(150))
+    await()
+        .pollDelay(Duration.ofMillis(150))
         .untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isEqualTo(1));
     var configMap = operator.get(ConfigMap.class, TEST_RESOURCE_NAME);
 
@@ -46,17 +47,14 @@ class DependentAnnotationSecondaryMapperIT {
     configMap.getData().put("additional_data", "data");
     operator.replace(configMap);
 
-    await().pollDelay(Duration.ofMillis(150))
+    await()
+        .pollDelay(Duration.ofMillis(150))
         .untilAsserted(() -> assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2));
   }
 
-
   DependentAnnotationSecondaryMapperResource testResource() {
     var res = new DependentAnnotationSecondaryMapperResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }
-
 }

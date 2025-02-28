@@ -18,7 +18,8 @@ public class DependentReInitializationReconciler
   @Override
   public UpdateControl<DependentReInitializationCustomResource> reconcile(
       DependentReInitializationCustomResource resource,
-      Context<DependentReInitializationCustomResource> context) throws Exception {
+      Context<DependentReInitializationCustomResource> context)
+      throws Exception {
     configMapDependentResource.reconcile(resource, context);
     return UpdateControl.noUpdate();
   }
@@ -26,9 +27,6 @@ public class DependentReInitializationReconciler
   @Override
   public List<EventSource<?, DependentReInitializationCustomResource>> prepareEventSources(
       EventSourceContext<DependentReInitializationCustomResource> context) {
-    return EventSourceUtils.dependentEventSources(context,
-        configMapDependentResource);
+    return EventSourceUtils.dependentEventSources(context, configMapDependentResource);
   }
-
-
 }

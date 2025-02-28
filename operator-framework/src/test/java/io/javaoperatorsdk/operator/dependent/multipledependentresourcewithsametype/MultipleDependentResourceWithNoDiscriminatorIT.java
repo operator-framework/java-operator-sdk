@@ -16,6 +16,7 @@ import static org.awaitility.Awaitility.await;
 class MultipleDependentResourceWithNoDiscriminatorIT {
 
   public static final String TEST_RESOURCE_NAME = "multipledependentresource-testresource";
+
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
@@ -32,20 +33,21 @@ class MultipleDependentResourceWithNoDiscriminatorIT {
     var reconciler =
         operator.getReconcilerOfType(MultipleDependentResourceWithDiscriminatorReconciler.class);
 
-    await().pollDelay(Duration.ofMillis(300))
-        .until(() -> reconciler.getNumberOfExecutions() <= 1);
+    await().pollDelay(Duration.ofMillis(300)).until(() -> reconciler.getNumberOfExecutions() <= 1);
 
-    IntStream.of(MultipleDependentResourceWithDiscriminatorReconciler.FIRST_CONFIG_MAP_ID,
-        MultipleDependentResourceWithDiscriminatorReconciler.SECOND_CONFIG_MAP_ID)
-        .forEach(configMapId -> {
-          ConfigMap configMap =
-              operator.get(ConfigMap.class, customResource.getConfigMapName(configMapId));
-          assertThat(configMap).isNotNull();
-          assertThat(configMap.getMetadata().getName())
-              .isEqualTo(customResource.getConfigMapName(configMapId));
-          assertThat(configMap.getData().get(MultipleDependentResourceConfigMap.DATA_KEY))
-              .isEqualTo(String.valueOf(configMapId));
-        });
+    IntStream.of(
+            MultipleDependentResourceWithDiscriminatorReconciler.FIRST_CONFIG_MAP_ID,
+            MultipleDependentResourceWithDiscriminatorReconciler.SECOND_CONFIG_MAP_ID)
+        .forEach(
+            configMapId -> {
+              ConfigMap configMap =
+                  operator.get(ConfigMap.class, customResource.getConfigMapName(configMapId));
+              assertThat(configMap).isNotNull();
+              assertThat(configMap.getMetadata().getName())
+                  .isEqualTo(customResource.getConfigMapName(configMapId));
+              assertThat(configMap.getData().get(MultipleDependentResourceConfigMap.DATA_KEY))
+                  .isEqualTo(String.valueOf(configMapId));
+            });
   }
 
   public MultipleDependentResourceCustomResourceNoDiscriminator createTestCustomResource() {
@@ -58,5 +60,4 @@ class MultipleDependentResourceWithNoDiscriminatorIT {
             .build());
     return resource;
   }
-
 }

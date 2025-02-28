@@ -34,8 +34,9 @@ class LeaderElectionManagerTest {
     when(kubernetesClient.getConfiguration()).thenReturn(Config.autoConfigure(null));
     var configurationService =
         ConfigurationService.newOverriddenConfigurationService(
-            o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test"))
-                .withKubernetesClient(kubernetesClient));
+            o ->
+                o.withLeaderElectionConfiguration(new LeaderElectionConfiguration("test"))
+                    .withKubernetesClient(kubernetesClient));
     return new LeaderElectionManager(controllerManager, configurationService);
   }
 

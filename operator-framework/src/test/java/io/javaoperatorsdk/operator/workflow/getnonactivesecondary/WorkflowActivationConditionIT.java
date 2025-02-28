@@ -23,18 +23,20 @@ public class WorkflowActivationConditionIT {
   void reconciledOnVanillaKubernetesDespiteRouteInWorkflow() {
     extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      assertThat(extension.getReconcilerOfType(WorkflowActivationConditionReconciler.class)
-          .getNumberOfReconciliationExecution()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      extension
+                          .getReconcilerOfType(WorkflowActivationConditionReconciler.class)
+                          .getNumberOfReconciliationExecution())
+                  .isEqualTo(1);
+            });
   }
 
   private GetNonActiveSecondaryCustomResource testResource() {
     var res = new GetNonActiveSecondaryCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return res;
   }
-
 }

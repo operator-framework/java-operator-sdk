@@ -27,8 +27,8 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-class ControllerEventSourceTest extends
-    AbstractEventSourceTestBase<ControllerEventSource<TestCustomResource>, EventHandler> {
+class ControllerEventSourceTest
+    extends AbstractEventSourceTestBase<ControllerEventSource<TestCustomResource>, EventHandler> {
 
   public static final String FINALIZER =
       ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
@@ -87,8 +87,7 @@ class ControllerEventSourceTest extends
 
   @Test
   void handlesAllEventIfNotGenerationAware() {
-    source =
-        new ControllerEventSource<>(new TestController(false));
+    source = new ControllerEventSource<>(new TestController(false));
     setup();
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
@@ -116,8 +115,8 @@ class ControllerEventSourceTest extends
     source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
 
     verify(testController.getEventSourceManager(), times(1))
-        .broadcastOnResourceEvent(eq(ResourceAction.UPDATED), eq(customResource1),
-            eq(customResource1));
+        .broadcastOnResourceEvent(
+            eq(ResourceAction.UPDATED), eq(customResource1), eq(customResource1));
   }
 
   @Test
@@ -126,9 +125,7 @@ class ControllerEventSourceTest extends
 
     OnAddFilter<TestCustomResource> onAddFilter = (res) -> false;
     OnUpdateFilter<TestCustomResource> onUpdatePredicate = (res, res2) -> false;
-    source =
-        new ControllerEventSource<>(
-            new TestController(onAddFilter, onUpdatePredicate, null));
+    source = new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null));
     setUpSource(source, true, controllerConfig);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
@@ -141,8 +138,7 @@ class ControllerEventSourceTest extends
   void genericFilterFiltersOutAddUpdateAndDeleteEvents() {
     TestCustomResource cr = TestUtils.testCustomResource();
 
-    source =
-        new ControllerEventSource<>(new TestController(null, null, res -> false));
+    source = new ControllerEventSource<>(new TestController(null, null, res -> false));
     setUpSource(source, true, controllerConfig);
 
     source.eventReceived(ResourceAction.ADDED, cr, null);
@@ -161,15 +157,20 @@ class ControllerEventSourceTest extends
     private final EventSourceManager<TestCustomResource> eventSourceManager =
         mock(EventSourceManager.class);
 
-    public TestController(OnAddFilter<TestCustomResource> onAddFilter,
+    public TestController(
+        OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
         GenericFilter<TestCustomResource> genericFilter) {
-      super(reconciler, new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
+      super(
+          reconciler,
+          new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
     public TestController(boolean generationAware) {
-      super(reconciler, new TestConfiguration(generationAware, null, null, null),
+      super(
+          reconciler,
+          new TestConfiguration(generationAware, null, null, null),
           MockKubernetesClient.client(TestCustomResource.class));
     }
 
@@ -184,10 +185,12 @@ class ControllerEventSourceTest extends
     }
   }
 
-  private static class TestConfiguration extends
-      ResolvedControllerConfiguration<TestCustomResource> {
+  private static class TestConfiguration
+      extends ResolvedControllerConfiguration<TestCustomResource> {
 
-    public TestConfiguration(boolean generationAware, OnAddFilter<TestCustomResource> onAddFilter,
+    public TestConfiguration(
+        boolean generationAware,
+        OnAddFilter<TestCustomResource> onAddFilter,
         OnUpdateFilter<TestCustomResource> onUpdateFilter,
         GenericFilter<TestCustomResource> genericFilter) {
       super(
@@ -201,8 +204,10 @@ class ControllerEventSourceTest extends
           null,
           null,
           new BaseConfigurationService(),
-          InformerConfiguration.builder(TestCustomResource.class).withOnAddFilter(onAddFilter)
-              .withOnUpdateFilter(onUpdateFilter).withGenericFilter(genericFilter)
+          InformerConfiguration.builder(TestCustomResource.class)
+              .withOnAddFilter(onAddFilter)
+              .withOnUpdateFilter(onUpdateFilter)
+              .withGenericFilter(genericFilter)
               .buildForController());
     }
   }

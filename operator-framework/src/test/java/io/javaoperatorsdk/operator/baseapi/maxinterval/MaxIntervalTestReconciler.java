@@ -10,8 +10,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@ControllerConfiguration(maxReconciliationInterval = @MaxReconciliationInterval(interval = 50,
-    timeUnit = TimeUnit.MILLISECONDS))
+@ControllerConfiguration(
+    maxReconciliationInterval =
+        @MaxReconciliationInterval(interval = 50, timeUnit = TimeUnit.MILLISECONDS))
 public class MaxIntervalTestReconciler
     implements Reconciler<MaxIntervalTestCustomResource>, TestExecutionInfoProvider {
 
@@ -27,5 +28,4 @@ public class MaxIntervalTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

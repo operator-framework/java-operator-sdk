@@ -10,5 +10,4 @@ public class FirstStatefulSet extends BaseStatefulSet {
   public FirstStatefulSet() {
     super(DISCRIMINATOR_PREFIX);
   }
-
 }

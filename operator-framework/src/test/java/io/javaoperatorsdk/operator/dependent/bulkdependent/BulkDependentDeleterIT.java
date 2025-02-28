@@ -9,7 +9,8 @@ public class BulkDependentDeleterIT extends BulkDependentTestBase {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new ManagedDeleterBulkReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new ManagedDeleterBulkReconciler())
           .build();
 
   @Override

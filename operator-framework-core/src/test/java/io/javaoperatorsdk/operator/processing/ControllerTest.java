@@ -53,15 +53,14 @@ class ControllerTest {
   void crdShouldNotBeCheckedForCustomResourcesIfDisabled() {
     final var client = MockKubernetesClient.client(TestCustomResource.class);
     ConfigurationService configurationService =
-        ConfigurationService.newOverriddenConfigurationService(new BaseConfigurationService(),
-            o -> o.checkingCRDAndValidateLocalModel(false));
+        ConfigurationService.newOverriddenConfigurationService(
+            new BaseConfigurationService(), o -> o.checkingCRDAndValidateLocalModel(false));
 
     final var configuration =
         MockControllerConfiguration.forResource(TestCustomResource.class, configurationService);
     final var controller = new Controller<TestCustomResource>(reconciler, configuration, client);
     controller.start();
     verify(client, never()).apiextensions();
-
   }
 
   @Test
@@ -70,24 +69,27 @@ class ControllerTest {
     final var configuration = MockControllerConfiguration.forResource(Secret.class);
     when(configuration.getConfigurationService()).thenReturn(new BaseConfigurationService());
 
-    final var controller = new Controller<Secret>(reconciler, configuration,
-        MockKubernetesClient.client(Secret.class));
+    final var controller =
+        new Controller<Secret>(
+            reconciler, configuration, MockKubernetesClient.client(Secret.class));
 
     assertThat(controller.useFinalizer()).isTrue();
   }
 
   @ParameterizedTest
   @CsvSource({
-      "true, true, true, false",
-      "true, true, false, true",
-      "false, true, true, true",
-      "false, true, false, true",
-      "true, false, true, false",
+    "true, true, true, false",
+    "true, true, false, true",
+    "false, true, true, true",
+    "false, true, false, true",
+    "true, false, true, false",
   })
-  void callsCleanupOnWorkflowWhenHasCleanerAndReconcilerIsNotCleaner(boolean reconcilerIsCleaner,
+  void callsCleanupOnWorkflowWhenHasCleanerAndReconcilerIsNotCleaner(
+      boolean reconcilerIsCleaner,
       boolean workflowIsCleaner,
       boolean isExplicitWorkflowInvocation,
-      boolean workflowCleanerExecuted) throws Exception {
+      boolean workflowCleanerExecuted)
+      throws Exception {
 
     Reconciler reconciler;
     if (reconcilerIsCleaner) {
@@ -116,8 +118,9 @@ class ControllerTest {
     var managedWorkflowMock = workflow(workflowIsCleaner);
     when(mockManagedWorkflow.resolve(any(), any())).thenReturn(managedWorkflowMock);
 
-    final var controller = new Controller<Secret>(reconciler, configuration,
-        MockKubernetesClient.client(Secret.class));
+    final var controller =
+        new Controller<Secret>(
+            reconciler, configuration, MockKubernetesClient.client(Secret.class));
 
     controller.cleanup(new Secret(), new DefaultContext<>(null, controller, new Secret()));
 

@@ -23,7 +23,7 @@ class PerResourcePollingEventSourceIT {
   /**
    * This is kinda some test to verify that the implementation of PerResourcePollingEventSource
    * works with the underling mechanisms in event source manager and other parts of the system.
-   **/
+   */
   @Test
   void fetchedAndReconciledMultipleTimes() {
     operator.create(resource(NAME_1));
@@ -31,20 +31,19 @@ class PerResourcePollingEventSourceIT {
 
     var reconciler =
         operator.getReconcilerOfType(PerResourcePollingEventSourceTestReconciler.class);
-    await().untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions(NAME_1)).isGreaterThan(2);
-      assertThat(reconciler.getNumberOfFetchExecution(NAME_1)).isGreaterThan(2);
-      assertThat(reconciler.getNumberOfExecutions(NAME_2)).isGreaterThan(2);
-      assertThat(reconciler.getNumberOfFetchExecution(NAME_2)).isGreaterThan(2);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getNumberOfExecutions(NAME_1)).isGreaterThan(2);
+              assertThat(reconciler.getNumberOfFetchExecution(NAME_1)).isGreaterThan(2);
+              assertThat(reconciler.getNumberOfExecutions(NAME_2)).isGreaterThan(2);
+              assertThat(reconciler.getNumberOfFetchExecution(NAME_2)).isGreaterThan(2);
+            });
   }
 
   private PerResourceEventSourceCustomResource resource(String name) {
     var res = new PerResourceEventSourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(name).build());
     return res;
   }
-
 }

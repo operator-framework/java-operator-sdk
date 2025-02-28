@@ -14,6 +14,7 @@ public class SubResourceTestCustomResourceStatus {
   }
 
   public enum State {
-    SUCCESS, ERROR
+    SUCCESS,
+    ERROR
   }
 }

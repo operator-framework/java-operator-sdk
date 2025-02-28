@@ -10,8 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("wac")
 public class WorkflowActivationConditionCustomResource
-    extends CustomResource<WorkflowActivationConditionSpec, Void>
-    implements Namespaced {
-
-
-}
+    extends CustomResource<WorkflowActivationConditionSpec, Void> implements Namespaced {}

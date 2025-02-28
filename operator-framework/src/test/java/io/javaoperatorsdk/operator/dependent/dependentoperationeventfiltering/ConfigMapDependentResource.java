@@ -7,8 +7,9 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
-public class ConfigMapDependentResource extends
-    CRUDKubernetesDependentResource<ConfigMap, DependentOperationEventFilterCustomResource> {
+public class ConfigMapDependentResource
+    extends CRUDKubernetesDependentResource<
+        ConfigMap, DependentOperationEventFilterCustomResource> {
 
   public static final String KEY = "key1";
 
@@ -17,7 +18,8 @@ public class ConfigMapDependentResource extends
   }
 
   @Override
-  protected ConfigMap desired(DependentOperationEventFilterCustomResource primary,
+  protected ConfigMap desired(
+      DependentOperationEventFilterCustomResource primary,
       Context<DependentOperationEventFilterCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();

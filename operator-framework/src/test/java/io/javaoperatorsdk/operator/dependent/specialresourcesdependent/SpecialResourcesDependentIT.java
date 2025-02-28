@@ -22,38 +22,39 @@ public class SpecialResourcesDependentIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new SpecialResourceTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new SpecialResourceTestReconciler())
           .build();
 
   @Test
   void specialCRUDReconciler() {
     var resource = extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      var sa = extension.get(ServiceAccount.class, RESOURCE_NAME);
-      assertThat(sa).isNotNull();
-      assertThat(sa.getAutomountServiceAccountToken()).isTrue();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var sa = extension.get(ServiceAccount.class, RESOURCE_NAME);
+              assertThat(sa).isNotNull();
+              assertThat(sa.getAutomountServiceAccountToken()).isTrue();
+            });
 
     resource.getSpec().setValue(CHANGED_VALUE);
     extension.replace(resource);
 
-    await().untilAsserted(() -> {
-      var sa = extension.get(ServiceAccount.class, RESOURCE_NAME);
-      assertThat(sa).isNotNull();
-      assertThat(sa.getAutomountServiceAccountToken()).isFalse();
-    });
-
+    await()
+        .untilAsserted(
+            () -> {
+              var sa = extension.get(ServiceAccount.class, RESOURCE_NAME);
+              assertThat(sa).isNotNull();
+              assertThat(sa.getAutomountServiceAccountToken()).isFalse();
+            });
   }
 
   SpecialResourceCustomResource testResource() {
     SpecialResourceCustomResource res = new SpecialResourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     res.setSpec(new SpecialResourceSpec());
     res.getSpec().setValue(INITIAL_VALUE);
     return res;
   }
-
 }

@@ -32,11 +32,13 @@ public class ClusterScopedCustomResourceReconciler
     var optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
 
     final var client = context.getClient();
-    optionalConfigMap.ifPresentOrElse(cm -> {
-      if (!resource.getSpec().getData().equals(cm.getData().get(DATA_KEY))) {
-        client.configMaps().resource(desired(resource)).replace();
-      }
-    }, () -> client.configMaps().resource(desired(resource)).create());
+    optionalConfigMap.ifPresentOrElse(
+        cm -> {
+          if (!resource.getSpec().getData().equals(cm.getData().get(DATA_KEY))) {
+            client.configMaps().resource(desired(resource)).replace();
+          }
+        },
+        () -> client.configMaps().resource(desired(resource)).create());
 
     resource.setStatus(new ClusterScopedCustomResourceStatus());
     resource.getStatus().setCreated(true);
@@ -44,14 +46,16 @@ public class ClusterScopedCustomResourceReconciler
   }
 
   private ConfigMap desired(ClusterScopedCustomResource resource) {
-    var cm = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(resource.getMetadata().getName())
-            .withNamespace(resource.getSpec().getTargetNamespace())
-            .withLabels(Map.of(TEST_LABEL_KEY, TEST_LABEL_VALUE))
-            .build())
-        .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
-        .build();
+    var cm =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(resource.getMetadata().getName())
+                    .withNamespace(resource.getSpec().getTargetNamespace())
+                    .withLabels(Map.of(TEST_LABEL_KEY, TEST_LABEL_VALUE))
+                    .build())
+            .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
+            .build();
     cm.addOwnerReference(resource);
     return cm;
   }
@@ -59,13 +63,15 @@ public class ClusterScopedCustomResourceReconciler
   @Override
   public List<EventSource<?, ClusterScopedCustomResource>> prepareEventSources(
       EventSourceContext<ClusterScopedCustomResource> context) {
-    var ies = new InformerEventSource<>(
-        InformerEventSourceConfiguration.from(ConfigMap.class, ClusterScopedCustomResource.class)
-            .withSecondaryToPrimaryMapper(
-                Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
-            .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
-            .build(),
-        context);
+    var ies =
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(
+                    ConfigMap.class, ClusterScopedCustomResource.class)
+                .withSecondaryToPrimaryMapper(
+                    Mappers.fromOwnerReferences(context.getPrimaryResourceClass(), true))
+                .withLabelSelector(TEST_LABEL_KEY + "=" + TEST_LABEL_VALUE)
+                .build(),
+            context);
     return List.of(ies);
   }
 }

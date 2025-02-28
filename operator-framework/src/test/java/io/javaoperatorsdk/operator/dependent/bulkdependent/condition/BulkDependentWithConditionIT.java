@@ -26,20 +26,25 @@ class BulkDependentWithConditionIT {
     var resource = testResource();
     extension.create(resource);
 
-    await().untilAsserted(() -> {
-      var res = extension.get(BulkDependentTestCustomResource.class,
-          testResource().getMetadata().getName());
-      assertThat(res.getStatus()).isNotNull();
-      assertThat(res.getStatus().getReady()).isTrue();
+    await()
+        .untilAsserted(
+            () -> {
+              var res =
+                  extension.get(
+                      BulkDependentTestCustomResource.class,
+                      testResource().getMetadata().getName());
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getReady()).isTrue();
 
-      var cms = extension.getKubernetesClient().configMaps().inNamespace(extension.getNamespace())
-          .withLabel(LABEL_KEY, LABEL_VALUE)
-          .list().getItems();
-      assertThat(cms).hasSize(INITIAL_NUMBER_OF_CONFIG_MAPS);
-
-    });
+              var cms =
+                  extension
+                      .getKubernetesClient()
+                      .configMaps()
+                      .inNamespace(extension.getNamespace())
+                      .withLabel(LABEL_KEY, LABEL_VALUE)
+                      .list()
+                      .getItems();
+              assertThat(cms).hasSize(INITIAL_NUMBER_OF_CONFIG_MAPS);
+            });
   }
-
-
-
 }

@@ -29,5 +29,4 @@ public class MultipleReconcilerSameTypeReconciler2
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

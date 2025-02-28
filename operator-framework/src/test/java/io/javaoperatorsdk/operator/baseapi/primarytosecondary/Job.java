@@ -9,7 +9,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("cjo")
-public class Job
-    extends CustomResource<JobSpec, Void>
-    implements Namespaced {
-}
+public class Job extends CustomResource<JobSpec, Void> implements Namespaced {}

@@ -16,7 +16,8 @@ class MaxIntervalAfterRetryIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(new MaxIntervalAfterRetryTestReconciler()).build();
+          .withReconciler(new MaxIntervalAfterRetryTestReconciler())
+          .build();
 
   @Test
   void reconciliationTriggeredBasedOnMaxInterval() {
@@ -28,8 +29,12 @@ class MaxIntervalAfterRetryIT {
         .pollInterval(50, TimeUnit.MILLISECONDS)
         .atMost(1, TimeUnit.SECONDS)
         .untilAsserted(
-            () -> assertThat(operator.getReconcilerOfType(MaxIntervalAfterRetryTestReconciler.class)
-                .getNumberOfExecutions()).isGreaterThan(5));
+            () ->
+                assertThat(
+                        operator
+                            .getReconcilerOfType(MaxIntervalAfterRetryTestReconciler.class)
+                            .getNumberOfExecutions())
+                    .isGreaterThan(5));
   }
 
   private MaxIntervalAfterRetryTestCustomResource createTestResource() {

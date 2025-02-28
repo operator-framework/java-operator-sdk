@@ -16,8 +16,9 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
 public class TestReconciler
-    implements Reconciler<TestCustomResource>, Cleaner<TestCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<TestCustomResource>,
+        Cleaner<TestCustomResource>,
+        TestExecutionInfoProvider {
 
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
 
@@ -28,7 +29,6 @@ public class TestReconciler
   private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
   private volatile boolean updateStatus;
 
-
   public TestReconciler(boolean updateStatus) {
     this.updateStatus = updateStatus;
   }
@@ -38,15 +38,16 @@ public class TestReconciler
   }
 
   @Override
-  public DeleteControl cleanup(
-      TestCustomResource resource, Context<TestCustomResource> context) {
+  public DeleteControl cleanup(TestCustomResource resource, Context<TestCustomResource> context) {
     numberOfCleanupExecutions.incrementAndGet();
 
-    var statusDetail = context.getClient()
-        .configMaps()
-        .inNamespace(resource.getMetadata().getNamespace())
-        .withName(resource.getSpec().getConfigMapName())
-        .delete();
+    var statusDetail =
+        context
+            .getClient()
+            .configMaps()
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(resource.getSpec().getConfigMapName())
+            .delete();
 
     if (statusDetail.size() == 1 && statusDetail.get(0).getCauses().isEmpty()) {
       log.info(
@@ -100,15 +101,17 @@ public class TestReconciler
               .build();
       kubernetesClient
           .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace()).resource(newConfigMap)
+          .inNamespace(resource.getMetadata().getNamespace())
+          .resource(newConfigMap)
           .createOrReplace();
     }
     if (updateStatus) {
       var statusUpdateResource = new TestCustomResource();
-      statusUpdateResource.setMetadata(new ObjectMetaBuilder()
-          .withName(resource.getMetadata().getName())
-          .withNamespace(resource.getMetadata().getNamespace())
-          .build());
+      statusUpdateResource.setMetadata(
+          new ObjectMetaBuilder()
+              .withName(resource.getMetadata().getName())
+              .withNamespace(resource.getMetadata().getNamespace())
+              .build());
       resource.setStatus(new TestCustomResourceStatus());
       resource.getStatus().setConfigMapStatus("ConfigMap Ready");
       return UpdateControl.patchStatus(resource);

@@ -23,8 +23,7 @@ class ExternalStateIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(ExternalStateReconciler.class)
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(ExternalStateReconciler.class).build();
 
   @Test
   public void reconcilesResourceWithPersistentState() {
@@ -40,32 +39,34 @@ class ExternalStateIT {
   }
 
   private void assertResourcesDeleted(ExternalStateCustomResource resource) {
-    await().untilAsserted(() -> {
-      var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
-      var resources = externalService.listResources();
-      assertThat(cm).isNull();
-      assertThat(resources).isEmpty();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
+              var resources = externalService.listResources();
+              assertThat(cm).isNull();
+              assertThat(resources).isEmpty();
+            });
   }
 
-  private void assertResourcesCreated(ExternalStateCustomResource resource,
-      String initialTestData) {
-    await().untilAsserted(() -> {
-      var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
-      var resources = externalService.listResources();
-      assertThat(resources).hasSize(1);
-      var extRes = externalService.listResources().get(0);
-      assertThat(extRes.getData()).isEqualTo(initialTestData);
-      assertThat(cm).isNotNull();
-      assertThat(cm.getData().get(ID_KEY)).isEqualTo(extRes.getId());
-    });
+  private void assertResourcesCreated(
+      ExternalStateCustomResource resource, String initialTestData) {
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = operator.get(ConfigMap.class, resource.getMetadata().getName());
+              var resources = externalService.listResources();
+              assertThat(resources).hasSize(1);
+              var extRes = externalService.listResources().get(0);
+              assertThat(extRes.getData()).isEqualTo(initialTestData);
+              assertThat(cm).isNotNull();
+              assertThat(cm.getData().get(ID_KEY)).isEqualTo(extRes.getId());
+            });
   }
 
   private ExternalStateCustomResource testResource() {
     var res = new ExternalStateCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new ExternalStateSpec());
     res.getSpec().setData(INITIAL_TEST_DATA);

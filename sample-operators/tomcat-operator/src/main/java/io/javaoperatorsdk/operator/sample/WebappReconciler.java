@@ -33,8 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMap
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
-public class WebappReconciler
-    implements Reconciler<Webapp>, Cleaner<Webapp> {
+public class WebappReconciler implements Reconciler<Webapp>, Cleaner<Webapp> {
 
   private static final Logger log = LoggerFactory.getLogger(WebappReconciler.class);
 
@@ -53,17 +52,21 @@ public class WebappReconciler
      * convention.
      */
     final SecondaryToPrimaryMapper<Tomcat> webappsMatchingTomcatName =
-        (Tomcat t) -> context.getPrimaryCache()
-            .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
-            .map(ResourceID::fromResource)
-            .collect(Collectors.toSet());
+        (Tomcat t) ->
+            context
+                .getPrimaryCache()
+                .list(webApp -> webApp.getSpec().getTomcat().equals(t.getMetadata().getName()))
+                .map(ResourceID::fromResource)
+                .collect(Collectors.toSet());
 
     InformerEventSourceConfiguration<Tomcat> configuration =
         InformerEventSourceConfiguration.from(Tomcat.class, Webapp.class)
             .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
             .withPrimaryToSecondaryMapper(
-                (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
-                    primary.getMetadata().getNamespace())))
+                (Webapp primary) ->
+                    Set.of(
+                        new ResourceID(
+                            primary.getSpec().getTomcat(), primary.getMetadata().getNamespace())))
             .build();
     return List.of(new InformerEventSource<>(configuration, context));
   }
@@ -79,29 +82,49 @@ public class WebappReconciler
       return UpdateControl.noUpdate();
     }
 
-    Tomcat tomcat = context.getSecondaryResource(Tomcat.class)
-        .orElseThrow(
-            () -> new IllegalStateException("Cannot find Tomcat " + webapp.getSpec().getTomcat()
-                + " for Webapp " + webapp.getMetadata().getName() + " in namespace "
-                + webapp.getMetadata().getNamespace()));
+    Tomcat tomcat =
+        context
+            .getSecondaryResource(Tomcat.class)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Cannot find Tomcat "
+                            + webapp.getSpec().getTomcat()
+                            + " for Webapp "
+                            + webapp.getMetadata().getName()
+                            + " in namespace "
+                            + webapp.getMetadata().getNamespace()));
 
     if (tomcat.getStatus() != null
         && Objects.equals(tomcat.getSpec().getReplicas(), tomcat.getStatus().getReadyReplicas())) {
       log.info(
           "Tomcat is ready and webapps not yet deployed. Commencing deployment of {} in Tomcat {}",
-          webapp.getMetadata().getName(), tomcat.getMetadata().getName());
-      String[] command = new String[] {"wget", "-O",
-          "/data/" + webapp.getSpec().getContextPath() + ".war", webapp.getSpec().getUrl()};
+          webapp.getMetadata().getName(),
+          tomcat.getMetadata().getName());
+      String[] command =
+          new String[] {
+            "wget",
+            "-O",
+            "/data/" + webapp.getSpec().getContextPath() + ".war",
+            webapp.getSpec().getUrl()
+          };
       if (log.isInfoEnabled()) {
-        command = new String[] {"time", "wget", "-O",
-            "/data/" + webapp.getSpec().getContextPath() + ".war", webapp.getSpec().getUrl()};
+        command =
+            new String[] {
+              "time",
+              "wget",
+              "-O",
+              "/data/" + webapp.getSpec().getContextPath() + ".war",
+              webapp.getSpec().getUrl()
+            };
       }
 
       String[] commandStatusInAllPods = executeCommandInAllPods(kubernetesClient, webapp, command);
 
       return UpdateControl.patchStatus(createWebAppForStatusUpdate(webapp, commandStatusInAllPods));
     } else {
-      log.info("WebappController invoked but Tomcat not ready yet ({}/{})",
+      log.info(
+          "WebappController invoked but Tomcat not ready yet ({}/{})",
           tomcat.getStatus() != null ? tomcat.getStatus().getReadyReplicas() : 0,
           tomcat.getSpec().getReplicas());
       return UpdateControl.noUpdate();
@@ -110,10 +133,11 @@ public class WebappReconciler
 
   private Webapp createWebAppForStatusUpdate(Webapp actual, String[] commandStatusInAllPods) {
     var webapp = new Webapp();
-    webapp.setMetadata(new ObjectMetaBuilder()
-        .withName(actual.getMetadata().getName())
-        .withNamespace(actual.getMetadata().getNamespace())
-        .build());
+    webapp.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(actual.getMetadata().getName())
+            .withNamespace(actual.getMetadata().getNamespace())
+            .build());
     webapp.setStatus(new WebappStatus());
     webapp.getStatus().setDeployedArtifact(actual.getSpec().getUrl());
     webapp.getStatus().setDeploymentStatus(commandStatusInAllPods);
@@ -166,8 +190,7 @@ public class WebappReconciler
         } catch (ExecutionException e) {
           status[i] = pod.getMetadata().getName() + ": ExecutionException - " + e.getMessage();
         } catch (InterruptedException e) {
-          status[i] =
-              pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
+          status[i] = pod.getMetadata().getName() + ": InterruptedException - " + e.getMessage();
         } catch (TimeoutException e) {
           status[i] = pod.getMetadata().getName() + ": TimeoutException - " + e.getMessage();
         }
@@ -178,7 +201,8 @@ public class WebappReconciler
 
   private ExecWatch execCmd(Pod pod, CompletableFuture<String> data, String... command) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    return kubernetesClient.pods()
+    return kubernetesClient
+        .pods()
         .inNamespace(pod.getMetadata().getNamespace())
         .withName(pod.getMetadata().getName())
         .inContainer("war-downloader")
@@ -216,5 +240,4 @@ public class WebappReconciler
       data.complete(baos.toString());
     }
   }
-
 }

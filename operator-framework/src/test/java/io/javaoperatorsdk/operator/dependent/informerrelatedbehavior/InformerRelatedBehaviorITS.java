@@ -35,16 +35,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * value (in case want to try with minikube use: "minikube start
  * --extra-config=apiserver.min-request-timeout=1")
  *
- * <p>
- * This is important when tests are affected by permission changes, since the watch permissions are
- * just checked when established a watch request. So minimal request timeout is set to make sure
+ * <p>This is important when tests are affected by permission changes, since the watch permissions
+ * are just checked when established a watch request. So minimal request timeout is set to make sure
  * that with periodical watch reconnect the permission is tested again.
- * </p>
- * <p>
- * The test ends with "ITS" (Special) since it needs to run separately from other ITs
- * </p>
+ *
+ * <p>The test ends with "ITS" (Special) since it needs to run separately from other ITs
  */
-@EnableKubeAPIServer(apiServerFlags = {"--min-request-timeout", "1"}, updateKubeConfigFile = true)
+@EnableKubeAPIServer(
+    apiServerFlags = {"--min-request-timeout", "1"},
+    updateKubeConfigFile = true)
 class InformerRelatedBehaviorITS {
 
   public static final String TEST_RESOURCE_NAME = "test1";
@@ -59,13 +58,16 @@ class InformerRelatedBehaviorITS {
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
-    LocallyRunOperatorExtension.applyCrd(InformerRelatedBehaviorTestCustomResource.class,
-        adminClient);
-    testInfo.getTestMethod().ifPresent(method -> {
-      actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
-      additionalNamespace = actualNamespace + ADDITIONAL_NAMESPACE_SUFFIX;
-      adminClient.resource(namespace()).createOrReplace();
-    });
+    LocallyRunOperatorExtension.applyCrd(
+        InformerRelatedBehaviorTestCustomResource.class, adminClient);
+    testInfo
+        .getTestMethod()
+        .ifPresent(
+            method -> {
+              actualNamespace = KubernetesResourceUtil.sanitizeName(method.getName());
+              additionalNamespace = actualNamespace + ADDITIONAL_NAMESPACE_SUFFIX;
+              adminClient.resource(namespace()).createOrReplace();
+            });
     // cleans up binding before test, not all test cases use cluster role
     removeClusterRoleBinding();
   }
@@ -103,7 +105,6 @@ class InformerRelatedBehaviorITS {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isTrue();
   }
 
-
   @Test
   void startsUpWhenNoPermissionToSecondaryResource() {
     adminClient.resource(testCustomResource()).createOrReplace();
@@ -134,26 +135,31 @@ class InformerRelatedBehaviorITS {
   private void assertInformerNotWatchingForAdditionalNamespace(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
     var unhealthyEventSources =
-        operator.getRuntimeInfo().unhealthyInformerWrappingEventSourceHealthIndicator()
+        operator
+            .getRuntimeInfo()
+            .unhealthyInformerWrappingEventSourceHealthIndicator()
             .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
 
     InformerHealthIndicator controllerHealthIndicator =
-        (InformerHealthIndicator) unhealthyEventSources
-            .get(ControllerEventSource.NAME)
-            .informerHealthIndicators().get(additionalNamespace);
+        (InformerHealthIndicator)
+            unhealthyEventSources
+                .get(ControllerEventSource.NAME)
+                .informerHealthIndicators()
+                .get(additionalNamespace);
     assertThat(controllerHealthIndicator).isNotNull();
     assertThat(controllerHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
     assertThat(controllerHealthIndicator.isWatching()).isFalse();
 
     InformerHealthIndicator configMapHealthIndicator =
-        (InformerHealthIndicator) unhealthyEventSources
-            .get(InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE)
-            .informerHealthIndicators().get(additionalNamespace);
+        (InformerHealthIndicator)
+            unhealthyEventSources
+                .get(InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE)
+                .informerHealthIndicators()
+                .get(additionalNamespace);
     assertThat(configMapHealthIndicator).isNotNull();
     assertThat(configMapHealthIndicator.getTargetNamespace()).isEqualTo(additionalNamespace);
     assertThat(configMapHealthIndicator.isWatching()).isFalse();
   }
-
 
   // this will be investigated separately under the issue below, it's not crucial functional wise,
   // it is rather "something working why it should", not other way around; but it's not a
@@ -175,7 +181,6 @@ class InformerRelatedBehaviorITS {
     assertReconciled();
   }
 
-
   @Test
   void resilientForLoosingPermissionForSecondaryResource() {
     setFullResourcesAccess();
@@ -185,11 +190,18 @@ class InformerRelatedBehaviorITS {
     waitForWatchReconnect();
     adminClient.resource(testCustomResource()).createOrReplace();
 
-    await().pollDelay(Duration.ofMillis(300)).untilAsserted(() -> {
-      var cm =
-          adminClient.configMaps().inNamespace(actualNamespace).withName(TEST_RESOURCE_NAME).get();
-      assertThat(cm).isNull();
-    });
+    await()
+        .pollDelay(Duration.ofMillis(300))
+        .untilAsserted(
+            () -> {
+              var cm =
+                  adminClient
+                      .configMaps()
+                      .inNamespace(actualNamespace)
+                      .withName(TEST_RESOURCE_NAME)
+                      .get();
+              assertThat(cm).isNull();
+            });
 
     setFullResourcesAccess();
     assertReconciled();
@@ -226,54 +238,67 @@ class InformerRelatedBehaviorITS {
   }
 
   private void assertNotReconciled() {
-    await().pollDelay(Duration.ofMillis(2000)).untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
-    });
+    await()
+        .pollDelay(Duration.ofMillis(2000))
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
+            });
   }
 
   InformerRelatedBehaviorTestCustomResource testCustomResource() {
     InformerRelatedBehaviorTestCustomResource testCustomResource =
         new InformerRelatedBehaviorTestCustomResource();
-    testCustomResource.setMetadata(new ObjectMetaBuilder()
-        .withNamespace(actualNamespace)
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    testCustomResource.setMetadata(
+        new ObjectMetaBuilder()
+            .withNamespace(actualNamespace)
+            .withName(TEST_RESOURCE_NAME)
+            .build());
     return testCustomResource;
   }
 
   private ConfigMap dependentConfigMap() {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(TEST_RESOURCE_NAME)
-            .withNamespace(actualNamespace)
-            .build())
+        .withMetadata(
+            new ObjectMetaBuilder()
+                .withName(TEST_RESOURCE_NAME)
+                .withNamespace(actualNamespace)
+                .build())
         .build();
   }
 
   private void assertReconciled() {
-    await().untilAsserted(() -> {
-      assertThat(reconciler.getNumberOfExecutions()).isGreaterThan(0);
-      var cm =
-          adminClient.configMaps().inNamespace(actualNamespace).withName(TEST_RESOURCE_NAME).get();
-      assertThat(cm).isNotNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getNumberOfExecutions()).isGreaterThan(0);
+              var cm =
+                  adminClient
+                      .configMaps()
+                      .inNamespace(actualNamespace)
+                      .withName(TEST_RESOURCE_NAME)
+                      .get();
+              assertThat(cm).isNotNull();
+            });
   }
 
   @SuppressWarnings("unchecked")
   private void assertRuntimeInfoNoCRPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
     var unhealthyEventSources =
-        operator.getRuntimeInfo().unhealthyEventSources()
+        operator
+            .getRuntimeInfo()
+            .unhealthyEventSources()
             .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(unhealthyEventSources).isNotEmpty();
-    assertThat(unhealthyEventSources.get(ControllerEventSource.NAME))
-        .isNotNull();
-    var informerHealthIndicators = operator.getRuntimeInfo()
-        .unhealthyInformerWrappingEventSourceHealthIndicator()
-        .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    assertThat(unhealthyEventSources.get(ControllerEventSource.NAME)).isNotNull();
+    var informerHealthIndicators =
+        operator
+            .getRuntimeInfo()
+            .unhealthyInformerWrappingEventSourceHealthIndicator()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(informerHealthIndicators).isNotEmpty();
-    assertThat(informerHealthIndicators.get(ControllerEventSource.NAME)
-        .informerHealthIndicators())
+    assertThat(informerHealthIndicators.get(ControllerEventSource.NAME).informerHealthIndicators())
         .hasSize(1);
   }
 
@@ -281,26 +306,32 @@ class InformerRelatedBehaviorITS {
   private void assertRuntimeInfoForSecondaryPermission(Operator operator) {
     assertThat(operator.getRuntimeInfo().allEventSourcesAreHealthy()).isFalse();
     var unhealthyEventSources =
-        operator.getRuntimeInfo().unhealthyEventSources()
+        operator
+            .getRuntimeInfo()
+            .unhealthyEventSources()
             .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(unhealthyEventSources).isNotEmpty();
     assertThat(unhealthyEventSources.get(CONFIG_MAP_DEPENDENT_RESOURCE)).isNotNull();
-    var informerHealthIndicators = operator.getRuntimeInfo()
-        .unhealthyInformerWrappingEventSourceHealthIndicator()
-        .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
+    var informerHealthIndicators =
+        operator
+            .getRuntimeInfo()
+            .unhealthyInformerWrappingEventSourceHealthIndicator()
+            .get(INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER);
     assertThat(informerHealthIndicators).isNotEmpty();
     assertThat(
-        informerHealthIndicators.get(CONFIG_MAP_DEPENDENT_RESOURCE).informerHealthIndicators())
+            informerHealthIndicators.get(CONFIG_MAP_DEPENDENT_RESOURCE).informerHealthIndicators())
         .hasSize(1);
   }
 
   KubernetesClient clientUsingServiceAccount() {
-    KubernetesClient client = new KubernetesClientBuilder()
-        .withConfig(new ConfigBuilder()
-            .withImpersonateUsername("rbac-test-user")
-            .withNamespace(actualNamespace)
-            .build())
-        .build();
+    KubernetesClient client =
+        new KubernetesClientBuilder()
+            .withConfig(
+                new ConfigBuilder()
+                    .withImpersonateUsername("rbac-test-user")
+                    .withNamespace(actualNamespace)
+                    .build())
+            .build();
     return client;
   }
 
@@ -308,26 +339,30 @@ class InformerRelatedBehaviorITS {
     return startOperator(stopOnInformerErrorDuringStartup, true);
   }
 
-  Operator startOperator(boolean stopOnInformerErrorDuringStartup, boolean addStopHandler,
-      String... namespaces) {
+  Operator startOperator(
+      boolean stopOnInformerErrorDuringStartup, boolean addStopHandler, String... namespaces) {
 
     reconciler = new InformerRelatedBehaviorTestReconciler();
 
-    Operator operator = new Operator(
-        co -> {
-          co.withKubernetesClient(clientUsingServiceAccount());
-          co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
-          co.withCacheSyncTimeout(Duration.ofMillis(3000));
-          co.withReconciliationTerminationTimeout(Duration.ofSeconds(1));
-          if (addStopHandler) {
-            co.withInformerStoppedHandler((informer, ex) -> replacementStopHandlerCalled = true);
+    Operator operator =
+        new Operator(
+            co -> {
+              co.withKubernetesClient(clientUsingServiceAccount());
+              co.withStopOnInformerErrorDuringStartup(stopOnInformerErrorDuringStartup);
+              co.withCacheSyncTimeout(Duration.ofMillis(3000));
+              co.withReconciliationTerminationTimeout(Duration.ofSeconds(1));
+              if (addStopHandler) {
+                co.withInformerStoppedHandler(
+                    (informer, ex) -> replacementStopHandlerCalled = true);
+              }
+            });
+    operator.register(
+        reconciler,
+        o -> {
+          if (namespaces.length > 0) {
+            o.settingNamespaces(namespaces);
           }
         });
-    operator.register(reconciler, o -> {
-      if (namespaces.length > 0) {
-        o.settingNamespaces(namespaces);
-      }
-    });
     operator.start();
     return operator;
   }
@@ -348,24 +383,25 @@ class InformerRelatedBehaviorITS {
   }
 
   private void addRoleBindingsToTestNamespaces() {
-    var role = ReconcilerUtils
-        .loadYaml(Role.class, this.getClass(), "rback-test-only-main-ns-access.yaml");
+    var role =
+        ReconcilerUtils.loadYaml(
+            Role.class, this.getClass(), "rback-test-only-main-ns-access.yaml");
     adminClient.resource(role).inNamespace(actualNamespace).createOrReplace();
-    var roleBinding = ReconcilerUtils
-        .loadYaml(RoleBinding.class, this.getClass(),
-            "rback-test-only-main-ns-access-binding.yaml");
+    var roleBinding =
+        ReconcilerUtils.loadYaml(
+            RoleBinding.class, this.getClass(), "rback-test-only-main-ns-access-binding.yaml");
     adminClient.resource(roleBinding).inNamespace(actualNamespace).createOrReplace();
   }
 
   private void applyClusterRoleBinding() {
-    var clusterRoleBinding = ReconcilerUtils
-        .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+    var clusterRoleBinding =
+        ReconcilerUtils.loadYaml(
+            ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).createOrReplace();
   }
 
   private void applyClusterRole(String filename) {
-    var clusterRole = ReconcilerUtils
-        .loadYaml(ClusterRole.class, this.getClass(), filename);
+    var clusterRole = ReconcilerUtils.loadYaml(ClusterRole.class, this.getClass(), filename);
     adminClient.resource(clusterRole).createOrReplace();
   }
 
@@ -375,15 +411,14 @@ class InformerRelatedBehaviorITS {
 
   private Namespace namespace(String name) {
     Namespace n = new Namespace();
-    n.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    n.setMetadata(new ObjectMetaBuilder().withName(name).build());
     return n;
   }
 
   private void removeClusterRoleBinding() {
-    var clusterRoleBinding = ReconcilerUtils
-        .loadYaml(ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+    var clusterRoleBinding =
+        ReconcilerUtils.loadYaml(
+            ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).delete();
   }
 }

@@ -12,5 +12,4 @@ public class UpdateStatusInCleanupAndRescheduleCustomStatus {
     this.cleanupAttempt = cleanupAttempt;
     return this;
   }
-
 }

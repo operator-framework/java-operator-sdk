@@ -27,9 +27,12 @@ class MaxIntervalIT {
         .pollInterval(50, TimeUnit.MILLISECONDS)
         .atMost(500, TimeUnit.MILLISECONDS)
         .untilAsserted(
-            () -> assertThat(operator.getReconcilerOfType(MaxIntervalTestReconciler.class)
-                .getNumberOfExecutions())
-                .isGreaterThan(3));
+            () ->
+                assertThat(
+                        operator
+                            .getReconcilerOfType(MaxIntervalTestReconciler.class)
+                            .getNumberOfExecutions())
+                    .isGreaterThan(3));
   }
 
   private MaxIntervalTestCustomResource createTestResource() {

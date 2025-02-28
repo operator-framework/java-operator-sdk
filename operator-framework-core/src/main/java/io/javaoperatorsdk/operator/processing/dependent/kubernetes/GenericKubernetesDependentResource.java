@@ -20,10 +20,10 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     this.groupVersionKind = groupVersionKind;
   }
 
-  protected InformerEventSourceConfiguration.Builder<GenericKubernetesResource> informerConfigurationBuilder(
-      EventSourceContext<P> context) {
-    return InformerEventSourceConfiguration.from(groupVersionKind,
-        context.getPrimaryResourceClass());
+  protected InformerEventSourceConfiguration.Builder<GenericKubernetesResource>
+      informerConfigurationBuilder(EventSourceContext<P> context) {
+    return InformerEventSourceConfiguration.from(
+        groupVersionKind, context.getPrimaryResourceClass());
   }
 
   @SuppressWarnings("unused")

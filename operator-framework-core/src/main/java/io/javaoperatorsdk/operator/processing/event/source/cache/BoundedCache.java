@@ -7,5 +7,4 @@ public interface BoundedCache<K, R> {
   R remove(K key);
 
   void put(K key, R object);
-
 }

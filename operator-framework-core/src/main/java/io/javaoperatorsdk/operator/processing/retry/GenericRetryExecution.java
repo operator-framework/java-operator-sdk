@@ -15,8 +15,7 @@ public class GenericRetryExecution implements RetryExecution {
   }
 
   public Optional<Long> nextDelay() {
-    if (genericRetry.getMaxAttempts() > -1
-        && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
+    if (genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts()) {
       return Optional.empty();
     }
     if (lastAttemptIndex > 1) {
@@ -31,8 +30,7 @@ public class GenericRetryExecution implements RetryExecution {
 
   @Override
   public boolean isLastAttempt() {
-    return genericRetry.getMaxAttempts() > -1
-        && lastAttemptIndex >= genericRetry.getMaxAttempts();
+    return genericRetry.getMaxAttempts() > -1 && lastAttemptIndex >= genericRetry.getMaxAttempts();
   }
 
   @Override

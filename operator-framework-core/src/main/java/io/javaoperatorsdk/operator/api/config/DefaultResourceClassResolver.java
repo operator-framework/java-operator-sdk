@@ -9,7 +9,7 @@ public class DefaultResourceClassResolver implements ResourceClassResolver {
   @Override
   public <R extends HasMetadata> Class<R> getPrimaryResourceClass(
       Class<? extends Reconciler<R>> reconcilerClass) {
-    return (Class<R>) Utils.getFirstTypeArgumentFromSuperClassOrInterface(reconcilerClass,
-        Reconciler.class);
+    return (Class<R>)
+        Utils.getFirstTypeArgumentFromSuperClassOrInterface(reconcilerClass, Reconciler.class);
   }
 }

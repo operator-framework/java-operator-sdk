@@ -24,25 +24,26 @@ public class WorkflowExplicitCleanupIT {
   void workflowInvokedExplicitly() {
     var res = extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      assertThat(extension.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(extension.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
+            });
 
     extension.delete(res);
 
     // The ConfigMap is not garbage collected, this tests that even if the cleaner is not
     // implemented the workflow cleanup still called even if there is explicit invocation
-    await().untilAsserted(() -> {
-      assertThat(extension.get(ConfigMap.class, RESOURCE_NAME)).isNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(extension.get(ConfigMap.class, RESOURCE_NAME)).isNull();
+            });
   }
 
   WorkflowExplicitCleanupCustomResource testResource() {
     var res = new WorkflowExplicitCleanupCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     return res;
   }
-
 }

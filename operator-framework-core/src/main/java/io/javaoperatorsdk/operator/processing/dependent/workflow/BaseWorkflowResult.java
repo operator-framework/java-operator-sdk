@@ -44,8 +44,10 @@ class BaseWorkflowResult implements WorkflowResult {
   }
 
   @Override
-  public <T> Optional<T> getDependentConditionResult(DependentResource dependentResource,
-      Condition.Type conditionType, Class<T> expectedResultType) {
+  public <T> Optional<T> getDependentConditionResult(
+      DependentResource dependentResource,
+      Condition.Type conditionType,
+      Class<T> expectedResultType) {
     if (dependentResource == null) {
       return Optional.empty();
     }
@@ -57,15 +59,19 @@ class BaseWorkflowResult implements WorkflowResult {
           .map(r -> result[0] = r.getDetail())
           .map(expectedResultType::cast);
     } catch (Exception e) {
-      throw new IllegalArgumentException("Condition " +
-          "result " + result[0] +
-          " for Dependent " + dependentResource.name() + " doesn't match expected type "
-          + expectedResultType.getSimpleName(), e);
+      throw new IllegalArgumentException(
+          "Condition "
+              + "result "
+              + result[0]
+              + " for Dependent "
+              + dependentResource.name()
+              + " doesn't match expected type "
+              + expectedResultType.getSimpleName(),
+          e);
     }
   }
 
-  protected List<DependentResource> listFilteredBy(
-      Function<Detail, Boolean> filter) {
+  protected List<DependentResource> listFilteredBy(Function<Detail, Boolean> filter) {
     return results.entrySet().stream()
         .filter(e -> filter.apply(e.getValue()))
         .map(Map.Entry::getKey)
@@ -83,7 +89,8 @@ class BaseWorkflowResult implements WorkflowResult {
   @Override
   public void throwAggregateExceptionIfErrorsPresent() {
     if (erroredDependentsExist()) {
-      throw new AggregatedOperatorException("Exception(s) during workflow execution.",
+      throw new AggregatedOperatorException(
+          "Exception(s) during workflow execution.",
           getErroredDependentsStream()
               .collect(Collectors.toMap(e -> e.getKey().name(), e -> e.getValue().error)));
     }
@@ -102,21 +109,27 @@ class BaseWorkflowResult implements WorkflowResult {
     private boolean markedForDelete;
 
     Detail<R> build() {
-      return new Detail<>(error, reconcileResult, activationConditionResult,
-          deletePostconditionResult, readyPostconditionResult, reconcilePostconditionResult,
-          deleted, visited, markedForDelete);
+      return new Detail<>(
+          error,
+          reconcileResult,
+          activationConditionResult,
+          deletePostconditionResult,
+          readyPostconditionResult,
+          reconcilePostconditionResult,
+          deleted,
+          visited,
+          markedForDelete);
     }
 
     DetailBuilder<R> withResultForCondition(
-        ConditionWithType conditionWithType,
-        DetailedCondition.Result conditionResult) {
+        ConditionWithType conditionWithType, DetailedCondition.Result conditionResult) {
       switch (conditionWithType.type()) {
         case ACTIVATION -> activationConditionResult = conditionResult;
         case DELETE -> deletePostconditionResult = conditionResult;
         case READY -> readyPostconditionResult = conditionResult;
         case RECONCILE -> reconcilePostconditionResult = conditionResult;
         default ->
-          throw new IllegalStateException("Unexpected condition type: " + conditionWithType);
+            throw new IllegalStateException("Unexpected condition type: " + conditionWithType);
       }
       return this;
     }
@@ -167,16 +180,20 @@ class BaseWorkflowResult implements WorkflowResult {
     }
   }
 
-
-  record Detail<R>(Exception error, ReconcileResult<R> reconcileResult,
+  record Detail<R>(
+      Exception error,
+      ReconcileResult<R> reconcileResult,
       DetailedCondition.Result activationConditionResult,
       DetailedCondition.Result deletePostconditionResult,
       DetailedCondition.Result readyPostconditionResult,
       DetailedCondition.Result reconcilePostconditionResult,
-      boolean deleted, boolean visited, boolean markedForDelete) {
+      boolean deleted,
+      boolean visited,
+      boolean markedForDelete) {
 
     boolean isConditionWithTypeMet(Condition.Type conditionType) {
-      return getResultForConditionWithType(conditionType).map(DetailedCondition.Result::isSuccess)
+      return getResultForConditionWithType(conditionType)
+          .map(DetailedCondition.Result::isSuccess)
           .orElse(true);
     }
 

@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 
@@ -32,7 +31,6 @@ public final class KubernetesDependentResourceConfigBuilder<R extends HasMetadat
 
   public KubernetesDependentResourceConfig<R> build() {
     return new KubernetesDependentResourceConfig<>(
-        useSSA, createResourceOnlyIfNotExistingWithSSA,
-        informerConfiguration);
+        useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfiguration);
   }
 }

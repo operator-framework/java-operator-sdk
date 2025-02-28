@@ -14,6 +14,7 @@ public class RetryTestCustomResourceStatus {
   }
 
   public enum State {
-    SUCCESS, ERROR
+    SUCCESS,
+    ERROR
   }
 }

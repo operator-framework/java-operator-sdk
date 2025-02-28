@@ -12,7 +12,6 @@ import static java.lang.String.format;
 
 public class SchemaService {
 
-
   private static final Logger log = LoggerFactory.getLogger(SchemaService.class);
 
   private final MySQLDbConfig mySQLDbConfig;
@@ -29,16 +28,12 @@ public class SchemaService {
     }
   }
 
-  public static Schema createSchemaAndRelatedUser(Connection connection, String schemaName,
-      String encoding,
-      String userName,
-      String password) {
+  public static Schema createSchemaAndRelatedUser(
+      Connection connection, String schemaName, String encoding, String userName, String password) {
     try {
       try (Statement statement = connection.createStatement()) {
         statement.execute(
-            format(
-                "CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s",
-                schemaName, encoding));
+            format("CREATE SCHEMA `%1$s` DEFAULT CHARACTER SET %2$s", schemaName, encoding));
       }
       if (!userExists(connection, userName)) {
         try (Statement statement = connection.createStatement()) {
@@ -46,8 +41,7 @@ public class SchemaService {
         }
       }
       try (Statement statement = connection.createStatement()) {
-        statement.execute(
-            format("GRANT ALL ON `%1$s`.* TO '%2$s'", schemaName, userName));
+        statement.execute(format("GRANT ALL ON `%1$s`.* TO '%2$s'", schemaName, userName));
       }
 
       return new Schema(schemaName, encoding);
@@ -56,8 +50,8 @@ public class SchemaService {
     }
   }
 
-  public static void deleteSchemaAndRelatedUser(Connection connection, String schemaName,
-      String userName) {
+  public static void deleteSchemaAndRelatedUser(
+      Connection connection, String schemaName, String userName) {
     try {
       if (schemaExists(connection, schemaName)) {
         try (Statement statement = connection.createStatement()) {
@@ -80,8 +74,7 @@ public class SchemaService {
 
   private static boolean userExists(Connection connection, String username) {
     try (PreparedStatement ps =
-        connection.prepareStatement(
-            "SELECT 1 FROM mysql.user WHERE user = ?")) {
+        connection.prepareStatement("SELECT 1 FROM mysql.user WHERE user = ?")) {
       ps.setString(1, username);
       try (ResultSet resultSet = ps.executeQuery()) {
         return resultSet.next();
@@ -106,8 +99,10 @@ public class SchemaService {
         if (!exists) {
           return Optional.empty();
         } else {
-          return Optional.of(new Schema(resultSet.getString("SCHEMA_NAME"),
-              resultSet.getString("DEFAULT_CHARACTER_SET_NAME")));
+          return Optional.of(
+              new Schema(
+                  resultSet.getString("SCHEMA_NAME"),
+                  resultSet.getString("DEFAULT_CHARACTER_SET_NAME")));
         }
       }
     } catch (SQLException e) {
@@ -121,11 +116,10 @@ public class SchemaService {
           format("jdbc:mysql://%1$s:%2$s", mySQLDbConfig.getHost(), mySQLDbConfig.getPort());
 
       log.debug("Connecting to '{}' with user '{}'", connectionString, mySQLDbConfig.getUser());
-      return DriverManager.getConnection(connectionString, mySQLDbConfig.getUser(),
-          mySQLDbConfig.getPassword());
+      return DriverManager.getConnection(
+          connectionString, mySQLDbConfig.getUser(), mySQLDbConfig.getPassword());
     } catch (SQLException e) {
       throw new IllegalStateException(e);
     }
   }
-
 }

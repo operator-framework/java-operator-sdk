@@ -31,18 +31,17 @@ class KubernetesResourceFetcherTest {
 
   private HasMetadata namespacedResource() {
     var cm = new ConfigMap();
-    cm.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .withNamespace(DEFAULT_NAMESPACE)
-        .build());
+    cm.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(TEST_RESOURCE_NAME)
+            .withNamespace(DEFAULT_NAMESPACE)
+            .build());
     return cm;
   }
 
   private HasMetadata clusterScopedResource() {
     var cm = new CustomResourceDefinition();
-    cm.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    cm.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     return cm;
   }
 }

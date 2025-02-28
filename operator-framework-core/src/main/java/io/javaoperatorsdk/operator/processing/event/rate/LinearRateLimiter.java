@@ -6,14 +6,13 @@ import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 
-/**
- * A simple rate limiter that limits the number of permission for a time interval.
- */
+/** A simple rate limiter that limits the number of permission for a time interval. */
 public class LinearRateLimiter
     implements RateLimiter<RateState>, AnnotationConfigurable<RateLimited> {
 
   /** To turn off rate limiting set limit for period to a non-positive number */
   public static final int NO_LIMIT_PERIOD = -1;
+
   public static final int DEFAULT_REFRESH_PERIOD_SECONDS = 10;
   public static final Duration DEFAULT_REFRESH_PERIOD =
       Duration.ofSeconds(DEFAULT_REFRESH_PERIOD_SECONDS);
@@ -43,7 +42,8 @@ public class LinearRateLimiter
     if (actualState.getCount() < limitForPeriod) {
       actualState.increaseCount();
       return Optional.empty();
-    } else if (actualState.getLastRefreshTime()
+    } else if (actualState
+        .getLastRefreshTime()
         .isBefore(LocalDateTime.now().minus(refreshPeriod))) {
       actualState.reset();
       actualState.increaseCount();
@@ -60,8 +60,7 @@ public class LinearRateLimiter
 
   @Override
   public void initFrom(RateLimited configuration) {
-    this.refreshPeriod = Duration.of(configuration.within(),
-        configuration.unit().toChronoUnit());
+    this.refreshPeriod = Duration.of(configuration.within(), configuration.unit().toChronoUnit());
     this.limitForPeriod = configuration.maxReconciliations();
   }
 

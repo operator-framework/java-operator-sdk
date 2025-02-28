@@ -25,24 +25,30 @@ public class DefaultNamespaceNameSupplier implements Function<ExtensionContext, 
   public String apply(ExtensionContext context) {
     String classPart = context.getRequiredTestClass().getSimpleName();
     String methodPart = context.getRequiredTestMethod().getName();
-    if (classPart.length() + methodPart.length() + DELIMITERS_LENGTH
-        + RANDOM_SUFFIX_LENGTH > MAX_NAMESPACE_NAME_LENGTH) {
+    if (classPart.length() + methodPart.length() + DELIMITERS_LENGTH + RANDOM_SUFFIX_LENGTH
+        > MAX_NAMESPACE_NAME_LENGTH) {
       if (classPart.length() > PART_RESERVED_NAME_LENGTH) {
         int classPartMaxLength =
-            methodPart.length() > PART_RESERVED_NAME_LENGTH ? PART_RESERVED_NAME_LENGTH
+            methodPart.length() > PART_RESERVED_NAME_LENGTH
+                ? PART_RESERVED_NAME_LENGTH
                 : MAX_NAME_LENGTH_TOGETHER - methodPart.length();
         classPart = classPart.substring(0, Math.min(classPartMaxLength, classPart.length()));
       }
       if (methodPart.length() > PART_RESERVED_NAME_LENGTH) {
         int methodPartMaxLength =
-            classPart.length() > PART_RESERVED_NAME_LENGTH ? PART_RESERVED_NAME_LENGTH
+            classPart.length() > PART_RESERVED_NAME_LENGTH
+                ? PART_RESERVED_NAME_LENGTH
                 : MAX_NAME_LENGTH_TOGETHER - classPart.length();
         methodPart = methodPart.substring(0, Math.min(methodPartMaxLength, methodPart.length()));
       }
     }
 
-    String namespace = classPart + DELIMITER + methodPart + DELIMITER + UUID.randomUUID().toString()
-        .substring(0, RANDOM_SUFFIX_LENGTH);
+    String namespace =
+        classPart
+            + DELIMITER
+            + methodPart
+            + DELIMITER
+            + UUID.randomUUID().toString().substring(0, RANDOM_SUFFIX_LENGTH);
     namespace = KubernetesResourceUtil.sanitizeName(namespace).toLowerCase(Locale.US);
     return namespace;
   }

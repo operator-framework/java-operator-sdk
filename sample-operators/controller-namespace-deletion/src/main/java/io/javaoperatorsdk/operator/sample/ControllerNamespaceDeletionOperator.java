@@ -18,14 +18,18 @@ public class ControllerNamespaceDeletionOperator {
 
   public static void main(String[] args) {
 
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      log.info("Shutting down...");
-      boolean allResourcesDeleted = waitUntilResourcesDeleted();
-      log.info("All resources within timeout: {}", allResourcesDeleted);
-    }));
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  log.info("Shutting down...");
+                  boolean allResourcesDeleted = waitUntilResourcesDeleted();
+                  log.info("All resources within timeout: {}", allResourcesDeleted);
+                }));
 
     Operator operator = new Operator();
-    operator.register(new ControllerNamespaceDeletionReconciler(),
+    operator.register(
+        new ControllerNamespaceDeletionReconciler(),
         ControllerConfigurationOverrider::watchingOnlyCurrentNamespace);
     operator.start();
   }
@@ -35,9 +39,11 @@ public class ControllerNamespaceDeletionOperator {
       var startTime = LocalTime.now();
       while (startTime.until(LocalTime.now(), SECONDS) < 20) {
         var items =
-            client.resources(ControllerNamespaceDeletionCustomResource.class)
+            client
+                .resources(ControllerNamespaceDeletionCustomResource.class)
                 .inNamespace(client.getConfiguration().getNamespace())
-                .list().getItems();
+                .list()
+                .getItems();
         log.info("Custom resource in namespace: {}", items);
         if (items.isEmpty()) {
           return true;

@@ -24,12 +24,9 @@ public class GenericKubernetesResourceHandlingIT
   @Override
   public GenericKubernetesResourceHandlingCustomResource testResource(String name, String data) {
     var resource = new GenericKubernetesResourceHandlingCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(name).build());
     resource.setSpec(new GenericKubernetesDependentSpec());
     resource.getSpec().setValue(INITIAL_DATA);
     return resource;
   }
-
 }

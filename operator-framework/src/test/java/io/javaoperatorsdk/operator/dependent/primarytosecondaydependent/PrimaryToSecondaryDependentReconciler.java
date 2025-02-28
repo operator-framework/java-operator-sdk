@@ -23,11 +23,15 @@ import static io.javaoperatorsdk.operator.dependent.primarytosecondaydependent.P
  * Note that this is usually just used with read only resources. So it has limited usage, one reason
  * to use it is to have nice condition on that resource within a workflow.
  */
-@Workflow(dependents = {@Dependent(type = ConfigMapDependent.class,
-    name = CONFIG_MAP,
-    reconcilePrecondition = ConfigMapReconcilePrecondition.class,
-    useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
-    @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)})
+@Workflow(
+    dependents = {
+      @Dependent(
+          type = ConfigMapDependent.class,
+          name = CONFIG_MAP,
+          reconcilePrecondition = ConfigMapReconcilePrecondition.class,
+          useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+      @Dependent(type = SecretDependent.class, dependsOn = CONFIG_MAP)
+    })
 @ControllerConfiguration()
 public class PrimaryToSecondaryDependentReconciler
     implements Reconciler<PrimaryToSecondaryDependentCustomResource>, TestExecutionInfoProvider {
@@ -56,32 +60,53 @@ public class PrimaryToSecondaryDependentReconciler
    * do this setup elegantly within the bounds of the KubernetesDependentResource API. However, this
    * is quite a corner case; might be covered more out of the box in the future if there will be
    * demand for it.
-   **/
+   */
   @Override
   public List<EventSource<?, PrimaryToSecondaryDependentCustomResource>> prepareEventSources(
       EventSourceContext<PrimaryToSecondaryDependentCustomResource> context) {
     // there is no owner reference in the config map, but we still want to trigger reconciliation if
     // the config map changes. So first we add an index which custom resource references the config
     // map.
-    context.getPrimaryCache().addIndexer(CONFIG_MAP_INDEX, (primary -> List
-        .of(indexKey(primary.getSpec().getConfigMapName(), primary.getMetadata().getNamespace()))));
+    context
+        .getPrimaryCache()
+        .addIndexer(
+            CONFIG_MAP_INDEX,
+            (primary ->
+                List.of(
+                    indexKey(
+                        primary.getSpec().getConfigMapName(),
+                        primary.getMetadata().getNamespace()))));
 
-    var es = new InformerEventSource<>(InformerEventSourceConfiguration
-        .from(ConfigMap.class, PrimaryToSecondaryDependentCustomResource.class)
-        .withName(CONFIG_MAP_EVENT_SOURCE)
-        // if there is a many-to-many relationship (thus no direct owner reference)
-        // PrimaryToSecondaryMapper needs to be added
-        .withPrimaryToSecondaryMapper(
-            (PrimaryToSecondaryMapper<PrimaryToSecondaryDependentCustomResource>) p -> Set
-                .of(new ResourceID(p.getSpec().getConfigMapName(), p.getMetadata().getNamespace())))
-        // the index is used to trigger reconciliation of related custom resources if config map
-        // changes
-        .withSecondaryToPrimaryMapper(cm -> context.getPrimaryCache()
-            .byIndex(CONFIG_MAP_INDEX, indexKey(cm.getMetadata().getName(),
-                cm.getMetadata().getNamespace()))
-            .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
-        .build(),
-        context);
+    var es =
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(
+                    ConfigMap.class, PrimaryToSecondaryDependentCustomResource.class)
+                .withName(CONFIG_MAP_EVENT_SOURCE)
+                // if there is a many-to-many relationship (thus no direct owner reference)
+                // PrimaryToSecondaryMapper needs to be added
+                .withPrimaryToSecondaryMapper(
+                    (PrimaryToSecondaryMapper<PrimaryToSecondaryDependentCustomResource>)
+                        p ->
+                            Set.of(
+                                new ResourceID(
+                                    p.getSpec().getConfigMapName(),
+                                    p.getMetadata().getNamespace())))
+                // the index is used to trigger reconciliation of related custom resources if config
+                // map
+                // changes
+                .withSecondaryToPrimaryMapper(
+                    cm ->
+                        context
+                            .getPrimaryCache()
+                            .byIndex(
+                                CONFIG_MAP_INDEX,
+                                indexKey(
+                                    cm.getMetadata().getName(), cm.getMetadata().getNamespace()))
+                            .stream()
+                            .map(ResourceID::fromResource)
+                            .collect(Collectors.toSet()))
+                .build(),
+            context);
 
     return List.of(es);
   }

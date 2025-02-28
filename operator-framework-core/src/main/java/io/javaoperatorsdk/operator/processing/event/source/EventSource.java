@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
  *
  * @param <R> the resource type that this EventSource is associated with
  * @param <P> the primary resource type which reconciler needs to be triggered when events occur on
- *        resources of type R
+ *     resources of type R
  */
 public interface EventSource<R, P extends HasMetadata>
     extends LifecycleAware, EventSourceHealthIndicator {
@@ -67,7 +67,7 @@ public interface EventSource<R, P extends HasMetadata>
    * Retrieves the optional <em>unique</em> secondary resource associated with the specified primary
    * resource. Note that this operation will fail if multiple resources are associated with the
    * specified primary resource.
-   * 
+   *
    * @param primary the primary resource for which the secondary resource is requested
    * @return the secondary resource associated with the specified primary resource
    * @throws IllegalStateException if multiple resources are associated with the primary one
@@ -86,7 +86,7 @@ public interface EventSource<R, P extends HasMetadata>
   /**
    * Retrieves a potential empty set of resources tracked by this EventSource associated with the
    * specified primary resource
-   * 
+   *
    * @param primary the primary resource for which the secondary resource is requested
    * @return the set of secondary resources associated with the specified primary
    */

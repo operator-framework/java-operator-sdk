@@ -14,6 +14,7 @@ public class EventSourceTestCustomResourceStatus {
   }
 
   public enum State {
-    SUCCESS, ERROR
+    SUCCESS,
+    ERROR
   }
 }

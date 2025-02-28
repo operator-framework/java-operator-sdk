@@ -14,10 +14,11 @@ public class Utils {
 
   public static WebPage createWebPageForStatusUpdate(WebPage webPage, String configMapName) {
     WebPage res = new WebPage();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(webPage.getMetadata().getName())
-        .withNamespace(webPage.getMetadata().getNamespace())
-        .build());
+    res.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(webPage.getMetadata().getName())
+            .withNamespace(webPage.getMetadata().getNamespace())
+            .build());
     res.setStatus(createStatus(configMapName));
     return res;
   }
@@ -72,8 +73,16 @@ public class Utils {
     Ingress ingress = loadYaml(Ingress.class, Utils.class, "ingress.yaml");
     ingress.getMetadata().setName(webPage.getMetadata().getName());
     ingress.getMetadata().setNamespace(webPage.getMetadata().getNamespace());
-    ingress.getSpec().getRules().get(0).getHttp().getPaths().get(0)
-        .getBackend().getService().setName(serviceName(webPage));
+    ingress
+        .getSpec()
+        .getRules()
+        .get(0)
+        .getHttp()
+        .getPaths()
+        .get(0)
+        .getBackend()
+        .getService()
+        .setName(serviceName(webPage));
     return ingress;
   }
 }

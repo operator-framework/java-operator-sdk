@@ -20,10 +20,15 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
   private final String useEventSourceWithName;
   private C nullableConfiguration;
 
-  public DependentResourceSpec(Class<? extends DependentResource<R, P>> dependentResourceClass,
-      String name, Set<String> dependsOn, Condition<?, ?> readyCondition,
-      Condition<?, ?> reconcileCondition, Condition<?, ?> deletePostCondition,
-      Condition<?, ?> activationCondition, String useEventSourceWithName) {
+  public DependentResourceSpec(
+      Class<? extends DependentResource<R, P>> dependentResourceClass,
+      String name,
+      Set<String> dependsOn,
+      Condition<?, ?> readyCondition,
+      Condition<?, ?> reconcileCondition,
+      Condition<?, ?> deletePostCondition,
+      Condition<?, ?> activationCondition,
+      String useEventSourceWithName) {
     this.dependentResourceClass = dependentResourceClass;
     this.name = name;
     this.dependsOn = dependsOn;
@@ -44,8 +49,11 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
 
   @Override
   public String toString() {
-    return "DependentResourceSpec{ name='" + name +
-        "', type=" + getDependentResourceClass().getCanonicalName() + '}';
+    return "DependentResourceSpec{ name='"
+        + name
+        + "', type="
+        + getDependentResourceClass().getCanonicalName()
+        + '}';
   }
 
   @Override
@@ -100,5 +108,4 @@ public class DependentResourceSpec<R, P extends HasMetadata, C> {
   protected void setNullableConfiguration(C configuration) {
     this.nullableConfiguration = configuration;
   }
-
 }

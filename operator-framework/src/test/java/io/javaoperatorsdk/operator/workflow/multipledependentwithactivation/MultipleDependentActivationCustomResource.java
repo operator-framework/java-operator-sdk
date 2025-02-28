@@ -10,8 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("mdar")
 public class MultipleDependentActivationCustomResource
-    extends CustomResource<MultipleDependentActivationSpec, Void>
-    implements Namespaced {
-
-
-}
+    extends CustomResource<MultipleDependentActivationSpec, Void> implements Namespaced {}

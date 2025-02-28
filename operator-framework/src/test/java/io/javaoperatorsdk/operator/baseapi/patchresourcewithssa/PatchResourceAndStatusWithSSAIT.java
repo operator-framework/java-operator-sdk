@@ -8,5 +8,4 @@ public class PatchResourceAndStatusWithSSAIT extends PatchWithSSAITBase {
   protected Reconciler<?> reconciler() {
     return new PatchResourceAndStatusWithSSAReconciler();
   }
-
 }

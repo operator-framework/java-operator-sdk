@@ -89,8 +89,8 @@ public class MicrometerMetrics implements Metrics {
    * @return a MicrometerMetrics instance configured to not collect per-resource metrics
    * @see PerResourceCollectingMicrometerMetricsBuilder
    */
-  public static PerResourceCollectingMicrometerMetricsBuilder newPerResourceCollectingMicrometerMetricsBuilder(
-      MeterRegistry registry) {
+  public static PerResourceCollectingMicrometerMetricsBuilder
+      newPerResourceCollectingMicrometerMetricsBuilder(MeterRegistry registry) {
     return new PerResourceCollectingMicrometerMetricsBuilder(registry);
   }
 
@@ -103,8 +103,8 @@ public class MicrometerMetrics implements Metrics {
    * @param cleaner the {@link Cleaner} to use
    * @param collectingPerResourceMetrics whether to collect per resource metrics
    */
-  private MicrometerMetrics(MeterRegistry registry, Cleaner cleaner,
-      boolean collectingPerResourceMetrics) {
+  private MicrometerMetrics(
+      MeterRegistry registry, Cleaner cleaner, boolean collectingPerResourceMetrics) {
     this.registry = registry;
     this.cleaner = cleaner;
     this.collectPerResourceMetrics = collectingPerResourceMetrics;
@@ -144,17 +144,17 @@ public class MicrometerMetrics implements Metrics {
             .publishPercentileHistogram()
             .register(registry);
     try {
-      final var result = timer.record(() -> {
-        try {
-          return execution.execute();
-        } catch (Exception e) {
-          throw new OperatorException(e);
-        }
-      });
+      final var result =
+          timer.record(
+              () -> {
+                try {
+                  return execution.execute();
+                } catch (Exception e) {
+                  throw new OperatorException(e);
+                }
+              });
       final var successType = execution.successTypeName(result);
-      registry
-          .counter(execName + SUCCESS_SUFFIX, CONTROLLER, name, TYPE, successType)
-          .increment();
+      registry.counter(execName + SUCCESS_SUFFIX, CONTROLLER, name, TYPE, successType).increment();
       return result;
     } catch (Exception e) {
       final var exception = e.getClass().getSimpleName();
@@ -168,12 +168,16 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
     if (event instanceof ResourceEvent) {
-      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED,
+      incrementCounter(
+          event.getRelatedCustomResourceID(),
+          EVENTS_RECEIVED,
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
           Tag.of(ACTION, ((ResourceEvent) event).getAction().toString()));
     } else {
-      incrementCounter(event.getRelatedCustomResourceID(), EVENTS_RECEIVED,
+      incrementCounter(
+          event.getRelatedCustomResourceID(),
+          EVENTS_RECEIVED,
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()));
     }
@@ -187,14 +191,18 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfoNullable,
-      Map<String, Object> metadata) {
+  public void reconcileCustomResource(
+      HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_STARTED,
+    incrementCounter(
+        ResourceID.fromResource(resource),
+        RECONCILIATIONS_STARTED,
         metadata,
-        Tag.of(RECONCILIATIONS_RETRIES_NUMBER,
+        Tag.of(
+            RECONCILIATIONS_RETRIES_NUMBER,
             String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0))),
-        Tag.of(RECONCILIATIONS_RETRIES_LAST,
+        Tag.of(
+            RECONCILIATIONS_RETRIES_LAST,
             String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true))));
 
     var controllerQueueSize =
@@ -226,15 +234,18 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void failedReconciliation(HasMetadata resource, Exception exception,
-      Map<String, Object> metadata) {
+  public void failedReconciliation(
+      HasMetadata resource, Exception exception, Map<String, Object> metadata) {
     var cause = exception.getCause();
     if (cause == null) {
       cause = exception;
     } else if (cause instanceof RuntimeException) {
       cause = cause.getCause() != null ? cause.getCause() : cause;
     }
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_FAILED, metadata,
+    incrementCounter(
+        ResourceID.fromResource(resource),
+        RECONCILIATIONS_FAILED,
+        metadata,
         Tag.of(EXCEPTION, cause.getClass().getSimpleName()));
   }
 
@@ -243,9 +254,8 @@ public class MicrometerMetrics implements Metrics {
     return registry.gaugeMapSize(PREFIX + name + SIZE_SUFFIX, Collections.emptyList(), map);
   }
 
-
-  private void addMetadataTags(ResourceID resourceID, Map<String, Object> metadata,
-      List<Tag> tags, boolean prefixed) {
+  private void addMetadataTags(
+      ResourceID resourceID, Map<String, Object> metadata, List<Tag> tags, boolean prefixed) {
     if (collectPerResourceMetrics) {
       addTag(NAME, resourceID.getName(), tags, prefixed);
       addTagOmittingOnEmptyValue(NAMESPACE, resourceID.getNamespace().orElse(null), tags, prefixed);
@@ -261,8 +271,8 @@ public class MicrometerMetrics implements Metrics {
     tags.add(Tag.of(getPrefixedMetadataTag(name, prefixed), value));
   }
 
-  private static void addTagOmittingOnEmptyValue(String name, String value, List<Tag> tags,
-      boolean prefixed) {
+  private static void addTagOmittingOnEmptyValue(
+      String name, String value, List<Tag> tags, boolean prefixed) {
     if (value != null && !value.isBlank()) {
       addTag(name, value, tags, prefixed);
     }
@@ -282,8 +292,8 @@ public class MicrometerMetrics implements Metrics {
     addTag(KIND, gvk.getKind(), tags, prefixed);
   }
 
-  private void incrementCounter(ResourceID id, String counterName, Map<String, Object> metadata,
-      Tag... additionalTags) {
+  private void incrementCounter(
+      ResourceID id, String counterName, Map<String, Object> metadata, Tag... additionalTags) {
     final var additionalTagsNb =
         additionalTags != null && additionalTags.length > 0 ? additionalTags.length : 0;
     final var metadataNb = metadata != null ? metadata.size() : 0;
@@ -314,8 +324,8 @@ public class MicrometerMetrics implements Metrics {
 
     /**
      * @param cleaningThreadsNumber the maximal number of threads that can be assigned to the
-     *        removal of {@link Meter}s associated with deleted resources, defaults to 1 if not
-     *        specified or if the provided number is lesser or equal to 0
+     *     removal of {@link Meter}s associated with deleted resources, defaults to 1 if not
+     *     specified or if the provided number is lesser or equal to 0
      */
     public PerResourceCollectingMicrometerMetricsBuilder withCleaningThreadNumber(
         int cleaningThreadsNumber) {
@@ -325,11 +335,11 @@ public class MicrometerMetrics implements Metrics {
 
     /**
      * @param cleanUpDelayInSeconds the number of seconds to wait before {@link Meter}s are removed
-     *        for deleted resources, defaults to 1 (meaning meters will be removed one second after
-     *        the associated resource is deleted) if not specified or if the provided number is
-     *        lesser than 0. Threading and the general interaction model of interacting with the API
-     *        server means that it's not possible to ensure that meters are immediately deleted in
-     *        all cases so a minimal delay of one second is always enforced
+     *     for deleted resources, defaults to 1 (meaning meters will be removed one second after the
+     *     associated resource is deleted) if not specified or if the provided number is lesser than
+     *     0. Threading and the general interaction model of interacting with the API server means
+     *     that it's not possible to ensure that meters are immediately deleted in all cases so a
+     *     minimal delay of one second is always enforced
      */
     public PerResourceCollectingMicrometerMetricsBuilder withCleanUpDelayInSeconds(
         int cleanUpDelayInSeconds) {
@@ -344,6 +354,7 @@ public class MicrometerMetrics implements Metrics {
       return new MicrometerMetrics(registry, cleaner, true);
     }
   }
+
   public static class MicrometerMetricsBuilder {
     protected final MeterRegistry registry;
     private boolean collectingPerResourceMetrics = true;
@@ -352,9 +363,7 @@ public class MicrometerMetrics implements Metrics {
       this.registry = registry;
     }
 
-    /**
-     * Configures the instance to collect metrics on a per-resource basis.
-     */
+    /** Configures the instance to collect metrics on a per-resource basis. */
     @SuppressWarnings("unused")
     public PerResourceCollectingMicrometerMetricsBuilder collectingMetricsPerResource() {
       collectingPerResourceMetrics = true;
@@ -422,8 +431,8 @@ public class MicrometerMetrics implements Metrics {
     private final ScheduledExecutorService metersCleaner;
     private final int cleanUpDelayInSeconds;
 
-    private DelayedCleaner(MeterRegistry registry, int cleanUpDelayInSeconds,
-        int cleaningThreadsNumber) {
+    private DelayedCleaner(
+        MeterRegistry registry, int cleanUpDelayInSeconds, int cleaningThreadsNumber) {
       super(registry);
       this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
       this.metersCleaner = Executors.newScheduledThreadPool(cleaningThreadsNumber);
@@ -432,8 +441,8 @@ public class MicrometerMetrics implements Metrics {
     @Override
     public void removeMetersFor(ResourceID resourceID) {
       // schedule deletion of meters associated with ResourceID
-      metersCleaner.schedule(() -> super.removeMetersFor(resourceID),
-          cleanUpDelayInSeconds, TimeUnit.SECONDS);
+      metersCleaner.schedule(
+          () -> super.removeMetersFor(resourceID), cleanUpDelayInSeconds, TimeUnit.SECONDS);
     }
   }
 }

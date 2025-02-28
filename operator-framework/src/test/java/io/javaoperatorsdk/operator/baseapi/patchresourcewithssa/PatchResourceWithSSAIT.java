@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.baseapi.patchresourcewithssa;
 
-
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-
 
 public class PatchResourceWithSSAIT extends PatchWithSSAITBase {
 
@@ -10,5 +8,4 @@ public class PatchResourceWithSSAIT extends PatchWithSSAITBase {
   protected Reconciler<?> reconciler() {
     return new PatchResourceWithSSAReconciler();
   }
-
 }
