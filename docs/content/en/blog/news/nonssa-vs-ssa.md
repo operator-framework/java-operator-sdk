@@ -1,6 +1,8 @@
 ---
 title: From legacy approach to server-side apply
 date: 2025-02-25
+author: >-
+ [Attila Mészáros](https://github.com/csviri)
 ---
 
 From version 5 of Java Operator SDK [server side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/)
