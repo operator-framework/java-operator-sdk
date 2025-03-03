@@ -15,12 +15,16 @@ class InformerConfigurationTest {
 
   @Test
   void allNamespacesWatched() {
-    assertThrows(IllegalArgumentException.class,
-        () -> InformerConfiguration.allNamespacesWatched(null));
-    assertThrows(IllegalArgumentException.class, () -> InformerConfiguration.allNamespacesWatched(
-        Set.of(Constants.WATCH_CURRENT_NAMESPACE, Constants.WATCH_ALL_NAMESPACES, "foo")));
-    assertThrows(IllegalArgumentException.class, () -> InformerConfiguration.allNamespacesWatched(
-        Collections.emptySet()));
+    assertThrows(
+        IllegalArgumentException.class, () -> InformerConfiguration.allNamespacesWatched(null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            InformerConfiguration.allNamespacesWatched(
+                Set.of(Constants.WATCH_CURRENT_NAMESPACE, Constants.WATCH_ALL_NAMESPACES, "foo")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> InformerConfiguration.allNamespacesWatched(Collections.emptySet()));
     assertFalse(InformerConfiguration.allNamespacesWatched(Set.of("foo", "bar")));
     assertTrue(InformerConfiguration.allNamespacesWatched(Set.of(Constants.WATCH_ALL_NAMESPACES)));
     assertFalse(InformerConfiguration.allNamespacesWatched(Set.of("foo")));
@@ -30,12 +34,15 @@ class InformerConfigurationTest {
 
   @Test
   void currentNamespaceWatched() {
-    assertThrows(IllegalArgumentException.class,
-        () -> InformerConfiguration.currentNamespaceWatched(null));
-    assertThrows(IllegalArgumentException.class,
-        () -> InformerConfiguration.currentNamespaceWatched(
-            Set.of(Constants.WATCH_CURRENT_NAMESPACE, Constants.WATCH_ALL_NAMESPACES, "foo")));
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class, () -> InformerConfiguration.currentNamespaceWatched(null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            InformerConfiguration.currentNamespaceWatched(
+                Set.of(Constants.WATCH_CURRENT_NAMESPACE, Constants.WATCH_ALL_NAMESPACES, "foo")));
+    assertThrows(
+        IllegalArgumentException.class,
         () -> InformerConfiguration.currentNamespaceWatched(Collections.emptySet()));
     assertFalse(InformerConfiguration.currentNamespaceWatched(Set.of("foo", "bar")));
     assertFalse(
@@ -66,14 +73,21 @@ class InformerConfigurationTest {
   @Test
   void failIfNotValid() {
     assertThrows(IllegalArgumentException.class, () -> InformerConfiguration.failIfNotValid(null));
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class,
         () -> InformerConfiguration.failIfNotValid(Collections.emptySet()));
-    assertThrows(IllegalArgumentException.class, () -> InformerConfiguration.failIfNotValid(
-        Set.of(Constants.WATCH_CURRENT_NAMESPACE, Constants.WATCH_ALL_NAMESPACES, "foo")));
-    assertThrows(IllegalArgumentException.class, () -> InformerConfiguration.failIfNotValid(
-        Set.of(Constants.WATCH_CURRENT_NAMESPACE, "foo")));
-    assertThrows(IllegalArgumentException.class, () -> InformerConfiguration.failIfNotValid(
-        Set.of(Constants.WATCH_ALL_NAMESPACES, "foo")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            InformerConfiguration.failIfNotValid(
+                Set.of(Constants.WATCH_CURRENT_NAMESPACE, Constants.WATCH_ALL_NAMESPACES, "foo")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            InformerConfiguration.failIfNotValid(Set.of(Constants.WATCH_CURRENT_NAMESPACE, "foo")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> InformerConfiguration.failIfNotValid(Set.of(Constants.WATCH_ALL_NAMESPACES, "foo")));
 
     // should work
     InformerConfiguration.failIfNotValid(Set.of("foo", "bar"));

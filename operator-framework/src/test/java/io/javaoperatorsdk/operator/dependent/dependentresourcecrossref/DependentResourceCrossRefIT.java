@@ -34,15 +34,16 @@ class DependentResourceCrossRefIT {
         .pollDelay(Duration.ofMillis(150))
         .untilAsserted(
             () -> {
-              assertThat(operator
-                  .getReconcilerOfType(DependentResourceCrossRefReconciler.class)
-                  .isErrorHappened()).isFalse();
+              assertThat(
+                      operator
+                          .getReconcilerOfType(DependentResourceCrossRefReconciler.class)
+                          .isErrorHappened())
+                  .isFalse();
               for (int i = 0; i < EXECUTION_NUMBER; i++) {
                 assertThat(operator.get(ConfigMap.class, TEST_RESOURCE_NAME + i)).isNotNull();
                 assertThat(operator.get(Secret.class, TEST_RESOURCE_NAME + i)).isNotNull();
               }
             });
-
   }
 
   DependentResourceCrossRefResource testResource(int n) {

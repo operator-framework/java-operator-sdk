@@ -21,7 +21,8 @@ class SubResourceUpdateIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(SubResourceTestCustomReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(SubResourceTestCustomReconciler.class)
           .build();
 
   @Test
@@ -33,8 +34,7 @@ class SubResourceUpdateIT {
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(2);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   @Test
@@ -48,8 +48,7 @@ class SubResourceUpdateIT {
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(2);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   /** Note that we check on controller impl if there is finalizer on execution. */
@@ -63,8 +62,7 @@ class SubResourceUpdateIT {
     // wait for sure, there are no more events
     waitXms(WAIT_AFTER_EXECUTION);
     // there is no event on status update processed
-    assertThat(TestUtils.getNumberOfExecutions(operator))
-        .isEqualTo(2);
+    assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(2);
   }
 
   /**
@@ -99,17 +97,13 @@ class SubResourceUpdateIT {
                   operator.get(SubResourceTestCustomResource.class, name);
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
-              assertThat(cr.getStatus().getState())
-                  .isEqualTo(SUCCESS);
+              assertThat(cr.getStatus().getState()).isEqualTo(SUCCESS);
             });
   }
 
   public SubResourceTestCustomResource createTestCustomResource(String id) {
     SubResourceTestCustomResource resource = new SubResourceTestCustomResource();
-    resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName("subresource-" + id)
-            .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName("subresource-" + id).build());
     resource.setKind("SubresourceSample");
     resource.setSpec(new SubResourceTestCustomResourceSpec());
     resource.getSpec().setValue(id);

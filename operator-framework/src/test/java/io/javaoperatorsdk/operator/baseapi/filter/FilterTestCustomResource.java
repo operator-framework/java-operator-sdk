@@ -10,8 +10,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("ftc")
 public class FilterTestCustomResource
-    extends CustomResource<FilterTestResourceSpec, FilterTestResourceStatus>
-    implements Namespaced {
+    extends CustomResource<FilterTestResourceSpec, FilterTestResourceStatus> implements Namespaced {
 
   public String getConfigMapName(int id) {
     return "configmap" + id;

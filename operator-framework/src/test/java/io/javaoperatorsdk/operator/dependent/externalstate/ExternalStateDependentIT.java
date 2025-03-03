@@ -8,7 +8,8 @@ public class ExternalStateDependentIT extends ExternalStateTestBase {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(ExternalStateDependentReconciler.class)
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(ExternalStateDependentReconciler.class)
           .build();
 
   @Override

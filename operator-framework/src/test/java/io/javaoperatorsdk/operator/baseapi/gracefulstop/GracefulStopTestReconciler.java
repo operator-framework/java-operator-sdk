@@ -8,8 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration
-public class GracefulStopTestReconciler
-    implements Reconciler<GracefulStopTestCustomResource> {
+public class GracefulStopTestReconciler implements Reconciler<GracefulStopTestCustomResource> {
 
   public static final int RECONCILER_SLEEP = 1000;
 
@@ -17,8 +16,8 @@ public class GracefulStopTestReconciler
 
   @Override
   public UpdateControl<GracefulStopTestCustomResource> reconcile(
-      GracefulStopTestCustomResource resource,
-      Context<GracefulStopTestCustomResource> context) throws InterruptedException {
+      GracefulStopTestCustomResource resource, Context<GracefulStopTestCustomResource> context)
+      throws InterruptedException {
 
     numberOfExecutions.addAndGet(1);
     resource.setStatus(new GracefulStopTestCustomResourceStatus());
@@ -31,5 +30,4 @@ public class GracefulStopTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

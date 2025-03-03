@@ -36,37 +36,32 @@ public interface ConfigurationService {
   Logger log = LoggerFactory.getLogger(ConfigurationService.class);
 
   int DEFAULT_MAX_CONCURRENT_REQUEST = 512;
-  /**
-   * The default numbers of concurrent reconciliations
-   */
+
+  /** The default numbers of concurrent reconciliations */
   int DEFAULT_RECONCILIATION_THREADS_NUMBER = 50;
-  /**
-   * The default number of threads used to process dependent workflows
-   */
+
+  /** The default number of threads used to process dependent workflows */
   int DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER = DEFAULT_RECONCILIATION_THREADS_NUMBER;
 
   /**
-   * Creates a new {@link ConfigurationService} instance used to configure an
-   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the specified base
-   * configuration and overriding specific aspects according to the provided
-   * {@link ConfigurationServiceOverrider} instance.
+   * Creates a new {@link ConfigurationService} instance used to configure an {@link
+   * io.javaoperatorsdk.operator.Operator} instance, starting from the specified base configuration
+   * and overriding specific aspects according to the provided {@link ConfigurationServiceOverrider}
+   * instance.
    *
-   * <p>
-   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
-   * your Operator instance as the configuration service is set at creation time and cannot be
-   * subsequently changed. As a result, overriding values this way after the Operator has been
+   * <p><em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong>
+   * creating your Operator instance as the configuration service is set at creation time and cannot
+   * be subsequently changed. As a result, overriding values this way after the Operator has been
    * configured will not take effect.
-   * </p>
    *
    * @param baseConfiguration the {@link ConfigurationService} to start from
    * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
-   *        by the base configuration
+   *     by the base configuration
    * @return a new {@link ConfigurationService} starting from the configuration provided as base but
-   *         with overridden values.
+   *     with overridden values.
    */
   static ConfigurationService newOverriddenConfigurationService(
-      ConfigurationService baseConfiguration,
-      Consumer<ConfigurationServiceOverrider> overrider) {
+      ConfigurationService baseConfiguration, Consumer<ConfigurationServiceOverrider> overrider) {
     if (overrider != null) {
       final var toOverride = new ConfigurationServiceOverrider(baseConfiguration);
       overrider.accept(toOverride);
@@ -76,22 +71,20 @@ public interface ConfigurationService {
   }
 
   /**
-   * Creates a new {@link ConfigurationService} instance used to configure an
-   * {@link io.javaoperatorsdk.operator.Operator} instance, starting from the default configuration
-   * and overriding specific aspects according to the provided {@link ConfigurationServiceOverrider}
+   * Creates a new {@link ConfigurationService} instance used to configure an {@link
+   * io.javaoperatorsdk.operator.Operator} instance, starting from the default configuration and
+   * overriding specific aspects according to the provided {@link ConfigurationServiceOverrider}
    * instance.
    *
-   * <p>
-   * <em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong> creating
-   * your Operator instance as the configuration service is set at creation time and cannot be
-   * subsequently changed. As a result, overriding values this way after the Operator has been
+   * <p><em>NOTE:</em> This overriding mechanism should only be used <strong>before</strong>
+   * creating your Operator instance as the configuration service is set at creation time and cannot
+   * be subsequently changed. As a result, overriding values this way after the Operator has been
    * configured will not take effect.
-   * </p>
    *
    * @param overrider the {@link ConfigurationServiceOverrider} used to change the values provided
-   *        by the default configuration
+   *     by the default configuration
    * @return a new {@link ConfigurationService} overriding the default values with the ones provided
-   *         by the specified {@link ConfigurationServiceOverrider}
+   *     by the specified {@link ConfigurationServiceOverrider}
    * @since 4.4.0
    */
   static ConfigurationService newOverriddenConfigurationService(
@@ -104,18 +97,16 @@ public interface ConfigurationService {
    *
    * @param reconciler the reconciler we want the configuration of
    * @param <R> the {@code CustomResource} type associated with the specified reconciler
-   * @return the {@link ControllerConfiguration} associated with the specified reconciler or
-   *         {@code null} if no configuration exists for the reconciler
+   * @return the {@link ControllerConfiguration} associated with the specified reconciler or {@code
+   *     null} if no configuration exists for the reconciler
    */
   <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler);
 
   /**
    * Used to clone custom resources.
    *
-   * <p>
-   * <em>NOTE:</em> It is strongly suggested that implementors override this method since the
+   * <p><em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link Cloner} instance each time this method is called.
-   * </p>
    *
    * @return the configured {@link Cloner}
    */
@@ -134,31 +125,28 @@ public interface ConfigurationService {
    * take care of creating the required connections to watch the target resources (in particular,
    * you do not need to worry about setting the namespace information in most cases).
    *
-   * <p>
-   * Previous versions of this class provided direct access to the serialization mechanism (via
+   * <p>Previous versions of this class provided direct access to the serialization mechanism (via
    * {@link com.fasterxml.jackson.databind.ObjectMapper}) or the client's configuration. This was
    * somewhat confusing, in particular with respect to changes made in the Fabric8 client
    * serialization architecture made in 6.7. The proper way to configure these aspects is now to
    * configure the Kubernetes client accordingly and the SDK will extract the information it needs
-   * from this instance. The recommended way to do so is to create your operator with
-   * {@link io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance
-   * with {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
-   * </p>
+   * from this instance. The recommended way to do so is to create your operator with {@link
+   * io.javaoperatorsdk.operator.Operator#Operator(Consumer)}, passing your custom instance with
+   * {@link ConfigurationServiceOverrider#withKubernetesClient(KubernetesClient)}.
    *
-   * <p>
-   * <em>NOTE:</em> It is strongly suggested that implementors override this method since the
+   * <p><em>NOTE:</em> It is strongly suggested that implementors override this method since the
    * default implementation creates a new {@link KubernetesClient} instance each time this method is
    * called.
-   * </p>
    *
    * @return the configured {@link KubernetesClient}
    * @since 4.4.0
    */
   default KubernetesClient getKubernetesClient() {
     return new KubernetesClientBuilder()
-        .withConfig(new ConfigBuilder(Config.autoConfigure(null))
-            .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
-            .build())
+        .withConfig(
+            new ConfigBuilder(Config.autoConfigure(null))
+                .withMaxConcurrentRequests(DEFAULT_MAX_CONCURRENT_REQUEST)
+                .build())
         .withKubernetesSerialization(new KubernetesSerialization())
         .build();
   }
@@ -178,13 +166,11 @@ public interface ConfigurationService {
   Version getVersion();
 
   /**
-   * Whether the operator should query the CRD to make sure it's deployed and validate
-   * {@link CustomResource} implementations before attempting to register the associated
-   * reconcilers.
+   * Whether the operator should query the CRD to make sure it's deployed and validate {@link
+   * CustomResource} implementations before attempting to register the associated reconcilers.
    *
-   * <p>
-   * Note that this might require elevating the privileges associated with the operator to gain read
-   * access on the CRD resources.
+   * <p>Note that this might require elevating the privileges associated with the operator to gain
+   * read access on the CRD resources.
    *
    * @return {@code true} if CRDs should be checked (default), {@code false} otherwise
    */
@@ -226,7 +212,7 @@ public interface ConfigurationService {
    * handle concurrent reconciliations
    *
    * @return the {@link ExecutorService} implementation to use for concurrent reconciliation
-   *         processing
+   *     processing
    */
   default ExecutorService getExecutorService() {
     return Executors.newFixedThreadPool(concurrentReconciliationThreads());
@@ -243,8 +229,8 @@ public interface ConfigurationService {
   }
 
   /**
-   * Determines whether the associated Kubernetes client should be closed when the associated
-   * {@link io.javaoperatorsdk.operator.Operator} is stopped.
+   * Determines whether the associated Kubernetes client should be closed when the associated {@link
+   * io.javaoperatorsdk.operator.Operator} is stopped.
    *
    * @return {@code true} if the Kubernetes should be closed on stop, {@code false} otherwise
    */
@@ -264,9 +250,9 @@ public interface ConfigurationService {
   }
 
   /**
-   * Retrieves the optional {@link LeaderElectionConfiguration} to specify how the associated
-   * {@link io.javaoperatorsdk.operator.Operator} handles leader election to ensure only one
-   * instance of the operator runs on the cluster at any given time
+   * Retrieves the optional {@link LeaderElectionConfiguration} to specify how the associated {@link
+   * io.javaoperatorsdk.operator.Operator} handles leader election to ensure only one instance of
+   * the operator runs on the cluster at any given time
    *
    * @return the {@link LeaderElectionConfiguration}
    */
@@ -275,15 +261,12 @@ public interface ConfigurationService {
   }
 
   /**
-   * <p>
-   * if true, operator stops if there are some issues with informers
-   * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} or
-   * {@link ControllerEventSource} on startup. Other event sources may also respect this flag.
-   * </p>
-   * <p>
-   * if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
+   * if true, operator stops if there are some issues with informers {@link
+   * io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} or {@link
+   * ControllerEventSource} on startup. Other event sources may also respect this flag.
+   *
+   * <p>if false, the startup will ignore recoverable errors, caused for example by RBAC issues, and
    * will try to reconnect periodically in the background.
-   * </p>
    *
    * @return actual value described above
    */
@@ -320,26 +303,28 @@ public interface ConfigurationService {
    * @return an optional InformerStopHandler
    */
   default Optional<InformerStoppedHandler> getInformerStoppedHandler() {
-    return Optional.of((informer, ex) -> {
-      // hasSynced is checked to verify that informer already started. If not started, in case
-      // of a fatal error the operator will stop, no need for explicit exit.
-      if (ex != null && informer.hasSynced()) {
-        log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
-        System.exit(1);
-      } else {
-        log.debug(
-            "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of " +
-                "stopping the controller, or due to an error on startup." +
-                "See also stopOnInformerErrorDuringStartup configuration.",
-            informer, informer.hasSynced(), ex);
-      }
-    });
+    return Optional.of(
+        (informer, ex) -> {
+          // hasSynced is checked to verify that informer already started. If not started, in case
+          // of a fatal error the operator will stop, no need for explicit exit.
+          if (ex != null && informer.hasSynced()) {
+            log.error("Fatal error in informer: {}. Stopping the operator", informer, ex);
+            System.exit(1);
+          } else {
+            log.debug(
+                "Informer stopped: {}. Has synced: {}, Error: {}. This can happen as a result of "
+                    + "stopping the controller, or due to an error on startup."
+                    + "See also stopOnInformerErrorDuringStartup configuration.",
+                informer,
+                informer.hasSynced(),
+                ex);
+          }
+        });
   }
 
   /**
-   * Override to provide a custom {@link ManagedWorkflowFactory} implementation to change how
-   * {@link io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow} are
-   * instantiated
+   * Override to provide a custom {@link ManagedWorkflowFactory} implementation to change how {@link
+   * io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow} are instantiated
    *
    * @return the custom {@link ManagedWorkflowFactory} implementation
    */
@@ -360,12 +345,12 @@ public interface ConfigurationService {
   /**
    * Allows to revert to the 4.3 behavior when it comes to creating, updating and matching
    * Kubernetes Dependent Resources when set to {@code false}. The default approach how these
-   * resources are created/updated and match was change to use
-   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
-   * Apply</a> (SSA) by default.
-   * <p>
-   * SSA based create/update can be still used with the legacy matching, just overriding the match
-   * method of Kubernetes Dependent Resource.
+   * resources are created/updated and match was change to use <a
+   * href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side Apply</a>
+   * (SSA) by default.
+   *
+   * <p>SSA based create/update can be still used with the legacy matching, just overriding the
+   * match method of Kubernetes Dependent Resource.
    *
    * @return {@code true} if SSA should be used for dependent resources, {@code false} otherwise
    * @since 4.4.0
@@ -387,7 +372,9 @@ public interface ConfigurationService {
    */
   default <R extends HasMetadata, P extends HasMetadata> boolean shouldUseSSA(
       KubernetesDependentResource<R, P> dependentResource) {
-    return shouldUseSSA(dependentResource.getClass(), dependentResource.resourceType(),
+    return shouldUseSSA(
+        dependentResource.getClass(),
+        dependentResource.resourceType(),
         dependentResource.configuration().orElse(null));
   }
 
@@ -399,19 +386,19 @@ public interface ConfigurationService {
    * @param dependentResourceType the {@link KubernetesDependentResource} type under consideration
    * @param resourceType the resource type associated with the considered dependent resource type
    * @return {@code true} if SSA should be used for specified dependent resource type, {@code false}
-   *         otherwise
+   *     otherwise
    * @since 4.9.5
    */
   @SuppressWarnings("rawtypes")
-  default boolean shouldUseSSA(Class<? extends KubernetesDependentResource> dependentResourceType,
+  default boolean shouldUseSSA(
+      Class<? extends KubernetesDependentResource> dependentResourceType,
       Class<? extends HasMetadata> resourceType,
       KubernetesDependentResourceConfig<? extends HasMetadata> config) {
     if (ResourceUpdaterMatcher.class.isAssignableFrom(dependentResourceType)) {
       return false;
     }
-    Boolean useSSAConfig = Optional.ofNullable(config)
-        .map(KubernetesDependentResourceConfig::useSSA)
-        .orElse(null);
+    Boolean useSSAConfig =
+        Optional.ofNullable(config).map(KubernetesDependentResourceConfig::useSSA).orElse(null);
     // don't use SSA for certain resources by default, only if explicitly overridden
     if (useSSAConfig == null) {
       if (defaultNonSSAResources().contains(resourceType)) {
@@ -426,12 +413,12 @@ public interface ConfigurationService {
 
   /**
    * Returns the set of default resources for which Server-Side Apply (SSA) will not be used, even
-   * if it is the default behavior for dependent resources as specified by
-   * {@link #ssaBasedCreateUpdateMatchForDependentResources()}. The exception to this is in the case
-   * where the use of SSA is explicitly enabled on the dependent resource directly using
-   * {@link KubernetesDependent#useSSA()}.
-   * <p>
-   * By default, SSA is disabled for {@link ConfigMap} and {@link Secret} resources.
+   * if it is the default behavior for dependent resources as specified by {@link
+   * #ssaBasedCreateUpdateMatchForDependentResources()}. The exception to this is in the case where
+   * the use of SSA is explicitly enabled on the dependent resource directly using {@link
+   * KubernetesDependent#useSSA()}.
+   *
+   * <p>By default, SSA is disabled for {@link ConfigMap} and {@link Secret} resources.
    *
    * @return The set of resource types for which SSA will not be used
    */
@@ -450,12 +437,11 @@ public interface ConfigurationService {
   /**
    * If a javaoperatorsdk.io/previous annotation should be used so that the operator sdk can detect
    * events from its own updates of dependent resources and then filter them.
-   * <p>
-   * Disable this if you want to react to your own dependent resource updates
+   *
+   * <p>Disable this if you want to react to your own dependent resource updates
    *
    * @return if special annotation should be used for dependent resource to filter events
    * @since 4.5.0
-   *
    * @return if special annotation should be used for dependent resource to filter events
    */
   default boolean previousAnnotationForDependentResourcesEventFiltering() {
@@ -465,15 +451,14 @@ public interface ConfigurationService {
   /**
    * If the event logic should parse the resourceVersion to determine the ordering of dependent
    * resource events. This is typically not needed.
-   * <p>
-   * Disabled by default as Kubernetes does not support, and discourages, this interpretation of
+   *
+   * <p>Disabled by default as Kubernetes does not support, and discourages, this interpretation of
    * resourceVersions. Enable only if your api server event processing seems to lag the operator
    * logic, and you want to further minimize the amount of work done / updates issued by the
    * operator.
    *
    * @return if resource version should be parsed (as integer)
    * @since 4.5.0
-   *
    * @return if resource version should be parsed (as integer)
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
@@ -486,7 +471,7 @@ public interface ConfigurationService {
    * adding finalizers, patching resources and status.
    *
    * @return {@code true} if Server-Side Apply (SSA) should be used when patching the primary
-   *         resources, {@code false} otherwise
+   *     resources, {@code false} otherwise
    * @see ConfigurationServiceOverrider#withUseSSAToPatchPrimaryResource(boolean)
    * @since 5.0.0
    */
@@ -495,25 +480,20 @@ public interface ConfigurationService {
   }
 
   /**
-   * <p>
-   * Determines whether resources retrieved from caches such as via calls to
-   * {@link Context#getSecondaryResource(Class)} should be defensively cloned first.
-   * </p>
+   * Determines whether resources retrieved from caches such as via calls to {@link
+   * Context#getSecondaryResource(Class)} should be defensively cloned first.
    *
-   * <p>
-   * Defensive cloning to prevent problematic cache modifications (modifying the resource would
+   * <p>Defensive cloning to prevent problematic cache modifications (modifying the resource would
    * otherwise modify the stored copy in the cache) was transparently done in previous JOSDK
    * versions. This might have performance consequences and, with the more prevalent use of
    * Server-Side Apply, where you should create a new copy of your resource with only modified
    * fields, such modifications of these resources are less likely to occur.
-   * </p>
    *
    * @return {@code true} if resources should be defensively cloned before returning them from
-   *         caches, {@code false} otherwise
+   *     caches, {@code false} otherwise
    * @since 5.0.0
    */
   default boolean cloneSecondaryResourcesWhenGettingFromCache() {
     return false;
   }
-
 }

@@ -10,8 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("wacc")
 public class WorkflowActivationCleanupCustomResource
-    extends CustomResource<WorkflowActivationCleanupSpec, Void>
-    implements Namespaced {
-
-
-}
+    extends CustomResource<WorkflowActivationCleanupSpec, Void> implements Namespaced {}

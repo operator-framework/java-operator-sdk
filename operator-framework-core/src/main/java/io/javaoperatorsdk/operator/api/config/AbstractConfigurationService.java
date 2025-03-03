@@ -33,40 +33,43 @@ public class AbstractConfigurationService implements ConfigurationService {
    * Creates a new {@link AbstractConfigurationService} with the specified parameters.
    *
    * @param client the {@link KubernetesClient} instance to use to connect to the cluster, if let
-   *        {@code null}, the client will be lazily instantiated with the default configuration
-   *        provided by {@link ConfigurationService#getKubernetesClient()} the first time
-   *        {@link #getKubernetesClient()} is called
+   *     {@code null}, the client will be lazily instantiated with the default configuration
+   *     provided by {@link ConfigurationService#getKubernetesClient()} the first time {@link
+   *     #getKubernetesClient()} is called
    * @param version the version information
-   * @param cloner the {@link Cloner} to use, if {@code null} the default provided by
-   *        {@link ConfigurationService#getResourceCloner()} will be used
+   * @param cloner the {@link Cloner} to use, if {@code null} the default provided by {@link
+   *     ConfigurationService#getResourceCloner()} will be used
    * @param executorServiceManager the {@link ExecutorServiceManager} instance to be used, can be
-   *        {@code null} to lazily initialize one by default when
-   *        {@link #getExecutorServiceManager()} is called
+   *     {@code null} to lazily initialize one by default when {@link #getExecutorServiceManager()}
+   *     is called
    */
-  public AbstractConfigurationService(Version version, Cloner cloner,
-      ExecutorServiceManager executorServiceManager, KubernetesClient client) {
+  public AbstractConfigurationService(
+      Version version,
+      Cloner cloner,
+      ExecutorServiceManager executorServiceManager,
+      KubernetesClient client) {
     this.version = version;
     init(cloner, executorServiceManager, client);
   }
 
   /**
-   * Subclasses can call this method to more easily initialize the {@link Cloner} and
-   * {@link ExecutorServiceManager} associated with this ConfigurationService implementation. This
-   * is useful in situations where the cloner depends on a mapper that might require additional
+   * Subclasses can call this method to more easily initialize the {@link Cloner} and {@link
+   * ExecutorServiceManager} associated with this ConfigurationService implementation. This is
+   * useful in situations where the cloner depends on a mapper that might require additional
    * configuration steps before it's ready to be used.
    *
    * @param cloner the {@link Cloner} instance to be used, if {@code null}, the default provided by
-   *        {@link ConfigurationService#getResourceCloner()} will be used
+   *     {@link ConfigurationService#getResourceCloner()} will be used
    * @param executorServiceManager the {@link ExecutorServiceManager} instance to be used, can be
-   *        {@code null} to lazily initialize one by default when
-   *        {@link #getExecutorServiceManager()} is called
+   *     {@code null} to lazily initialize one by default when {@link #getExecutorServiceManager()}
+   *     is called
    * @param client the {@link KubernetesClient} instance to use to connect to the cluster, if let
-   *        {@code null}, the client will be lazily instantiated with the default configuration
-   *        provided by {@link ConfigurationService#getKubernetesClient()} the first time
-   *        {@link #getKubernetesClient()} is called
+   *     {@code null}, the client will be lazily instantiated with the default configuration
+   *     provided by {@link ConfigurationService#getKubernetesClient()} the first time {@link
+   *     #getKubernetesClient()} is called
    */
-  protected void init(Cloner cloner, ExecutorServiceManager executorServiceManager,
-      KubernetesClient client) {
+  protected void init(
+      Cloner cloner, ExecutorServiceManager executorServiceManager, KubernetesClient client) {
     this.client = client;
     this.cloner = cloner != null ? cloner : ConfigurationService.super.getResourceCloner();
     this.executorServiceManager = executorServiceManager;

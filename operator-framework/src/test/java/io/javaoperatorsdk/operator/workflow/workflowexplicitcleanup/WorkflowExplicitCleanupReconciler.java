@@ -3,12 +3,11 @@ package io.javaoperatorsdk.operator.workflow.workflowexplicitcleanup;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(explicitInvocation = true,
-    dependents = @Dependent(type = ConfigMapDependent.class))
+@Workflow(explicitInvocation = true, dependents = @Dependent(type = ConfigMapDependent.class))
 @ControllerConfiguration
 public class WorkflowExplicitCleanupReconciler
     implements Reconciler<WorkflowExplicitCleanupCustomResource>,
-    Cleaner<WorkflowExplicitCleanupCustomResource> {
+        Cleaner<WorkflowExplicitCleanupCustomResource> {
 
   @Override
   public UpdateControl<WorkflowExplicitCleanupCustomResource> reconcile(
@@ -21,7 +20,8 @@ public class WorkflowExplicitCleanupReconciler
   }
 
   @Override
-  public DeleteControl cleanup(WorkflowExplicitCleanupCustomResource resource,
+  public DeleteControl cleanup(
+      WorkflowExplicitCleanupCustomResource resource,
       Context<WorkflowExplicitCleanupCustomResource> context) {
 
     context.managedWorkflowAndDependentResourceContext().cleanupManageWorkflow();

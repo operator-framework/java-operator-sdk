@@ -22,7 +22,8 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final Controller<P> controller;
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
-  private final DefaultManagedWorkflowAndDependentResourceContext<P> defaultManagedDependentResourceContext;
+  private final DefaultManagedWorkflowAndDependentResourceContext<P>
+      defaultManagedDependentResourceContext;
 
   public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
     this.retryInfo = retryInfo;
@@ -50,7 +51,8 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
 
   @Override
   public boolean isNextReconciliationImminent() {
-    return controller.getEventProcessor()
+    return controller
+        .getEventProcessor()
         .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
   }
 

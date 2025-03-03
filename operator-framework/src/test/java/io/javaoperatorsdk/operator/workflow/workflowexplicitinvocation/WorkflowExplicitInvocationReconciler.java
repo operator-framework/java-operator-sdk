@@ -5,8 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(explicitInvocation = true,
-    dependents = @Dependent(type = ConfigMapDependent.class))
+@Workflow(explicitInvocation = true, dependents = @Dependent(type = ConfigMapDependent.class))
 @ControllerConfiguration
 public class WorkflowExplicitInvocationReconciler
     implements Reconciler<WorkflowExplicitInvocationCustomResource> {
@@ -24,7 +23,6 @@ public class WorkflowExplicitInvocationReconciler
     if (invokeWorkflow) {
       context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
     }
-
 
     return UpdateControl.noUpdate();
   }

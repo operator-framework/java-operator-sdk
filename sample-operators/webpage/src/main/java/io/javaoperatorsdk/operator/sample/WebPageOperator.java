@@ -18,7 +18,6 @@ public class WebPageOperator {
   public static final String WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE = "managed";
   private static final Logger log = LoggerFactory.getLogger(WebPageOperator.class);
 
-
   /**
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
    * can be implemented using the low level and higher level APIs.
@@ -30,8 +29,7 @@ public class WebPageOperator {
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler());
-    } else if (WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE
-        .equals(reconcilerEnvVar)) {
+    } else if (WEBPAGE_MANAGED_DEPENDENT_RESOURCE_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageManagedDependentsReconciler());
     } else {
       operator.register(new WebPageStandaloneDependentsReconciler());

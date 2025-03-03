@@ -22,10 +22,10 @@ public interface BulkDependentResource<R, P extends HasMetadata> {
    * identified by an arbitrary key.
    *
    * @param primary the primary resource with which we want to identify which secondary resources
-   *        are associated
+   *     are associated
    * @param context the {@link Context} associated with the current reconciliation
    * @return a Map associating desired secondary resources with the specified primary via arbitrary
-   *         identifiers
+   *     identifiers
    */
   default Map<String, R> desiredResources(P primary, Context<P> context) {
     throw new IllegalStateException(
@@ -37,10 +37,10 @@ public interface BulkDependentResource<R, P extends HasMetadata> {
    * the specified primary resource.
    *
    * @param primary the primary resource for which we want to retrieve the associated secondary
-   *        resources
+   *     resources
    * @param context the {@link Context} associated with the current reconciliation
    * @return a Map associating actual secondary resources with the specified primary via arbitrary
-   *         identifiers
+   *     identifiers
    */
   Map<String, R> getSecondaryResources(P primary, Context<P> context);
 
@@ -49,7 +49,7 @@ public interface BulkDependentResource<R, P extends HasMetadata> {
    * secondary resources for the specified primary.
    *
    * @param primary the primary resource for which we want to remove now undesired secondary
-   *        resources still present on the cluster
+   *     resources still present on the cluster
    * @param resource the actual resource existing on the cluster that needs to be removed
    * @param key key of the resource
    * @param context actual context
@@ -58,17 +58,17 @@ public interface BulkDependentResource<R, P extends HasMetadata> {
 
   /**
    * Determines whether the specified secondary resource matches the desired state with target index
-   * of a bulk resource as defined from the specified primary resource, given the specified
-   * {@link Context}.
+   * of a bulk resource as defined from the specified primary resource, given the specified {@link
+   * Context}.
    *
    * @param actualResource the resource we want to determine whether it's matching the desired state
    * @param desired the resource's desired state
    * @param primary the primary resource from which the desired state is inferred
    * @param context the context in which the resource is being matched
    * @return a {@link Result} encapsulating whether the resource matched its desired state and this
-   *         associated state if it was computed as part of the matching process. Use the static
-   *         convenience methods ({@link Result#nonComputed(boolean)} and
-   *         {@link Result#computed(boolean, Object)})
+   *     associated state if it was computed as part of the matching process. Use the static
+   *     convenience methods ({@link Result#nonComputed(boolean)} and {@link
+   *     Result#computed(boolean, Object)})
    */
   default Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     return Matcher.Result.computed(desired.equals(actualResource), desired);

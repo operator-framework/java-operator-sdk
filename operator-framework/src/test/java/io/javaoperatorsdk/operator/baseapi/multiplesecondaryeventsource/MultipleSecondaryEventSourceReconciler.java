@@ -39,15 +39,27 @@ public class MultipleSecondaryEventSourceReconciler
     numberOfExecutions.addAndGet(1);
 
     final var client = context.getClient();
-    if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-        .withName(getName1(resource)).get() == null) {
-      client.configMaps().inNamespace(resource.getMetadata().getNamespace())
+    if (client
+            .configMaps()
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(getName1(resource))
+            .get()
+        == null) {
+      client
+          .configMaps()
+          .inNamespace(resource.getMetadata().getNamespace())
           .resource(configMap(getName1(resource), resource))
           .createOrReplace();
     }
-    if (client.configMaps().inNamespace(resource.getMetadata().getNamespace())
-        .withName(getName2(resource)).get() == null) {
-      client.configMaps().inNamespace(resource.getMetadata().getNamespace())
+    if (client
+            .configMaps()
+            .inNamespace(resource.getMetadata().getNamespace())
+            .withName(getName2(resource))
+            .get()
+        == null) {
+      client
+          .configMaps()
+          .inNamespace(resource.getMetadata().getNamespace())
           .resource(configMap(getName2(resource), resource))
           .createOrReplace();
     }
@@ -68,17 +80,22 @@ public class MultipleSecondaryEventSourceReconciler
   public List<EventSource<?, MultipleSecondaryEventSourceCustomResource>> prepareEventSources(
       EventSourceContext<MultipleSecondaryEventSourceCustomResource> context) {
 
-    var config = InformerEventSourceConfiguration
-        .from(ConfigMap.class, MultipleSecondaryEventSourceCustomResource.class)
-        .withNamespacesInheritedFromController()
-        .withLabelSelector("multisecondary")
-        .withSecondaryToPrimaryMapper(s -> {
-          var name =
-              s.getMetadata().getName().subSequence(0, s.getMetadata().getName().length() - 1);
-          return Set.of(new ResourceID(name.toString(), s.getMetadata().getNamespace()));
-        }).build();
-    InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource> configMapEventSource =
-        new InformerEventSource<>(config, context);
+    var config =
+        InformerEventSourceConfiguration.from(
+                ConfigMap.class, MultipleSecondaryEventSourceCustomResource.class)
+            .withNamespacesInheritedFromController()
+            .withLabelSelector("multisecondary")
+            .withSecondaryToPrimaryMapper(
+                s -> {
+                  var name =
+                      s.getMetadata()
+                          .getName()
+                          .subSequence(0, s.getMetadata().getName().length() - 1);
+                  return Set.of(new ResourceID(name.toString(), s.getMetadata().getNamespace()));
+                })
+            .build();
+    InformerEventSource<ConfigMap, MultipleSecondaryEventSourceCustomResource>
+        configMapEventSource = new InformerEventSource<>(config, context);
     return List.of(configMapEventSource);
   }
 

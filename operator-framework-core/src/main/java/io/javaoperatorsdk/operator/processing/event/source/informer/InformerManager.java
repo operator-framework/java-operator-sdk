@@ -41,7 +41,8 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
   private ControllerConfiguration<R> controllerConfiguration;
 
-  InformerManager(MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client,
+  InformerManager(
+      MixedOperation<R, KubernetesResourceList<R>, Resource<R>> client,
       C configuration,
       ResourceEventHandler<R> eventHandler) {
     this.client = client;
@@ -57,15 +58,20 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   public void start() throws OperatorException {
     initSources();
     // make sure informers are all started before proceeding further
-    controllerConfiguration.getConfigurationService().getExecutorServiceManager()
+    controllerConfiguration
+        .getConfigurationService()
+        .getExecutorServiceManager()
         .boundedExecuteAndWaitForAllToComplete(
             sources.values().stream(),
             iw -> {
               iw.start();
               return null;
             },
-            iw -> "InformerStarter-" + iw.getTargetNamespace() + "-"
-                + configuration.getResourceClass().getSimpleName());
+            iw ->
+                "InformerStarter-"
+                    + iw.getTargetNamespace()
+                    + "-"
+                    + configuration.getResourceClass().getSimpleName());
   }
 
   private void initSources() {
@@ -81,8 +87,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
       targetNamespaces.forEach(
           ns -> {
             final var source = createEventSourceForNamespace(ns);
-            log.debug("Registered {} -> {} for namespace: {}", this, source,
-                ns);
+            log.debug("Registered {} -> {} for namespace: {}", this, source, ns);
           });
     }
   }
@@ -92,33 +97,33 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   }
 
   public void changeNamespaces(Set<String> namespaces) {
-    var sourcesToRemove = sources.keySet().stream()
-        .filter(k -> !namespaces.contains(k)).collect(Collectors.toSet());
+    var sourcesToRemove =
+        sources.keySet().stream().filter(k -> !namespaces.contains(k)).collect(Collectors.toSet());
     log.debug("Stopped informer {} for namespaces: {}", this, sourcesToRemove);
     sourcesToRemove.forEach(k -> sources.remove(k).stop());
 
-    namespaces.forEach(ns -> {
-      if (!sources.containsKey(ns)) {
-        final InformerWrapper<R> source = createEventSourceForNamespace(ns);
-        source.start();
-        log.debug("Registered new {} -> {} for namespace: {}", this, source,
-            ns);
-      }
-    });
+    namespaces.forEach(
+        ns -> {
+          if (!sources.containsKey(ns)) {
+            final InformerWrapper<R> source = createEventSourceForNamespace(ns);
+            source.start();
+            log.debug("Registered new {} -> {} for namespace: {}", this, source, ns);
+          }
+        });
   }
-
 
   private InformerWrapper<R> createEventSourceForNamespace(String namespace) {
     final InformerWrapper<R> source;
     final var labelSelector = configuration.getInformerConfig().getLabelSelector();
     if (namespace.equals(WATCH_ALL_NAMESPACES)) {
-      final var filteredBySelectorClient =
-          client.inAnyNamespace().withLabelSelector(labelSelector);
+      final var filteredBySelectorClient = client.inAnyNamespace().withLabelSelector(labelSelector);
       source = createEventSource(filteredBySelectorClient, eventHandler, WATCH_ALL_NAMESPACES);
     } else {
-      source = createEventSource(
-          client.inNamespace(namespace).withLabelSelector(labelSelector),
-          eventHandler, namespace);
+      source =
+          createEventSource(
+              client.inNamespace(namespace).withLabelSelector(labelSelector),
+              eventHandler,
+              namespace);
     }
     source.addIndexers(indexers);
     return source;
@@ -126,14 +131,18 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   private InformerWrapper<R> createEventSource(
       FilterWatchListDeletable<R, KubernetesResourceList<R>, Resource<R>> filteredBySelectorClient,
-      ResourceEventHandler<R> eventHandler, String namespaceIdentifier) {
+      ResourceEventHandler<R> eventHandler,
+      String namespaceIdentifier) {
     final var informerConfig = configuration.getInformerConfig();
-    var informer = Optional.ofNullable(informerConfig.getInformerListLimit())
-        .map(filteredBySelectorClient::withLimit)
-        .orElse(filteredBySelectorClient).runnableInformer(0);
+    var informer =
+        Optional.ofNullable(informerConfig.getInformerListLimit())
+            .map(filteredBySelectorClient::withLimit)
+            .orElse(filteredBySelectorClient)
+            .runnableInformer(0);
     Optional.ofNullable(informerConfig.getItemStore()).ifPresent(informer::itemStore);
-    var source = new InformerWrapper<>(informer, controllerConfiguration.getConfigurationService(),
-        namespaceIdentifier);
+    var source =
+        new InformerWrapper<>(
+            informer, controllerConfiguration.getConfigurationService(), namespaceIdentifier);
     source.addEventHandler(eventHandler);
     sources.put(namespaceIdentifier, source);
     return source;
@@ -141,14 +150,15 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   @Override
   public void stop() {
-    sources.forEach((ns, source) -> {
-      try {
-        log.debug("Stopping informer for namespace: {} -> {}", ns, source);
-        source.stop();
-      } catch (Exception e) {
-        log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
-      }
-    });
+    sources.forEach(
+        (ns, source) -> {
+          try {
+            log.debug("Stopping informer for namespace: {} -> {}", ns, source);
+            source.stop();
+          } catch (Exception e) {
+            log.warn("Error stopping informer for namespace: {} -> {}", ns, source, e);
+          }
+        });
     sources.clear();
   }
 
@@ -167,9 +177,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
           .map(source -> source.list(namespace, predicate))
           .orElseGet(Stream::empty);
     } else {
-      return getSource(namespace)
-          .map(source -> source.list(predicate))
-          .orElseGet(Stream::empty);
+      return getSource(namespace).map(source -> source.list(predicate)).orElseGet(Stream::empty);
     }
   }
 
@@ -177,10 +185,13 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
   public Optional<R> get(ResourceID resourceID) {
     return getSource(resourceID.getNamespace().orElse(WATCH_ALL_NAMESPACES))
         .flatMap(source -> source.get(resourceID))
-        .map(r -> controllerConfiguration.getConfigurationService()
-            .cloneSecondaryResourcesWhenGettingFromCache()
-                ? controllerConfiguration.getConfigurationService().getResourceCloner().clone(r)
-                : r);
+        .map(
+            r ->
+                controllerConfiguration
+                        .getConfigurationService()
+                        .cloneSecondaryResourcesWhenGettingFromCache()
+                    ? controllerConfiguration.getConfigurationService().getResourceCloner().clone(r)
+                    : r);
   }
 
   @Override
@@ -204,8 +215,10 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
 
   @Override
   public List<R> byIndex(String indexName, String indexKey) {
-    return sources.values().stream().map(s -> s.byIndex(indexName, indexKey))
-        .flatMap(List::stream).collect(Collectors.toList());
+    return sources.values().stream()
+        .map(s -> s.byIndex(indexName, indexKey))
+        .flatMap(List::stream)
+        .collect(Collectors.toList());
   }
 
   @Override

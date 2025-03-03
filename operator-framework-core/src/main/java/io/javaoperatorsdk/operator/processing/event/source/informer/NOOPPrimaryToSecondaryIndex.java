@@ -5,8 +5,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-class NOOPPrimaryToSecondaryIndex<R extends HasMetadata>
-    implements PrimaryToSecondaryIndex<R> {
+class NOOPPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryToSecondaryIndex<R> {
 
   @SuppressWarnings("rawtypes")
   private static final NOOPPrimaryToSecondaryIndex instance = new NOOPPrimaryToSecondaryIndex();

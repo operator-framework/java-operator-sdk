@@ -30,10 +30,12 @@ class PrimaryToSecondaryMissingIT {
     Thread.sleep(300);
     operator.create(job());
 
-    await().untilAsserted(() -> {
-      assertThat(reconciler.isErrorOccurred()).isTrue();
-      assertThat(reconciler.getNumberOfExecutions()).isZero();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.isErrorOccurred()).isTrue();
+              assertThat(reconciler.getNumberOfExecutions()).isZero();
+            });
   }
 
   @Test
@@ -44,10 +46,11 @@ class PrimaryToSecondaryMissingIT {
     Thread.sleep(300);
     operator.create(job());
 
-    await().untilAsserted(() -> {
-      assertThat(reconciler.isErrorOccurred()).isFalse();
-      assertThat(reconciler.getNumberOfExecutions()).isPositive();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.isErrorOccurred()).isFalse();
+              assertThat(reconciler.getNumberOfExecutions()).isPositive();
+            });
   }
-
 }

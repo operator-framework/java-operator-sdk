@@ -35,8 +35,7 @@ public class TestCustomReconciler
   }
 
   @Override
-  public DeleteControl cleanup(
-      TestCustomResource resource, Context<TestCustomResource> context) {
+  public DeleteControl cleanup(TestCustomResource resource, Context<TestCustomResource> context) {
     var statusDetails =
         kubernetesClient
             .configMaps()

@@ -8,8 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration
-public class StatusPatchLockingReconciler
-    implements Reconciler<StatusPatchLockingCustomResource> {
+public class StatusPatchLockingReconciler implements Reconciler<StatusPatchLockingCustomResource> {
 
   public static final String MESSAGE = "message";
   public static final long WAIT_TIME = 500L;
@@ -33,5 +32,4 @@ public class StatusPatchLockingReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

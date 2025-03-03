@@ -12,7 +12,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Kind("CleanupConflictCustomResource")
 @ShortNames("ccc")
 public class CleanupConflictCustomResource
-    extends CustomResource<Void, CleanupConflictCustomResourceStatus>
-    implements Namespaced {
-
-}
+    extends CustomResource<Void, CleanupConflictCustomResourceStatus> implements Namespaced {}

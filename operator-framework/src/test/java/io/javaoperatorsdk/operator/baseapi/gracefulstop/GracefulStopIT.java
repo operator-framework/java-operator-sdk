@@ -19,8 +19,10 @@ public class GracefulStopIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withCloseClientOnStop(false)
-              .withReconciliationTerminationTimeout(Duration.ofMillis(RECONCILER_SLEEP)))
+          .withConfigurationService(
+              o ->
+                  o.withCloseClientOnStop(false)
+                      .withReconciliationTerminationTimeout(Duration.ofMillis(RECONCILER_SLEEP)))
           .withReconciler(new GracefulStopTestReconciler())
           .build();
 
@@ -31,41 +33,49 @@ public class GracefulStopIT {
 
   private void testGracefulStop(String resourceName, int expectedFinalGeneration) {
     var testRes = operator.create(testResource(resourceName));
-    await().untilAsserted(() -> {
-      var r = operator.get(GracefulStopTestCustomResource.class, resourceName);
-      assertThat(r.getStatus()).isNotNull();
-      assertThat(r.getStatus().getObservedGeneration()).isEqualTo(1);
-      assertThat(operator.getReconcilerOfType(GracefulStopTestReconciler.class)
-          .getNumberOfExecutions()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var r = operator.get(GracefulStopTestCustomResource.class, resourceName);
+              assertThat(r.getStatus()).isNotNull();
+              assertThat(r.getStatus().getObservedGeneration()).isEqualTo(1);
+              assertThat(
+                      operator
+                          .getReconcilerOfType(GracefulStopTestReconciler.class)
+                          .getNumberOfExecutions())
+                  .isEqualTo(1);
+            });
 
     testRes.getSpec().setValue(2);
     operator.replace(testRes);
 
-    await().pollDelay(Duration.ofMillis(50)).untilAsserted(
-        () -> assertThat(operator.getReconcilerOfType(GracefulStopTestReconciler.class)
-            .getNumberOfExecutions()).isEqualTo(2));
+    await()
+        .pollDelay(Duration.ofMillis(50))
+        .untilAsserted(
+            () ->
+                assertThat(
+                        operator
+                            .getReconcilerOfType(GracefulStopTestReconciler.class)
+                            .getNumberOfExecutions())
+                    .isEqualTo(2));
 
     operator.getOperator().stop();
 
-    await().untilAsserted(() -> {
-      var r = operator.get(GracefulStopTestCustomResource.class, resourceName);
-      assertThat(r.getStatus()).isNotNull();
-      assertThat(r.getStatus().getObservedGeneration()).isEqualTo(expectedFinalGeneration);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var r = operator.get(GracefulStopTestCustomResource.class, resourceName);
+              assertThat(r.getStatus()).isNotNull();
+              assertThat(r.getStatus().getObservedGeneration()).isEqualTo(expectedFinalGeneration);
+            });
   }
 
   public GracefulStopTestCustomResource testResource(String name) {
-    GracefulStopTestCustomResource resource =
-        new GracefulStopTestCustomResource();
+    GracefulStopTestCustomResource resource = new GracefulStopTestCustomResource();
     resource.setMetadata(
-        new ObjectMetaBuilder()
-            .withName(name)
-            .withNamespace(operator.getNamespace())
-            .build());
+        new ObjectMetaBuilder().withName(name).withNamespace(operator.getNamespace()).build());
     resource.setSpec(new GracefulStopTestCustomResourceSpec());
     resource.getSpec().setValue(1);
     return resource;
   }
-
 }

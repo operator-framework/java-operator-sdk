@@ -15,9 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public interface Metrics {
 
-  /**
-   * The default Metrics provider: a no-operation implementation.
-   */
+  /** The default Metrics provider: a no-operation implementation. */
   Metrics NOOP = new Metrics() {};
 
   /**
@@ -36,7 +34,6 @@ public interface Metrics {
    */
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
-
   /**
    * Called right before a resource is dispatched to the ExecutorService for reconciliation.
    *
@@ -44,27 +41,24 @@ public interface Metrics {
    * @param retryInfo the current retry state information for the reconciliation request
    * @param metadata metadata associated with the resource being processed
    */
-  default void reconcileCustomResource(HasMetadata resource, RetryInfo retryInfo,
-      Map<String, Object> metadata) {}
+  default void reconcileCustomResource(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
   /**
-   * Called when a precedent reconciliation for the resource associated with the specified
-   * {@link ResourceID} resulted in the provided exception, resulting in a retry of the
-   * reconciliation.
+   * Called when a precedent reconciliation for the resource associated with the specified {@link
+   * ResourceID} resulted in the provided exception, resulting in a retry of the reconciliation.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param exception the exception that caused the failed reconciliation resulting in a retry
    * @param metadata metadata associated with the resource being processed
    */
-  default void failedReconciliation(HasMetadata resource, Exception exception,
-      Map<String, Object> metadata) {}
-
+  default void failedReconciliation(
+      HasMetadata resource, Exception exception, Map<String, Object> metadata) {}
 
   default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
 
-  default void reconciliationExecutionFinished(HasMetadata resource,
-      Map<String, Object> metadata) {}
-
+  default void reconciliationExecutionFinished(
+      HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Called when the resource associated with the specified {@link ResourceID} has been successfully
@@ -76,10 +70,10 @@ public interface Metrics {
   default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**
-   * Called when the
-   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)}
-   * method of the Reconciler associated with the resource associated with the specified
-   * {@link ResourceID} has sucessfully finished.
+   * Called when the {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)} method
+   * of the Reconciler associated with the resource associated with the specified {@link ResourceID}
+   * has sucessfully finished.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
@@ -87,16 +81,16 @@ public interface Metrics {
   default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
-   * Encapsulates the information about a controller execution i.e. a call to either
-   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)}
-   * or {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner#cleanup(HasMetadata, Context)}.
-   * Note that instances are automatically created for you by the SDK and passed to your Metrics
-   * implementation at the appropriate time to the
-   * {@link #timeControllerExecution(ControllerExecution)} method.
+   * Encapsulates the information about a controller execution i.e. a call to either {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)} or
+   * {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner#cleanup(HasMetadata, Context)}. Note
+   * that instances are automatically created for you by the SDK and passed to your Metrics
+   * implementation at the appropriate time to the {@link
+   * #timeControllerExecution(ControllerExecution)} method.
    *
-   * @param <T> the outcome type associated with the controller execution. Currently, one of
-   *        {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or
-   *        {@link io.javaoperatorsdk.operator.api.reconciler.DeleteControl}
+   * @param <T> the outcome type associated with the controller execution. Currently, one of {@link
+   *     io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or {@link
+   *     io.javaoperatorsdk.operator.api.reconciler.DeleteControl}
    */
   interface ControllerExecution<T> {
 
@@ -117,9 +111,9 @@ public interface Metrics {
 
     /**
      * Retrieves the name of the successful result when the reconciliation ended positively.
-     * Possible values comes from the different outcomes provided by
-     * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or
-     * {@link io.javaoperatorsdk.operator.api.reconciler.DeleteControl}.
+     * Possible values comes from the different outcomes provided by {@link
+     * io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or {@link
+     * io.javaoperatorsdk.operator.api.reconciler.DeleteControl}.
      *
      * @param result the reconciliation result
      * @return a name associated with the specified outcome
@@ -152,14 +146,14 @@ public interface Metrics {
   }
 
   /**
-   * Times the execution of the controller operation encapsulated by the provided
-   * {@link ControllerExecution}.
+   * Times the execution of the controller operation encapsulated by the provided {@link
+   * ControllerExecution}.
    *
    * @param execution the controller operation to be timed
    * @return the result of the controller's execution if successful
    * @param <T> the type of the outcome/result of the controller's execution
    * @throws Exception if an error occurred during the controller's execution, usually this should
-   *         just be a pass-through of whatever the controller returned
+   *     just be a pass-through of whatever the controller returned
    */
   default <T> T timeControllerExecution(ControllerExecution<T> execution) throws Exception {
     return execution.execute();
@@ -172,7 +166,7 @@ public interface Metrics {
    * @param map the Map which size is to be monitored
    * @param name the name of the provided Map to be used in metrics data
    * @return the Map that was passed in so the registration can be done as part of an assignment
-   *         statement.
+   *     statement.
    * @param <T> the type of the Map being monitored
    */
   @SuppressWarnings("unused")

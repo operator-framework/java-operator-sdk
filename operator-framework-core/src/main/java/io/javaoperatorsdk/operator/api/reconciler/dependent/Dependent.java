@@ -5,8 +5,8 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
 
 /**
- * The annotation used to create managed {@link DependentResource} associated with a given
- * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}
+ * The annotation used to create managed {@link DependentResource} associated with a given {@link
+ * io.javaoperatorsdk.operator.api.reconciler.Reconciler}
  */
 public @interface Dependent {
 
@@ -17,8 +17,8 @@ public @interface Dependent {
    * The name of this dependent. This is needed to be able to refer to it when creating dependencies
    * between dependent resources.
    *
-   * @return the name if it has been set,
-   *         {@link io.javaoperatorsdk.operator.api.reconciler.Constants#NO_VALUE_SET} otherwise
+   * @return the name if it has been set, {@link
+   *     io.javaoperatorsdk.operator.api.reconciler.Constants#NO_VALUE_SET} otherwise
    */
   String name() default NO_VALUE_SET;
 
@@ -26,17 +26,17 @@ public @interface Dependent {
    * The condition (if it exists) that needs to become true before the workflow can further proceed.
    *
    * @return a {@link Condition} implementation, defaulting to the interface itself if no value is
-   *         set
+   *     set
    */
   Class<? extends Condition> readyPostcondition() default Condition.class;
 
   /**
-   * The condition (if it exists) that needs to become true before the associated
-   * {@link DependentResource} is reconciled. Note that if this condition is set and the condition
-   * doesn't hold true, the associated secondary will be deleted.
+   * The condition (if it exists) that needs to become true before the associated {@link
+   * DependentResource} is reconciled. Note that if this condition is set and the condition doesn't
+   * hold true, the associated secondary will be deleted.
    *
    * @return a {@link Condition} implementation, defaulting to the interface itself if no value is
-   *         set
+   *     set
    */
   Class<? extends Condition> reconcilePrecondition() default Condition.class;
 
@@ -46,12 +46,11 @@ public @interface Dependent {
    * to have been deleted.
    *
    * @return a {@link Condition} implementation, defaulting to the interface itself if no value is
-   *         set
+   *     set
    */
   Class<? extends Condition> deletePostcondition() default Condition.class;
 
   /**
-   * <p>
    * A condition that needs to become true for the dependent to even be considered as part of the
    * workflow. This is useful for dependents that represent optional resources on the cluster and
    * might not be present. In this case, a reconcile pre-condition is not enough because in that
@@ -60,13 +59,11 @@ public @interface Dependent {
    * behaves like a reconcile pre-condition in the sense that dependents, that depend on this one,
    * will only get created if the condition is met and will get deleted if the condition becomes
    * false.
-   * </p>
-   * <p>
-   * As other conditions, this gets evaluated at the beginning of every reconciliation, which means
-   * that it allows to react to optional resources becoming available on the cluster as the operator
-   * runs. More specifically, this means that the associated event source can get dynamically
-   * registered or de-registered during reconciliation.
-   * </p>
+   *
+   * <p>As other conditions, this gets evaluated at the beginning of every reconciliation, which
+   * means that it allows to react to optional resources becoming available on the cluster as the
+   * operator runs. More specifically, this means that the associated event source can get
+   * dynamically registered or de-registered during reconciliation.
    */
   Class<? extends Condition> activationCondition() default Condition.class;
 
@@ -74,7 +71,7 @@ public @interface Dependent {
    * The list of named dependents that need to be reconciled before this one can be.
    *
    * @return the list (possibly empty) of named dependents that need to be reconciled before this
-   *         one can be
+   *     one can be
    */
   String[] dependsOn() default {};
 

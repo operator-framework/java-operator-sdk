@@ -10,6 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("ptsd")
 public class PrimaryToSecondaryDependentCustomResource
-    extends CustomResource<PrimaryToSecondaryDependentSpec, Void>
-    implements Namespaced {
-}
+    extends CustomResource<PrimaryToSecondaryDependentSpec, Void> implements Namespaced {}

@@ -24,30 +24,38 @@ class ComplexWorkflowIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder()
-          .withReconciler(new ComplexWorkflowReconciler())
-          .build();
+      LocallyRunOperatorExtension.builder().withReconciler(new ComplexWorkflowReconciler()).build();
 
   @Test
   void successfullyReconciles() {
     operator.create(testResource());
 
-    await().atMost(Duration.ofSeconds(90))
-        .untilAsserted(() -> {
-          var res = operator.get(ComplexWorkflowCustomResource.class, TEST_RESOURCE_NAME);
-          assertThat(res.getStatus()).isNotNull();
-          assertThat(res.getStatus().getStatus())
-              .isEqualTo(ComplexWorkflowReconciler.RECONCILE_STATUS.READY);
-        });
+    await()
+        .atMost(Duration.ofSeconds(90))
+        .untilAsserted(
+            () -> {
+              var res = operator.get(ComplexWorkflowCustomResource.class, TEST_RESOURCE_NAME);
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getStatus())
+                  .isEqualTo(ComplexWorkflowReconciler.RECONCILE_STATUS.READY);
+            });
 
-    var firstStatefulSet = operator.get(StatefulSet.class, String.format("%s-%s",
-        FirstStatefulSet.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
-    var secondStatefulSet = operator.get(StatefulSet.class, String.format("%s-%s",
-        SecondStatefulSet.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
-    var firstService = operator.get(Service.class, String.format("%s-%s",
-        FirstService.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
-    var secondService = operator.get(Service.class, String.format("%s-%s",
-        SecondService.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
+    var firstStatefulSet =
+        operator.get(
+            StatefulSet.class,
+            String.format("%s-%s", FirstStatefulSet.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
+    var secondStatefulSet =
+        operator.get(
+            StatefulSet.class,
+            String.format("%s-%s", SecondStatefulSet.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
+    var firstService =
+        operator.get(
+            Service.class,
+            String.format("%s-%s", FirstService.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
+    var secondService =
+        operator.get(
+            Service.class,
+            String.format("%s-%s", SecondService.DISCRIMINATOR_PREFIX, TEST_RESOURCE_NAME));
     assertThat(firstService).isNotNull();
     assertThat(secondService).isNotNull();
     assertThat(firstStatefulSet).isNotNull();
@@ -58,13 +66,10 @@ class ComplexWorkflowIT {
 
   ComplexWorkflowCustomResource testResource() {
     var resource = new ComplexWorkflowCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     resource.setSpec(new ComplexWorkflowSpec());
     resource.getSpec().setProjectId(TEST_RESOURCE_NAME);
 
     return resource;
   }
-
 }

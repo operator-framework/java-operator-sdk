@@ -23,13 +23,13 @@ class ControllerManager {
 
   @SuppressWarnings("rawtypes")
   private final Map<String, Controller> controllers = new HashMap<>();
+
   private boolean started = false;
   private final ExecutorServiceManager executorServiceManager;
 
   public ControllerManager(ExecutorServiceManager executorServiceManager) {
     this.executorServiceManager = executorServiceManager;
   }
-
 
   public synchronized void shouldStart() {
     if (started) {
@@ -41,27 +41,36 @@ class ControllerManager {
   }
 
   public synchronized void start(boolean startEventProcessor) {
-    executorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
-      c.start(startEventProcessor);
-      return null;
-    }, c -> "Controller Starter for: " + c.getConfiguration().getName());
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(
+        controllers().stream(),
+        c -> {
+          c.start(startEventProcessor);
+          return null;
+        },
+        c -> "Controller Starter for: " + c.getConfiguration().getName());
     started = true;
   }
 
   public synchronized void stop() {
-    executorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
-      log.debug("closing {}", c);
-      c.stop();
-      return null;
-    }, c -> "Controller Stopper for: " + c.getConfiguration().getName());
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(
+        controllers().stream(),
+        c -> {
+          log.debug("closing {}", c);
+          c.stop();
+          return null;
+        },
+        c -> "Controller Stopper for: " + c.getConfiguration().getName());
     started = false;
   }
 
   public synchronized void startEventProcessing() {
-    executorServiceManager.boundedExecuteAndWaitForAllToComplete(controllers().stream(), c -> {
-      c.startEventProcessing();
-      return null;
-    }, c -> "Event processor starter for: " + c.getConfiguration().getName());
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(
+        controllers().stream(),
+        c -> {
+          c.startEventProcessing();
+          return null;
+        },
+        c -> "Event processor starter for: " + c.getConfiguration().getName());
   }
 
   @SuppressWarnings("rawtypes")

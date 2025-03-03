@@ -33,26 +33,38 @@ class BuiltInResourceCleanerIT {
   void cleanerIsCalledOnBuiltInResource() {
     var service = operator.create(testService());
 
-    await().untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(BuiltInResourceCleanerReconciler.class)
-          .getReconcileCount()).isPositive();
-      var actualService = operator.get(Service.class, service.getMetadata().getName());
-      assertThat(actualService.getMetadata().getFinalizers()).isNotEmpty();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      operator
+                          .getReconcilerOfType(BuiltInResourceCleanerReconciler.class)
+                          .getReconcileCount())
+                  .isPositive();
+              var actualService = operator.get(Service.class, service.getMetadata().getName());
+              assertThat(actualService.getMetadata().getFinalizers()).isNotEmpty();
+            });
 
     operator.delete(service);
 
-    await().untilAsserted(() -> {
-      assertThat(operator.getReconcilerOfType(BuiltInResourceCleanerReconciler.class)
-          .getCleanCount()).isPositive();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(
+                      operator
+                          .getReconcilerOfType(BuiltInResourceCleanerReconciler.class)
+                          .getCleanCount())
+                  .isPositive();
+            });
   }
 
   Service testService() {
-    Service service = ReconcilerUtils.loadYaml(Service.class, StandaloneDependentResourceIT.class,
-        "/io/javaoperatorsdk/operator/service-template.yaml");
+    Service service =
+        ReconcilerUtils.loadYaml(
+            Service.class,
+            StandaloneDependentResourceIT.class,
+            "/io/javaoperatorsdk/operator/service-template.yaml");
     service.getMetadata().setLabels(Map.of("builtintest", "true"));
     return service;
   }
-
 }

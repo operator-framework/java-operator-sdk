@@ -20,11 +20,13 @@ class RetryMaxAttemptIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(reconciler,
-              new GenericRetry().setInitialInterval(RETRY_INTERVAL).withLinearRetry()
+          .withReconciler(
+              reconciler,
+              new GenericRetry()
+                  .setInitialInterval(RETRY_INTERVAL)
+                  .withLinearRetry()
                   .setMaxAttempts(MAX_RETRY_ATTEMPTS))
           .build();
-
 
   @Test
   void retryFailedExecution() throws InterruptedException {

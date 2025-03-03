@@ -36,10 +36,8 @@ public class ExternalResource {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     ExternalResource that = (ExternalResource) o;
     return Objects.equals(id, that.id) && Objects.equals(data, that.data);
   }
@@ -55,13 +53,16 @@ public class ExternalResource {
   }
 
   public static String toExternalResourceId(HasMetadata primary, int i) {
-    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
-        primary.getMetadata().getNamespace() +
-        EXTERNAL_RESOURCE_NAME_DELIMITER + i;
+    return primary.getMetadata().getName()
+        + EXTERNAL_RESOURCE_NAME_DELIMITER
+        + primary.getMetadata().getNamespace()
+        + EXTERNAL_RESOURCE_NAME_DELIMITER
+        + i;
   }
 
   public static String toExternalResourceId(HasMetadata primary) {
-    return primary.getMetadata().getName() + EXTERNAL_RESOURCE_NAME_DELIMITER +
-        primary.getMetadata().getNamespace();
+    return primary.getMetadata().getName()
+        + EXTERNAL_RESOURCE_NAME_DELIMITER
+        + primary.getMetadata().getNamespace();
   }
 }

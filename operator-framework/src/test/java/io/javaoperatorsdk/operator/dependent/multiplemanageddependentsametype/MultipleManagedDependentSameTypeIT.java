@@ -27,7 +27,6 @@ class MultipleManagedDependentSameTypeIT {
           .withReconciler(new MultipleManagedDependentResourceReconciler())
           .build();
 
-
   @Test
   void handlesCrudOperations() {
     operator.create(testResource());
@@ -43,35 +42,49 @@ class MultipleManagedDependentSameTypeIT {
   }
 
   private void assertConfigMapsPresent(String expectedData) {
-    await().untilAsserted(() -> {
-      var maps = operator.getKubernetesClient().configMaps()
-          .inNamespace(operator.getNamespace()).list().getItems().stream()
-          .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
-          .collect(Collectors.toList());
-      assertThat(maps).hasSize(2);
-      assertThat(maps).allMatch(cm -> cm.getData().get(DATA_KEY).equals(expectedData));
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var maps =
+                  operator
+                      .getKubernetesClient()
+                      .configMaps()
+                      .inNamespace(operator.getNamespace())
+                      .list()
+                      .getItems()
+                      .stream()
+                      .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
+                      .collect(Collectors.toList());
+              assertThat(maps).hasSize(2);
+              assertThat(maps).allMatch(cm -> cm.getData().get(DATA_KEY).equals(expectedData));
+            });
   }
 
   private void assertConfigMapsDeleted() {
-    await().atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS)).untilAsserted(() -> {
-      var maps = operator.getKubernetesClient().configMaps()
-          .inNamespace(operator.getNamespace()).list().getItems().stream()
-          .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
-          .collect(Collectors.toList());
-      assertThat(maps).hasSize(0);
-    });
+    await()
+        .atMost(Duration.ofSeconds(GARBAGE_COLLECTION_TIMEOUT_SECONDS))
+        .untilAsserted(
+            () -> {
+              var maps =
+                  operator
+                      .getKubernetesClient()
+                      .configMaps()
+                      .inNamespace(operator.getNamespace())
+                      .list()
+                      .getItems()
+                      .stream()
+                      .filter(cm -> cm.getMetadata().getName().startsWith(TEST_RESOURCE_NAME))
+                      .collect(Collectors.toList());
+              assertThat(maps).hasSize(0);
+            });
   }
 
   private MultipleManagedDependentResourceCustomResource testResource() {
     var res = new MultipleManagedDependentResourceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new MultipleManagedDependentResourceSpec());
     res.getSpec().setValue(DEFAULT_SPEC_VALUE);
     return res;
   }
-
 }

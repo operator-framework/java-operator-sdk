@@ -7,8 +7,7 @@ import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCust
 import io.javaoperatorsdk.operator.dependent.bulkdependent.CRUDConfigMapBulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-public class SampleBulkCondition
-    implements Condition<ConfigMap, BulkDependentTestCustomResource> {
+public class SampleBulkCondition implements Condition<ConfigMap, BulkDependentTestCustomResource> {
 
   // We use ConfigMaps here just to show how to check some properties of resources managed by a
   // BulkDependentResource. In real life example this would be rather based on some status of those
@@ -20,8 +19,9 @@ public class SampleBulkCondition
       BulkDependentTestCustomResource primary,
       Context<BulkDependentTestCustomResource> context) {
 
-    var resources = ((CRUDConfigMapBulkDependentResource) dependentResource)
-        .getSecondaryResources(primary, context);
+    var resources =
+        ((CRUDConfigMapBulkDependentResource) dependentResource)
+            .getSecondaryResources(primary, context);
     return resources.values().stream().noneMatch(cm -> cm.getData().isEmpty());
   }
 }

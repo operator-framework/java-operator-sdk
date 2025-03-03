@@ -21,7 +21,7 @@ public interface ManagedWorkflowAndDependentResourceContext {
    * @param expectedType the class representing the expected type of the contextual object
    * @param <T> the type of the expected contextual object
    * @return an Optional containing the contextual object or {@link Optional#empty()} if no such
-   *         object exists or doesn't match the expected type
+   *     object exists or doesn't match the expected type
    */
   <T> Optional<T> get(Object key, Class<T> expectedType);
 
@@ -30,22 +30,20 @@ public interface ManagedWorkflowAndDependentResourceContext {
    * the semantics of this operation is defined as removing the mapping associated with the
    * specified key.
    *
-   * <p>
-   * Note that, while implementations shouldn't throw a {@link ClassCastException} when the new
+   * <p>Note that, while implementations shouldn't throw a {@link ClassCastException} when the new
    * value type differs from the type of the existing value, calling sites might encounter such
    * exceptions if they bind the return value to a specific type. Users are either expected to
    * disregard the return value (most common case) or "reset" the value type associated with the
    * specified key by first calling {@code put(key, null)} if they want to ensure some level of type
    * safety in their code (where attempting to store values of different types under the same key
    * might be indicative of an issue).
-   * </p>
    *
    * @param <T> object type
    * @param key the key identifying which contextual object to add or remove from the context
    * @param value the value to add to the context or {@code null} to remove an existing entry
-   *        associated with the specified key
+   *     associated with the specified key
    * @return the previous value if one was associated with the specified key, {@code null}
-   *         otherwise.
+   *     otherwise.
    */
   <T> T put(Object key, T value);
 
@@ -67,8 +65,8 @@ public interface ManagedWorkflowAndDependentResourceContext {
   Optional<WorkflowCleanupResult> getWorkflowCleanupResult();
 
   /**
-   * Explicitly reconcile the declared workflow for the associated
-   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}
+   * Explicitly reconcile the declared workflow for the associated {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Reconciler}
    *
    * @return the result of the workflow reconciliation
    * @throws IllegalStateException if called when explicit invocation is not requested
@@ -76,14 +74,13 @@ public interface ManagedWorkflowAndDependentResourceContext {
   WorkflowReconcileResult reconcileManagedWorkflow();
 
   /**
-   * Explicitly clean-up dependent resources in the declared workflow for the associated
-   * {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}. Note that calling this method is
-   * only needed if the associated reconciler implements the
-   * {@link io.javaoperatorsdk.operator.api.reconciler.Cleaner} interface.
+   * Explicitly clean-up dependent resources in the declared workflow for the associated {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Reconciler}. Note that calling this method is only
+   * needed if the associated reconciler implements the {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Cleaner} interface.
    *
    * @return the result of the workflow reconciliation on cleanup
    * @throws IllegalStateException if called when explicit invocation is not requested
    */
   WorkflowCleanupResult cleanupManageWorkflow();
-
 }

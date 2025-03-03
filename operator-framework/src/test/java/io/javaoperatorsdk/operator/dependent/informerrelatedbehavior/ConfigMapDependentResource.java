@@ -21,16 +21,17 @@ public class ConfigMapDependentResource
   }
 
   @Override
-  protected ConfigMap desired(InformerRelatedBehaviorTestCustomResource primary,
+  protected ConfigMap desired(
+      InformerRelatedBehaviorTestCustomResource primary,
       Context<InformerRelatedBehaviorTestCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withLabels(Map.of("app", "rbac-test"))
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
+        .withMetadata(
+            new ObjectMetaBuilder()
+                .withLabels(Map.of("app", "rbac-test"))
+                .withName(primary.getMetadata().getName())
+                .withNamespace(primary.getMetadata().getNamespace())
+                .build())
         .withData(Map.of(DATA_KEY, primary.getMetadata().getName()))
         .build();
-
   }
 }

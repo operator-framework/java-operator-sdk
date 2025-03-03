@@ -18,11 +18,11 @@ public class PrimaryIndexerIT {
   public static final String RESOURCE_NAME1 = "test1";
   public static final String RESOURCE_NAME2 = "test2";
 
-  @RegisterExtension
-  LocallyRunOperatorExtension operator = buildOperator();
+  @RegisterExtension LocallyRunOperatorExtension operator = buildOperator();
 
   protected LocallyRunOperatorExtension buildOperator() {
-    return LocallyRunOperatorExtension.builder().withReconciler(new PrimaryIndexerTestReconciler())
+    return LocallyRunOperatorExtension.builder()
+        .withReconciler(new PrimaryIndexerTestReconciler())
         .build();
   }
 

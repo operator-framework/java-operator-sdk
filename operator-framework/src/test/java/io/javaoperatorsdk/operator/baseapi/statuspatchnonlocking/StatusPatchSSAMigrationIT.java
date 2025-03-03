@@ -26,9 +26,9 @@ public class StatusPatchSSAMigrationIT {
 
   @BeforeEach
   void beforeEach(TestInfo testInfo) {
-    LocallyRunOperatorExtension.applyCrd(StatusPatchLockingCustomResource.class,
-        client);
-    testInfo.getTestMethod()
+    LocallyRunOperatorExtension.applyCrd(StatusPatchLockingCustomResource.class, client);
+    testInfo
+        .getTestMethod()
         .ifPresent(method -> testNamespace = KubernetesResourceUtil.sanitizeName(method.getName()));
     client.namespaces().resource(testNamespace(testNamespace)).create();
   }
@@ -36,48 +36,57 @@ public class StatusPatchSSAMigrationIT {
   @AfterEach
   void afterEach() {
     client.namespaces().withName(testNamespace).delete();
-    await().untilAsserted(() -> {
-      var ns = client.namespaces().withName(testNamespace).get();
-      assertThat(ns).isNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var ns = client.namespaces().withName(testNamespace).get();
+              assertThat(ns).isNull();
+            });
     client.close();
   }
-
 
   @Test
   void testMigratingToSSA() {
     var operator = startOperator(false);
     var testResource = client.resource(testResource()).create();
 
-    await().untilAsserted(() -> {
-      var res = client.resource(testResource).get();
-      assertThat(res.getStatus()).isNotNull();
-      assertThat(res.getStatus().getMessage()).isEqualTo(StatusPatchLockingReconciler.MESSAGE);
-      assertThat(res.getStatus().getValue()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var res = client.resource(testResource).get();
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getMessage())
+                  .isEqualTo(StatusPatchLockingReconciler.MESSAGE);
+              assertThat(res.getStatus().getValue()).isEqualTo(1);
+            });
     operator.stop();
 
     // start operator with SSA
     operator = startOperator(true);
-    await().untilAsserted(() -> {
-      var res = client.resource(testResource).get();
-      assertThat(res.getStatus()).isNotNull();
-      assertThat(res.getStatus().getMessage()).isEqualTo(StatusPatchLockingReconciler.MESSAGE);
-      assertThat(res.getStatus().getValue()).isEqualTo(2);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var res = client.resource(testResource).get();
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getMessage())
+                  .isEqualTo(StatusPatchLockingReconciler.MESSAGE);
+              assertThat(res.getStatus().getValue()).isEqualTo(2);
+            });
 
     var actualResource = client.resource(testResource()).get();
     actualResource.getSpec().setMessageInStatus(false);
     client.resource(actualResource).update();
 
-    await().untilAsserted(() -> {
-      var res = client.resource(testResource).get();
-      assertThat(res.getStatus()).isNotNull();
-      // !!! This is wrong, the message should be null,
-      // see issue in Kubernetes: https://github.com/kubernetes/kubernetes/issues/99003
-      assertThat(res.getStatus().getMessage()).isNotNull();
-      assertThat(res.getStatus().getValue()).isEqualTo(3);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var res = client.resource(testResource).get();
+              assertThat(res.getStatus()).isNotNull();
+              // !!! This is wrong, the message should be null,
+              // see issue in Kubernetes: https://github.com/kubernetes/kubernetes/issues/99003
+              assertThat(res.getStatus().getMessage()).isNotNull();
+              assertThat(res.getStatus().getValue()).isEqualTo(3);
+            });
 
     client.resource(testResource()).delete();
     operator.stop();
@@ -88,48 +97,60 @@ public class StatusPatchSSAMigrationIT {
     var operator = startOperator(false);
     var testResource = client.resource(testResource()).create();
 
-    await().untilAsserted(() -> {
-      var res = client.resource(testResource).get();
-      assertThat(res.getStatus()).isNotNull();
-      assertThat(res.getStatus().getMessage()).isEqualTo(StatusPatchLockingReconciler.MESSAGE);
-      assertThat(res.getStatus().getValue()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var res = client.resource(testResource).get();
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getMessage())
+                  .isEqualTo(StatusPatchLockingReconciler.MESSAGE);
+              assertThat(res.getStatus().getValue()).isEqualTo(1);
+            });
     operator.stop();
 
     // start operator with SSA
     operator = startOperator(true);
-    await().untilAsserted(() -> {
-      var res = client.resource(testResource).get();
-      assertThat(res.getStatus()).isNotNull();
-      assertThat(res.getStatus().getMessage()).isEqualTo(StatusPatchLockingReconciler.MESSAGE);
-      assertThat(res.getStatus().getValue()).isEqualTo(2);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var res = client.resource(testResource).get();
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getMessage())
+                  .isEqualTo(StatusPatchLockingReconciler.MESSAGE);
+              assertThat(res.getStatus().getValue()).isEqualTo(2);
+            });
 
     var actualResource = client.resource(testResource()).get();
     actualResource.getSpec().setMessageInStatus(false);
     // removing the managed field entry for former method works
-    actualResource.getMetadata().setManagedFields(actualResource.getMetadata().getManagedFields()
-        .stream().filter(r -> !r.getOperation().equals("Update") && r.getSubresource() != null)
-        .toList());
+    actualResource
+        .getMetadata()
+        .setManagedFields(
+            actualResource.getMetadata().getManagedFields().stream()
+                .filter(r -> !r.getOperation().equals("Update") && r.getSubresource() != null)
+                .toList());
     client.resource(actualResource).update();
 
-    await().untilAsserted(() -> {
-      var res = client.resource(testResource).get();
-      assertThat(res.getStatus()).isNotNull();
-      assertThat(res.getStatus().getMessage()).isNull();
-      assertThat(res.getStatus().getValue()).isEqualTo(3);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var res = client.resource(testResource).get();
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getMessage()).isNull();
+              assertThat(res.getStatus().getValue()).isEqualTo(3);
+            });
 
     client.resource(testResource()).delete();
     operator.stop();
   }
 
-
   private Operator startOperator(boolean patchStatusWithSSA) {
-    var operator = new Operator(o -> o.withCloseClientOnStop(false)
-        .withUseSSAToPatchPrimaryResource(patchStatusWithSSA));
-    operator.register(new StatusPatchLockingReconciler(),
-        o -> o.settingNamespaces(testNamespace));
+    var operator =
+        new Operator(
+            o ->
+                o.withCloseClientOnStop(false)
+                    .withUseSSAToPatchPrimaryResource(patchStatusWithSSA));
+    operator.register(new StatusPatchLockingReconciler(), o -> o.settingNamespaces(testNamespace));
 
     operator.start();
     return operator;
@@ -138,16 +159,14 @@ public class StatusPatchSSAMigrationIT {
   StatusPatchLockingCustomResource testResource() {
     StatusPatchLockingCustomResource res = new StatusPatchLockingCustomResource();
     res.setSpec(new StatusPatchLockingCustomResourceSpec());
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .withNamespace(testNamespace)
-        .build());
+    res.setMetadata(
+        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(testNamespace).build());
     return res;
   }
 
   private Namespace testNamespace(String name) {
-    return new NamespaceBuilder().withMetadata(new ObjectMetaBuilder()
-        .withName(name)
-        .build()).build();
+    return new NamespaceBuilder()
+        .withMetadata(new ObjectMetaBuilder().withName(name).build())
+        .build();
   }
 }

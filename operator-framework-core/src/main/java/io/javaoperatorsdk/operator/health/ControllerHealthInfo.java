@@ -27,25 +27,27 @@ public class ControllerHealthInfo {
         .collect(Collectors.toMap(EventSource::name, e -> e));
   }
 
-  public Map<String, InformerWrappingEventSourceHealthIndicator> informerEventSourceHealthIndicators() {
+  public Map<String, InformerWrappingEventSourceHealthIndicator>
+      informerEventSourceHealthIndicators() {
     return eventSourceManager.allEventSources().stream()
         .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(Collectors.toMap(EventSource::name,
-            e -> (InformerWrappingEventSourceHealthIndicator) e));
-
+        .collect(
+            Collectors.toMap(
+                EventSource::name, e -> (InformerWrappingEventSourceHealthIndicator) e));
   }
 
   /**
-   * @return Map with event sources that wraps an informer. Thus, either a
-   *         {@link ControllerEventSource} or an
-   *         {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
+   * @return Map with event sources that wraps an informer. Thus, either a {@link
+   *     ControllerEventSource} or an {@link
+   *     io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}.
    */
-  public Map<String, InformerWrappingEventSourceHealthIndicator> unhealthyInformerEventSourceHealthIndicators() {
+  public Map<String, InformerWrappingEventSourceHealthIndicator>
+      unhealthyInformerEventSourceHealthIndicators() {
     return eventSourceManager.allEventSources().stream()
         .filter(e -> e.getStatus() == Status.UNHEALTHY)
         .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(Collectors.toMap(EventSource::name,
-            e -> (InformerWrappingEventSourceHealthIndicator) e));
+        .collect(
+            Collectors.toMap(
+                EventSource::name, e -> (InformerWrappingEventSourceHealthIndicator) e));
   }
-
 }

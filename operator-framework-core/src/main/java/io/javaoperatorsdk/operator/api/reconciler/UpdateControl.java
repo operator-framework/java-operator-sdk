@@ -11,8 +11,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   private final boolean patchResource;
   private final boolean patchStatus;
 
-  private UpdateControl(
-      P resource, boolean patchResource, boolean patchStatus) {
+  private UpdateControl(P resource, boolean patchResource, boolean patchStatus) {
     if ((patchResource || patchStatus) && resource == null) {
       throw new IllegalArgumentException("CustomResource cannot be null in case of update");
     }
@@ -24,12 +23,11 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   /**
    * Preferred way to update the status. It does not do optimistic locking. Uses JSON Patch to patch
    * the resource.
-   * <p>
-   * Note that this does not work, if the {@link CustomResource#initStatus()} is implemented, since
-   * it breaks the diffing process. Don't implement it if using this method.
-   * </p>
-   * There is also an issue with setting value to {@code null} with older Kubernetes versions (1.19
-   * and below). See: <a href=
+   *
+   * <p>Note that this does not work, if the {@link CustomResource#initStatus()} is implemented,
+   * since it breaks the diffing process. Don't implement it if using this method. There is also an
+   * issue with setting value to {@code null} with older Kubernetes versions (1.19 and below). See:
+   * <a href=
    * "https://github.com/fabric8io/kubernetes-client/issues/4158">https://github.com/fabric8io/kubernetes-client/issues/4158</a>
    *
    * @param <T> resource type
@@ -76,5 +74,4 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   public boolean isPatchResourceAndStatus() {
     return patchResource && patchStatus;
   }
-
 }

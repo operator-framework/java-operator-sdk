@@ -9,7 +9,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("clu")
-public class Cluster
-    extends CustomResource<Void, Void>
-    implements Namespaced {
-}
+public class Cluster extends CustomResource<Void, Void> implements Namespaced {}

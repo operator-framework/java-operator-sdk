@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * An abstract implementation of {@link DependentResource} to be used as base for custom
  * implementations, providing, in particular, the core {@link #reconcile(HasMetadata, Context)}
  * logic for dependents
- * 
+ *
  * @param <R> the dependent resource type
  * @param <P> the associated primary resource type
  */
@@ -46,9 +46,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     creator = creatable ? (Creator<R, P>) this : null;
     updater = updatable ? (Updater<R, P>) this : null;
 
-    dependentResourceReconciler = this instanceof BulkDependentResource
-        ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
-        : new SingleDependentResourceReconciler<>(this);
+    dependentResourceReconciler =
+        this instanceof BulkDependentResource
+            ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
+            : new SingleDependentResourceReconciler<>(this);
     this.name = name == null ? DependentResource.defaultNameFor(this.getClass()) : name;
   }
 
@@ -85,13 +86,15 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
             return ReconcileResult.resourceUpdated(updatedResource);
           } else {
-            log.debug("Update skipped for dependent {} as it matched the existing one",
+            log.debug(
+                "Update skipped for dependent {} as it matched the existing one",
                 actualResource instanceof HasMetadata
                     ? ResourceID.fromResource((HasMetadata) actualResource)
                     : getClass().getSimpleName());
           }
         } else {
-          log.debug("Update skipped for dependent {} implement Updater interface to modify it",
+          log.debug(
+              "Update skipped for dependent {} implement Updater interface to modify it",
               actualResource instanceof HasMetadata
                   ? ResourceID.fromResource((HasMetadata) actualResource)
                   : getClass().getSimpleName());
@@ -116,7 +119,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     } else {
       return selectTargetSecondaryResource(secondaryResources, primary, context);
     }
-
   }
 
   /**
@@ -130,10 +132,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @param context the context in which this method is called
    * @return the matching secondary resource or {@link Optional#empty()} if none matches
    * @throws IllegalStateException if more than one candidate is found, in which case some other
-   *         mechanism might be necessary to distinguish between candidate secondary resources
+   *     mechanism might be necessary to distinguish between candidate secondary resources
    */
-  protected Optional<R> selectTargetSecondaryResource(Set<R> secondaryResources, P primary,
-      Context<P> context) {
+  protected Optional<R> selectTargetSecondaryResource(
+      Set<R> secondaryResources, P primary, Context<P> context) {
     R desired = desired(primary, context);
     var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
     if (targetResources.size() > 1) {
@@ -151,10 +153,13 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   private void logForOperation(String operation, P primary, R desired) {
-    final var desiredDesc = desired instanceof HasMetadata
-        ? "'" + ((HasMetadata) desired).getMetadata().getName() + "' "
-            + ((HasMetadata) desired).getKind()
-        : desired.getClass().getSimpleName();
+    final var desiredDesc =
+        desired instanceof HasMetadata
+            ? "'"
+                + ((HasMetadata) desired).getMetadata().getName()
+                + "' "
+                + ((HasMetadata) desired).getKind()
+            : desired.getClass().getSimpleName();
     log.debug("{} {} for primary {}", operation, desiredDesc, ResourceID.fromResource(primary));
   }
 
@@ -170,7 +175,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * needed.
    *
    * @param primary the {@link ResourceID} of the primary resource associated with the newly created
-   *        resource
+   *     resource
    * @param created the newly created resource
    * @param context the context in which this operation is called
    */
@@ -180,7 +185,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * Allows subclasses to perform additional processing on the updated resource if needed.
    *
    * @param primary the {@link ResourceID} of the primary resource associated with the newly updated
-   *        resource
+   *     resource
    * @param updated the updated resource
    * @param actual the resource as it was before the update
    * @param context the context in which this operation is called
@@ -196,7 +201,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   protected R desired(P primary, Context<P> context) {
     throw new IllegalStateException(
-        "desired method must be implemented if this DependentResource can be created and/or updated");
+        "desired method must be implemented if this DependentResource can be created and/or"
+            + " updated");
   }
 
   public void delete(P primary, Context<P> context) {

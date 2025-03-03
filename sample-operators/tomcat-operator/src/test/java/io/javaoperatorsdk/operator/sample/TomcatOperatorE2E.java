@@ -26,13 +26,13 @@ import static org.hamcrest.Matchers.notNullValue;
 
 class TomcatOperatorE2E {
 
-  final static Logger log = LoggerFactory.getLogger(TomcatOperatorE2E.class);
+  static final Logger log = LoggerFactory.getLogger(TomcatOperatorE2E.class);
 
-  final static KubernetesClient client = new DefaultKubernetesClient();
+  static final KubernetesClient client = new DefaultKubernetesClient();
 
   public TomcatOperatorE2E() throws FileNotFoundException {}
 
-  final static int tomcatReplicas = 2;
+  static final int tomcatReplicas = 2;
 
   boolean isLocal() {
     String deployment = System.getProperty("test.deployment");
@@ -42,23 +42,25 @@ class TomcatOperatorE2E {
   }
 
   @RegisterExtension
-  AbstractOperatorExtension operator = isLocal() ? LocallyRunOperatorExtension.builder()
-      .waitForNamespaceDeletion(false)
-      .withReconciler(new TomcatReconciler())
-      .withReconciler(new WebappReconciler(client))
-      .build()
-      : ClusterDeployedOperatorExtension.builder()
-          .waitForNamespaceDeletion(false)
-          .withOperatorDeployment(
-              client.load(new FileInputStream("k8s/operator.yaml")).items())
-          .build();
+  AbstractOperatorExtension operator =
+      isLocal()
+          ? LocallyRunOperatorExtension.builder()
+              .waitForNamespaceDeletion(false)
+              .withReconciler(new TomcatReconciler())
+              .withReconciler(new WebappReconciler(client))
+              .build()
+          : ClusterDeployedOperatorExtension.builder()
+              .waitForNamespaceDeletion(false)
+              .withOperatorDeployment(client.load(new FileInputStream("k8s/operator.yaml")).items())
+              .build();
 
   Tomcat getTomcat() {
     Tomcat tomcat = new Tomcat();
-    tomcat.setMetadata(new ObjectMetaBuilder()
-        .withName("test-tomcat1")
-        .withNamespace(operator.getNamespace())
-        .build());
+    tomcat.setMetadata(
+        new ObjectMetaBuilder()
+            .withName("test-tomcat1")
+            .withNamespace(operator.getNamespace())
+            .build());
     tomcat.setSpec(new TomcatSpec());
     tomcat.getSpec().setReplicas(tomcatReplicas);
     tomcat.getSpec().setVersion(9);
@@ -67,10 +69,11 @@ class TomcatOperatorE2E {
 
   Webapp getWebapp() {
     Webapp webapp1 = new Webapp();
-    webapp1.setMetadata(new ObjectMetaBuilder()
-        .withName("test-webapp1")
-        .withNamespace(operator.getNamespace())
-        .build());
+    webapp1.setMetadata(
+        new ObjectMetaBuilder()
+            .withName("test-webapp1")
+            .withNamespace(operator.getNamespace())
+            .build());
     webapp1.setSpec(new WebappSpec());
     webapp1.getSpec().setContextPath("webapp1");
     webapp1.getSpec().setTomcat(getTomcat().getMetadata().getName());
@@ -91,37 +94,46 @@ class TomcatOperatorE2E {
     webappClient.inNamespace(operator.getNamespace()).resource(webapp1).create();
 
     log.info("Waiting 5 minutes for Tomcat and Webapp CR statuses to be updated");
-    await().atMost(5, MINUTES).untilAsserted(() -> {
-      Tomcat updatedTomcat =
-          tomcatClient.inNamespace(operator.getNamespace()).withName(tomcat.getMetadata().getName())
-              .get();
-      Webapp updatedWebapp =
-          webappClient.inNamespace(operator.getNamespace())
-              .withName(webapp1.getMetadata().getName()).get();
-      assertThat(updatedTomcat.getStatus(), is(notNullValue()));
-      assertThat(updatedTomcat.getStatus().getReadyReplicas(), equalTo(tomcatReplicas));
-      assertThat(updatedWebapp.getStatus(), is(notNullValue()));
-      assertThat(updatedWebapp.getStatus().getDeployedArtifact(), is(notNullValue()));
-    });
+    await()
+        .atMost(5, MINUTES)
+        .untilAsserted(
+            () -> {
+              Tomcat updatedTomcat =
+                  tomcatClient
+                      .inNamespace(operator.getNamespace())
+                      .withName(tomcat.getMetadata().getName())
+                      .get();
+              Webapp updatedWebapp =
+                  webappClient
+                      .inNamespace(operator.getNamespace())
+                      .withName(webapp1.getMetadata().getName())
+                      .get();
+              assertThat(updatedTomcat.getStatus(), is(notNullValue()));
+              assertThat(updatedTomcat.getStatus().getReadyReplicas(), equalTo(tomcatReplicas));
+              assertThat(updatedWebapp.getStatus(), is(notNullValue()));
+              assertThat(updatedWebapp.getStatus().getDeployedArtifact(), is(notNullValue()));
+            });
 
     String url =
         "http://" + tomcat.getMetadata().getName() + "/" + webapp1.getSpec().getContextPath() + "/";
     var inClusterCurl = new InClusterCurl(client, operator.getNamespace());
     log.info("Starting curl Pod and waiting 5 minutes for GET of {} to return 200", url);
 
-    await("wait-for-webapp").atMost(6, MINUTES).untilAsserted(() -> {
-      try {
-        var curlOutput = inClusterCurl.checkUrl(url);
-        assertThat(curlOutput, equalTo("200"));
-      } catch (KubernetesClientException ex) {
-        throw new AssertionError(ex);
-      }
-    });
+    await("wait-for-webapp")
+        .atMost(6, MINUTES)
+        .untilAsserted(
+            () -> {
+              try {
+                var curlOutput = inClusterCurl.checkUrl(url);
+                assertThat(curlOutput, equalTo("200"));
+              } catch (KubernetesClientException ex) {
+                throw new AssertionError(ex);
+              }
+            });
 
     log.info("Deleting test Tomcat object: {}", tomcat);
     tomcatClient.inNamespace(operator.getNamespace()).resource(tomcat).delete();
     log.info("Deleting test Webapp object: {}", webapp1);
     webappClient.inNamespace(operator.getNamespace()).resource(webapp1).delete();
   }
-
 }

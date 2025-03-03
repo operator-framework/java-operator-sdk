@@ -8,8 +8,11 @@ import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCust
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestStatus;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.CRUDConfigMapBulkDependentResource;
 
-@Workflow(dependents = @Dependent(readyPostcondition = SampleBulkCondition.class,
-    type = CRUDConfigMapBulkDependentResource.class))
+@Workflow(
+    dependents =
+        @Dependent(
+            readyPostcondition = SampleBulkCondition.class,
+            type = CRUDConfigMapBulkDependentResource.class))
 @ControllerConfiguration()
 public class ManagedBulkDependentWithReadyConditionReconciler
     implements Reconciler<BulkDependentTestCustomResource> {
@@ -18,14 +21,16 @@ public class ManagedBulkDependentWithReadyConditionReconciler
 
   @Override
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
-      BulkDependentTestCustomResource resource,
-      Context<BulkDependentTestCustomResource> context) throws Exception {
+      BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context)
+      throws Exception {
     numberOfExecutions.incrementAndGet();
 
-    var ready = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
-        .orElseThrow()
-        .allDependentResourcesReady();
-
+    var ready =
+        context
+            .managedWorkflowAndDependentResourceContext()
+            .getWorkflowReconcileResult()
+            .orElseThrow()
+            .allDependentResourcesReady();
 
     resource.setStatus(new BulkDependentTestStatus());
     resource.getStatus().setReady(ready);

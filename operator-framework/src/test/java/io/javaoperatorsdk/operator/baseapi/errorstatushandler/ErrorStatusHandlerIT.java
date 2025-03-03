@@ -20,14 +20,13 @@ class ErrorStatusHandlerIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(reconciler,
-              new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
+          .withReconciler(
+              reconciler, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())
           .build();
 
   @Test
   void testErrorMessageSetEventually() {
-    ErrorStatusHandlerTestCustomResource resource =
-        operator.create(createCustomResource());
+    ErrorStatusHandlerTestCustomResource resource = operator.create(createCustomResource());
 
     await()
         .atMost(10, TimeUnit.SECONDS)
@@ -35,8 +34,8 @@ class ErrorStatusHandlerIT {
         .untilAsserted(
             () -> {
               ErrorStatusHandlerTestCustomResource res =
-                  operator.get(ErrorStatusHandlerTestCustomResource.class,
-                      resource.getMetadata().getName());
+                  operator.get(
+                      ErrorStatusHandlerTestCustomResource.class, resource.getMetadata().getName());
               assertThat(res.getStatus()).isNotNull();
               for (int i = 0; i < MAX_RETRY_ATTEMPTS + 1; i++) {
                 assertThat(res.getStatus().getMessages())
@@ -54,5 +53,4 @@ class ErrorStatusHandlerIT {
             .build());
     return resource;
   }
-
 }

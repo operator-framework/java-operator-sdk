@@ -62,10 +62,10 @@ The SDK modules and samples are formatted to follow the Java Google code style.
 On every `compile` the code gets formatted automatically, 
 however, to make things simpler (i.e. avoid getting a PR rejected simply because of code style issues), you can import one of the following code style schemes based on the IDE you use:
 
-- for *IntelliJ IDEA*:
-    - Install the [Eclipse Code Formatter plugin](https://github.com/krasa/EclipseCodeFormatter#instructions)
-    - Use [contributing/eclipse-google-style.xml](contributing/eclipse-google-style.xml) for the Eclipse formatter config file
-- for *Eclipse* import [contributing/eclipse-google-style.xml](contributing/eclipse-google-style.xml)
+- for *Intellij IDEA*
+  install [google-java-format](https://plugins.jetbrains.com/plugin/8527-google-java-format) plugin
+- for *Eclipse*
+  follow [these intructions](https://github.com/google/google-java-format?tab=readme-ov-file#eclipse)
 
 ## Thanks
 

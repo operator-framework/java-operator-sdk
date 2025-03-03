@@ -11,7 +11,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("CleanerForReconcilerCustomResource")
 @ShortNames("cfr")
-public class CleanerForManagedDependentCustomResource
-    extends CustomResource<Void, String>
-    implements Namespaced {
-}
+public class CleanerForManagedDependentCustomResource extends CustomResource<Void, String>
+    implements Namespaced {}

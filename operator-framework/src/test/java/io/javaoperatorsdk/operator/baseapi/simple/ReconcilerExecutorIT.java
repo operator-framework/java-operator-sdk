@@ -63,9 +63,12 @@ class ReconcilerExecutorIT {
     awaitStatusUpdated();
     operator.delete(resource);
 
-    await().atMost(Duration.ofSeconds(1))
-        .until(() -> ((TestReconciler) operator.getFirstReconciler())
-            .getNumberOfCleanupExecutions() == 1);
+    await()
+        .atMost(Duration.ofSeconds(1))
+        .until(
+            () ->
+                ((TestReconciler) operator.getFirstReconciler()).getNumberOfCleanupExecutions()
+                    == 1);
   }
 
   void awaitResourcesCreatedOrUpdated() {
@@ -73,8 +76,7 @@ class ReconcilerExecutorIT {
         .atMost(5, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              ConfigMap configMap =
-                  operator.get(ConfigMap.class, "test-config-map");
+              ConfigMap configMap = operator.get(ConfigMap.class, "test-config-map");
               assertThat(configMap).isNotNull();
               assertThat(configMap.getData().get("test-key")).isEqualTo("test-value");
             });
@@ -90,8 +92,7 @@ class ReconcilerExecutorIT {
         .untilAsserted(
             () -> {
               TestCustomResource cr =
-                  operator.get(TestCustomResource.class,
-                      TestUtils.TEST_CUSTOM_RESOURCE_NAME);
+                  operator.get(TestCustomResource.class, TestUtils.TEST_CUSTOM_RESOURCE_NAME);
               assertThat(cr).isNotNull();
               assertThat(cr.getStatus()).isNotNull();
               assertThat(cr.getStatus().getConfigMapStatus()).isEqualTo("ConfigMap Ready");
