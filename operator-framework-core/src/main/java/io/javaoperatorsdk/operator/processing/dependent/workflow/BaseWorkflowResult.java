@@ -71,11 +71,15 @@ class BaseWorkflowResult implements WorkflowResult {
     }
   }
 
-  protected List<DependentResource> listFilteredBy(Function<Detail, Boolean> filter) {
+  public List<DependentResource> listFilteredBy(Function<Detail, Boolean> filter) {
     return results.entrySet().stream()
         .filter(e -> filter.apply(e.getValue()))
         .map(Map.Entry::getKey)
         .toList();
+  }
+
+  public Map<DependentResource, Detail<?>> getResults() {
+    return results;
   }
 
   @Override
