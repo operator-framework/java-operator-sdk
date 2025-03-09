@@ -27,14 +27,24 @@ public class KubernetesResourceDeletedCondition implements Condition<HasMetadata
       Context<HasMetadata> context) {
     var optionalResource = dependentResource.getSecondaryResource(primary, context);
     if (optionalResource.isEmpty()) {
-      logger.debug(
-          "Resource not found in cache, considering it deleted. "
-              + "Dependent resource name: {}, primary resource name: {}",
-          dependentResource.name(),
-          primary.getMetadata().getName());
+      if (logger.isDebugEnabled()) {
+        logger.debug(
+            "Resource not found in cache, considering it deleted. "
+                + "Dependent resource name: {}, primary resource name: {}",
+            dependentResource.name(),
+            primary.getMetadata().getName());
+      }
       return true;
     } else {
-      return optionalResource.orElseThrow().getMetadata().getFinalizers().isEmpty();
+      var finalizers = optionalResource.orElseThrow().getMetadata().getFinalizers();
+      if (logger.isDebugEnabled()) {
+        logger.debug(
+            "finalizers: {}, dependent resource name: {}, primary resource name: {}\"",
+            finalizers,
+            dependentResource.name(),
+            primary.getMetadata().getName());
+      }
+      return finalizers.isEmpty();
     }
   }
 }
