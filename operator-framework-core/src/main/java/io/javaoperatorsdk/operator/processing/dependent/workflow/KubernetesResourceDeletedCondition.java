@@ -1,5 +1,8 @@
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -14,6 +17,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
  */
 public class KubernetesResourceDeletedCondition implements Condition<HasMetadata, HasMetadata> {
 
+  private static final Logger logger =
+      LoggerFactory.getLogger(KubernetesResourceDeletedCondition.class);
+
   @Override
   public boolean isMet(
       DependentResource<HasMetadata, HasMetadata> dependentResource,
@@ -21,6 +27,11 @@ public class KubernetesResourceDeletedCondition implements Condition<HasMetadata
       Context<HasMetadata> context) {
     var optionalResource = dependentResource.getSecondaryResource(primary, context);
     if (optionalResource.isEmpty()) {
+      logger.debug(
+          "Resource not found in cache, considering it deleted. "
+              + "Dependent resource name: {}, primary resource name: {}",
+          dependentResource.name(),
+          primary.getMetadata().getName());
       return true;
     } else {
       return optionalResource.orElseThrow().getMetadata().getFinalizers().isEmpty();
