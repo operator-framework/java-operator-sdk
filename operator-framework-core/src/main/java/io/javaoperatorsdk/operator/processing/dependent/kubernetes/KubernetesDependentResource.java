@@ -170,6 +170,12 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected void handleDelete(P primary, R secondary, Context<P> context) {
     if (secondary != null) {
       context.getClient().resource(secondary).delete();
+    } else {
+      log.debug(
+          "No secondary resource found for deletion. Dependent resource name: {}. Primary resource:"
+              + " {}.",
+          name(),
+          primary.getMetadata().getName());
     }
   }
 
