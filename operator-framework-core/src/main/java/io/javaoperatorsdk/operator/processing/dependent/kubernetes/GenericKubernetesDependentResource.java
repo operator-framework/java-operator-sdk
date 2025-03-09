@@ -15,8 +15,17 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     this(GroupVersionKindPlural.from(groupVersionKind));
   }
 
+  public GenericKubernetesDependentResource(GroupVersionKind groupVersionKind, String name) {
+    this(GroupVersionKindPlural.from(groupVersionKind), name);
+  }
+
   public GenericKubernetesDependentResource(GroupVersionKindPlural groupVersionKind) {
-    super(GenericKubernetesResource.class);
+    super(GenericKubernetesResource.class, null);
+    this.groupVersionKind = groupVersionKind;
+  }
+
+  public GenericKubernetesDependentResource(GroupVersionKindPlural groupVersionKind, String name) {
+    super(GenericKubernetesResource.class, name);
     this.groupVersionKind = groupVersionKind;
   }
 
