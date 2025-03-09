@@ -20,6 +20,7 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     this.groupVersionKind = groupVersionKind;
   }
 
+  @Override
   protected InformerEventSourceConfiguration.Builder<GenericKubernetesResource>
       informerConfigurationBuilder(EventSourceContext<P> context) {
     return InformerEventSourceConfiguration.from(
