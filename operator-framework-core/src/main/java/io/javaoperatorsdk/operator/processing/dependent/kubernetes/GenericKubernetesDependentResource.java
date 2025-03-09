@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 public class GenericKubernetesDependentResource<P extends HasMetadata>
     extends KubernetesDependentResource<GenericKubernetesResource, P> {
 
-  private final GroupVersionKindPlural groupVersionKind;
+  private final GroupVersionKind groupVersionKind;
 
   public GenericKubernetesDependentResource(GroupVersionKind groupVersionKind) {
     this(GroupVersionKindPlural.from(groupVersionKind));
@@ -27,7 +27,7 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
   }
 
   @SuppressWarnings("unused")
-  public GroupVersionKindPlural getGroupVersionKind() {
+  public GroupVersionKind getGroupVersionKind() {
     return groupVersionKind;
   }
 }
