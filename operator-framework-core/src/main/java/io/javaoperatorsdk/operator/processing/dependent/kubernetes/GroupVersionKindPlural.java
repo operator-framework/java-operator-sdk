@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.Pluralize;
@@ -33,6 +34,24 @@ public class GroupVersionKindPlural extends GroupVersionKind {
             : (gvk instanceof GroupVersionKindPlural
                 ? ((GroupVersionKindPlural) gvk).plural
                 : null));
+  }
+
+  @Override
+  protected boolean specificEquals(GroupVersionKind that) {
+    if (plural == null) {
+      return true;
+    }
+    return that instanceof GroupVersionKindPlural gvkp && gvkp.plural.equals(plural);
+  }
+
+  @Override
+  public int hashCode() {
+    return plural != null ? Objects.hash(super.hashCode(), plural) : super.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return toGVKString() + (plural != null ? " (plural: " + plural + ")" : "");
   }
 
   /**

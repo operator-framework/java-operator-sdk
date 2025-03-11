@@ -101,9 +101,15 @@ public class GroupVersionKind {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    GroupVersionKind that = (GroupVersionKind) o;
-    return Objects.equals(apiVersion, that.apiVersion) && Objects.equals(kind, that.kind);
+    if (!(o instanceof GroupVersionKind that)) return false;
+    return Objects.equals(apiVersion, that.apiVersion)
+        && Objects.equals(kind, that.kind)
+        && specificEquals(that)
+        && that.specificEquals(this);
+  }
+
+  protected boolean specificEquals(GroupVersionKind that) {
+    return true;
   }
 
   @Override
@@ -113,13 +119,6 @@ public class GroupVersionKind {
 
   @Override
   public String toString() {
-    return "GroupVersionKind{"
-        + "apiVersion='"
-        + apiVersion
-        + '\''
-        + ", kind='"
-        + kind
-        + '\''
-        + '}';
+    return toGVKString();
   }
 }
