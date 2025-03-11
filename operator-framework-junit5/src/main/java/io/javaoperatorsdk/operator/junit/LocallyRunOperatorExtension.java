@@ -42,7 +42,7 @@ import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOver
 public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LocallyRunOperatorExtension.class);
-  private static final int CRD_DELETE_TIMEOUT = 1000;
+  private static final int CRD_DELETE_TIMEOUT = 5000;
   private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
   private static final boolean deleteCRDs =
       Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
@@ -343,7 +343,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
       LOGGER.debug("Deleted CRD with path: {}", appliedCRD.path);
     } catch (Exception ex) {
-      throw new IllegalStateException("Cannot delete CRD yaml: " + appliedCRD.path, ex);
+      LOGGER.warn(
+          "Cannot delete CRD yaml: {}. You might need to delete it manually.", appliedCRD.path, ex);
     }
   }
 
