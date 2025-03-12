@@ -30,6 +30,31 @@ class MappersTest {
   }
 
   @Test
+  void secondaryToPrimaryMapperFromOwnerReferenceWhereGroupIdIsEmpty() {
+    var primary =
+        new ConfigMapBuilder()
+            .withNewMetadata()
+            .withName("test")
+            .withNamespace("default")
+            .endMetadata()
+            .build();
+    primary.getMetadata().setUid(UUID.randomUUID().toString());
+    var secondary =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("test1")
+                    .withNamespace(primary.getMetadata().getNamespace())
+                    .build())
+            .build();
+    secondary.addOwnerReference(primary);
+
+    var res = Mappers.fromOwnerReferences(ConfigMap.class).toPrimaryResourceIDs(secondary);
+
+    assertThat(res).contains(ResourceID.fromResource(primary));
+  }
+
+  @Test
   void secondaryToPrimaryMapperFromOwnerReferenceFiltersByType() {
     var primary = TestUtils.testCustomResource();
     primary.getMetadata().setUid(UUID.randomUUID().toString());
