@@ -61,19 +61,31 @@ class GroupVersionKindTest {
   @Test
   void pluralShouldBeEmptyIfNotProvided() {
     final var kind = "MyKind";
-    var gvk =
-        GroupVersionKindPlural.gvkWithPlural(new GroupVersionKind("josdk.io", "v1", kind), null);
+    final var original = new GroupVersionKind("josdk.io", "v1", kind);
+    var gvk = GroupVersionKindPlural.gvkWithPlural(original, null);
     assertThat(gvk.getPlural()).isEmpty();
     assertThat(gvk.getPluralOrDefault())
         .isEqualTo(GroupVersionKindPlural.getDefaultPluralFor(kind));
+    assertThat(gvk).isEqualTo(original);
+    assertThat(original).isEqualTo(gvk);
+    assertThat(gvk.hashCode()).isEqualTo(original.hashCode());
   }
 
   @Test
   void pluralShouldOverrideDefaultComputedVersionIfProvided() {
-    var gvk =
-        GroupVersionKindPlural.gvkWithPlural(
-            new GroupVersionKind("josdk.io", "v1", "MyKind"), "MyPlural");
+    final var original = new GroupVersionKind("josdk.io", "v1", "MyKind");
+    final var gvk = GroupVersionKindPlural.gvkWithPlural(original, "MyPlural");
     assertThat(gvk.getPlural()).hasValue("MyPlural");
+    assertThat(gvk).isNotEqualTo(original);
+    assertThat(original).isNotEqualTo(gvk);
+    assertThat(gvk.hashCode()).isNotEqualTo(original.hashCode());
+  }
+
+  @Test
+  void equals() {
+    final var original = new GroupVersionKind("josdk.io", "v1", "MyKind");
+    assertEquals(original, original);
+    assertFalse(original.equals(null));
   }
 
   @Test
