@@ -92,17 +92,35 @@ which do this, usually cache the updated status in memory to make sure it is pre
 
 Dependent Resources feature supports the [first approach](../dependent-resources/_index.md#external-state-tracking-dependent-resources).
     
-### How can I skip the reconciliation of a single dependent resource?
+### How can I skip the reconciliation of a dependent resource?
 
 Since v5 the reconciliation of the whole workflow can be skipped with explicit invocation feature. 
-But what if you want to skip a reconciliation of a single dependent resource. A common mistake is
-to use `ReconcilePrecondition`, note that if the condition does not hold it will delete the resources.
-This is by design (although it's true that the name of this condition might be misleading).
+You can read more about this in [v5 release notes](https://javaoperatorsdk.io/blog/2025/01/06/version-5-released/#explicit-workflow-invocation).
 
-It's a rule of thumb that you might want to just simply reconcile all you resources and if there 
-are changes apply them. However, this might not be simple in all the cases, 
+However, what if you want to skip a reconciliation of a single dependent resource based on some state?
+Remember if the desired state and the actual state matches, the resource won't be actually updated.
+In addition to that, it is a rule of thumb that you want to just simply reconcile all your resources, thus
+match the actual and the desired state and update it if they do not match.
+On the other (mostly for corner cases), some of our users were asking how to skip reconciliation only some
+dependent resources not the entire workflow, based for example on the status of the custom resource.
 
+A common mistake is to use `ReconcilePrecondition`, if the condition does not hold it will delete the resources.
+This is by design (although it's true that the name of this condition might be misleading), but not that
+what we want in this case. 
 
+The way to go is to override the matcher in the dependent resource:
+
+```java
+public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
+    if (alreadyIsCertainState(primary.getStatus())) {
+      return true;
+    } else {
+       return super.match(actual, desired, primary, context);
+    }
+}
+```
+
+That will make sure that the resource is not updated if the custom resource is in certain state.
 
 ### How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
 
