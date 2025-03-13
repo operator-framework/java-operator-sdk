@@ -94,33 +94,34 @@ Dependent Resources feature supports the [first approach](../dependent-resources
     
 ### How can I skip the reconciliation of a dependent resource?
 
-Since v5 the reconciliation of the whole workflow can be skipped with explicit invocation feature. 
+Skipping workflow reconciliation altogether is possible with the explicit invocation feature since v5. 
 You can read more about this in [v5 release notes](https://javaoperatorsdk.io/blog/2025/01/06/version-5-released/#explicit-workflow-invocation).
 
-However, what if you want to skip a reconciliation of a single dependent resource based on some state?
-Remember if the desired state and the actual state matches, the resource won't be actually updated.
-In addition to that, it is a rule of thumb that you want to just simply reconcile all your resources, thus
-match the actual and the desired state and update it if they do not match.
-On the other (mostly for corner cases), some of our users were asking how to skip reconciliation only some
-dependent resources not the entire workflow, based for example on the status of the custom resource.
+However, what if you want to avoid reconciling a single dependent resource based on some state?
+First of all, remember that the dependent resource won't be modified if the desired state and the actual state match.
+Moreover, it is generally a good practice to reconcile all your resources, JOSDK taking care of only processing the
+resources which state doesn't match the desired one.
+However, in some corner cases (for example, if it is expensive to compute the desired state or compare it to the actual
+state), it is somtimes useful to be able to only skip the reconcilation of some resources but not all, if it is known
+that they don't need to be processed based for example on the status of the custom resource.
 
 A common mistake is to use `ReconcilePrecondition`, if the condition does not hold it will delete the resources.
-This is by design (although it's true that the name of this condition might be misleading), but not that
-what we want in this case. 
+This is by design (although it's true that the name of this condition might be misleading), but not what we want in this
+case.
 
 The way to go is to override the matcher in the dependent resource:
 
 ```java
 public Result<R> match(R actualResource, R desired, P primary, Context<P> context) {
     if (alreadyIsCertainState(primary.getStatus())) {
-      return true;
+        return true;
     } else {
-       return super.match(actual, desired, primary, context);
+        return super.match(actual, desired, primary, context);
     }
 }
 ```
 
-That will make sure that the resource is not updated if the custom resource is in certain state.
+This will make sure that the dependent resource is not updated if the primary resource is in certain state.
 
 ### How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
 
