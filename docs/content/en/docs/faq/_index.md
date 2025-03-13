@@ -3,7 +3,7 @@ title: FAQ
 weight: 80
 ---
 
-### Q: How can I access the events which triggered the Reconciliation?
+### How can I access the events which triggered the Reconciliation?
 
 In the v1.* version events were exposed to `Reconciler` (which was called `ResourceController`
 then). This included events (Create, Update) of the custom resource, but also events produced by
@@ -16,7 +16,7 @@ sound agreement between the developers that this is the way to go.
 Note that this is also consistent with Kubernetes 
 [level based](https://cloud.redhat.com/blog/kubernetes-operators-best-practices) reconciliation approach. 
 
-### Q: Can I re-schedule a reconciliation, possibly with a specific delay?
+### Can I re-schedule a reconciliation, possibly with a specific delay?
 
 Yes, this can be done
 using [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java)
@@ -46,7 +46,7 @@ without an update:
 Although you might consider using `EventSources`, to handle reconciliation triggering in a smarter
 way. 
 
-### Q: How can I run an operator without cluster scope rights?
+### How can I run an operator without cluster scope rights?
 
 By default, JOSDK requires access to CRs at cluster scope. You may not be granted such
 rights and you will see some error at startup that looks like:
@@ -74,7 +74,7 @@ is `true` (`false` by default). To disable, set it to `false` at [Operator-level
 Operator operator = new Operator( override -> override.checkingCRDAndValidateLocalModel(false));
 ```
 
-### Q: I'm managing an external resource that has a generated ID, where should I store that?
+### I'm managing an external resource that has a generated ID, where should I store that?
 
 It is common that a non-Kubernetes or external resource is managed from a controller. Those external resources might
 have a generated ID, so are not simply addressable based on the spec of a custom resources. Therefore, the 
@@ -91,8 +91,20 @@ it is not guaranteed that during the next reconciliation you will see the fresh 
 which do this, usually cache the updated status in memory to make sure it is present for next reconciliation.
 
 Dependent Resources feature supports the [first approach](../dependent-resources/_index.md#external-state-tracking-dependent-resources).
+    
+### How can I skip the reconciliation of a single dependent resource?
 
-### Q: How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
+Since v5 the reconciliation of the whole workflow can be skipped with explicit invocation feature. 
+But what if you want to skip a reconciliation of a single dependent resource. A common mistake is
+to use `ReconcilePrecondition`, note that if the condition does not hold it will delete the resources.
+This is by design (although it's true that the name of this condition might be misleading).
+
+It's a rule of thumb that you might want to just simply reconcile all you resources and if there 
+are changes apply them. However, this might not be simple in all the cases, 
+
+
+
+### How to fix `sun.security.provider.certpath.SunCertPathBuilderException` on Rancher Desktop and k3d/k3s Kubernetes
 
 It's a common issue when using k3d and the fabric8 client tries to connect to the cluster an exception is thrown:
 
