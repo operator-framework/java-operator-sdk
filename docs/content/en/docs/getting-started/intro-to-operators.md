@@ -1,6 +1,6 @@
 ---
 title: Introduction to Kubernetes operators
-weight: 20
+weight: 11
 ---
 
 ## Introduction & Resources 

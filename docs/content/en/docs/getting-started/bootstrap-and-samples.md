@@ -1,6 +1,6 @@
 ---
 title: Bootstrapping and samples
-weight: 30
+weight: 12
 ---
 
 ## Generating Project Skeleton
@@ -11,30 +11,28 @@ Project includes a maven plugin to generate a skeleton project:
 mvn io.javaoperatorsdk:bootstrapper:[version]:create -DprojectGroupId=org.acme -DprojectArtifactId=getting-started
 ```
 
+You can build this project with maven,
+the build will generate also the [CustomResourceDefinition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) 
+for you.
+
 ## Getting started with samples
 
-The easiest way to get started with SDK is to start
-[minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) and
-execute one of our [examples](https://github.com/java-operator-sdk/java-operator-sdk/tree/main/sample-operators).
-There is a dedicated page to describe how to [use the samples](/docs/using-samples).
+You can find examples under [sample-operators](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/sample-operators)
+directory which are intended to demonstrate the usage of different components in different scenarios, but mainly are more real world
+examples:
 
-Here are the main steps to develop the code and deploy the operator to a Kubernetes cluster.
-A more detailed and specific version can be found under `samples/mysql-schema/README.md`.
+* *webpage*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code. We provide more 
+  flavors of implementation, both with the low level APIs and higher level abstractions.
+* *mysql-schema*: Operator managing schemas in a MySQL database. Shows how to manage non Kubernetes resources.
+* *tomcat*: Operator with two controllers, managing Tomcat instances and Webapps running in Tomcat. The intention
+  with this example to show how to manage multiple related custom resources and/or more controllers.
 
+The easiest way to run / try out is to run one of the samples on
+[minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) or [kind](https://kind.sigs.k8s.io/).
+After applying the generated CRD, you can simply run your main class. The controller will automatically
+start communicate with you local Kubernetes cluster and reconcile custom resource after you create one.
 
-- Setup `kubectl` to work with your Kubernetes cluster of choice. 
-- Apply Custom Resource Definition
-- Compile the whole project (framework + samples) using `mvn install` in the root directory
-- Run the main class of the sample you picked and check out the sample's README to see what it
-   does. When run locally the framework will use your Kubernetes client configuration (in `~/.
-   kube/config`) to establish a connection to the cluster. This is why it was important to set
-   up `kubectl` up front.
-- You can work in this local development mode to play with the code.
-- Build the Docker image and push it to the registry
-- Apply RBAC configuration
-- Apply deployment configuration
-- Verify if the operator is up and running. Don't run it locally anymore to avoid conflicts in
-   processing events from the cluster's API server.
+See also detailed instructions under [`samples/mysql-schema/README.md`](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/mysql-schema/README.md).
 
 
 

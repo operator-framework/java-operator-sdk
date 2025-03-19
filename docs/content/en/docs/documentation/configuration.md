@@ -1,10 +1,7 @@
 ---
-title: Configuring JOSDK 
-layout: docs
-permalink: /docs/configuration
+title: Configurations
+weight: 56
 ---
-
-# Configuration options
 
 The Java Operator SDK (JOSDK) provides several abstractions that work great out of the 
 box. However, while we strive to cover the most common cases with the default behavior, we also 

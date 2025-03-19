@@ -1,6 +1,6 @@
 ---
 title: Glossary
-weight: 40
+weight: 70
 ---
 
 - **Primary Resource** - the resource that represents the desired state that the controller is

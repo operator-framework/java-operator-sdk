@@ -1,9 +1,7 @@
 ---
 title: Features
-weight: 50
+weight: 41
 ---
-
-# Features
 
 The Java Operator SDK (JOSDK) is a high level framework and related tooling aimed at
 facilitating the implementation of Kubernetes operators. The features are by default following
