@@ -1,6 +1,6 @@
 ---
 title: Bootstrapping and samples
-weight: 12
+weight: 20
 ---
 
 ## Generating Project Skeleton

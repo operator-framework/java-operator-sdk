@@ -1,6 +1,6 @@
 ---
 title: Patterns and best practices
-weight: 13
+weight: 25
 ---
 
 This document describes patterns and best practices, to build and run operators, and how to

@@ -1,6 +1,6 @@
 ---
 title: Architecture and Internals
-weight: 59
+weight: 85
 ---
 
 This document gives an overview of the internal structure and components of Java Operator SDK core,

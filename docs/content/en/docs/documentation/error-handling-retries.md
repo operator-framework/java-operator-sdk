@@ -1,6 +1,6 @@
 ---
 title: Error handling and retries
-weight: 45
+weight: 46
 ---
 
 ## Automatic Retries on Error

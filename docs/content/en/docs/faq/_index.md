@@ -1,6 +1,6 @@
 ---
 title: FAQ
-weight: 80
+weight: 90
 ---
 
 ### How can I access the events which triggered the Reconciliation?
