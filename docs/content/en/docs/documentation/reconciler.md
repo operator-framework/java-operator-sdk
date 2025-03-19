@@ -1,6 +1,6 @@
 ---
 title: Implementing a reconciler
-weight: 42
+weight: 43
 ---
 
 ## Reconciliation Execution in a Nutshell
