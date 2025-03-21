@@ -1,8 +1,7 @@
 ---
-title: Patterns and Best Practices
+title: Patterns and best practices
 weight: 25
 ---
-
 
 This document describes patterns and best practices, to build and run operators, and how to
 implement them in terms of the Java Operator SDK (JOSDK).

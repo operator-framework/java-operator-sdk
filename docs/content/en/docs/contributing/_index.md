@@ -1,6 +1,6 @@
 ---
 title: Contributing To Java Operator SDK
-weight: 100
+weight: 110
 ---
 
 First of all, we'd like to thank you for considering contributing to the project! We really
