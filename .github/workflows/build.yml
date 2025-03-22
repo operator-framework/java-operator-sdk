@@ -10,7 +10,7 @@ jobs:
   integration_tests:
     strategy:
       matrix:
-        java: [ 17, 21 ]
+        java: [ 17, 21, 24 ]
         kubernetes: [ 'v1.29.12','1.30.8', '1.31.4', '1.32.0' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
@@ -23,7 +23,7 @@ jobs:
         httpclient: [ 'vertx', 'jdk', 'jetty' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
-      java-version: 21
+      java-version: 24
       kube-version: '1.32.0'
       http-client: ${{ matrix.httpclient }}
       experimental: true
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 17, 21 ]
+        java: [ 17, 21, 24 ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java and Maven
