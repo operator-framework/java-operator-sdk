@@ -23,7 +23,7 @@ controller implementations because reconciliations are then only triggered when 
 on resources affecting our primary resources thus doing away with the need to periodically
 reschedule reconciliations.
 
-![Event Sources architecture diagram](../assets/images/event-sources.png)
+![Event Sources architecture diagram](/images/event-sources.png)
 
 There are few interesting points here:
 
@@ -60,29 +60,26 @@ related [method](https://github.com/java-operator-sdk/java-operator-sdk/blob/mai
 To register event sources, your `Reconciler` has to override the `prepareEventSources` and return
 list of event sources to register. One way to see this in action is
 to look at the
-[tomcat example](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/sample-operators/tomcat-operator/src/main/java/io/javaoperatorsdk/operator/sample/WebappReconciler.java)
+[WebPage example](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/webpage/src/main/java/io/javaoperatorsdk/operator/sample/WebPageReconciler.java)
 (irrelevant details omitted):
 
 ```java
 
+import java.util.List;
+
 @ControllerConfiguration
 public class WebappReconciler
         implements Reconciler<Webapp>, Cleaner<Webapp>, EventSourceInitializer<Webapp> {
-   // ommitted code
-    
-   @Override
-    public Map<String, EventSource> prepareEventSources(EventSourceContext<Webapp> context) {
-      InformerEventSourceConfiguration<Tomcat> configuration =
-                InformerEventSourceConfiguration.from(Tomcat.class, Tomcat.class)
-                        .withSecondaryToPrimaryMapper(webappsMatchingTomcatName)
-                        .withPrimaryToSecondaryMapper(
-                                (Webapp primary) -> Set.of(new ResourceID(primary.getSpec().getTomcat(),
-                                        primary.getMetadata().getNamespace())))
+    // ommitted code
+
+    @Override
+    public List<EventSource<?, Webapp>> prepareEventSources(EventSourceContext<Webapp> context) {
+        InformerEventSourceConfiguration<Webapp> configuration =
+                InformerEventSourceConfiguration.from(Deployment.class, Webapp.class)
+                        .withLabelSelector(SELECTOR)
                         .build();
-        return EventSourceInitializer
-                .nameEventSources(new InformerEventSource<>(configuration, context));
+        return List.of(new InformerEventSource<>(configuration, context));
     }
-  
 }
 ```
 
@@ -95,8 +92,8 @@ cover common use cases.
 Event sources let your operator know when a secondary resource has changed and that your
 operator might need to reconcile this new information. However, in order to do so, the SDK needs
 to somehow retrieve the primary resource associated with which ever secondary resource triggered
-the event. In the `Tomcat` example above, when an event occurs on a tracked `Deployment`, the
-SDK needs to be able to identify which `Tomcat` resource is impacted by that change.
+the event. In the `Webapp` example above, when an event occurs on a tracked `Deployment`, the
+SDK needs to be able to identify which `Webapp` resource is impacted by that change.
 
 Seasoned Kubernetes users already know one way to track this parent-child kind of relationship:
 using owner references. Indeed, that's how the SDK deals with this situation by default as well,
@@ -198,7 +195,7 @@ simply set a client that connects to a remote cluster:
 
 ```java
 
-InformerEventSourceConfiguration<Tomcat> configuration =
+InformerEventSourceConfiguration<WebPage> configuration =
         InformerEventSourceConfiguration.from(SecondaryResource.class, PrimaryResource.class)
             .withKubernetesClient(remoteClusterClient)
             .withSecondaryToPrimaryMapper(Mappers.fromDefaultAnnotations());
@@ -323,8 +320,8 @@ evict cold resources than try to limit cache sizes.
 
 See usage of the related implementation using [Caffeine](https://github.com/ben-manes/caffeine) cache in integration
 tests
-for [primary resources](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java#L29-L29).
+for [primary resources](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/test/java/io/javaoperatorsdk/operator/processing/event/source/cache/sample/AbstractTestReconciler.java).
 
 See
-also [CaffeineBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/902c8a562dfd7f8993a52e03473a7ad4b00f378b/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
+also [CaffeineBoundedItemStores](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/caffeine-bounded-cache-support/src/main/java/io/javaoperatorsdk/operator/processing/event/source/cache/CaffeineBoundedItemStores.java)
 for more details.
