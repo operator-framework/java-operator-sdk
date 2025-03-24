@@ -38,7 +38,7 @@ call the `reconcile` method unless the custom resource is
 [marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work). 
 
 On the other, if the resource is marked from deletion and if the `Reconciler` implements the
-[`Cleaner`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) interface, only the `cleanup` method is called. By implementing the `Cleaner`
+[`Cleaner`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) interface, only the `cleanup` method is called. By implementing this interface
 the framework will automatically handle (add/remove) the finalizers for you.
 
 In short, if you need to provide explicit cleanup logic, you always want to use finalizers; for a more detailed explanation, see [Finalizer support](#finalizer-support) for more details.
