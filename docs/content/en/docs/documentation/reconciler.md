@@ -20,7 +20,7 @@ Once the reconciliation is done, the framework checks if:
 
 - an exception was thrown during execution, and if yes, schedules a retry.
 - new events were received during the controller execution; if yes, schedule a new reconciliation.
-- the reconciler results explicitly re-schedules (`UpdateControl.rescheduleAfter(..)`) a reconciliation with a time delay, if yes,
+- the reconciler results explicitly re-scheduled (`UpdateControl.rescheduleAfter(..)`) a reconciliation with a time delay, if yes,
   schedules a timer event with the specific delay.
 - if none of the above applies, the reconciliation is finished.
 
