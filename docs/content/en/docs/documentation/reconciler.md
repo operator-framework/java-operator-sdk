@@ -6,16 +6,15 @@ weight: 45
 ## Reconciliation Execution in a Nutshell
 
 An event always triggers reconciliation execution. Events typically come from a
-primary resource, most of the time a custom resource, triggered by changes made to that resource
-on the server (e.g. a resource is created, updated, or deleted). Reconciler implementations are
-associated with a given resource type and listen for such events from the Kubernetes API server
+primary resource, usually a custom resource, triggered by changes made to that resource
+on the server (e.g. a resource is created, updated, or deleted) or from secondary resources for which there is a registered event source.
+Reconciler implementations are associated with a given resource type and listen for such events from the Kubernetes API server
 so that they can appropriately react to them. It is, however, possible for secondary sources to
-trigger the reconciliation process. This usually occurs via
+trigger the reconciliation process. This occurs via
 the [event source](#handling-related-events-with-event-sources) mechanism.
 
-When we receive an event it triggers the reconciliation, unless a reconciliation is already
-underway for this particular resource. In other words, the framework guarantees that no
-concurrent reconciliation happens for a resource.
+When we receive an event, it triggers the reconciliation unless a reconciliation is already
+underway for this particular resource. In other words, the framework guarantees that no concurrent reconciliation happens for a resource.
 
 Once the reconciliation is done, the framework checks if:
 
@@ -23,7 +22,7 @@ Once the reconciliation is done, the framework checks if:
 - new events were received during the controller execution; if yes, schedule a new reconciliation.
 - the reconciler results explicitly re-schedules (`UpdateControl.rescheduleAfter(..)`) a reconciliation with a time delay, if yes,
   schedules a timer event with the specific delay.
-- if none above applies, the reconciliation is finished.
+- if none of the above applies, the reconciliation is finished.
 
 In summary, the core of the SDK is implemented as an eventing system where events trigger
 reconciliation requests.
@@ -43,7 +42,7 @@ See [Finalizer support](#finalizer-support) for more details.
 
 ### Using `UpdateControl` and `DeleteControl`
 
-These two classes are used to control the outcome or the desired behaviour after the reconciliation.
+These two classes control the outcome or the desired behavior after the reconciliation.
 
 The [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java)
 can instruct the framework to update the status sub-resource of the resource
@@ -71,13 +70,10 @@ without an update:
   }
 ```
 
-Note, though, that using `EventSources` should be preferred to rescheduling since the
-reconciliation will then be triggered only when needed instead than on a timely basis.
+Note, though, that using `EventSources` is the preferred way of scheduling since the
+reconciliation is triggered only when a resource is changed, not on a timely basis.
 
-Those are the typical use cases of resource updates, however in some cases there it can happen that
-the controller wants to update the resource itself (for example to add annotations) or not perform
-any updates, which is also supported.
-
+At the end of the reconciliation, you typically update the status sub-resources. 
 It is also possible to update both the status and the resource with the `patchResourceAndStatus` method. In this case,
 the resource is updated first followed by the status, using two separate requests to the Kubernetes API.
 
