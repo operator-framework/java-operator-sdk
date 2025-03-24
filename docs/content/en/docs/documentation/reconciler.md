@@ -168,4 +168,4 @@ You can specify the name of the finalizer to use for your `Reconciler` using the
 [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 annotation. If you do not specify a finalizer name, one will be automatically generated for you.
 
-From v5, by default, the finalizer is added using the Served Side Apply. See also UpdateControl in docs.
+From v5, by default, the finalizer is added using Server Side Apply. See also `UpdateControl` in docs.
