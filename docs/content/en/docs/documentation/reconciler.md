@@ -5,44 +5,40 @@ weight: 45
 
 ## Reconciliation Execution in a Nutshell
 
-Reconciliation execution is always triggered by an event. Events typically come from a
+An event always triggers reconciliation execution. Events typically come from a
 primary resource, most of the time a custom resource, triggered by changes made to that resource
-on the server (e.g. a resource is created, updated or deleted). Reconciler implementations are
-associated with a given resource type and listens for such events from the Kubernetes API server
+on the server (e.g. a resource is created, updated, or deleted). Reconciler implementations are
+associated with a given resource type and listen for such events from the Kubernetes API server
 so that they can appropriately react to them. It is, however, possible for secondary sources to
 trigger the reconciliation process. This usually occurs via
 the [event source](#handling-related-events-with-event-sources) mechanism.
 
-When an event is received reconciliation is executed, unless a reconciliation is already
+When we receive an event it triggers the reconciliation, unless a reconciliation is already
 underway for this particular resource. In other words, the framework guarantees that no
-concurrent reconciliation happens for any given resource.
+concurrent reconciliation happens for a resource.
 
 Once the reconciliation is done, the framework checks if:
 
-- an exception was thrown during execution and if yes schedules a retry.
-- new events were received during the controller execution, if yes schedule a new reconciliation.
-- the reconcilier instructed the SDK to re-schedule a reconciliation at a later date, if yes
-  schedules a timer event with the specified delay.
-- none of the above, the reconciliation is finished.
+- an exception was thrown during execution, and if yes, schedules a retry.
+- new events were received during the controller execution; if yes, schedule a new reconciliation.
+- the reconciler results explicitly re-schedules (`UpdateControl.rescheduleAfter(..)`) a reconciliation with a time delay, if yes,
+  schedules a timer event with the specific delay.
+- if none above applies, the reconciliation is finished.
 
-In summary, the core of the SDK is implemented as an eventing system, where events trigger
+In summary, the core of the SDK is implemented as an eventing system where events trigger
 reconciliation requests.
 
 ## Implementing a [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java) and/or [`Cleaner`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
 
-The lifecycle of a Kubernetes resource can be clearly separated into two phases from the
-perspective of an operator depending on whether a resource is created or updated, or on the
-other hand if it is marked for deletion.
+The lifecycle of a Kubernetes resource can be separated into two phases depending on weather the resource is already marked for deletion or not.
 
-This separation-related logic is automatically handled by the framework. The framework will always
-call the `reconcile` method, unless the custom resource is
+The framework out of the box supports this logic, it will always
+call the `reconcile` method unless the custom resource is
 [marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work)
 . On the other, if the resource is marked from deletion and if the `Reconciler` implements the
-`Cleaner` interface, only the `cleanup` method will be called. Implementing the `Cleaner`
-interface allows developers to let the SDK know that they are interested in cleaning related
-state (e.g. out-of-cluster resources). The SDK will therefore automatically add a finalizer
-associated with your `Reconciler` so that the Kubernetes server doesn't delete your resources
-before your `Reconciler` gets a chance to clean things up.
+`Cleaner` interface, only the `cleanup` method is called. By implementing the `Cleaner`
+the framework will automatically handle (add/remove) the finalizers for you.
+
 See [Finalizer support](#finalizer-support) for more details.
 
 ### Using `UpdateControl` and `DeleteControl`
