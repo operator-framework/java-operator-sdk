@@ -27,18 +27,21 @@ Once the reconciliation is done, the framework checks if:
 In summary, the core of the SDK is implemented as an eventing system where events trigger
 reconciliation requests.
 
-## Implementing a [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java) and/or [`Cleaner`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
+## Implementing a Reconciler and Cleaner interfaces
 
-The lifecycle of a Kubernetes resource can be separated into two phases depending on weather the resource is already marked for deletion or not.
+To implement a reconciler, you always have to implement the [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java) interface.
+
+The lifecycle of a Kubernetes resource can be separated into two phases depending on whether the resource has already been marked for deletion or not.
 
 The framework out of the box supports this logic, it will always
 call the `reconcile` method unless the custom resource is
-[marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work)
-. On the other, if the resource is marked from deletion and if the `Reconciler` implements the
-`Cleaner` interface, only the `cleanup` method is called. By implementing the `Cleaner`
+[marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work). 
+
+On the other, if the resource is marked from deletion and if the `Reconciler` implements the
+[`Cleaner`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) interface, only the `cleanup` method is called. By implementing the `Cleaner`
 the framework will automatically handle (add/remove) the finalizers for you.
 
-See [Finalizer support](#finalizer-support) for more details.
+In short, if you need to provide explicit cleanup logic, you always want to use finalizers; for a more detailed explanation, see [Finalizer support](#finalizer-support) for more details.
 
 ### Using `UpdateControl` and `DeleteControl`
 
@@ -133,32 +136,30 @@ Kubernetes cluster (e.g. external resources), you might not need to use finalize
 use the
 Kubernetes [garbage collection](https://kubernetes.io/docs/concepts/architecture/garbage-collection/#owners-dependents)
 mechanism as much as possible by setting owner references for your secondary resources so that
-the cluster can automatically deleted them for you whenever the associated primary resource is
+the cluster can automatically delete them for you whenever the associated primary resource is
 deleted. Note that setting owner references is the responsibility of the `Reconciler`
 implementation, though [dependent resources](https://javaoperatorsdk.io/docs/dependent-resources)
 make that process easier.
 
-If you do need to clean such state, you need to use finalizers so that their
+If you do need to clean such a state, you need to use finalizers so that their
 presence will prevent the Kubernetes server from deleting the resource before your operator is
-ready to allow it. This allows for clean up to still occur even if your operator was down when
-the resources was "deleted" by a user.
+ready to allow it. This allows for clean-up even if your operator was down when the resource was marked for deletion.
 
 JOSDK makes cleaning resources in this fashion easier by taking care of managing finalizers
 automatically for you when needed. The only thing you need to do is let the SDK know that your
-operator is interested in cleaning state associated with your primary resources by having it
+operator is interested in cleaning the state associated with your primary resources by having it
 implement
 the [`Cleaner<P>`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
 interface. If your `Reconciler` doesn't implement the `Cleaner` interface, the SDK will consider
-that you don't need to perform any clean-up when resources are deleted and will therefore not
-activate finalizer support. In other words, finalizer support is added only if your `Reconciler`
-implements the `Cleaner` interface.
+that you don't need to perform any clean-up when resources are deleted and will, therefore, not activate finalizer support.
+In other words, finalizer support is added only if your `Reconciler` implements the `Cleaner` interface.
 
-Finalizers are automatically added by the framework as the first step, thus after a resource
-is created, but before the first reconciliation. The finalizer is added via a separate
+The framework automatically adds finalizers as the first step, thus after a resource
+is created but before the first reconciliation. The finalizer is added via a separate
 Kubernetes API call. As a result of this update, the finalizer will then be present on the
 resource. The reconciliation can then proceed as normal.
 
-The finalizer that is automatically added will be also removed after the `cleanup` is executed on
+The automatically added finalizer will also be removed after the `cleanup` is executed on
 the reconciler. This behavior is customizable as explained
 [above](#using-updatecontrol-and-deletecontrol) when we addressed the use of
 `DeleteControl`.
@@ -167,4 +168,4 @@ You can specify the name of the finalizer to use for your `Reconciler` using the
 [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 annotation. If you do not specify a finalizer name, one will be automatically generated for you.
 
-From v5 by default finalizer is added using Served Side Apply. See also UpdateControl in docs.
+From v5, by default, the finalizer is added using the Served Side Apply. See also UpdateControl in docs.
