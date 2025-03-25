@@ -5,49 +5,47 @@ weight: 45
 
 ## Reconciliation Execution in a Nutshell
 
-Reconciliation execution is always triggered by an event. Events typically come from a
-primary resource, most of the time a custom resource, triggered by changes made to that resource
-on the server (e.g. a resource is created, updated or deleted). Reconciler implementations are
-associated with a given resource type and listens for such events from the Kubernetes API server
+An event always triggers reconciliation execution. Events typically come from a
+primary resource, usually a custom resource, triggered by changes made to that resource
+on the server (e.g. a resource is created, updated, or deleted) or from secondary resources for which there is a registered event source.
+Reconciler implementations are associated with a given resource type and listen for such events from the Kubernetes API server
 so that they can appropriately react to them. It is, however, possible for secondary sources to
-trigger the reconciliation process. This usually occurs via
+trigger the reconciliation process. This occurs via
 the [event source](#handling-related-events-with-event-sources) mechanism.
 
-When an event is received reconciliation is executed, unless a reconciliation is already
-underway for this particular resource. In other words, the framework guarantees that no
-concurrent reconciliation happens for any given resource.
+When we receive an event, it triggers the reconciliation unless a reconciliation is already
+underway for this particular resource. In other words, the framework guarantees that no concurrent reconciliation happens for a resource.
 
 Once the reconciliation is done, the framework checks if:
 
-- an exception was thrown during execution and if yes schedules a retry.
-- new events were received during the controller execution, if yes schedule a new reconciliation.
-- the reconcilier instructed the SDK to re-schedule a reconciliation at a later date, if yes
-  schedules a timer event with the specified delay.
-- none of the above, the reconciliation is finished.
+- an exception was thrown during execution, and if yes, schedules a retry.
+- new events were received during the controller execution; if yes, schedule a new reconciliation.
+- the reconciler results explicitly re-scheduled (`UpdateControl.rescheduleAfter(..)`) a reconciliation with a time delay, if yes,
+  schedules a timer event with the specific delay.
+- if none of the above applies, the reconciliation is finished.
 
-In summary, the core of the SDK is implemented as an eventing system, where events trigger
+In summary, the core of the SDK is implemented as an eventing system where events trigger
 reconciliation requests.
 
-## Implementing a [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java) and/or [`Cleaner`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
+## Implementing a Reconciler and Cleaner interfaces
 
-The lifecycle of a Kubernetes resource can be clearly separated into two phases from the
-perspective of an operator depending on whether a resource is created or updated, or on the
-other hand if it is marked for deletion.
+To implement a reconciler, you always have to implement the [`Reconciler`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java) interface.
 
-This separation-related logic is automatically handled by the framework. The framework will always
-call the `reconcile` method, unless the custom resource is
-[marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work)
-. On the other, if the resource is marked from deletion and if the `Reconciler` implements the
-`Cleaner` interface, only the `cleanup` method will be called. Implementing the `Cleaner`
-interface allows developers to let the SDK know that they are interested in cleaning related
-state (e.g. out-of-cluster resources). The SDK will therefore automatically add a finalizer
-associated with your `Reconciler` so that the Kubernetes server doesn't delete your resources
-before your `Reconciler` gets a chance to clean things up.
-See [Finalizer support](#finalizer-support) for more details.
+The lifecycle of a Kubernetes resource can be separated into two phases depending on whether the resource has already been marked for deletion or not.
+
+The framework out of the box supports this logic, it will always
+call the `reconcile` method unless the custom resource is
+[marked from deletion](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/#how-finalizers-work). 
+
+On the other hand, if the resource is marked from deletion and if the `Reconciler` implements the
+[`Cleaner`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java) interface, only the `cleanup` method is called. By implementing this interface
+the framework will automatically handle (add/remove) the finalizers for you.
+
+In short, if you need to provide explicit cleanup logic, you always want to use finalizers; for a more detailed explanation, see [Finalizer support](#finalizer-support) for more details.
 
 ### Using `UpdateControl` and `DeleteControl`
 
-These two classes are used to control the outcome or the desired behaviour after the reconciliation.
+These two classes control the outcome or the desired behavior after the reconciliation.
 
 The [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java)
 can instruct the framework to update the status sub-resource of the resource
@@ -75,13 +73,10 @@ without an update:
   }
 ```
 
-Note, though, that using `EventSources` should be preferred to rescheduling since the
-reconciliation will then be triggered only when needed instead than on a timely basis.
+Note, though, that using `EventSources` is the preferred way of scheduling since the
+reconciliation is triggered only when a resource is changed, not on a timely basis.
 
-Those are the typical use cases of resource updates, however in some cases there it can happen that
-the controller wants to update the resource itself (for example to add annotations) or not perform
-any updates, which is also supported.
-
+At the end of the reconciliation, you typically update the status sub-resources. 
 It is also possible to update both the status and the resource with the `patchResourceAndStatus` method. In this case,
 the resource is updated first followed by the status, using two separate requests to the Kubernetes API.
 
@@ -141,32 +136,30 @@ Kubernetes cluster (e.g. external resources), you might not need to use finalize
 use the
 Kubernetes [garbage collection](https://kubernetes.io/docs/concepts/architecture/garbage-collection/#owners-dependents)
 mechanism as much as possible by setting owner references for your secondary resources so that
-the cluster can automatically deleted them for you whenever the associated primary resource is
+the cluster can automatically delete them for you whenever the associated primary resource is
 deleted. Note that setting owner references is the responsibility of the `Reconciler`
 implementation, though [dependent resources](https://javaoperatorsdk.io/docs/dependent-resources)
 make that process easier.
 
-If you do need to clean such state, you need to use finalizers so that their
+If you do need to clean such a state, you need to use finalizers so that their
 presence will prevent the Kubernetes server from deleting the resource before your operator is
-ready to allow it. This allows for clean up to still occur even if your operator was down when
-the resources was "deleted" by a user.
+ready to allow it. This allows for clean-up even if your operator was down when the resource was marked for deletion.
 
 JOSDK makes cleaning resources in this fashion easier by taking care of managing finalizers
 automatically for you when needed. The only thing you need to do is let the SDK know that your
-operator is interested in cleaning state associated with your primary resources by having it
+operator is interested in cleaning the state associated with your primary resources by having it
 implement
 the [`Cleaner<P>`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Cleaner.java)
 interface. If your `Reconciler` doesn't implement the `Cleaner` interface, the SDK will consider
-that you don't need to perform any clean-up when resources are deleted and will therefore not
-activate finalizer support. In other words, finalizer support is added only if your `Reconciler`
-implements the `Cleaner` interface.
+that you don't need to perform any clean-up when resources are deleted and will, therefore, not activate finalizer support.
+In other words, finalizer support is added only if your `Reconciler` implements the `Cleaner` interface.
 
-Finalizers are automatically added by the framework as the first step, thus after a resource
-is created, but before the first reconciliation. The finalizer is added via a separate
+The framework automatically adds finalizers as the first step, thus after a resource
+is created but before the first reconciliation. The finalizer is added via a separate
 Kubernetes API call. As a result of this update, the finalizer will then be present on the
 resource. The reconciliation can then proceed as normal.
 
-The finalizer that is automatically added will be also removed after the `cleanup` is executed on
+The automatically added finalizer will also be removed after the `cleanup` is executed on
 the reconciler. This behavior is customizable as explained
 [above](#using-updatecontrol-and-deletecontrol) when we addressed the use of
 `DeleteControl`.
@@ -175,4 +168,4 @@ You can specify the name of the finalizer to use for your `Reconciler` using the
 [`@ControllerConfiguration`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 annotation. If you do not specify a finalizer name, one will be automatically generated for you.
 
-From v5 by default finalizer is added using Served Side Apply. See also UpdateControl in docs.
+From v5, by default, the finalizer is added using Server Side Apply. See also `UpdateControl` in docs.
