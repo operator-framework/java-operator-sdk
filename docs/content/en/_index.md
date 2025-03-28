@@ -33,7 +33,7 @@ We do a [Pull Request](https://github.com/operator-framework/java-operator-sdk/p
 {{% /blocks/feature %}}
 
 
-{{% blocks/feature icon="fab fa-twitter" title="Follow us on Twitter!" url="https://twitter.com/javaoperatorsdk" %}}
+{{% blocks/feature icon="fa-brands fa-bluesky" title="Follow us on BlueSky!" url="https://bsky.app/profile/javaoperatorsdk.bsky.social" %}}
 For announcement of latest features etc.
 {{% /blocks/feature %}}
 
