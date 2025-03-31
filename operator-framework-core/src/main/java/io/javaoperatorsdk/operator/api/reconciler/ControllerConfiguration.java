@@ -44,10 +44,9 @@ public @interface ControllerConfiguration {
 
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request
-   * to happen before one will be automatically triggered.
-   * The intention behind this feature is to have a failsafe, not to have another way of
-   * repeated reconciliation.
-   * For that use {@link UpdateControl#rescheduleAfter(long)}.
+   * to happen before one will be automatically triggered. The intention behind this feature is to
+   * have a failsafe, not to have another way of repeated reconciliation. For that use {@link
+   * UpdateControl#rescheduleAfter(long)}.
    *
    * @return the maximal reconciliation interval configuration
    */
