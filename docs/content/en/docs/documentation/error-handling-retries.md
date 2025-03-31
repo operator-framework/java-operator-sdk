@@ -69,7 +69,7 @@ this update request will also produce an event and result in a reconciliation if
 controller is not generation-aware.
 
 This feature is only available for the `reconcile` method of the `Reconciler` interface, since
-There should not be updates to resources that have been marked for deletion.
+there should not be updates to resources that have been marked for deletion.
 
 Retry can be skipped in cases of unrecoverable errors:
 
