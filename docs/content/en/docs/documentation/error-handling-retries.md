@@ -102,9 +102,9 @@ these features:
    Similarly, if a retry was scheduled, any event from the cluster triggering a successful execution in the meantime
    would cancel the scheduled retry (because there's now no point in retrying something that already succeeded)
 
-3. In case an exception is thrown, a retry is initiated. However, if an event is received
+2. In case an exception is thrown, a retry is initiated. However, if an event is received
    meanwhile, it will be reconciled instantly, and this execution won't count as a retry attempt.
-4. If the retry limit is reached (so no more automatic retry would happen), but a new event
+3. If the retry limit is reached (so no more automatic retry would happen), but a new event
    received, the reconciliation will still happen, but won't reset the retry, and will still be
    marked as the last attempt in the retry info. The point (1) still holds - thus successful reconciliation will reset the retry - but no retry will happen in case of an error.
    
