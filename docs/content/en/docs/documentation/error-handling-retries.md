@@ -6,7 +6,7 @@ weight: 46
 ## Automatic Retries on Error
 
 JOSDK will schedule an automatic retry of the reconciliation whenever an exception is thrown by
-your `Reconciler`. The retry is behavior is configurable but a default implementation is provided
+your `Reconciler`. The retry behavior is configurable, but a default implementation is provided
 covering most of the typical use-cases, see
 [GenericRetry](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/retry/GenericRetry.java)
 .
@@ -32,7 +32,7 @@ Information about the current retry state is accessible from
 the [Context](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Context.java)
 object. Of note, particularly interesting is the `isLastAttempt` method, which could allow your
 `Reconciler` to implement a different behavior based on this status, by setting an error message
-in your resource' status, for example, when attempting a last retry.
+in your resource status, for example, when attempting a last retry.
 
 Note, though, that reaching the retry limit won't prevent new events to be processed. New
 reconciliations will happen for new events as usual. However, if an error also occurs that
@@ -41,16 +41,19 @@ is already reached.
 
 A successful execution resets the retry state.
 
-### Setting Error Status After Last Retry Attempt
+### Reconciler Error Handler
 
-In order to facilitate error reporting, `Reconciler` can implement the
-[ErrorStatusHandler](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ErrorStatusHandler.java)
-interface:
+In order to facilitate error reporting you can override [`updateErrorStatus`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/Reconciler.java#L52)
+method in `Reconciler`:
 
 ```java
-public interface ErrorStatusHandler<P extends HasMetadata> {
+public class MyReconciler implements Reconciler<WebPage> {
 
-   ErrorStatusUpdateControl<P> updateErrorStatus(P resource, Context<P> context, Exception e);
+   @Override
+   public ErrorStatusUpdateControl<WebPage> updateErrorStatus(
+           WebPage resource, Context<WebPage> context, Exception e) {
+      return handleError(resource, e);
+   }
 
 }
 ```
@@ -63,7 +66,7 @@ result of a retry (regardless of whether a retry policy is configured or not).
 `ErrorStatusUpdateControl` is used to tell the SDK what to do and how to perform the status
 update on the primary resource, always performed as a status sub-resource request. Note that
 this update request will also produce an event, and will result in a reconciliation if the
-controller is not generation aware.
+controller is not generation-aware.
 
 This feature is only available for the `reconcile` method of the `Reconciler` interface, since
 there should not be updates to resource that have been marked for deletion.
@@ -76,10 +79,10 @@ Retry can be skipped in cases of unrecoverable errors:
 
 ### Correctness and Automatic Retries
 
-While it is possible to deactivate automatic retries, this is not desirable, unless for very
-specific reasons. Errors naturally occur, whether it be transient network errors or conflicts
+While it is possible to deactivate automatic retries, this is not desirable, unless there is a very
+specific reason. Errors naturally occur, whether it be transient network errors or conflicts
 when a given resource is handled by a `Reconciler` but is modified at the same time by a user in
-a different process. Automatic retries handle these cases nicely and will usually result in a
+a different process. Automatic retries handle these cases nicely and will usually result eventually in a
 successful reconciliation.
 
 ## Retry and Rescheduling and Event Handling Common Behavior
