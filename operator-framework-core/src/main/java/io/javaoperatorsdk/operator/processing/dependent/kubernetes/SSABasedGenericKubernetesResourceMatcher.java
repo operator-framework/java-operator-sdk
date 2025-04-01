@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -79,10 +80,14 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   private static final Logger log =
       LoggerFactory.getLogger(SSABasedGenericKubernetesResourceMatcher.class);
 
-  @SuppressWarnings("unchecked")
   public boolean matches(R actual, R desired, Context<?> context) {
-    var optionalManagedFieldsEntry =
-        checkIfFieldManagerExists(actual, context.getControllerConfiguration().fieldManager());
+    return matches(
+        actual, desired, context.getControllerConfiguration().fieldManager(), context.getClient(), false);
+  }
+
+  @SuppressWarnings("unchecked")
+  public boolean matches(R actual, R desired, String fieldManager, KubernetesClient client, boolean compareActual) {
+    var optionalManagedFieldsEntry = checkIfFieldManagerExists(actual, fieldManager);
     // If no field is managed by our controller, that means the controller hasn't touched the
     // resource yet and the resource probably doesn't match the desired state. Not matching here
     // means that the resource will need to be updated and since this will be done using SSA, the
@@ -93,7 +98,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     var managedFieldsEntry = optionalManagedFieldsEntry.orElseThrow();
 
-    var objectMapper = context.getClient().getKubernetesSerialization();
+    var objectMapper = client.getKubernetesSerialization();
     var actualMap = objectMapper.convertValue(actual, Map.class);
     var desiredMap = objectMapper.convertValue(desired, Map.class);
     if (LoggingUtils.isNotSensitiveResource(desired)) {
@@ -108,7 +113,18 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         managedFieldsEntry.getFieldsV1().getAdditionalProperties(),
         objectMapper);
 
-    removeIrrelevantValues(desiredMap);
+    if (compareActual) {
+      var prunedDesired = new HashMap<String, Object>(actualMap.size());
+      keepOnlyManagedFields(
+          prunedDesired,
+          desiredMap,
+          managedFieldsEntry.getFieldsV1().getAdditionalProperties(),
+          objectMapper);
+      
+      desiredMap = prunedDesired;
+    } else {
+      removeIrrelevantValues(desiredMap);
+    }
 
     var matches = prunedActual.equals(desiredMap);
     if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
@@ -438,7 +454,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return new AbstractMap.SimpleEntry<>(lastIndex, possibleTargets.get(0));
   }
 
-  private Optional<ManagedFieldsEntry> checkIfFieldManagerExists(R actual, String fieldManager) {
+  public Optional<ManagedFieldsEntry> checkIfFieldManagerExists(R actual, String fieldManager) {
     var targetManagedFields =
         actual.getMetadata().getManagedFields().stream()
             // Only the apply operations are interesting for us since those were created properly be

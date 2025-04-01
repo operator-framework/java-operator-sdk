@@ -114,7 +114,25 @@ class SSABasedGenericKubernetesResourceMatcherTest {
 
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
   }
+  
+  @Test
+  void compareActualSame() {
+    var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml", ConfigMap.class);
 
+    assertThat(matcher.matches(actualConfigMap, actualConfigMap, mockedContext.getControllerConfiguration().fieldManager(), mockedContext.getClient(), true)).isTrue();
+  }
+  
+  @Test
+  void compareActualSameWithUnownedChange() {
+    var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml", ConfigMap.class);
+    
+    var newConfigMap = loadResource("configmap.empty-owner-reference.yaml", ConfigMap.class);
+    newConfigMap.getMetadata().setLabels(Map.of("newlabel", "val"));
+
+    assertThat(matcher.matches(newConfigMap, actualConfigMap, mockedContext.getControllerConfiguration().fieldManager(), mockedContext.getClient(), true)).isTrue();
+    assertThat(matcher.matches(actualConfigMap, newConfigMap, mockedContext.getControllerConfiguration().fieldManager(), mockedContext.getClient(), true)).isTrue();
+  }
+  
   @Test
   @SuppressWarnings("unchecked")
   void sortListItemsTest() {
