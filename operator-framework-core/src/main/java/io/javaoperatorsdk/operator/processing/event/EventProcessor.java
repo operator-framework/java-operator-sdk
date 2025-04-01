@@ -349,21 +349,29 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       boolean eventPresent,
       Exception exception,
       ExecutionScope<P> executionScope) {
-    if (!eventPresent
-        && !retry.isLastAttempt()
-        && exception instanceof KubernetesClientException ex) {
-      if (ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
-        log.debug(
-            "Full client conflict error during event processing {}", executionScope, exception);
-        log.warn(
-            "Resource Kubernetes Resource Creator/Update Conflict during reconciliation. Message:"
-                + " {} Resource name: {}",
-            ex.getMessage(),
-            ex.getFullResourceName());
-        return;
-      }
+    if (!retry.isLastAttempt()
+        && exception instanceof KubernetesClientException ex
+        && ex.getCode() == HttpURLConnection.HTTP_CONFLICT) {
+      log.debug("Full client conflict error during event processing {}", executionScope, exception);
+      log.info(
+          "Resource Kubernetes Resource Creator/Update Conflict during reconciliation. Message:"
+              + " {} Resource name: {}",
+          ex.getMessage(),
+          ex.getFullResourceName());
+    } else if (eventPresent || !retry.isLastAttempt()) {
+      log.warn(
+          "Uncaught error during event processing {} - but another reconciliation will be attempted"
+              + " because a superceding event has been recieved or another retry attempt is"
+              + " pending.",
+          executionScope,
+          exception);
+    } else {
+      log.error(
+          "Uncaught error during event processing {} - no superceding event is present and this is"
+              + " the retry last attempt",
+          executionScope,
+          exception);
     }
-    log.error("Error during event processing {}", executionScope, exception);
   }
 
   private void cleanupOnSuccessfulExecution(ExecutionScope<P> executionScope) {
