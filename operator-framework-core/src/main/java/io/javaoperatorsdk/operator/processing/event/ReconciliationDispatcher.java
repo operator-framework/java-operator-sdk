@@ -212,9 +212,18 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     P updatedResource = null;
     if (errorStatusUpdateControl.getResource().isPresent()) {
-      updatedResource =
-          customResourceFacade.patchStatus(
-              errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
+      try {
+        updatedResource =
+            customResourceFacade.patchStatus(
+                errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
+      } catch (Exception ex) {
+        log.error(
+            "updateErrorStatus failed for resource: {} with version: {} for error {}",
+            getUID(resource),
+            getVersion(resource),
+            e.getMessage(),
+            ex);
+      }
     }
     if (errorStatusUpdateControl.isNoRetry()) {
       PostExecutionControl<P> postExecutionControl;
