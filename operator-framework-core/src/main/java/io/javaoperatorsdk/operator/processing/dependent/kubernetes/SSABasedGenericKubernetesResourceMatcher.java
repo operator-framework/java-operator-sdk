@@ -110,7 +110,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
 
     removeIrrelevantValues(desiredMap);
 
-    var matches = prunedActual.equals(desiredMap);
+    var matches = matches(prunedActual, desiredMap, actual, desired, context);
     if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
       var diff = getDiff(prunedActual, desiredMap, objectMapper);
       log.debug(
@@ -123,6 +123,28 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           diff);
     }
     return matches;
+  }
+
+  /**
+   * Compares the desired and actual resources for equality.
+   *
+   * <p>This method can be overridden to implement custom matching logic. The {@code actualMap} is a
+   * cleaned-up version of the actual resource with managed fields and irrelevant values removed.
+   *
+   * @param actualMap the actual resource represented as a map
+   * @param desiredMap the desired resource represented as a map
+   * @param actual the actual resource object
+   * @param desired the desired resource object
+   * @param context the current matching context
+   * @return {@code true} if the resources are equal, otherwise {@code false}
+   */
+  protected boolean matches(
+      Map<String, Object> actualMap,
+      Map<String, Object> desiredMap,
+      R actual,
+      R desired,
+      Context<?> context) {
+    return actualMap.equals(desiredMap);
   }
 
   private String getDiff(
