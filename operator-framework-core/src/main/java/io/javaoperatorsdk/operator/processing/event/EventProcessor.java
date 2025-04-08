@@ -361,13 +361,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     } else if (eventPresent || !retry.isLastAttempt()) {
       log.warn(
           "Uncaught error during event processing {} - but another reconciliation will be attempted"
-              + " because a superceding event has been recieved or another retry attempt is"
+              + " because a superseding event has been received or another retry attempt is"
               + " pending.",
           executionScope,
           exception);
     } else {
       log.error(
-          "Uncaught error during event processing {} - no superceding event is present and this is"
+          "Uncaught error during event processing {} - no superseding event is present and this is"
               + " the retry last attempt",
           executionScope,
           exception);
