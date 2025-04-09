@@ -37,9 +37,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     implements ConfiguredDependentResource<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
+
+  @SuppressWarnings("rawtypes")
+  private static final SSABasedGenericKubernetesResourceMatcher defaultMatcher =
+      SSABasedGenericKubernetesResourceMatcher.getInstance();
+
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
+
+  @SuppressWarnings("unchecked")
+  private SSABasedGenericKubernetesResourceMatcher<R> matcher = defaultMatcher;
 
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
@@ -52,6 +60,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
+  }
+
+  public void setMatcher(SSABasedGenericKubernetesResourceMatcher<R> matcher) {
+    if (this.matcher != defaultMatcher) {
+      throw new IllegalStateException("Can only set a matcher once.");
+    }
+    this.matcher = matcher;
   }
 
   @SuppressWarnings("unused")
@@ -111,9 +126,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     final boolean matches;
     addMetadata(true, actualResource, desired, primary, context);
     if (useSSA(context)) {
-      matches =
-          SSABasedGenericKubernetesResourceMatcher.getInstance()
-              .matches(actualResource, desired, context);
+      matches = matcher.matches(actualResource, desired, context);
     } else {
       matches =
           GenericKubernetesResourceMatcher.match(desired, actualResource, false, false, context)
