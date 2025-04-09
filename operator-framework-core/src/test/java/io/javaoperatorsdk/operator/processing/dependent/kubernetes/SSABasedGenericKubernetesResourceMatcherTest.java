@@ -236,6 +236,37 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualDaemonSet, desiredDaemonSet, mockedContext)).isFalse();
   }
 
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testCustomMatcher_returnsExpectedMatchBasedOnReadOnlyLabel(boolean readOnly) {
+    var desiredConfigMap =
+        loadResource("configmap.empty-owner-reference-desired.yaml", ConfigMap.class);
+    desiredConfigMap.getData().put("key1", "another value");
+    var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml", ConfigMap.class);
+    actualConfigMap.getMetadata().getLabels().put("readonly", Boolean.toString(readOnly));
+
+    var matcher = new ReadOnlyAwareMatcher<ConfigMap>();
+    assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext))
+        .isEqualTo(readOnly);
+  }
+
+  private static class ReadOnlyAwareMatcher<T extends HasMetadata>
+      extends SSABasedGenericKubernetesResourceMatcher<T> {
+    @Override
+    protected boolean matches(
+        Map<String, Object> actualMap,
+        Map<String, Object> desiredMap,
+        T actual,
+        T desired,
+        Context<?> context) {
+      var readonly = actual.getMetadata().getLabels().get("readonly");
+      if (readonly != null && readonly.equals("true")) {
+        return true;
+      }
+      return actualMap.equals(desiredMap);
+    }
+  }
+
   private static <R> R loadResource(String fileName, Class<R> clazz) {
     return ReconcilerUtils.loadYaml(
         clazz, SSABasedGenericKubernetesResourceMatcherTest.class, fileName);
