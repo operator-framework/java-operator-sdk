@@ -22,6 +22,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,7 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     when(mockedContext.getClient()).thenReturn(client);
 
     final var configurationService = mock(ConfigurationService.class);
+    when(configurationService.shouldUseSSA(any(), any(), any())).thenReturn(true);
     final var controllerConfiguration = mock(ControllerConfiguration.class);
     when(controllerConfiguration.getConfigurationService()).thenReturn(configurationService);
     when(controllerConfiguration.fieldManager()).thenReturn("controller");
@@ -239,15 +241,29 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void testCustomMatcher_returnsExpectedMatchBasedOnReadOnlyLabel(boolean readOnly) {
+    var dr = new ConfigMapDR();
     var desiredConfigMap =
         loadResource("configmap.empty-owner-reference-desired.yaml", ConfigMap.class);
     desiredConfigMap.getData().put("key1", "another value");
     var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml", ConfigMap.class);
     actualConfigMap.getMetadata().getLabels().put("readonly", Boolean.toString(readOnly));
 
-    var matcher = new ReadOnlyAwareMatcher<ConfigMap>();
-    assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext))
+    ConfigMap ignoredPrimary = null;
+    assertThat(
+            dr.match(
+                    actualConfigMap,
+                    desiredConfigMap,
+                    ignoredPrimary,
+                    (Context<ConfigMap>) mockedContext)
+                .matched())
         .isEqualTo(readOnly);
+  }
+
+  private static class ConfigMapDR extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+    public ConfigMapDR() {
+      super(ConfigMap.class);
+      setMatcher(new ReadOnlyAwareMatcher<>());
+    }
   }
 
   private static class ReadOnlyAwareMatcher<T extends HasMetadata>
