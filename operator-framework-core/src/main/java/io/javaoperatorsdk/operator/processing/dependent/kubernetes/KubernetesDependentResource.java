@@ -38,16 +38,13 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
 
-  @SuppressWarnings("rawtypes")
-  private static final SSABasedGenericKubernetesResourceMatcher defaultMatcher =
-      SSABasedGenericKubernetesResourceMatcher.getInstance();
-
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
 
-  @SuppressWarnings("unchecked")
-  private SSABasedGenericKubernetesResourceMatcher<R> matcher = defaultMatcher;
+  private SSABasedGenericKubernetesResourceMatcher<R> matcher =
+      SSABasedGenericKubernetesResourceMatcher.getInstance();
+  private volatile boolean matcherSet = false;
 
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
@@ -57,16 +54,24 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     super(resourceType, name);
   }
 
+  public KubernetesDependentResource(
+      Class<R> resourceType, String name, SSABasedGenericKubernetesResourceMatcher<R> matcher) {
+    this(resourceType, name);
+    this.matcher = matcher;
+    matcherSet = true;
+  }
+
   @Override
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
   }
 
   public void setMatcher(SSABasedGenericKubernetesResourceMatcher<R> matcher) {
-    if (this.matcher != defaultMatcher) {
+    if (matcherSet) {
       throw new IllegalStateException("Can only set a matcher once.");
     }
     this.matcher = matcher;
+    matcherSet = true;
   }
 
   @SuppressWarnings("unused")
