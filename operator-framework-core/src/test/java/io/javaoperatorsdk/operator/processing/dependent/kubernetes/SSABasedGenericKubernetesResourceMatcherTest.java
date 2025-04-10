@@ -261,8 +261,7 @@ class SSABasedGenericKubernetesResourceMatcherTest {
 
   private static class ConfigMapDR extends KubernetesDependentResource<ConfigMap, ConfigMap> {
     public ConfigMapDR() {
-      super(ConfigMap.class);
-      setMatcher(new ReadOnlyAwareMatcher<>());
+      super(ConfigMap.class, "foo", new ReadOnlyAwareMatcher<>());
     }
   }
 
