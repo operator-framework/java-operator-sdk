@@ -55,6 +55,8 @@ public interface Context<P extends HasMetadata> {
   @SuppressWarnings("unused")
   IndexedResourceCache<P> getPrimaryCache();
 
+  boolean isPrimaryDeleted();
+
   /**
    * Determines whether a new reconciliation will be triggered right after the current
    * reconciliation is finished. This allows to optimize certain situations, helping avoid unneeded
