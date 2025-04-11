@@ -39,6 +39,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
+      KubernetesClient infrastructureKubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
     super(
@@ -48,6 +49,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
         kubernetesClient,
+        infrastructureKubernetesClient,
         namespaceNameSupplier,
         perClassNamespaceNameSupplier);
     this.operatorDeployment = operatorDeployment;
@@ -114,6 +116,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     private final List<HasMetadata> operatorDeployment;
     private Duration deploymentTimeout;
     private KubernetesClient kubernetesClient;
+    private KubernetesClient infrastructureKubernetesClient;
 
     protected Builder() {
       super();
@@ -160,6 +163,9 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build(),
+          infrastructureKubernetesClient != null
+              ? infrastructureKubernetesClient
+              : new KubernetesClientBuilder().build(),
           namespaceNameSupplier,
           perClassNamespaceNameSupplier);
     }
