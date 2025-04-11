@@ -77,4 +77,10 @@ public @interface ControllerConfiguration {
    * @return the name used as field manager for SSA operations
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
+
+  /**
+   * Will trigger reconciliation on delete event of the primary resource. Can be set to true only if
+   * the reconciler does not implement {@link Cleaner} interface.
+   */
+  boolean reconcileOnPrimaryDelete() default false;
 }
