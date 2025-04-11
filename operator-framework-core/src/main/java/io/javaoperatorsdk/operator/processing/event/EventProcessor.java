@@ -196,7 +196,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // event as below.
         markEventReceived(state);
       }
-    } else if (!state.deleteEventPresent() || !state.processedMarkForDeletionPresent()) {
+    } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
       markEventReceived(state);
     } else if (log.isDebugEnabled()) {
       log.debug(
