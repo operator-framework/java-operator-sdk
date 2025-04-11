@@ -66,6 +66,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
+      KubernetesClient infrastructureKubernetesClient,
       Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
@@ -78,6 +79,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
         kubernetesClient,
+        infrastructureKubernetesClient,
         namespaceNameSupplier,
         perClassNamespaceNameSupplier);
     this.reconcilers = reconcilers;
@@ -365,6 +367,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<String> additionalCRDs = new ArrayList<>();
     private Consumer<LocallyRunOperatorExtension> beforeStartHook;
     private KubernetesClient kubernetesClient;
+    private KubernetesClient infrastructureKubernetesClient;
 
     protected Builder() {
       super();
@@ -419,6 +422,12 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    public Builder withInfrastructureKubernetesClient(
+        KubernetesClient infrastructureKubernetesClient) {
+      this.infrastructureKubernetesClient = infrastructureKubernetesClient;
+      return this;
+    }
+
     public Builder withAdditionalCustomResourceDefinition(
         Class<? extends CustomResource> customResource) {
       additionalCustomResourceDefinitions.add(customResource);
@@ -452,6 +461,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient,
+          infrastructureKubernetesClient,
           configurationServiceOverrider,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier,
