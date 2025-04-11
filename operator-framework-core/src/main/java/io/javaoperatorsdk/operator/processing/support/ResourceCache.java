@@ -15,6 +15,11 @@ public class ResourceCache<P extends HasMetadata> {
     this.evictionPredicate = evictionPredicate;
   }
 
+  public void cacheResource(P afterUpdate) {
+    var resourceId = ResourceID.fromResource(afterUpdate);
+    cache.put(resourceId, new Pair<>(null, afterUpdate));
+  }
+
   public void cacheResource(P beforeUpdate, P afterUpdate) {
     var resourceId = ResourceID.fromResource(beforeUpdate);
     cache.put(resourceId, new Pair<>(beforeUpdate, afterUpdate));
@@ -24,6 +29,10 @@ public class ResourceCache<P extends HasMetadata> {
     var resourceId = ResourceID.fromResource(newVersion);
     var pair = cache.get(resourceId);
     if (pair == null) {
+      return newVersion;
+    }
+    if (!newVersion.getMetadata().getUid().equals(pair.afterUpdate().getMetadata().getUid())) {
+      cache.remove(resourceId);
       return newVersion;
     }
     if (evictionPredicate.test(pair, newVersion)) {
