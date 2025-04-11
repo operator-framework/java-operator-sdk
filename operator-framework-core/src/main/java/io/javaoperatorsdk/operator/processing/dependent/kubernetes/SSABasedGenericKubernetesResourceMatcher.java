@@ -4,6 +4,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.LoggingUtils;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
@@ -60,7 +62,13 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
       new SSABasedGenericKubernetesResourceMatcher<>();
 
   private static final List<String> IGNORED_METADATA =
-      List.of("creationTimestamp", "deletionTimestamp", "generation", "selfLink", "uid");
+      List.of(
+          "creationTimestamp",
+          "deletionTimestamp",
+          "generation",
+          "selfLink",
+          "uid",
+          "resourceVersion");
 
   @SuppressWarnings("unchecked")
   public static <L extends HasMetadata> SSABasedGenericKubernetesResourceMatcher<L> getInstance() {
@@ -79,8 +87,126 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   private static final Logger log =
       LoggerFactory.getLogger(SSABasedGenericKubernetesResourceMatcher.class);
 
-  @SuppressWarnings("unchecked")
+  record SSAState(Map<String, Object> desired, Map<String, Object> actual) {}
+
+  record CacheKey(ResourceID id, int hash) {}
+
+  private LinkedHashMap<CacheKey, SSAState> defaultsAndNormalizations =
+      new LinkedHashMap<CacheKey, SSAState>();
+
+  public void findDefaultsAndNormalizations(R actual, R desired, Context<?> context) {
+    SSAState state = getSSAState(actual, desired, context);
+
+    if (state == null) {
+      // exception?
+    }
+
+    // minimize by removing eveything that appears in both
+    minimizeMaps(state.desired, state.actual);
+
+    if (!state.desired.isEmpty() || !state.actual.isEmpty()) {
+      defaultsAndNormalizations.put(
+          new CacheKey(ResourceID.fromResource(actual), desired.hashCode()), state);
+    }
+  }
+
+  void minimizeMaps(Map<String, Object> actual, Map<String, Object> desired) {
+    for (Iterator<Map.Entry<String, Object>> iter = desired.entrySet().iterator();
+        iter.hasNext(); ) {
+      var entry = iter.next();
+      var desiredValue = entry.getValue();
+      var actualValue = actual.get(entry.getKey());
+      if (Objects.equals(desiredValue, actualValue)) {
+        iter.remove();
+        actual.remove(entry.getKey());
+      } else if (desiredValue instanceof Map dm) {
+        if (actualValue instanceof Map am) {
+          minimizeMaps(am, dm);
+          if (am.isEmpty()) {
+            actual.remove(entry.getKey());
+          }
+        }
+        if (dm.isEmpty()) {
+          iter.remove();
+        }
+      } else if (desiredValue instanceof List dl) {
+        if (actualValue instanceof List al) {
+          minimizeLists(al, dl);
+          if ((dl.isEmpty() || dl.stream().allMatch(Objects::isNull))
+              && (al.isEmpty() || al.stream().allMatch(Objects::isNull))) {
+            iter.remove();
+            actual.remove(entry.getKey());
+          }
+        }
+      }
+    }
+  }
+
+  void minimizeLists(List<Object> actual, List<Object> desired) {
+    for (int i = 0; i < desired.size(); i++) {
+      Object desiredValue = desired.get(i);
+      if (actual.size() > i) {
+        Object actualValue = actual.get(i);
+        if (Objects.equals(desiredValue, actualValue)) {
+          actual.set(i, null);
+          desired.set(i, null);
+        } else if (desiredValue instanceof Map dm) {
+          if (actualValue instanceof Map am) {
+            minimizeMaps(am, dm);
+            if (am.isEmpty()) {
+              actual.set(i, null);
+            }
+          }
+          if (dm.isEmpty()) {
+            desired.set(i, null);
+          }
+        } else if (desiredValue instanceof List dl) {
+          if (actualValue instanceof List al) {
+            minimizeLists(al, dl);
+            if ((dl.isEmpty() || dl.stream().allMatch(Objects::isNull))
+                && (al.isEmpty() || al.stream().allMatch(Objects::isNull))) {
+              actual.set(i, null);
+              desired.set(i, null);
+            }
+          }
+        }
+      }
+    }
+  }
+
   public boolean matches(R actual, R desired, Context<?> context) {
+    SSAState state = getSSAState(actual, desired, context);
+    
+    if (state == null) {
+      return false;
+    }
+    
+    SSAState overrides = defaultsAndNormalizations.get(new CacheKey(ResourceID.fromResource(actual), desired.hashCode()));
+    if (overrides != null) {
+      // if containsAll(overrides.desired, state.desired) && containsAll(overrides.actual, state.actual)
+      
+      //
+    }
+
+    var matches = matches(state.actual(), state.desired(), actual, desired, context);
+    if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
+      var diff =
+          getDiff(
+              state.actual(), state.desired(), context.getClient().getKubernetesSerialization());
+      log.debug(
+          "Diff between actual and desired state for resource: {} with name: {} in namespace: {}"
+              + " is:\n"
+              + "{}",
+          actual.getKind(),
+          actual.getMetadata().getName(),
+          actual.getMetadata().getNamespace(),
+          diff);
+    }
+    return matches;
+  }
+
+  @SuppressWarnings("unchecked")
+  private SSAState getSSAState(R actual, R desired, Context<?> context) {
     var optionalManagedFieldsEntry =
         checkIfFieldManagerExists(actual, context.getControllerConfiguration().fieldManager());
     // If no field is managed by our controller, that means the controller hasn't touched the
@@ -88,7 +214,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     // means that the resource will need to be updated and since this will be done using SSA, the
     // fields our controller cares about will become managed by it
     if (optionalManagedFieldsEntry.isEmpty()) {
-      return false;
+      return null;
     }
 
     var managedFieldsEntry = optionalManagedFieldsEntry.orElseThrow();
@@ -109,20 +235,8 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         objectMapper);
 
     removeIrrelevantValues(desiredMap);
-
-    var matches = matches(prunedActual, desiredMap, actual, desired, context);
-    if (!matches && log.isDebugEnabled() && LoggingUtils.isNotSensitiveResource(desired)) {
-      var diff = getDiff(prunedActual, desiredMap, objectMapper);
-      log.debug(
-          "Diff between actual and desired state for resource: {} with name: {} in namespace: {}"
-              + " is:\n"
-              + "{}",
-          actual.getKind(),
-          actual.getMetadata().getName(),
-          actual.getMetadata().getNamespace(),
-          diff);
-    }
-    return matches;
+    removeIrrelevantValues(actualMap);
+    return new SSAState(desiredMap, prunedActual);
   }
 
   /**
