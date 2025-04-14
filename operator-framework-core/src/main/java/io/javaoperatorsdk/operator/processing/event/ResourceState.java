@@ -1,9 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
-class ResourceState {
+class ResourceState<P extends HasMetadata> {
 
   /**
    * Manages the state of received events. Basically there can be only three distinct states
@@ -21,6 +22,7 @@ class ResourceState {
     PROCESSED_MARK_FOR_DELETION,
     /** Delete event present, from this point other events are not relevant */
     DELETE_EVENT_PRESENT,
+    DELETE_EVENT_RECONCILIATION_SUBMITTED
   }
 
   private final ResourceID id;
@@ -29,6 +31,8 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
+
+  private P deletedResource;
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -63,8 +67,13 @@ class ResourceState {
     this.underProcessing = underProcessing;
   }
 
-  public void markDeleteEventReceived() {
+  public void markDeleteEventReceived(P deletedResource) {
     eventing = EventingState.DELETE_EVENT_PRESENT;
+    this.deletedResource = deletedResource;
+  }
+
+  public void markDeleteEventReconciliationSubmitted() {
+    this.eventing = EventingState.DELETE_EVENT_RECONCILIATION_SUBMITTED;
   }
 
   public boolean deleteEventPresent() {
@@ -75,8 +84,16 @@ class ResourceState {
     return eventing == EventingState.PROCESSED_MARK_FOR_DELETION;
   }
 
+  public boolean deleteEventReconciliationSubmitted() {
+    return eventing == EventingState.DELETE_EVENT_RECONCILIATION_SUBMITTED;
+  }
+
+  public P getDeletedResource() {
+    return deletedResource;
+  }
+
   public void markEventReceived() {
-    if (deleteEventPresent()) {
+    if (deleteEventPresent() || deleteEventReconciliationSubmitted()) {
       throw new IllegalStateException("Cannot receive event after a delete event received");
     }
     eventing = EventingState.EVENT_PRESENT;

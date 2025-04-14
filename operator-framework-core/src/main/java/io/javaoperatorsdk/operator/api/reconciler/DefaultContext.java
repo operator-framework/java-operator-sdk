@@ -24,12 +24,15 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final ControllerConfiguration<P> controllerConfiguration;
   private final DefaultManagedWorkflowAndDependentResourceContext<P>
       defaultManagedDependentResourceContext;
+  private final boolean isPrimaryDeleted;
 
-  public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
+  public DefaultContext(
+      RetryInfo retryInfo, Controller<P> controller, P primaryResource, boolean isPrimaryDeleted) {
     this.retryInfo = retryInfo;
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
+    this.isPrimaryDeleted = isPrimaryDeleted;
     this.defaultManagedDependentResourceContext =
         new DefaultManagedWorkflowAndDependentResourceContext<>(controller, primaryResource, this);
   }
@@ -47,6 +50,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public IndexedResourceCache<P> getPrimaryCache() {
     return controller.getEventSourceManager().getControllerEventSource();
+  }
+
+  @Override
+  public boolean isPrimaryDeleted() {
+    return isPrimaryDeleted;
   }
 
   @Override

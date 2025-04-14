@@ -8,9 +8,11 @@ class ExecutionScope<R extends HasMetadata> {
   // the latest custom resource from cache
   private R resource;
   private final RetryInfo retryInfo;
+  private boolean isPrimaryDeleted = false;
 
-  ExecutionScope(RetryInfo retryInfo) {
+  ExecutionScope(RetryInfo retryInfo, boolean isPrimaryDeleted) {
     this.retryInfo = retryInfo;
+    this.isPrimaryDeleted = isPrimaryDeleted;
   }
 
   public ExecutionScope<R> setResource(R resource) {
@@ -41,5 +43,13 @@ class ExecutionScope<R extends HasMetadata> {
 
   public RetryInfo getRetryInfo() {
     return retryInfo;
+  }
+
+  public void setPrimaryDeleted(boolean primaryDeleted) {
+    isPrimaryDeleted = primaryDeleted;
+  }
+
+  public boolean isPrimaryDeleted() {
+    return isPrimaryDeleted;
   }
 }
