@@ -43,6 +43,10 @@ public class UserPrimaryResourceCache<P extends HasMetadata> {
     }
   }
 
+  public void cleanup(P resource) {
+    cache.remove(ResourceID.fromResource(resource));
+  }
+
   public record Pair<T extends HasMetadata>(T beforeUpdate, T afterUpdate) {}
 
   public static class ResourceVersionParsingEvictionPredicate<T extends HasMetadata>
@@ -51,18 +55,6 @@ public class UserPrimaryResourceCache<P extends HasMetadata> {
     public boolean test(Pair<T> updatePair, T newVersion) {
       return Long.parseLong(updatePair.afterUpdate().getMetadata().getResourceVersion())
           <= Long.parseLong(newVersion.getMetadata().getResourceVersion());
-    }
-  }
-
-  public static class EqualityPredicateForOptimisticUpdate<T extends HasMetadata>
-      implements BiPredicate<Pair<T>, T> {
-    @Override
-    public boolean test(Pair<T> updatePair, T newVersion) {
-      return !updatePair
-          .beforeUpdate()
-          .getMetadata()
-          .getResourceVersion()
-          .equals(newVersion.getMetadata().getResourceVersion());
     }
   }
 }
