@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.processing.support;
+package io.javaoperatorsdk.operator.api.reconciler.support;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
