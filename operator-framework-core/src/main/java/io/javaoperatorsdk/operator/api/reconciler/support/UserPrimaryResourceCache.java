@@ -8,11 +8,11 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class UserPrimaryResourceCache<P extends HasMetadata> {
 
-  private BiPredicate<Pair<P>, P> evictionCondition;
-  private ConcurrentHashMap<ResourceID, Pair<P>> cache = new ConcurrentHashMap<>();
+  private final BiPredicate<Pair<P>, P> evictionPredicate;
+  private final ConcurrentHashMap<ResourceID, Pair<P>> cache = new ConcurrentHashMap<>();
 
-  public UserPrimaryResourceCache(BiPredicate<Pair<P>, P> evictionCondition) {
-    this.evictionCondition = evictionCondition;
+  public UserPrimaryResourceCache(BiPredicate<Pair<P>, P> evictionPredicate) {
+    this.evictionPredicate = evictionPredicate;
   }
 
   public void cacheResource(P afterUpdate) {
@@ -35,7 +35,7 @@ public class UserPrimaryResourceCache<P extends HasMetadata> {
       cache.remove(resourceId);
       return newVersion;
     }
-    if (evictionCondition.test(pair, newVersion)) {
+    if (evictionPredicate.test(pair, newVersion)) {
       cache.remove(resourceId);
       return newVersion;
     } else {
@@ -45,7 +45,7 @@ public class UserPrimaryResourceCache<P extends HasMetadata> {
 
   public record Pair<T extends HasMetadata>(T beforeUpdate, T afterUpdate) {}
 
-  public static class ResourceVersionComparePredicate<T extends HasMetadata>
+  public static class ResourceVersionParsingEvictionPredicate<T extends HasMetadata>
       implements BiPredicate<Pair<T>, T> {
     @Override
     public boolean test(Pair<T> updatePair, T newVersion) {
@@ -54,11 +54,15 @@ public class UserPrimaryResourceCache<P extends HasMetadata> {
     }
   }
 
-  public static class ResourceVersionEqualityPredicate<T extends HasMetadata>
+  public static class EqualityPredicateForOptimisticUpdate<T extends HasMetadata>
       implements BiPredicate<Pair<T>, T> {
     @Override
     public boolean test(Pair<T> updatePair, T newVersion) {
-      return !updatePair.beforeUpdate().equals(newVersion.getMetadata().getResourceVersion());
+      return !updatePair
+          .beforeUpdate()
+          .getMetadata()
+          .getResourceVersion()
+          .equals(newVersion.getMetadata().getResourceVersion());
     }
   }
 }
