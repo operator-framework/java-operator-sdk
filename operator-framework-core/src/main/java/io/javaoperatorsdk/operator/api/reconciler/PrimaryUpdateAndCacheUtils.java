@@ -10,9 +10,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
-import io.javaoperatorsdk.operator.api.reconciler.support.UserPrimaryResourceCache;
+import io.javaoperatorsdk.operator.api.reconciler.support.PrimaryResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+// todo javadoc
 public class PrimaryUpdateAndCacheUtils {
 
   private PrimaryUpdateAndCacheUtils() {}
@@ -70,7 +71,7 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
-      P primary, P freshResource, Context<P> context, UserPrimaryResourceCache<P> cache) {
+      P primary, P freshResource, Context<P> context, PrimaryResourceCache<P> cache) {
     logWarnIfResourceVersionPresent(freshResource);
     return patchAndCacheStatus(
         primary,
@@ -90,7 +91,7 @@ public class PrimaryUpdateAndCacheUtils {
   public static <P extends HasMetadata> P patchAndCacheStatus(
       P primary,
       KubernetesClient client,
-      UserPrimaryResourceCache<P> cache,
+      PrimaryResourceCache<P> cache,
       BiFunction<P, KubernetesClient, P> patch) {
     var updatedResource = patch.apply(primary, client);
     cache.cacheResource(primary, updatedResource);
