@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.support.UserPrimaryResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class PrimaryUpdateAndCacheUtils {
@@ -19,7 +21,15 @@ public class PrimaryUpdateAndCacheUtils {
     return updatedResource;
   }
 
-  public static <P extends HasMetadata> P patchAndCacheStatus(P primary) {
+  public static <P extends HasMetadata> P patchAndCacheStatus(
+      P primary, Context<P> context, UserPrimaryResourceCache<P> cache) {
+
+    return null;
+  }
+
+  public static <P extends HasMetadata> P patchAndCacheStatus(
+      P primary, KubernetesClient client, UserPrimaryResourceCache<P> cache) {
+
     return null;
   }
 }

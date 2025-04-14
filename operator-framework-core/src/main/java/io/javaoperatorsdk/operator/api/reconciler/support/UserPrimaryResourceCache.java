@@ -6,13 +6,13 @@ import java.util.function.BiPredicate;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class ResourceCache<P extends HasMetadata> {
+public class UserPrimaryResourceCache<P extends HasMetadata> {
 
-  private BiPredicate<Pair<P>, P> evictionPredicate;
+  private BiPredicate<Pair<P>, P> evictionCondition;
   private ConcurrentHashMap<ResourceID, Pair<P>> cache = new ConcurrentHashMap<>();
 
-  public ResourceCache(BiPredicate<Pair<P>, P> evictionPredicate) {
-    this.evictionPredicate = evictionPredicate;
+  public UserPrimaryResourceCache(BiPredicate<Pair<P>, P> evictionCondition) {
+    this.evictionCondition = evictionCondition;
   }
 
   public void cacheResource(P afterUpdate) {
@@ -35,7 +35,7 @@ public class ResourceCache<P extends HasMetadata> {
       cache.remove(resourceId);
       return newVersion;
     }
-    if (evictionPredicate.test(pair, newVersion)) {
+    if (evictionCondition.test(pair, newVersion)) {
       cache.remove(resourceId);
       return newVersion;
     } else {
