@@ -128,7 +128,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.3.1</version>
+        <version>3.4.2</version>
         <configuration>
           <excludes>
             <exclude>META-INF/fabric8/*.yml</exclude>
