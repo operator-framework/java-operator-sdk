@@ -26,7 +26,7 @@ public class StatusPatchCacheWithLockReconciler
       throws InterruptedException {
 
     if (resource.getStatus() != null && resource.getStatus().getValue() != latestValue) {
-      errorPresent = false;
+      errorPresent = true;
       throw new IllegalStateException(
           "status is not up to date. Latest value: "
               + latestValue

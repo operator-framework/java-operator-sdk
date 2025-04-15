@@ -38,7 +38,7 @@ public class StatusPatchPrimaryCacheReconciler
     primary = cache.getFreshResource(primary);
 
     if (primary.getStatus() != null && primary.getStatus().getValue() != latestValue) {
-      errorPresent = false;
+      errorPresent = true;
       throw new IllegalStateException(
           "status is not up to date. Latest value: "
               + latestValue
