@@ -21,10 +21,6 @@ public class ConfigMapDeleterBulkDependentResource
   public static final String ADDITIONAL_DATA_KEY = "additionalData";
   public static final String INDEX_DELIMITER = "-";
 
-  public ConfigMapDeleterBulkDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   public Map<String, ConfigMap> desiredResources(
       BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {

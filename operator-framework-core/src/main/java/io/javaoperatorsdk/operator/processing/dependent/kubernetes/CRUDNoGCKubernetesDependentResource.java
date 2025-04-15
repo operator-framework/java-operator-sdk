@@ -20,6 +20,8 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
 public class CRUDNoGCKubernetesDependentResource<R extends HasMetadata, P extends HasMetadata>
     extends KubernetesDependentResource<R, P> implements Creator<R, P>, Updater<R, P>, Deleter<P> {
 
+  public CRUDNoGCKubernetesDependentResource() {}
+
   public CRUDNoGCKubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
   }

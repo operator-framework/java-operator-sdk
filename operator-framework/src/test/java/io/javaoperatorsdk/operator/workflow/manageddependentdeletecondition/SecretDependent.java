@@ -13,10 +13,6 @@ public class SecretDependent
     extends CRUDNoGCKubernetesDependentResource<
         Secret, ManagedDependentDefaultDeleteConditionCustomResource> {
 
-  public SecretDependent() {
-    super(Secret.class);
-  }
-
   @Override
   protected Secret desired(
       ManagedDependentDefaultDeleteConditionCustomResource primary,

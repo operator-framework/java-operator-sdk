@@ -13,10 +13,6 @@ import static io.javaoperatorsdk.operator.dependent.primarytosecondaydependent.P
 public class SecretDependent
     extends CRUDKubernetesDependentResource<Secret, PrimaryToSecondaryDependentCustomResource> {
 
-  public SecretDependent() {
-    super(Secret.class);
-  }
-
   @Override
   protected Secret desired(
       PrimaryToSecondaryDependentCustomResource primary,

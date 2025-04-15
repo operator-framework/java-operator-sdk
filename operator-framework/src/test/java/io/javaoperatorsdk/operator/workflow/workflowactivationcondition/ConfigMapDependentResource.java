@@ -12,10 +12,6 @@ public class ConfigMapDependentResource
 
   public static final String DATA_KEY = "data";
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       WorkflowActivationConditionCustomResource primary,

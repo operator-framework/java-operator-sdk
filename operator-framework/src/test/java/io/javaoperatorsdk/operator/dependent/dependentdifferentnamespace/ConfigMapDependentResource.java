@@ -15,10 +15,6 @@ public class ConfigMapDependentResource
 
   public static final String NAMESPACE = "default";
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       DependentDifferentNamespaceCustomResource primary,

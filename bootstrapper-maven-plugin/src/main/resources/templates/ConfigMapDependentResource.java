@@ -17,10 +17,6 @@ public class ConfigMapDependentResource
 
     public static final String KEY = "key";
 
-    public ConfigMapDependentResource() {
-        super(ConfigMap.class);
-    }
-
     @Override
     protected ConfigMap desired({{artifactClassId}}CustomResource primary,
                                 Context<{{artifactClassId}}CustomResource> context) {

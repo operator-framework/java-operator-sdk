@@ -14,10 +14,6 @@ public class UnmodifiablePartConfigMapDependent
   public static final String UNMODIFIABLE_INITIAL_DATA_KEY = "initialDataKey";
   public static final String ACTUAL_DATA_KEY = "actualDataKey";
 
-  public UnmodifiablePartConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       UnmodifiableDependentPartCustomResource primary,

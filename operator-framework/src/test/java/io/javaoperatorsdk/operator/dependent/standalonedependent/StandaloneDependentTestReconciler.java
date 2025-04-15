@@ -70,10 +70,6 @@ public class StandaloneDependentTestReconciler
   private static class DeploymentDependentResource
       extends CRUDKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
-    public DeploymentDependentResource() {
-      super(Deployment.class);
-    }
-
     @Override
     protected Deployment desired(
         StandaloneDependentTestCustomResource primary,

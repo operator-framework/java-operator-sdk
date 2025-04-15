@@ -134,6 +134,27 @@ public class Utils {
     }
   }
 
+  public static Class<?> getTypeArgumentFromHierarchyByIndex(
+      Class<?> clazz, Class<?> expectedImplementedInterface, int index) {
+    Class<?> c = clazz;
+    while (!(c.getGenericSuperclass() instanceof ParameterizedType)) {
+      c = c.getSuperclass();
+    }
+    Class<?> actualTypeArgument =
+        (Class<?>) ((ParameterizedType) c.getGenericSuperclass()).getActualTypeArguments()[index];
+    if (!expectedImplementedInterface.isAssignableFrom(actualTypeArgument)) {
+      throw new IllegalArgumentException(
+          GENERIC_PARAMETER_TYPE_ERROR_PREFIX
+              + clazz.getName()
+              + "because it doesn't extend a class that is parametrized with the type that"
+              + " implements "
+              + expectedImplementedInterface.getSimpleName()
+              + ". Please provide the resource type in the constructor (e.g.,"
+              + " super(Deployment.class).");
+    }
+    return actualTypeArgument;
+  }
+
   public static Class<?> getFirstTypeArgumentFromInterface(
       Class<?> clazz, Class<?> expectedImplementedInterface) {
     return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, 0);

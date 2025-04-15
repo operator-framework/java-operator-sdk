@@ -8,10 +8,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKuber
 public class DeploymentDependentResource
     extends CRUDNoGCKubernetesDependentResource<Deployment, WorkflowAllFeatureCustomResource> {
 
-  public DeploymentDependentResource() {
-    super(Deployment.class);
-  }
-
   @Override
   protected Deployment desired(
       WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
