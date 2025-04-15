@@ -23,6 +23,7 @@ public class StatusPatchPrimaryCacheReconciler
   public volatile int latestValue = 0;
   public volatile boolean errorPresent = false;
 
+  // We on purpose don't use the provided predicate to show what a custom could look like.
   private PrimaryResourceCache<StatusPatchPrimaryCacheCustomResource> cache =
       new PrimaryResourceCache<>(
           (statusPatchCacheCustomResourcePair, statusPatchCacheCustomResource) ->
