@@ -82,7 +82,7 @@ public class PrimaryUpdateAndCacheUtils {
         .eventSourceRetriever()
         .getControllerEventSource()
         .handleRecentResourceUpdate(ResourceID.fromResource(primary), updatedResource, primary);
-    return null;
+    return updatedResource;
   }
 
   /**
