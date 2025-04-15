@@ -54,10 +54,6 @@ public class SchemaDependentResource
 
   private MySQLDbConfig dbConfig;
 
-  public SchemaDependentResource() {
-    super(Schema.class);
-  }
-
   @Override
   public Optional<ResourcePollerConfig> configuration() {
     return Optional.of(new ResourcePollerConfig(getPollingPeriod(), dbConfig));
