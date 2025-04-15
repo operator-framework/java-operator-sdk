@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.SSABasedGenericKubernetesResourceMatcher;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -68,6 +69,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private final String id = UUID.randomUUID().toString();
+  private final KubernetesClient client;
+  private final String fieldManager;
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
@@ -77,18 +80,20 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         context
             .getControllerConfiguration()
             .getConfigurationService()
-            .parseResourceVersionsForEventFilteringAndCaching());
+            .parseResourceVersionsForEventFilteringAndCaching(),
+        context.getControllerConfiguration().fieldManager());
   }
 
   InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
-    this(configuration, client, false);
+    this(configuration, client, false, "manager");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private InformerEventSource(
       InformerEventSourceConfiguration<R> configuration,
       KubernetesClient client,
-      boolean parseResourceVersions) {
+      boolean parseResourceVersions,
+      String fieldManager) {
     super(
         configuration.name(),
         configuration
@@ -112,6 +117,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     onUpdateFilter = informerConfig.getOnUpdateFilter();
     onDeleteFilter = informerConfig.getOnDeleteFilter();
     genericFilter = informerConfig.getGenericFilter();
+    this.client = client;
+    this.fieldManager = fieldManager;
   }
 
   @Override
@@ -215,10 +222,22 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       if (id.equals(parts[0])) {
         if (oldObject == null && parts.length == 1) {
           known = true;
-        } else if (oldObject != null
-            && parts.length == 2
-            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
-          known = true;
+        } else if (oldObject != null && parts.length == 2) {
+          if (oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
+            known = true;
+          } else {
+            // if the resource version doesn't match, there's a chance that it's due
+            // to a change that is not meaningful, but causes the matcher logic between
+            // desired and newObject to see a change.
+            // TODO: this likely should be conditional on useSSA, not just the presence of the 
+            // field manager
+            var ssaMatcher = SSABasedGenericKubernetesResourceMatcher.getInstance();
+            if (ssaMatcher.checkIfFieldManagerExists(newObject, fieldManager).isPresent()) {
+              known = ssaMatcher.matches(oldObject, newObject, fieldManager, client, true);
+            } else {
+              // do we even need to worry about this case 
+            }
+          }
         }
       }
     }
