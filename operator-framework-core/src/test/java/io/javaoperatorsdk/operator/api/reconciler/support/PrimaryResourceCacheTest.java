@@ -59,6 +59,18 @@ class PrimaryResourceCacheTest {
     assertThat(olderCR).isSameAs(res);
   }
 
+  @Test
+  void removesIfNewResourceWithDifferentUid() {
+    var cr = customResource("2");
+    versionParsingCache.cacheResource(cr);
+    var crWithDifferentUid = customResource("1");
+    cr.getMetadata().setUid("otheruid");
+
+    var res = versionParsingCache.getFreshResource(crWithDifferentUid);
+
+    assertThat(res).isSameAs(crWithDifferentUid);
+  }
+
   private TestCustomResource customResource(String resourceVersion) {
     var cr = new TestCustomResource();
     cr.setMetadata(
