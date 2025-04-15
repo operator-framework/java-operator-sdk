@@ -15,6 +15,10 @@ public class PrimaryResourceCache<P extends HasMetadata> {
     this.evictionPredicate = evictionPredicate;
   }
 
+  public PrimaryResourceCache() {
+    this(new ResourceVersionParsingEvictionPredicate<>());
+  }
+
   public void cacheResource(P afterUpdate) {
     var resourceId = ResourceID.fromResource(afterUpdate);
     cache.put(resourceId, new Pair<>(null, afterUpdate));
@@ -49,6 +53,7 @@ public class PrimaryResourceCache<P extends HasMetadata> {
 
   public record Pair<T extends HasMetadata>(T beforeUpdate, T afterUpdate) {}
 
+  /** This works in general, but it does not strictly follow the contract with k8s API */
   public static class ResourceVersionParsingEvictionPredicate<T extends HasMetadata>
       implements BiPredicate<Pair<T>, T> {
     @Override

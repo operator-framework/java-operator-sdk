@@ -43,10 +43,7 @@ public class PeriodicTriggerEventSource<P extends HasMetadata>
           public void run() {
             primaryCache
                 .list()
-                .forEach(
-                    r -> {
-                      getEventHandler().handleEvent(new Event(ResourceID.fromResource(r)));
-                    });
+                .forEach(r -> getEventHandler().handleEvent(new Event(ResourceID.fromResource(r))));
           }
         },
         0,
