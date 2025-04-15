@@ -14,6 +14,8 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
     extends AbstractPollingDependentResource<R, P>
     implements PerResourcePollingEventSource.ResourceFetcher<R, P> {
 
+  public PerResourcePollingDependentResource() {}
+
   public PerResourcePollingDependentResource(Class<R> resourceType) {
     super(resourceType);
   }
