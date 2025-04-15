@@ -144,20 +144,10 @@ class DependentResourceConfigurationResolverTest {
   }
 
   public static class ConfigMapDep extends KubernetesDependentResource<ConfigMap, ConfigMap>
-      implements GarbageCollected<ConfigMap> {
-
-    public ConfigMapDep() {
-      super(ConfigMap.class);
-    }
-  }
+      implements GarbageCollected<ConfigMap> {}
 
   public static class ServiceDep extends KubernetesDependentResource<Service, ConfigMap>
-      implements GarbageCollected<ConfigMap> {
-
-    public ServiceDep() {
-      super(Service.class);
-    }
-  }
+      implements GarbageCollected<ConfigMap> {}
 
   @CustomAnnotation(value = CustomAnnotatedDep.PROVIDED_VALUE)
   @Configured(

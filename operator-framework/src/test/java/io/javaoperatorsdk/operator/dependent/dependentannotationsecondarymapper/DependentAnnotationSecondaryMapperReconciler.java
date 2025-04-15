@@ -41,10 +41,6 @@ public class DependentAnnotationSecondaryMapperReconciler
           Updater<ConfigMap, DependentAnnotationSecondaryMapperResource>,
           Deleter<DependentAnnotationSecondaryMapperResource> {
 
-    public ConfigMapDependentResource() {
-      super(ConfigMap.class);
-    }
-
     @Override
     protected ConfigMap desired(
         DependentAnnotationSecondaryMapperResource primary,

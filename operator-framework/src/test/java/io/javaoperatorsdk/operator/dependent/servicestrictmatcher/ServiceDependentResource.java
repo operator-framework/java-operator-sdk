@@ -19,10 +19,6 @@ public class ServiceDependentResource
 
   public static AtomicInteger updated = new AtomicInteger(0);
 
-  public ServiceDependentResource() {
-    super(Service.class);
-  }
-
   @Override
   protected Service desired(
       ServiceStrictMatcherTestCustomResource primary,

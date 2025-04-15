@@ -22,10 +22,6 @@ public class ServiceDependentResource
             .CRUDKubernetesDependentResource<
         Service, WebPage> {
 
-  public ServiceDependentResource() {
-    super(Service.class);
-  }
-
   @Override
   protected Service desired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> serviceLabels = new HashMap<>();

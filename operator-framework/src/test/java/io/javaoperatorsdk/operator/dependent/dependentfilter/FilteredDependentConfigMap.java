@@ -15,10 +15,6 @@ import static io.javaoperatorsdk.operator.dependent.dependentfilter.DependentFil
 public class FilteredDependentConfigMap
     extends CRUDKubernetesDependentResource<ConfigMap, DependentFilterTestCustomResource> {
 
-  public FilteredDependentConfigMap() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       DependentFilterTestCustomResource primary,

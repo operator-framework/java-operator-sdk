@@ -11,10 +11,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKuber
 public class ConfigMapDependent
     extends CRUDNoGCKubernetesDependentResource<ConfigMap, WorkflowExplicitCleanupCustomResource> {
 
-  public ConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       WorkflowExplicitCleanupCustomResource primary,

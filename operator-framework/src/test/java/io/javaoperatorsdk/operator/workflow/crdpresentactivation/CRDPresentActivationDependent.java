@@ -8,10 +8,6 @@ public class CRDPresentActivationDependent
     extends CRUDNoGCKubernetesDependentResource<
         CRDPresentActivationDependentCustomResource, CRDPresentActivationCustomResource> {
 
-  public CRDPresentActivationDependent() {
-    super(CRDPresentActivationDependentCustomResource.class);
-  }
-
   @Override
   protected CRDPresentActivationDependentCustomResource desired(
       CRDPresentActivationCustomResource primary,

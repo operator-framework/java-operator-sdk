@@ -18,10 +18,6 @@ public class MultipleManagedDependentNoDiscriminatorConfigMap2
 
   public static final String NAME_SUFFIX = "-2";
 
-  public MultipleManagedDependentNoDiscriminatorConfigMap2() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       MultipleManagedDependentNoDiscriminatorCustomResource primary,

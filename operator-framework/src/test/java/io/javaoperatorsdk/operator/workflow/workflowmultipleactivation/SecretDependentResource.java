@@ -11,10 +11,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class SecretDependentResource
     extends CRUDKubernetesDependentResource<Secret, WorkflowMultipleActivationCustomResource> {
 
-  public SecretDependentResource() {
-    super(Secret.class);
-  }
-
   @Override
   protected Secret desired(
       WorkflowMultipleActivationCustomResource primary,

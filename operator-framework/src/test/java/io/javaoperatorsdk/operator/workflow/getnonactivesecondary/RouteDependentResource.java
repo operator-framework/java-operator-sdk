@@ -8,10 +8,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class RouteDependentResource
     extends CRUDKubernetesDependentResource<Route, GetNonActiveSecondaryCustomResource> {
 
-  public RouteDependentResource() {
-    super(Route.class);
-  }
-
   @Override
   protected Route desired(
       GetNonActiveSecondaryCustomResource primary,

@@ -8,10 +8,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class RouteDependentResource
     extends CRUDKubernetesDependentResource<Route, WorkflowActivationConditionCustomResource> {
 
-  public RouteDependentResource() {
-    super(Route.class);
-  }
-
   @Override
   protected Route desired(
       WorkflowActivationConditionCustomResource primary,

@@ -19,10 +19,6 @@ public class ConfigMapDependentResource
 
   private static final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       CleanerForManagedDependentCustomResource primary,

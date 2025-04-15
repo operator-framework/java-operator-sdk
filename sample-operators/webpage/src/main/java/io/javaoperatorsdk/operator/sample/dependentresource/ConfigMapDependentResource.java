@@ -20,10 +20,6 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 public class ConfigMapDependentResource
     extends CRUDKubernetesDependentResource<ConfigMap, WebPage> {
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> data = new HashMap<>();

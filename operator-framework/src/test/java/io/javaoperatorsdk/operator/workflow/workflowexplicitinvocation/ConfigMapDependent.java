@@ -12,10 +12,6 @@ public class ConfigMapDependent
     extends CRUDNoGCKubernetesDependentResource<
         ConfigMap, WorkflowExplicitInvocationCustomResource> {
 
-  public ConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       WorkflowExplicitInvocationCustomResource primary,

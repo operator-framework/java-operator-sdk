@@ -9,10 +9,6 @@ public class ConfigMapDependent
     extends CRUDNoGCKubernetesDependentResource<
         ConfigMap, HandleWorkflowExceptionsInReconcilerCustomResource> {
 
-  public ConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
   public ReconcileResult<ConfigMap> reconcile(
       HandleWorkflowExceptionsInReconcilerCustomResource primary,

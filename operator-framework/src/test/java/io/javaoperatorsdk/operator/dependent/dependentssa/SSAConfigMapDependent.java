@@ -16,10 +16,6 @@ public class SSAConfigMapDependent
 
   public static final String DATA_KEY = "key1";
 
-  public SSAConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       DependentSSACustomResource primary, Context<DependentSSACustomResource> context) {

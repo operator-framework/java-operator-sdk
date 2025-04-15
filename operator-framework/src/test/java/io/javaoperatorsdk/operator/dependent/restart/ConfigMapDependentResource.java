@@ -16,10 +16,6 @@ public class ConfigMapDependentResource
 
   public static final String DATA_KEY = "key";
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       RestartTestCustomResource primary, Context<RestartTestCustomResource> context) {

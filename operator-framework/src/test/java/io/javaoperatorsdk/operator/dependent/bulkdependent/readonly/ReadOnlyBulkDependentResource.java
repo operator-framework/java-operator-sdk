@@ -23,10 +23,6 @@ public class ReadOnlyBulkDependentResource
 
   public static final String INDEX_DELIMITER = "-";
 
-  public ReadOnlyBulkDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   public Map<String, ConfigMap> getSecondaryResources(
       BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {

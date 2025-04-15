@@ -61,10 +61,6 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
   public static class ReadOnlyConfigMapDependent
       extends KubernetesDependentResource<ConfigMap, PrimaryIndexerTestCustomResource> {
 
-    public ReadOnlyConfigMapDependent() {
-      super(ConfigMap.class);
-    }
-
     @Override
     protected ConfigMap desired(
         PrimaryIndexerTestCustomResource primary,

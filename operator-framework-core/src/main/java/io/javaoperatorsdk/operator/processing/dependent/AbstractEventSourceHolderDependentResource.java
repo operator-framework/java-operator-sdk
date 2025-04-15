@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -23,13 +24,22 @@ public abstract class AbstractEventSourceHolderDependentResource<
   private boolean isCacheFillerEventSource;
   protected String eventSourceNameToUse;
 
+  @SuppressWarnings("unchecked")
+  protected AbstractEventSourceHolderDependentResource() {
+    this(null, null);
+  }
+
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }
 
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType, String name) {
     super(name);
-    this.resourceType = resourceType;
+    if (resourceType == null) {
+      this.resourceType = (Class<R>) Utils.getTypeArgumentFromHierarchyByIndex(getClass(), 0);
+    } else {
+      this.resourceType = resourceType;
+    }
   }
 
   /**

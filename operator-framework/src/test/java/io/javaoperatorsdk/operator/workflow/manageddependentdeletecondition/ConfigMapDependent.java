@@ -11,10 +11,6 @@ public class ConfigMapDependent
     extends CRUDNoGCKubernetesDependentResource<
         ConfigMap, ManagedDependentDefaultDeleteConditionCustomResource> {
 
-  public ConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       ManagedDependentDefaultDeleteConditionCustomResource primary,

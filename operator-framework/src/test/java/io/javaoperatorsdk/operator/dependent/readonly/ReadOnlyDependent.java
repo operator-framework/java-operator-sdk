@@ -5,9 +5,4 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 @KubernetesDependent
-public class ReadOnlyDependent extends KubernetesDependentResource<ConfigMap, ConfigMapReader> {
-
-  public ReadOnlyDependent() {
-    super(ConfigMap.class);
-  }
-}
+public class ReadOnlyDependent extends KubernetesDependentResource<ConfigMap, ConfigMapReader> {}
