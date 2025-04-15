@@ -10,30 +10,53 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PrimaryResourceCacheTest {
 
+  PrimaryResourceCache<TestCustomResource> versionParsingCache =
+      new PrimaryResourceCache<>(
+          new PrimaryResourceCache.ResourceVersionParsingEvictionPredicate<>());
+
   @Test
-  void flowWithResourceVersionParsingEvictionPredicate() {
-    var cache =
-        new PrimaryResourceCache<TestCustomResource>(
-            new PrimaryResourceCache.ResourceVersionParsingEvictionPredicate<>());
+  void returnsThePassedValueIfCacheIsEmpty() {
+    var cr = customResource("1");
 
-    var newCR = customResource("2");
-    var cr = cache.getFreshResource(newCR);
-    assertThat(cr).isSameAs(newCR);
-    // todo break these down by spec
-    cache.cacheResource(newCR);
-    cr = cache.getFreshResource(customResource("1"));
+    var res = versionParsingCache.getFreshResource(cr);
 
-    assertThat(cr).isSameAs(newCR);
-
-    var newestCR = customResource("3");
-    cr = cache.getFreshResource(newestCR);
-
-    assertThat(cr).isSameAs(newestCR);
+    assertThat(cr).isSameAs(res);
   }
 
   @Test
-  void customResourceSpecificEvictionPredicate() {
-    // todo
+  void returnsTheCachedIfNotEvictedAccordingToPredicate() {
+    var cr = customResource("2");
+
+    versionParsingCache.cacheResource(cr);
+
+    var res = versionParsingCache.getFreshResource(customResource("1"));
+    assertThat(cr).isSameAs(res);
+  }
+
+  @Test
+  void ifMoreFreshPassedCachedIsEvicted() {
+    var cr = customResource("2");
+    versionParsingCache.cacheResource(cr);
+    var newCR = customResource("3");
+
+    var res = versionParsingCache.getFreshResource(newCR);
+    var resOnOlder = versionParsingCache.getFreshResource(cr);
+
+    assertThat(newCR).isSameAs(res);
+    assertThat(resOnOlder).isSameAs(cr);
+    assertThat(newCR).isNotSameAs(cr);
+  }
+
+  @Test
+  void cleanupRemovesCachedResources() {
+    var cr = customResource("2");
+    versionParsingCache.cacheResource(cr);
+
+    versionParsingCache.cleanup(customResource("3"));
+
+    var olderCR = customResource("1");
+    var res = versionParsingCache.getFreshResource(olderCR);
+    assertThat(olderCR).isSameAs(res);
   }
 
   private TestCustomResource customResource(String resourceVersion) {

@@ -13,30 +13,67 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.api.reconciler.support.PrimaryResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-// todo javadoc
 public class PrimaryUpdateAndCacheUtils {
 
   private PrimaryUpdateAndCacheUtils() {}
 
   private static final Logger log = LoggerFactory.getLogger(PrimaryUpdateAndCacheUtils.class);
 
-  public static <P extends HasMetadata> P updateAndCacheStatus(P primary, Context<P> context) {
+  /**
+   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
+   * Using update (PUT) method.
+   *
+   * @param primary resource
+   * @param context of reconciliation
+   * @return updated resource
+   * @param <P> primary resource type
+   */
+  public static <P extends HasMetadata> P updateAndCacheStatusWithLock(
+      P primary, Context<P> context) {
     return patchAndCacheStatusWithLock(
         primary, context, (p, c) -> c.resource(primary).updateStatus());
   }
 
+  /**
+   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
+   * Using JSON Merge patch.
+   *
+   * @param primary resource
+   * @param context of reconciliation
+   * @return updated resource
+   * @param <P> primary resource type
+   */
   public static <P extends HasMetadata> P patchAndCacheStatusWithLock(
       P primary, Context<P> context) {
     return patchAndCacheStatusWithLock(
         primary, context, (p, c) -> c.resource(primary).patchStatus());
   }
 
+  /**
+   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
+   * Using JSON Patch.
+   *
+   * @param primary resource
+   * @param context of reconciliation
+   * @return updated resource
+   * @param <P> primary resource type
+   */
   public static <P extends HasMetadata> P editAndCacheStatusWithLock(
       P primary, Context<P> context, UnaryOperator<P> operation) {
     return patchAndCacheStatusWithLock(
         primary, context, (p, c) -> c.resource(primary).editStatus(operation));
   }
 
+  /**
+   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
+   *
+   * @param primary resource
+   * @param context of reconciliation
+   * @param patch free implementation of cache - make sure you use optimistic locking during the
+   *     update
+   * @return the updated resource.
+   * @param <P> primary resource type
+   */
   public static <P extends HasMetadata> P patchAndCacheStatusWithLock(
       P primary, Context<P> context, BiFunction<P, KubernetesClient, P> patch) {
     checkResourceVersionPresent(primary);
@@ -48,6 +85,16 @@ public class PrimaryUpdateAndCacheUtils {
     return null;
   }
 
+  /**
+   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
+   * Using Server Side Apply.
+   *
+   * @param primary resource
+   * @param freshResourceWithStatus - fresh resource with target state
+   * @param context of reconciliation
+   * @return the updated resource.
+   * @param <P> primary resource type
+   */
   public static <P extends HasMetadata> P ssaPatchAndCacheStatusWithLock(
       P primary, P freshResourceWithStatus, Context<P> context) {
     checkResourceVersionPresent(freshResourceWithStatus);
@@ -70,15 +117,26 @@ public class PrimaryUpdateAndCacheUtils {
     return res;
   }
 
+  /**
+   * Patches the resource and adds it to the {@link PrimaryResourceCache} provided. Optimistic
+   * locking is not required.
+   *
+   * @param primary resource
+   * @param freshResourceWithStatus - fresh resource with target state
+   * @param context of reconciliation
+   * @param cache - resource cache managed by user
+   * @return the updated resource.
+   * @param <P> primary resource type
+   */
   public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
-      P primary, P freshResource, Context<P> context, PrimaryResourceCache<P> cache) {
-    logWarnIfResourceVersionPresent(freshResource);
+      P primary, P freshResourceWithStatus, Context<P> context, PrimaryResourceCache<P> cache) {
+    logWarnIfResourceVersionPresent(freshResourceWithStatus);
     return patchAndCacheStatus(
         primary,
         context.getClient(),
         cache,
         (P p, KubernetesClient c) ->
-            c.resource(freshResource)
+            c.resource(freshResourceWithStatus)
                 .subresource("status")
                 .patch(
                     new PatchContext.Builder()
@@ -86,6 +144,66 @@ public class PrimaryUpdateAndCacheUtils {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()));
+  }
+
+  /**
+   * Patches the resource with JSON Patch and adds it to the {@link PrimaryResourceCache} provided.
+   * Optimistic locking is not required.
+   *
+   * @param primary resource*
+   * @param context of reconciliation
+   * @param cache - resource cache managed by user
+   * @return the updated resource.
+   * @param <P> primary resource type
+   */
+  public static <P extends HasMetadata> P edithAndCacheStatus(
+      P primary, Context<P> context, PrimaryResourceCache<P> cache, UnaryOperator<P> operation) {
+    logWarnIfResourceVersionPresent(primary);
+    return patchAndCacheStatus(
+        primary,
+        context.getClient(),
+        cache,
+        (P p, KubernetesClient c) -> c.resource(primary).editStatus(operation));
+  }
+
+  /**
+   * Patches the resource with JSON Merge patch and adds it to the {@link PrimaryResourceCache}
+   * provided. Optimistic locking is not required.
+   *
+   * @param primary resource*
+   * @param context of reconciliation
+   * @param cache - resource cache managed by user
+   * @return the updated resource.
+   * @param <P> primary resource type
+   */
+  public static <P extends HasMetadata> P patchAndCacheStatus(
+      P primary, Context<P> context, PrimaryResourceCache<P> cache) {
+    logWarnIfResourceVersionPresent(primary);
+    return patchAndCacheStatus(
+        primary,
+        context.getClient(),
+        cache,
+        (P p, KubernetesClient c) -> c.resource(primary).patchStatus());
+  }
+
+  /**
+   * Updates the resource and adds it to the {@link PrimaryResourceCache} provided. Optimistic
+   * locking is not required.
+   *
+   * @param primary resource*
+   * @param context of reconciliation
+   * @param cache - resource cache managed by user
+   * @return the updated resource.
+   * @param <P> primary resource type
+   */
+  public static <P extends HasMetadata> P updateAndCacheStatus(
+      P primary, Context<P> context, PrimaryResourceCache<P> cache) {
+    logWarnIfResourceVersionPresent(primary);
+    return patchAndCacheStatus(
+        primary,
+        context.getClient(),
+        cache,
+        (P p, KubernetesClient c) -> c.resource(primary).updateStatus());
   }
 
   public static <P extends HasMetadata> P patchAndCacheStatus(
