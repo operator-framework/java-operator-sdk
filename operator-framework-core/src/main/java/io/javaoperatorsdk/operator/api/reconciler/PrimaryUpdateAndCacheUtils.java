@@ -156,7 +156,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P edithAndCacheStatus(
+  public static <P extends HasMetadata> P editAndCacheStatus(
       P primary, Context<P> context, PrimaryResourceCache<P> cache, UnaryOperator<P> operation) {
     logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
