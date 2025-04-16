@@ -227,7 +227,7 @@ public class PrimaryUpdateAndCacheUtils {
   private static <P extends HasMetadata> void logWarnIfResourceVersionPresent(P primary) {
     if (primary.getMetadata().getResourceVersion() != null) {
       log.warn(
-          "Primary resource version is NOT  null, for caching with optimistic locking use"
+          "Primary resource version is NOT null, for caching with optimistic locking use"
               + " alternative methods. Name: {} namespace: {}",
           primary.getMetadata().getName(),
           primary.getMetadata().getNamespace());
