@@ -239,7 +239,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   protected void before(ExtensionContext context) {
     super.before(context);
 
-    final var kubernetesClient = getKubernetesClient();
+    final var kubernetesClient = getInfrastructureKubernetesClient();
 
     for (var ref : portForwards) {
       String podName =
@@ -308,7 +308,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   protected void after(ExtensionContext context) {
     super.after(context);
 
-    var kubernetesClient = getKubernetesClient();
+    var kubernetesClient = getInfrastructureKubernetesClient();
 
     var iterator = appliedCRDs.iterator();
     while (iterator.hasNext()) {
