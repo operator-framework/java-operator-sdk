@@ -71,7 +71,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     final var crdPath = "./target/classes/META-INF/fabric8/";
     final var crdSuffix = "-v1.yml";
 
-    final var kubernetesClient = getKubernetesClient();
+    final var kubernetesClient = getInfrastructureKubernetesClient();
     for (var crdFile :
         Objects.requireNonNull(
             new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
@@ -109,7 +109,10 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
 
   @Override
   protected void deleteOperator() {
-    getKubernetesClient().resourceList(operatorDeployment).inNamespace(namespace).delete();
+    getInfrastructureKubernetesClient()
+        .resourceList(operatorDeployment)
+        .inNamespace(namespace)
+        .delete();
   }
 
   public static class Builder extends AbstractBuilder<Builder> {
