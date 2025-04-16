@@ -157,6 +157,12 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     }
 
     public ClusterDeployedOperatorExtension build() {
+      infrastructureKubernetesClient =
+          infrastructureKubernetesClient != null
+              ? infrastructureKubernetesClient
+              : new KubernetesClientBuilder().build();
+      kubernetesClient =
+          kubernetesClient != null ? kubernetesClient : infrastructureKubernetesClient;
       return new ClusterDeployedOperatorExtension(
           operatorDeployment,
           deploymentTimeout,
@@ -165,10 +171,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass,
-          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build(),
-          infrastructureKubernetesClient != null
-              ? infrastructureKubernetesClient
-              : new KubernetesClientBuilder().build(),
+          kubernetesClient,
+          infrastructureKubernetesClient,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier);
     }

@@ -60,12 +60,12 @@ public abstract class AbstractOperatorExtension
       KubernetesClient infrastructureKubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
-    this.kubernetesClient =
-        kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
     this.infrastructureKubernetesClient =
         infrastructureKubernetesClient != null
             ? infrastructureKubernetesClient
             : new KubernetesClientBuilder().build();
+    this.kubernetesClient =
+        kubernetesClient != null ? kubernetesClient : this.infrastructureKubernetesClient;
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
     this.oneNamespacePerClass = oneNamespacePerClass;
