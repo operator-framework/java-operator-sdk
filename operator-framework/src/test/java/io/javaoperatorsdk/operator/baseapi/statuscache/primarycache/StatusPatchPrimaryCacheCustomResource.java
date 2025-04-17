@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.statuscache;
+package io.javaoperatorsdk.operator.baseapi.statuscache.primarycache;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
