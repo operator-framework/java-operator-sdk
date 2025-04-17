@@ -41,8 +41,9 @@ public class StatusPatchCacheWithLockReconciler
         .getStatus()
         .setValue(resource.getStatus() == null ? 1 : resource.getStatus().getValue() + 1);
 
+    resource.getMetadata().setResourceVersion(null);
     var updated =
-        PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatusWithLock(resource, freshCopy, context);
+        PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatusWith(resource, freshCopy, context);
     latestValue = updated.getStatus().getValue();
 
     return UpdateControl.noUpdate();

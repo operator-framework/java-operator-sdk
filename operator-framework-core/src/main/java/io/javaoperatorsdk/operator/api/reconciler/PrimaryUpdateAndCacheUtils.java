@@ -28,10 +28,8 @@ public class PrimaryUpdateAndCacheUtils {
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P updateAndCacheStatusWithLock(
-      P primary, Context<P> context) {
-    return patchAndCacheStatusWithLock(
-        primary, context, (p, c) -> c.resource(primary).updateStatus());
+  public static <P extends HasMetadata> P updateAndCacheStatusWith(P primary, Context<P> context) {
+    return patchAndCacheStatusWith(primary, context, (p, c) -> c.resource(primary).updateStatus());
   }
 
   /**
@@ -43,10 +41,8 @@ public class PrimaryUpdateAndCacheUtils {
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatusWithLock(
-      P primary, Context<P> context) {
-    return patchAndCacheStatusWithLock(
-        primary, context, (p, c) -> c.resource(primary).patchStatus());
+  public static <P extends HasMetadata> P patchAndCacheStatusWith(P primary, Context<P> context) {
+    return patchAndCacheStatusWith(primary, context, (p, c) -> c.resource(primary).patchStatus());
   }
 
   /**
@@ -58,9 +54,9 @@ public class PrimaryUpdateAndCacheUtils {
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P editAndCacheStatusWithLock(
+  public static <P extends HasMetadata> P editAndCacheStatusWith(
       P primary, Context<P> context, UnaryOperator<P> operation) {
-    return patchAndCacheStatusWithLock(
+    return patchAndCacheStatusWith(
         primary, context, (p, c) -> c.resource(primary).editStatus(operation));
   }
 
@@ -74,7 +70,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatusWithLock(
+  public static <P extends HasMetadata> P patchAndCacheStatusWith(
       P primary, Context<P> context, BiFunction<P, KubernetesClient, P> patch) {
     checkResourceVersionPresent(primary);
     var updatedResource = patch.apply(primary, context.getClient());
@@ -95,7 +91,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P ssaPatchAndCacheStatusWithLock(
+  public static <P extends HasMetadata> P ssaPatchAndCacheStatusWith(
       P primary, P freshResourceWithStatus, Context<P> context) {
     checkResourceVersionPresent(freshResourceWithStatus);
     var res =
