@@ -27,7 +27,7 @@ public class StatusPatchCacheWithLockIT {
 
     extension.create(testResource());
 
-    // the reconciliation id periodically triggered, the status values should be increasing
+    // the reconciliation is periodically triggered, the status values should be increasing
     // monotonically
     await()
         .pollDelay(Duration.ofSeconds(1))
