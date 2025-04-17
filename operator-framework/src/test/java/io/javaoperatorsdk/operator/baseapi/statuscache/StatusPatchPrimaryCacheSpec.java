@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.statuscache.primarycache;
+package io.javaoperatorsdk.operator.baseapi.statuscache;
 
 public class StatusPatchPrimaryCacheSpec {
 

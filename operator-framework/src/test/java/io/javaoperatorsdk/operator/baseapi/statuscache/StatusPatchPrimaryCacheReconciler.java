@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.statuscache.primarycache;
+package io.javaoperatorsdk.operator.baseapi.statuscache;
 
 import java.util.List;
 
@@ -12,7 +12,6 @@ import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.support.PrimaryResourceCache;
-import io.javaoperatorsdk.operator.baseapi.statuscache.PeriodicTriggerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
