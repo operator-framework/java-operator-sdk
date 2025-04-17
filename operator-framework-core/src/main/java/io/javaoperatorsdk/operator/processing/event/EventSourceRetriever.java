@@ -6,6 +6,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 public interface EventSourceRetriever<P extends HasMetadata> {
 
@@ -16,6 +17,8 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   <R> EventSource<R, P> getEventSourceFor(Class<R> dependentType, String name);
 
   <R> List<EventSource<R, P>> getEventSourcesFor(Class<R> dependentType);
+
+  ControllerEventSource<P> getControllerEventSource();
 
   /**
    * Registers (and starts) the specified {@link EventSource} dynamically during the reconciliation.

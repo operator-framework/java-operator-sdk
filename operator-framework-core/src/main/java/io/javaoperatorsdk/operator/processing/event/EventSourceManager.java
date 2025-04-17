@@ -208,6 +208,7 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.flatMappedSources();
   }
 
+  @Override
   public ControllerEventSource<P> getControllerEventSource() {
     return eventSources.controllerEventSource();
   }

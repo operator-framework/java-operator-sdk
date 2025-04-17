@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -167,9 +167,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   /**
-   * @return true if {@link InformerEventSourceConfiguration#parseResourceVersions()} is enabled and
-   *     the resourceVersion of newResource is numerically greater than cachedResource, otherwise
-   *     false
+   * @return true if {@link ConfigurationService#parseResourceVersionsForEventFilteringAndCaching()}
+   *     is enabled and the resourceVersion of newResource is numerically greater than
+   *     cachedResource, otherwise false
    */
   private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
     try {
