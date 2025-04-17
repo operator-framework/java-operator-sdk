@@ -117,6 +117,14 @@ public class PrimaryUpdateAndCacheUtils {
     return updatedResource;
   }
 
+  private static <P extends HasMetadata> void checkResourceVersionPresent(P primary) {
+    if (primary.getMetadata().getResourceVersion() == null) {
+      throw new IllegalStateException(
+          "Primary resource version is null, it is expected to set resource version for updates for caching. Name: %s namespace: %s"
+              .formatted(primary.getMetadata().getName(), primary.getMetadata().getNamespace()));
+    }
+  }
+
   private static <P extends HasMetadata> void logWarnIfResourceVersionPresent(P primary) {
     if (primary.getMetadata().getResourceVersion() != null) {
       log.warn(
