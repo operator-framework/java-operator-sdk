@@ -28,8 +28,8 @@ public class PrimaryUpdateAndCacheUtils {
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P updateAndCacheStatusWith(P primary, Context<P> context) {
-    return patchAndCacheStatusWith(primary, context, (p, c) -> c.resource(primary).updateStatus());
+  public static <P extends HasMetadata> P updateAndCacheStatus(P primary, Context<P> context) {
+    return patchAndCacheStatus(primary, context, (p, c) -> c.resource(primary).updateStatus());
   }
 
   /**
@@ -41,8 +41,8 @@ public class PrimaryUpdateAndCacheUtils {
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatusWith(P primary, Context<P> context) {
-    return patchAndCacheStatusWith(primary, context, (p, c) -> c.resource(primary).patchStatus());
+  public static <P extends HasMetadata> P patchAndCacheStatus(P primary, Context<P> context) {
+    return patchAndCacheStatus(primary, context, (p, c) -> c.resource(primary).patchStatus());
   }
 
   /**
@@ -54,9 +54,9 @@ public class PrimaryUpdateAndCacheUtils {
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P editAndCacheStatusWith(
+  public static <P extends HasMetadata> P editAndCacheStatus(
       P primary, Context<P> context, UnaryOperator<P> operation) {
-    return patchAndCacheStatusWith(
+    return patchAndCacheStatus(
         primary, context, (p, c) -> c.resource(primary).editStatus(operation));
   }
 
@@ -70,7 +70,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatusWith(
+  public static <P extends HasMetadata> P patchAndCacheStatus(
       P primary, Context<P> context, BiFunction<P, KubernetesClient, P> patch) {
     var updatedResource = patch.apply(primary, context.getClient());
     context
@@ -90,7 +90,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P ssaPatchAndCacheStatusWith(
+  public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
       P primary, P freshResourceWithStatus, Context<P> context) {
     var res =
         context

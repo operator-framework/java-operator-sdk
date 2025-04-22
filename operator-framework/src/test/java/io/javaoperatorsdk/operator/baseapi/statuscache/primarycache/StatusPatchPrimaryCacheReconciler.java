@@ -33,8 +33,7 @@ public class StatusPatchPrimaryCacheReconciler
   @Override
   public UpdateControl<StatusPatchPrimaryCacheCustomResource> reconcile(
       StatusPatchPrimaryCacheCustomResource primary,
-      Context<StatusPatchPrimaryCacheCustomResource> context)
-      throws InterruptedException {
+      Context<StatusPatchPrimaryCacheCustomResource> context) {
 
     primary = cache.getFreshResource(primary);
 
@@ -48,8 +47,6 @@ public class StatusPatchPrimaryCacheReconciler
     }
 
     var freshCopy = createFreshCopy(primary);
-    // setting the resource version
-    freshCopy.getMetadata().setResourceVersion(primary.getMetadata().getResourceVersion());
     freshCopy
         .getStatus()
         .setValue(primary.getStatus() == null ? 1 : primary.getStatus().getValue() + 1);

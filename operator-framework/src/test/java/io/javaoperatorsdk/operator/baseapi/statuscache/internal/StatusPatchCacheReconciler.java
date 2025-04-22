@@ -20,8 +20,7 @@ public class StatusPatchCacheReconciler implements Reconciler<StatusPatchCacheCu
 
   @Override
   public UpdateControl<StatusPatchCacheCustomResource> reconcile(
-      StatusPatchCacheCustomResource resource, Context<StatusPatchCacheCustomResource> context)
-      throws InterruptedException {
+      StatusPatchCacheCustomResource resource, Context<StatusPatchCacheCustomResource> context) {
 
     if (resource.getStatus() != null && resource.getStatus().getValue() != latestValue) {
       errorPresent = true;
@@ -40,8 +39,7 @@ public class StatusPatchCacheReconciler implements Reconciler<StatusPatchCacheCu
         .setValue(resource.getStatus() == null ? 1 : resource.getStatus().getValue() + 1);
 
     resource.getMetadata().setResourceVersion(null);
-    var updated =
-        PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatusWith(resource, freshCopy, context);
+    var updated = PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus(resource, freshCopy, context);
     latestValue = updated.getStatus().getValue();
 
     return UpdateControl.noUpdate();
