@@ -72,7 +72,6 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P patchAndCacheStatusWith(
       P primary, Context<P> context, BiFunction<P, KubernetesClient, P> patch) {
-    checkResourceVersionPresent(primary);
     var updatedResource = patch.apply(primary, context.getClient());
     context
         .eventSourceRetriever()
@@ -93,7 +92,6 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P ssaPatchAndCacheStatusWith(
       P primary, P freshResourceWithStatus, Context<P> context) {
-    checkResourceVersionPresent(freshResourceWithStatus);
     var res =
         context
             .getClient()
@@ -210,14 +208,6 @@ public class PrimaryUpdateAndCacheUtils {
     var updatedResource = patch.apply(primary, client);
     cache.cacheResource(primary, updatedResource);
     return updatedResource;
-  }
-
-  private static <P extends HasMetadata> void checkResourceVersionPresent(P primary) {
-    if (primary.getMetadata().getResourceVersion() == null) {
-      throw new IllegalStateException(
-          "Primary resource version is null, it is expected to set resource version for updates for caching. Name: %s namespace: %s"
-              .formatted(primary.getMetadata().getName(), primary.getMetadata().getNamespace()));
-    }
   }
 
   private static <P extends HasMetadata> void logWarnIfResourceVersionPresent(P primary) {
