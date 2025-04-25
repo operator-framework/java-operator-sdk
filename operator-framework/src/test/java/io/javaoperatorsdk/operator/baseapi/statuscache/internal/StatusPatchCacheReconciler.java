@@ -32,8 +32,7 @@ public class StatusPatchCacheReconciler implements Reconciler<StatusPatchCacheCu
     }
 
     var freshCopy = createFreshCopy(resource);
-    // setting the resource version
-    freshCopy.getMetadata().setResourceVersion(resource.getMetadata().getResourceVersion());
+
     freshCopy
         .getStatus()
         .setValue(resource.getStatus() == null ? 1 : resource.getStatus().getValue() + 1);
