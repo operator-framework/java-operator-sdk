@@ -189,7 +189,7 @@ to avoid generating the resource again and other race conditions.
 
 Therefore,
 the framework provides facilities
-to cover these use cases withing [`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java#L16).
+to cover these use cases with [`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java#L16).
 These utility methods come in two flavors:
 
 #### Using internal cache
