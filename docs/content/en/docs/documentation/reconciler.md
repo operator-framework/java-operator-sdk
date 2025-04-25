@@ -228,7 +228,8 @@ is set to `false` (more precisely there are some edge cases when it won't work).
 
 #### Using `PrimaryResourceCache` cache
 
-As an alternative, you can use an explicit caching approach that the framework supports:
+As an alternative, for very rare cases when `ConfigurtionService.parseResourceVersionsForEventFilteringAndCaching` 
+needs to be set to `false` you can use an explicit caching approach:
 
 ```java
 
