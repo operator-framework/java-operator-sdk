@@ -1,18 +1,23 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.api.reconciler.support.PrimaryResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
+/**
+ * Utility methods to patch the primary resource state and store it to the related cache, to make
+ * sure that fresh resource is present for the next reconciliation. The main use case for such
+ * updates is to store state is resource status. Use of optimistic locking is not desired for such
+ * updates, since we don't want to patch fail and lose information that we want to store.
+ */
 public class PrimaryUpdateAndCacheUtils {
 
   private PrimaryUpdateAndCacheUtils() {}
@@ -29,7 +34,9 @@ public class PrimaryUpdateAndCacheUtils {
    * @param <P> primary resource type
    */
   public static <P extends HasMetadata> P updateAndCacheStatus(P primary, Context<P> context) {
-    return patchAndCacheStatus(primary, context, (p, c) -> c.resource(primary).updateStatus());
+    logWarnIfResourceVersionPresent(primary);
+    return patchAndCacheStatus(
+        primary, context, () -> context.getClient().resource(primary).updateStatus());
   }
 
   /**
@@ -42,7 +49,9 @@ public class PrimaryUpdateAndCacheUtils {
    * @param <P> primary resource type
    */
   public static <P extends HasMetadata> P patchAndCacheStatus(P primary, Context<P> context) {
-    return patchAndCacheStatus(primary, context, (p, c) -> c.resource(primary).patchStatus());
+    logWarnIfResourceVersionPresent(primary);
+    return patchAndCacheStatus(
+        primary, context, () -> context.getClient().resource(primary).patchStatus());
   }
 
   /**
@@ -56,8 +65,9 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P editAndCacheStatus(
       P primary, Context<P> context, UnaryOperator<P> operation) {
+    logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
-        primary, context, (p, c) -> c.resource(primary).editStatus(operation));
+        primary, context, () -> context.getClient().resource(primary).editStatus(operation));
   }
 
   /**
@@ -65,14 +75,13 @@ public class PrimaryUpdateAndCacheUtils {
    *
    * @param primary resource
    * @param context of reconciliation
-   * @param patch free implementation of cache - make sure you use optimistic locking during the
-   *     update
+   * @param patch free implementation of cache
    * @return the updated resource.
    * @param <P> primary resource type
    */
   public static <P extends HasMetadata> P patchAndCacheStatus(
-      P primary, Context<P> context, BiFunction<P, KubernetesClient, P> patch) {
-    var updatedResource = patch.apply(primary, context.getClient());
+      P primary, Context<P> context, Supplier<P> patch) {
+    var updatedResource = patch.get();
     context
         .eventSourceRetriever()
         .getControllerEventSource()
@@ -92,6 +101,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
       P primary, P freshResourceWithStatus, Context<P> context) {
+    logWarnIfResourceVersionPresent(freshResourceWithStatus);
     var res =
         context
             .getClient()
@@ -112,8 +122,7 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Patches the resource and adds it to the {@link PrimaryResourceCache} provided. Optimistic
-   * locking is not required.
+   * Patches the resource and adds it to the {@link PrimaryResourceCache} provided.
    *
    * @param primary resource
    * @param freshResourceWithStatus - fresh resource with target state
@@ -127,10 +136,11 @@ public class PrimaryUpdateAndCacheUtils {
     logWarnIfResourceVersionPresent(freshResourceWithStatus);
     return patchAndCacheStatus(
         primary,
-        context.getClient(),
         cache,
-        (P p, KubernetesClient c) ->
-            c.resource(freshResourceWithStatus)
+        () ->
+            context
+                .getClient()
+                .resource(freshResourceWithStatus)
                 .subresource("status")
                 .patch(
                     new PatchContext.Builder()
@@ -142,7 +152,6 @@ public class PrimaryUpdateAndCacheUtils {
 
   /**
    * Patches the resource with JSON Patch and adds it to the {@link PrimaryResourceCache} provided.
-   * Optimistic locking is not required.
    *
    * @param primary resource
    * @param context of reconciliation
@@ -154,15 +163,12 @@ public class PrimaryUpdateAndCacheUtils {
       P primary, Context<P> context, PrimaryResourceCache<P> cache, UnaryOperator<P> operation) {
     logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
-        primary,
-        context.getClient(),
-        cache,
-        (P p, KubernetesClient c) -> c.resource(primary).editStatus(operation));
+        primary, cache, () -> context.getClient().resource(primary).editStatus(operation));
   }
 
   /**
    * Patches the resource with JSON Merge patch and adds it to the {@link PrimaryResourceCache}
-   * provided. Optimistic locking is not required.
+   * provided.
    *
    * @param primary resource
    * @param context of reconciliation
@@ -174,15 +180,11 @@ public class PrimaryUpdateAndCacheUtils {
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
     logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
-        primary,
-        context.getClient(),
-        cache,
-        (P p, KubernetesClient c) -> c.resource(primary).patchStatus());
+        primary, cache, () -> context.getClient().resource(primary).patchStatus());
   }
 
   /**
-   * Updates the resource and adds it to the {@link PrimaryResourceCache} provided. Optimistic
-   * locking is not required.
+   * Updates the resource and adds it to the {@link PrimaryResourceCache} provided.
    *
    * @param primary resource
    * @param context of reconciliation
@@ -194,18 +196,21 @@ public class PrimaryUpdateAndCacheUtils {
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
     logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
-        primary,
-        context.getClient(),
-        cache,
-        (P p, KubernetesClient c) -> c.resource(primary).updateStatus());
+        primary, cache, () -> context.getClient().resource(primary).updateStatus());
   }
 
+  /**
+   * Updates the resource using the user provided implementation anc caches the result.
+   *
+   * @param primary resource
+   * @param cache resource cache managed by user
+   * @param patch implementation of resource update*
+   * @return the updated resource.
+   * @param <P> primary resource type
+   */
   public static <P extends HasMetadata> P patchAndCacheStatus(
-      P primary,
-      KubernetesClient client,
-      PrimaryResourceCache<P> cache,
-      BiFunction<P, KubernetesClient, P> patch) {
-    var updatedResource = patch.apply(primary, client);
+      P primary, PrimaryResourceCache<P> cache, Supplier<P> patch) {
+    var updatedResource = patch.get();
     cache.cacheResource(primary, updatedResource);
     return updatedResource;
   }
@@ -213,10 +218,8 @@ public class PrimaryUpdateAndCacheUtils {
   private static <P extends HasMetadata> void logWarnIfResourceVersionPresent(P primary) {
     if (primary.getMetadata().getResourceVersion() != null) {
       log.warn(
-          "Primary resource version is NOT null, for caching with optimistic locking use"
-              + " alternative methods. Name: {} namespace: {}",
-          primary.getMetadata().getName(),
-          primary.getMetadata().getNamespace());
+          "The metadata.resourceVersion of primary resource is NOT null, "
+              + "using optimistic locking is discouraged for this purpose. ");
     }
   }
 }

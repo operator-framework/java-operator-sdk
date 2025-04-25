@@ -277,7 +277,9 @@ As shown in the example above, it is up to you to provide a predicate to determi
 In other words, when to evict the resource from the cache. Typically, as show in the [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/primarycache)
 you can have a counter in status to check on that. 
 
-Since all of this happens explicitly, you cannot use it for now with managed dependent resources and workflows.
+Since all of this happens explicitly, you cannot use this approach for managed dependent resources and workflows; 
+Since passing of the primary resource to the dependent resource always comes directly from the underlying informer event
+source cache.
 
 #### Additional remarks
 
