@@ -144,7 +144,7 @@ public class PrimaryUpdateAndCacheUtils {
    * Patches the resource with JSON Patch and adds it to the {@link PrimaryResourceCache} provided.
    * Optimistic locking is not required.
    *
-   * @param primary resource*
+   * @param primary resource
    * @param context of reconciliation
    * @param cache - resource cache managed by user
    * @return the updated resource.
