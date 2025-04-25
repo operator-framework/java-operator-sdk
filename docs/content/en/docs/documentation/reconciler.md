@@ -214,7 +214,7 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
   }
 ```
 
-In the background `PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatusWith` puts the result of the update into an internal
+In the background `PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus` puts the result of the update into an internal
 cache of the event source of primary resource, and will make sure that the next reconciliation will contain the most 
 recent version of the resource. Note that it is not necessarily the version from the update response, it can be newer
 since other parties can do additional updates meanwhile, but if not explicitly modified, it will contain the up-to-date
