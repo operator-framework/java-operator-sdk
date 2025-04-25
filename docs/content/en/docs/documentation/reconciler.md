@@ -205,7 +205,6 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
     
     // update with SSA requires a fresh copy
     var freshCopy = createFreshCopy(primary);
-    
     freshCopy.getStatus().setValue(statusWithState());
     
     var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus(resource, freshCopy, context);
@@ -226,7 +225,7 @@ This approach works with the default configuration of the framework and should b
 Without going further into the details, this won't work if `ConfigurtionService.parseResourceVersionsForEventFilteringAndCaching`
 is set to `false` (more precisely there are some edge cases when it won't work). For that case framework provides the following solution:
 
-#### Using `PrimaryResourceCache` cache
+#### Fallback approach: using `PrimaryResourceCache` cache
 
 As an alternative, for very rare cases when `ConfigurtionService.parseResourceVersionsForEventFilteringAndCaching` 
 needs to be set to `false` you can use an explicit caching approach:
