@@ -41,6 +41,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
+  private volatile Boolean usePreviousAnnotationForEventFiltering;
 
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
@@ -163,10 +164,19 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   private boolean usePreviousAnnotation(Context<P> context) {
-    return context
-        .getControllerConfiguration()
-        .getConfigurationService()
-        .previousAnnotationForDependentResourcesEventFiltering();
+    if (usePreviousAnnotationForEventFiltering == null) {
+      usePreviousAnnotationForEventFiltering =
+          context
+                  .getControllerConfiguration()
+                  .getConfigurationService()
+                  .previousAnnotationForDependentResourcesEventFiltering()
+              && !context
+                  .getControllerConfiguration()
+                  .getConfigurationService()
+                  .previousAnnotationUsageBlacklist()
+                  .contains(this.resourceType());
+    }
+    return usePreviousAnnotationForEventFiltering;
   }
 
   @Override
