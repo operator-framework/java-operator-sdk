@@ -177,7 +177,7 @@ usually update the status subresource with the information that was available du
 Sometimes this is referred to as the last observed state. 
 When the resource is updated, the framework does not cache the resource directly from the response of the update.
 Instead, the underlying informer eventually receives an event with the updated resource and caches the resource.
-Therefore, it can happen that on next reconciliation the primary resource is not up-to-date regarding your updated (note that other event sources
+Therefore, it can happen that on next reconciliation the primary resource is not up-to-date regarding your updated status subresource (note that other event sources
 can trigger the reconciliation meanwhile). This is not usually a problem, since the status is not used as an input,
 the reconciliation runs again, and the status us updated again. The caches are eventually consistent.
 
