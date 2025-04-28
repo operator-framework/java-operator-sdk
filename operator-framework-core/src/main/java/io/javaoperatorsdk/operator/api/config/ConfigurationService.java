@@ -452,7 +452,22 @@ public interface ConfigurationService {
     return true;
   }
 
-  default List<Class<? extends HasMetadata>> previousAnnotationUsageBlacklist() {
+  /**
+   * For dependent resources framework can add an annotation to filter our events that are results
+   * of changes made by the framework. There are, however, few resources that do not follow the K8S
+   * API convention that changes in metadata do not increase the "metadata.generation". For these
+   * resources, the generation is increased by adding the annotation and their controller increases
+   * the observedGeneration in the status. This results in a new event, that if not handled
+   * correctly with the resource matcher yet again results in an update and a previous version
+   * annotation change, thus results in an infinite loop.
+   *
+   * <p>As a workaround, we automatically skip adding previous annotation for those well-known
+   * resources. Note that if you are sure that the matcher works (most of the cases does) for your
+   * case, you can remove the resource from the blocklist.
+   *
+   * @return blocklist of resource classes where the previous version annotation won't be used.
+   */
+  default List<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
     return List.of(Deployment.class, StatefulSet.class, ReplicaSet.class);
   }
 
