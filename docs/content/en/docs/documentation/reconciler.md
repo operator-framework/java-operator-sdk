@@ -170,26 +170,20 @@ annotation. If you do not specify a finalizer name, one will be automatically ge
 
 From v5, by default, the finalizer is added using Server Side Apply. See also `UpdateControl` in docs.
 
-### Making sure primary is up to date for the next reconciliation
+### Making sure the primary resource is up to date for the next reconciliation
 
-When you implement a reconciler as a final step (but maybe also multiple times during one reconciliation), you 
-usually update the status subresource with the information that was available during the reconciliation.
-Sometimes this is referred to as the last observed state. 
-When the resource is updated, the framework does not cache the resource directly from the response of the update.
-Instead, the underlying informer eventually receives an event with the updated resource and caches the resource.
-Therefore, it can happen that on next reconciliation the primary resource is not up-to-date regarding your updated status subresource (note that other event sources
-can trigger the reconciliation meanwhile). This is not usually a problem, since the status is not used as an input,
-the reconciliation runs again, and the status us updated again. The caches are eventually consistent.
+It is typical to want to update the status subresource with the information that is available during the reconciliation.
+This is sometimes referred to as the last observed state. When the primary resource is updated, though, the framework
+does not cache the resource directly, relying instead on the propagation of the update to the underlying informer's
+cache. It can, therefore, happen that, if other events trigger other reconciliations before the informer cache gets
+updated, your reconciler does not see the latest version of the primary resource. While this might not typically be a
+problem in most cases, as caches eventually become consistent, depending on your reconciliation logic, you might still
+require the latest status version possible, for example if the status subresource is used as a communication mechanism,
+see [Representing Allocated Values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values)
+from the Kubernetes docs for more details.
 
-However, there are cases when you would like to store some state in the status, typically generated 
-IDs of external resources. 
-See related topic in Kubernetes docs: [Representing Allocated Values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values).
-In this case, it is reasonable to expect to have the state always available for the next reconciliation,
-to avoid generating the resource again and other race conditions.
-
-Therefore,
-the framework provides facilities
-to cover these use cases with [`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java#L16).
+The framework provides utilities to help with these use cases with 
+[`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java).
 These utility methods come in two flavors:
 
 #### Using internal cache
@@ -214,20 +208,19 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
 ```
 
 In the background `PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus` puts the result of the update into an internal
-cache of the event source of primary resource, and will make sure that the next reconciliation will contain the most 
-recent version of the resource. Note that it is not necessarily the version of the resource you got as response from the update ,
-it can be newer since other parties can do additional updates meanwhile, but if not explicitly modified,
-it will contain the up-to-date status.
+cache and will make sure that the next reconciliation will contain the most recent version of the resource. Note that it
+is not necessarily the version of the resource you got as response from the update, it can be newer since other parties
+can do additional updates meanwhile, but if not explicitly modified, it will contain the up-to-date status.
 
 See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internal).
 
 This approach works with the default configuration of the framework and should be good to go in most of the cases.
-Without going further into the details, this won't work if `ConfigurtionService.parseResourceVersionsForEventFilteringAndCaching`
+Without going further into the details, this won't work if `ConfigurationService.parseResourceVersionsForEventFilteringAndCaching`
 is set to `false` (more precisely there are some edge cases when it won't work). For that case framework provides the following solution:
 
 #### Fallback approach: using `PrimaryResourceCache` cache
 
-As an alternative, for very rare cases when `ConfigurtionService.parseResourceVersionsForEventFilteringAndCaching` 
+As an alternative, for very rare cases when `ConfigurationService.parseResourceVersionsForEventFilteringAndCaching` 
 needs to be set to `false` you can use an explicit caching approach:
 
 ```java
@@ -244,7 +237,7 @@ needs to be set to `false` you can use an explicit caching approach:
           StatusPatchPrimaryCacheCustomResource primary,
           Context<StatusPatchPrimaryCacheCustomResource> context) {
     
-    // cache will compare the current and the cached resource and return the more recent. (And evic the old)   
+    // cache will compare the current and the cached resource and return the more recent. (And evict the old)   
     primary = cache.getFreshResource(primary);
       
     // omitted logic  
@@ -272,20 +265,21 @@ needs to be set to `false` you can use an explicit caching approach:
 ```
 
 [`PrimaryResourceCache`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/support/PrimaryResourceCache.java)
-is designed for this purpose. 
-As shown in the example above, it is up to you to provide a predicate to determine if the resource is more recent than the one available.
-In other words, when to evict the resource from the cache. Typically, as show in the [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/primarycache)
-you can have a counter in status to check on that. 
+is designed for this purpose. As shown in the example above, it is up to you to provide a predicate to determine if the
+resource is more recent than the one available. In other words, when to evict the resource from the cache. Typically, as
+shown in
+the [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/primarycache)
+you can have a counter in status to check on that.
 
-Since all of this happens explicitly, you cannot use this approach for managed dependent resources and workflows (you can still use not managed); 
-Since passing of the primary resource to the dependent resource always comes directly from the underlying informer event
-source cache.
+Since all of this happens explicitly, you cannot use this approach for managed dependent resources and workflows and
+will need to use the unmanaged approach instead. This is due to the fact that managed dependent resources always get
+their associated primary resource from the underlying informer event source cache.
 
 #### Additional remarks
 
 As shown in the integration tests, there is no optimistic locking used when updating the
 [resource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internal/StatusPatchCacheReconciler.java#L41)
-(in other works `metadata.resourceVersion` is set to `null`).
-This is desired since you don't want the patch to fail on update.
+(in other words `metadata.resourceVersion` is set to `null`). This is desired since you don't want the patch to fail on
+update.
 
-In addition, you can configure retry for in fabric8 client. 
+In addition, you can configure the Fabric8 client retry. 
