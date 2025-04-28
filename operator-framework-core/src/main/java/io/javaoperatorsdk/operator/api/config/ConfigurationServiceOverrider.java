@@ -41,7 +41,7 @@ public class ConfigurationServiceOverrider {
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
-  private List<Class<? extends HasMetadata>> previousAnnotationUsageBlacklist;
+  private List<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -190,9 +190,9 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider previousAnnotationUsageBlacklist(
+  public ConfigurationServiceOverrider previousAnnotationUsageBlocklist(
       List<Class<? extends HasMetadata>> previousAnnotationUsageBlacklist) {
-    this.previousAnnotationUsageBlacklist = previousAnnotationUsageBlacklist;
+    this.previousAnnotationUsageBlocklist = previousAnnotationUsageBlacklist;
     return this;
   }
 
@@ -338,10 +338,10 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public List<Class<? extends HasMetadata>> previousAnnotationUsageBlacklist() {
+      public List<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
         return overriddenValueOrDefault(
-            previousAnnotationUsageBlacklist,
-            ConfigurationService::previousAnnotationUsageBlacklist);
+            previousAnnotationUsageBlocklist,
+            ConfigurationService::previousAnnotationUsageBlocklist);
       }
     };
   }

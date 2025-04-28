@@ -173,7 +173,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
               && !context
                   .getControllerConfiguration()
                   .getConfigurationService()
-                  .previousAnnotationUsageBlacklist()
+                  .previousAnnotationUsageBlocklist()
                   .contains(this.resourceType());
     }
     return usePreviousAnnotationForEventFiltering;
