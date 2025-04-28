@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.Config;
@@ -468,7 +467,7 @@ public interface ConfigurationService {
    * @return blocklist of resource classes where the previous version annotation won't be used.
    */
   default List<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
-    return List.of(Deployment.class, StatefulSet.class, DaemonSet.class);
+    return List.of(Deployment.class, StatefulSet.class);
   }
 
   /**
