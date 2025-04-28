@@ -382,7 +382,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
         // only retry on conflict (HTTP 409), otherwise fail
-        if (e.getCode() != 409) {
+        if (e.getCode() != 409 && e.getCode() != 422) {
           throw e;
         }
         if (retryIndex >= MAX_UPDATE_RETRY) {
