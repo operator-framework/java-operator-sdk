@@ -282,4 +282,4 @@ As shown in the integration tests, there is no optimistic locking used when upda
 (in other words `metadata.resourceVersion` is set to `null`). This is desired since you don't want the patch to fail on
 update.
 
-In addition, you can configure the Fabric8 client retry. 
+In addition, you can configure the [Fabric8 client retry](https://github.com/fabric8io/kubernetes-client?tab=readme-ov-file#configuring-the-client).
