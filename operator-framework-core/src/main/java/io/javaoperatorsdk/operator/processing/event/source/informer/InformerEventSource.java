@@ -22,41 +22,33 @@ import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMap
 
 /**
  * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
- * this is built on top of Fabric8 client Informers, it also supports caching resources using caching from
- * informer caches as well as additional caches described below.
+ * this is built on top of Fabric8 client Informers, it also supports caching resources using
+ * caching from informer caches as well as additional caches described below.
  *
  * <p>InformerEventSource also supports two features to better handle events and caching of
- * resources on top of Informers from the Fabric8 Kubernetes client. These two features
- * are related to each other as follows:
+ * resources on top of Informers from the Fabric8 Kubernetes client. These two features are related
+ * to each other as follows:
  *
  * <ol>
- *   <li>Ensuring the cache contains the fresh resource after an update. This is
- *       important for {@link
- *       io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and mainly for
- *       {@link
+ *   <li>Ensuring the cache contains the fresh resource after an update. This is important for
+ *       {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and mainly
+ *       for {@link
  *       io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource} so
- *       that {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource#getSecondaryResource(HasMetadata, Context)} always returns the latest version of the resource after a reconciliation. To achieve this
- *       {@link #handleRecentResourceUpdate(ResourceID, HasMetadata, HasMetadata)} and {@link #handleRecentResourceCreate(ResourceID, HasMetadata)} need to be called explicitly
+ *       that {@link
+ *       io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource#getSecondaryResource(HasMetadata,
+ *       Context)} always returns the latest version of the resource after a reconciliation. To
+ *       achieve this {@link #handleRecentResourceUpdate(ResourceID, HasMetadata, HasMetadata)} and
+ *       {@link #handleRecentResourceCreate(ResourceID, HasMetadata)} need to be called explicitly
  *       after a resource is created or updated using the kubernetes client. These calls are done
- *       automatically by the KubernetesDependentResource implementation. In the background this will
- *       store the new resource in a temporary cache {@link TemporaryResourceCache} which does
+ *       automatically by the KubernetesDependentResource implementation. In the background this
+ *       will store the new resource in a temporary cache {@link TemporaryResourceCache} which does
  *       additional checks. After a new event is received the cached object is removed from this
  *       cache, since it is then usually already in the informer cache.
- *   <li>Avoiding unneeded reconciliations after resources are created or updated. This filters out events that are the results of updates and creates made
- *       by the controller itself because we typically don't want the associated informer to trigger an event causing a useless reconciliation (as the change originates from the reconciler itself). This is achieved
- *       by
- *       TODO: update as this mentions methods that don't exist anymore and isn't very clear
- *
- *       {@link #prepareForCreateOrUpdateEventFiltering(..) method needs to be called before the operation
- *       of the k8s client. And the operation from point 1. after the k8s client call. See its
- *       usage in CreateUpdateEventFilterTestReconciler integration test for the usage. (Again this
- *       is managed for the developer if using dependent resources.) <br>
- *       Roughly it works in a way that before the K8S API call is made, we set mark the resource
- *       ID, and from that point informer won't propagate events further just will start record
- *       them. After the client operation is done, it's checked and analysed what events were
- *       received and based on that it will propagate event or not and/or put the new resource into
- *       the temporal cache - so if the event not arrived yet about the update will be able to
- *       filter it in the future.
+ *   <li>Avoiding unneeded reconciliations after resources are created or updated. This filters out
+ *       events that are the results of updates and creates made by the controller itself because we
+ *       typically don't want the associated informer to trigger an event causing a useless
+ *       reconciliation (as the change originates from the reconciler itself). For the details see
+ *       {@link #canSkipEvent(HasMetadata, HasMetadata, ResourceID)} and related usage.
  * </ol>
  *
  * @param <R> resource type being watched
