@@ -242,6 +242,10 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   @ValueSource(booleans = {true, false})
   void testCustomMatcher_returnsExpectedMatchBasedOnReadOnlyLabel(boolean readOnly) {
     var dr = new ConfigMapDR();
+    dr.configureWith(
+        new KubernetesDependentResourceConfigBuilder()
+            .withSSAMatcher(new ReadOnlyAwareMatcher())
+            .build());
     var desiredConfigMap =
         loadResource("configmap.empty-owner-reference-desired.yaml", ConfigMap.class);
     desiredConfigMap.getData().put("key1", "another value");
@@ -261,7 +265,7 @@ class SSABasedGenericKubernetesResourceMatcherTest {
 
   private static class ConfigMapDR extends KubernetesDependentResource<ConfigMap, ConfigMap> {
     public ConfigMapDR() {
-      super(ConfigMap.class, "foo", new ReadOnlyAwareMatcher<>());
+      super(ConfigMap.class);
     }
   }
 

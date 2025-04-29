@@ -42,10 +42,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
 
-  private SSABasedGenericKubernetesResourceMatcher<R> matcher =
-      SSABasedGenericKubernetesResourceMatcher.getInstance();
-  private volatile boolean matcherSet = false;
-
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }
@@ -54,24 +50,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     super(resourceType, name);
   }
 
-  public KubernetesDependentResource(
-      Class<R> resourceType, String name, SSABasedGenericKubernetesResourceMatcher<R> matcher) {
-    this(resourceType, name);
-    this.matcher = matcher;
-    matcherSet = true;
-  }
-
   @Override
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
-  }
-
-  public void setMatcher(SSABasedGenericKubernetesResourceMatcher<R> matcher) {
-    if (matcherSet) {
-      throw new IllegalStateException("Can only set a matcher once.");
-    }
-    this.matcher = matcher;
-    matcherSet = true;
   }
 
   @SuppressWarnings("unused")
@@ -131,7 +112,11 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     final boolean matches;
     addMetadata(true, actualResource, desired, primary, context);
     if (useSSA(context)) {
-      matches = matcher.matches(actualResource, desired, context);
+      matches =
+          configuration()
+              .map(KubernetesDependentResourceConfig::matcher)
+              .orElse(SSABasedGenericKubernetesResourceMatcher.getInstance())
+              .matches(actualResource, desired, context);
     } else {
       matches =
           GenericKubernetesResourceMatcher.match(desired, actualResource, false, false, context)
