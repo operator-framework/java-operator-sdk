@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TemporaryResourceCacheTest {
+class TemporaryPrimaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
 

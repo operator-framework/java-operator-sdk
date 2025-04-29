@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -20,50 +21,45 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
 /**
- * Wraps informer(s) so it is connected to the eventing system of the framework. Note that since
- * it's it is built on top of Informers, it also support caching resources using caching from
- * fabric8 client Informer caches and additional caches described below.
+ * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
+ * this is built on top of Fabric8 client Informers, it also supports caching resources using
+ * caching from informer caches as well as additional caches described below.
  *
  * <p>InformerEventSource also supports two features to better handle events and caching of
- * resources on top of Informers from fabric8 Kubernetes client. These two features implementation
- * wise are related to each other: <br>
+ * resources on top of Informers from the Fabric8 Kubernetes client. These two features are related
+ * to each other as follows:
  *
- * <p>1. API that allows to make sure the cache contains the fresh resource after an update. This is
- * important for {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and
- * mainly for {@link
- * io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource} so after
- * reconcile if getResource() called always return the fresh resource. To achieve this
- * handleRecentResourceUpdate() and handleRecentResourceCreate() needs to be called explicitly after
- * resource created/updated using the kubernetes client. (These calls are done automatically by
- * KubernetesDependentResource implementation.). In the background this will store the new resource
- * in a temporary cache {@link TemporaryResourceCache} which do additional checks. After a new event
- * is received the cachec object is removed from this cache, since in general then it is already in
- * the cache of informer. <br>
+ * <ol>
+ *   <li>Ensuring the cache contains the fresh resource after an update. This is important for
+ *       {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and mainly
+ *       for {@link
+ *       io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource} so
+ *       that {@link
+ *       io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource#getSecondaryResource(HasMetadata,
+ *       Context)} always returns the latest version of the resource after a reconciliation. To
+ *       achieve this {@link #handleRecentResourceUpdate(ResourceID, HasMetadata, HasMetadata)} and
+ *       {@link #handleRecentResourceCreate(ResourceID, HasMetadata)} need to be called explicitly
+ *       after a resource is created or updated using the kubernetes client. These calls are done
+ *       automatically by the KubernetesDependentResource implementation. In the background this
+ *       will store the new resource in a temporary cache {@link TemporaryResourceCache} which does
+ *       additional checks. After a new event is received the cached object is removed from this
+ *       cache, since it is then usually already in the informer cache.
+ *   <li>Avoiding unneeded reconciliations after resources are created or updated. This filters out
+ *       events that are the results of updates and creates made by the controller itself because we
+ *       typically don't want the associated informer to trigger an event causing a useless
+ *       reconciliation (as the change originates from the reconciler itself). For the details see
+ *       {@link #canSkipEvent(HasMetadata, HasMetadata, ResourceID)} and related usage.
+ * </ol>
  *
- * <p>2. Additional API is provided that is meant to be used with the combination of the previous
- * one, and the goal is to filter out events that are the results of updates and creates made by the
- * controller itself. For example if in reconciler a ConfigMaps is created, there should be an
- * Informer in place to handle change events of that ConfigMap, but since it has bean created (or
- * updated) by the reconciler this should not trigger an additional reconciliation by default. In
- * order to achieve this prepareForCreateOrUpdateEventFiltering(..) method needs to be called before
- * the operation of the k8s client. And the operation from point 1. after the k8s client call. See
- * it's usage in CreateUpdateEventFilterTestReconciler integration test for the usage. (Again this
- * is managed for the developer if using dependent resources.) <br>
- * Roughly it works in a way that before the K8S API call is made, we set mark the resource ID, and
- * from that point informer won't propagate events further just will start record them. After the
- * client operation is done, it's checked and analysed what events were received and based on that
- * it will propagate event or not and/or put the new resource into the temporal cache - so if the
- * event not arrived yet about the update will be able to filter it in the future.
- *
- * @param <R> resource type watching
- * @param <P> type of the primary resource
+ * @param <R> resource type being watched
+ * @param <P> type of the associated primary resource
  */
 public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerEventSourceConfiguration<R>>
     implements ResourceEventHandler<R> {
 
-  private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
   public static final String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
+  private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
