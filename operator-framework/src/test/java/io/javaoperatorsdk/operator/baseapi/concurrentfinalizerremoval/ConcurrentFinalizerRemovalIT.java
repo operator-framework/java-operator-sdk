@@ -21,7 +21,7 @@ class ConcurrentFinalizerRemovalIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           // should work without a retry, thus not retry the whole reconciliation but to retry
-          // finalizer removal only. 
+          // finalizer removal only.
           .withReconciler(
               new ConcurrentFinalizerRemovalReconciler1(),
               o ->
