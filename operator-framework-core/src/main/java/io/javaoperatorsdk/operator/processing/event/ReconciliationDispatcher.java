@@ -397,6 +397,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
                   + ") retry attempts to patch resource: "
                   + ResourceID.fromResource(resource));
         }
+        log.debug(
+            "Retrying patch for resource name: {}, namespace: {}; HTTP code: {}",
+            resource.getMetadata().getName(),
+            resource.getMetadata().getNamespace(),
+            e.getCode());
         resource =
             customResourceFacade.getResource(
                 resource.getMetadata().getNamespace(), resource.getMetadata().getName());
