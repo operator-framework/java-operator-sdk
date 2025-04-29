@@ -122,7 +122,7 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Patches the resource and adds it to the {@link PrimaryResourceCache} provided.
+   * Patches the resource and adds it to the {@link PrimaryResourceCache}.
    *
    * @param primary resource
    * @param freshResourceWithStatus - fresh resource with target state
@@ -151,7 +151,7 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Patches the resource with JSON Patch and adds it to the {@link PrimaryResourceCache} provided.
+   * Patches the resource with JSON Patch and adds it to the {@link PrimaryResourceCache}.
    *
    * @param primary resource
    * @param context of reconciliation
@@ -184,7 +184,7 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Updates the resource and adds it to the {@link PrimaryResourceCache} provided.
+   * Updates the resource and adds it to the {@link PrimaryResourceCache}.
    *
    * @param primary resource
    * @param context of reconciliation
