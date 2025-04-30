@@ -381,8 +381,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
-        // only retry on conflict (HTTP 409), otherwise fail
-        if (e.getCode() != 409) {
+        // only retry on conflict (409) and unprocessable content (422) which
+        // can happen if JSON Patch is not a valid request since there was
+        // a concurrent request which already removed another finalizer:
+        // List element removal from a list is by index in JSON Patch
+        // so if addressing a second finalizer but first is meanwhile removed
+        // it is a wrong request.
+        if (e.getCode() != 409 && e.getCode() != 422) {
           throw e;
         }
         if (retryIndex >= MAX_UPDATE_RETRY) {
@@ -392,6 +397,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
                   + ") retry attempts to patch resource: "
                   + ResourceID.fromResource(resource));
         }
+        log.debug(
+            "Retrying patch for resource name: {}, namespace: {}; HTTP code: {}",
+            resource.getMetadata().getName(),
+            resource.getMetadata().getNamespace(),
+            e.getCode());
         resource =
             customResourceFacade.getResource(
                 resource.getMetadata().getNamespace(), resource.getMetadata().getName());
