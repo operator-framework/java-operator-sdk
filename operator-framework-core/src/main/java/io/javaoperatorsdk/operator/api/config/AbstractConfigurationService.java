@@ -112,10 +112,18 @@ public class AbstractConfigurationService implements ConfigurationService {
   public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
       Reconciler<R> reconciler) {
     final var key = keyFor(reconciler);
-    final var configuration = configurations.get(key);
+    var configuration = configurations.get(key);
     if (configuration == null) {
       logMissingReconcilerWarning(key, getReconcilersNameMessage());
+    } else {
+      if (reconciler instanceof ConfigurableReconciler<?> configurableReconciler) {
+        final var overrider = ControllerConfigurationOverrider.override(configuration);
+        configurableReconciler.updateConfigurationFrom(overrider);
+        configuration = overrider.build();
+        configurations.put(key, configuration);
+      }
     }
+
     return configuration;
   }
 
