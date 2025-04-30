@@ -381,7 +381,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
-        // only retry on conflict (409) and unprocessable content (422) what
+        // only retry on conflict (409) and unprocessable content (422) which
         // can happen if JSON Patch is not a valid request since there was
         // a concurrent request already removed another finalizer:
         // List element removal from a list is by index in JSON Patch
