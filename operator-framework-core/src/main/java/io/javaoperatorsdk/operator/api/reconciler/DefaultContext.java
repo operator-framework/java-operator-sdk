@@ -45,18 +45,6 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public IndexedResourceCache<P> getPrimaryCache() {
-    return controller.getEventSourceManager().getControllerEventSource();
-  }
-
-  @Override
-  public boolean isNextReconciliationImminent() {
-    return controller
-        .getEventProcessor()
-        .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
-  }
-
-  @Override
   public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
     return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
         .map(es -> es.getSecondaryResources(primaryResource))
@@ -114,12 +102,25 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return controller.getExecutorServiceManager().workflowExecutorService();
   }
 
+  @Override
+  public P getPrimaryResource() {
+    return primaryResource;
+  }
+
+  @Override
+  public IndexedResourceCache<P> getPrimaryCache() {
+    return controller.getEventSourceManager().getControllerEventSource();
+  }
+
+  @Override
+  public boolean isNextReconciliationImminent() {
+    return controller
+        .getEventProcessor()
+        .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
+  }
+
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
     this.retryInfo = retryInfo;
     return this;
-  }
-
-  public P getPrimaryResource() {
-    return primaryResource;
   }
 }
