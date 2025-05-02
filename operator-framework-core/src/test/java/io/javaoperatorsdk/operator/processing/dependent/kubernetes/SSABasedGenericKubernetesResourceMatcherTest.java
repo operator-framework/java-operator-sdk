@@ -117,48 +117,6 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actualConfigMap, desiredConfigMap, mockedContext)).isFalse();
   }
 
-  @Test
-  @SuppressWarnings("unchecked")
-  void sortListItemsTest() {
-    var nestedMap1 = new HashMap<String, Object>();
-    nestedMap1.put("z", 26);
-    nestedMap1.put("y", 25);
-
-    var nestedMap2 = new HashMap<String, Object>();
-    nestedMap2.put("b", 26);
-    nestedMap2.put("c", 25);
-    nestedMap2.put("a", 24);
-
-    var unsortedListItems = List.<Object>of(1, nestedMap1, nestedMap2);
-    var sortedListItems = matcher.sortListItems(unsortedListItems);
-    assertThat(sortedListItems).element(0).isEqualTo(1);
-
-    var sortedNestedMap1 = (Map<String, Object>) sortedListItems.get(1);
-    assertThat(sortedNestedMap1.keySet()).containsExactly("y", "z");
-
-    var sortedNestedMap2 = (Map<String, Object>) sortedListItems.get(2);
-    assertThat(sortedNestedMap2.keySet()).containsExactly("a", "b", "c");
-  }
-
-  @Test
-  @SuppressWarnings("unchecked")
-  void testSortMapWithNestedMap() {
-    var nestedMap = new HashMap<String, Object>();
-    nestedMap.put("z", 26);
-    nestedMap.put("y", 25);
-
-    var unsortedMap = new HashMap<String, Object>();
-    unsortedMap.put("b", nestedMap);
-    unsortedMap.put("a", 1);
-    unsortedMap.put("c", 2);
-
-    var sortedMap = matcher.sortMap(unsortedMap);
-    assertThat(sortedMap.keySet()).containsExactly("a", "b", "c");
-
-    var sortedNestedMap = (Map<String, Object>) sortedMap.get("b");
-    assertThat(sortedNestedMap.keySet()).containsExactly("y", "z");
-  }
-
   @ParameterizedTest
   @ValueSource(
       strings = {
@@ -263,6 +221,53 @@ class SSABasedGenericKubernetesResourceMatcherTest {
         .isEqualTo(readOnly);
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  void testSortMapWithNestedMap() {
+    var nestedMap = new HashMap<String, Object>();
+    nestedMap.put("z", 26);
+    nestedMap.put("y", 25);
+
+    var unsortedMap = new HashMap<String, Object>();
+    unsortedMap.put("b", nestedMap);
+    unsortedMap.put("a", 1);
+    unsortedMap.put("c", 2);
+
+    var sortedMap = SSABasedGenericKubernetesResourceMatcher.sortMap(unsortedMap);
+    assertThat(sortedMap.keySet()).containsExactly("a", "b", "c");
+
+    var sortedNestedMap = (Map<String, Object>) sortedMap.get("b");
+    assertThat(sortedNestedMap.keySet()).containsExactly("y", "z");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void sortListItemsTest() {
+    var nestedMap1 = new HashMap<String, Object>();
+    nestedMap1.put("z", 26);
+    nestedMap1.put("y", 25);
+
+    var nestedMap2 = new HashMap<String, Object>();
+    nestedMap2.put("b", 26);
+    nestedMap2.put("c", 25);
+    nestedMap2.put("a", 24);
+
+    var unsortedListItems = List.<Object>of(1, nestedMap1, nestedMap2);
+    var sortedListItems = SSABasedGenericKubernetesResourceMatcher.sortListItems(unsortedListItems);
+    assertThat(sortedListItems).element(0).isEqualTo(1);
+
+    var sortedNestedMap1 = (Map<String, Object>) sortedListItems.get(1);
+    assertThat(sortedNestedMap1.keySet()).containsExactly("y", "z");
+
+    var sortedNestedMap2 = (Map<String, Object>) sortedListItems.get(2);
+    assertThat(sortedNestedMap2.keySet()).containsExactly("a", "b", "c");
+  }
+
+  private static <R> R loadResource(String fileName, Class<R> clazz) {
+    return ReconcilerUtils.loadYaml(
+            clazz, SSABasedGenericKubernetesResourceMatcherTest.class, fileName);
+  }
+
   private static class ConfigMapDR extends KubernetesDependentResource<ConfigMap, ConfigMap> {
     public ConfigMapDR() {
       super(ConfigMap.class);
@@ -284,10 +289,5 @@ class SSABasedGenericKubernetesResourceMatcherTest {
       }
       return actualMap.equals(desiredMap);
     }
-  }
-
-  private static <R> R loadResource(String fileName, Class<R> clazz) {
-    return ReconcilerUtils.loadYaml(
-        clazz, SSABasedGenericKubernetesResourceMatcherTest.class, fileName);
   }
 }

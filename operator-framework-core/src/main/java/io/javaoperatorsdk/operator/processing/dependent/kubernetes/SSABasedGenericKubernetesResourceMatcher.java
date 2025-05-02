@@ -55,18 +55,6 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   public static final String APPLY_OPERATION = "Apply";
   public static final String DOT_KEY = ".";
 
-  @SuppressWarnings("rawtypes")
-  private static final SSABasedGenericKubernetesResourceMatcher INSTANCE =
-      new SSABasedGenericKubernetesResourceMatcher<>();
-
-  private static final List<String> IGNORED_METADATA =
-      List.of("creationTimestamp", "deletionTimestamp", "generation", "selfLink", "uid");
-
-  @SuppressWarnings("unchecked")
-  public static <L extends HasMetadata> SSABasedGenericKubernetesResourceMatcher<L> getInstance() {
-    return INSTANCE;
-  }
-
   private static final String F_PREFIX = "f:";
   private static final String K_PREFIX = "k:";
   private static final String V_PREFIX = "v:";
@@ -76,8 +64,20 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   private static final String KIND_KEY = "kind";
   private static final String API_VERSION_KEY = "apiVersion";
 
+  @SuppressWarnings("rawtypes")
+  private static final SSABasedGenericKubernetesResourceMatcher INSTANCE =
+      new SSABasedGenericKubernetesResourceMatcher<>();
+
+  private static final List<String> IGNORED_METADATA =
+      List.of("creationTimestamp", "deletionTimestamp", "generation", "selfLink", "uid");
+
   private static final Logger log =
       LoggerFactory.getLogger(SSABasedGenericKubernetesResourceMatcher.class);
+
+  @SuppressWarnings("unchecked")
+  public static <L extends HasMetadata> SSABasedGenericKubernetesResourceMatcher<L> getInstance() {
+    return INSTANCE;
+  }
 
   @SuppressWarnings("unchecked")
   public boolean matches(R actual, R desired, Context<?> context) {
@@ -147,54 +147,35 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return actualMap.equals(desiredMap);
   }
 
-  private String getDiff(
-      Map<String, Object> prunedActualMap,
-      Map<String, Object> desiredMap,
-      KubernetesSerialization serialization) {
-    var actualYaml = serialization.asYaml(sortMap(prunedActualMap));
-    var desiredYaml = serialization.asYaml(sortMap(desiredMap));
-    if (log.isTraceEnabled()) {
-      log.trace("Pruned actual resource:\n {} \ndesired resource:\n {} ", actualYaml, desiredYaml);
+  private Optional<ManagedFieldsEntry> checkIfFieldManagerExists(R actual, String fieldManager) {
+    var targetManagedFields =
+        actual.getMetadata().getManagedFields().stream()
+            // Only the apply operations are interesting for us since those were created properly be
+            // SSA patch. An update can be present with same fieldManager when migrating and having
+            // the same field manager name
+            .filter(
+                f ->
+                    f.getManager().equals(fieldManager) && f.getOperation().equals(APPLY_OPERATION))
+            .toList();
+    if (targetManagedFields.isEmpty()) {
+      log.debug(
+          "No field manager exists for resource: {} with name: {} and operation {}",
+          actual.getKind(),
+          actual.getMetadata().getName(),
+          APPLY_OPERATION);
+      return Optional.empty();
     }
-
-    var patch = DiffUtils.diff(actualYaml.lines().toList(), desiredYaml.lines().toList());
-    var unifiedDiff =
-        UnifiedDiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
-    return String.join("\n", unifiedDiff);
-  }
-
-  @SuppressWarnings("unchecked")
-  Map<String, Object> sortMap(Map<String, Object> map) {
-    var sortedKeys = new ArrayList<>(map.keySet());
-    Collections.sort(sortedKeys);
-
-    var sortedMap = new LinkedHashMap<String, Object>();
-    for (var key : sortedKeys) {
-      var value = map.get(key);
-      if (value instanceof Map) {
-        sortedMap.put(key, sortMap((Map<String, Object>) value));
-      } else if (value instanceof List) {
-        sortedMap.put(key, sortListItems((List<Object>) value));
-      } else {
-        sortedMap.put(key, value);
-      }
+    // this should not happen in theory
+    if (targetManagedFields.size() > 1) {
+      throw new OperatorException(
+          "More than one field manager exists with name: "
+              + fieldManager
+              + " in resource: "
+              + actual.getKind()
+              + " with name: "
+              + actual.getMetadata().getName());
     }
-    return sortedMap;
-  }
-
-  @SuppressWarnings("unchecked")
-  List<Object> sortListItems(List<Object> list) {
-    var sortedList = new ArrayList<>();
-    for (var item : list) {
-      if (item instanceof Map) {
-        sortedList.add(sortMap((Map<String, Object>) item));
-      } else if (item instanceof List) {
-        sortedList.add(sortListItems((List<Object>) item));
-      } else {
-        sortedList.add(item);
-      }
-    }
-    return sortedList;
+    return Optional.of(targetManagedFields.get(0));
   }
 
   /** Correct for known issue with SSA */
@@ -245,19 +226,6 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  private static void removeIrrelevantValues(Map<String, Object> desiredMap) {
-    var metadata = (Map<String, Object>) desiredMap.get(METADATA_KEY);
-    metadata.remove(NAME_KEY);
-    metadata.remove(NAMESPACE_KEY);
-    IGNORED_METADATA.forEach(metadata::remove);
-    if (metadata.isEmpty()) {
-      desiredMap.remove(METADATA_KEY);
-    }
-    desiredMap.remove(KIND_KEY);
-    desiredMap.remove(API_VERSION_KEY);
-  }
-
-  @SuppressWarnings("unchecked")
   private static void keepOnlyManagedFields(
       Map<String, Object> result,
       Map<String, Object> actualMap,
@@ -292,7 +260,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           }
         } else {
           // this should handle the case when the value is complex in the actual map (not just a
-          // simple value).
+          // simple value)
           result.put(keyInActual, actualMap.get(keyInActual));
         }
       } else {
@@ -304,28 +272,31 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private static void fillResultsAndTraverseFurther(
-      Map<String, Object> result,
-      Map<String, Object> actualMap,
-      Map<String, Object> managedFields,
-      KubernetesSerialization objectMapper,
-      String key,
-      String keyInActual,
-      Object managedFieldValue) {
-    var emptyMapValue = new HashMap<String, Object>();
-    result.put(keyInActual, emptyMapValue);
-    var actualMapValue = actualMap.getOrDefault(keyInActual, Collections.emptyMap());
-    log.debug("key: {} actual map value: managedFieldValue: {}", keyInActual, managedFieldValue);
-    keepOnlyManagedFields(
-        emptyMapValue,
-        (Map<String, Object>) actualMapValue,
-        (Map<String, Object>) managedFields.get(key),
-        objectMapper);
-  }
-
   private static boolean isNestedValue(Map<?, ?> managedFieldValue) {
     return !managedFieldValue.isEmpty();
+  }
+
+  private static boolean isListKeyEntrySet(Set<Map.Entry<String, Object>> managedEntrySet) {
+    return isKeyPrefixedSkippingDotKey(managedEntrySet, K_PREFIX);
+  }
+
+  private static boolean isSetValueField(Set<Map.Entry<String, Object>> managedEntrySet) {
+    return isKeyPrefixedSkippingDotKey(managedEntrySet, V_PREFIX);
+  }
+
+  /**
+   * Sometimes (not always) the first subfield of a managed field ("f:") is ".:{}", it looks that
+   * those are added when there are more subfields of a referenced field. See test samples. Does not
+   * seem to provide additional functionality, so can be just skipped for now.
+   */
+  private static boolean isKeyPrefixedSkippingDotKey(
+      Set<Map.Entry<String, Object>> managedEntrySet, String prefix) {
+    var iterator = managedEntrySet.iterator();
+    var managedFieldEntry = iterator.next();
+    if (managedFieldEntry.getKey().equals(DOT_KEY)) {
+      managedFieldEntry = iterator.next();
+    }
+    return managedFieldEntry.getKey().startsWith(prefix);
   }
 
   /**
@@ -372,6 +343,36 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         });
   }
 
+  @SuppressWarnings("unchecked")
+  private static Map.Entry<Integer, Map<String, Object>> selectListEntryBasedOnKey(
+      String key, List<Map<String, Object>> values, KubernetesSerialization objectMapper) {
+    Map<String, Object> ids = objectMapper.unmarshal(key, Map.class);
+    var possibleTargets = new ArrayList<Map<String, Object>>(1);
+    int lastIndex = -1;
+    for (int i = 0; i < values.size(); i++) {
+      var value = values.get(i);
+      if (value.entrySet().containsAll(ids.entrySet())) {
+        possibleTargets.add(value);
+        lastIndex = i;
+      }
+    }
+    if (possibleTargets.isEmpty()) {
+      throw new IllegalStateException(
+          "Cannot find list element for key: "
+              + key
+              + " in map: "
+              + values.stream().map(Map::keySet).toList());
+    }
+    if (possibleTargets.size() > 1) {
+      throw new IllegalStateException(
+          "More targets found in list element for key: "
+              + key
+              + " in map: "
+              + values.stream().map(Map::keySet).toList());
+    }
+    return new AbstractMap.SimpleEntry<>(lastIndex, possibleTargets.get(0));
+  }
+
   /**
    * Set values, the {@code "v:"} prefix. Form in managed fields: {@code
    * "f:some-set":{"v:1":{}},"v:2":{},"v:3":{}}.
@@ -407,90 +408,87 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     return objectMapper.unmarshal(stringValue.trim(), type);
   }
 
-  private static boolean isSetValueField(Set<Map.Entry<String, Object>> managedEntrySet) {
-    return isKeyPrefixedSkippingDotKey(managedEntrySet, V_PREFIX);
-  }
-
-  private static boolean isListKeyEntrySet(Set<Map.Entry<String, Object>> managedEntrySet) {
-    return isKeyPrefixedSkippingDotKey(managedEntrySet, K_PREFIX);
-  }
-
-  /**
-   * Sometimes (not always) the first subfield of a managed field ("f:") is ".:{}", it looks that
-   * those are added when there are more subfields of a referenced field. See test samples. Does not
-   * seem to provide additional functionality, so can be just skipped for now.
-   */
-  private static boolean isKeyPrefixedSkippingDotKey(
-      Set<Map.Entry<String, Object>> managedEntrySet, String prefix) {
-    var iterator = managedEntrySet.iterator();
-    var managedFieldEntry = iterator.next();
-    if (managedFieldEntry.getKey().equals(DOT_KEY)) {
-      managedFieldEntry = iterator.next();
-    }
-    return managedFieldEntry.getKey().startsWith(prefix);
+  @SuppressWarnings("unchecked")
+  private static void fillResultsAndTraverseFurther(
+      Map<String, Object> result,
+      Map<String, Object> actualMap,
+      Map<String, Object> managedFields,
+      KubernetesSerialization objectMapper,
+      String key,
+      String keyInActual,
+      Object managedFieldValue) {
+    var emptyMapValue = new HashMap<String, Object>();
+    result.put(keyInActual, emptyMapValue);
+    var actualMapValue = actualMap.getOrDefault(keyInActual, Collections.emptyMap());
+    log.debug("key: {} actual map value: managedFieldValue: {}", keyInActual, managedFieldValue);
+    keepOnlyManagedFields(
+        emptyMapValue,
+        (Map<String, Object>) actualMapValue,
+        (Map<String, Object>) managedFields.get(key),
+        objectMapper);
   }
 
   @SuppressWarnings("unchecked")
-  private static Map.Entry<Integer, Map<String, Object>> selectListEntryBasedOnKey(
-      String key, List<Map<String, Object>> values, KubernetesSerialization objectMapper) {
-    Map<String, Object> ids = objectMapper.unmarshal(key, Map.class);
-    var possibleTargets = new ArrayList<Map<String, Object>>(1);
-    int lastIndex = -1;
-    for (int i = 0; i < values.size(); i++) {
-      var value = values.get(i);
-      if (value.entrySet().containsAll(ids.entrySet())) {
-        possibleTargets.add(value);
-        lastIndex = i;
-      }
+  private static void removeIrrelevantValues(Map<String, Object> desiredMap) {
+    var metadata = (Map<String, Object>) desiredMap.get(METADATA_KEY);
+    metadata.remove(NAME_KEY);
+    metadata.remove(NAMESPACE_KEY);
+    IGNORED_METADATA.forEach(metadata::remove);
+    if (metadata.isEmpty()) {
+      desiredMap.remove(METADATA_KEY);
     }
-    if (possibleTargets.isEmpty()) {
-      throw new IllegalStateException(
-          "Cannot find list element for key: "
-              + key
-              + " in map: "
-              + values.stream().map(Map::keySet).toList());
-    }
-    if (possibleTargets.size() > 1) {
-      throw new IllegalStateException(
-          "More targets found in list element for key: "
-              + key
-              + " in map: "
-              + values.stream().map(Map::keySet).toList());
-    }
-    return new AbstractMap.SimpleEntry<>(lastIndex, possibleTargets.get(0));
+    desiredMap.remove(KIND_KEY);
+    desiredMap.remove(API_VERSION_KEY);
   }
 
-  private Optional<ManagedFieldsEntry> checkIfFieldManagerExists(R actual, String fieldManager) {
-    var targetManagedFields =
-        actual.getMetadata().getManagedFields().stream()
-            // Only the apply operations are interesting for us since those were created properly be
-            // SSA
-            // Patch. An update can be present with same fieldManager when migrating and having the
-            // same
-            // field manager name.
-            .filter(
-                f ->
-                    f.getManager().equals(fieldManager) && f.getOperation().equals(APPLY_OPERATION))
-            .toList();
-    if (targetManagedFields.isEmpty()) {
-      log.debug(
-          "No field manager exists for resource: {} with name: {} and operation {}",
-          actual.getKind(),
-          actual.getMetadata().getName(),
-          APPLY_OPERATION);
-      return Optional.empty();
+  private static String getDiff(
+      Map<String, Object> prunedActualMap,
+      Map<String, Object> desiredMap,
+      KubernetesSerialization serialization) {
+    var actualYaml = serialization.asYaml(sortMap(prunedActualMap));
+    var desiredYaml = serialization.asYaml(sortMap(desiredMap));
+    if (log.isTraceEnabled()) {
+      log.trace("Pruned actual resource:\n {} \ndesired resource:\n {} ", actualYaml, desiredYaml);
     }
-    // this should not happen in theory
-    if (targetManagedFields.size() > 1) {
-      throw new OperatorException(
-          "More than one field manager exists with name: "
-              + fieldManager
-              + " in resource: "
-              + actual.getKind()
-              + " with name: "
-              + actual.getMetadata().getName());
+
+    var patch = DiffUtils.diff(actualYaml.lines().toList(), desiredYaml.lines().toList());
+    var unifiedDiff =
+        UnifiedDiffUtils.generateUnifiedDiff("", "", actualYaml.lines().toList(), patch, 1);
+    return String.join("\n", unifiedDiff);
+  }
+
+  @SuppressWarnings("unchecked")
+  static Map<String, Object> sortMap(Map<String, Object> map) {
+    var sortedKeys = new ArrayList<>(map.keySet());
+    Collections.sort(sortedKeys);
+
+    var sortedMap = new LinkedHashMap<String, Object>();
+    for (var key : sortedKeys) {
+      var value = map.get(key);
+      if (value instanceof Map) {
+        sortedMap.put(key, sortMap((Map<String, Object>) value));
+      } else if (value instanceof List) {
+        sortedMap.put(key, sortListItems((List<Object>) value));
+      } else {
+        sortedMap.put(key, value);
+      }
     }
-    return Optional.of(targetManagedFields.get(0));
+    return sortedMap;
+  }
+
+  @SuppressWarnings("unchecked")
+  static List<Object> sortListItems(List<Object> list) {
+    var sortedList = new ArrayList<>();
+    for (var item : list) {
+      if (item instanceof Map) {
+        sortedList.add(sortMap((Map<String, Object>) item));
+      } else if (item instanceof List) {
+        sortedList.add(sortListItems((List<Object>) item));
+      } else {
+        sortedList.add(item);
+      }
+    }
+    return sortedList;
   }
 
   private static String keyWithoutPrefix(String key) {
