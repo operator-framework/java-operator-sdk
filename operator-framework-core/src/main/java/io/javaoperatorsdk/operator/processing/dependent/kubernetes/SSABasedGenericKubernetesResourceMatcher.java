@@ -226,7 +226,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   @SuppressWarnings("unchecked")
-  private static void keepOnlyManagedFields(
+  static void keepOnlyManagedFields(
       Map<String, Object> result,
       Map<String, Object> actualMap,
       Map<String, Object> managedFields,
