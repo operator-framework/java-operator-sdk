@@ -116,6 +116,7 @@ public class AbstractConfigurationService implements ConfigurationService {
     if (configuration == null) {
       logMissingReconcilerWarning(key, getReconcilersNameMessage());
     } else {
+      // if a reconciler is also a ConfigurableReconciler, update and replace its configuration
       if (reconciler instanceof ConfigurableReconciler<?> configurableReconciler) {
         final var overrider = ControllerConfigurationOverrider.override(configuration);
         configurableReconciler.updateConfigurationFrom(overrider);
