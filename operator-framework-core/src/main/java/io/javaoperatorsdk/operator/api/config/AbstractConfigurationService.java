@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
  */
 @SuppressWarnings("rawtypes")
 public class AbstractConfigurationService implements ConfigurationService {
-  private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
+  private final Map<String, Configured> configurations = new ConcurrentHashMap<>();
   private final Version version;
   private KubernetesClient client;
   private Cloner cloner;
@@ -88,12 +88,14 @@ public class AbstractConfigurationService implements ConfigurationService {
       ControllerConfiguration<R> config, boolean failIfExisting) {
     final var name = config.getName();
     if (failIfExisting) {
-      final var existing = configurations.get(name);
+      final var existing = getFor(name);
       if (existing != null) {
         throwExceptionOnNameCollision(config.getAssociatedReconcilerClassName(), existing);
       }
     }
-    configurations.put(name, config);
+    // record the configuration but mark is as un-configured in case a reconciler wants to override
+    // the configuration when registering
+    configurations.put(name, new Configured(false, config));
   }
 
   protected <R extends HasMetadata> void throwExceptionOnNameCollision(
@@ -112,21 +114,31 @@ public class AbstractConfigurationService implements ConfigurationService {
   public <R extends HasMetadata> ControllerConfiguration<R> getConfigurationFor(
       Reconciler<R> reconciler) {
     final var key = keyFor(reconciler);
-    var configuration = configurations.get(key);
-    if (configuration == null) {
+    var configured = configurations.get(key);
+    if (configured == null) {
       logMissingReconcilerWarning(key, getReconcilersNameMessage());
-    } else {
-      // if a reconciler is also a ConfigurableReconciler, update and replace its configuration
-      if (reconciler instanceof ConfigurableReconciler<?> configurableReconciler) {
-        final var overrider = ControllerConfigurationOverrider.override(configuration);
-        configurableReconciler.updateConfigurationFrom(overrider);
-        configuration = overrider.build();
-        configurations.put(key, configuration);
-      }
+      return null;
     }
 
-    return configuration;
+    var config = configured.config;
+    // if a reconciler is also a ConfigurableReconciler, update and replace its configuration if it
+    // hasn't already been configured
+    if (!configured.configured) {
+      if (reconciler instanceof ConfigurableReconciler<?> configurableReconciler) {
+
+        final var overrider = ControllerConfigurationOverrider.override(config);
+        configurableReconciler.updateConfigurationFrom(overrider);
+        config = overrider.build();
+      }
+      // mark the reconciler as configured so that we don't attempt to do so again next time the
+      // configuration is requested
+      configurations.put(key, new Configured(true, config));
+    }
+
+    return config;
   }
+
+  private record Configured(boolean configured, ControllerConfiguration config) {}
 
   protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
     log.warn("Cannot find reconciler named '{}'. {}", reconcilerKey, reconcilersNameMessage);
@@ -142,14 +154,14 @@ public class AbstractConfigurationService implements ConfigurationService {
     return ReconcilerUtils.getNameFor(reconciler);
   }
 
-  @SuppressWarnings("unused")
   protected ControllerConfiguration getFor(String reconcilerName) {
-    return configurations.get(reconcilerName);
+    final var configured = configurations.get(reconcilerName);
+    return configured != null ? configured.config : null;
   }
 
   @SuppressWarnings("unused")
   protected Stream<ControllerConfiguration> controllerConfigurations() {
-    return configurations.values().stream();
+    return configurations.values().stream().map(Configured::config);
   }
 
   @Override
