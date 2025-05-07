@@ -14,7 +14,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
  * An abstract implementation of {@link ConfigurationService} meant to ease custom implementations
  */
 @SuppressWarnings("rawtypes")
-public class AbstractConfigurationService implements ConfigurationService {
+public class AbstractConfigurationService implements UpdatableConfigurationService {
   private final Map<String, ControllerConfiguration> configurations = new ConcurrentHashMap<>();
   private final Version version;
   private KubernetesClient client;
@@ -71,7 +71,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   protected void init(
       Cloner cloner, ExecutorServiceManager executorServiceManager, KubernetesClient client) {
     this.client = client;
-    this.cloner = cloner != null ? cloner : ConfigurationService.super.getResourceCloner();
+    this.cloner = cloner != null ? cloner : UpdatableConfigurationService.super.getResourceCloner();
     this.executorServiceManager = executorServiceManager;
   }
 
@@ -79,7 +79,8 @@ public class AbstractConfigurationService implements ConfigurationService {
     put(config, true);
   }
 
-  protected <R extends HasMetadata> void replace(ControllerConfiguration<R> config) {
+  @Override
+  public <R extends HasMetadata> void replace(ControllerConfiguration<R> config) {
     put(config, false);
   }
 
@@ -162,7 +163,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   public KubernetesClient getKubernetesClient() {
     // lazy init to avoid needing initializing a client when not needed (in tests, in particular)
     if (client == null) {
-      client = ConfigurationService.super.getKubernetesClient();
+      client = UpdatableConfigurationService.super.getKubernetesClient();
     }
     return client;
   }
@@ -171,7 +172,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   public ExecutorServiceManager getExecutorServiceManager() {
     // lazy init to avoid initializing thread pools for nothing in an overriding scenario
     if (executorServiceManager == null) {
-      executorServiceManager = ConfigurationService.super.getExecutorServiceManager();
+      executorServiceManager = UpdatableConfigurationService.super.getExecutorServiceManager();
     }
     return executorServiceManager;
   }

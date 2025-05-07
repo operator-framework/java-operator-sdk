@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +51,15 @@ class OperatorTest {
     registeredControllers = operator.getRegisteredControllers();
     assertEquals(1, registeredControllers.size());
     assertEquals(maybeController.get(), registeredControllers.stream().findFirst().orElseThrow());
+  }
+
+  @Test
+  void overriddenConfigurationShouldBeUpdatedInConfigurationService() {
+    final var reconciler = new FooReconciler();
+    operator.register(new FooReconciler(), override -> override.settingNamespace("test"));
+    final var config = operator.getConfigurationService().getConfigurationFor(reconciler);
+    final var namespaces = config.getInformerConfig().getNamespaces();
+    assertEquals(Set.of("test"), namespaces);
   }
 
   @ControllerConfiguration
