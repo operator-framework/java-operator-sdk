@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +40,7 @@ public class ConfigurationServiceOverrider {
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
-  private List<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist;
+  private Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -191,7 +190,7 @@ public class ConfigurationServiceOverrider {
   }
 
   public ConfigurationServiceOverrider previousAnnotationUsageBlocklist(
-      List<Class<? extends HasMetadata>> previousAnnotationUsageBlacklist) {
+      Set<Class<? extends HasMetadata>> previousAnnotationUsageBlacklist) {
     this.previousAnnotationUsageBlocklist = previousAnnotationUsageBlacklist;
     return this;
   }
@@ -338,7 +337,7 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public List<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
+      public Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
         return overriddenValueOrDefault(
             previousAnnotationUsageBlocklist,
             ConfigurationService::previousAnnotationUsageBlocklist);
