@@ -1,7 +1,6 @@
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -464,10 +463,14 @@ public interface ConfigurationService {
    * resources. Note that if you are sure that the matcher works (most of the cases does) for your
    * case, you can remove the resource from the blocklist.
    *
+   * <p>The consequence of adding a resource type to this list is that it will not use event
+   * filtering in dependent resources, so will process also events which are results from updates of
+   * the dependent.
+   *
    * @return blocklist of resource classes where the previous version annotation won't be used.
    */
-  default List<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
-    return List.of(Deployment.class, StatefulSet.class);
+  default Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
+    return Set.of(Deployment.class, StatefulSet.class);
   }
 
   /**
