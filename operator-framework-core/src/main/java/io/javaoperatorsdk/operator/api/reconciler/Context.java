@@ -47,6 +47,13 @@ public interface Context<P extends HasMetadata> {
   ExecutorService getWorkflowExecutorService();
 
   /**
+   * Retrieves the primary resource.
+   *
+   * @return the primary resource associated with the current reconciliation
+   */
+  P getPrimaryResource();
+
+  /**
    * Retrieves the primary resource cache.
    *
    * @return the {@link IndexerResourceCache} associated with the associated {@link Reconciler} for

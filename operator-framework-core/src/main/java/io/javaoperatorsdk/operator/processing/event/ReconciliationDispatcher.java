@@ -180,10 +180,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
 
-  @SuppressWarnings("unchecked")
   private PostExecutionControl<P> handleErrorStatusHandler(
       P resource, P originalResource, Context<P> context, Exception e) throws Exception {
-
     RetryInfo retryInfo =
         context
             .getRetryInfo()
