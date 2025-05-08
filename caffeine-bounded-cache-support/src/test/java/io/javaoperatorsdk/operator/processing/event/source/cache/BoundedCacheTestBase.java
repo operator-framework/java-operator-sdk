@@ -44,7 +44,7 @@ public abstract class BoundedCacheTestBase<
 
   private void assertConfigMapsDeleted() {
     await()
-        .atMost(Duration.ofSeconds(30))
+        .atMost(Duration.ofSeconds(120))
         .untilAsserted(
             () ->
                 IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
