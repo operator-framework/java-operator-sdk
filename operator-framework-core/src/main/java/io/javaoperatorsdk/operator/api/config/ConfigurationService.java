@@ -457,11 +457,14 @@ public interface ConfigurationService {
    * logic, and you want to further minimize the amount of work done / updates issued by the
    * operator.
    *
-   * @return if resource version should be parsed (as integer)
    * @since 4.5.0
-   * @return if resource version should be parsed (as integer)
+   * @return if resourceVersion should be parsed (as integer)
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
+    return false;
+  }
+
+  default boolean cacheUpdatedResourcesViaUpdateControl() {
     return false;
   }
 

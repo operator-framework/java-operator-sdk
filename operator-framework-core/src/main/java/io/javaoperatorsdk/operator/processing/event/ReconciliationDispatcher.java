@@ -416,7 +416,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     private final boolean useSSA;
     private final String fieldManager;
     private final Cloner cloner;
-    private final boolean previousAnnotationForDependentResourcesEventFiltering;
+    private final boolean cacheUpdatedResources;
+
     private final ControllerEventSource<R> controllerEventSource;
 
     public CustomResourceFacade(
@@ -427,16 +428,17 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       this.resourceOperation = resourceOperation;
       this.useSSA = configuration.getConfigurationService().useSSAToPatchPrimaryResource();
       this.fieldManager = configuration.fieldManager();
-      this.previousAnnotationForDependentResourcesEventFiltering =
+      this.cacheUpdatedResources =
           configuration
-              .getConfigurationService()
-              .previousAnnotationForDependentResourcesEventFiltering();
+                  .getConfigurationService()
+                  .previousAnnotationForDependentResourcesEventFiltering()
+              && configuration.getConfigurationService().cacheUpdatedResourcesViaUpdateControl();
       this.cloner = cloner;
       this.controllerEventSource = controllerEventSource;
     }
 
     private void cachePrimaryResource(R updatedResource, R previousVersionOfResource) {
-      if (previousAnnotationForDependentResourcesEventFiltering) {
+      if (cacheUpdatedResources) {
         controllerEventSource.handleRecentResourceUpdate(
             ResourceID.fromResource(updatedResource), updatedResource, previousVersionOfResource);
       }
