@@ -144,7 +144,8 @@ class ReconciliationDispatcherTest {
     verify(reconciler, never()).reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
         .patchResourceWithSSA(
-            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)));
+            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)),
+            any());
   }
 
   @Test
@@ -357,13 +358,13 @@ class ReconciliationDispatcherTest {
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.patchResourceWithSSA(any())).thenReturn(testCustomResource);
+    when(customResourceFacade.patchResourceWithSSA(any(), any())).thenReturn(testCustomResource);
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
     verify(customResourceFacade, times(1))
-        .patchResourceWithSSA(argThat(a -> !a.getMetadata().getFinalizers().isEmpty()));
+        .patchResourceWithSSA(argThat(a -> !a.getMetadata().getFinalizers().isEmpty()), any());
     assertThat(postExecControl.updateIsStatusPatch()).isFalse();
     assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }

@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 
@@ -60,7 +61,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         new CustomResourceFacade<>(
             controller.getCRClient(),
             controller.getConfiguration(),
-            controller.getConfiguration().getConfigurationService().getResourceCloner()));
+            controller.getConfiguration().getConfigurationService().getResourceCloner(),
+            controller.getEventSourceManager().getControllerEventSource()));
   }
 
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
@@ -175,7 +177,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     if (updateControl.isPatchStatus()) {
-      customResourceFacade.patchStatus(toUpdate, originalResource);
+      updatedCustomResource = customResourceFacade.patchStatus(toUpdate, originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl);
   }
@@ -315,7 +317,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
       resource.setMetadata(objectMeta);
       resource.addFinalizer(configuration().getFinalizerName());
-      return customResourceFacade.patchResourceWithSSA(resource);
+      return customResourceFacade.patchResourceWithSSA(resource, originalResource);
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException
@@ -414,15 +416,30 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     private final boolean useSSA;
     private final String fieldManager;
     private final Cloner cloner;
+    private final boolean previousAnnotationForDependentResourcesEventFiltering;
+    private final ControllerEventSource<R> controllerEventSource;
 
     public CustomResourceFacade(
         MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation,
         ControllerConfiguration<R> configuration,
-        Cloner cloner) {
+        Cloner cloner,
+        ControllerEventSource<R> controllerEventSource) {
       this.resourceOperation = resourceOperation;
       this.useSSA = configuration.getConfigurationService().useSSAToPatchPrimaryResource();
       this.fieldManager = configuration.fieldManager();
+      this.previousAnnotationForDependentResourcesEventFiltering =
+          configuration
+              .getConfigurationService()
+              .previousAnnotationForDependentResourcesEventFiltering();
       this.cloner = cloner;
+      this.controllerEventSource = controllerEventSource;
+    }
+
+    private void cachePrimaryResource(R updatedResource, R previousVersionOfResource) {
+      if (previousAnnotationForDependentResourcesEventFiltering) {
+        controllerEventSource.handleRecentResourceUpdate(
+            ResourceID.fromResource(updatedResource), updatedResource, previousVersionOfResource);
+      }
     }
 
     public R getResource(String namespace, String name) {
@@ -434,7 +451,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     public R patchResourceWithoutSSA(R resource, R originalResource) {
-      return resource(originalResource).edit(r -> resource);
+      R updated = resource(originalResource).edit(r -> resource);
+      cachePrimaryResource(updated, originalResource);
+      return updated;
     }
 
     public R patchResource(R resource, R originalResource) {
@@ -444,32 +463,43 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             ResourceID.fromResource(resource),
             resource.getMetadata().getResourceVersion());
       }
+      R updated;
       if (useSSA) {
-        return patchResourceWithSSA(resource);
+        return patchResourceWithSSA(resource, originalResource);
       } else {
-        return resource(originalResource).edit(r -> resource);
+        updated = resource(originalResource).edit(r -> resource);
+        cachePrimaryResource(updated, originalResource);
+        return updated;
       }
     }
 
     public R patchStatus(R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
       if (useSSA) {
+        R updated = null;
         var managedFields = resource.getMetadata().getManagedFields();
         try {
           resource.getMetadata().setManagedFields(null);
           var res = resource(resource);
-          return res.subresource("status")
-              .patch(
-                  new PatchContext.Builder()
-                      .withFieldManager(fieldManager)
-                      .withForce(true)
-                      .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                      .build());
+          updated =
+              res.subresource("status")
+                  .patch(
+                      new PatchContext.Builder()
+                          .withFieldManager(fieldManager)
+                          .withForce(true)
+                          .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                          .build());
+          return updated;
         } finally {
           resource.getMetadata().setManagedFields(managedFields);
+          if (updated != null) {
+            cachePrimaryResource(updated, originalResource);
+          }
         }
       } else {
-        return editStatus(resource, originalResource);
+        R updated = editStatus(resource, originalResource);
+        cachePrimaryResource(updated, originalResource);
+        return updated;
       }
     }
 
@@ -490,14 +520,17 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-    public R patchResourceWithSSA(R resource) {
-      return resource(resource)
-          .patch(
-              new PatchContext.Builder()
-                  .withFieldManager(fieldManager)
-                  .withForce(true)
-                  .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                  .build());
+    public R patchResourceWithSSA(R resource, R originalResource) {
+      R updated =
+          resource(resource)
+              .patch(
+                  new PatchContext.Builder()
+                      .withFieldManager(fieldManager)
+                      .withForce(true)
+                      .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                      .build());
+      cachePrimaryResource(updated, originalResource);
+      return updated;
     }
 
     private Resource<R> resource(R resource) {
