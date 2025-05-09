@@ -17,6 +17,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurableReconciler;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -309,6 +311,34 @@ class BaseConfigurationServiceTest {
     assertEquals(
         reconciler.isUseSSA(),
         configurationService.shouldUseSSA(reconciler.getSsaConfigMapDependent()));
+  }
+
+  @Test
+  void shouldOverrideConfigurationForConfigurableReconciler() {
+    final var reconciler = new TestConfigurableReconciler();
+    var config = configurationService.getConfigurationFor(reconciler);
+    assertThat(config.getInformerConfig().getLabelSelector()).isNull();
+
+    config = configurationService.getConfigurationFor(reconciler);
+    assertThat(config.getInformerConfig().getLabelSelector())
+        .isEqualTo(TestConfigurableReconciler.selector);
+  }
+
+  private static class TestConfigurableReconciler
+      implements Reconciler<ConfigMap>, ConfigurableReconciler<ConfigMap> {
+    private static final String selector = "foo=bar";
+
+    @Override
+    public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
+        throws Exception {
+      return null;
+    }
+
+    @Override
+    public void updateConfigurationFrom(
+        ControllerConfigurationOverrider<ConfigMap> configOverrider) {
+      configOverrider.withLabelSelector(selector);
+    }
   }
 
   @SuppressWarnings("unchecked")
