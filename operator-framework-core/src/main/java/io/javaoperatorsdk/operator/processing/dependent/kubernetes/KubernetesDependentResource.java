@@ -69,12 +69,18 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     }
     addMetadata(false, null, desired, primary, context);
     final var resource = prepare(context, desired, primary, "Creating");
-    return useSSA(context)
-        ? resource
-            .fieldManager(context.getControllerConfiguration().fieldManager())
-            .forceConflicts()
-            .serverSideApply()
-        : resource.create();
+    var result =
+        useSSA(context)
+            ? resource
+                .fieldManager(context.getControllerConfiguration().fieldManager())
+                .forceConflicts()
+                .serverSideApply()
+            : resource.create();
+    if (useSSA(context)) {
+      SSABasedGenericKubernetesResourceMatcher.getInstance()
+          .findDefaultsAndNormalizations(result, desired, context);
+    }
+    return result;
   }
 
   public R update(R actual, R desired, P primary, Context<P> context) {
@@ -92,6 +98,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
               .fieldManager(context.getControllerConfiguration().fieldManager())
               .forceConflicts()
               .serverSideApply();
+      SSABasedGenericKubernetesResourceMatcher.getInstance()
+          .findDefaultsAndNormalizations(actual, desired, context);
     } else {
       var updatedActual = GenericResourceUpdater.updateResource(actual, desired, context);
       updatedResource = prepare(context, updatedActual, primary, "Updating").update();
