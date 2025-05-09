@@ -27,5 +27,24 @@ public @interface KubernetesDependent {
    */
   BooleanWithUndefined useSSA() default BooleanWithUndefined.UNDEFINED;
 
+  /**
+   * The underlying Informer event source configuration
+   *
+   * @return the {@link Informer} configuration
+   */
   Informer informer() default @Informer;
+
+  /**
+   * The specific matcher implementation to use when Server-Side Apply (SSA) is used, when case the
+   * default one isn't working appropriately. Typically, this could be needed to cover border cases
+   * with some Kubernetes resources that are modified by their controllers to normalize or add
+   * default values, which could result in infinite loops with the default matcher. Using a specific
+   * matcher could also be an optimization decision if determination of whether two resources match
+   * can be done faster than what can be done with the default exhaustive algorithm.
+   *
+   * @return the class of the specific matcher to use for the associated dependent resources
+   * @since 5.1
+   */
+  Class<? extends SSABasedGenericKubernetesResourceMatcher> matcher() default
+      SSABasedGenericKubernetesResourceMatcher.class;
 }

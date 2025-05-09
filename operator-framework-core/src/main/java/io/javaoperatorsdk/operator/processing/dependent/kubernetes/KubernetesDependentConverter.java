@@ -22,10 +22,22 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
         DEFAULT_CREATE_RESOURCE_ONLY_IF_NOT_EXISTING_WITH_SSA;
 
     Boolean useSSA = null;
+    SSABasedGenericKubernetesResourceMatcher<R> matcher =
+        SSABasedGenericKubernetesResourceMatcher.getInstance();
     if (configAnnotation != null) {
       createResourceOnlyIfNotExistingWithSSA =
           configAnnotation.createResourceOnlyIfNotExistingWithSSA();
       useSSA = configAnnotation.useSSA().asBoolean();
+
+      // check if we have a specific matcher
+      Class<? extends KubernetesDependentResource<?, ?>> dependentResourceClass =
+          (Class<? extends KubernetesDependentResource<?, ?>>) spec.getDependentResourceClass();
+      final var context =
+          Utils.contextFor(
+              controllerConfig, dependentResourceClass, configAnnotation.annotationType());
+      matcher =
+          Utils.instantiate(
+              configAnnotation.matcher(), SSABasedGenericKubernetesResourceMatcher.class, context);
     }
 
     var informerConfiguration =
@@ -35,7 +47,7 @@ public class KubernetesDependentConverter<R extends HasMetadata, P extends HasMe
             controllerConfig);
 
     return new KubernetesDependentResourceConfig<>(
-        useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfiguration);
+        useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfiguration, matcher);
   }
 
   @SuppressWarnings({"unchecked"})

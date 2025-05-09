@@ -10,14 +10,18 @@ public class KubernetesDependentResourceConfig<R extends HasMetadata> {
   private final Boolean useSSA;
   private final boolean createResourceOnlyIfNotExistingWithSSA;
   private final InformerConfiguration<R> informerConfig;
+  private final SSABasedGenericKubernetesResourceMatcher<R> matcher;
 
   public KubernetesDependentResourceConfig(
       Boolean useSSA,
       boolean createResourceOnlyIfNotExistingWithSSA,
-      InformerConfiguration<R> informerConfig) {
+      InformerConfiguration<R> informerConfig,
+      SSABasedGenericKubernetesResourceMatcher<R> matcher) {
     this.useSSA = useSSA;
     this.createResourceOnlyIfNotExistingWithSSA = createResourceOnlyIfNotExistingWithSSA;
     this.informerConfig = informerConfig;
+    this.matcher =
+        matcher != null ? matcher : SSABasedGenericKubernetesResourceMatcher.getInstance();
   }
 
   public boolean createResourceOnlyIfNotExistingWithSSA() {
@@ -30,5 +34,9 @@ public class KubernetesDependentResourceConfig<R extends HasMetadata> {
 
   public InformerConfiguration<R> informerConfig() {
     return informerConfig;
+  }
+
+  public SSABasedGenericKubernetesResourceMatcher<R> matcher() {
+    return matcher;
   }
 }
