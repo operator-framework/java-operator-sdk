@@ -40,6 +40,7 @@ public class ConfigurationServiceOverrider {
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
+  private Boolean cacheUpdatedResourcesViaUpdateControl;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -188,6 +189,11 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public ConfigurationServiceOverrider withCacheUpdatedResourcesViaUpdateControl(boolean value) {
+    this.cacheUpdatedResourcesViaUpdateControl = value;
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -327,6 +333,13 @@ public class ConfigurationServiceOverrider {
         return overriddenValueOrDefault(
             cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
+      }
+
+      @Override
+      public boolean cacheUpdatedResourcesViaUpdateControl() {
+        return overriddenValueOrDefault(
+            cacheUpdatedResourcesViaUpdateControl,
+            ConfigurationService::cacheUpdatedResourcesViaUpdateControl);
       }
     };
   }

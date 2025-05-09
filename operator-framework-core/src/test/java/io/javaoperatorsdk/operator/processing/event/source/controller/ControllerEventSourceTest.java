@@ -165,6 +165,9 @@ class ControllerEventSourceTest
           reconciler,
           new TestConfiguration(true, onAddFilter, onUpdateFilter, genericFilter),
           MockKubernetesClient.client(TestCustomResource.class));
+
+      when(eventSourceManager.getControllerEventSource())
+          .thenReturn(mock(ControllerEventSource.class));
     }
 
     public TestController(boolean generationAware) {
@@ -176,6 +179,9 @@ class ControllerEventSourceTest
 
     @Override
     public EventSourceManager<TestCustomResource> getEventSourceManager() {
+      if (eventSourceManager == null) {
+        return super.getEventSourceManager();
+      }
       return eventSourceManager;
     }
 
