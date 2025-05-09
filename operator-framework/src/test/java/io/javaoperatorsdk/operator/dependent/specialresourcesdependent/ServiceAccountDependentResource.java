@@ -12,10 +12,6 @@ import static io.javaoperatorsdk.operator.dependent.specialresourcesdependent.Sp
 public class ServiceAccountDependentResource
     extends CRUDKubernetesDependentResource<ServiceAccount, SpecialResourceCustomResource> {
 
-  public ServiceAccountDependentResource() {
-    super(ServiceAccount.class);
-  }
-
   @Override
   protected ServiceAccount desired(
       SpecialResourceCustomResource primary, Context<SpecialResourceCustomResource> context) {

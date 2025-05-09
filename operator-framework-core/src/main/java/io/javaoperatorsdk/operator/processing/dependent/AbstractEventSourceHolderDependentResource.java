@@ -1,8 +1,10 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -23,13 +25,23 @@ public abstract class AbstractEventSourceHolderDependentResource<
   private boolean isCacheFillerEventSource;
   protected String eventSourceNameToUse;
 
+  @SuppressWarnings("unchecked")
+  protected AbstractEventSourceHolderDependentResource() {
+    this(null, null);
+  }
+
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }
 
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType, String name) {
     super(name);
-    this.resourceType = resourceType;
+    if (resourceType == null) {
+      this.resourceType =
+          (Class<R>) Utils.getTypeArgumentFromHierarchyByIndex(getClass(), HasMetadata.class, 0);
+    } else {
+      this.resourceType = resourceType;
+    }
   }
 
   /**
@@ -115,5 +127,24 @@ public abstract class AbstractEventSourceHolderDependentResource<
   @SuppressWarnings("unchecked")
   private RecentOperationCacheFiller<R> recentOperationCacheFiller() {
     return (RecentOperationCacheFiller<R>) eventSource;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Class<R> findFirstGenericSuperclass(
+      Class<? extends AbstractEventSourceHolderDependentResource> clazz) {
+    Class<? extends AbstractEventSourceHolderDependentResource> c = clazz;
+    while (!(c.getGenericSuperclass() instanceof ParameterizedType)) {
+      c = (Class<? extends AbstractEventSourceHolderDependentResource>) c.getSuperclass();
+    }
+    Class<R> actualTypeArgument =
+        (Class<R>) ((ParameterizedType) c.getGenericSuperclass()).getActualTypeArguments()[0];
+    if (!HasMetadata.class.isAssignableFrom(actualTypeArgument)) {
+      throw new IllegalStateException(
+          "Not possible to automatically derive the the resource type for "
+              + clazz.getName()
+              + ". Please provide the resource type in the constructor (e.g.,"
+              + " super(Deployment.class).");
+    }
+    return actualTypeArgument;
   }
 }

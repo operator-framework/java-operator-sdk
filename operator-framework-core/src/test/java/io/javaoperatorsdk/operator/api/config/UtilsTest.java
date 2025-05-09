@@ -118,10 +118,5 @@ class UtilsTest {
   }
 
   public static class TestKubernetesDependentResource
-      extends KubernetesDependentResource<Deployment, TestCustomResource> {
-
-    public TestKubernetesDependentResource() {
-      super(Deployment.class);
-    }
-  }
+      extends KubernetesDependentResource<Deployment, TestCustomResource> {}
 }

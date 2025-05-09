@@ -21,6 +21,8 @@ public abstract class AbstractExternalDependentResource<
 
   private InformerEventSource<?, P> externalStateEventSource;
 
+  protected AbstractExternalDependentResource() {}
+
   @SuppressWarnings("unchecked")
   protected AbstractExternalDependentResource(Class<R> resourceType) {
     super(resourceType);

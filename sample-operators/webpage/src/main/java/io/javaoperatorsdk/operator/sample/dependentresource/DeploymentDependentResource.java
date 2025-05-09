@@ -22,10 +22,6 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 public class DeploymentDependentResource
     extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 
-  public DeploymentDependentResource() {
-    super(Deployment.class);
-  }
-
   @Override
   protected Deployment desired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> labels = new HashMap<>();

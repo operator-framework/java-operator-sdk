@@ -359,21 +359,11 @@ class ControllerConfigurationOverriderTest {
   }
 
   public static class ReadOnlyDependent extends KubernetesDependentResource<ConfigMap, ConfigMap>
-      implements GarbageCollected<ConfigMap> {
-
-    public ReadOnlyDependent() {
-      super(ConfigMap.class);
-    }
-  }
+      implements GarbageCollected<ConfigMap> {}
 
   @KubernetesDependent(informer = @Informer(namespaces = Constants.WATCH_ALL_NAMESPACES))
   public static class WatchAllNSDependent extends KubernetesDependentResource<ConfigMap, ConfigMap>
-      implements GarbageCollected<ConfigMap> {
-
-    public WatchAllNSDependent() {
-      super(ConfigMap.class);
-    }
-  }
+      implements GarbageCollected<ConfigMap> {}
 
   @Workflow(dependents = @Dependent(type = OverriddenNSDependent.class))
   @ControllerConfiguration(
@@ -394,10 +384,6 @@ class ControllerConfigurationOverriderTest {
       implements GarbageCollected<ConfigMap> {
 
     private static final String DEP_NS = "dependentNS";
-
-    public OverriddenNSDependent() {
-      super(ConfigMap.class);
-    }
   }
 
   @Workflow(
@@ -415,12 +401,7 @@ class ControllerConfigurationOverriderTest {
 
     private static class NamedDependentResource
         extends KubernetesDependentResource<ConfigMap, ConfigMap>
-        implements GarbageCollected<ConfigMap> {
-
-      public NamedDependentResource() {
-        super(ConfigMap.class);
-      }
-    }
+        implements GarbageCollected<ConfigMap> {}
 
     private static class ExternalDependentResource
         implements DependentResource<Object, ConfigMap>,

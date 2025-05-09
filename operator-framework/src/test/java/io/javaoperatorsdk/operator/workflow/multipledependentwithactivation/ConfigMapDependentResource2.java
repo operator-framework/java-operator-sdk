@@ -17,10 +17,6 @@ public class ConfigMapDependentResource2
   public static final String DATA_KEY = "data";
   public static final String SUFFIX = "2";
 
-  public ConfigMapDependentResource2() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       MultipleDependentActivationCustomResource primary,

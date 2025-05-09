@@ -17,10 +17,6 @@ public class MultipleManagedDependentNoDiscriminatorConfigMap1
 
   public static final String NAME_SUFFIX = "-1";
 
-  public MultipleManagedDependentNoDiscriminatorConfigMap1() {
-    super(ConfigMap.class);
-  }
-
   /*
    * Showcases optimization to avoid computing the whole desired state by providing the ResourceID
    * of the target resource. In this particular case this would not be necessary, since desired

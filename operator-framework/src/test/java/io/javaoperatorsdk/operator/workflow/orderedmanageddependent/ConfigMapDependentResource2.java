@@ -15,10 +15,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class ConfigMapDependentResource2
     extends CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 
-  public ConfigMapDependentResource2() {
-    super(ConfigMap.class);
-  }
-
   @Override
   public ReconcileResult<ConfigMap> reconcile(
       OrderedManagedDependentCustomResource primary,

@@ -11,10 +11,6 @@ public class ConfigMapDependentResource
     extends CRUDKubernetesDependentResource<
         ConfigMap, CreateOnlyIfNotExistingDependentWithSSACustomResource> {
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       CreateOnlyIfNotExistingDependentWithSSACustomResource primary,

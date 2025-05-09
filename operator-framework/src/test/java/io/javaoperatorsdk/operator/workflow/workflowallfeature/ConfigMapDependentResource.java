@@ -25,10 +25,6 @@ public class ConfigMapDependentResource
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {

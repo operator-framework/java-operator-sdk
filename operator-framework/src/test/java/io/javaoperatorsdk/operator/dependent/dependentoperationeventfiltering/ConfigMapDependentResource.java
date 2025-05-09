@@ -13,10 +13,6 @@ public class ConfigMapDependentResource
 
   public static final String KEY = "key1";
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       DependentOperationEventFilterCustomResource primary,
