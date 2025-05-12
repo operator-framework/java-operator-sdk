@@ -37,6 +37,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     implements ConfiguredDependentResource<KubernetesDependentResourceConfig<R>> {
 
   private static final Logger log = LoggerFactory.getLogger(KubernetesDependentResource.class);
+
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
@@ -112,7 +113,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     addMetadata(true, actualResource, desired, primary, context);
     if (useSSA(context)) {
       matches =
-          SSABasedGenericKubernetesResourceMatcher.getInstance()
+          configuration()
+              .map(KubernetesDependentResourceConfig::matcher)
+              .orElse(SSABasedGenericKubernetesResourceMatcher.getInstance())
               .matches(actualResource, desired, context);
     } else {
       matches =
