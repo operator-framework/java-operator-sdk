@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,17 +10,20 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,6 +50,54 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   }
 
   @Test
+  void noMatchWhenNoMatchingController() {
+    var desired = loadResource("nginx-deployment.yaml", Deployment.class);
+    var actual =
+        loadResource("deployment-with-managed-fields-additional-controller.yaml", Deployment.class);
+    actual
+        .getMetadata()
+        .getManagedFields()
+        .removeIf(managedFieldsEntry -> managedFieldsEntry.getManager().equals("controller"));
+
+    assertThat(matcher.matches(actual, desired, mockedContext)).isFalse();
+  }
+
+  @Test
+  void exceptionWhenDuplicateController() {
+    var desired = loadResource("nginx-deployment.yaml", Deployment.class);
+    var actual =
+        loadResource("deployment-with-managed-fields-additional-controller.yaml", Deployment.class);
+    actual.getMetadata().getManagedFields().stream()
+        .filter(managedFieldsEntry -> managedFieldsEntry.getManager().equals("controller"))
+        .findFirst()
+        .ifPresent(
+            managedFieldsEntry -> actual.getMetadata().getManagedFields().add(managedFieldsEntry));
+
+    assertThatThrownBy(() -> matcher.matches(actual, desired, mockedContext))
+        .isInstanceOf(OperatorException.class)
+        .hasMessage(
+            "More than one field manager exists with name: controller in resource: Deployment with"
+                + " name: test");
+  }
+
+  @Test
+  void matchWithSensitiveResource() {
+    var desired = loadResource("secret-desired.yaml", Secret.class);
+    var actual = loadResource("secret.yaml", Secret.class);
+
+    assertThat(matcher.matches(actual, desired, mockedContext)).isTrue();
+  }
+
+  @Test
+  void noMatchWithSensitiveResource() {
+    var desired = loadResource("secret-desired.yaml", Secret.class);
+    var actual = loadResource("secret.yaml", Secret.class);
+    actual.getData().put("key1", "dmFsMg==");
+
+    assertThat(matcher.matches(actual, desired, mockedContext)).isFalse();
+  }
+
+  @Test
   void checksIfAddsNotAddedByController() {
     var desired = loadResource("nginx-deployment.yaml", Deployment.class);
     var actual =
@@ -56,7 +106,40 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     assertThat(matcher.matches(actual, desired, mockedContext)).isTrue();
   }
 
-  // In the example the owner reference in a list is referenced by "k:", while all the fields are
+  @Test
+  void throwExceptionWhenManagedListEntryNotFound() {
+    var desired = loadResource("nginx-deployment.yaml", Deployment.class);
+    var actual =
+        loadResource("deployment-with-managed-fields-additional-controller.yaml", Deployment.class);
+    final var container = actual.getSpec().getTemplate().getSpec().getContainers().get(0);
+    container.setName("foobar");
+
+    assertThatThrownBy(() -> matcher.matches(actual, desired, mockedContext))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "Cannot find list element for key: {\"name\":\"nginx\"} in map: [[image,"
+                + " imagePullPolicy, name, ports, resources, terminationMessagePath,"
+                + " terminationMessagePolicy]]");
+  }
+
+  @Test
+  void throwExceptionWhenDuplicateManagedListEntryFound() {
+    var desired = loadResource("nginx-deployment.yaml", Deployment.class);
+    var actual =
+        loadResource("deployment-with-managed-fields-additional-controller.yaml", Deployment.class);
+    final var container = actual.getSpec().getTemplate().getSpec().getContainers().get(0);
+    actual.getSpec().getTemplate().getSpec().getContainers().add(container);
+
+    assertThatThrownBy(() -> matcher.matches(actual, desired, mockedContext))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "More targets found in list element for key: {\"name\":\"nginx\"} in map: [[image,"
+                + " imagePullPolicy, name, ports, resources, terminationMessagePath,"
+                + " terminationMessagePolicy], [image, imagePullPolicy, name, ports, resources,"
+                + " terminationMessagePath, terminationMessagePolicy]]");
+  }
+
+  // in the example the owner reference in a list is referenced by "k:", while all the fields are
   // managed but not listed
   @Test
   void emptyListElementMatchesAllFields() {
@@ -118,45 +201,11 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  void sortListItemsTest() {
-    var nestedMap1 = new HashMap<String, Object>();
-    nestedMap1.put("z", 26);
-    nestedMap1.put("y", 25);
+  void withFinalizer() {
+    var desired = loadResource("secret-with-finalizer-desired.yaml", Secret.class);
+    var actual = loadResource("secret-with-finalizer.yaml", Secret.class);
 
-    var nestedMap2 = new HashMap<String, Object>();
-    nestedMap2.put("b", 26);
-    nestedMap2.put("c", 25);
-    nestedMap2.put("a", 24);
-
-    var unsortedListItems = List.<Object>of(1, nestedMap1, nestedMap2);
-    var sortedListItems = matcher.sortListItems(unsortedListItems);
-    assertThat(sortedListItems).element(0).isEqualTo(1);
-
-    var sortedNestedMap1 = (Map<String, Object>) sortedListItems.get(1);
-    assertThat(sortedNestedMap1.keySet()).containsExactly("y", "z");
-
-    var sortedNestedMap2 = (Map<String, Object>) sortedListItems.get(2);
-    assertThat(sortedNestedMap2.keySet()).containsExactly("a", "b", "c");
-  }
-
-  @Test
-  @SuppressWarnings("unchecked")
-  void testSortMapWithNestedMap() {
-    var nestedMap = new HashMap<String, Object>();
-    nestedMap.put("z", 26);
-    nestedMap.put("y", 25);
-
-    var unsortedMap = new HashMap<String, Object>();
-    unsortedMap.put("b", nestedMap);
-    unsortedMap.put("a", 1);
-    unsortedMap.put("c", 2);
-
-    var sortedMap = matcher.sortMap(unsortedMap);
-    assertThat(sortedMap.keySet()).containsExactly("a", "b", "c");
-
-    var sortedNestedMap = (Map<String, Object>) sortedMap.get("b");
-    assertThat(sortedNestedMap.keySet()).containsExactly("y", "z");
+    assertThat(matcher.matches(actual, desired, mockedContext)).isTrue();
   }
 
   @ParameterizedTest
@@ -206,6 +255,23 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   }
 
   @Test
+  void testSanitizeState_statefulSet_withResourceTypeMismatch() {
+    var desiredReplicaSet = loadResource("sample-rs-resources-desired.yaml", ReplicaSet.class);
+    var actualStatefulSet = loadResource("sample-sts-resources.yaml", StatefulSet.class);
+
+    assertThat(matcher.matches(actualStatefulSet, desiredReplicaSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_deployment_withResourceTypeMismatch() {
+    var desiredReplicaSet = loadResource("sample-rs-resources-desired.yaml", ReplicaSet.class);
+    var actualDeployment =
+        loadResource("deployment-with-managed-fields-additional-controller.yaml", Deployment.class);
+
+    assertThat(matcher.matches(actualDeployment, desiredReplicaSet, mockedContext)).isFalse();
+  }
+
+  @Test
   void testSanitizeState_replicaSetWithResources() {
     var desiredReplicaSet = loadResource("sample-rs-resources-desired.yaml", ReplicaSet.class);
     var actualReplicaSet = loadResource("sample-rs-resources.yaml", ReplicaSet.class);
@@ -223,6 +289,14 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   }
 
   @Test
+  void testSanitizeState_replicaSet_withResourceTypeMismatch() {
+    var desiredDaemonSet = loadResource("sample-ds-resources-desired.yaml", DaemonSet.class);
+    var actualReplicaSet = loadResource("sample-rs-resources.yaml", ReplicaSet.class);
+
+    assertThat(matcher.matches(actualReplicaSet, desiredDaemonSet, mockedContext)).isFalse();
+  }
+
+  @Test
   void testSanitizeState_daemonSetWithResources() {
     var desiredDaemonSet = loadResource("sample-ds-resources-desired.yaml", DaemonSet.class);
     var actualDaemonSet = loadResource("sample-ds-resources.yaml", DaemonSet.class);
@@ -236,6 +310,14 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     var actualDaemonSet = loadResource("sample-ds-resources.yaml", DaemonSet.class);
 
     assertThat(matcher.matches(actualDaemonSet, desiredDaemonSet, mockedContext)).isFalse();
+  }
+
+  @Test
+  void testSanitizeState_daemonSet_withResourceTypeMismatch() {
+    var desiredReplicaSet = loadResource("sample-rs-resources-desired.yaml", ReplicaSet.class);
+    var actualDaemonSet = loadResource("sample-ds-resources.yaml", DaemonSet.class);
+
+    assertThat(matcher.matches(actualDaemonSet, desiredReplicaSet, mockedContext)).isFalse();
   }
 
   @ParameterizedTest
@@ -263,6 +345,52 @@ class SSABasedGenericKubernetesResourceMatcherTest {
         .isEqualTo(readOnly);
   }
 
+  @Test
+  void keepOnlyManagedFields_withInvalidManagedFieldsKey() {
+    assertThatThrownBy(
+            () ->
+                SSABasedGenericKubernetesResourceMatcher.keepOnlyManagedFields(
+                    Map.of(),
+                    Map.of(),
+                    Map.of("invalid", 1),
+                    mockedContext.getClient().getKubernetesSerialization())) //
+        .isInstanceOf(IllegalStateException.class) //
+        .hasMessage("Key: invalid has no prefix: f:");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testSortMap() {
+    final var unsortedMap = Map.of("b", Map.of("z", 26, "y", 25), "a", List.of("w", "v"), "c", 2);
+
+    var sortedMap = SSABasedGenericKubernetesResourceMatcher.sortMap(unsortedMap);
+    assertThat(sortedMap.keySet()).containsExactly("a", "b", "c");
+
+    var sortedNestedMap = (Map<String, Object>) sortedMap.get("b");
+    assertThat(sortedNestedMap.keySet()).containsExactly("y", "z");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testSortListItems() {
+    final var unsortedList =
+        List.of(1, Map.of("z", 26, "y", 25), Map.of("b", 26, "c", 25, "a", 24), List.of("w", "v"));
+
+    var sortedListItems = SSABasedGenericKubernetesResourceMatcher.sortListItems(unsortedList);
+    assertThat(sortedListItems).element(0).isEqualTo(1);
+
+    var sortedNestedMap1 = (Map<String, Object>) sortedListItems.get(1);
+    assertThat(sortedNestedMap1.keySet()).containsExactly("y", "z");
+
+    var sortedNestedMap2 = (Map<String, Object>) sortedListItems.get(2);
+    assertThat(sortedNestedMap2.keySet()).containsExactly("a", "b", "c");
+  }
+
+  private static <R> R loadResource(String fileName, Class<R> clazz) {
+    return ReconcilerUtils.loadYaml(
+        clazz, SSABasedGenericKubernetesResourceMatcherTest.class, fileName);
+  }
+
   private static class ConfigMapDR extends KubernetesDependentResource<ConfigMap, ConfigMap> {
     public ConfigMapDR() {
       super(ConfigMap.class);
@@ -284,10 +412,5 @@ class SSABasedGenericKubernetesResourceMatcherTest {
       }
       return actualMap.equals(desiredMap);
     }
-  }
-
-  private static <R> R loadResource(String fileName, Class<R> clazz) {
-    return ReconcilerUtils.loadYaml(
-        clazz, SSABasedGenericKubernetesResourceMatcherTest.class, fileName);
   }
 }
