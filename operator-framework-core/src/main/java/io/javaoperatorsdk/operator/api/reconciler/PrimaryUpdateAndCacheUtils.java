@@ -225,7 +225,7 @@ public class PrimaryUpdateAndCacheUtils {
         .parseResourceVersionsForEventFilteringAndCaching()) {
       throw new OperatorException(
           "For internal primary resource caching 'parseResourceVersionsForEventFilteringAndCaching'"
-              + " must to be allowed.");
+              + " must be allowed.");
     }
   }
 }
