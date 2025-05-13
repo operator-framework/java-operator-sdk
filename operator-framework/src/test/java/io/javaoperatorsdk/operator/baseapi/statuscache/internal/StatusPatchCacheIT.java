@@ -18,7 +18,7 @@ public class StatusPatchCacheIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-              .withConfigurationService(o->o.withParseResourceVersions(true))
+          .withConfigurationService(o -> o.withParseResourceVersions(true))
           .withReconciler(StatusPatchCacheReconciler.class)
           .build();
 
