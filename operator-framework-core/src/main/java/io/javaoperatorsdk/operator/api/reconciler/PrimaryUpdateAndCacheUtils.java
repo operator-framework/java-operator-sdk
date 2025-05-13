@@ -53,7 +53,7 @@ public class PrimaryUpdateAndCacheUtils {
     return patchAndCacheStatus(
         primary, context, () -> context.getClient().resource(primary).patchStatus());
   }
-  
+
   /**
    * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
    *
