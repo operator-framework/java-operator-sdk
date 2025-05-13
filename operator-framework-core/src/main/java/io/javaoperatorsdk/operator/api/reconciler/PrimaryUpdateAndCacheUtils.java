@@ -53,23 +53,7 @@ public class PrimaryUpdateAndCacheUtils {
     return patchAndCacheStatus(
         primary, context, () -> context.getClient().resource(primary).patchStatus());
   }
-
-  /**
-   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
-   * Using JSON Patch.
-   *
-   * @param primary resource
-   * @param context of reconciliation
-   * @return updated resource
-   * @param <P> primary resource type
-   */
-  public static <P extends HasMetadata> P editAndCacheStatus(
-      P primary, Context<P> context, UnaryOperator<P> operation) {
-    logWarnIfResourceVersionPresent(primary);
-    return patchAndCacheStatus(
-        primary, context, () -> context.getClient().resource(primary).editStatus(operation));
-  }
-
+  
   /**
    * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
    *
