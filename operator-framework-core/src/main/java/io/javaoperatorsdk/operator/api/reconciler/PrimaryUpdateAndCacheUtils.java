@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.support.PrimaryResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -34,7 +35,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @param <P> primary resource type
    */
   public static <P extends HasMetadata> P updateAndCacheStatus(P primary, Context<P> context) {
-    logWarnIfResourceVersionPresent(primary);
+    sanityChecks(primary, context);
     return patchAndCacheStatus(
         primary, context, () -> context.getClient().resource(primary).updateStatus());
   }
@@ -49,7 +50,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @param <P> primary resource type
    */
   public static <P extends HasMetadata> P patchAndCacheStatus(P primary, Context<P> context) {
-    logWarnIfResourceVersionPresent(primary);
+    sanityChecks(primary, context);
     return patchAndCacheStatus(
         primary, context, () -> context.getClient().resource(primary).patchStatus());
   }
@@ -65,7 +66,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P editAndCacheStatus(
       P primary, Context<P> context, UnaryOperator<P> operation) {
-    logWarnIfResourceVersionPresent(primary);
+    sanityChecks(primary, context);
     return patchAndCacheStatus(
         primary, context, () -> context.getClient().resource(primary).editStatus(operation));
   }
@@ -101,24 +102,21 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
       P primary, P freshResourceWithStatus, Context<P> context) {
-    logWarnIfResourceVersionPresent(freshResourceWithStatus);
-    var res =
-        context
-            .getClient()
-            .resource(freshResourceWithStatus)
-            .subresource("status")
-            .patch(
-                new PatchContext.Builder()
-                    .withForce(true)
-                    .withFieldManager(context.getControllerConfiguration().fieldManager())
-                    .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                    .build());
-
-    context
-        .eventSourceRetriever()
-        .getControllerEventSource()
-        .handleRecentResourceUpdate(ResourceID.fromResource(primary), res, primary);
-    return res;
+    sanityChecks(freshResourceWithStatus, context);
+    return patchAndCacheStatus(
+        primary,
+        context,
+        () ->
+            context
+                .getClient()
+                .resource(freshResourceWithStatus)
+                .subresource("status")
+                .patch(
+                    new PatchContext.Builder()
+                        .withForce(true)
+                        .withFieldManager(context.getControllerConfiguration().fieldManager())
+                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                        .build()));
   }
 
   /**
@@ -133,7 +131,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
       P primary, P freshResourceWithStatus, Context<P> context, PrimaryResourceCache<P> cache) {
-    logWarnIfResourceVersionPresent(freshResourceWithStatus);
+    sanityChecks(freshResourceWithStatus, context);
     return patchAndCacheStatus(
         primary,
         cache,
@@ -161,7 +159,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P editAndCacheStatus(
       P primary, Context<P> context, PrimaryResourceCache<P> cache, UnaryOperator<P> operation) {
-    logWarnIfResourceVersionPresent(primary);
+    sanityChecks(primary, context);
     return patchAndCacheStatus(
         primary, cache, () -> context.getClient().resource(primary).editStatus(operation));
   }
@@ -178,7 +176,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P patchAndCacheStatus(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
-    logWarnIfResourceVersionPresent(primary);
+    sanityChecks(primary, context);
     return patchAndCacheStatus(
         primary, cache, () -> context.getClient().resource(primary).patchStatus());
   }
@@ -194,7 +192,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P updateAndCacheStatus(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
-    logWarnIfResourceVersionPresent(primary);
+    sanityChecks(primary, context);
     return patchAndCacheStatus(
         primary, cache, () -> context.getClient().resource(primary).updateStatus());
   }
@@ -215,11 +213,19 @@ public class PrimaryUpdateAndCacheUtils {
     return updatedResource;
   }
 
-  private static <P extends HasMetadata> void logWarnIfResourceVersionPresent(P primary) {
+  private static <P extends HasMetadata> void sanityChecks(P primary, Context<P> context) {
     if (primary.getMetadata().getResourceVersion() != null) {
       log.warn(
           "The metadata.resourceVersion of primary resource is NOT null, "
               + "using optimistic locking is discouraged for this purpose. ");
+    }
+    if (!context
+        .getControllerConfiguration()
+        .getConfigurationService()
+        .parseResourceVersionsForEventFilteringAndCaching()) {
+      throw new OperatorException(
+          "For internal primary resource caching 'parseResourceVersionsForEventFilteringAndCaching'"
+              + " must to be allowed.");
     }
   }
 }
