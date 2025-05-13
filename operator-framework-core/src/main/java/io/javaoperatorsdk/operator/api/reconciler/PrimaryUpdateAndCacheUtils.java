@@ -131,7 +131,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
       P primary, P freshResourceWithStatus, Context<P> context, PrimaryResourceCache<P> cache) {
-    sanityChecks(freshResourceWithStatus, context);
+    logWarnIfResourceVersionPresent(freshResourceWithStatus);
     return patchAndCacheStatus(
         primary,
         cache,
@@ -159,7 +159,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P editAndCacheStatus(
       P primary, Context<P> context, PrimaryResourceCache<P> cache, UnaryOperator<P> operation) {
-    sanityChecks(primary, context);
+    logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
         primary, cache, () -> context.getClient().resource(primary).editStatus(operation));
   }
@@ -176,7 +176,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P patchAndCacheStatus(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
-    sanityChecks(primary, context);
+    logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
         primary, cache, () -> context.getClient().resource(primary).patchStatus());
   }
@@ -192,7 +192,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P updateAndCacheStatus(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
-    sanityChecks(primary, context);
+    logWarnIfResourceVersionPresent(primary);
     return patchAndCacheStatus(
         primary, cache, () -> context.getClient().resource(primary).updateStatus());
   }
@@ -213,12 +213,16 @@ public class PrimaryUpdateAndCacheUtils {
     return updatedResource;
   }
 
-  private static <P extends HasMetadata> void sanityChecks(P primary, Context<P> context) {
+  private static <P extends HasMetadata> void logWarnIfResourceVersionPresent(P primary) {
     if (primary.getMetadata().getResourceVersion() != null) {
       log.warn(
           "The metadata.resourceVersion of primary resource is NOT null, "
               + "using optimistic locking is discouraged for this purpose. ");
     }
+  }
+
+  private static <P extends HasMetadata> void sanityChecks(P primary, Context<P> context) {
+    logWarnIfResourceVersionPresent(primary);
     if (!context
         .getControllerConfiguration()
         .getConfigurationService()
