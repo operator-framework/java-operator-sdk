@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.statuscache.internal;
+package io.javaoperatorsdk.operator.baseapi.statuscache.internalwithlock;
 
 import java.time.Duration;
 
@@ -11,20 +11,19 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class StatusPatchCacheIT {
+public class StatusPatchCacheWithLockIT {
 
   public static final String TEST_1 = "test1";
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withParseResourceVersions(true))
-          .withReconciler(StatusPatchCacheReconciler.class)
+          .withReconciler(StatusPatchCacheWithLockReconciler.class)
           .build();
 
   @Test
   void testStatusAlwaysUpToDate() {
-    var reconciler = extension.getReconcilerOfType(StatusPatchCacheReconciler.class);
+    var reconciler = extension.getReconcilerOfType(StatusPatchCacheWithLockReconciler.class);
 
     extension.create(testResource());
 
@@ -40,10 +39,10 @@ public class StatusPatchCacheIT {
             });
   }
 
-  StatusPatchCacheCustomResource testResource() {
-    var res = new StatusPatchCacheCustomResource();
+  StatusPatchCacheWithLockCustomResource testResource() {
+    var res = new StatusPatchCacheWithLockCustomResource();
     res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
-    res.setSpec(new StatusPatchCacheSpec());
+    res.setSpec(new StatusPatchCacheWithLockSpec());
     return res;
   }
 }
