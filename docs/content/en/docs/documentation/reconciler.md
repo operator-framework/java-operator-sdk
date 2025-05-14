@@ -188,10 +188,39 @@ These utility methods come in two flavors:
 
 #### Using internal cache
 
-In almost all cases for this purpose, you can use internal caches:
+In almost all cases for this purpose, you can use internal caches. You can turn on this functionality for 
+`UpdateControl`, thus all updates for `UpdateControl` will be guaranteed to be present in the next reconciliation:
 
 ```java
- @Override
+ Operator operator = new Operator(o -> o
+        .withParseResourceVersions(true)
+        .withGuaranteeUpdatedPrimaryIsAvailableForNextReconciliation(true));
+```
+
+With this setup the following trivial code will cache the resource for the next reconciliation: 
+
+```java
+
+@Override
+public UpdateControl<UpdateControlPrimaryCacheCustomResource> reconcile(
+      UpdateControlPrimaryCacheCustomResource resource,
+      Context<UpdateControlPrimaryCacheCustomResource> context) {
+    
+     // your logic omitted
+     var freshCopy = createFreshCopy(resource); // create fresh copy for SSA
+     freshCopy.getStatus().setValue(statusWithState());
+  
+     return UpdateControl.patchStatus(freshCopy);
+}
+```
+See related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/updatecontrol/UpdateControlPrimaryCacheCustomResource.java).
+
+If you need to do update of the resource during the reconciliation you can just use `PrimaryUpdateAndCacheUtils`.
+(The code below is equivalent to the one above.) 
+Note that this utility does not require to set `withGuaranteeUpdatedPrimaryIsAvailableForNextReconciliation` to true.
+
+```java
+@Override
 public UpdateControl<StatusPatchCacheCustomResource> reconcile(
         StatusPatchCacheCustomResource resource, Context<StatusPatchCacheCustomResource> context) {
     
@@ -207,10 +236,12 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
   }
 ```
 
-In the background `PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus` puts the result of the update into an internal
-cache and will make sure that the next reconciliation will contain the most recent version of the resource. Note that it
-is not necessarily the version of the resource you got as response from the update, it can be newer since other parties
-can do additional updates meanwhile, but if not explicitly modified, it will contain the up-to-date status.
+In the background `PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus` and also the mechanism behind `UpdateControl.patchStatus` 
+puts the result of the update into an internal cache and will make sure that the next reconciliation will contain the 
+most recent version of the resource. 
+Note that it is not necessarily the version of the resource you got as a response 
+from the update, it can be more recent since other parties can do additional updates meanwhile. 
+But if not explicitly modified by another party, it will contain the up-to-date status.
 
 See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internal).
 
