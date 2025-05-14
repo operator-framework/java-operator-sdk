@@ -42,7 +42,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public class PrimaryUpdateAndCacheUtils {
 
-  public static final int DEFAULT_MAX_RETRY = 3;
+  public static final int DEFAULT_MAX_RETRY = 10;
 
   private PrimaryUpdateAndCacheUtils() {}
 
