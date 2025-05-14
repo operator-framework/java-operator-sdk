@@ -75,6 +75,7 @@ public class PrimaryUpdateAndCacheUtils {
         primary, context, modificationFunction, r -> context.getClient().resource(r).patchStatus());
   }
 
+  // TODO document caveat with JSON PATCH
   /**
    * Patches status and makes sure that the up-to-date primary resource will be present during the
    * next reconciliation. Using JSON Patch.
