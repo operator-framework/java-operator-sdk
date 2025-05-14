@@ -201,7 +201,7 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
     var freshCopy = createFreshCopy(primary);
     freshCopy.getStatus().setValue(statusWithState());
     
-    var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus(resource, freshCopy, context);
+    var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(resource, freshCopy, context);
     
     return UpdateControl.noUpdate();
   }
@@ -247,7 +247,7 @@ needs to be set to `false` you can use an explicit caching approach:
     freshCopy.getStatus().setValue(statusWithState());
 
     var updated =
-            PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus(primary, freshCopy, context, cache);
+            PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(primary, freshCopy, context, cache);
       
     return UpdateControl.noUpdate();
   }

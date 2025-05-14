@@ -37,7 +37,8 @@ public class StatusPatchCacheReconciler implements Reconciler<StatusPatchCacheCu
         .getStatus()
         .setValue(resource.getStatus() == null ? 1 : resource.getStatus().getValue() + 1);
 
-    var updated = PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus(resource, freshCopy, context);
+    var updated =
+        PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(resource, freshCopy, context);
     latestValue = updated.getStatus().getValue();
 
     return UpdateControl.noUpdate();

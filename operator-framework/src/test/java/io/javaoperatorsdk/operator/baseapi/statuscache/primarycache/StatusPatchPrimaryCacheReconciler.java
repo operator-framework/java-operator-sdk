@@ -52,7 +52,8 @@ public class StatusPatchPrimaryCacheReconciler
         .setValue(primary.getStatus() == null ? 1 : primary.getStatus().getValue() + 1);
 
     var updated =
-        PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus(primary, freshCopy, context, cache);
+        PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(
+            primary, freshCopy, context, cache);
     latestValue = updated.getStatus().getValue();
 
     return UpdateControl.noUpdate();

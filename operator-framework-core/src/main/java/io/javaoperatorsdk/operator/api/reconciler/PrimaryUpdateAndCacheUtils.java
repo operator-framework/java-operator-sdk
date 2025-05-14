@@ -25,53 +25,56 @@ public class PrimaryUpdateAndCacheUtils {
   private static final Logger log = LoggerFactory.getLogger(PrimaryUpdateAndCacheUtils.class);
 
   /**
-   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
-   * Using update (PUT) method.
+   * Updates status and makes sure that the up-to-date primary resource will be present during the
+   * next reconciliation. Using update (PUT) method.
    *
    * @param primary resource
    * @param context of reconciliation
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P updateAndCacheStatus(P primary, Context<P> context) {
+  public static <P extends HasMetadata> P updateStatusAndCacheResource(
+      P primary, Context<P> context) {
     logWarnIfResourceVersionPresent(primary);
-    return patchAndCacheStatus(
+    return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).updateStatus());
   }
 
   /**
-   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
-   * Using JSON Merge patch.
+   * Patches status with and makes sure that the up-to-date primary resource will be present during
+   * the next reconciliation. Using JSON Merge patch.
    *
    * @param primary resource
    * @param context of reconciliation
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatus(P primary, Context<P> context) {
+  public static <P extends HasMetadata> P patchStatusAndCacheResource(
+      P primary, Context<P> context) {
     logWarnIfResourceVersionPresent(primary);
-    return patchAndCacheStatus(
+    return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).patchStatus());
   }
 
   /**
-   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
-   * Using JSON Patch.
+   * Patches status and makes sure that the up-to-date primary resource will be present during the
+   * next reconciliation. Using JSON Patch.
    *
    * @param primary resource
    * @param context of reconciliation
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P editAndCacheStatus(
+  public static <P extends HasMetadata> P editStatusAndCacheResource(
       P primary, Context<P> context, UnaryOperator<P> operation) {
     logWarnIfResourceVersionPresent(primary);
-    return patchAndCacheStatus(
+    return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).editStatus(operation));
   }
 
   /**
-   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
+   * Patches the resource with supplied method and makes sure that the up-to-date primary resource
+   * will be present during the next reconciliation.
    *
    * @param primary resource
    * @param context of reconciliation
@@ -79,7 +82,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatus(
+  public static <P extends HasMetadata> P patchStatusAndCacheResource(
       P primary, Context<P> context, Supplier<P> patch) {
     var updatedResource = patch.get();
     context
@@ -90,8 +93,8 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Makes sure that the up-to-date primary resource will be present during the next reconciliation.
-   * Using Server Side Apply.
+   * Patches status and makes sure that the up-to-date primary resource will be present during the
+   * next reconciliation. Using Server Side Apply.
    *
    * @param primary resource
    * @param freshResourceWithStatus - fresh resource with target state
@@ -99,7 +102,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
+  public static <P extends HasMetadata> P ssaPatchStatusAndCacheResource(
       P primary, P freshResourceWithStatus, Context<P> context) {
     logWarnIfResourceVersionPresent(freshResourceWithStatus);
     var res =
@@ -122,7 +125,8 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Patches the resource and adds it to the {@link PrimaryResourceCache}.
+   * Patches the resource status and caches the response in provided {@link PrimaryResourceCache}.
+   * Uses Server Side Apply.
    *
    * @param primary resource
    * @param freshResourceWithStatus - fresh resource with target state
@@ -131,10 +135,10 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P ssaPatchAndCacheStatus(
+  public static <P extends HasMetadata> P ssaPatchStatusAndCacheResource(
       P primary, P freshResourceWithStatus, Context<P> context, PrimaryResourceCache<P> cache) {
     logWarnIfResourceVersionPresent(freshResourceWithStatus);
-    return patchAndCacheStatus(
+    return patchStatusAndCacheResource(
         primary,
         cache,
         () ->
@@ -151,7 +155,8 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Patches the resource with JSON Patch and adds it to the {@link PrimaryResourceCache}.
+   * Patches the resource with JSON Patch and caches the response in provided {@link
+   * PrimaryResourceCache}.
    *
    * @param primary resource
    * @param context of reconciliation
@@ -159,16 +164,16 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P editAndCacheStatus(
+  public static <P extends HasMetadata> P editStatusAndCacheResource(
       P primary, Context<P> context, PrimaryResourceCache<P> cache, UnaryOperator<P> operation) {
     logWarnIfResourceVersionPresent(primary);
-    return patchAndCacheStatus(
+    return patchStatusAndCacheResource(
         primary, cache, () -> context.getClient().resource(primary).editStatus(operation));
   }
 
   /**
-   * Patches the resource with JSON Merge patch and adds it to the {@link PrimaryResourceCache}
-   * provided.
+   * Patches the resource status with JSON Merge patch and caches the response in provided {@link
+   * PrimaryResourceCache}
    *
    * @param primary resource
    * @param context of reconciliation
@@ -176,15 +181,15 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatus(
+  public static <P extends HasMetadata> P patchStatusAndCacheResource(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
     logWarnIfResourceVersionPresent(primary);
-    return patchAndCacheStatus(
+    return patchStatusAndCacheResource(
         primary, cache, () -> context.getClient().resource(primary).patchStatus());
   }
 
   /**
-   * Updates the resource and adds it to the {@link PrimaryResourceCache}.
+   * Updates the resource status and caches the response in provided {@link PrimaryResourceCache}.
    *
    * @param primary resource
    * @param context of reconciliation
@@ -192,15 +197,16 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P updateAndCacheStatus(
+  public static <P extends HasMetadata> P updateStatusAndCacheResource(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
     logWarnIfResourceVersionPresent(primary);
-    return patchAndCacheStatus(
+    return patchStatusAndCacheResource(
         primary, cache, () -> context.getClient().resource(primary).updateStatus());
   }
 
   /**
-   * Updates the resource using the user provided implementation anc caches the result.
+   * Updates the resource using the user provided implementation and caches the response in provided
+   * {@link PrimaryResourceCache}.
    *
    * @param primary resource
    * @param cache resource cache managed by user
@@ -208,7 +214,7 @@ public class PrimaryUpdateAndCacheUtils {
    * @return the updated resource.
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P patchAndCacheStatus(
+  public static <P extends HasMetadata> P patchStatusAndCacheResource(
       P primary, PrimaryResourceCache<P> cache, Supplier<P> patch) {
     var updatedResource = patch.get();
     cache.cacheResource(primary, updatedResource);
