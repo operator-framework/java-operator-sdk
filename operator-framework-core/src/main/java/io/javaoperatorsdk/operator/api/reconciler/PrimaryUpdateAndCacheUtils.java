@@ -17,8 +17,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 /**
  * Utility methods to patch the primary resource state and store it to the related cache, to make
  * sure that fresh resource is present for the next reconciliation. The main use case for such
- * updates is to store state is resource status. Use of optimistic locking is not desired for such
- * updates, since we don't want to patch fail and lose information that we want to store.
+ * updates is to store state is resource status. We aim here for completeness and provide you all
+ * various options, where all of them have pros and cons.
  */
 public class PrimaryUpdateAndCacheUtils {
 
@@ -39,7 +39,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P updateStatusAndCacheResource(
       P primary, Context<P> context) {
-    logWarnIfResourceVersionPresent(primary);
+    checkResourceVersionNotPresentAndParseConfiguration(primary, context);
     return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).updateStatus());
   }
@@ -64,7 +64,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P patchStatusAndCacheResource(
       P primary, Context<P> context) {
-    logWarnIfResourceVersionPresent(primary);
+    checkResourceVersionNotPresentAndParseConfiguration(primary, context);
     return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).patchStatus());
   }
@@ -86,7 +86,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P editStatusAndCacheResource(
       P primary, Context<P> context, UnaryOperator<P> operation) {
-    logWarnIfResourceVersionPresent(primary);
+    checkResourceVersionNotPresentAndParseConfiguration(primary, context);
     return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).editStatus(operation));
   }
@@ -132,24 +132,21 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P ssaPatchStatusAndCacheResource(
       P primary, P freshResourceWithStatus, Context<P> context) {
-    logWarnIfResourceVersionPresent(freshResourceWithStatus);
-    var res =
-        context
-            .getClient()
-            .resource(freshResourceWithStatus)
-            .subresource("status")
-            .patch(
-                new PatchContext.Builder()
-                    .withForce(true)
-                    .withFieldManager(context.getControllerConfiguration().fieldManager())
-                    .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                    .build());
-
-    context
-        .eventSourceRetriever()
-        .getControllerEventSource()
-        .handleRecentResourceUpdate(ResourceID.fromResource(primary), res, primary);
-    return res;
+    checkResourceVersionNotPresentAndParseConfiguration(freshResourceWithStatus, context);
+    return patchStatusAndCacheResource(
+        primary,
+        context,
+        () ->
+            context
+                .getClient()
+                .resource(freshResourceWithStatus)
+                .subresource("status")
+                .patch(
+                    new PatchContext.Builder()
+                        .withForce(true)
+                        .withFieldManager(context.getControllerConfiguration().fieldManager())
+                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                        .build()));
   }
 
   public static <P extends HasMetadata> P ssaPatchStatusAndCacheResourceWithLock(
@@ -184,7 +181,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P ssaPatchStatusAndCacheResource(
       P primary, P freshResourceWithStatus, Context<P> context, PrimaryResourceCache<P> cache) {
-    logWarnIfResourceVersionPresent(freshResourceWithStatus);
+    checkResourceVersionIsNotPresent(freshResourceWithStatus);
     return patchStatusAndCacheResource(
         primary,
         cache,
@@ -213,7 +210,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P editStatusAndCacheResource(
       P primary, Context<P> context, PrimaryResourceCache<P> cache, UnaryOperator<P> operation) {
-    logWarnIfResourceVersionPresent(primary);
+    checkResourceVersionIsNotPresent(primary);
     return patchStatusAndCacheResource(
         primary, cache, () -> context.getClient().resource(primary).editStatus(operation));
   }
@@ -230,7 +227,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P patchStatusAndCacheResource(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
-    logWarnIfResourceVersionPresent(primary);
+    checkResourceVersionIsNotPresent(primary);
     return patchStatusAndCacheResource(
         primary, cache, () -> context.getClient().resource(primary).patchStatus());
   }
@@ -246,7 +243,7 @@ public class PrimaryUpdateAndCacheUtils {
    */
   public static <P extends HasMetadata> P updateStatusAndCacheResource(
       P primary, Context<P> context, PrimaryResourceCache<P> cache) {
-    logWarnIfResourceVersionPresent(primary);
+    checkResourceVersionIsNotPresent(primary);
     return patchStatusAndCacheResource(
         primary, cache, () -> context.getClient().resource(primary).updateStatus());
   }
@@ -268,11 +265,22 @@ public class PrimaryUpdateAndCacheUtils {
     return updatedResource;
   }
 
-  private static <P extends HasMetadata> void logWarnIfResourceVersionPresent(P primary) {
+  private static <P extends HasMetadata> void checkResourceVersionIsNotPresent(P primary) {
     if (primary.getMetadata().getResourceVersion() != null) {
-      log.warn(
-          "The metadata.resourceVersion of primary resource is NOT null, "
-              + "using optimistic locking is discouraged for this purpose. ");
+      throw new IllegalArgumentException("Resource version is present");
+    }
+  }
+
+  private static <P extends HasMetadata> void checkResourceVersionNotPresentAndParseConfiguration(
+      P primary, Context<P> context) {
+    checkResourceVersionIsNotPresent(primary);
+    if (!context
+        .getControllerConfiguration()
+        .getConfigurationService()
+        .parseResourceVersionsForEventFilteringAndCaching()) {
+      throw new OperatorException(
+          "For internal primary resource caching 'parseResourceVersionsForEventFilteringAndCaching'"
+              + " must be allowed.");
     }
   }
 
@@ -296,10 +304,11 @@ public class PrimaryUpdateAndCacheUtils {
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(primary));
     }
+    P modified = null;
     int retryIndex = 0;
     while (true) {
       try {
-        var modified = modificationFunction.apply(primary);
+        modified = modificationFunction.apply(primary);
         modified.getMetadata().setResourceVersion(primary.getMetadata().getResourceVersion());
         var updated = updateMethod.apply(modified);
         context
@@ -320,6 +329,7 @@ public class PrimaryUpdateAndCacheUtils {
           throw e;
         }
         if (retryIndex >= maxRetry) {
+          log.warn("Retry exhausted, last desired resource: {}", modified);
           throw new OperatorException(
               "Exceeded maximum ("
                   + maxRetry
