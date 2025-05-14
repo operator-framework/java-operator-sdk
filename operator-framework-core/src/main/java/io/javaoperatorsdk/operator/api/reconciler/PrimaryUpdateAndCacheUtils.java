@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.support.PrimaryResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -19,6 +20,25 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * sure that fresh resource is present for the next reconciliation. The main use case for such
  * updates is to store state is resource status. We aim here for completeness and provide you all
  * various options, where all of them have pros and cons.
+ *
+ * <ul>
+ *   <li>Retryable updates with optimistic locking (*withLock) - you can use this approach out of
+ *       the box, it updates the resource using optimistic locking and caches the resource. If the
+ *       update fails it reads the primary resource and applies the modifications again and retries
+ *       the update. After successful update it caches the resource for next reconciliation. The
+ *       disadvantage of this method is that theoretically it could fail the max attempt retry. Note
+ *       that optimistic locking is essential to have the caching work in general.
+ *   <li>Caching without optimistic locking but with parsing the resource version - to use this you
+ *       have to set {@link ConfigurationService#parseResourceVersionsForEventFilteringAndCaching()}
+ *       to true. The update won't fail on optimistic locking so there is much higher chance to
+ *       succeed. However this bends the rules of Kubernetes API contract by parsing the resource
+ *       version. Using this for this purpose is actually a gray area, it should be fine in most of
+ *       the setups.
+ *   <li>Using {@link PrimaryResourceCache} - in this way you can explicitly ensure freshness or the
+ *       resource (see related docs). You don't have to use optimistic locking or parse the resource
+ *       version. But requires code from your side and for now (might in future) is not supported in
+ *       managed dependent resources.
+ * </ul>
  */
 public class PrimaryUpdateAndCacheUtils {
 
@@ -75,10 +95,14 @@ public class PrimaryUpdateAndCacheUtils {
         primary, context, modificationFunction, r -> context.getClient().resource(r).patchStatus());
   }
 
-  // TODO document caveat with JSON PATCH
   /**
    * Patches status and makes sure that the up-to-date primary resource will be present during the
    * next reconciliation. Using JSON Patch.
+   *
+   * <p>Note that since optimistic locking is not used, there is a risk that JSON Patch will have
+   * concurrency issues when removing an element from a list. Since, the list element in JSON Patch
+   * are addressed by index, so if a concurrent request removes an element with lower index, the
+   * request might be not valid anymore (HTTP 422) or might remove an unmeant element.
    *
    * @param primary resource
    * @param context of reconciliation
