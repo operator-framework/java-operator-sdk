@@ -465,24 +465,28 @@ public interface ConfigurationService {
   }
 
   /**
-   * If you update the primary resource from the reconciler with or without {@link
-   * io.javaoperatorsdk.operator.api.reconciler.UpdateControl} it is not guaranteed that for the
-   * next reconciliation will receive the most up-to-date resource. This is a consequence of
-   * Informers design in the Operator pattern.
+   * Guarantees that primary resource updated by {@link
+   * io.javaoperatorsdk.operator.api.reconciler.UpdateControl} will be available for next
+   * reconciliation.
    *
-   * <p>The framework can be smart about it and make such guarantees, but this can be done
+   * <p>If by default you update the primary resource from reconciler regardless if you use {@link
+   * io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or directly the Kubernetes client, it
+   * is not guaranteed that for the next reconciliation will receive the most up-to-date resource.
+   * This is a consequence of how the informers work in Operator pattern.
+   *
+   * <p>However, the framework can be smart about it and make such guarantees, but this can be done
    * absolutely reliably only if it bends some rules of the Kubernetes API contract. Thus, if we
    * parse the resourceVersion of a primary resource as an integer and compare it with the version
    * of the resource in the cache. Note that this is a gray area, since with default setup Etcd
    * guarantees such monotonically increasing resource versions. But since it is still bending the
-   * rules by default, this feature is turned off, and work only if {@link
+   * rules by default, this feature is turned off, and requires {@link
    * #parseResourceVersionsForEventFilteringAndCaching} is also set to true.
    *
    * <p>See also {@link io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils}
    *
    * @return if the framework should cache the updated resource for next reconciliation
    */
-  default boolean cacheUpdatedResourcesViaUpdateControl() {
+  default boolean guaranteeUpdatedPrimaryIsAvailableForNextReconciliation() {
     return false;
   }
 

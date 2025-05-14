@@ -430,11 +430,21 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       this.fieldManager = configuration.fieldManager();
       this.cacheUpdatedResources =
           configuration
-                  .getConfigurationService()
-                  .previousAnnotationForDependentResourcesEventFiltering()
-              && configuration.getConfigurationService().cacheUpdatedResourcesViaUpdateControl();
+              .getConfigurationService()
+              .guaranteeUpdatedPrimaryIsAvailableForNextReconciliation();
+
       this.cloner = cloner;
       this.controllerEventSource = controllerEventSource;
+
+      if (cacheUpdatedResources
+          && !configuration
+              .getConfigurationService()
+              .previousAnnotationForDependentResourcesEventFiltering()) {
+        throw new OperatorException(
+            "guaranteeUpdatedPrimaryIsAvailableForNextReconciliation is set to true, but"
+                + " previousAnnotationForDependentResourcesEventFiltering is set to false, set this"
+                + " flag also to true if you want to use this feature");
+      }
     }
 
     private void cachePrimaryResource(R updatedResource, R previousVersionOfResource) {

@@ -189,7 +189,8 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withCacheUpdatedResourcesViaUpdateControl(boolean value) {
+  public ConfigurationServiceOverrider withGuaranteeUpdatedPrimaryIsAvailableForNextReconciliation(
+      boolean value) {
     this.cacheUpdatedResourcesViaUpdateControl = value;
     return this;
   }
@@ -336,10 +337,10 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean cacheUpdatedResourcesViaUpdateControl() {
+      public boolean guaranteeUpdatedPrimaryIsAvailableForNextReconciliation() {
         return overriddenValueOrDefault(
             cacheUpdatedResourcesViaUpdateControl,
-            ConfigurationService::cacheUpdatedResourcesViaUpdateControl);
+            ConfigurationService::guaranteeUpdatedPrimaryIsAvailableForNextReconciliation);
       }
     };
   }
