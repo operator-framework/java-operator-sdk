@@ -7,8 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.reconciler.support.PrimaryResourceCache;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -19,6 +21,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * updates, since we don't want to patch fail and lose information that we want to store.
  */
 public class PrimaryUpdateAndCacheUtils {
+
+  public static final int DEFAULT_MAX_RETRY = 3;
 
   private PrimaryUpdateAndCacheUtils() {}
 
@@ -40,6 +44,15 @@ public class PrimaryUpdateAndCacheUtils {
         primary, context, () -> context.getClient().resource(primary).updateStatus());
   }
 
+  public static <P extends HasMetadata> P updateStatusAndCacheResourceWithLock(
+      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
+    return updateAndCacheResourceWithLock(
+        primary,
+        context,
+        modificationFunction,
+        r -> context.getClient().resource(r).updateStatus());
+  }
+
   /**
    * Patches status with and makes sure that the up-to-date primary resource will be present during
    * the next reconciliation. Using JSON Merge patch.
@@ -56,6 +69,12 @@ public class PrimaryUpdateAndCacheUtils {
         primary, context, () -> context.getClient().resource(primary).patchStatus());
   }
 
+  public static <P extends HasMetadata> P patchStatusAndCacheResourceWithLock(
+      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
+    return updateAndCacheResourceWithLock(
+        primary, context, modificationFunction, r -> context.getClient().resource(r).patchStatus());
+  }
+
   /**
    * Patches status and makes sure that the up-to-date primary resource will be present during the
    * next reconciliation. Using JSON Patch.
@@ -70,6 +89,15 @@ public class PrimaryUpdateAndCacheUtils {
     logWarnIfResourceVersionPresent(primary);
     return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).editStatus(operation));
+  }
+
+  public static <P extends HasMetadata> P editStatusAndCacheResourceWithLock(
+      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
+    return updateAndCacheResourceWithLock(
+        primary,
+        context,
+        UnaryOperator.identity(),
+        r -> context.getClient().resource(r).editStatus(modificationFunction));
   }
 
   /**
@@ -122,6 +150,25 @@ public class PrimaryUpdateAndCacheUtils {
         .getControllerEventSource()
         .handleRecentResourceUpdate(ResourceID.fromResource(primary), res, primary);
     return res;
+  }
+
+  public static <P extends HasMetadata> P ssaPatchStatusAndCacheResourceWithLock(
+      P primary, P freshResourceWithStatus, Context<P> context) {
+    return updateAndCacheResourceWithLock(
+        primary,
+        context,
+        r -> freshResourceWithStatus,
+        r ->
+            context
+                .getClient()
+                .resource(r)
+                .subresource("status")
+                .patch(
+                    new PatchContext.Builder()
+                        .withForce(true)
+                        .withFieldManager(context.getControllerConfiguration().fieldManager())
+                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                        .build()));
   }
 
   /**
@@ -226,6 +273,73 @@ public class PrimaryUpdateAndCacheUtils {
       log.warn(
           "The metadata.resourceVersion of primary resource is NOT null, "
               + "using optimistic locking is discouraged for this purpose. ");
+    }
+  }
+
+  public static <P extends HasMetadata> P updateAndCacheResourceWithLock(
+      P primary,
+      Context<P> context,
+      UnaryOperator<P> modificationFunction,
+      UnaryOperator<P> updateMethod) {
+    return updateAndCacheResourceWithLock(
+        primary, context, modificationFunction, updateMethod, DEFAULT_MAX_RETRY);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P updateAndCacheResourceWithLock(
+      P primary,
+      Context<P> context,
+      UnaryOperator<P> modificationFunction,
+      UnaryOperator<P> updateMethod,
+      int maxRetry) {
+
+    if (log.isDebugEnabled()) {
+      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(primary));
+    }
+    int retryIndex = 0;
+    while (true) {
+      try {
+        var modified = modificationFunction.apply(primary);
+        modified.getMetadata().setResourceVersion(primary.getMetadata().getResourceVersion());
+        var updated = updateMethod.apply(modified);
+        context
+            .eventSourceRetriever()
+            .getControllerEventSource()
+            .handleRecentResourceUpdate(ResourceID.fromResource(primary), updated, primary);
+        return updated;
+      } catch (KubernetesClientException e) {
+        log.trace("Exception during patch for resource: {}", primary);
+        retryIndex++;
+        // only retry on conflict (409) and unprocessable content (422) which
+        // can happen if JSON Patch is not a valid request since there was
+        // a concurrent request which already removed another finalizer:
+        // List element removal from a list is by index in JSON Patch
+        // so if addressing a second finalizer but first is meanwhile removed
+        // it is a wrong request.
+        if (e.getCode() != 409 && e.getCode() != 422) {
+          throw e;
+        }
+        if (retryIndex >= maxRetry) {
+          throw new OperatorException(
+              "Exceeded maximum ("
+                  + maxRetry
+                  + ") retry attempts to patch resource: "
+                  + ResourceID.fromResource(primary));
+        }
+        log.debug(
+            "Retrying patch for resource name: {}, namespace: {}; HTTP code: {}",
+            primary.getMetadata().getName(),
+            primary.getMetadata().getNamespace(),
+            e.getCode());
+        primary =
+            (P)
+                context
+                    .getClient()
+                    .resources(primary.getClass())
+                    .inNamespace(primary.getMetadata().getNamespace())
+                    .withName(primary.getMetadata().getName())
+                    .get();
+      }
     }
   }
 }
