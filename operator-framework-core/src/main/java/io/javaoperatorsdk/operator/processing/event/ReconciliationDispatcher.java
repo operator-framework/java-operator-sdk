@@ -439,7 +439,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       if (cacheUpdatedResources
           && !configuration
               .getConfigurationService()
-              .previousAnnotationForDependentResourcesEventFiltering()) {
+              .parseResourceVersionsForEventFilteringAndCaching()) {
         throw new OperatorException(
             "guaranteeUpdatedPrimaryIsAvailableForNextReconciliation is set to true, but"
                 + " previousAnnotationForDependentResourcesEventFiltering is set to false, set this"
