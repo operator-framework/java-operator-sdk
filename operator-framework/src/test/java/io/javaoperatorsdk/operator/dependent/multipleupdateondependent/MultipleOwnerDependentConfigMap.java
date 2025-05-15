@@ -19,10 +19,6 @@ public class MultipleOwnerDependentConfigMap
 
   public static final String RESOURCE_NAME = "test1";
 
-  public MultipleOwnerDependentConfigMap() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       MultipleOwnerDependentCustomResource primary,

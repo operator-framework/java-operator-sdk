@@ -30,10 +30,6 @@ public class CustomMappingConfigMapDependentResource
           CUSTOM_TYPE_KEY,
           DependentCustomMappingCustomResource.class);
 
-  public CustomMappingConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       DependentCustomMappingCustomResource primary,

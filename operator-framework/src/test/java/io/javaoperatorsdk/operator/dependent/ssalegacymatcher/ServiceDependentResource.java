@@ -18,10 +18,6 @@ public class ServiceDependentResource
 
   public static AtomicInteger createUpdateCount = new AtomicInteger(0);
 
-  public ServiceDependentResource() {
-    super(Service.class);
-  }
-
   @Override
   protected Service desired(
       SSALegacyMatcherCustomResource primary, Context<SSALegacyMatcherCustomResource> context) {

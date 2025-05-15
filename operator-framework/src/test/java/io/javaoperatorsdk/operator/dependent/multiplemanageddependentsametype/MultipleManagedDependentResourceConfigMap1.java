@@ -16,10 +16,6 @@ public class MultipleManagedDependentResourceConfigMap1
 
   public static final String NAME_SUFFIX = "-1";
 
-  public MultipleManagedDependentResourceConfigMap1() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       MultipleManagedDependentResourceCustomResource primary,

@@ -414,12 +414,7 @@ class BaseConfigurationServiceTest {
 
     @KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
     public static class WithAnnotation
-        extends CRUDKubernetesDependentResource<ConfigMap, ConfigMapReader> {
-
-      public WithAnnotation() {
-        super(ConfigMap.class);
-      }
-    }
+        extends CRUDKubernetesDependentResource<ConfigMap, ConfigMapReader> {}
   }
 
   public static class MissingAnnotationReconciler implements Reconciler<ConfigMap> {
@@ -443,18 +438,10 @@ class BaseConfigurationServiceTest {
     }
 
     private static class DefaultDependent
-        extends KubernetesDependentResource<ConfigMapReader, ConfigMap> {
-      public DefaultDependent() {
-        super(ConfigMapReader.class);
-      }
-    }
+        extends KubernetesDependentResource<ConfigMapReader, ConfigMap> {}
 
     @KubernetesDependent(useSSA = BooleanWithUndefined.FALSE)
-    private static class NonSSADependent extends KubernetesDependentResource<Service, ConfigMap> {
-      public NonSSADependent() {
-        super(Service.class);
-      }
-    }
+    private static class NonSSADependent extends KubernetesDependentResource<Service, ConfigMap> {}
   }
 
   public static class TestRetry implements Retry, AnnotationConfigurable<TestRetryConfiguration> {

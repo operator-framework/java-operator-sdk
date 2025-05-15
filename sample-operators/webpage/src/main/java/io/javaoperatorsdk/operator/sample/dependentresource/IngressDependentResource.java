@@ -15,10 +15,6 @@ import static io.javaoperatorsdk.operator.sample.Utils.makeDesiredIngress;
     informer = @Informer(labelSelector = WebPageManagedDependentsReconciler.SELECTOR))
 public class IngressDependentResource extends CRUDKubernetesDependentResource<Ingress, WebPage> {
 
-  public IngressDependentResource() {
-    super(Ingress.class);
-  }
-
   @Override
   protected Ingress desired(WebPage webPage, Context<WebPage> context) {
     return makeDesiredIngress(webPage);

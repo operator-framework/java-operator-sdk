@@ -18,6 +18,8 @@ public abstract class CRUDKubernetesDependentResource<R extends HasMetadata, P e
     extends KubernetesDependentResource<R, P>
     implements Creator<R, P>, Updater<R, P>, GarbageCollected<P> {
 
+  public CRUDKubernetesDependentResource() {}
+
   public CRUDKubernetesDependentResource(Class<R> resourceType) {
     super(resourceType);
   }

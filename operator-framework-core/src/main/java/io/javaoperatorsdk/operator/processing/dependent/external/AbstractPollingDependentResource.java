@@ -16,6 +16,8 @@ public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
   public static final Duration DEFAULT_POLLING_PERIOD = Duration.ofMillis(5000);
   private Duration pollingPeriod;
 
+  protected AbstractPollingDependentResource() {}
+
   protected AbstractPollingDependentResource(Class<R> resourceType) {
     this(resourceType, DEFAULT_POLLING_PERIOD);
   }

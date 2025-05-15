@@ -186,10 +186,6 @@ class GenericKubernetesResourceMatcherTest {
   private static class ServiceAccountDR
       extends KubernetesDependentResource<ServiceAccount, HasMetadata> {
 
-    public ServiceAccountDR() {
-      super(ServiceAccount.class);
-    }
-
     @Override
     protected ServiceAccount desired(HasMetadata primary, Context<HasMetadata> context) {
       return new ServiceAccountBuilder()

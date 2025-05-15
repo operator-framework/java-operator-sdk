@@ -136,10 +136,6 @@ Deleted (or set to be garbage collected). The following example shows how to cre
 @KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
 class DeploymentDependentResource extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 
-    public DeploymentDependentResource() {
-        super(Deployment.class);
-    }
-
     @Override
     protected Deployment desired(WebPage webPage, Context<WebPage> context) {
         var deploymentName = deploymentName(webPage);

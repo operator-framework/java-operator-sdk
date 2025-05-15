@@ -42,6 +42,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
 
+  public KubernetesDependentResource() {}
+
   public KubernetesDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }

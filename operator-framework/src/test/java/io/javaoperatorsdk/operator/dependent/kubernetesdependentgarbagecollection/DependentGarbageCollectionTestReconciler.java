@@ -70,10 +70,6 @@ public class DependentGarbageCollectionTestReconciler
           Updater<ConfigMap, DependentGarbageCollectionTestCustomResource>,
           GarbageCollected<DependentGarbageCollectionTestCustomResource> {
 
-    public ConfigMapDependentResource() {
-      super(ConfigMap.class);
-    }
-
     @Override
     protected ConfigMap desired(
         DependentGarbageCollectionTestCustomResource primary,

@@ -59,10 +59,6 @@ public class DependentResourceCrossRefReconciler
   public static class SecretDependentResource
       extends CRUDKubernetesDependentResource<Secret, DependentResourceCrossRefResource> {
 
-    public SecretDependentResource() {
-      super(Secret.class);
-    }
-
     @Override
     protected Secret desired(
         DependentResourceCrossRefResource primary,
@@ -80,10 +76,6 @@ public class DependentResourceCrossRefReconciler
 
   public static class ConfigMapDependentResource
       extends CRUDKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
-
-    public ConfigMapDependentResource() {
-      super(ConfigMap.class);
-    }
 
     @Override
     protected ConfigMap desired(

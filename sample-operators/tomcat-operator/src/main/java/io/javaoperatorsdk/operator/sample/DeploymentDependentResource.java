@@ -14,10 +14,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class DeploymentDependentResource
     extends CRUDKubernetesDependentResource<Deployment, Tomcat> {
 
-  public DeploymentDependentResource() {
-    super(Deployment.class);
-  }
-
   private static String tomcatImage(Tomcat tomcat) {
     return "tomcat:" + tomcat.getSpec().getVersion();
   }

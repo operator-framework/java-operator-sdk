@@ -12,10 +12,6 @@ public class StatefulSetDesiredSanitizerDependentResource
 
   public static volatile Boolean nonMatchedAtLeastOnce;
 
-  public StatefulSetDesiredSanitizerDependentResource() {
-    super(StatefulSet.class);
-  }
-
   @Override
   protected StatefulSet desired(
       StatefulSetDesiredSanitizerCustomResource primary,

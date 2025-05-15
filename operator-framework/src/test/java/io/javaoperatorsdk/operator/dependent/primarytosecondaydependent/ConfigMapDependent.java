@@ -11,10 +11,6 @@ public class ConfigMapDependent
 
   public static final String TEST_CONFIG_MAP_NAME = "testconfigmap";
 
-  public ConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       PrimaryToSecondaryDependentCustomResource primary,

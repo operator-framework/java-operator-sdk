@@ -11,10 +11,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class ConfigMapDependentResource
     extends CRUDKubernetesDependentResource<ConfigMap, DependentReInitializationCustomResource> {
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
   protected ConfigMap desired(
       DependentReInitializationCustomResource primary,

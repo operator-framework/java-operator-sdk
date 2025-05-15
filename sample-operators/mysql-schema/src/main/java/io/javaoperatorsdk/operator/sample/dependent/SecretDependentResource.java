@@ -27,10 +27,6 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
   public static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
 
-  public SecretDependentResource() {
-    super(Secret.class);
-  }
-
   private static String encode(String value) {
     return Base64.getEncoder().encodeToString(value.getBytes());
   }
