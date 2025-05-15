@@ -474,7 +474,8 @@ public interface ConfigurationService {
    *
    * @return a Set of resource classes where the previous version annotation won't be used.
    */
-  default Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
+  default Set<Class<? extends HasMetadata>>
+      previousAnnotationForDependentResourcesEventFilteringBlocklist() {
     return Set.of(Deployment.class, StatefulSet.class);
   }
 

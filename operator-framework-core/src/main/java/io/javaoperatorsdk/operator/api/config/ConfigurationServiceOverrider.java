@@ -189,9 +189,9 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider previousAnnotationUsageBlocklist(
-      Set<Class<? extends HasMetadata>> previousAnnotationUsageBlacklist) {
-    this.previousAnnotationUsageBlocklist = previousAnnotationUsageBlacklist;
+  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResourcesBlocklist(
+      Set<Class<? extends HasMetadata>> blocklist) {
+    this.previousAnnotationUsageBlocklist = blocklist;
     return this;
   }
 
@@ -337,10 +337,11 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
+      public Set<Class<? extends HasMetadata>>
+          previousAnnotationForDependentResourcesEventFilteringBlocklist() {
         return overriddenValueOrDefault(
             previousAnnotationUsageBlocklist,
-            ConfigurationService::previousAnnotationUsageBlocklist);
+            ConfigurationService::previousAnnotationForDependentResourcesEventFilteringBlocklist);
       }
     };
   }
