@@ -46,6 +46,10 @@ public class StatusPatchPrimaryCacheReconciler
               + primary.getStatus().getValue());
     }
 
+    // test also resource update happening meanwhile reconciliation
+    primary.getSpec().setCounter(primary.getSpec().getCounter() + 1);
+    context.getClient().resource(primary).update();
+
     var freshCopy = createFreshCopy(primary);
     freshCopy
         .getStatus()

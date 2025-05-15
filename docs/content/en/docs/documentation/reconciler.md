@@ -175,20 +175,23 @@ From v5, by default, the finalizer is added using Server Side Apply. See also `U
 It is typical to want to update the status subresource with the information that is available during the reconciliation.
 This is sometimes referred to as the last observed state. When the primary resource is updated, though, the framework
 does not cache the resource directly, relying instead on the propagation of the update to the underlying informer's
-cache. It can, therefore, happen that, if other events trigger other reconciliations before the informer cache gets
+cache. It can, therefore, happen that, if other events trigger other reconciliations, before the informer cache gets
 updated, your reconciler does not see the latest version of the primary resource. While this might not typically be a
 problem in most cases, as caches eventually become consistent, depending on your reconciliation logic, you might still
-require the latest status version possible, for example if the status subresource is used as a communication mechanism,
-see [Representing Allocated Values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values)
+require the latest status version possible, for example, if the status subresource is used to store allocated values.
+See [Representing Allocated Values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values)
 from the Kubernetes docs for more details.
 
 The framework provides utilities to help with these use cases with 
 [`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java).
-These utility methods come in two flavors:
+These utility methods come in multiple flavors:
 
 #### Using internal cache
 
-In almost all cases for this purpose, you can use internal caches:
+In almost all cases for this purpose, you can use internal caches in combination with update methods that use 
+optimistic locking (end with *WithLock(...)). If the update method fails on optimistic locking, it will retry 
+using a fresh resource from the server as base for modification. Again, this is the default option and will probably
+work for you.
 
 ```java
  @Override
@@ -201,27 +204,32 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
     var freshCopy = createFreshCopy(primary);
     freshCopy.getStatus().setValue(statusWithState());
     
-    var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(resource, freshCopy, context);
+    var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResourceWithLock(resource, freshCopy, context);
     
     return UpdateControl.noUpdate();
   }
 ```
 
-In the background `PrimaryUpdateAndCacheUtils.ssaPatchAndCacheStatus` puts the result of the update into an internal
-cache and will make sure that the next reconciliation will contain the most recent version of the resource. Note that it
-is not necessarily the version of the resource you got as response from the update, it can be newer since other parties
+After the update `PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResourceWithLock` puts the result of the update into an internal
+cache and will the framework will make sure that the next reconciliation will contain the most recent version of the resource.
+Note that it is not necessarily the version of the resource you got as response from the update, it can be newer since other parties
 can do additional updates meanwhile, but if not explicitly modified, it will contain the up-to-date status.
 
-See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internal).
+See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internalwithlock).
 
 This approach works with the default configuration of the framework and should be good to go in most of the cases.
-Without going further into the details, this won't work if `ConfigurationService.parseResourceVersionsForEventFilteringAndCaching`
-is set to `false` (more precisely there are some edge cases when it won't work). For that case framework provides the following solution:
+
+Without going further into the details, a bit more experimental way we provide overloaded methods without optimistic locking,
+to use those you have to set `ConfigurationService.parseResourceVersionsForEventFilteringAndCaching`
+to `true`. This in practice would mean that request won't fail on optimistic locking, but requires bending a bit 
+the rules regarding Kubernetes API contract. This might be needed only if you have multiple resources frequently
+writing the resource.
 
 #### Fallback approach: using `PrimaryResourceCache` cache
 
-As an alternative, for very rare cases when `ConfigurationService.parseResourceVersionsForEventFilteringAndCaching` 
-needs to be set to `false` you can use an explicit caching approach:
+For the sake of completeness, we also provide a more explicit approach to manage the cache yourself. 
+This approach has the advantage that you don't have to do neither optimistic locking nor 
+setting the `parseResourceVersionsForEventFilteringAndCaching` to `true`:
 
 ```java
 
@@ -277,9 +285,7 @@ their associated primary resource from the underlying informer event source cach
 
 #### Additional remarks
 
-As shown in the integration tests, there is no optimistic locking used when updating the
+As shown in the last two cases, there is no optimistic locking used when updating the
 [resource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internal/StatusPatchCacheReconciler.java#L41)
-(in other words `metadata.resourceVersion` is set to `null`). This is desired since you don't want the patch to fail on
-update.
-
-In addition, you can configure the [Fabric8 client retry](https://github.com/fabric8io/kubernetes-client?tab=readme-ov-file#configuring-the-client).
+(in other words `metadata.resourceVersion` is set to `null`). This has nice property the request will be successful. 
+However, it might be desirable to configure retry on [Fabric8 client](https://github.com/fabric8io/kubernetes-client?tab=readme-ov-file#configuring-the-client).

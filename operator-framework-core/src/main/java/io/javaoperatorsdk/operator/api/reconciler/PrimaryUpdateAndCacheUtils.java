@@ -22,12 +22,13 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * various options, where all of them have pros and cons.
  *
  * <ul>
- *   <li>Retryable updates with optimistic locking (*withLock) - you can use this approach out of
- *       the box, it updates the resource using optimistic locking and caches the resource. If the
- *       update fails it reads the primary resource and applies the modifications again and retries
- *       the update. After successful update it caches the resource for next reconciliation. The
- *       disadvantage of this method is that theoretically it could fail the max attempt retry. Note
- *       that optimistic locking is essential to have the caching work in general.
+ *   <li>(Preferred) Retryable updates with optimistic locking (*withLock) - you can use this
+ *       approach out of the box, it updates the resource using optimistic locking and caches the
+ *       resource. If the update fails it reads the primary resource and applies the modifications
+ *       again and retries the update. After successful update it caches the resource for next
+ *       reconciliation. The disadvantage of this method is that theoretically it could fail the max
+ *       attempt retry. Note that optimistic locking is essential to have the caching work in
+ *       general.
  *   <li>Caching without optimistic locking but with parsing the resource version - to use this you
  *       have to set {@link ConfigurationService#parseResourceVersionsForEventFilteringAndCaching()}
  *       to true. The update won't fail on optimistic locking so there is much higher chance to
@@ -49,6 +50,65 @@ public class PrimaryUpdateAndCacheUtils {
   private static final Logger log = LoggerFactory.getLogger(PrimaryUpdateAndCacheUtils.class);
 
   /**
+   * Updates the status with optimistic locking and caches the result for next reconciliation. For
+   * details see {@link #updateAndCacheResourceWithLock}.
+   */
+  public static <P extends HasMetadata> P updateStatusAndCacheResourceWithLock(
+      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
+    return updateAndCacheResourceWithLock(
+        primary,
+        context,
+        modificationFunction,
+        r -> context.getClient().resource(r).updateStatus());
+  }
+
+  /**
+   * Patches the status using JSON Merge Patch with optimistic locking and caches the result for
+   * next reconciliation. For details see {@link #updateAndCacheResourceWithLock}.
+   */
+  public static <P extends HasMetadata> P patchStatusAndCacheResourceWithLock(
+      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
+    return updateAndCacheResourceWithLock(
+        primary, context, modificationFunction, r -> context.getClient().resource(r).patchStatus());
+  }
+
+  /**
+   * Patches the status using JSON Patch with optimistic locking and caches the result for next
+   * reconciliation. For details see {@link #updateAndCacheResourceWithLock}.
+   */
+  public static <P extends HasMetadata> P editStatusAndCacheResourceWithLock(
+      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
+    return updateAndCacheResourceWithLock(
+        primary,
+        context,
+        UnaryOperator.identity(),
+        r -> context.getClient().resource(r).editStatus(modificationFunction));
+  }
+
+  /**
+   * Patches the status using Server Side Apply with optimistic locking and caches the result for
+   * next reconciliation. For details see {@link #updateAndCacheResourceWithLock}.
+   */
+  public static <P extends HasMetadata> P ssaPatchStatusAndCacheResourceWithLock(
+      P primary, P freshResourceWithStatus, Context<P> context) {
+    return updateAndCacheResourceWithLock(
+        primary,
+        context,
+        r -> freshResourceWithStatus,
+        r ->
+            context
+                .getClient()
+                .resource(r)
+                .subresource("status")
+                .patch(
+                    new PatchContext.Builder()
+                        .withForce(true)
+                        .withFieldManager(context.getControllerConfiguration().fieldManager())
+                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                        .build()));
+  }
+
+  /**
    * Updates status and makes sure that the up-to-date primary resource will be present during the
    * next reconciliation. Using update (PUT) method.
    *
@@ -62,15 +122,6 @@ public class PrimaryUpdateAndCacheUtils {
     checkResourceVersionNotPresentAndParseConfiguration(primary, context);
     return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).updateStatus());
-  }
-
-  public static <P extends HasMetadata> P updateStatusAndCacheResourceWithLock(
-      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
-    return updateAndCacheResourceWithLock(
-        primary,
-        context,
-        modificationFunction,
-        r -> context.getClient().resource(r).updateStatus());
   }
 
   /**
@@ -87,12 +138,6 @@ public class PrimaryUpdateAndCacheUtils {
     checkResourceVersionNotPresentAndParseConfiguration(primary, context);
     return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).patchStatus());
-  }
-
-  public static <P extends HasMetadata> P patchStatusAndCacheResourceWithLock(
-      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
-    return updateAndCacheResourceWithLock(
-        primary, context, modificationFunction, r -> context.getClient().resource(r).patchStatus());
   }
 
   /**
@@ -114,15 +159,6 @@ public class PrimaryUpdateAndCacheUtils {
     checkResourceVersionNotPresentAndParseConfiguration(primary, context);
     return patchStatusAndCacheResource(
         primary, context, () -> context.getClient().resource(primary).editStatus(operation));
-  }
-
-  public static <P extends HasMetadata> P editStatusAndCacheResourceWithLock(
-      P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
-    return updateAndCacheResourceWithLock(
-        primary,
-        context,
-        UnaryOperator.identity(),
-        r -> context.getClient().resource(r).editStatus(modificationFunction));
   }
 
   /**
@@ -165,25 +201,6 @@ public class PrimaryUpdateAndCacheUtils {
             context
                 .getClient()
                 .resource(freshResourceWithStatus)
-                .subresource("status")
-                .patch(
-                    new PatchContext.Builder()
-                        .withForce(true)
-                        .withFieldManager(context.getControllerConfiguration().fieldManager())
-                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                        .build()));
-  }
-
-  public static <P extends HasMetadata> P ssaPatchStatusAndCacheResourceWithLock(
-      P primary, P freshResourceWithStatus, Context<P> context) {
-    return updateAndCacheResourceWithLock(
-        primary,
-        context,
-        r -> freshResourceWithStatus,
-        r ->
-            context
-                .getClient()
-                .resource(r)
                 .subresource("status")
                 .patch(
                     new PatchContext.Builder()
@@ -309,6 +326,23 @@ public class PrimaryUpdateAndCacheUtils {
     }
   }
 
+  /**
+   * Modifies the primary using modificationFunction, then uses the modified resource for the
+   * request to update with provided update method. But before the update operation sets the
+   * resourceVersion to the modified resource from the primary resource, so there is always
+   * optimistic locking happening. If the request fails on optimistic update, we read the resource
+   * again from the K8S API server and retry the whole process. In short, we make sure we always
+   * update the resource with optimistic locking, after we cache the resource in internal cache.
+   * Without further going into the details, the optimistic locking is needed so we can reliably
+   * handle the caching.
+   *
+   * @param primary original resource to update
+   * @param context of reconciliation
+   * @param modificationFunction modifications to make on primary
+   * @param updateMethod the update method implementation
+   * @return updated resource
+   * @param <P> primary type
+   */
   public static <P extends HasMetadata> P updateAndCacheResourceWithLock(
       P primary,
       Context<P> context,
@@ -318,6 +352,24 @@ public class PrimaryUpdateAndCacheUtils {
         primary, context, modificationFunction, updateMethod, DEFAULT_MAX_RETRY);
   }
 
+  /**
+   * Modifies the primary using modificationFunction, then uses the modified resource for the
+   * request to update with provided update method. But before the update operation sets the
+   * resourceVersion to the modified resource from the primary resource, so there is always
+   * optimistic locking happening. If the request fails on optimistic update, we read the resource
+   * again from the K8S API server and retry the whole process. In short, we make sure we always
+   * update the resource with optimistic locking, after we cache the resource in internal cache.
+   * Without further going into the details, the optimistic locking is needed so we can reliably
+   * handle the caching.
+   *
+   * @param primary original resource to update
+   * @param context of reconciliation
+   * @param modificationFunction modifications to make on primary
+   * @param updateMethod the update method implementation
+   * @param maxRetry - maximum number of retries of conflicts
+   * @return updated resource
+   * @param <P> primary type
+   */
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P updateAndCacheResourceWithLock(
       P primary,

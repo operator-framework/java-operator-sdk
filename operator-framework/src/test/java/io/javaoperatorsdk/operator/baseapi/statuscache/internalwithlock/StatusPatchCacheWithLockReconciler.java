@@ -33,6 +33,10 @@ public class StatusPatchCacheWithLockReconciler
               + resource.getStatus().getValue());
     }
 
+    // test also resource update happening meanwhile reconciliation
+    resource.getSpec().setCounter(resource.getSpec().getCounter() + 1);
+    context.getClient().resource(resource).update();
+
     var freshCopy = createFreshCopy(resource);
 
     freshCopy

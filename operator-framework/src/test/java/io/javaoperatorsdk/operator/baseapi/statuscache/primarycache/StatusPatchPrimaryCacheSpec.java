@@ -2,14 +2,13 @@ package io.javaoperatorsdk.operator.baseapi.statuscache.primarycache;
 
 public class StatusPatchPrimaryCacheSpec {
 
-  private boolean messageInStatus = true;
+  private int counter = 0;
 
-  public boolean isMessageInStatus() {
-    return messageInStatus;
+  public int getCounter() {
+    return counter;
   }
 
-  public StatusPatchPrimaryCacheSpec setMessageInStatus(boolean messageInStatus) {
-    this.messageInStatus = messageInStatus;
-    return this;
+  public void setCounter(int counter) {
+    this.counter = counter;
   }
 }
