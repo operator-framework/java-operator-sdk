@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * updates is to store state is resource status.
  *
  * <p>The way the framework handles this is with retryable updates with optimistic locking, and
- * caches the updated resource from the response in an overlay cache on top of the Informer behind.
+ * caches the updated resource from the response in an overlay cache on top of the Informer cache.
  * If the update fails, it reads the primary resource and applies the modifications again and
  * retries the update.
  */
@@ -168,13 +168,14 @@ public class PrimaryUpdateAndCacheUtils {
         if (e.getCode() != 409 && e.getCode() != 422) {
           throw e;
         }
-        if (retryIndex >= maxRetry) {
+        if (retryIndex > maxRetry) {
           log.warn("Retry exhausted, last desired resource: {}", modified);
           throw new OperatorException(
               "Exceeded maximum ("
                   + maxRetry
                   + ") retry attempts to patch resource: "
-                  + ResourceID.fromResource(primary));
+                  + ResourceID.fromResource(primary),
+              e);
         }
         log.debug(
             "Retrying patch for resource name: {}, namespace: {}; HTTP code: {}",
