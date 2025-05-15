@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.statuscache.internalwithlock;
+package io.javaoperatorsdk.operator.baseapi.statuscache;
 
 public class StatusPatchCacheWithLockSpec {
 

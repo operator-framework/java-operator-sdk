@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.statuscache.internal;
+package io.javaoperatorsdk.operator.baseapi.statuscache;
 
 import java.util.List;
 
@@ -9,18 +9,19 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.baseapi.statuscache.PeriodicTriggerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @ControllerConfiguration
-public class StatusPatchCacheReconciler implements Reconciler<StatusPatchCacheCustomResource> {
+public class StatusPatchCacheWithLockReconciler
+    implements Reconciler<StatusPatchCacheWithLockCustomResource> {
 
   public volatile int latestValue = 0;
   public volatile boolean errorPresent = false;
 
   @Override
-  public UpdateControl<StatusPatchCacheCustomResource> reconcile(
-      StatusPatchCacheCustomResource resource, Context<StatusPatchCacheCustomResource> context) {
+  public UpdateControl<StatusPatchCacheWithLockCustomResource> reconcile(
+      StatusPatchCacheWithLockCustomResource resource,
+      Context<StatusPatchCacheWithLockCustomResource> context) {
 
     if (resource.getStatus() != null && resource.getStatus().getValue() != latestValue) {
       errorPresent = true;
@@ -49,20 +50,21 @@ public class StatusPatchCacheReconciler implements Reconciler<StatusPatchCacheCu
   }
 
   @Override
-  public List<EventSource<?, StatusPatchCacheCustomResource>> prepareEventSources(
-      EventSourceContext<StatusPatchCacheCustomResource> context) {
+  public List<EventSource<?, StatusPatchCacheWithLockCustomResource>> prepareEventSources(
+      EventSourceContext<StatusPatchCacheWithLockCustomResource> context) {
     // periodic event triggering for testing purposes
     return List.of(new PeriodicTriggerEventSource<>(context.getPrimaryCache()));
   }
 
-  private StatusPatchCacheCustomResource createFreshCopy(StatusPatchCacheCustomResource resource) {
-    var res = new StatusPatchCacheCustomResource();
+  private StatusPatchCacheWithLockCustomResource createFreshCopy(
+      StatusPatchCacheWithLockCustomResource resource) {
+    var res = new StatusPatchCacheWithLockCustomResource();
     res.setMetadata(
         new ObjectMetaBuilder()
             .withName(resource.getMetadata().getName())
             .withNamespace(resource.getMetadata().getNamespace())
             .build());
-    res.setStatus(new StatusPatchCacheStatus());
+    res.setStatus(new StatusPatchCacheWithLockStatus());
 
     return res;
   }

@@ -182,16 +182,12 @@ require the latest status version possible, for example, if the status subresour
 See [Representing Allocated Values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values)
 from the Kubernetes docs for more details.
 
-The framework provides utilities to help with these use cases with 
+The framework provides utilities to help with these use cases:  
 [`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java).
-These utility methods come in multiple flavors:
 
-#### Using internal cache
-
-In almost all cases for this purpose, you can use internal caches in combination with update methods that use 
-optimistic locking (end with *WithLock(...)). If the update method fails on optimistic locking, it will retry 
-using a fresh resource from the server as base for modification. Again, this is the default option and will probably
-work for you.
+Framework you can use internal caches in combination with update methods that use 
+optimistic locking. If the update method fails on optimistic locking, it will retry 
+using a fresh resource from the server as base for modification. 
 
 ```java
  @Override
@@ -204,88 +200,16 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
     var freshCopy = createFreshCopy(primary);
     freshCopy.getStatus().setValue(statusWithState());
     
-    var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResourceWithLock(resource, freshCopy, context);
+    var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(resource, freshCopy, context);
     
     return UpdateControl.noUpdate();
   }
 ```
 
-After the update `PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResourceWithLock` puts the result of the update into an internal
-cache and will the framework will make sure that the next reconciliation will contain the most recent version of the resource.
+After the update `PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource` puts the response of the update into an internal
+cache and the framework will make sure that the next reconciliation will contain the most recent version of the resource.
 Note that it is not necessarily the version of the resource you got as response from the update, it can be newer since other parties
-can do additional updates meanwhile, but if not explicitly modified, it will contain the up-to-date status.
+can do additional updates meanwhile. However, if not explicitly modified, it will contain the up-to-date resource.
 
-See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internalwithlock).
+See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache).
 
-This approach works with the default configuration of the framework and should be good to go in most of the cases.
-
-Without going further into the details, a bit more experimental way we provide overloaded methods without optimistic locking,
-to use those you have to set `ConfigurationService.parseResourceVersionsForEventFilteringAndCaching`
-to `true`. This in practice would mean that request won't fail on optimistic locking, but requires bending a bit 
-the rules regarding Kubernetes API contract. This might be needed only if you have multiple resources frequently
-writing the resource.
-
-#### Fallback approach: using `PrimaryResourceCache` cache
-
-For the sake of completeness, we also provide a more explicit approach to manage the cache yourself. 
-This approach has the advantage that you don't have to do neither optimistic locking nor 
-setting the `parseResourceVersionsForEventFilteringAndCaching` to `true`:
-
-```java
-
-// We on purpose don't use the provided predicate to show what a custom one could look like.
-  private final PrimaryResourceCache<StatusPatchPrimaryCacheCustomResource> cache =
-      new PrimaryResourceCache<>(
-          (statusPatchCacheCustomResourcePair, statusPatchCacheCustomResource) ->
-              statusPatchCacheCustomResource.getStatus().getValue()
-                  >= statusPatchCacheCustomResourcePair.afterUpdate().getStatus().getValue());
-
-  @Override
-  public UpdateControl<StatusPatchPrimaryCacheCustomResource> reconcile(
-          StatusPatchPrimaryCacheCustomResource primary,
-          Context<StatusPatchPrimaryCacheCustomResource> context) {
-    
-    // cache will compare the current and the cached resource and return the more recent. (And evict the old)   
-    primary = cache.getFreshResource(primary);
-      
-    // omitted logic  
-      
-    var freshCopy = createFreshCopy(primary);
-    
-    freshCopy.getStatus().setValue(statusWithState());
-
-    var updated =
-            PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(primary, freshCopy, context, cache);
-      
-    return UpdateControl.noUpdate();
-  }
-
-  @Override
-  public DeleteControl cleanup(
-          StatusPatchPrimaryCacheCustomResource resource,
-          Context<StatusPatchPrimaryCacheCustomResource> context)
-          throws Exception {
-    // cleanup the cache on resource deletion  
-    cache.cleanup(resource);
-    return DeleteControl.defaultDelete();
-  }
-  
-```
-
-[`PrimaryResourceCache`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/support/PrimaryResourceCache.java)
-is designed for this purpose. As shown in the example above, it is up to you to provide a predicate to determine if the
-resource is more recent than the one available. In other words, when to evict the resource from the cache. Typically, as
-shown in
-the [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/primarycache)
-you can have a counter in status to check on that.
-
-Since all of this happens explicitly, you cannot use this approach for managed dependent resources and workflows and
-will need to use the unmanaged approach instead. This is due to the fact that managed dependent resources always get
-their associated primary resource from the underlying informer event source cache.
-
-#### Additional remarks
-
-As shown in the last two cases, there is no optimistic locking used when updating the
-[resource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache/internal/StatusPatchCacheReconciler.java#L41)
-(in other words `metadata.resourceVersion` is set to `null`). This has nice property the request will be successful. 
-However, it might be desirable to configure retry on [Fabric8 client](https://github.com/fabric8io/kubernetes-client?tab=readme-ov-file#configuring-the-client).
