@@ -444,30 +444,35 @@ public interface ConfigurationService {
    *
    * @return if special annotation should be used for dependent resource to filter events
    * @since 4.5.0
-   * @return if special annotation should be used for dependent resource to filter events
    */
   default boolean previousAnnotationForDependentResourcesEventFiltering() {
     return true;
   }
 
   /**
-   * For dependent resources framework can add an annotation to filter our events that are results
-   * of changes made by the framework. There are, however, few resources that do not follow the K8S
-   * API convention that changes in metadata do not increase the "metadata.generation". For these
-   * resources, the generation is increased by adding the annotation and their controller increases
-   * the observedGeneration in the status. This results in a new event, that if not handled
-   * correctly with the resource matcher yet again results in an update and a previous version
-   * annotation change, thus results in an infinite loop.
+   * For dependent resources, the framework can add an annotation to filter out events resulting
+   * directly from the framework's operation. There are, however, some resources that do not follow
+   * the Kubernetes API conventions that changes in metadata should not increase the generation of
+   * the resource (as recorded in the {@code generation} field of the resource's {@code metadata}).
+   * For these resources, this convention is not respected and results in a new event for the
+   * framework to process. If that particular case is not handled correctly in the resource matcher,
+   * the framework will consider that the resource doesn't match the desired state and therefore
+   * triggers an update, which in turn, will re-add the annotation, thus starting the loop again,
+   * infinitely.
    *
    * <p>As a workaround, we automatically skip adding previous annotation for those well-known
-   * resources. Note that if you are sure that the matcher works (most of the cases does) for your
-   * case, you can remove the resource from the blocklist.
+   * resources. Note that if you are sure that the matcher works for your use case, and it should in
+   * most instances, you can remove the resource type from the blocklist.
    *
-   * <p>The consequence of adding a resource type to this list is that it will not use event
-   * filtering in dependent resources, so will process also events which are results from updates of
-   * the dependent.
+   * <p>The consequence of adding a resource type to the set is that the framework will not use
+   * event filtering to prevent events, initiated by changes made by the framework itself as a
+   * result of its processing of dependent resources, to trigger the associated reconciler again.
    *
-   * @return blocklist of resource classes where the previous version annotation won't be used.
+   * <p>Note that this method only takes effect if annotating dependent resources to prevent
+   * dependent resources events from triggering the associated reconciler again is activated as
+   * controlled by {@link #previousAnnotationForDependentResourcesEventFiltering()}
+   *
+   * @return a Set of resource classes where the previous version annotation won't be used.
    */
   default Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist() {
     return Set.of(Deployment.class, StatefulSet.class);
