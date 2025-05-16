@@ -182,10 +182,11 @@ require the latest status version possible, for example, if the status subresour
 See [Representing Allocated Values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values)
 from the Kubernetes docs for more details.
 
-The framework provides utilities to help with these use cases:  
-[`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java).
+The framework provides the  
+[`PrimaryUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java) utility class
+to help with these use cases.
 
-Framework you can use internal caches in combination with update methods that use 
+This class' methods use internal caches in combination with update methods that leveraging 
 optimistic locking. If the update method fails on optimistic locking, it will retry 
 using a fresh resource from the server as base for modification. 
 
@@ -206,10 +207,11 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
   }
 ```
 
-After the update `PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource` puts the response of the update into an internal
-cache and the framework will make sure that the next reconciliation will contain the most recent version of the resource.
-Note that it is not necessarily the version of the resource you got as response from the update, it can be newer since other parties
-can do additional updates meanwhile. However, if not explicitly modified, it will contain the up-to-date resource.
+After the update `PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResourceWithLock` puts the result of the update into an internal
+cache and the framework will make sure that the next reconciliation contains the most recent version of the resource.
+Note that it is not necessarily the same version returned as response from the update, it can be a newer version since other parties
+can do additional updates meanwhile. However, unless it has been explicitly modified, that
+resource will contain the up-to-date status.
+
 
 See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache).
-
