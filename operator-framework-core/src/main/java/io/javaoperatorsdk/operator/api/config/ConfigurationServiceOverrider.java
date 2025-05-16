@@ -338,10 +338,10 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public Set<Class<? extends HasMetadata>>
-          previousAnnotationForDependentResourcesEventFilteringBlocklist() {
+          withPreviousAnnotationForDependentResourcesBlocklist() {
         return overriddenValueOrDefault(
             previousAnnotationUsageBlocklist,
-            ConfigurationService::previousAnnotationForDependentResourcesEventFilteringBlocklist);
+            ConfigurationService::withPreviousAnnotationForDependentResourcesBlocklist);
       }
     };
   }
