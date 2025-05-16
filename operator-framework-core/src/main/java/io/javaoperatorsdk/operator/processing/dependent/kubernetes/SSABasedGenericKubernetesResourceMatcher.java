@@ -179,7 +179,7 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
   }
 
   /** Correct for known issue with SSA */
-  private void sanitizeState(R actual, R desired, Map<String, Object> actualMap) {
+  protected void sanitizeState(R actual, R desired, Map<String, Object> actualMap) {
     if (actual instanceof StatefulSet actualStatefulSet
         && desired instanceof StatefulSet desiredStatefulSet) {
       var actualSpec = actualStatefulSet.getSpec();

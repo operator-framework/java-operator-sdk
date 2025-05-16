@@ -40,6 +40,7 @@ public class ConfigurationServiceOverrider {
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
+  private Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -188,6 +189,12 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResourcesBlocklist(
+      Set<Class<? extends HasMetadata>> blocklist) {
+    this.previousAnnotationUsageBlocklist = blocklist;
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -327,6 +334,14 @@ public class ConfigurationServiceOverrider {
         return overriddenValueOrDefault(
             cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
+      }
+
+      @Override
+      public Set<Class<? extends HasMetadata>>
+          withPreviousAnnotationForDependentResourcesBlocklist() {
+        return overriddenValueOrDefault(
+            previousAnnotationUsageBlocklist,
+            ConfigurationService::withPreviousAnnotationForDependentResourcesBlocklist);
       }
     };
   }
