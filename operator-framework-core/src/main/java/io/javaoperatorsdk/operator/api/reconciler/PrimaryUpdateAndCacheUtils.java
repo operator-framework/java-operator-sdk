@@ -47,7 +47,7 @@ public class PrimaryUpdateAndCacheUtils {
    * Patches the status using JSON Merge Patch with optimistic locking and caches the result for
    * next reconciliation. For details see {@link #updateAndCacheResource}.
    */
-  public static <P extends HasMetadata> P patchStatusAndCacheResource(
+  public static <P extends HasMetadata> P jsonMergePatchStatusAndCacheResource(
       P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
     return updateAndCacheResource(
         primary, context, modificationFunction, r -> context.getClient().resource(r).patchStatus());
@@ -57,7 +57,7 @@ public class PrimaryUpdateAndCacheUtils {
    * Patches the status using JSON Patch with optimistic locking and caches the result for next
    * reconciliation. For details see {@link #updateAndCacheResource}.
    */
-  public static <P extends HasMetadata> P editStatusAndCacheResource(
+  public static <P extends HasMetadata> P jsonPatchStatusAndCacheResource(
       P primary, Context<P> context, UnaryOperator<P> modificationFunction) {
     return updateAndCacheResource(
         primary,
