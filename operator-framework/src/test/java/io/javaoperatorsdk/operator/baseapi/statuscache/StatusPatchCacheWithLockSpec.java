@@ -1,6 +1,6 @@
-package io.javaoperatorsdk.operator.baseapi.statuscache.internal;
+package io.javaoperatorsdk.operator.baseapi.statuscache;
 
-public class StatusPatchCacheSpec {
+public class StatusPatchCacheWithLockSpec {
 
   private int counter = 0;
 
