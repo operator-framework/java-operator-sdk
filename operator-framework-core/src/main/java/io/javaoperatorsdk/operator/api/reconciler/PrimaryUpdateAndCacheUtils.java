@@ -14,13 +14,13 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
  * Utility methods to patch the primary resource state and store it to the related cache, to make
- * sure that fresh resource is present for the next reconciliation. The main use case for such
- * updates is to store state is resource status.
+ * sure that the latest version of the resource is present for the next reconciliation. The main use
+ * case for such updates is to store state is resource status.
  *
  * <p>The way the framework handles this is with retryable updates with optimistic locking, and
  * caches the updated resource from the response in an overlay cache on top of the Informer cache.
- * If the update fails, it reads the primary resource and applies the modifications again and
- * retries the update.
+ * If the update fails, it reads the primary resource from the cluster, applies the modifications
+ * again and retries the update.
  */
 public class PrimaryUpdateAndCacheUtils {
 
@@ -90,74 +90,71 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Modifies the primary using modificationFunction, then uses the modified resource for the
-   * request to update with provided update method. But before the update operation sets the
-   * resourceVersion to the modified resource from the primary resource, so there is always
-   * optimistic locking happening. If the request fails on optimistic update, we read the resource
-   * again from the K8S API server and retry the whole process. In short, we make sure we always
-   * update the resource with optimistic locking, after we cache the resource in internal cache.
-   * Without further going into the details, the optimistic locking is needed so we can reliably
-   * handle the caching.
+   * Same as {@link #updateAndCacheResource(HasMetadata, Context, UnaryOperator, UnaryOperator,
+   * int)} using the default maximum retry number as defined by {@link #DEFAULT_MAX_RETRY}.
    *
-   * @param primary original resource to update
+   * @param resourceToUpdate original resource to update
    * @param context of reconciliation
    * @param modificationFunction modifications to make on primary
    * @param updateMethod the update method implementation
-   * @return updated resource
    * @param <P> primary type
+   * @return the updated resource
    */
   public static <P extends HasMetadata> P updateAndCacheResource(
-      P primary,
+      P resourceToUpdate,
       Context<P> context,
       UnaryOperator<P> modificationFunction,
       UnaryOperator<P> updateMethod) {
     return updateAndCacheResource(
-        primary, context, modificationFunction, updateMethod, DEFAULT_MAX_RETRY);
+        resourceToUpdate, context, modificationFunction, updateMethod, DEFAULT_MAX_RETRY);
   }
 
   /**
-   * Modifies the primary using modificationFunction, then uses the modified resource for the
-   * request to update with provided update method. But before the update operation sets the
-   * resourceVersion to the modified resource from the primary resource, so there is always
-   * optimistic locking happening. If the request fails on optimistic update, we read the resource
-   * again from the K8S API server and retry the whole process. In short, we make sure we always
-   * update the resource with optimistic locking, after we cache the resource in internal cache.
-   * Without further going into the details, the optimistic locking is needed so we can reliably
-   * handle the caching.
+   * Modifies the primary using the specified modification function, then uses the modified resource
+   * for the request to update with provided update method. As the {@code resourceVersion} field of
+   * the modified resource is set to the value found in the specified resource to update, the update
+   * operation will therefore use optimistic locking on the server. If the request fails on
+   * optimistic update, we read the resource again from the K8S API server and retry the whole
+   * process. In short, we make sure we always update the resource with optimistic locking, then we
+   * cache the resource in an internal cache. Without further going into details, the optimistic
+   * locking is needed so we can reliably handle the caching.
    *
-   * @param primary original resource to update
+   * @param resourceToUpdate original resource to update
    * @param context of reconciliation
    * @param modificationFunction modifications to make on primary
    * @param updateMethod the update method implementation
-   * @param maxRetry - maximum number of retries of conflicts
-   * @return updated resource
+   * @param maxRetry maximum number of retries before giving up
    * @param <P> primary type
+   * @return the updated resource
    */
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P updateAndCacheResource(
-      P primary,
+      P resourceToUpdate,
       Context<P> context,
       UnaryOperator<P> modificationFunction,
       UnaryOperator<P> updateMethod,
       int maxRetry) {
 
     if (log.isDebugEnabled()) {
-      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(primary));
+      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resourceToUpdate));
     }
     P modified = null;
     int retryIndex = 0;
     while (true) {
       try {
-        modified = modificationFunction.apply(primary);
-        modified.getMetadata().setResourceVersion(primary.getMetadata().getResourceVersion());
+        modified = modificationFunction.apply(resourceToUpdate);
+        modified
+            .getMetadata()
+            .setResourceVersion(resourceToUpdate.getMetadata().getResourceVersion());
         var updated = updateMethod.apply(modified);
         context
             .eventSourceRetriever()
             .getControllerEventSource()
-            .handleRecentResourceUpdate(ResourceID.fromResource(primary), updated, primary);
+            .handleRecentResourceUpdate(
+                ResourceID.fromResource(resourceToUpdate), updated, resourceToUpdate);
         return updated;
       } catch (KubernetesClientException e) {
-        log.trace("Exception during patch for resource: {}", primary);
+        log.trace("Exception during patch for resource: {}", resourceToUpdate);
         retryIndex++;
         // only retry on conflict (409) and unprocessable content (422) which
         // can happen if JSON Patch is not a valid request since there was
@@ -174,21 +171,21 @@ public class PrimaryUpdateAndCacheUtils {
               "Exceeded maximum ("
                   + maxRetry
                   + ") retry attempts to patch resource: "
-                  + ResourceID.fromResource(primary),
+                  + ResourceID.fromResource(resourceToUpdate),
               e);
         }
         log.debug(
             "Retrying patch for resource name: {}, namespace: {}; HTTP code: {}",
-            primary.getMetadata().getName(),
-            primary.getMetadata().getNamespace(),
+            resourceToUpdate.getMetadata().getName(),
+            resourceToUpdate.getMetadata().getNamespace(),
             e.getCode());
-        primary =
+        resourceToUpdate =
             (P)
                 context
                     .getClient()
-                    .resources(primary.getClass())
-                    .inNamespace(primary.getMetadata().getNamespace())
-                    .withName(primary.getMetadata().getName())
+                    .resources(resourceToUpdate.getClass())
+                    .inNamespace(resourceToUpdate.getMetadata().getNamespace())
+                    .withName(resourceToUpdate.getMetadata().getName())
                     .get();
       }
     }
