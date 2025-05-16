@@ -207,7 +207,7 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
   }
 ```
 
-After the update `PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResourceWithLock` puts the result of the update into an internal
+After the update `PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource` puts the result of the update into an internal
 cache and the framework will make sure that the next reconciliation contains the most recent version of the resource.
 Note that it is not necessarily the same version returned as response from the update, it can be a newer version since other parties
 can do additional updates meanwhile. However, unless it has been explicitly modified, that
