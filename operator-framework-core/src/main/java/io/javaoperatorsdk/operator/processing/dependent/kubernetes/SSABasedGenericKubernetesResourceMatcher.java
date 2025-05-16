@@ -31,7 +31,7 @@ import io.javaoperatorsdk.operator.processing.LoggingUtils;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
 
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.PodTemplateSpecSanitizer.sanitizePodTemplateSpec;
 
 /**
  * Matches the actual state on the server vs the desired state. Based on the managedFields of SSA.
@@ -203,22 +203,22 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
           }
         }
       }
-      sanitizeResourceRequirements(actualMap, actualSpec.getTemplate(), desiredSpec.getTemplate());
+      sanitizePodTemplateSpec(actualMap, actualSpec.getTemplate(), desiredSpec.getTemplate());
     } else if (actual instanceof Deployment actualDeployment
         && desired instanceof Deployment desiredDeployment) {
-      sanitizeResourceRequirements(
+      sanitizePodTemplateSpec(
           actualMap,
           actualDeployment.getSpec().getTemplate(),
           desiredDeployment.getSpec().getTemplate());
     } else if (actual instanceof ReplicaSet actualReplicaSet
         && desired instanceof ReplicaSet desiredReplicaSet) {
-      sanitizeResourceRequirements(
+      sanitizePodTemplateSpec(
           actualMap,
           actualReplicaSet.getSpec().getTemplate(),
           desiredReplicaSet.getSpec().getTemplate());
     } else if (actual instanceof DaemonSet actualDaemonSet
         && desired instanceof DaemonSet desiredDaemonSet) {
-      sanitizeResourceRequirements(
+      sanitizePodTemplateSpec(
           actualMap,
           actualDaemonSet.getSpec().getTemplate(),
           desiredDaemonSet.getSpec().getTemplate());

@@ -2,32 +2,34 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 
 /**
- * Sanitizes the {@link ResourceRequirements} in the containers of a pair of {@link PodTemplateSpec}
- * instances.
+ * Sanitizes the {@link ResourceRequirements} and the {@link EnvVar} in the containers of a pair of
+ * {@link PodTemplateSpec} instances.
  *
  * <p>When the sanitizer finds a mismatch in the structure of the given templates, before it gets to
- * the nested resource limits and requests, it returns early without fixing the actual map. This is
- * an optimization because the given templates will anyway differ at this point. This means we do
- * not have to attempt to sanitize the resources for these use cases, since there will anyway be an
- * update of the K8s resource.
+ * the nested fields, it returns early without fixing the actual map. This is an optimization
+ * because the given templates will anyway differ at this point. This means we do not have to
+ * attempt to sanitize the fields for these use cases, since there will anyway be an update of the
+ * K8s resource.
  *
  * <p>The algorithm traverses the whole template structure because we need the actual and desired
- * {@link Quantity} instances to compare their numerical amount. Using the {@link
+ * {@link Quantity} and {@link EnvVar} instances. Using the {@link
  * GenericKubernetesResource#get(Map, Object...)} shortcut would need to create new instances just
  * for the sanitization check.
  */
-class ResourceRequirementsSanitizer {
+class PodTemplateSpecSanitizer {
 
-  static void sanitizeResourceRequirements(
+  static void sanitizePodTemplateSpec(
       final Map<String, Object> actualMap,
       final PodTemplateSpec actualTemplate,
       final PodTemplateSpec desiredTemplate) {
@@ -37,19 +39,19 @@ class ResourceRequirementsSanitizer {
     if (actualTemplate.getSpec() == null || desiredTemplate.getSpec() == null) {
       return;
     }
-    sanitizeResourceRequirements(
+    sanitizePodTemplateSpec(
         actualMap,
         actualTemplate.getSpec().getInitContainers(),
         desiredTemplate.getSpec().getInitContainers(),
         "initContainers");
-    sanitizeResourceRequirements(
+    sanitizePodTemplateSpec(
         actualMap,
         actualTemplate.getSpec().getContainers(),
         desiredTemplate.getSpec().getContainers(),
         "containers");
   }
 
-  private static void sanitizeResourceRequirements(
+  private static void sanitizePodTemplateSpec(
       final Map<String, Object> actualMap,
       final List<Container> actualContainers,
       final List<Container> desiredContainers,
@@ -57,11 +59,17 @@ class ResourceRequirementsSanitizer {
     int containers = desiredContainers.size();
     if (containers == actualContainers.size()) {
       for (int containerIndex = 0; containerIndex < containers; containerIndex++) {
-        var desiredContainer = desiredContainers.get(containerIndex);
-        var actualContainer = actualContainers.get(containerIndex);
+        final var desiredContainer = desiredContainers.get(containerIndex);
+        final var actualContainer = actualContainers.get(containerIndex);
         if (!desiredContainer.getName().equals(actualContainer.getName())) {
           return;
         }
+        sanitizeEnvVars(
+            actualMap,
+            actualContainer.getEnv(),
+            desiredContainer.getEnv(),
+            containerPath,
+            containerIndex);
         sanitizeResourceRequirements(
             actualMap,
             actualContainer.getResources(),
@@ -121,7 +129,7 @@ class ResourceRequirementsSanitizer {
             m ->
                 actualResource.forEach(
                     (key, actualQuantity) -> {
-                      var desiredQuantity = desiredResource.get(key);
+                      final var desiredQuantity = desiredResource.get(key);
                       if (desiredQuantity == null) {
                         return;
                       }
@@ -137,5 +145,54 @@ class ResourceRequirementsSanitizer {
                         m.replace(key, desiredQuantity.toString());
                       }
                     }));
+  }
+
+  @SuppressWarnings("unchecked")
+  private static void sanitizeEnvVars(
+      final Map<String, Object> actualMap,
+      final List<EnvVar> actualEnvVars,
+      final List<EnvVar> desiredEnvVars,
+      final String containerPath,
+      final int containerIndex) {
+    if (desiredEnvVars.isEmpty() || actualEnvVars.isEmpty()) {
+      return;
+    }
+    Optional.ofNullable(
+            GenericKubernetesResource.get(
+                actualMap, "spec", "template", "spec", containerPath, containerIndex, "env"))
+        .map(List.class::cast)
+        .ifPresent(
+            envVars ->
+                actualEnvVars.forEach(
+                    actualEnvVar -> {
+                      final var actualEnvVarName = actualEnvVar.getName();
+                      final var actualEnvVarValue = actualEnvVar.getValue();
+                      // check if the actual EnvVar value string is not null or the desired EnvVar
+                      // already contains the same EnvVar name with a non empty EnvVar value
+                      final var isDesiredEnvVarEmpty =
+                          hasEnvVarNoEmptyValue(actualEnvVarName, desiredEnvVars);
+                      if (actualEnvVarValue != null || isDesiredEnvVarEmpty) {
+                        return;
+                      }
+                      envVars.stream()
+                          .filter(
+                              envVar ->
+                                  ((Map<String, String>) envVar)
+                                      .get("name")
+                                      .equals(actualEnvVarName))
+                          // add the actual EnvVar value with an empty string to prevent a
+                          // resource update
+                          .forEach(envVar -> ((Map<String, String>) envVar).put("value", ""));
+                    }));
+  }
+
+  private static boolean hasEnvVarNoEmptyValue(
+      final String envVarName, final List<EnvVar> envVars) {
+    return envVars.stream()
+        .anyMatch(
+            envVar ->
+                Objects.equals(envVarName, envVar.getName())
+                    && envVar.getValue() != null
+                    && !envVar.getValue().isEmpty());
   }
 }
