@@ -1,10 +1,14 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.List;
 import java.util.Map;
 
+import org.assertj.core.api.ListAssert;
 import org.assertj.core.api.MapAssert;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
@@ -15,17 +19,17 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 
-import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceRequirementsSanitizer.sanitizeResourceRequirements;
+import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.PodTemplateSpecSanitizer.sanitizePodTemplateSpec;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
- * Tests the {@link ResourceRequirementsSanitizer} with combinations of matching and mismatching K8s
- * resources, using a mix of containers and init containers, as well as resource requests and
- * limits.
+ * Tests the {@link PodTemplateSpecSanitizer} with combinations of matching and mismatching K8s
+ * resources, using a mix of containers and init containers, as well as resource requests and limits
+ * along with environment variables.
  */
-class ResourceRequirementsSanitizerTest {
+class PodTemplateSpecSanitizerTest {
 
   private final Map<String, Object> actualMap = mock();
 
@@ -33,26 +37,26 @@ class ResourceRequirementsSanitizerTest {
   private final KubernetesSerialization serialization = client.getKubernetesSerialization();
 
   @Test
-  void testSanitizeResourceRequirements_whenTemplateIsNull_doNothing() {
+  void testSanitizePodTemplateSpec_whenTemplateIsNull_doNothing() {
     final var template = new PodTemplateSpecBuilder().build();
 
-    sanitizeResourceRequirements(actualMap, null, template);
-    sanitizeResourceRequirements(actualMap, template, null);
+    sanitizePodTemplateSpec(actualMap, null, template);
+    sanitizePodTemplateSpec(actualMap, template, null);
     verifyNoInteractions(actualMap);
   }
 
   @Test
-  void testSanitizeResourceRequirements_whenTemplateSpecIsNull_doNothing() {
+  void testSanitizePodTemplateSpec_whenTemplateSpecIsNull_doNothing() {
     final var template = new PodTemplateSpecBuilder().withSpec(null).build();
     final var templateWithSpec = new PodTemplateSpecBuilder().withNewSpec().endSpec().build();
 
-    sanitizeResourceRequirements(actualMap, template, templateWithSpec);
-    sanitizeResourceRequirements(actualMap, templateWithSpec, template);
+    sanitizePodTemplateSpec(actualMap, template, templateWithSpec);
+    sanitizePodTemplateSpec(actualMap, templateWithSpec, template);
     verifyNoInteractions(actualMap);
   }
 
   @Test
-  void testSanitizeResourceRequirements_whenContainerSizeMismatch_doNothing() {
+  void testSanitizePodTemplateSpec_whenContainerSizeMismatch_doNothing() {
     final var template =
         new PodTemplateSpecBuilder()
             .withNewSpec()
@@ -73,13 +77,13 @@ class ResourceRequirementsSanitizerTest {
             .endSpec()
             .build();
 
-    sanitizeResourceRequirements(actualMap, template, templateWithTwoContainers);
-    sanitizeResourceRequirements(actualMap, templateWithTwoContainers, template);
+    sanitizePodTemplateSpec(actualMap, template, templateWithTwoContainers);
+    sanitizePodTemplateSpec(actualMap, templateWithTwoContainers, template);
     verifyNoInteractions(actualMap);
   }
 
   @Test
-  void testSanitizeResourceRequirements_whenContainerNameMismatch_doNothing() {
+  void testSanitizePodTemplateSpec_whenContainerNameMismatch_doNothing() {
     final var template =
         new PodTemplateSpecBuilder()
             .withNewSpec()
@@ -97,13 +101,13 @@ class ResourceRequirementsSanitizerTest {
             .endSpec()
             .build();
 
-    sanitizeResourceRequirements(actualMap, template, templateWithNewContainerName);
-    sanitizeResourceRequirements(actualMap, templateWithNewContainerName, template);
+    sanitizePodTemplateSpec(actualMap, template, templateWithNewContainerName);
+    sanitizePodTemplateSpec(actualMap, templateWithNewContainerName, template);
     verifyNoInteractions(actualMap);
   }
 
   @Test
-  void testSanitizeResourceRequirements_whenResourceIsNull_doNothing() {
+  void testSanitizePodTemplateSpec_whenResourceIsNull_doNothing() {
     final var template =
         new PodTemplateSpecBuilder()
             .withNewSpec()
@@ -123,8 +127,8 @@ class ResourceRequirementsSanitizerTest {
             .endSpec()
             .build();
 
-    sanitizeResourceRequirements(actualMap, template, templateWithResource);
-    sanitizeResourceRequirements(actualMap, templateWithResource, template);
+    sanitizePodTemplateSpec(actualMap, template, templateWithResource);
+    sanitizePodTemplateSpec(actualMap, templateWithResource, template);
     verifyNoInteractions(actualMap);
   }
 
@@ -155,7 +159,7 @@ class ResourceRequirementsSanitizerTest {
   }
 
   @Test
-  void testSanitizeResourceRequirements_whenResourcesHaveSameAmountAndFormat_doNothing() {
+  void testSanitizePodTemplateSpec_whenResourcesHaveSameAmountAndFormat_doNothing() {
     final var actualMap =
         sanitizeRequestsAndLimits(
             ContainerType.CONTAINER,
@@ -168,7 +172,7 @@ class ResourceRequirementsSanitizerTest {
   }
 
   @Test
-  void testSanitizeResourceRequirements_whenResourcesHaveNumericalAmountMismatch_doNothing() {
+  void testSanitizePodTemplateSpec_whenResourcesHaveNumericalAmountMismatch_doNothing() {
     final var actualMap =
         sanitizeRequestsAndLimits(
             ContainerType.INIT_CONTAINER,
@@ -200,17 +204,139 @@ class ResourceRequirementsSanitizerTest {
     assertContainerResources(actualMap, "limits").hasSize(1).containsEntry("cpu", "4000m");
   }
 
-  @SuppressWarnings("unchecked")
+  @Test
+  void testSanitizePodTemplateSpec_whenEnvVarsIsEmpty_doNothing() {
+    final var template =
+        new PodTemplateSpecBuilder()
+            .withNewSpec()
+            .addNewContainer()
+            .withName("test")
+            .endContainer()
+            .endSpec()
+            .build();
+    final var templateWithEnvVars =
+        new PodTemplateSpecBuilder()
+            .withNewSpec()
+            .addNewContainer()
+            .withName("test")
+            .withEnv(List.of(new EnvVarBuilder().withName("FOO").withValue("foobar").build()))
+            .endContainer()
+            .endSpec()
+            .build();
+
+    sanitizePodTemplateSpec(actualMap, template, templateWithEnvVars);
+    sanitizePodTemplateSpec(actualMap, templateWithEnvVars, template);
+    verifyNoInteractions(actualMap);
+  }
+
+  @Test
+  void testSanitizePodTemplateSpec_whenActualEnvVarValueIsNotEmpty_doNothing() {
+    final var actualMap =
+        sanitizeEnvVars(
+            ContainerType.CONTAINER,
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue("foo").build(),
+                new EnvVarBuilder().withName("BAR").withValue("bar").build()),
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue("bar").build(),
+                new EnvVarBuilder().withName("BAR").withValue("foo").build()));
+    assertContainerEnvVars(actualMap)
+        .hasSize(2)
+        .containsExactly(
+            Map.of("name", "FOO", "value", "foo"), Map.of("name", "BAR", "value", "bar"));
+  }
+
+  @Test
+  void testSanitizePodTemplateSpec_whenActualAndDesiredEnvVarsAreDifferent_doNothing() {
+    final var actualMap =
+        sanitizeEnvVars(
+            ContainerType.INIT_CONTAINER,
+            List.of(new EnvVarBuilder().withName("FOO").withValue("foo").build()),
+            List.of(new EnvVarBuilder().withName("BAR").withValue("bar").build()));
+    assertInitContainerEnvVars(actualMap)
+        .hasSize(1)
+        .containsExactly(Map.of("name", "FOO", "value", "foo"));
+  }
+
+  @Test
+  void testSanitizePodTemplateSpec_whenActualEnvVarIsEmpty_doNothing() {
+    final var actualMap =
+        sanitizeEnvVars(
+            ContainerType.INIT_CONTAINER,
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue("").build(),
+                new EnvVarBuilder().withName("BAR").withValue("").build()),
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue("foo").build(),
+                new EnvVarBuilder().withName("BAR").withValue("").build()));
+    assertInitContainerEnvVars(actualMap)
+        .hasSize(2)
+        .containsExactly(Map.of("name", "FOO", "value", ""), Map.of("name", "BAR", "value", ""));
+  }
+
+  @Test
+  void testSanitizePodTemplateSpec_whenActualEnvVarIsNull_doNothing() {
+    final var actualMap =
+        sanitizeEnvVars(
+            ContainerType.CONTAINER,
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue(null).build(),
+                new EnvVarBuilder().withName("BAR").withValue(null).build()),
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue("foo").build(),
+                new EnvVarBuilder().withName("BAR").withValue(" ").build()));
+    assertContainerEnvVars(actualMap)
+        .hasSize(2)
+        .containsExactly(Map.of("name", "FOO"), Map.of("name", "BAR"));
+  }
+
+  @Test
+  void
+      testSanitizePodTemplateSpec_whenActualEnvVarIsNull_withDesiredEnvVarEmpty_thenSanitizeActualMap() {
+    final var actualMap =
+        sanitizeEnvVars(
+            ContainerType.CONTAINER,
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue(null).build(),
+                new EnvVarBuilder().withName("BAR").withValue(null).build()),
+            List.of(
+                new EnvVarBuilder().withName("FOO").withValue("").build(),
+                new EnvVarBuilder().withName("BAR").withValue("").build()));
+    assertContainerEnvVars(actualMap)
+        .hasSize(2)
+        .containsExactly(Map.of("name", "FOO", "value", ""), Map.of("name", "BAR", "value", ""));
+  }
+
   private Map<String, Object> sanitizeRequestsAndLimits(
       final ContainerType type,
       final Map<String, Quantity> actualRequests,
       final Map<String, Quantity> desiredRequests,
       final Map<String, Quantity> actualLimits,
       final Map<String, Quantity> desiredLimits) {
-    final var actual = createStatefulSet(type, actualRequests, actualLimits);
-    final var desired = createStatefulSet(type, desiredRequests, desiredLimits);
+    return sanitize(
+        type, actualRequests, desiredRequests, actualLimits, desiredLimits, List.of(), List.of());
+  }
+
+  private Map<String, Object> sanitizeEnvVars(
+      final ContainerType type,
+      final List<EnvVar> actualEnvVars,
+      final List<EnvVar> desiredEnvVars) {
+    return sanitize(type, Map.of(), Map.of(), Map.of(), Map.of(), actualEnvVars, desiredEnvVars);
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> sanitize(
+      final ContainerType type,
+      final Map<String, Quantity> actualRequests,
+      final Map<String, Quantity> desiredRequests,
+      final Map<String, Quantity> actualLimits,
+      final Map<String, Quantity> desiredLimits,
+      final List<EnvVar> actualEnvVars,
+      final List<EnvVar> desiredEnvVars) {
+    final var actual = createStatefulSet(type, actualRequests, actualLimits, actualEnvVars);
+    final var desired = createStatefulSet(type, desiredRequests, desiredLimits, desiredEnvVars);
     final var actualMap = serialization.convertValue(actual, Map.class);
-    sanitizeResourceRequirements(
+    sanitizePodTemplateSpec(
         actualMap, actual.getSpec().getTemplate(), desired.getSpec().getTemplate());
     return actualMap;
   }
@@ -223,7 +349,8 @@ class ResourceRequirementsSanitizerTest {
   private static StatefulSet createStatefulSet(
       final ContainerType type,
       final Map<String, Quantity> requests,
-      final Map<String, Quantity> limits) {
+      final Map<String, Quantity> limits,
+      final List<EnvVar> envVars) {
     var builder = new StatefulSetBuilder().withNewSpec().withNewTemplate().withNewSpec();
     if (type == ContainerType.CONTAINER) {
       builder =
@@ -234,6 +361,7 @@ class ResourceRequirementsSanitizerTest {
               .withRequests(requests)
               .withLimits(limits)
               .endResources()
+              .withEnv(envVars)
               .endContainer();
     } else {
       builder =
@@ -244,6 +372,7 @@ class ResourceRequirementsSanitizerTest {
               .withRequests(requests)
               .withLimits(limits)
               .endResources()
+              .withEnv(envVars)
               .endInitContainer();
     }
     return builder.endSpec().endTemplate().endSpec().build();
@@ -261,5 +390,19 @@ class ResourceRequirementsSanitizerTest {
     return assertThat(
         GenericKubernetesResource.<Map<String, Object>>get(
             actualMap, "spec", "template", "spec", "initContainers", 0, "resources", resourceName));
+  }
+
+  private static ListAssert<Map<String, Object>> assertContainerEnvVars(
+      final Map<String, Object> actualMap) {
+    return assertThat(
+        GenericKubernetesResource.<List<Map<String, Object>>>get(
+            actualMap, "spec", "template", "spec", "containers", 0, "env"));
+  }
+
+  private static ListAssert<Map<String, Object>> assertInitContainerEnvVars(
+      final Map<String, Object> actualMap) {
+    return assertThat(
+        GenericKubernetesResource.<List<Map<String, Object>>>get(
+            actualMap, "spec", "template", "spec", "initContainers", 0, "env"));
   }
 }
