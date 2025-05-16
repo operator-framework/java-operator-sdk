@@ -191,7 +191,7 @@ optimistic locking. If the update method fails on optimistic locking, it will re
 using a fresh resource from the server as base for modification. 
 
 ```java
- @Override
+@Override
 public UpdateControl<StatusPatchCacheCustomResource> reconcile(
         StatusPatchCacheCustomResource resource, Context<StatusPatchCacheCustomResource> context) {
     
