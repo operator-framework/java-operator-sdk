@@ -113,14 +113,33 @@ for this feature.
 
 ## DependentResource-level configuration
 
-`DependentResource` implementations can implement the `DependentResourceConfigurator` interface 
-to pass information to the implementation. For example, the SDK 
-provides specific support for the `KubernetesDependentResource`, which can be configured via the 
-`@KubernetesDependent` annotation. This annotation is, in turn, converted into a 
-`KubernetesDependentResourceConfig` instance, which is then passed to the `configureWith` method 
-implementation.
+It is possible to define custom annotations to configure custom `DependentResource` implementations. For example, the
+SDK provides the `@KubernetesDependent` annotation which allows configuring `KubernetesDependentResource` instance.
 
-TODO
+In order to provide such a configuration mechanism for your own `DependentResource` implementations, they must be
+annotated with the `@Configured` annotation. This annotation defines 3 fields that tie everything together:
+
+- `by`, which specifies which annotation class will be used to configure your dependents,
+- `with`, which specifies the class holding the configuration object for your dependents and
+- `converter`, which specifies the `ConfigurationConverter` implementation in charge of converting the annotation
+  specified by the `by` field into objects of the class specified by the `with` field.
+
+`ConfigurationConverter` instances implement a single `configFrom` method, which will receive, as expected, the
+annotation instance annotating the dependent resource instance to be configured, but it can also extract information
+from the `DependentResourceSpec` instance associated with the `DependentResource` class so that metadata from it can be
+used in the configuration, as well as the parent `ControllerConfiguration`, if needed. The role of
+`ConfigurationConverter` implementations is to extract the annotation information, augment it with metadata from the
+`DependentResourceSpec` and the configuration from the parent controller on which the dependent is defined, to finally
+create the configuration object that the `DependentResource` instances will use.
+
+However, one last element is required to finish the configuration process: the target `DependentResource` class must
+implement the `ConfiguredDependentResource` interface, parameterized with the annotation class defined by the
+`@Configured` annotation `by` field. This interface is called by the framework to inject the configuration at the
+appropriate time and retrieve the configuration, if it's available.
+
+For more information on how to use this feature, we recommend looking at how this mechanism is implemented for
+`KubernetesDependentResource` in the core framework, `SchemaDependentResource` in the samples or `CustomAnnotationDep`
+in the `BaseConfigurationServiceTest` test class.
 
 ## EventSource-level configuration
 
