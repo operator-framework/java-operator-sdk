@@ -3,12 +3,14 @@ package io.javaoperatorsdk.operator.api.config;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class ConfigurationServiceOverriderTest {
@@ -26,30 +28,32 @@ class ConfigurationServiceOverriderTest {
         }
       };
 
+  final BaseConfigurationService config =
+      new BaseConfigurationService(null) {
+        @Override
+        public boolean checkCRDAndValidateLocalModel() {
+          return false;
+        }
+
+        @Override
+        public Metrics getMetrics() {
+          return METRICS;
+        }
+
+        @Override
+        public Cloner getResourceCloner() {
+          return CLONER;
+        }
+
+        @Override
+        public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
+          return Optional.of(LEADER_ELECTION_CONFIGURATION);
+        }
+      };
+
   @Test
   void overrideShouldWork() {
-    final var config =
-        new BaseConfigurationService(null) {
-          @Override
-          public boolean checkCRDAndValidateLocalModel() {
-            return false;
-          }
 
-          @Override
-          public Metrics getMetrics() {
-            return METRICS;
-          }
-
-          @Override
-          public Cloner getResourceCloner() {
-            return CLONER;
-          }
-
-          @Override
-          public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
-            return Optional.of(LEADER_ELECTION_CONFIGURATION);
-          }
-        };
     final var overridden =
         new ConfigurationServiceOverrider(config)
             .checkingCRDAndValidateLocalModel(true)
@@ -85,5 +89,18 @@ class ConfigurationServiceOverriderTest {
         config.getInformerStoppedHandler(), overridden.getLeaderElectionConfiguration());
     assertNotEquals(
         config.reconciliationTerminationTimeout(), overridden.reconciliationTerminationTimeout());
+  }
+
+  @Test
+  void threadCountConfiguredProperly() {
+    final var overridden =
+        new ConfigurationServiceOverrider(config)
+            .withConcurrentReconciliationThreads(13)
+            .withConcurrentWorkflowExecutorThreads(14)
+            .build();
+    assertThat(((ThreadPoolExecutor) overridden.getExecutorService()).getMaximumPoolSize())
+        .isEqualTo(13);
+    assertThat(((ThreadPoolExecutor) overridden.getWorkflowExecutorService()).getMaximumPoolSize())
+        .isEqualTo(14);
   }
 }

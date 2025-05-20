@@ -254,13 +254,20 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public ExecutorService getExecutorService() {
-        return overriddenValueOrDefault(executorService, ConfigurationService::getExecutorService);
+        if (executorService != null) {
+          return executorService;
+        } else {
+          return super.getExecutorService();
+        }
       }
 
       @Override
       public ExecutorService getWorkflowExecutorService() {
-        return overriddenValueOrDefault(
-            workflowExecutorService, ConfigurationService::getWorkflowExecutorService);
+        if (workflowExecutorService != null) {
+          return workflowExecutorService;
+        } else {
+          return super.getWorkflowExecutorService();
+        }
       }
 
       @Override
