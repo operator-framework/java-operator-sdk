@@ -61,7 +61,7 @@
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
 
     <junit.version>5.12.2</junit.version>
-    <fabric8-client.version>7.3.0</fabric8-client.version>
+    <fabric8-client.version>7.3.1</fabric8-client.version>
     <slf4j.version>2.0.12</slf4j.version>
     <log4j.version>2.24.3</log4j.version>
     <mokito.version>5.17.0</mokito.version>
