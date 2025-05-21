@@ -79,6 +79,7 @@ class InformerWrapper<T extends HasMetadata>
       if (!configurationService.stopOnInformerErrorDuringStartup()) {
         informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
       }
+
       // change thread name for easier debugging
       final var thread = Thread.currentThread();
       final var name = thread.getName();
