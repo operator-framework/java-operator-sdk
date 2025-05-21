@@ -9,6 +9,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("spwl")
-public class StatusPatchCacheWithLockCustomResource
-    extends CustomResource<StatusPatchCacheWithLockSpec, StatusPatchCacheWithLockStatus>
-    implements Namespaced {}
+public class StatusPatchCacheCustomResource
+    extends CustomResource<StatusPatchCacheSpec, StatusPatchCacheStatus> implements Namespaced {}

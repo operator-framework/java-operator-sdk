@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
@@ -25,6 +27,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public class PrimaryUpdateAndCacheUtils {
 
   public static final int DEFAULT_MAX_RETRY = 10;
+  public static final int RESOURCE_CACHE_POLL_TIMEOUT = 10000;
+  public static final int DEFAULT_SLEEP_FOR_CACHE_POLL_MILLIS = 30;
 
   private PrimaryUpdateAndCacheUtils() {}
 
@@ -90,8 +94,8 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Same as {@link #updateAndCacheResource(HasMetadata, Context, UnaryOperator, UnaryOperator,
-   * int)} using the default maximum retry number as defined by {@link #DEFAULT_MAX_RETRY}.
+   * Same as {@link #updateAndCacheResource(HasMetadata, Context, UnaryOperator, UnaryOperator, int,
+   * long,long)} using the default maximum retry number as defined by {@link #DEFAULT_MAX_RETRY}.
    *
    * @param resourceToUpdate original resource to update
    * @param context of reconciliation
@@ -106,7 +110,13 @@ public class PrimaryUpdateAndCacheUtils {
       UnaryOperator<P> modificationFunction,
       UnaryOperator<P> updateMethod) {
     return updateAndCacheResource(
-        resourceToUpdate, context, modificationFunction, updateMethod, DEFAULT_MAX_RETRY);
+        resourceToUpdate,
+        context,
+        modificationFunction,
+        updateMethod,
+        DEFAULT_MAX_RETRY,
+        RESOURCE_CACHE_POLL_TIMEOUT,
+        DEFAULT_SLEEP_FOR_CACHE_POLL_MILLIS);
   }
 
   /**
@@ -133,7 +143,9 @@ public class PrimaryUpdateAndCacheUtils {
       Context<P> context,
       UnaryOperator<P> modificationFunction,
       UnaryOperator<P> updateMethod,
-      int maxRetry) {
+      int maxRetry,
+      long cachePollTimeoutMillis,
+      long pollDelayMillis) {
 
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resourceToUpdate));
@@ -180,14 +192,35 @@ public class PrimaryUpdateAndCacheUtils {
             resourceToUpdate.getMetadata().getNamespace(),
             e.getCode());
         resourceToUpdate =
-            (P)
-                context
-                    .getClient()
-                    .resources(resourceToUpdate.getClass())
-                    .inNamespace(resourceToUpdate.getMetadata().getNamespace())
-                    .withName(resourceToUpdate.getMetadata().getName())
-                    .get();
+            pollLocalCache(context, resourceToUpdate, cachePollTimeoutMillis, pollDelayMillis);
       }
+    }
+  }
+
+  private static <P extends HasMetadata> P pollLocalCache(
+      Context<P> context, P staleResource, long timeoutMillis, long pollDelayMillis) {
+    try {
+      var resourceId = ResourceID.fromResource(staleResource);
+      var startTime = LocalTime.now();
+      while (startTime.plus(timeoutMillis, ChronoUnit.MILLIS).isAfter(LocalTime.now())) {
+        log.debug("Polling cache for resource: {}", resourceId);
+        var cachedResource = context.getPrimaryCache().get(resourceId).orElseThrow();
+        if (!cachedResource
+            .getMetadata()
+            .getResourceVersion()
+            .equals(staleResource.getMetadata().getResourceVersion())) {
+          return context
+              .getControllerConfiguration()
+              .getConfigurationService()
+              .getResourceCloner()
+              .clone(cachedResource);
+        }
+        Thread.sleep(pollDelayMillis);
+      }
+      throw new OperatorException("Timeout of resource polling from cache for resource");
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new OperatorException(e);
     }
   }
 }
