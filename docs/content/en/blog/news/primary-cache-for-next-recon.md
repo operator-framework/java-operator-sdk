@@ -58,5 +58,10 @@ if we compare resource versions with this resource and previously cached resourc
 that would be different, and in general there is no elegant way to determine in general if this new version that 
 informer receives an event for is from an update that happened before or after our update. 
 (Note that informers watch can lose connection and other edge cases)
-If we do an update with optimistic locking it simplifies the situation, we can easily have strong guarantees. 
+
+If we do an update with optimistic locking it simplifies the situation, we can easily have strong guarantees.
+Since we know if the update with optimistic locking is successful, we had the fresh resource in our cache. 
+Thus, the next event we receive will be the one that is results of our update or a newer one. 
+So if we cache the resource in the overlay cache we know that with the next event, we can remove it from there.
+
 
