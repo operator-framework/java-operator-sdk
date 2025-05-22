@@ -60,7 +60,7 @@ informer receives an event for is from an update that happened before or after o
 
 If we do an update with optimistic locking it simplifies the situation, we can easily have strong guarantees.
 Since we know if the update with optimistic locking is successful, we had the fresh resource in our cache. 
-Thus, the next event we receive will be the one that is results of our update or a newer one. 
+Thus, the next event we receive will be the one that is the result of our update or a newer one. 
 So if we cache the resource in the overlay cache we know that with the next event, we can remove it from there.
 If the update with optimistic locking fails, we can wait until the informer's cache is populated with next resource
 version and retry.
