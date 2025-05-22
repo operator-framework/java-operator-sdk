@@ -28,7 +28,7 @@ public class PrimaryUpdateAndCacheUtils {
 
   public static final int DEFAULT_MAX_RETRY = 10;
   public static final int RESOURCE_CACHE_POLL_TIMEOUT = 10000;
-  public static final int DEFAULT_SLEEP_FOR_CACHE_POLL_MILLIS = 30;
+  public static final int DEFAULT_SLEEP_FOR_CACHE_POLL_MILLIS = 50;
 
   private PrimaryUpdateAndCacheUtils() {}
 
