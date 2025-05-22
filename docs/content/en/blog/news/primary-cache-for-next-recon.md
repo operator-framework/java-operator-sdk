@@ -59,17 +59,19 @@ that would be different, and in general there is no elegant way to determine if 
 informer receives an event from an update that happened before or after our update. 
 (Note that informers watch can lose connection and other edge cases)
 
+
 ```mermaid
 flowchart TD
     A["Update Resource with Lock"] --> B{"Is Successful"}
-    B -- Fails on conflict --> D["Poll the Informer until resource changes"]
-    D --> n4["Apply desired changes on the resource"]
+    B -- Fails on conflict --> D["Poll the Informer cache until resource changes"]
+    D --> n4["Apply desired changes on the resource again"]
     B -- Yes --> n2["Still the original resource in informer cache"]
     n2 -- Yes --> C["Cache the resource in overlay cache"]
     n2 -- NO --> n3["We know there is already a fesh resource in Informer"]
     n4 --> A
 
 ```
+
 
 If we do our update with optimistic locking, it simplifies the situation, we can easily have strong guarantees.
 Since we know if the update with optimistic locking is successful, we have the fresh resource in our cache. 
