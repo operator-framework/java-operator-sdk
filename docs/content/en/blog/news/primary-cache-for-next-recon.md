@@ -9,9 +9,9 @@ We recently released v5.1 of Java Operator SDK. One of the highlights of this re
 [allocated values](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#representing-allocated-values
 ) in Kubernetes.
 
-To sum up the problem, for example, if we create a resource in our controller that has a generated ID - 
+To sum up the problem, let's say if we create a resource from our controller that has a generated ID - 
 in other words, we cannot address the resource only by using the values from the `.spec` -
-we have to store it, usually in the `.status` of the custom resource. However, operator frameworks cache resources
+we have to store this ID, usually in the `.status` of the custom resource. However, operator frameworks cache resources
 using informers, so the update that you made to the status of the custom resource will just eventually get into 
 the cache of the informer. If meanwhile some other event triggers the reconciliation, it can happen that we will 
 see the stale custom resource in the cache (in another word, the cache is eventually consistent) without the generated ID in the status. 
