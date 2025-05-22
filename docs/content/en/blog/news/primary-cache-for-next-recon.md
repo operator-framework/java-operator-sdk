@@ -1,5 +1,5 @@
 ---
-title: Custom resource change guarantees for next reconciliation 
+title: How to guarantee allocated values for reconciliation  
 date: 2025-05-22
 author: >-
  [Attila Mészáros](https://github.com/csviri)
