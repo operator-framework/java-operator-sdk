@@ -1,5 +1,5 @@
 ---
-title: How to guarantee allocated values for reconciliation  
+title: How to guarantee allocated values for next reconciliation  
 date: 2025-05-22
 author: >-
  [Attila Mészáros](https://github.com/csviri)
