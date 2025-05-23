@@ -59,7 +59,7 @@ The trick is to cache the resource from the response of our update in an additio
 cache. If we read the resource, we first check if it is in the overlay cache and read it from there if present,
 otherwise read it from the cache of the informer. If the informer receives an event with a fresh resource, we always
 remove the resource from the overlay
-cache, since that is a more recent resource. But this **works only** if the update is done **with optimistic locking**.
+cache, since that is a more recent resource. But this **works only** if our request update is using **with optimistic locking**.
 So if the update fails on conflict, we simply wait and poll the informer cache until there is a new resource version,
 and try to update again using the new resource (applied our changes again) with optimistic locking.
 
