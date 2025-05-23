@@ -204,7 +204,8 @@ public class PrimaryUpdateAndCacheUtils {
     try {
       var resourceId = ResourceID.fromResource(staleResource);
       var startTime = LocalTime.now();
-      while (startTime.plus(timeoutMillis, ChronoUnit.MILLIS).isAfter(LocalTime.now())) {
+      final var timeoutTime = startTime.plus(timeoutMillis, ChronoUnit.MILLIS);
+      while (timeoutTime.isAfter(LocalTime.now())) {
         log.debug("Polling cache for resource: {}", resourceId);
         var cachedResource = context.getPrimaryCache().get(resourceId).orElseThrow();
         if (!cachedResource
