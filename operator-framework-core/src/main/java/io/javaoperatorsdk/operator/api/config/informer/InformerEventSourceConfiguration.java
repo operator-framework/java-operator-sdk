@@ -194,6 +194,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withNamespaces(String... namespaces) {
+      config.withNamespaces(Set.of(namespaces));
+      return this;
+    }
+
     public Builder<R> withNamespacesInheritedFromController() {
       withNamespaces(SAME_AS_CONTROLLER_NAMESPACES_SET);
       return this;
