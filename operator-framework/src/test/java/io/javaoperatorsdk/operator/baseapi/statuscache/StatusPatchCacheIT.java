@@ -11,19 +11,19 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class StatusPatchCacheWithLockIT {
+public class StatusPatchCacheIT {
 
   public static final String TEST_1 = "test1";
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(StatusPatchCacheWithLockReconciler.class)
+          .withReconciler(StatusPatchCacheReconciler.class)
           .build();
 
   @Test
   void testStatusAlwaysUpToDate() {
-    var reconciler = extension.getReconcilerOfType(StatusPatchCacheWithLockReconciler.class);
+    var reconciler = extension.getReconcilerOfType(StatusPatchCacheReconciler.class);
 
     extension.create(testResource());
 
@@ -39,10 +39,10 @@ public class StatusPatchCacheWithLockIT {
             });
   }
 
-  StatusPatchCacheWithLockCustomResource testResource() {
-    var res = new StatusPatchCacheWithLockCustomResource();
+  StatusPatchCacheCustomResource testResource() {
+    var res = new StatusPatchCacheCustomResource();
     res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
-    res.setSpec(new StatusPatchCacheWithLockSpec());
+    res.setSpec(new StatusPatchCacheSpec());
     return res;
   }
 }

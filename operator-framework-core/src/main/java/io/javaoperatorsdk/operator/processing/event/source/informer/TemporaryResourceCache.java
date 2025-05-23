@@ -126,9 +126,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       knownResourceVersions.add(newResource.getMetadata().getResourceVersion());
     }
     var resourceId = ResourceID.fromResource(newResource);
-    var cachedResource =
-        getResourceFromCache(resourceId)
-            .orElse(managedInformerEventSource.get(resourceId).orElse(null));
+    var cachedResource = managedInformerEventSource.get(resourceId).orElse(null);
 
     boolean moveAhead = false;
     if (previousResourceVersion == null && cachedResource == null) {

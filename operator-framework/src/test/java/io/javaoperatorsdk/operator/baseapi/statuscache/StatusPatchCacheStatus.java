@@ -1,6 +1,6 @@
 package io.javaoperatorsdk.operator.baseapi.statuscache;
 
-public class StatusPatchCacheWithLockStatus {
+public class StatusPatchCacheStatus {
 
   private Integer value = 0;
 
@@ -8,7 +8,7 @@ public class StatusPatchCacheWithLockStatus {
     return value;
   }
 
-  public StatusPatchCacheWithLockStatus setValue(Integer value) {
+  public StatusPatchCacheStatus setValue(Integer value) {
     this.value = value;
     return this;
   }
