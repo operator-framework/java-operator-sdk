@@ -134,6 +134,8 @@ public class PrimaryUpdateAndCacheUtils {
    * @param modificationFunction modifications to make on primary
    * @param updateMethod the update method implementation
    * @param maxRetry maximum number of retries before giving up
+   * @param cachePollTimeoutMillis maximum amount of milliseconds to wait for the updated resource to appear in cache
+   * @param cachePollPeriodMillis cache polling period, in milliseconds
    * @param <P> primary type
    * @return the updated resource
    */
@@ -145,7 +147,7 @@ public class PrimaryUpdateAndCacheUtils {
       UnaryOperator<P> updateMethod,
       int maxRetry,
       long cachePollTimeoutMillis,
-      long pollDelayMillis) {
+      long cachePollPeriodMillis) {
 
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resourceToUpdate));
@@ -192,7 +194,7 @@ public class PrimaryUpdateAndCacheUtils {
             resourceToUpdate.getMetadata().getNamespace(),
             e.getCode());
         resourceToUpdate =
-            pollLocalCache(context, resourceToUpdate, cachePollTimeoutMillis, pollDelayMillis);
+            pollLocalCache(context, resourceToUpdate, cachePollTimeoutMillis, cachePollPeriodMillis);
       }
     }
   }
