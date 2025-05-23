@@ -27,8 +27,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public class PrimaryUpdateAndCacheUtils {
 
   public static final int DEFAULT_MAX_RETRY = 10;
-  public static final int RESOURCE_CACHE_POLL_TIMEOUT = 10000;
-  public static final int DEFAULT_SLEEP_FOR_CACHE_POLL_MILLIS = 50;
+  public static final int DEFAULT_RESOURCE_CACHE_TIMEOUT_MILLIS = 10000;
+  public static final int DEFAULT_RESOURCE_CACHE_POLL_PERIOD_MILLIS = 50;
 
   private PrimaryUpdateAndCacheUtils() {}
 
@@ -115,8 +115,8 @@ public class PrimaryUpdateAndCacheUtils {
         modificationFunction,
         updateMethod,
         DEFAULT_MAX_RETRY,
-        RESOURCE_CACHE_POLL_TIMEOUT,
-        DEFAULT_SLEEP_FOR_CACHE_POLL_MILLIS);
+        DEFAULT_RESOURCE_CACHE_TIMEOUT_MILLIS,
+        DEFAULT_RESOURCE_CACHE_POLL_PERIOD_MILLIS);
   }
 
   /**
@@ -134,12 +134,12 @@ public class PrimaryUpdateAndCacheUtils {
    * @param modificationFunction modifications to make on primary
    * @param updateMethod the update method implementation
    * @param maxRetry maximum number of retries before giving up
-   * @param cachePollTimeoutMillis maximum amount of milliseconds to wait for the updated resource to appear in cache
+   * @param cachePollTimeoutMillis maximum amount of milliseconds to wait for the updated resource
+   *     to appear in cache
    * @param cachePollPeriodMillis cache polling period, in milliseconds
    * @param <P> primary type
    * @return the updated resource
    */
-  @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P updateAndCacheResource(
       P resourceToUpdate,
       Context<P> context,
@@ -194,7 +194,8 @@ public class PrimaryUpdateAndCacheUtils {
             resourceToUpdate.getMetadata().getNamespace(),
             e.getCode());
         resourceToUpdate =
-            pollLocalCache(context, resourceToUpdate, cachePollTimeoutMillis, cachePollPeriodMillis);
+            pollLocalCache(
+                context, resourceToUpdate, cachePollTimeoutMillis, cachePollPeriodMillis);
       }
     }
   }
