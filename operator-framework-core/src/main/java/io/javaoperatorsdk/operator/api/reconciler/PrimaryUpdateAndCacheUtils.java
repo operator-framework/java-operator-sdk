@@ -95,7 +95,9 @@ public class PrimaryUpdateAndCacheUtils {
 
   /**
    * Same as {@link #updateAndCacheResource(HasMetadata, Context, UnaryOperator, UnaryOperator, int,
-   * long,long)} using the default maximum retry number as defined by {@link #DEFAULT_MAX_RETRY}.
+   * long,long)} using the default maximum retry number as defined by {@link #DEFAULT_MAX_RETRY} and
+   * default cache maximum polling time and period as defined, respectively by {@link
+   * #DEFAULT_RESOURCE_CACHE_TIMEOUT_MILLIS} and {@link #DEFAULT_RESOURCE_CACHE_POLL_PERIOD_MILLIS}.
    *
    * @param resourceToUpdate original resource to update
    * @param context of reconciliation
