@@ -43,7 +43,7 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
             .getStatus()
             .setValue(statusWithAllocatedValue());
 
-    // using the utility instead of update control
+    // using the utility instead of update control to patch the resource status
     var updated =
             PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(resource, freshCopy, context);
     return UpdateControl.noUpdate();
