@@ -201,6 +201,7 @@ public UpdateControl<StatusPatchCacheCustomResource> reconcile(
     var freshCopy = createFreshCopy(primary);
     freshCopy.getStatus().setValue(statusWithState());
     
+    // for this purpose using the utils instead of UpdateControl
     var updatedResource = PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(resource, freshCopy, context);
     
     return UpdateControl.noUpdate();
@@ -212,6 +213,10 @@ cache and the framework will make sure that the next reconciliation contains the
 Note that it is not necessarily the same version returned as response from the update, it can be a newer version since other parties
 can do additional updates meanwhile. However, unless it has been explicitly modified, that
 resource will contain the up-to-date status.
+
+Note that you can also do additional updates after the `PrimaryUpdateAndCacheUtils.*PatchStatusAndCacheResource` is called, 
+calling the utils again or UpdateControl. 
+It is still guaranteed that on next reconciliation not older than the resource update by `PrimaryUpdateAndCacheUtils` will be present. 
 
 
 See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache).
