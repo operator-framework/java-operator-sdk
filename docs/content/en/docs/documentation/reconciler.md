@@ -214,8 +214,8 @@ Note that it is not necessarily the same version returned as response from the u
 can do additional updates meanwhile. However, unless it has been explicitly modified, that
 resource will contain the up-to-date status.
 
-Note that you can also do additional updates after the `PrimaryUpdateAndCacheUtils.*PatchStatusAndCacheResource` is called, 
-calling the utils again or UpdateControl. 
+Note that you can also do additional updates after the `PrimaryUpdateAndCacheUtils.*PatchStatusAndCacheResource` is called. 
+Either call the utils again or an update via UpdateControl. 
 It is still guaranteed that on next reconciliation not older than the resource update by `PrimaryUpdateAndCacheUtils` will be present. 
 
 
