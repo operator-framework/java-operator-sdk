@@ -90,6 +90,22 @@ class ControllerConfigurationOverriderTest {
   }
 
   @Test
+  void overridingNamespacesShouldNotThrowNPE() {
+    var configuration = createConfiguration(new NullReconciler());
+    configuration =
+        ControllerConfigurationOverrider.override(configuration).settingNamespaces().build();
+    assertTrue(configuration.getInformerConfig().watchAllNamespaces());
+  }
+
+  private static class NullReconciler implements Reconciler<HasMetadata> {
+    @Override
+    public UpdateControl<HasMetadata> reconcile(HasMetadata resource, Context<HasMetadata> context)
+        throws Exception {
+      return null;
+    }
+  }
+
+  @Test
   void overridingNamespacesShouldWork() {
     var configuration = createConfiguration(new WatchCurrentReconciler());
     var informerConfig = configuration.getInformerConfig();
