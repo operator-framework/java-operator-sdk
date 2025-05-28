@@ -59,10 +59,10 @@ public class EventSourceManager<P extends HasMetadata>
    * Starts the event sources first and then the processor. Note that it's not desired to start
    * processing events while the event sources are not "synced". This not fully started and the
    * caches propagated - although for non k8s related event sources this behavior might be different
-   * (see
-   * {@link io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}).
-   * <p>
-   * Now the event sources are also started sequentially, mainly because others might depend on
+   * (see {@link
+   * io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource}).
+   *
+   * <p>Now the event sources are also started sequentially, mainly because others might depend on
    * {@link ControllerEventSource} , which is started first.
    */
   @Override
@@ -70,13 +70,15 @@ public class EventSourceManager<P extends HasMetadata>
     startEventSource(eventSources.controllerEventSource());
 
     executorServiceManager.boundedExecuteAndWaitForAllToComplete(
-        eventSources.additionalEventSources()
+        eventSources
+            .additionalEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.RESOURCE_STATE_LOADER)),
         this::startEventSource,
         getThreadNamer("start"));
 
     executorServiceManager.boundedExecuteAndWaitForAllToComplete(
-        eventSources.additionalEventSources()
+        eventSources
+            .additionalEventSources()
             .filter(es -> es.priority().equals(EventSourceStartPriority.DEFAULT)),
         this::startEventSource,
         getThreadNamer("start"));
@@ -95,16 +97,13 @@ public class EventSourceManager<P extends HasMetadata>
   public synchronized void stop() {
     stopEventSource(eventSources.controllerEventSource());
     executorServiceManager.boundedExecuteAndWaitForAllToComplete(
-        eventSources.additionalEventSources(),
-        this::stopEventSource,
-        getThreadNamer("stop"));
+        eventSources.additionalEventSources(), this::stopEventSource, getThreadNamer("stop"));
   }
 
   @SuppressWarnings("rawtypes")
   private void logEventSourceEvent(EventSource eventSource, String event) {
     if (log.isDebugEnabled()) {
-      log.debug("{} event source {} for {}", event, eventSource.name(),
-          eventSource.resourceType());
+      log.debug("{} event source {} for {}", event, eventSource.name(), eventSource.resourceType());
     }
   }
 
@@ -138,57 +137,65 @@ public class EventSourceManager<P extends HasMetadata>
     Objects.requireNonNull(eventSource, "EventSource must not be null");
     try {
       if (eventSource instanceof ManagedInformerEventSource managedInformerEventSource) {
-        managedInformerEventSource.setControllerConfiguration(
-            controller.getConfiguration());
+        managedInformerEventSource.setControllerConfiguration(controller.getConfiguration());
       }
       eventSources.add(eventSource);
       eventSource.setEventHandler(controller.getEventProcessor());
     } catch (IllegalStateException | MissingCRDException e) {
       throw e; // leave untouched
     } catch (Exception e) {
-      throw new OperatorException("Couldn't register event source: " + eventSource.name() + " for "
-          + controller.getConfiguration().getName() + " controller", e);
+      throw new OperatorException(
+          "Couldn't register event source: "
+              + eventSource.name()
+              + " for "
+              + controller.getConfiguration().getName()
+              + " controller",
+          e);
     }
   }
 
   @SuppressWarnings("unchecked")
   public void broadcastOnResourceEvent(ResourceAction action, P resource, P oldResource) {
-    eventSources.additionalEventSources()
-        .forEach(source -> {
-          if (source instanceof ResourceEventAware) {
-            var lifecycleAwareES = ((ResourceEventAware<P>) source);
-            switch (action) {
-              case ADDED:
-                lifecycleAwareES.onResourceCreated(resource);
-                break;
-              case UPDATED:
-                lifecycleAwareES.onResourceUpdated(resource, oldResource);
-                break;
-              case DELETED:
-                lifecycleAwareES.onResourceDeleted(resource);
-                break;
-            }
-          }
-        });
+    eventSources
+        .additionalEventSources()
+        .forEach(
+            source -> {
+              if (source instanceof ResourceEventAware) {
+                var lifecycleAwareES = ((ResourceEventAware<P>) source);
+                switch (action) {
+                  case ADDED:
+                    lifecycleAwareES.onResourceCreated(resource);
+                    break;
+                  case UPDATED:
+                    lifecycleAwareES.onResourceUpdated(resource, oldResource);
+                    break;
+                  case DELETED:
+                    lifecycleAwareES.onResourceDeleted(resource);
+                    break;
+                }
+              }
+            });
   }
 
   public void changeNamespaces(Set<String> namespaces) {
     eventSources.controllerEventSource().changeNamespaces(namespaces);
-    final var namespaceChangeables = eventSources
-        .additionalEventSources()
-        .filter(NamespaceChangeable.class::isInstance)
-        .map(NamespaceChangeable.class::cast)
-        .filter(NamespaceChangeable::allowsNamespaceChanges);
-    executorServiceManager.boundedExecuteAndWaitForAllToComplete(namespaceChangeables, e -> {
-      e.changeNamespaces(namespaces);
-      return null;
-    },
+    final var namespaceChangeables =
+        eventSources
+            .additionalEventSources()
+            .filter(NamespaceChangeable.class::isInstance)
+            .map(NamespaceChangeable.class::cast)
+            .filter(NamespaceChangeable::allowsNamespaceChanges);
+    executorServiceManager.boundedExecuteAndWaitForAllToComplete(
+        namespaceChangeables,
+        e -> {
+          e.changeNamespaces(namespaces);
+          return null;
+        },
         getEventSourceThreadNamer("changeNamespace"));
   }
 
   public Set<EventSource<?, P>> getRegisteredEventSources() {
-    return eventSources.flatMappedSources()
-        .collect(Collectors.toCollection(LinkedHashSet::new));
+    return eventSources.flatMappedSources().collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   @SuppressWarnings("rawtypes")
@@ -196,12 +203,12 @@ public class EventSourceManager<P extends HasMetadata>
     return eventSources.allEventSources().toList();
   }
 
-
   @SuppressWarnings("unused")
   public Stream<? extends EventSource<?, P>> getEventSourcesStream() {
     return eventSources.flatMappedSources();
   }
 
+  @Override
   public ControllerEventSource<P> getControllerEventSource() {
     return eventSources.controllerEventSource();
   }
@@ -243,8 +250,7 @@ public class EventSourceManager<P extends HasMetadata>
   }
 
   @Override
-  public <R> EventSource<R, P> getEventSourceFor(
-      Class<R> dependentType, String name) {
+  public <R> EventSource<R, P> getEventSourceFor(Class<R> dependentType, String name) {
     Objects.requireNonNull(dependentType, "dependentType is Mandatory");
     return eventSources.get(dependentType, name);
   }

@@ -8,15 +8,20 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-public abstract class AbstractExternalDependentResource<R, P extends HasMetadata, T extends EventSource<R, P>>
+public abstract class AbstractExternalDependentResource<
+        R, P extends HasMetadata, T extends EventSource<R, P>>
     extends AbstractEventSourceHolderDependentResource<R, P, T> {
 
   private final boolean isDependentResourceWithExplicitState =
       this instanceof DependentResourceWithExplicitState;
   private final boolean isBulkDependentResource = this instanceof BulkDependentResource;
+
   @SuppressWarnings("rawtypes")
   private DependentResourceWithExplicitState dependentResourceWithExplicitState;
+
   private InformerEventSource<?, P> externalStateEventSource;
+
+  protected AbstractExternalDependentResource() {}
 
   @SuppressWarnings("unchecked")
   protected AbstractExternalDependentResource(Class<R> resourceType) {
@@ -31,13 +36,13 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   public void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever) {
     super.resolveEventSource(eventSourceRetriever);
     if (isDependentResourceWithExplicitState) {
-      final var eventSourceName = (String) dependentResourceWithExplicitState
-          .eventSourceName().orElse(null);
-      externalStateEventSource = (InformerEventSource<?, P>) eventSourceRetriever
-          .getEventSourceFor(dependentResourceWithExplicitState.stateResourceClass(),
-              eventSourceName);
+      final var eventSourceName =
+          (String) dependentResourceWithExplicitState.eventSourceName().orElse(null);
+      externalStateEventSource =
+          (InformerEventSource<?, P>)
+              eventSourceRetriever.getEventSourceFor(
+                  dependentResourceWithExplicitState.stateResourceClass(), eventSourceName);
     }
-
   }
 
   @Override
@@ -83,18 +88,17 @@ public abstract class AbstractExternalDependentResource<R, P extends HasMetadata
   }
 
   @SuppressWarnings("unchecked")
-  public void deleteTargetResource(P primary, R resource, String key,
-      Context<P> context) {
+  public void deleteTargetResource(P primary, R resource, String key, Context<P> context) {
     if (isDependentResourceWithExplicitState) {
-      context.getClient()
+      context
+          .getClient()
           .resource(dependentResourceWithExplicitState.stateResource(primary, resource))
           .delete();
     }
     handleDeleteTargetResource(primary, resource, key, context);
   }
 
-  public void handleDeleteTargetResource(P primary, R resource, String key,
-      Context<P> context) {
+  public void handleDeleteTargetResource(P primary, R resource, String key, Context<P> context) {
     throw new IllegalStateException("Override this method in case you manage an bulk resource");
   }
 

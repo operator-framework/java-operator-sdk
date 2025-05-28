@@ -9,7 +9,8 @@ class StandaloneBulkDependentIT extends BulkDependentTestBase {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new StandaloneBulkDependentReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new StandaloneBulkDependentReconciler())
           .build();
 
   @Override

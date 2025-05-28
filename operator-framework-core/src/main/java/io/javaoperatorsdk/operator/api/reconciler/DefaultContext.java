@@ -22,7 +22,8 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final Controller<P> controller;
   private final P primaryResource;
   private final ControllerConfiguration<P> controllerConfiguration;
-  private final DefaultManagedWorkflowAndDependentResourceContext<P> defaultManagedDependentResourceContext;
+  private final DefaultManagedWorkflowAndDependentResourceContext<P>
+      defaultManagedDependentResourceContext;
 
   public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
     this.retryInfo = retryInfo;
@@ -41,17 +42,6 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
     return getSecondaryResourcesAsStream(expectedType).collect(Collectors.toSet());
-  }
-
-  @Override
-  public IndexedResourceCache<P> getPrimaryCache() {
-    return controller.getEventSourceManager().getControllerEventSource();
-  }
-
-  @Override
-  public boolean isNextReconciliationImminent() {
-    return controller.getEventProcessor()
-        .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
   }
 
   @Override
@@ -112,12 +102,25 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return controller.getExecutorServiceManager().workflowExecutorService();
   }
 
+  @Override
+  public P getPrimaryResource() {
+    return primaryResource;
+  }
+
+  @Override
+  public IndexedResourceCache<P> getPrimaryCache() {
+    return controller.getEventSourceManager().getControllerEventSource();
+  }
+
+  @Override
+  public boolean isNextReconciliationImminent() {
+    return controller
+        .getEventProcessor()
+        .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
+  }
+
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
     this.retryInfo = retryInfo;
     return this;
-  }
-
-  public P getPrimaryResource() {
-    return primaryResource;
   }
 }

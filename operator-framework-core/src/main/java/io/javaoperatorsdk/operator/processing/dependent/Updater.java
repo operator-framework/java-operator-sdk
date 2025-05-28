@@ -6,5 +6,4 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 public interface Updater<R, P extends HasMetadata> extends Matcher<R, P> {
 
   R update(R actual, R desired, P primary, Context<P> context);
-
 }

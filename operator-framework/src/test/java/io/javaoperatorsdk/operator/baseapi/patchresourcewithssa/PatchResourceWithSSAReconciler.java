@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 @ControllerConfiguration
 public class PatchResourceWithSSAReconciler
     implements Reconciler<PatchResourceWithSSACustomResource>,
-    Cleaner<PatchResourceWithSSACustomResource> {
+        Cleaner<PatchResourceWithSSACustomResource> {
 
   public static final String ADDED_VALUE = "Added Value";
 
@@ -16,10 +16,11 @@ public class PatchResourceWithSSAReconciler
       Context<PatchResourceWithSSACustomResource> context) {
 
     var res = new PatchResourceWithSSACustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(resource.getMetadata().getName())
-        .withNamespace(resource.getMetadata().getNamespace())
-        .build());
+    res.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(resource.getMetadata().getName())
+            .withNamespace(resource.getMetadata().getNamespace())
+            .build());
 
     // first update the spec with missing value, then status in next reconciliation
     if (resource.getSpec().getControllerManagedValue() == null) {
@@ -34,7 +35,8 @@ public class PatchResourceWithSSAReconciler
   }
 
   @Override
-  public DeleteControl cleanup(PatchResourceWithSSACustomResource resource,
+  public DeleteControl cleanup(
+      PatchResourceWithSSACustomResource resource,
       Context<PatchResourceWithSSACustomResource> context) {
     return DeleteControl.defaultDelete();
   }

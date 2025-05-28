@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.api.config;
 
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 

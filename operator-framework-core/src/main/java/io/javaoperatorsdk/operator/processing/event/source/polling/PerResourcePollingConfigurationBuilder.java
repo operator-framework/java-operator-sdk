@@ -49,7 +49,12 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
   }
 
   public PerResourcePollingConfiguration<R, P> build() {
-    return new PerResourcePollingConfiguration<>(name, executorService, cacheKeyMapper,
-        resourceFetcher, registerPredicate, defaultPollingPeriod);
+    return new PerResourcePollingConfiguration<>(
+        name,
+        executorService,
+        cacheKeyMapper,
+        resourceFetcher,
+        registerPredicate,
+        defaultPollingPeriod);
   }
 }

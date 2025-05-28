@@ -17,12 +17,10 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 
 // this annotation only activates when using managed dependents and is not otherwise needed
 @KubernetesDependent(informer = @Informer(labelSelector = SELECTOR))
-public class ServiceDependentResource extends
-    io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource<Service, WebPage> {
-
-  public ServiceDependentResource() {
-    super(Service.class);
-  }
+public class ServiceDependentResource
+    extends io.javaoperatorsdk.operator.processing.dependent.kubernetes
+            .CRUDKubernetesDependentResource<
+        Service, WebPage> {
 
   @Override
   protected Service desired(WebPage webPage, Context<WebPage> context) {

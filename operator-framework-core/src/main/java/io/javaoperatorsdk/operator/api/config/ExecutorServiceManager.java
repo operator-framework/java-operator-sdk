@@ -41,39 +41,50 @@ public class ExecutorServiceManager {
    * @param threadNamer for naming thread
    * @param <T> type
    */
-  public <T> void boundedExecuteAndWaitForAllToComplete(Stream<T> stream,
-      Function<T, Void> task, Function<T, String> threadNamer) {
+  public <T> void boundedExecuteAndWaitForAllToComplete(
+      Stream<T> stream, Function<T, Void> task, Function<T, String> threadNamer) {
     executeAndWaitForAllToComplete(stream, task, threadNamer, cachingExecutorService());
   }
 
-  public static <T> void executeAndWaitForAllToComplete(Stream<T> stream,
-      Function<T, Void> task, Function<T, String> threadNamer,
+  public static <T> void executeAndWaitForAllToComplete(
+      Stream<T> stream,
+      Function<T, Void> task,
+      Function<T, String> threadNamer,
       ExecutorService executorService) {
     final var instrumented = new InstrumentedExecutorService(executorService);
     try {
-      instrumented.invokeAll(stream.map(item -> (Callable<Void>) () -> {
-        // change thread name for easier debugging
-        final var thread = Thread.currentThread();
-        final var name = thread.getName();
-        thread.setName(threadNamer.apply(item));
-        try {
-          task.apply(item);
-          return null;
-        } finally {
-          // restore original name
-          thread.setName(name);
-        }
-      }).collect(Collectors.toList())).forEach(f -> {
-        try {
-          // to find out any exceptions
-          f.get();
-        } catch (ExecutionException e) {
-          throw new OperatorException(e);
-        } catch (InterruptedException e) {
-          log.warn("Interrupted.", e);
-          Thread.currentThread().interrupt();
-        }
-      });
+      instrumented
+          .invokeAll(
+              stream
+                  .map(
+                      item ->
+                          (Callable<Void>)
+                              () -> {
+                                // change thread name for easier debugging
+                                final var thread = Thread.currentThread();
+                                final var name = thread.getName();
+                                thread.setName(threadNamer.apply(item));
+                                try {
+                                  task.apply(item);
+                                  return null;
+                                } finally {
+                                  // restore original name
+                                  thread.setName(name);
+                                }
+                              })
+                  .collect(Collectors.toList()))
+          .forEach(
+              f -> {
+                try {
+                  // to find out any exceptions
+                  f.get();
+                } catch (ExecutionException e) {
+                  throw new OperatorException(e);
+                } catch (InterruptedException e) {
+                  log.warn("Interrupted.", e);
+                  Thread.currentThread().interrupt();
+                }
+              });
     } catch (InterruptedException e) {
       log.warn("Interrupted.", e);
       Thread.currentThread().interrupt();
@@ -113,9 +124,11 @@ public class ExecutorServiceManager {
     try {
       log.debug("Closing executor");
       var parallelExec = Executors.newFixedThreadPool(3);
-      parallelExec.invokeAll(List.of(shutdown(executor, gracefulShutdownTimeout),
-          shutdown(workflowExecutor, gracefulShutdownTimeout),
-          shutdown(cachingExecutorService, gracefulShutdownTimeout)));
+      parallelExec.invokeAll(
+          List.of(
+              shutdown(executor, gracefulShutdownTimeout),
+              shutdown(workflowExecutor, gracefulShutdownTimeout),
+              shutdown(cachingExecutorService, gracefulShutdownTimeout)));
       workflowExecutor = null;
       parallelExec.shutdownNow();
       started = false;
@@ -125,16 +138,16 @@ public class ExecutorServiceManager {
     }
   }
 
-  private static Callable<Void> shutdown(ExecutorService executorService,
-      Duration gracefulShutdownTimeout) {
+  private static Callable<Void> shutdown(
+      ExecutorService executorService, Duration gracefulShutdownTimeout) {
     return () -> {
       // workflow executor can be null
       if (executorService == null) {
         return null;
       }
       executorService.shutdown();
-      if (!executorService.awaitTermination(gracefulShutdownTimeout.toMillis(),
-          TimeUnit.MILLISECONDS)) {
+      if (!executorService.awaitTermination(
+          gracefulShutdownTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
         executorService.shutdownNow(); // if we timed out, waiting, cancel everything
       }
       return null;
@@ -203,8 +216,9 @@ public class ExecutorServiceManager {
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout,
-        TimeUnit unit) throws InterruptedException {
+    public <T> List<Future<T>> invokeAll(
+        Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+        throws InterruptedException {
       return executor.invokeAll(tasks, timeout, unit);
     }
 

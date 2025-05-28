@@ -27,8 +27,8 @@ public class LeaderElectionChangeNamespaceIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
-          .withConfigurationService(o -> o.withLeaderElectionConfiguration(
-              new LeaderElectionConfiguration(LEASE_NAME)))
+          .withConfigurationService(
+              o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration(LEASE_NAME)))
           .withReconciler(new LeaderElectionChangeNamespaceReconciler())
           .build();
 
@@ -50,46 +50,47 @@ public class LeaderElectionChangeNamespaceIT {
     extension.create(testResource());
 
     var reconciler = extension.getReconcilerOfType(LeaderElectionChangeNamespaceReconciler.class);
-    await().pollDelay(Duration.ofSeconds(1))
+    await()
+        .pollDelay(Duration.ofSeconds(1))
         .timeout(Duration.ofSeconds(3))
-        .untilAsserted(() -> {
-          assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
-        });
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
+            });
 
-    extension.getRegisteredControllerForReconcile(LeaderElectionChangeNamespaceReconciler.class)
+    extension
+        .getRegisteredControllerForReconcile(LeaderElectionChangeNamespaceReconciler.class)
         .changeNamespaces("default", extension.getNamespace());
 
-    await().pollDelay(Duration.ofSeconds(1))
+    await()
+        .pollDelay(Duration.ofSeconds(1))
         .timeout(Duration.ofSeconds(3))
-        .untilAsserted(() -> {
-          assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
-        });
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getNumberOfExecutions()).isEqualTo(0);
+            });
   }
-
 
   LeaderElectionChangeNamespaceCustomResource testResource() {
     var resource = new LeaderElectionChangeNamespaceCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName("test1")
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName("test1").build());
     return resource;
   }
 
   static Lease lease() {
     var lease = new Lease();
-    lease.setMetadata(new ObjectMetaBuilder()
-        .withName(LEASE_NAME)
-        .withNamespace("default")
-        .build());
+    lease.setMetadata(
+        new ObjectMetaBuilder().withName(LEASE_NAME).withNamespace("default").build());
     var time = ZonedDateTime.now();
-    lease.setSpec(new LeaseSpecBuilder()
-        .withAcquireTime(ZonedDateTime.now())
-        .withRenewTime(time)
-        .withAcquireTime(time)
-        .withHolderIdentity("non-operator-identity")
-        .withLeaseTransitions(0)
-        .withLeaseDurationSeconds(30)
-        .build());
+    lease.setSpec(
+        new LeaseSpecBuilder()
+            .withAcquireTime(ZonedDateTime.now())
+            .withRenewTime(time)
+            .withAcquireTime(time)
+            .withHolderIdentity("non-operator-identity")
+            .withLeaseTransitions(0)
+            .withLeaseDurationSeconds(30)
+            .build());
 
     return lease;
   }

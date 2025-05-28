@@ -11,8 +11,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("waf")
 public class WorkflowAllFeatureCustomResource
     extends CustomResource<WorkflowAllFeatureSpec, WorkflowAllFeatureStatus>
-    implements Namespaced {
-
-
-
-}
+    implements Namespaced {}

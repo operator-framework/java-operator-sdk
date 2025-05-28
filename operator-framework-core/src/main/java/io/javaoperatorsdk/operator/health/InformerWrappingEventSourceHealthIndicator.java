@@ -11,8 +11,10 @@ public interface InformerWrappingEventSourceHealthIndicator<R extends HasMetadat
 
   @Override
   default Status getStatus() {
-    var nonUp = informerHealthIndicators().values().stream()
-        .filter(i -> i.getStatus() != Status.HEALTHY).findAny();
+    var nonUp =
+        informerHealthIndicators().values().stream()
+            .filter(i -> i.getStatus() != Status.HEALTHY)
+            .findAny();
 
     return nonUp.isPresent() ? Status.UNHEALTHY : Status.HEALTHY;
   }

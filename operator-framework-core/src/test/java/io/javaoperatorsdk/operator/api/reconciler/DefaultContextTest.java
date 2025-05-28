@@ -9,19 +9,19 @@ import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class DefaultContextTest {
 
-  Secret primary = new Secret();
-  Controller<Secret> mockController = mock(Controller.class);
+  private final Secret primary = new Secret();
+  private final Controller<Secret> mockController = mock();
 
-  DefaultContext<?> context = new DefaultContext<>(null, mockController, primary);
+  private final DefaultContext<?> context = new DefaultContext<>(null, mockController, primary);
 
   @Test
+  @SuppressWarnings("unchecked")
   void getSecondaryResourceReturnsEmptyOptionalOnNonActivatedDRType() {
     var mockManager = mock(EventSourceManager.class);
     when(mockController.getEventSourceManager()).thenReturn(mockManager);
@@ -30,8 +30,14 @@ class DefaultContextTest {
         .thenThrow(new NoEventSourceForClassException(ConfigMap.class));
 
     var res = context.getSecondaryResource(ConfigMap.class);
-
     assertThat(res).isEmpty();
   }
 
+  @Test
+  void setRetryInfo() {
+    RetryInfo retryInfo = mock();
+    var newContext = context.setRetryInfo(retryInfo);
+    assertThat(newContext).isSameAs(context);
+    assertThat(newContext.getRetryInfo()).hasValue(retryInfo);
+  }
 }

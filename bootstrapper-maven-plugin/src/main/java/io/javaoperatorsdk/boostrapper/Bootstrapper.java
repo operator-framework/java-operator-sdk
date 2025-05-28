@@ -27,8 +27,7 @@ public class Bootstrapper {
   private static final Map<String, String> TOP_LEVEL_STATIC_FILES =
       Map.of("_.gitignore", ".gitignore", "README.md", "README.md");
   private static final List<String> JAVA_FILES =
-      List.of("CustomResource.java", "Reconciler.java",
-          "Spec.java", "Status.java");
+      List.of("CustomResource.java", "Reconciler.java", "Spec.java", "Status.java");
 
   public void create(File targetDir, String groupId, String artifactId) {
     try {
@@ -61,19 +60,24 @@ public class Bootstrapper {
       var targetTestDir = new File(projectDir, "src/test/java/" + packages);
       FileUtils.forceMkdir(targetDir);
       var classFileNamePrefix = artifactClassId(artifactId);
-      JAVA_FILES.forEach(f -> addTemplatedFile(projectDir, f, groupId, artifactId, targetDir,
-          classFileNamePrefix + f));
+      JAVA_FILES.forEach(
+          f ->
+              addTemplatedFile(
+                  projectDir, f, groupId, artifactId, targetDir, classFileNamePrefix + f));
 
       addTemplatedFile(projectDir, "Runner.java", groupId, artifactId, targetDir, null);
-      addTemplatedFile(projectDir, "ConfigMapDependentResource.java", groupId, artifactId,
-          targetDir, null);
-      addTemplatedFile(projectDir, "ReconcilerIntegrationTest.java", groupId,
+      addTemplatedFile(
+          projectDir, "ConfigMapDependentResource.java", groupId, artifactId, targetDir, null);
+      addTemplatedFile(
+          projectDir,
+          "ReconcilerIntegrationTest.java",
+          groupId,
           artifactId,
-          targetTestDir, artifactClassId(artifactId) + "ReconcilerIntegrationTest.java");
+          targetTestDir,
+          artifactClassId(artifactId) + "ReconcilerIntegrationTest.java");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-
   }
 
   private void addTemplatedFiles(File projectDir, String groupId, String artifactId) {
@@ -81,22 +85,37 @@ public class Bootstrapper {
     addTemplatedFile(projectDir, "k8s/test-resource.yaml", groupId, artifactId);
   }
 
-  private void addTemplatedFile(File projectDir, String fileName, String groupId,
-      String artifactId) {
+  private void addTemplatedFile(
+      File projectDir, String fileName, String groupId, String artifactId) {
     addTemplatedFile(projectDir, fileName, groupId, artifactId, null, null);
   }
 
-  private void addTemplatedFile(File projectDir, String fileName, String groupId, String artifactId,
-      File targetDir, String targetFileName) {
+  private void addTemplatedFile(
+      File projectDir,
+      String fileName,
+      String groupId,
+      String artifactId,
+      File targetDir,
+      String targetFileName) {
     try {
-      var values = Map.of("groupId", groupId, "artifactId", artifactId,
-          "artifactClassId", artifactClassId(artifactId),
-          "josdkVersion", Versions.JOSDK,
-          "fabric8Version", Versions.KUBERNETES_CLIENT);
+      var values =
+          Map.of(
+              "groupId",
+              groupId,
+              "artifactId",
+              artifactId,
+              "artifactClassId",
+              artifactClassId(artifactId),
+              "josdkVersion",
+              Versions.JOSDK,
+              "fabric8Version",
+              Versions.KUBERNETES_CLIENT);
 
       var mustache = mustacheFactory.compile("templates/" + fileName);
-      var targetFile = new File(targetDir == null ? projectDir : targetDir,
-          targetFileName == null ? fileName : targetFileName);
+      var targetFile =
+          new File(
+              targetDir == null ? projectDir : targetDir,
+              targetFileName == null ? fileName : targetFileName);
       FileUtils.forceMkdir(targetFile.getParentFile());
       var writer = new FileWriter(targetFile);
       mustache.execute(writer, values);
@@ -114,8 +133,8 @@ public class Bootstrapper {
     addStaticFile(targetDir, fileName, targetFileName, null);
   }
 
-  private void addStaticFile(File targetDir, String fileName, String targetFilename,
-      String subDir) {
+  private void addStaticFile(
+      File targetDir, String fileName, String targetFilename, String subDir) {
     String sourcePath = subDir == null ? "/static/" : "/static/" + subDir;
     String path = sourcePath + fileName;
     try (var is = Bootstrapper.class.getResourceAsStream(path)) {
@@ -127,14 +146,12 @@ public class Bootstrapper {
     } catch (IOException e) {
       throw new RuntimeException("File path: " + path, e);
     }
-
   }
 
   public static String artifactClassId(String artifactId) {
     var parts = artifactId.split("-");
-    return Arrays.stream(parts).map(p -> p.substring(0, 1)
-        .toUpperCase() + p.substring(1))
+    return Arrays.stream(parts)
+        .map(p -> p.substring(0, 1).toUpperCase() + p.substring(1))
         .collect(Collectors.joining(""));
   }
-
 }

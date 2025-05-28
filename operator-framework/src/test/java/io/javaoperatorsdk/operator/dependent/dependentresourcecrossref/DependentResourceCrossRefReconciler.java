@@ -14,11 +14,15 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 
 import static io.javaoperatorsdk.operator.dependent.dependentresourcecrossref.DependentResourceCrossRefReconciler.SECRET_NAME;
 
-@Workflow(dependents = {
-    @Dependent(name = SECRET_NAME,
-        type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
-    @Dependent(type = DependentResourceCrossRefReconciler.ConfigMapDependentResource.class,
-        dependsOn = SECRET_NAME)})
+@Workflow(
+    dependents = {
+      @Dependent(
+          name = SECRET_NAME,
+          type = DependentResourceCrossRefReconciler.SecretDependentResource.class),
+      @Dependent(
+          type = DependentResourceCrossRefReconciler.ConfigMapDependentResource.class,
+          dependsOn = SECRET_NAME)
+    })
 @ControllerConfiguration
 public class DependentResourceCrossRefReconciler
     implements Reconciler<DependentResourceCrossRefResource> {
@@ -42,7 +46,8 @@ public class DependentResourceCrossRefReconciler
   @Override
   public ErrorStatusUpdateControl<DependentResourceCrossRefResource> updateErrorStatus(
       DependentResourceCrossRefResource resource,
-      Context<DependentResourceCrossRefResource> context, Exception e) {
+      Context<DependentResourceCrossRefResource> context,
+      Exception e) {
     errorHappened = true;
     return ErrorStatusUpdateControl.noStatusUpdate();
   }
@@ -51,51 +56,44 @@ public class DependentResourceCrossRefReconciler
     return errorHappened;
   }
 
-  public static class SecretDependentResource extends
-      CRUDKubernetesDependentResource<Secret, DependentResourceCrossRefResource> {
-
-    public SecretDependentResource() {
-      super(Secret.class);
-    }
+  public static class SecretDependentResource
+      extends CRUDKubernetesDependentResource<Secret, DependentResourceCrossRefResource> {
 
     @Override
-    protected Secret desired(DependentResourceCrossRefResource primary,
+    protected Secret desired(
+        DependentResourceCrossRefResource primary,
         Context<DependentResourceCrossRefResource> context) {
       Secret secret = new Secret();
-      secret.setMetadata(new ObjectMetaBuilder()
-          .withName(primary.getMetadata().getName())
-          .withNamespace(primary.getMetadata().getNamespace())
-          .build());
+      secret.setMetadata(
+          new ObjectMetaBuilder()
+              .withName(primary.getMetadata().getName())
+              .withNamespace(primary.getMetadata().getNamespace())
+              .build());
       secret.setData(Map.of("key", Base64.getEncoder().encodeToString("secretData".getBytes())));
       return secret;
     }
   }
 
-  public static class ConfigMapDependentResource extends
-      CRUDKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
-
-    public ConfigMapDependentResource() {
-      super(ConfigMap.class);
-    }
+  public static class ConfigMapDependentResource
+      extends CRUDKubernetesDependentResource<ConfigMap, DependentResourceCrossRefResource> {
 
     @Override
-    protected ConfigMap desired(DependentResourceCrossRefResource primary,
+    protected ConfigMap desired(
+        DependentResourceCrossRefResource primary,
         Context<DependentResourceCrossRefResource> context) {
       var secret = context.getSecondaryResource(Secret.class);
       if (secret.isEmpty()) {
         throw new IllegalStateException("Secret is empty");
       }
       ConfigMap configMap = new ConfigMap();
-      configMap.setMetadata(new ObjectMetaBuilder()
-          .withName(primary.getMetadata().getName())
-          .withNamespace(primary.getMetadata().getNamespace())
-          .build());
-      configMap
-          .setData(Map.of("secretKey", new ArrayList<>(secret.get().getData().keySet()).get(0)));
+      configMap.setMetadata(
+          new ObjectMetaBuilder()
+              .withName(primary.getMetadata().getName())
+              .withNamespace(primary.getMetadata().getNamespace())
+              .build());
+      configMap.setData(
+          Map.of("secretKey", new ArrayList<>(secret.get().getData().keySet()).get(0)));
       return configMap;
     }
   }
-
-
-
 }

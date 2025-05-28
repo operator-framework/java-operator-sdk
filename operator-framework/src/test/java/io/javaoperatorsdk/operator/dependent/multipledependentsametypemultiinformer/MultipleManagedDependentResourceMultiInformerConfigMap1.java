@@ -12,17 +12,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 @KubernetesDependent
 public class MultipleManagedDependentResourceMultiInformerConfigMap1
-    extends
-    CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentResourceMultiInformerCustomResource> {
+    extends CRUDKubernetesDependentResource<
+        ConfigMap, MultipleManagedDependentResourceMultiInformerCustomResource> {
 
   public static final String NAME_SUFFIX = "-1";
 
-  public MultipleManagedDependentResourceMultiInformerConfigMap1() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(MultipleManagedDependentResourceMultiInformerCustomResource primary,
+  protected ConfigMap desired(
+      MultipleManagedDependentResourceMultiInformerCustomResource primary,
       Context<MultipleManagedDependentResourceMultiInformerCustomResource> context) {
     Map<String, String> data = new HashMap<>();
     data.put(MultipleManagedDependentResourceReconciler.DATA_KEY, primary.getSpec().getValue());

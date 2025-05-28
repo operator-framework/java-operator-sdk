@@ -27,11 +27,16 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
 
 @SuppressWarnings("rawtypes")
-public abstract class ManagedInformerEventSource<R extends HasMetadata, P extends HasMetadata, C extends Informable<R>>
+public abstract class ManagedInformerEventSource<
+        R extends HasMetadata, P extends HasMetadata, C extends Informable<R>>
     extends AbstractEventSource<R, P>
-    implements ResourceEventHandler<R>, Cache<R>, IndexerResourceCache<R>,
-    RecentOperationCacheFiller<R>, NamespaceChangeable,
-    InformerWrappingEventSourceHealthIndicator<R>, Configurable<C> {
+    implements ResourceEventHandler<R>,
+        Cache<R>,
+        IndexerResourceCache<R>,
+        RecentOperationCacheFiller<R>,
+        NamespaceChangeable,
+        InformerWrappingEventSourceHealthIndicator<R>,
+        Configurable<C> {
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
   private InformerManager<R, C> cache;
@@ -42,9 +47,8 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   protected TemporaryResourceCache<R> temporaryResourceCache;
   protected MixedOperation client;
 
-  protected ManagedInformerEventSource(String name,
-      MixedOperation client, C configuration,
-      boolean parseResourceVersions) {
+  protected ManagedInformerEventSource(
+      String name, MixedOperation client, C configuration, boolean parseResourceVersions) {
     super(configuration.getResourceClass(), name);
     this.parseResourceVersions = parseResourceVersions;
     this.client = client;
@@ -101,10 +105,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
   }
 
   @Override
-  public void handleRecentResourceUpdate(ResourceID resourceID, R resource,
-      R previousVersionOfResource) {
-    temporaryResourceCache.putResource(resource,
-        previousVersionOfResource.getMetadata().getResourceVersion());
+  public void handleRecentResourceUpdate(
+      ResourceID resourceID, R resource, R previousVersionOfResource) {
+    temporaryResourceCache.putResource(
+        resource, previousVersionOfResource.getMetadata().getResourceVersion());
   }
 
   @Override
@@ -119,8 +123,10 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
       log.debug("Resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
     } else {
-      log.debug("Resource not found in temporary cache reading it from informer cache," +
-          " for Resource ID: {}", resourceID);
+      log.debug(
+          "Resource not found in temporary cache reading it from informer cache,"
+              + " for Resource ID: {}",
+          resourceID);
       var res = cache.get(resourceID);
       log.debug("Resource found in cache: {} for id: {}", res.isPresent(), resourceID);
       return res;
@@ -181,13 +187,14 @@ public abstract class ManagedInformerEventSource<R extends HasMetadata, P extend
 
   @Override
   public String toString() {
-    return getClass().getSimpleName() + "{" +
-        "resourceClass: " + configuration().getResourceClass().getSimpleName() +
-        "}";
+    return getClass().getSimpleName()
+        + "{"
+        + "resourceClass: "
+        + configuration().getResourceClass().getSimpleName()
+        + "}";
   }
 
   public void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
     this.controllerConfiguration = controllerConfiguration;
   }
-
 }

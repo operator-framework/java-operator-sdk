@@ -23,12 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class TimerEventSourceTest
-    extends
-    AbstractEventSourceTestBase<TimerEventSource<TestCustomResource>, CapturingEventHandler> {
+    extends AbstractEventSourceTestBase<
+        TimerEventSource<TestCustomResource>, CapturingEventHandler> {
 
   public static final int INITIAL_DELAY = 50;
   public static final int PERIOD = 50;
-
 
   @BeforeEach
   public void setup() {
@@ -80,8 +79,8 @@ class TimerEventSourceTest
     var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
     source.stop();
-    assertThatExceptionOfType(IllegalStateException.class).isThrownBy(
-        () -> source.scheduleOnce(resourceID, PERIOD));
+    assertThatExceptionOfType(IllegalStateException.class)
+        .isThrownBy(() -> source.scheduleOnce(resourceID, PERIOD));
   }
 
   @Test

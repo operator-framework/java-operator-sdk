@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>sample-operators</artifactId>
-    <version>5.0.4-SNAPSHOT</version>
+    <version>5.1.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>sample-mysql-schema-operator</artifactId>
@@ -42,7 +42,7 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.30</version>
+      <version>8.0.33</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>

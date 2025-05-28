@@ -26,5 +26,4 @@ public class StatusUpdateLockingReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

@@ -8,5 +8,4 @@ public interface ResourceUpdaterMatcher<R extends HasMetadata> {
   R updateResource(R actual, R desired, Context<?> context);
 
   boolean matches(R actual, R desired, Context<?> context);
-
 }

@@ -10,15 +10,12 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
 public class SecretDependent
-    extends
-    CRUDNoGCKubernetesDependentResource<Secret, ManagedDependentDefaultDeleteConditionCustomResource> {
-
-  public SecretDependent() {
-    super(Secret.class);
-  }
+    extends CRUDNoGCKubernetesDependentResource<
+        Secret, ManagedDependentDefaultDeleteConditionCustomResource> {
 
   @Override
-  protected Secret desired(ManagedDependentDefaultDeleteConditionCustomResource primary,
+  protected Secret desired(
+      ManagedDependentDefaultDeleteConditionCustomResource primary,
       Context<ManagedDependentDefaultDeleteConditionCustomResource> context) {
 
     return new SecretBuilder()
@@ -26,8 +23,10 @@ public class SecretDependent
         .withName(primary.getMetadata().getName())
         .withNamespace(primary.getMetadata().getNamespace())
         .endMetadata()
-        .withData(Map.of("key",
-            new String(Base64.getEncoder().encode("val".getBytes(StandardCharsets.UTF_16)))))
+        .withData(
+            Map.of(
+                "key",
+                new String(Base64.getEncoder().encode("val".getBytes(StandardCharsets.UTF_16)))))
         .build();
   }
 }

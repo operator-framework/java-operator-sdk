@@ -8,19 +8,17 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class RouteDependentResource
     extends CRUDKubernetesDependentResource<Route, GetNonActiveSecondaryCustomResource> {
 
-  public RouteDependentResource() {
-    super(Route.class);
-  }
-
   @Override
-  protected Route desired(GetNonActiveSecondaryCustomResource primary,
+  protected Route desired(
+      GetNonActiveSecondaryCustomResource primary,
       Context<GetNonActiveSecondaryCustomResource> context) {
     // basically does not matter since this should not be called
     Route route = new Route();
-    route.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    route.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace())
+            .build());
 
     return route;
   }

@@ -9,26 +9,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
- * <p>
  * Temporal cache is used to solve the problem for {@link KubernetesDependentResource} that is, when
  * a create or update is executed the subsequent getResource operation might not return the
  * up-to-date resource from informer cache, since it is not received yet.
- * </p>
- * <p>
- * The idea of the solution is, that since an update (for create is simpler) was done successfully,
- * and optimistic locking is in place, there were no other operations between reading the resource
- * from the cache and the actual update. So when the new resource is stored in the temporal cache
- * only if the informer still has the previous resource version, from before the update. If not,
- * that means there were already updates on the cache (either by the actual update from
- * DependentResource or other) so the resource does not needs to be cached. Subsequently if event
- * received from the informer, it means that the cache of the informer was updated, so it already
- * contains a more fresh version of the resource.
- * </p>
+ *
+ * <p>The idea of the solution is, that since an update (for create is simpler) was done
+ * successfully, and optimistic locking is in place, there were no other operations between reading
+ * the resource from the cache and the actual update. So when the new resource is stored in the
+ * temporal cache only if the informer still has the previous resource version, from before the
+ * update. If not, that means there were already updates on the cache (either by the actual update
+ * from DependentResource or other) so the resource does not needs to be cached. Subsequently if
+ * event received from the informer, it means that the cache of the informer was updated, so it
+ * already contains a more fresh version of the resource.
  *
  * @param <T> resource to cache.
  */
@@ -40,12 +37,13 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
     public ExpirationCache(int maxEntries, int ttlMs) {
       this.ttlMs = ttlMs;
-      this.cache = new LinkedHashMap<>() {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<K, Long> eldest) {
-          return size() > maxEntries;
-        }
-      };
+      this.cache =
+          new LinkedHashMap<>() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<K, Long> eldest) {
+              return size() > maxEntries;
+            }
+          };
     }
 
     public void add(K key) {
@@ -84,7 +82,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final boolean parseResourceVersions;
   private final ExpirationCache<String> knownResourceVersions;
 
-  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
+  public TemporaryResourceCache(
+      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
       boolean parseResourceVersions) {
     this.managedInformerEventSource = managedInformerEventSource;
     this.parseResourceVersions = parseResourceVersions;
@@ -106,9 +105,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   synchronized void onEvent(T resource, boolean unknownState) {
-    cache.computeIfPresent(ResourceID.fromResource(resource),
-        (id, cached) -> (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null
-            : cached);
+    cache.computeIfPresent(
+        ResourceID.fromResource(resource),
+        (id, cached) ->
+            (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null : cached);
   }
 
   public synchronized void putAddedResource(T newResource) {
@@ -126,15 +126,15 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       knownResourceVersions.add(newResource.getMetadata().getResourceVersion());
     }
     var resourceId = ResourceID.fromResource(newResource);
-    var cachedResource = getResourceFromCache(resourceId)
-        .orElse(managedInformerEventSource.get(resourceId).orElse(null));
+    var cachedResource = managedInformerEventSource.get(resourceId).orElse(null);
 
     boolean moveAhead = false;
     if (previousResourceVersion == null && cachedResource == null) {
       if (tombstones.contains(newResource.getMetadata().getUid())) {
         log.debug(
             "Won't resurrect uid {} for resource id: {}",
-            newResource.getMetadata().getUid(), resourceId);
+            newResource.getMetadata().getUid(),
+            resourceId);
         return;
       }
       // we can skip further checks as this is a simple add and there's no previous entry to
@@ -144,11 +144,15 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
     if (moveAhead
         || (cachedResource != null
-            && (cachedResource.getMetadata().getResourceVersion().equals(previousResourceVersion))
+                && (cachedResource
+                    .getMetadata()
+                    .getResourceVersion()
+                    .equals(previousResourceVersion))
             || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
-          newResource.getMetadata().getResourceVersion(), resourceId);
+          newResource.getMetadata().getResourceVersion(),
+          resourceId);
       cache.put(resourceId, newResource);
     } else if (cache.remove(resourceId) != null) {
       log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
@@ -161,22 +165,23 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   /**
-   * @return true if {@link InformerEventSourceConfiguration#parseResourceVersions()} is enabled and
-   *         the resourceVersion of newResource is numerically greater than cachedResource,
-   *         otherwise false
+   * @return true if {@link ConfigurationService#parseResourceVersionsForEventFilteringAndCaching()}
+   *     is enabled and the resourceVersion of newResource is numerically greater than
+   *     cachedResource, otherwise false
    */
   private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
     try {
       if (parseResourceVersions
-          && Long.parseLong(newResource.getMetadata().getResourceVersion()) > Long
-              .parseLong(cachedResource.getMetadata().getResourceVersion())) {
+          && Long.parseLong(newResource.getMetadata().getResourceVersion())
+              > Long.parseLong(cachedResource.getMetadata().getResourceVersion())) {
         return true;
       }
     } catch (NumberFormatException e) {
       log.debug(
           "Could not compare resourceVersions {} and {} for {}",
           newResource.getMetadata().getResourceVersion(),
-          cachedResource.getMetadata().getResourceVersion(), resourceId);
+          cachedResource.getMetadata().getResourceVersion(),
+          resourceId);
     }
     return false;
   }

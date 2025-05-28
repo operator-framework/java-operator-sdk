@@ -8,8 +8,8 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration
 public class CleanerForReconcilerTestReconciler
     implements Reconciler<CleanerForReconcilerCustomResource>,
-    Cleaner<CleanerForReconcilerCustomResource>,
-    TestExecutionInfoProvider {
+        Cleaner<CleanerForReconcilerCustomResource>,
+        TestExecutionInfoProvider {
 
   public static final int RESCHEDULE_DELAY = 150;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -34,7 +34,8 @@ public class CleanerForReconcilerTestReconciler
   }
 
   @Override
-  public DeleteControl cleanup(CleanerForReconcilerCustomResource resource,
+  public DeleteControl cleanup(
+      CleanerForReconcilerCustomResource resource,
       Context<CleanerForReconcilerCustomResource> context) {
     if (reScheduleCleanup) {
       numberOfCleanupExecutions.addAndGet(1);

@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.dependent;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
@@ -14,7 +15,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 @Ignore
-public abstract class AbstractEventSourceHolderDependentResource<R, P extends HasMetadata, T extends EventSource<R, P>>
+public abstract class AbstractEventSourceHolderDependentResource<
+        R, P extends HasMetadata, T extends EventSource<R, P>>
     extends AbstractDependentResource<R, P> implements EventSourceReferencer<P> {
 
   private T eventSource;
@@ -22,13 +24,22 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   private boolean isCacheFillerEventSource;
   protected String eventSourceNameToUse;
 
+  @SuppressWarnings("unchecked")
+  protected AbstractEventSourceHolderDependentResource() {
+    this(null, null);
+  }
+
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType) {
     this(resourceType, null);
   }
 
   protected AbstractEventSourceHolderDependentResource(Class<R> resourceType, String name) {
     super(name);
-    this.resourceType = resourceType;
+    if (resourceType == null) {
+      this.resourceType = (Class<R>) Utils.getTypeArgumentFromHierarchyByIndex(getClass(), 0);
+    } else {
+      this.resourceType = resourceType;
+    }
   }
 
   /**
@@ -99,15 +110,15 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
 
   protected void onCreated(P primary, R created, Context<P> context) {
     if (isCacheFillerEventSource) {
-      recentOperationCacheFiller().handleRecentResourceCreate(ResourceID.fromResource(primary),
-          created);
+      recentOperationCacheFiller()
+          .handleRecentResourceCreate(ResourceID.fromResource(primary), created);
     }
   }
 
   protected void onUpdated(P primary, R updated, R actual, Context<P> context) {
     if (isCacheFillerEventSource) {
-      recentOperationCacheFiller().handleRecentResourceUpdate(ResourceID.fromResource(primary),
-          updated, actual);
+      recentOperationCacheFiller()
+          .handleRecentResourceUpdate(ResourceID.fromResource(primary), updated, actual);
     }
   }
 
@@ -115,5 +126,4 @@ public abstract class AbstractEventSourceHolderDependentResource<R, P extends Ha
   private RecentOperationCacheFiller<R> recentOperationCacheFiller() {
     return (RecentOperationCacheFiller<R>) eventSource;
   }
-
 }

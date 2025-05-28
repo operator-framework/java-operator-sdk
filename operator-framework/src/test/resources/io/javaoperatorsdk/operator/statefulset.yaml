@@ -21,6 +21,13 @@ spec:
           ports:
             - containerPort: 80
               name: web
+          env:
+            - name: APP1_HOST_NAME
+              value: ""
+            - name: APP2_HOST_NAME
+              value: "localhost"
+            - name: APP3_HOST_NAME
+              value: " "
           volumeMounts:
             - name: www
               mountPath: /usr/share/nginx/html

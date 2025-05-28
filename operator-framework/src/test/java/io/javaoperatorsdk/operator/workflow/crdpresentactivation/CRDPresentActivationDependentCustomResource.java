@@ -10,7 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("addp")
 public class CRDPresentActivationDependentCustomResource extends CustomResource<Void, Void>
-    implements Namespaced {
-
-
-}
+    implements Namespaced {}

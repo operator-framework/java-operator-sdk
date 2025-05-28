@@ -51,8 +51,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Ignore
 public class Controller<P extends HasMetadata>
-    implements Reconciler<P>, LifecycleAware, Cleaner<P>,
-    RegisteredController<P> {
+    implements Reconciler<P>, LifecycleAware, Cleaner<P>, RegisteredController<P> {
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
   private static final String CLEANUP = "cleanup";
@@ -78,7 +77,8 @@ public class Controller<P extends HasMetadata>
   private final ControllerHealthInfo controllerHealthInfo;
   private final EventSourceContext<P> eventSourceContext;
 
-  public Controller(Reconciler<P> reconciler,
+  public Controller(
+      Reconciler<P> reconciler,
       ControllerConfiguration<P> configuration,
       KubernetesClient kubernetesClient) {
     // needs to be initialized early since it's used in other downstream classes
@@ -95,16 +95,18 @@ public class Controller<P extends HasMetadata>
     final var managed = configurationService.getWorkflowFactory().workflowFor(configuration);
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
     explicitWorkflowInvocation =
-        configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation)
-            .orElse(false);
+        configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation).orElse(false);
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
     eventSourceManager.postProcessDefaultEventSourcesAfterProcessorInitializer();
     controllerHealthInfo = new ControllerHealthInfo(eventSourceManager);
-    eventSourceContext = new EventSourceContext<>(
-        eventSourceManager.getControllerEventSource(), configuration, kubernetesClient,
-        configuration.getResourceClass());
+    eventSourceContext =
+        new EventSourceContext<>(
+            eventSourceManager.getControllerEventSource(),
+            configuration,
+            kubernetesClient,
+            configuration.getResourceClass());
     initAndRegisterEventSources(eventSourceContext);
     configurationService.getMetrics().controllerRegistered(this);
   }
@@ -148,11 +150,14 @@ public class Controller<P extends HasMetadata>
           @Override
           public UpdateControl<P> execute() throws Exception {
             initContextIfNeeded(resource, context);
-            configuration.getWorkflowSpec().ifPresent(ws -> {
-              if (!managedWorkflow.isEmpty() && !explicitWorkflowInvocation) {
-                managedWorkflow.reconcile(resource, context);
-              }
-            });
+            configuration
+                .getWorkflowSpec()
+                .ifPresent(
+                    ws -> {
+                      if (!managedWorkflow.isEmpty() && !explicitWorkflowInvocation) {
+                        managedWorkflow.reconcile(resource, context);
+                      }
+                    });
             return reconciler.reconcile(resource, context);
           }
         });
@@ -223,7 +228,8 @@ public class Controller<P extends HasMetadata>
     if (workflowCleanupResult == null) {
       return DeleteControl.defaultDelete();
     } else {
-      return workflowCleanupResult.allPostConditionsMet() ? DeleteControl.defaultDelete()
+      return workflowCleanupResult.allPostConditionsMet()
+          ? DeleteControl.defaultDelete()
           : DeleteControl.noFinalizerRemoval();
     }
   }
@@ -243,23 +249,27 @@ public class Controller<P extends HasMetadata>
         managedWorkflow.getDependentResourcesWithoutActivationCondition();
     final var size = dependentResourcesByName.size();
     if (size > 0) {
-      dependentResourcesByName.forEach(dependentResource -> {
-        Optional<EventSource> eventSource = dependentResource.eventSource(context);
-        eventSource.ifPresent(eventSourceManager::registerEventSource);
-      });
+      dependentResourcesByName.forEach(
+          dependentResource -> {
+            Optional<EventSource> eventSource = dependentResource.eventSource(context);
+            eventSource.ifPresent(eventSourceManager::registerEventSource);
+          });
 
       // resolve event sources referenced by name for dependents that reuse an existing event source
       final Map<String, List<EventSourceReferencer>> unresolvable = new HashMap<>(size);
       dependentResourcesByName.stream()
           .filter(EventSourceReferencer.class::isInstance)
           .map(EventSourceReferencer.class::cast)
-          .forEach(dr -> {
-            try {
-              ((EventSourceReferencer<P>) dr).resolveEventSource(eventSourceManager);
-            } catch (EventSourceNotFoundException e) {
-              unresolvable.computeIfAbsent(e.getEventSourceName(), s -> new ArrayList<>()).add(dr);
-            }
-          });
+          .forEach(
+              dr -> {
+                try {
+                  ((EventSourceReferencer<P>) dr).resolveEventSource(eventSourceManager);
+                } catch (EventSourceNotFoundException e) {
+                  unresolvable
+                      .computeIfAbsent(e.getEventSourceName(), s -> new ArrayList<>())
+                      .add(dr);
+                }
+              });
       if (!unresolvable.isEmpty()) {
         throw new IllegalStateException(
             "Couldn't resolve referenced EventSources: " + unresolvable);
@@ -317,8 +327,8 @@ public class Controller<P extends HasMetadata>
 
   /**
    * Registers the specified controller with this operator, overriding its default configuration by
-   * the specified one (usually created via
-   * {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * the specified one (usually created via {@link
+   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
    * passing it the controller's original configuration.
    *
    * @param startEventProcessor if event processing should be started automatically
@@ -329,8 +339,11 @@ public class Controller<P extends HasMetadata>
     final String controllerName = configuration.getName();
     final var crdName = configuration.getResourceTypeName();
     final var specVersion = "v1";
-    log.info("Starting '{}' controller for reconciler: {}, resource: {}", controllerName,
-        configuration.getAssociatedReconcilerClassName(), resClass.getCanonicalName());
+    log.info(
+        "Starting '{}' controller for reconciler: {}, resource: {}",
+        controllerName,
+        configuration.getAssociatedReconcilerClassName(),
+        resClass.getCanonicalName());
 
     // fail early if we're missing the current namespace information
     failOnMissingCurrentNS();
@@ -348,14 +361,13 @@ public class Controller<P extends HasMetadata>
     }
   }
 
-
-  private void validateCRDWithLocalModelIfRequired(Class<P> resClass, String controllerName,
-      String crdName, String specVersion) {
+  private void validateCRDWithLocalModelIfRequired(
+      Class<P> resClass, String controllerName, String crdName, String specVersion) {
     final CustomResourceDefinition crd;
     if (getConfiguration().getConfigurationService().checkCRDAndValidateLocalModel()
         && CustomResource.class.isAssignableFrom(resClass)) {
-      crd = kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName)
-          .get();
+      crd =
+          kubernetesClient.apiextensions().v1().customResourceDefinitions().withName(crdName).get();
       if (crd == null) {
         throwMissingCRDException(crdName, specVersion, controllerName);
       }
@@ -414,7 +426,8 @@ public class Controller<P extends HasMetadata>
       throw new OperatorException(
           "Controller '"
               + configuration.getName()
-              + "' is configured to watch the current namespace but it couldn't be inferred from the current configuration.");
+              + "' is configured to watch the current namespace but it couldn't be inferred from"
+              + " the current configuration.");
     }
   }
 
@@ -473,5 +486,4 @@ public class Controller<P extends HasMetadata>
     return managedWorkflow.getDependentResourcesByName().values().stream()
         .anyMatch(d -> d.resourceType().equals(clazz));
   }
-
 }

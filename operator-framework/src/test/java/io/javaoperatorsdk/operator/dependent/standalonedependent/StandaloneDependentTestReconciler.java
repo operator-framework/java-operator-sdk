@@ -30,8 +30,7 @@ public class StandaloneDependentTestReconciler
   @Override
   public List<EventSource<?, StandaloneDependentTestCustomResource>> prepareEventSources(
       EventSourceContext<StandaloneDependentTestCustomResource> context) {
-    return EventSourceUtils.dependentEventSources(context,
-        deploymentDependent);
+    return EventSourceUtils.dependentEventSources(context, deploymentDependent);
   }
 
   @Override
@@ -54,7 +53,8 @@ public class StandaloneDependentTestReconciler
   @Override
   public ErrorStatusUpdateControl<StandaloneDependentTestCustomResource> updateErrorStatus(
       StandaloneDependentTestCustomResource resource,
-      Context<StandaloneDependentTestCustomResource> context, Exception e) {
+      Context<StandaloneDependentTestCustomResource> context,
+      Exception e) {
     // this can happen when a namespace is terminated in test
     if (e instanceof KubernetesClientException) {
       return ErrorStatusUpdateControl.noStatusUpdate();
@@ -67,18 +67,17 @@ public class StandaloneDependentTestReconciler
     return errorOccurred;
   }
 
-  private static class DeploymentDependentResource extends
-      CRUDKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
-
-    public DeploymentDependentResource() {
-      super(Deployment.class);
-    }
+  private static class DeploymentDependentResource
+      extends CRUDKubernetesDependentResource<Deployment, StandaloneDependentTestCustomResource> {
 
     @Override
-    protected Deployment desired(StandaloneDependentTestCustomResource primary,
+    protected Deployment desired(
+        StandaloneDependentTestCustomResource primary,
         Context<StandaloneDependentTestCustomResource> context) {
       Deployment deployment =
-          ReconcilerUtils.loadYaml(Deployment.class, StandaloneDependentResourceIT.class,
+          ReconcilerUtils.loadYaml(
+              Deployment.class,
+              StandaloneDependentResourceIT.class,
               "/io/javaoperatorsdk/operator/nginx-deployment.yaml");
       deployment.getMetadata().setName(primary.getMetadata().getName());
       deployment.getSpec().setReplicas(primary.getSpec().getReplicaCount());

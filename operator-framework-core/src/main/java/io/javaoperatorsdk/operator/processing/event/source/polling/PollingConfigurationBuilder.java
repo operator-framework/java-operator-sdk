@@ -10,8 +10,8 @@ public final class PollingConfigurationBuilder<R> {
   private CacheKeyMapper<R> cacheKeyMapper;
   private String name;
 
-  public PollingConfigurationBuilder(PollingEventSource.GenericResourceFetcher<R> fetcher,
-      Duration period) {
+  public PollingConfigurationBuilder(
+      PollingEventSource.GenericResourceFetcher<R> fetcher, Duration period) {
     this.genericResourceFetcher = fetcher;
     this.period = period;
   }

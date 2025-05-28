@@ -9,7 +9,6 @@ public class ResourcePollerConfig {
   private final Duration pollPeriod;
   private final MySQLDbConfig mySQLDbConfig;
 
-
   public ResourcePollerConfig(Duration pollPeriod, MySQLDbConfig mySQLDbConfig) {
     this.pollPeriod = pollPeriod;
     this.mySQLDbConfig = mySQLDbConfig;

@@ -11,24 +11,22 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 
 @KubernetesDependent(informer = @Informer(name = "configMapInformer"))
 public class ConfigMapDependentResource1
-    extends
-    CRUDNoGCKubernetesDependentResource<ConfigMap, MultipleDependentActivationCustomResource> {
+    extends CRUDNoGCKubernetesDependentResource<
+        ConfigMap, MultipleDependentActivationCustomResource> {
 
   public static final String DATA_KEY = "data";
   public static final String SUFFIX = "1";
 
-  public ConfigMapDependentResource1() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(MultipleDependentActivationCustomResource primary,
+  protected ConfigMap desired(
+      MultipleDependentActivationCustomResource primary,
       Context<MultipleDependentActivationCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName() + SUFFIX)
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(primary.getMetadata().getName() + SUFFIX)
+            .withNamespace(primary.getMetadata().getNamespace())
+            .build());
     configMap.setData(Map.of(DATA_KEY, primary.getSpec().getValue() + SUFFIX));
     return configMap;
   }

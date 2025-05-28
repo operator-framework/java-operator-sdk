@@ -18,8 +18,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
     informer = @Informer(labelSelector = "test=KubernetesResourceStatusUpdateIT"))
-public class DeploymentReconciler
-    implements Reconciler<Deployment>, TestExecutionInfoProvider {
+public class DeploymentReconciler implements Reconciler<Deployment>, TestExecutionInfoProvider {
 
   public static final String STATUS_MESSAGE = "Reconciled by DeploymentReconciler";
 
@@ -27,8 +26,7 @@ public class DeploymentReconciler
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<Deployment> reconcile(
-      Deployment resource, Context<Deployment> context) {
+  public UpdateControl<Deployment> reconcile(Deployment resource, Context<Deployment> context) {
 
     log.info("Reconcile deployment: {}", resource);
     numberOfExecutions.incrementAndGet();
@@ -42,14 +40,14 @@ public class DeploymentReconciler
     var condition =
         conditions.stream().filter(c -> c.getMessage().equals(STATUS_MESSAGE)).findFirst();
     if (condition.isEmpty()) {
-      conditions.add(new DeploymentCondition(null, null, STATUS_MESSAGE, null,
-          "unknown", "DeploymentReconciler"));
+      conditions.add(
+          new DeploymentCondition(
+              null, null, STATUS_MESSAGE, null, "unknown", "DeploymentReconciler"));
       return UpdateControl.patchStatus(resource);
     } else {
       return UpdateControl.noUpdate();
     }
   }
-
 
   @Override
   public int getNumberOfExecutions() {

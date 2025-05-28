@@ -15,9 +15,9 @@ class CleanerForReconcilerIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new CleanerForReconcilerTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new CleanerForReconcilerTestReconciler())
           .build();
-
 
   @Test
   void addsFinalizerAndCallsCleanupIfCleanerImplemented() {
@@ -28,13 +28,21 @@ class CleanerForReconcilerIT {
     var testResource = createTestResource();
     operator.create(testResource);
 
-    await().until(() -> !operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME)
-        .getMetadata().getFinalizers().isEmpty());
+    await()
+        .until(
+            () ->
+                !operator
+                    .get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME)
+                    .getMetadata()
+                    .getFinalizers()
+                    .isEmpty());
 
     operator.delete(testResource);
 
-    await().until(
-        () -> operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME) == null);
+    await()
+        .until(
+            () ->
+                operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME) == null);
 
     assertThat(reconciler.getNumberOfExecutions()).isEqualTo(1);
     assertThat(reconciler.getNumberOfCleanupExecutions()).isEqualTo(1);
@@ -49,17 +57,26 @@ class CleanerForReconcilerIT {
     var testResource = createTestResource();
     operator.create(testResource);
 
-    await().until(() -> !operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME)
-        .getMetadata().getFinalizers().isEmpty());
+    await()
+        .until(
+            () ->
+                !operator
+                    .get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME)
+                    .getMetadata()
+                    .getFinalizers()
+                    .isEmpty());
 
     operator.delete(testResource);
 
-    await().untilAsserted(
-        () -> assertThat(reconciler.getNumberOfCleanupExecutions()).isGreaterThan(5));
+    await()
+        .untilAsserted(
+            () -> assertThat(reconciler.getNumberOfCleanupExecutions()).isGreaterThan(5));
 
     reconciler.setReScheduleCleanup(false);
-    await().until(
-        () -> operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME) == null);
+    await()
+        .until(
+            () ->
+                operator.get(CleanerForReconcilerCustomResource.class, TEST_RESOURCE_NAME) == null);
   }
 
   private CleanerForReconcilerCustomResource createTestResource() {
@@ -68,5 +85,4 @@ class CleanerForReconcilerIT {
     cr.getMetadata().setName(TEST_RESOURCE_NAME);
     return cr;
   }
-
 }

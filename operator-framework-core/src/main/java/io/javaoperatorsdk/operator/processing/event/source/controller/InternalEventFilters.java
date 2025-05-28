@@ -11,8 +11,8 @@ public class InternalEventFilters {
     // the old resource is checked since in corner cases users might still want to update the status
     // for a resource that is marked for deletion
 
-    return (newResource, oldResource) -> !oldResource.isMarkedForDeletion()
-        && newResource.isMarkedForDeletion();
+    return (newResource, oldResource) ->
+        !oldResource.isMarkedForDeletion() && newResource.isMarkedForDeletion();
   }
 
   static <T extends HasMetadata> OnUpdateFilter<T> onUpdateGenerationAware(
@@ -27,14 +27,12 @@ public class InternalEventFilters {
         return true;
       }
 
-      return oldResource.getMetadata().getGeneration() < newResource
-          .getMetadata().getGeneration();
+      return oldResource.getMetadata().getGeneration() < newResource.getMetadata().getGeneration();
     };
   }
 
   static <T extends HasMetadata> OnUpdateFilter<T> onUpdateFinalizerNeededAndApplied(
-      boolean useFinalizer,
-      String finalizerName) {
+      boolean useFinalizer, String finalizerName) {
     return (newResource, oldResource) -> {
       if (useFinalizer) {
         boolean oldFinalizer = oldResource.hasFinalizer(finalizerName);

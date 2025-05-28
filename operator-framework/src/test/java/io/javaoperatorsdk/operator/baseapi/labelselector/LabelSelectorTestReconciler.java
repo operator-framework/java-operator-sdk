@@ -9,8 +9,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 import static io.javaoperatorsdk.operator.baseapi.labelselector.LabelSelectorTestReconciler.LABEL_KEY;
 import static io.javaoperatorsdk.operator.baseapi.labelselector.LabelSelectorTestReconciler.LABEL_VALUE;
 
-@ControllerConfiguration(
-    informer = @Informer(labelSelector = LABEL_KEY + "=" + LABEL_VALUE))
+@ControllerConfiguration(informer = @Informer(labelSelector = LABEL_KEY + "=" + LABEL_VALUE))
 public class LabelSelectorTestReconciler
     implements Reconciler<LabelSelectorTestCustomResource>, TestExecutionInfoProvider {
 
@@ -30,5 +29,4 @@ public class LabelSelectorTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

@@ -40,6 +40,8 @@ public class ConfigurationServiceOverrider {
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
+  private Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist;
+
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
 
@@ -98,8 +100,8 @@ public class ConfigurationServiceOverrider {
   /**
    * Replaces the default {@link KubernetesClient} instance by the specified one. This is the
    * preferred mechanism to configure which client will be used to access the cluster.
-   * <p>
-   * Note that when {@link Operator#stop()} is called, by default the client is closed even if
+   *
+   * <p>Note that when {@link Operator#stop()} is called, by default the client is closed even if
    * explicitly provided with this method. Use {@link #withCloseClientOnStop(boolean)} to change
    * this behavior.
    *
@@ -151,8 +153,7 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResources(
-      boolean value) {
+  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResources(boolean value) {
     this.previousAnnotationForDependentResources = value;
     return this;
   }
@@ -161,8 +162,7 @@ public class ConfigurationServiceOverrider {
    * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
    * @return this
    */
-  public ConfigurationServiceOverrider withParseResourceVersions(
-      boolean value) {
+  public ConfigurationServiceOverrider withParseResourceVersions(boolean value) {
     this.parseResourceVersions = value;
     return this;
   }
@@ -173,8 +173,7 @@ public class ConfigurationServiceOverrider {
    * @return this
    */
   @Deprecated(forRemoval = true)
-  public ConfigurationServiceOverrider wihtParseResourceVersions(
-      boolean value) {
+  public ConfigurationServiceOverrider wihtParseResourceVersions(boolean value) {
     this.parseResourceVersions = value;
     return this;
   }
@@ -190,6 +189,12 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
+  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResourcesBlocklist(
+      Set<Class<? extends HasMetadata>> blocklist) {
+    this.previousAnnotationUsageBlocklist = blocklist;
+    return this;
+  }
+
   public ConfigurationService build() {
     return new BaseConfigurationService(original.getVersion(), cloner, client) {
       @Override
@@ -197,28 +202,29 @@ public class ConfigurationServiceOverrider {
         return original.getKnownReconcilerNames();
       }
 
-      private <T> T overriddenValueOrDefault(T value,
-          Function<ConfigurationService, T> defaultValue) {
+      private <T> T overriddenValueOrDefault(
+          T value, Function<ConfigurationService, T> defaultValue) {
         return value != null ? value : defaultValue.apply(original);
       }
 
       @Override
       public boolean checkCRDAndValidateLocalModel() {
-        return overriddenValueOrDefault(checkCR,
-            ConfigurationService::checkCRDAndValidateLocalModel);
+        return overriddenValueOrDefault(
+            checkCR, ConfigurationService::checkCRDAndValidateLocalModel);
       }
 
       @SuppressWarnings("rawtypes")
       @Override
       public DependentResourceFactory dependentResourceFactory() {
-        return overriddenValueOrDefault(dependentResourceFactory,
-            ConfigurationService::dependentResourceFactory);
+        return overriddenValueOrDefault(
+            dependentResourceFactory, ConfigurationService::dependentResourceFactory);
       }
 
       @Override
       public int concurrentReconciliationThreads() {
         return Utils.ensureValid(
-            overriddenValueOrDefault(concurrentReconciliationThreads,
+            overriddenValueOrDefault(
+                concurrentReconciliationThreads,
                 ConfigurationService::concurrentReconciliationThreads),
             "maximum reconciliation threads",
             1,
@@ -228,7 +234,8 @@ public class ConfigurationServiceOverrider {
       @Override
       public int concurrentWorkflowExecutorThreads() {
         return Utils.ensureValid(
-            overriddenValueOrDefault(concurrentWorkflowExecutorThreads,
+            overriddenValueOrDefault(
+                concurrentWorkflowExecutorThreads,
                 ConfigurationService::concurrentWorkflowExecutorThreads),
             "maximum workflow execution threads",
             1,
@@ -247,30 +254,40 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public ExecutorService getExecutorService() {
-        return overriddenValueOrDefault(executorService, ConfigurationService::getExecutorService);
+        if (executorService != null) {
+          return executorService;
+        } else {
+          return super.getExecutorService();
+        }
       }
 
       @Override
       public ExecutorService getWorkflowExecutorService() {
-        return overriddenValueOrDefault(workflowExecutorService,
-            ConfigurationService::getWorkflowExecutorService);
+        if (workflowExecutorService != null) {
+          return workflowExecutorService;
+        } else {
+          return super.getWorkflowExecutorService();
+        }
       }
 
       @Override
       public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
-        return leaderElectionConfiguration != null ? Optional.of(leaderElectionConfiguration)
+        return leaderElectionConfiguration != null
+            ? Optional.of(leaderElectionConfiguration)
             : original.getLeaderElectionConfiguration();
       }
 
       @Override
       public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
-        return informerStoppedHandler != null ? Optional.of(informerStoppedHandler)
+        return informerStoppedHandler != null
+            ? Optional.of(informerStoppedHandler)
             : original.getInformerStoppedHandler();
       }
 
       @Override
       public boolean stopOnInformerErrorDuringStartup() {
-        return overriddenValueOrDefault(stopOnInformerErrorDuringStartup,
+        return overriddenValueOrDefault(
+            stopOnInformerErrorDuringStartup,
             ConfigurationService::stopOnInformerErrorDuringStartup);
       }
 
@@ -281,46 +298,58 @@ public class ConfigurationServiceOverrider {
 
       @Override
       public Duration reconciliationTerminationTimeout() {
-        return overriddenValueOrDefault(reconciliationTerminationTimeout,
+        return overriddenValueOrDefault(
+            reconciliationTerminationTimeout,
             ConfigurationService::reconciliationTerminationTimeout);
       }
 
       @Override
       public boolean ssaBasedCreateUpdateMatchForDependentResources() {
-        return overriddenValueOrDefault(ssaBasedCreateUpdateMatchForDependentResources,
+        return overriddenValueOrDefault(
+            ssaBasedCreateUpdateMatchForDependentResources,
             ConfigurationService::ssaBasedCreateUpdateMatchForDependentResources);
       }
 
       @Override
       public Set<Class<? extends HasMetadata>> defaultNonSSAResources() {
-        return overriddenValueOrDefault(defaultNonSSAResource,
-            ConfigurationService::defaultNonSSAResources);
+        return overriddenValueOrDefault(
+            defaultNonSSAResource, ConfigurationService::defaultNonSSAResources);
       }
 
       @Override
       public boolean previousAnnotationForDependentResourcesEventFiltering() {
-        return overriddenValueOrDefault(previousAnnotationForDependentResources,
+        return overriddenValueOrDefault(
+            previousAnnotationForDependentResources,
             ConfigurationService::previousAnnotationForDependentResourcesEventFiltering);
       }
 
       @Override
       public boolean parseResourceVersionsForEventFilteringAndCaching() {
-        return overriddenValueOrDefault(parseResourceVersions,
+        return overriddenValueOrDefault(
+            parseResourceVersions,
             ConfigurationService::parseResourceVersionsForEventFilteringAndCaching);
       }
 
       @Override
       public boolean useSSAToPatchPrimaryResource() {
-        return overriddenValueOrDefault(useSSAToPatchPrimaryResource,
-            ConfigurationService::useSSAToPatchPrimaryResource);
+        return overriddenValueOrDefault(
+            useSSAToPatchPrimaryResource, ConfigurationService::useSSAToPatchPrimaryResource);
       }
 
       @Override
       public boolean cloneSecondaryResourcesWhenGettingFromCache() {
-        return overriddenValueOrDefault(cloneSecondaryResourcesWhenGettingFromCache,
+        return overriddenValueOrDefault(
+            cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
+      }
+
+      @Override
+      public Set<Class<? extends HasMetadata>>
+          withPreviousAnnotationForDependentResourcesBlocklist() {
+        return overriddenValueOrDefault(
+            previousAnnotationUsageBlocklist,
+            ConfigurationService::withPreviousAnnotationForDependentResourcesBlocklist);
       }
     };
   }
-
 }

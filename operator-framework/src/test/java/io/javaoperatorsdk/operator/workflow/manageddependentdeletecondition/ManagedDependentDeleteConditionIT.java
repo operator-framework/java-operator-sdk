@@ -23,23 +23,24 @@ public class ManagedDependentDeleteConditionIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
-          .withReconciler(new ManagedDependentDefaultDeleteConditionReconciler()).build();
-
+          .withReconciler(new ManagedDependentDefaultDeleteConditionReconciler())
+          .build();
 
   @Test
   void resourceNotDeletedUntilDependentDeleted() {
     var resource = new ManagedDependentDefaultDeleteConditionCustomResource();
-    resource.setMetadata(new ObjectMetaBuilder()
-        .withName(RESOURCE_NAME)
-        .build());
+    resource.setMetadata(new ObjectMetaBuilder().withName(RESOURCE_NAME).build());
     resource = extension.create(resource);
 
-    await().timeout(Duration.ofSeconds(300)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, RESOURCE_NAME);
-      var sec = extension.get(Secret.class, RESOURCE_NAME);
-      assertThat(cm).isNotNull();
-      assertThat(sec).isNotNull();
-    });
+    await()
+        .timeout(Duration.ofSeconds(300))
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, RESOURCE_NAME);
+              var sec = extension.get(Secret.class, RESOURCE_NAME);
+              assertThat(cm).isNotNull();
+              assertThat(sec).isNotNull();
+            });
 
     var secret = extension.get(Secret.class, RESOURCE_NAME);
     secret.getMetadata().getFinalizers().add(CUSTOM_FINALIZER);
@@ -48,22 +49,26 @@ public class ManagedDependentDeleteConditionIT {
     extension.delete(resource);
 
     // both resources are present until the finalizer removed
-    await().pollDelay(Duration.ofMillis(250)).untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, RESOURCE_NAME);
-      var sec = extension.get(Secret.class, RESOURCE_NAME);
-      assertThat(cm).isNotNull();
-      assertThat(sec).isNotNull();
-    });
+    await()
+        .pollDelay(Duration.ofMillis(250))
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, RESOURCE_NAME);
+              var sec = extension.get(Secret.class, RESOURCE_NAME);
+              assertThat(cm).isNotNull();
+              assertThat(sec).isNotNull();
+            });
 
     secret.getMetadata().getFinalizers().clear();
     extension.replace(secret);
 
-    await().untilAsserted(() -> {
-      var cm = extension.get(ConfigMap.class, RESOURCE_NAME);
-      var sec = extension.get(Secret.class, RESOURCE_NAME);
-      assertThat(cm).isNull();
-      assertThat(sec).isNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = extension.get(ConfigMap.class, RESOURCE_NAME);
+              var sec = extension.get(Secret.class, RESOURCE_NAME);
+              assertThat(cm).isNull();
+              assertThat(sec).isNull();
+            });
   }
-
 }

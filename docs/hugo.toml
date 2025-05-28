@@ -160,20 +160,20 @@ enable = false
 
 [params.links]
 [[params.links.user]]
-  name ="Twitter"
-  url = "https://twitter.com/javaoperatorsdk"
-  icon = "fab fa-twitter"
-  desc = "Follow us on Twitter to get the latest news!"
+  name ="BlueSky"
+  url = "https://bsky.app/profile/javaoperatorsdk.bsky.social"
+  icon = "fa-brands fa-bluesky"
+  desc = "Follow us on BlueSky to get the latest news!"
 [[params.links.user]]
 name = "Slack"
 url = "https://kubernetes.slack.com/archives/CAW0GV7A5"
 icon = "fab fa-slack"
-desc = "Chat with other project developers"
+desc = "Chat with other project developers on Kubernetes slack"
 [[params.links.user]]
 name = "Discord"
 url = "https://discord.gg/DacEhAy"
 icon = "fab fa-discord"
-desc = "Chat with others on Discord"
+desc = "Chat with others on our dedicated Discord server"
 #[[params.links.user]]
 #  name = "Stack Overflow"
 #  url = "https://example.org/stack"

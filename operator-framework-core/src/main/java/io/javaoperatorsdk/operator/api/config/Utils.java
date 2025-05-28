@@ -62,9 +62,7 @@ public class Utils {
       log.debug("Couldn't parse git.build.time property", e);
       builtTime = Date.from(Instant.EPOCH);
     }
-    return new Version(
-        properties.getProperty("git.commit.id.abbrev", "unknown"),
-        builtTime);
+    return new Version(properties.getProperty("git.commit.id.abbrev", "unknown"), builtTime);
   }
 
   public static int ensureValid(int value, String description, int minValue) {
@@ -77,8 +75,13 @@ public class Utils {
         throw new IllegalArgumentException(
             "Default value for " + description + " must be greater than " + minValue);
       }
-      log.warn("Requested {} should be greater than {}. Requested: {}, using {}{} instead",
-          description, minValue, value, defaultValue, defaultValue == minValue ? "" : " (default)");
+      log.warn(
+          "Requested {} should be greater than {}. Requested: {}, using {}{} instead",
+          description,
+          minValue,
+          value,
+          defaultValue,
+          defaultValue == minValue ? "" : " (default)");
       value = defaultValue;
     }
     return value;
@@ -98,7 +101,8 @@ public class Utils {
     return getBooleanFromSystemPropsOrDefault(DEBUG_THREAD_POOL_ENV_KEY, false);
   }
 
-  public static boolean getBooleanFromSystemPropsOrDefault(String propertyName, boolean defaultValue) {
+  public static boolean getBooleanFromSystemPropsOrDefault(
+      String propertyName, boolean defaultValue) {
     var property = System.getProperty(propertyName);
     if (property == null) {
       return defaultValue;
@@ -121,20 +125,55 @@ public class Utils {
       Type type = clazz.getGenericSuperclass();
       return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[index];
     } catch (Exception e) {
-      throw new RuntimeException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
-          + clazz.getSimpleName()
-          + " because it doesn't extend a class that is parameterized with the type we want to retrieve",
+      throw new RuntimeException(
+          GENERIC_PARAMETER_TYPE_ERROR_PREFIX
+              + clazz.getSimpleName()
+              + " because it doesn't extend a class that is parameterized with the type we want to"
+              + " retrieve",
           e);
     }
   }
 
-  public static Class<?> getFirstTypeArgumentFromInterface(Class<?> clazz,
-      Class<?> expectedImplementedInterface) {
+  public static Class<?> getTypeArgumentFromHierarchyByIndex(Class<?> clazz, int index) {
+    return getTypeArgumentFromHierarchyByIndex(clazz, null, index);
+  }
+
+  public static Class<?> getTypeArgumentFromHierarchyByIndex(
+      Class<?> clazz, Class<?> expectedImplementedInterface, int index) {
+    Class<?> c = clazz;
+    while (!(c.getGenericSuperclass() instanceof ParameterizedType)) {
+      c = c.getSuperclass();
+    }
+    Class<?> actualTypeArgument =
+        (Class<?>) ((ParameterizedType) c.getGenericSuperclass()).getActualTypeArguments()[index];
+    if (expectedImplementedInterface != null
+        && !expectedImplementedInterface.isAssignableFrom(actualTypeArgument)) {
+      throw new IllegalArgumentException(
+          GENERIC_PARAMETER_TYPE_ERROR_PREFIX
+              + clazz.getName()
+              + "because it doesn't extend a class that is parametrized with the type that"
+              + " implements "
+              + expectedImplementedInterface.getSimpleName()
+              + ". Please provide the resource type in the constructor (e.g.,"
+              + " super(Deployment.class).");
+    } else if (expectedImplementedInterface == null && actualTypeArgument.equals(Object.class)) {
+      throw new IllegalArgumentException(
+          GENERIC_PARAMETER_TYPE_ERROR_PREFIX
+              + clazz.getName()
+              + " because it doesn't extend a class that is parametrized with the type we want to"
+              + " retrieve or because it's Object.class. Please provide the resource type in the "
+              + "constructor (e.g., super(Deployment.class).");
+    }
+    return actualTypeArgument;
+  }
+
+  public static Class<?> getFirstTypeArgumentFromInterface(
+      Class<?> clazz, Class<?> expectedImplementedInterface) {
     return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, 0);
   }
 
-  public static Class<?> getTypeArgumentFromInterfaceByIndex(Class<?> clazz,
-      Class<?> expectedImplementedInterface, int index) {
+  public static Class<?> getTypeArgumentFromInterfaceByIndex(
+      Class<?> clazz, Class<?> expectedImplementedInterface, int index) {
     if (expectedImplementedInterface.isAssignableFrom(clazz)) {
       final var genericInterfaces = clazz.getGenericInterfaces();
 
@@ -149,50 +188,60 @@ public class Utils {
         return getTypeArgumentFromInterfaceByIndex(parent, expectedImplementedInterface, index);
       }
     }
-    throw new IllegalArgumentException(GENERIC_PARAMETER_TYPE_ERROR_PREFIX
-        + clazz.getSimpleName() + " because it or its superclasses don't implement "
-        + expectedImplementedInterface.getSimpleName());
+    throw new IllegalArgumentException(
+        GENERIC_PARAMETER_TYPE_ERROR_PREFIX
+            + clazz.getSimpleName()
+            + " because it or its superclasses don't implement "
+            + expectedImplementedInterface.getSimpleName());
   }
 
-  private static Optional<? extends Class<?>> extractType(Class<?> clazz,
-      Class<?> expectedImplementedInterface, int index, Type[] genericInterfaces) {
+  private static Optional<? extends Class<?>> extractType(
+      Class<?> clazz, Class<?> expectedImplementedInterface, int index, Type[] genericInterfaces) {
     Optional<? extends Class<?>> target = Optional.empty();
     if (genericInterfaces.length > 0) {
       // try to find the target interface among them
-      target = Arrays.stream(genericInterfaces)
-          .filter(type -> type.getTypeName().startsWith(expectedImplementedInterface.getName())
-              && type instanceof ParameterizedType)
-          .map(ParameterizedType.class::cast)
-          .findFirst()
-          .map(t -> {
-            final Type argument = t.getActualTypeArguments()[index];
-            if (argument instanceof Class) {
-              return (Class<?>) argument;
-            }
-            // account for the case where the argument itself has parameters, which we will ignore
-            // and just return the raw type
-            if (argument instanceof ParameterizedType) {
-              final var rawType = ((ParameterizedType) argument).getRawType();
-              if (rawType instanceof Class) {
-                return (Class<?>) rawType;
-              }
-            }
-            throw new IllegalArgumentException(clazz.getSimpleName() + " implements "
-                + expectedImplementedInterface.getSimpleName()
-                + " but indirectly. Java type erasure doesn't allow to retrieve the generic type from it. Retrieved type was: "
-                + argument);
-          });
+      target =
+          Arrays.stream(genericInterfaces)
+              .filter(
+                  type ->
+                      type.getTypeName().startsWith(expectedImplementedInterface.getName())
+                          && type instanceof ParameterizedType)
+              .map(ParameterizedType.class::cast)
+              .findFirst()
+              .map(
+                  t -> {
+                    final Type argument = t.getActualTypeArguments()[index];
+                    if (argument instanceof Class) {
+                      return (Class<?>) argument;
+                    }
+                    // account for the case where the argument itself has parameters, which we will
+                    // ignore
+                    // and just return the raw type
+                    if (argument instanceof ParameterizedType) {
+                      final var rawType = ((ParameterizedType) argument).getRawType();
+                      if (rawType instanceof Class) {
+                        return (Class<?>) rawType;
+                      }
+                    }
+                    throw new IllegalArgumentException(
+                        clazz.getSimpleName()
+                            + " implements "
+                            + expectedImplementedInterface.getSimpleName()
+                            + " but indirectly. Java type erasure doesn't allow to retrieve the"
+                            + " generic type from it. Retrieved type was: "
+                            + argument);
+                  });
     }
     return target;
   }
 
-  public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(Class<?> clazz,
-      Class<?> expectedImplementedInterface) {
+  public static Class<?> getFirstTypeArgumentFromSuperClassOrInterface(
+      Class<?> clazz, Class<?> expectedImplementedInterface) {
     return getTypeArgumentFromSuperClassOrInterfaceByIndex(clazz, expectedImplementedInterface, 0);
   }
 
-  public static Class<?> getTypeArgumentFromSuperClassOrInterfaceByIndex(Class<?> clazz,
-      Class<?> expectedImplementedInterface, int index) {
+  public static Class<?> getTypeArgumentFromSuperClassOrInterfaceByIndex(
+      Class<?> clazz, Class<?> expectedImplementedInterface, int index) {
     // first check super class if it exists
     try {
       final Class<?> superclass = clazz.getSuperclass();
@@ -205,8 +254,8 @@ public class Utils {
             return getTypeArgumentFromInterfaceByIndex(clazz, expectedImplementedInterface, index);
           } catch (Exception ex) {
             // try on the parent
-            return getTypeArgumentFromSuperClassOrInterfaceByIndex(superclass,
-                expectedImplementedInterface, index);
+            return getTypeArgumentFromSuperClassOrInterfaceByIndex(
+                superclass, expectedImplementedInterface, index);
           }
         }
       }
@@ -216,8 +265,11 @@ public class Utils {
     }
   }
 
-  public static <T> T instantiateAndConfigureIfNeeded(Class<? extends T> targetClass,
-      Class<T> expectedType, String context, Configurator<T> configurator) {
+  public static <T> T instantiateAndConfigureIfNeeded(
+      Class<? extends T> targetClass,
+      Class<T> expectedType,
+      String context,
+      Configurator<T> configurator) {
     // if class to instantiate equals the expected interface, we cannot instantiate it so just
     // return null as it means we passed on void-type default value
     if (expectedType.equals(targetClass)) {
@@ -232,11 +284,18 @@ public class Utils {
       }
 
       return instance;
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
         | IllegalStateException e) {
-      throw new OperatorException("Couldn't instantiate " + expectedType.getSimpleName() + " '"
-          + targetClass.getName() + "'."
-          + (context != null ? " Context: " + context : ""), e);
+      throw new OperatorException(
+          "Couldn't instantiate "
+              + expectedType.getSimpleName()
+              + " '"
+              + targetClass.getName()
+              + "'."
+              + (context != null ? " Context: " + context : ""),
+          e);
     }
   }
 
@@ -252,8 +311,8 @@ public class Utils {
     return constructor;
   }
 
-  public static <T> T instantiate(Class<? extends T> toInstantiate, Class<T> expectedType,
-      String context) {
+  public static <T> T instantiate(
+      Class<? extends T> toInstantiate, Class<T> expectedType, String context) {
     return instantiateAndConfigureIfNeeded(toInstantiate, expectedType, context, null);
   }
 
@@ -263,7 +322,8 @@ public class Utils {
   }
 
   @SuppressWarnings("rawtypes")
-  public static String contextFor(ControllerConfiguration<?> controllerConfiguration,
+  public static String contextFor(
+      ControllerConfiguration<?> controllerConfiguration,
       Class<? extends DependentResource> dependentType,
       Class<? extends Annotation> configurationAnnotation) {
     return contextFor(controllerConfiguration.getName(), dependentType, configurationAnnotation);
@@ -274,11 +334,13 @@ public class Utils {
   }
 
   @SuppressWarnings("rawtypes")
-  public static String contextFor(String reconcilerName,
+  public static String contextFor(
+      String reconcilerName,
       Class<? extends DependentResource> dependentType,
       Class<? extends Annotation> configurationAnnotation) {
     final var annotationName =
-        configurationAnnotation != null ? configurationAnnotation.getSimpleName()
+        configurationAnnotation != null
+            ? configurationAnnotation.getSimpleName()
             : io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration.class
                 .getSimpleName();
     var context = "annotation: " + annotationName + ", ";

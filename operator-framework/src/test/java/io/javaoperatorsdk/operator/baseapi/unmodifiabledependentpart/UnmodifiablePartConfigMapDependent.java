@@ -14,25 +14,28 @@ public class UnmodifiablePartConfigMapDependent
   public static final String UNMODIFIABLE_INITIAL_DATA_KEY = "initialDataKey";
   public static final String ACTUAL_DATA_KEY = "actualDataKey";
 
-  public UnmodifiablePartConfigMapDependent() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(UnmodifiableDependentPartCustomResource primary,
+  protected ConfigMap desired(
+      UnmodifiableDependentPartCustomResource primary,
       Context<UnmodifiableDependentPartCustomResource> context) {
     var actual = context.getSecondaryResource(ConfigMap.class);
-    ConfigMap res = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
-        .build();
-    res.setData(Map.of(ACTUAL_DATA_KEY, primary.getSpec().getData(),
-        // setting the old data if available
-        UNMODIFIABLE_INITIAL_DATA_KEY,
-        actual.map(cm -> cm.getData().get(UNMODIFIABLE_INITIAL_DATA_KEY))
-            .orElse(primary.getSpec().getData())));
+    ConfigMap res =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(primary.getMetadata().getName())
+                    .withNamespace(primary.getMetadata().getNamespace())
+                    .build())
+            .build();
+    res.setData(
+        Map.of(
+            ACTUAL_DATA_KEY,
+            primary.getSpec().getData(),
+            // setting the old data if available
+            UNMODIFIABLE_INITIAL_DATA_KEY,
+            actual
+                .map(cm -> cm.getData().get(UNMODIFIABLE_INITIAL_DATA_KEY))
+                .orElse(primary.getSpec().getData())));
     return res;
   }
 }

@@ -19,13 +19,12 @@ class ConditionWithType<R, P extends HasMetadata, T> implements DetailedConditio
 
   @SuppressWarnings("unchecked")
   @Override
-  public Result<T> detailedIsMet(DependentResource<R, P> dependentResource, P primary,
-      Context<P> context) {
+  public Result<T> detailedIsMet(
+      DependentResource<R, P> dependentResource, P primary, Context<P> context) {
     if (condition instanceof DetailedCondition detailedCondition) {
       return detailedCondition.detailedIsMet(dependentResource, primary, context);
     } else {
-      return Result
-          .withoutResult(condition.isMet(dependentResource, primary, context));
+      return Result.withoutResult(condition.isMet(dependentResource, primary, context));
     }
   }
 }

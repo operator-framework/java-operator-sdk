@@ -11,7 +11,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @Kind("MaxIntervalTestCustomResource")
 @ShortNames("mit")
-public class MaxIntervalTestCustomResource
-    extends CustomResource<Void, Void>
-    implements Namespaced {
-}
+public class MaxIntervalTestCustomResource extends CustomResource<Void, Void>
+    implements Namespaced {}

@@ -27,29 +27,35 @@ class DependentOperationEventFilterIT {
 
   @Test
   void reconcileNotTriggeredWithDependentResourceCreateOrUpdate() {
-    var resource =
-        operator.create(createTestResource());
+    var resource = operator.create(createTestResource());
 
-    await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
+    await()
+        .pollDelay(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(3))
         .until(
-            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
-                .getFirstReconciler())
-                .getNumberOfExecutions() == 1);
+            () ->
+                ((DependentOperationEventFilterCustomResourceTestReconciler)
+                            operator.getFirstReconciler())
+                        .getNumberOfExecutions()
+                    == 1);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_1);
 
     resource.getSpec().setValue(SPEC_VAL_2);
     operator.replace(resource);
 
-    await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
+    await()
+        .pollDelay(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(3))
         .until(
-            () -> ((DependentOperationEventFilterCustomResourceTestReconciler) operator
-                .getFirstReconciler())
-                .getNumberOfExecutions() == 2);
+            () ->
+                ((DependentOperationEventFilterCustomResourceTestReconciler)
+                            operator.getFirstReconciler())
+                        .getNumberOfExecutions()
+                    == 2);
     assertThat(operator.get(ConfigMap.class, TEST).getData())
         .containsEntry(ConfigMapDependentResource.KEY, SPEC_VAL_2);
   }
-
 
   private DependentOperationEventFilterCustomResource createTestResource() {
     DependentOperationEventFilterCustomResource cr =
@@ -60,5 +66,4 @@ class DependentOperationEventFilterIT {
     cr.getSpec().setValue(SPEC_VAL_1);
     return cr;
   }
-
 }

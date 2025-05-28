@@ -16,34 +16,36 @@ public class SSAWithLegacyMatcherIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new SSALegacyMatcherReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new SSALegacyMatcherReconciler())
           .build();
 
   @Test
   void matchesDependentWithLegacyMatcher() {
     var resource = extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      var service = extension.get(Service.class, TEST_RESOURCE_NAME);
-      assertThat(service).isNotNull();
-      assertThat(ServiceDependentResource.createUpdateCount.get()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var service = extension.get(Service.class, TEST_RESOURCE_NAME);
+              assertThat(service).isNotNull();
+              assertThat(ServiceDependentResource.createUpdateCount.get()).isEqualTo(1);
+            });
 
     resource.getSpec().setValue("other_value");
 
-    await().untilAsserted(() -> {
-      assertThat(ServiceDependentResource.createUpdateCount.get()).isEqualTo(1);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(ServiceDependentResource.createUpdateCount.get()).isEqualTo(1);
+            });
   }
 
   SSALegacyMatcherCustomResource testResource() {
     SSALegacyMatcherCustomResource res = new SSALegacyMatcherCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
     res.setSpec(new SSALegacyMatcherSpec());
     res.getSpec().setValue("initial-value");
     return res;
   }
-
 }

@@ -14,6 +14,7 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
     extends AbstractPollingDependentResource<R, P>
     implements PerResourcePollingEventSource.ResourceFetcher<R, P> {
 
+  public PerResourcePollingDependentResource() {}
 
   public PerResourcePollingDependentResource(Class<R> resourceType) {
     super(resourceType);
@@ -27,9 +28,10 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
   protected ExternalResourceCachingEventSource<R, P> createEventSource(
       EventSourceContext<P> context) {
 
-    return new PerResourcePollingEventSource<>(resourceType(), context,
-        new PerResourcePollingConfigurationBuilder<>(
-            this, getPollingPeriod())
+    return new PerResourcePollingEventSource<>(
+        resourceType(),
+        context,
+        new PerResourcePollingConfigurationBuilder<>(this, getPollingPeriod())
             .withCacheKeyMapper(this)
             .withName(name())
             .build());

@@ -24,8 +24,7 @@ public class StandaloneBulkDependentReconciler
 
   @Override
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
-      BulkDependentTestCustomResource resource,
-      Context<BulkDependentTestCustomResource> context) {
+      BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
     dependent.reconcile(resource, context);

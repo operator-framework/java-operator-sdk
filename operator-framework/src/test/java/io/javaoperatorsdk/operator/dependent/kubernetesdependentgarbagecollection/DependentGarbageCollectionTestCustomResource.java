@@ -10,7 +10,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("dgc")
 public class DependentGarbageCollectionTestCustomResource
-    extends
-    CustomResource<DependentGarbageCollectionTestCustomResourceSpec, Void>
-    implements Namespaced {
-}
+    extends CustomResource<DependentGarbageCollectionTestCustomResourceSpec, Void>
+    implements Namespaced {}

@@ -9,13 +9,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(informer = @Informer(
-    labelSelector = "app.kubernetes.io/managed-by=tomcat-operator"))
+@KubernetesDependent(
+    informer = @Informer(labelSelector = "app.kubernetes.io/managed-by=tomcat-operator"))
 public class ServiceDependentResource extends CRUDKubernetesDependentResource<Service, Tomcat> {
-
-  public ServiceDependentResource() {
-    super(Service.class);
-  }
 
   @Override
   protected Service desired(Tomcat tomcat, Context<Tomcat> context) {
@@ -31,5 +27,4 @@ public class ServiceDependentResource extends CRUDKubernetesDependentResource<Se
         .endSpec()
         .build();
   }
-
 }

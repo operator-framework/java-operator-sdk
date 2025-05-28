@@ -50,7 +50,8 @@ public class DependentGarbageCollectionTestReconciler
   @Override
   public ErrorStatusUpdateControl<DependentGarbageCollectionTestCustomResource> updateErrorStatus(
       DependentGarbageCollectionTestCustomResource resource,
-      Context<DependentGarbageCollectionTestCustomResource> context, Exception e) {
+      Context<DependentGarbageCollectionTestCustomResource> context,
+      Exception e) {
     // this can happen when a namespace is terminated in test
     if (e instanceof KubernetesClientException) {
       return ErrorStatusUpdateControl.noStatusUpdate();
@@ -63,24 +64,22 @@ public class DependentGarbageCollectionTestReconciler
     return errorOccurred;
   }
 
-  private static class ConfigMapDependentResource extends
-      KubernetesDependentResource<ConfigMap, DependentGarbageCollectionTestCustomResource>
+  private static class ConfigMapDependentResource
+      extends KubernetesDependentResource<ConfigMap, DependentGarbageCollectionTestCustomResource>
       implements Creator<ConfigMap, DependentGarbageCollectionTestCustomResource>,
-      Updater<ConfigMap, DependentGarbageCollectionTestCustomResource>,
-      GarbageCollected<DependentGarbageCollectionTestCustomResource> {
-
-    public ConfigMapDependentResource() {
-      super(ConfigMap.class);
-    }
+          Updater<ConfigMap, DependentGarbageCollectionTestCustomResource>,
+          GarbageCollected<DependentGarbageCollectionTestCustomResource> {
 
     @Override
-    protected ConfigMap desired(DependentGarbageCollectionTestCustomResource primary,
+    protected ConfigMap desired(
+        DependentGarbageCollectionTestCustomResource primary,
         Context<DependentGarbageCollectionTestCustomResource> context) {
       ConfigMap configMap = new ConfigMap();
-      configMap.setMetadata(new ObjectMetaBuilder()
-          .withName(primary.getMetadata().getName())
-          .withNamespace(primary.getMetadata().getNamespace())
-          .build());
+      configMap.setMetadata(
+          new ObjectMetaBuilder()
+              .withName(primary.getMetadata().getName())
+              .withNamespace(primary.getMetadata().getNamespace())
+              .build());
       configMap.setData(Map.of("key", "data"));
       return configMap;
     }

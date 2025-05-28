@@ -41,10 +41,15 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       KubernetesClient kubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
-    super(infrastructure, infrastructureTimeout, oneNamespacePerClass,
+    super(
+        infrastructure,
+        infrastructureTimeout,
+        oneNamespacePerClass,
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
-        kubernetesClient, namespaceNameSupplier, perClassNamespaceNameSupplier);
+        kubernetesClient,
+        namespaceNameSupplier,
+        perClassNamespaceNameSupplier);
     this.operatorDeployment = operatorDeployment;
     this.operatorDeploymentTimeout = operatorDeploymentTimeout;
   }
@@ -65,8 +70,9 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     final var crdSuffix = "-v1.yml";
 
     final var kubernetesClient = getKubernetesClient();
-    for (var crdFile : Objects
-        .requireNonNull(new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
+    for (var crdFile :
+        Objects.requireNonNull(
+            new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
       try (InputStream is = new FileInputStream(crdFile)) {
         final var crd = kubernetesClient.load(is);
         crd.createOrReplace();
@@ -81,20 +87,18 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     }
 
     LOGGER.debug("Deploying the operator into Kubernetes. Target namespace: {}", namespace);
-    operatorDeployment.forEach(hm -> {
-      hm.getMetadata().setNamespace(namespace);
-      if (hm.getKind().toLowerCase(Locale.ROOT).equals("clusterrolebinding")) {
-        var crb = (ClusterRoleBinding) hm;
-        for (var subject : crb.getSubjects()) {
-          subject.setNamespace(namespace);
-        }
-      }
-    });
+    operatorDeployment.forEach(
+        hm -> {
+          hm.getMetadata().setNamespace(namespace);
+          if (hm.getKind().toLowerCase(Locale.ROOT).equals("clusterrolebinding")) {
+            var crb = (ClusterRoleBinding) hm;
+            for (var subject : crb.getSubjects()) {
+              subject.setNamespace(namespace);
+            }
+          }
+        });
 
-    kubernetesClient
-        .resourceList(operatorDeployment)
-        .inNamespace(namespace)
-        .createOrReplace();
+    kubernetesClient.resourceList(operatorDeployment).inNamespace(namespace).createOrReplace();
     kubernetesClient
         .resourceList(operatorDeployment)
         .waitUntilReady(operatorDeploymentTimeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -123,8 +127,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       return this;
     }
 
-    public Builder withOperatorDeployment(List<HasMetadata> hm,
-        Consumer<List<HasMetadata>> modifications) {
+    public Builder withOperatorDeployment(
+        List<HasMetadata> hm, Consumer<List<HasMetadata>> modifications) {
       modifications.accept(hm);
       operatorDeployment.addAll(hm);
       return this;

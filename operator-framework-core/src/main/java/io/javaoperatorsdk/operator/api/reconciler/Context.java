@@ -31,9 +31,9 @@ public interface Context<P extends HasMetadata> {
   ControllerConfiguration<P> getControllerConfiguration();
 
   /**
-   * Retrieve the {@link ManagedWorkflowAndDependentResourceContext} used to interact with
-   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource}s and associated
-   * {@link io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow}
+   * Retrieve the {@link ManagedWorkflowAndDependentResourceContext} used to interact with {@link
+   * io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource}s and associated {@link
+   * io.javaoperatorsdk.operator.processing.dependent.workflow.Workflow}
    *
    * @return the {@link ManagedWorkflowAndDependentResourceContext}
    */
@@ -43,16 +43,21 @@ public interface Context<P extends HasMetadata> {
 
   KubernetesClient getClient();
 
-  /**
-   * ExecutorService initialized by framework for workflows. Used for workflow standalone mode.
-   */
+  /** ExecutorService initialized by framework for workflows. Used for workflow standalone mode. */
   ExecutorService getWorkflowExecutorService();
+
+  /**
+   * Retrieves the primary resource.
+   *
+   * @return the primary resource associated with the current reconciliation
+   */
+  P getPrimaryResource();
 
   /**
    * Retrieves the primary resource cache.
    *
    * @return the {@link IndexerResourceCache} associated with the associated {@link Reconciler} for
-   *         this context
+   *     this context
    */
   @SuppressWarnings("unused")
   IndexedResourceCache<P> getPrimaryCache();
@@ -65,7 +70,6 @@ public interface Context<P extends HasMetadata> {
    * rendering the current one moot.
    *
    * @return {@code true} is another reconciliation is already scheduled, {@code false} otherwise
-   **/
+   */
   boolean isNextReconciliationImminent();
-
 }

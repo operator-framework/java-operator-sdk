@@ -60,8 +60,8 @@ public class WorkflowBuilder<P extends HasMetadata> {
   }
 
   DefaultWorkflow<P> buildAsDefaultWorkflow() {
-    return new DefaultWorkflow(new HashSet<>(dependentResourceNodes.values()),
-        throwExceptionAutomatically, isCleaner);
+    return new DefaultWorkflow(
+        new HashSet<>(dependentResourceNodes.values()), throwExceptionAutomatically, isCleaner);
   }
 
   public class WorkflowNodeConfigurationBuilder {

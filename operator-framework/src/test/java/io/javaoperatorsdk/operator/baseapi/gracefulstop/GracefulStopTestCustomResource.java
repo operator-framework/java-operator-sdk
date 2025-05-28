@@ -11,6 +11,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("gst")
 public class GracefulStopTestCustomResource
     extends CustomResource<GracefulStopTestCustomResourceSpec, GracefulStopTestCustomResourceStatus>
-    implements Namespaced {
-
-}
+    implements Namespaced {}

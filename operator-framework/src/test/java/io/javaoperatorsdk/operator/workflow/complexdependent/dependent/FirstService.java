@@ -9,5 +9,4 @@ public class FirstService extends BaseService {
   public FirstService() {
     super(DISCRIMINATOR_PREFIX);
   }
-
 }

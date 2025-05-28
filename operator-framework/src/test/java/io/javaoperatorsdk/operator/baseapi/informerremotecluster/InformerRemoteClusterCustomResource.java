@@ -10,5 +10,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("irc")
 public class InformerRemoteClusterCustomResource
-    extends CustomResource<Void, InformerRemoteClusterStatus> implements Namespaced {
-}
+    extends CustomResource<Void, InformerRemoteClusterStatus> implements Namespaced {}

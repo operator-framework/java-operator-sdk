@@ -14,10 +14,13 @@ public abstract class BaseStatefulSet extends BaseDependentResource<StatefulSet>
   }
 
   @Override
-  protected StatefulSet desired(ComplexWorkflowCustomResource primary,
-      Context<ComplexWorkflowCustomResource> context) {
-    var template = ReconcilerUtils.loadYaml(StatefulSet.class, getClass(),
-        "/io/javaoperatorsdk/operator/workflow/complexdependent/statefulset.yaml");
+  protected StatefulSet desired(
+      ComplexWorkflowCustomResource primary, Context<ComplexWorkflowCustomResource> context) {
+    var template =
+        ReconcilerUtils.loadYaml(
+            StatefulSet.class,
+            getClass(),
+            "/io/javaoperatorsdk/operator/workflow/complexdependent/statefulset.yaml");
     var name = name(primary);
     var metadata = createMeta(primary).build();
 

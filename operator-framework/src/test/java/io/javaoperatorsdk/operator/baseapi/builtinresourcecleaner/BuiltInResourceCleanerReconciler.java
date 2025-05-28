@@ -7,16 +7,13 @@ import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 
 @ControllerConfiguration(informer = @Informer(labelSelector = "builtintest=true"))
-public class BuiltInResourceCleanerReconciler
-    implements Reconciler<Service>, Cleaner<Service> {
+public class BuiltInResourceCleanerReconciler implements Reconciler<Service>, Cleaner<Service> {
 
   private final AtomicInteger reconciled = new AtomicInteger(0);
   private final AtomicInteger cleaned = new AtomicInteger(0);
 
   @Override
-  public UpdateControl<Service> reconcile(
-      Service resource,
-      Context<Service> context) {
+  public UpdateControl<Service> reconcile(Service resource, Context<Service> context) {
     reconciled.addAndGet(1);
     return UpdateControl.noUpdate();
   }

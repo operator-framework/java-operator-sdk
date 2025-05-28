@@ -42,7 +42,7 @@ import static io.javaoperatorsdk.operator.api.config.ControllerConfigurationOver
 public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LocallyRunOperatorExtension.class);
-  private static final int CRD_DELETE_TIMEOUT = 1000;
+  private static final int CRD_DELETE_TIMEOUT = 5000;
   private static final Set<AppliedCRD> appliedCRDs = new HashSet<>();
   private static final boolean deleteCRDs =
       Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
@@ -82,29 +82,31 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
-    configurationServiceOverrider = configurationServiceOverrider != null
-        ? configurationServiceOverrider
-            .andThen(overrider -> overrider.withKubernetesClient(kubernetesClient))
-        : overrider -> overrider.withKubernetesClient(kubernetesClient);
+    configurationServiceOverrider =
+        configurationServiceOverrider != null
+            ? configurationServiceOverrider.andThen(
+                overrider -> overrider.withKubernetesClient(kubernetesClient))
+            : overrider -> overrider.withKubernetesClient(kubernetesClient);
     this.operator = new Operator(configurationServiceOverrider);
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
   }
 
-  static Map<String, String> getAdditionalCRDsFromFiles(Iterable<String> additionalCrds,
-      KubernetesClient client) {
+  static Map<String, String> getAdditionalCRDsFromFiles(
+      Iterable<String> additionalCrds, KubernetesClient client) {
     Map<String, String> crdMappings = new HashMap<>();
-    additionalCrds.forEach(p -> {
-      try (InputStream is = new FileInputStream(p)) {
-        client.load(is).items().stream()
-            // only consider CRDs to avoid applying random resources to the cluster
-            .filter(CustomResourceDefinition.class::isInstance)
-            .map(CustomResourceDefinition.class::cast)
-            .forEach(crd -> crdMappings.put(crd.getMetadata().getName(), p));
-      } catch (Exception e) {
-        throw new RuntimeException("Couldn't load CRD at " + p, e);
-      }
-    });
+    additionalCrds.forEach(
+        p -> {
+          try (InputStream is = new FileInputStream(p)) {
+            client.load(is).items().stream()
+                // only consider CRDs to avoid applying random resources to the cluster
+                .filter(CustomResourceDefinition.class::isInstance)
+                .map(CustomResourceDefinition.class::cast)
+                .forEach(crd -> crdMappings.put(crd.getMetadata().getName(), p));
+          } catch (Exception e) {
+            throw new RuntimeException("Couldn't load CRD at " + p, e);
+          }
+        });
     return crdMappings;
   }
 
@@ -164,8 +166,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   /**
    * Applies the CRD associated with the specified custom resource, first checking if a CRD has been
    * manually specified using {@link Builder#withAdditionalCRD}, otherwise assuming that its CRD
-   * should be found in the standard location as explained in
-   * {@link LocallyRunOperatorExtension#applyCrd(String, KubernetesClient)}
+   * should be found in the standard location as explained in {@link
+   * LocallyRunOperatorExtension#applyCrd(String, KubernetesClient)}
    *
    * @param crClass the custom resource class for which we want to apply the CRD
    */
@@ -176,12 +178,12 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   /**
    * Applies the CRD associated with the specified resource type name, first checking if a CRD has
    * been manually specified using {@link Builder#withAdditionalCRD}, otherwise assuming that its
-   * CRD should be found in the standard location as explained in
-   * {@link LocallyRunOperatorExtension#applyCrd(String, KubernetesClient)}
+   * CRD should be found in the standard location as explained in {@link
+   * LocallyRunOperatorExtension#applyCrd(String, KubernetesClient)}
    *
    * @param resourceTypeName the resource type name associated with the CRD to be applied,
-   *        typically, given a resource type, its name would be obtained using
-   *        {@link ReconcilerUtils#getResourceTypeName(Class)}
+   *     typically, given a resource type, its name would be obtained using {@link
+   *     ReconcilerUtils#getResourceTypeName(Class)}
    */
   public void applyCrd(String resourceTypeName) {
     // first attempt to use a manually defined CRD
@@ -238,17 +240,23 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     final var kubernetesClient = getKubernetesClient();
 
     for (var ref : portForwards) {
-      String podName = kubernetesClient.pods()
-          .inNamespace(ref.getNamespace())
-          .withLabel(ref.getLabelKey(), ref.getLabelValue())
-          .list()
-          .getItems()
-          .get(0)
-          .getMetadata()
-          .getName();
+      String podName =
+          kubernetesClient
+              .pods()
+              .inNamespace(ref.getNamespace())
+              .withLabel(ref.getLabelKey(), ref.getLabelValue())
+              .list()
+              .getItems()
+              .get(0)
+              .getMetadata()
+              .getName();
 
-      localPortForwards.add(kubernetesClient.pods().inNamespace(ref.getNamespace())
-          .withName(podName).portForward(ref.getPort(), ref.getLocalPort()));
+      localPortForwards.add(
+          kubernetesClient
+              .pods()
+              .inNamespace(ref.getNamespace())
+              .withName(podName)
+              .portForward(ref.getPort(), ref.getLocalPort()));
     }
 
     additionalCustomResourceDefinitions.forEach(this::applyCrd);
@@ -278,15 +286,16 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       var registeredController = this.operator.register(ref.reconciler, oconfig.build());
       registeredControllers.put(ref.reconciler, registeredController);
     }
-    crdMappings.forEach((crdName, path) -> {
-      final String crdString;
-      try {
-        crdString = Files.readString(Path.of(path));
-      } catch (IOException e) {
-        throw new IllegalArgumentException("Couldn't read CRD located at " + path, e);
-      }
-      applyCrd(crdString, path, getKubernetesClient());
-    });
+    crdMappings.forEach(
+        (crdName, path) -> {
+          final String crdString;
+          try {
+            crdString = Files.readString(Path.of(path));
+          } catch (IOException e) {
+            throw new IllegalArgumentException("Couldn't read CRD located at " + path, e);
+          }
+          applyCrd(crdString, path, getKubernetesClient());
+        });
     crdMappings.clear();
 
     LOGGER.debug("Starting the operator locally");
@@ -334,7 +343,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
       LOGGER.debug("Deleted CRD with path: {}", appliedCRD.path);
     } catch (Exception ex) {
-      throw new IllegalStateException("Cannot delete CRD yaml: " + appliedCRD.path, ex);
+      LOGGER.warn(
+          "Cannot delete CRD yaml: {}. You might need to delete it manually.", appliedCRD.path, ex);
     }
   }
 
@@ -390,8 +400,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
-    public Builder withPortForward(String namespace, String labelKey, String labelValue, int port,
-        int localPort) {
+    public Builder withPortForward(
+        String namespace, String labelKey, String labelValue, int port, int localPort) {
       portForwards.add(new PortForwardSpec(namespace, labelKey, labelValue, port, localPort));
       return this;
     }
@@ -425,7 +435,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient,
-          configurationServiceOverrider, namespaceNameSupplier,
+          configurationServiceOverrider,
+          namespaceNameSupplier,
           perClassNamespaceNameSupplier,
           additionalCRDs);
     }
@@ -438,8 +449,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     final int port;
     final int localPort;
 
-    public PortForwardSpec(String namespace, String labelKey, String labelValue, int port,
-        int localPort) {
+    public PortForwardSpec(
+        String namespace, String labelKey, String labelValue, int port, int localPort) {
       this.namespace = namespace;
       this.labelKey = labelKey;
       this.labelValue = labelValue;

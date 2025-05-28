@@ -21,20 +21,14 @@ on:
         type: string
         required: false
         default: ''
-      it-category:
-        type: string
-        required: false
-        default: ''
 
 jobs:
   integration_tests:
-    name: "Experimental: ${{ inputs.experimental }}, Checkout ref: ${{ inputs.checkout-ref }}"
+    name: Integration tests (${{ inputs.java-version }}, ${{ inputs.kube-version }}, ${{ inputs.http-client }})
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.experimental }}
     timeout-minutes: 40
     steps:
-      - name: Output test information
-        run: echo "Running ITs with ${{ inputs.http-client }}, ${{ inputs.kube-version }}, ${{ inputs.java-version }}"
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.checkout-ref }}
@@ -44,18 +38,13 @@ jobs:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
-      - name: Download minikube artifact for Kubernetes ${{ inputs.kube-version }}
-        uses: actions/download-artifact@v4
+      - name: Set up Minikube
+        uses: manusa/actions-setup-minikube@v2.14.0
         with:
-          name: minikube-${{inputs.kube-version}}
-          path: minikube
-      - name: Start minikube with Kubernetes ${{ inputs.kube-version }}
-        run: |
-          # wait for docker
-          docker version -f '{{.Server.Version}} - {{.Client.Version}}'
-          export MINIKUBE_HOME=$PWD/minikube
-          minikube start --driver=docker
-          kubectl version
+          minikube version: 'v1.34.0'
+          kubernetes version: '${{ inputs.kube-version }}'
+          driver: 'docker'
+          github token: ${{ secrets.GITHUB_TOKEN }}
       - name: "${{inputs.it-category}} integration tests (kube: ${{ inputs.kube-version }} / java: ${{ inputs.java-version }} / client: ${{ inputs.http-client }})"
         run: |
           if [ -z "${{inputs.it-category}}" ]; then

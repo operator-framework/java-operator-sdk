@@ -28,7 +28,6 @@ class GenericKubernetesResourceMatcherTest {
   Deployment desired = createDeployment();
   TestDependentResource dependentResource = new TestDependentResource(desired);
 
-
   @BeforeAll
   static void setUp() {
     final var client = MockKubernetesClient.client(HasMetadata.class);
@@ -55,8 +54,7 @@ class GenericKubernetesResourceMatcherTest {
   @Test
   void matchesWithStrongSpecEquality() {
     actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
-    assertThat(match(desired, actual, true, true, context)
-        .matched())
+    assertThat(match(desired, actual, true, true, context).matched())
         .withFailMessage("Adding values should fail matching when strong equality is required")
         .isFalse();
   }
@@ -64,9 +62,10 @@ class GenericKubernetesResourceMatcherTest {
   @Test
   void doesNotMatchRemovedValues() {
     actual = createDeployment();
-    assertThat(GenericKubernetesResourceMatcher
-        .match(dependentResource.desired(createPrimary("removed"), null), actual, context)
-        .matched())
+    assertThat(
+            GenericKubernetesResourceMatcher.match(
+                    dependentResource.desired(createPrimary("removed"), null), actual, context)
+                .matched())
         .withFailMessage("Removing values in metadata should lead to a mismatch")
         .isFalse();
   }
@@ -119,11 +118,12 @@ class GenericKubernetesResourceMatcherTest {
 
   @Test
   void matchesMetadata() {
-    actual = new DeploymentBuilder(createDeployment())
-        .editOrNewMetadata()
-        .addToAnnotations("test", "value")
-        .endMetadata()
-        .build();
+    actual =
+        new DeploymentBuilder(createDeployment())
+            .editOrNewMetadata()
+            .addToAnnotations("test", "value")
+            .endMetadata()
+            .build();
     assertThat(match(dependentResource, actual, null, context, false).matched())
         .withFailMessage("Annotations shouldn't matter when metadata is not considered")
         .isTrue();
@@ -134,9 +134,9 @@ class GenericKubernetesResourceMatcherTest {
 
     assertThat(match(desired, actual, false, false, context).matched())
         .withFailMessage(
-            "Should match when strong equality is not considered and only additive changes are made")
+            "Should match when strong equality is not considered and only additive changes are"
+                + " made")
         .isTrue();
-
   }
 
   @Test
@@ -144,12 +144,13 @@ class GenericKubernetesResourceMatcherTest {
     final var serviceAccountDR = new ServiceAccountDR();
 
     final var desired = serviceAccountDR.desired(null, context);
-    var actual = new ServiceAccountBuilder(desired)
-        .addNewImagePullSecret("imagePullSecret3")
-        .build();
+    var actual =
+        new ServiceAccountBuilder(desired).addNewImagePullSecret("imagePullSecret3").build();
 
-    assertThat(GenericKubernetesResourceMatcher.match(desired, actual, false, false, context)
-        .matched()).isTrue();
+    assertThat(
+            GenericKubernetesResourceMatcher.match(desired, actual, false, false, context)
+                .matched())
+        .isTrue();
   }
 
   @Test
@@ -158,17 +159,13 @@ class GenericKubernetesResourceMatcherTest {
     var actual = createConfigMap();
     actual.getData().put("key2", "val2");
 
-    var match = GenericKubernetesResourceMatcher.match(desired, actual,
-        true, false, context);
+    var match = GenericKubernetesResourceMatcher.match(desired, actual, true, false, context);
     assertThat(match.matched()).isTrue();
   }
 
   ConfigMap createConfigMap() {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName("tes1")
-            .withNamespace("default")
-            .build())
+        .withMetadata(new ObjectMetaBuilder().withName("tes1").withNamespace("default").build())
         .withData(Map.of("key1", "val1"))
         .build();
   }
@@ -189,14 +186,12 @@ class GenericKubernetesResourceMatcherTest {
   private static class ServiceAccountDR
       extends KubernetesDependentResource<ServiceAccount, HasMetadata> {
 
-    public ServiceAccountDR() {
-      super(ServiceAccount.class);
-    }
-
     @Override
     protected ServiceAccount desired(HasMetadata primary, Context<HasMetadata> context) {
       return new ServiceAccountBuilder()
-          .withNewMetadata().withName("foo").endMetadata()
+          .withNewMetadata()
+          .withName("foo")
+          .endMetadata()
           .withAutomountServiceAccountToken()
           .addNewImagePullSecret("imagePullSecret1")
           .addNewImagePullSecret("imagePullSecret2")
@@ -215,9 +210,10 @@ class GenericKubernetesResourceMatcherTest {
 
     @Override
     protected Deployment desired(HasMetadata primary, Context context) {
-      final var currentCase = Optional.ofNullable(primary)
-          .map(p -> p.getMetadata().getLabels().get("case"))
-          .orElse(null);
+      final var currentCase =
+          Optional.ofNullable(primary)
+              .map(p -> p.getMetadata().getLabels().get("case"))
+              .orElse(null);
       var d = desired;
       if ("removed".equals(currentCase)) {
         d = createDeployment();

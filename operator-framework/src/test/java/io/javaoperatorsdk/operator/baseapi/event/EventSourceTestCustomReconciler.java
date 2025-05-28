@@ -7,8 +7,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration
 public class EventSourceTestCustomReconciler
-    implements Reconciler<EventSourceTestCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<EventSourceTestCustomResource>, TestExecutionInfoProvider {
 
   public static final int TIMER_PERIOD = 500;
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);

@@ -14,6 +14,7 @@ public class PatchResourceAndStatusNoSSAStatus {
   }
 
   public enum State {
-    SUCCESS, ERROR
+    SUCCESS,
+    ERROR
   }
 }

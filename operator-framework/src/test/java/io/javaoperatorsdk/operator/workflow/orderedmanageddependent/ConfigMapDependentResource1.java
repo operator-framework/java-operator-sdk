@@ -12,22 +12,20 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent(informer = @Informer(labelSelector = "dependent = cm1"))
-public class ConfigMapDependentResource1 extends
-    CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
-
-  public ConfigMapDependentResource1() {
-    super(ConfigMap.class);
-  }
+public class ConfigMapDependentResource1
+    extends CRUDKubernetesDependentResource<ConfigMap, OrderedManagedDependentCustomResource> {
 
   @Override
-  public ReconcileResult<ConfigMap> reconcile(OrderedManagedDependentCustomResource primary,
+  public ReconcileResult<ConfigMap> reconcile(
+      OrderedManagedDependentCustomResource primary,
       Context<OrderedManagedDependentCustomResource> context) {
     OrderedManagedDependentTestReconciler.dependentExecution.add(this.getClass());
     return super.reconcile(primary, context);
   }
 
   @Override
-  protected ConfigMap desired(OrderedManagedDependentCustomResource primary,
+  protected ConfigMap desired(
+      OrderedManagedDependentCustomResource primary,
       Context<OrderedManagedDependentCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();
@@ -42,5 +40,4 @@ public class ConfigMapDependentResource1 extends
     configMap.setData(data);
     return configMap;
   }
-
 }

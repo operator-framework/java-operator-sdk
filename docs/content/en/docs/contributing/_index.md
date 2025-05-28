@@ -1,6 +1,6 @@
 ---
 title: Contributing To Java Operator SDK
-weight: 100
+weight: 110
 ---
 
 First of all, we'd like to thank you for considering contributing to the project! We really
@@ -72,9 +72,9 @@ avoid getting a PR rejected simply because of code style issues), you can import
 following code style schemes based on the IDE you use:
 
 - for *Intellij IDEA*
-  import [contributing/intellij-google-style.xml](contributing/intellij-google-style.xml)
+  install [google-java-format](https://plugins.jetbrains.com/plugin/8527-google-java-format) plugin
 - for *Eclipse*
-  import [contributing/eclipse-google-style.xml](contributing/eclipse-google-style.xml)
+  follow [these intructions](https://github.com/google/google-java-format?tab=readme-ov-file#eclipse)
 
 ## Thanks
 

@@ -82,8 +82,9 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
     this.initialInterval = configuration.initialInterval();
     this.maxAttempts = configuration.maxAttempts();
     this.intervalMultiplier = configuration.intervalMultiplier();
-    this.maxInterval = configuration.maxInterval() == GradualRetry.UNSET_VALUE
-        ? GradualRetry.DEFAULT_MAX_INTERVAL
-        : configuration.maxInterval();
+    this.maxInterval =
+        configuration.maxInterval() == GradualRetry.UNSET_VALUE
+            ? GradualRetry.DEFAULT_MAX_INTERVAL
+            : configuration.maxInterval();
   }
 }

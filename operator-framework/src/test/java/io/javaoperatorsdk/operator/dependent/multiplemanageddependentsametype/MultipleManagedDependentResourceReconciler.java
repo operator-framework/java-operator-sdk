@@ -13,16 +13,19 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.dependent.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 
-@Workflow(dependents = {
-    @Dependent(type = MultipleManagedDependentResourceConfigMap1.class,
-        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
-    @Dependent(type = MultipleManagedDependentResourceConfigMap2.class,
-        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
-})
+@Workflow(
+    dependents = {
+      @Dependent(
+          type = MultipleManagedDependentResourceConfigMap1.class,
+          useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+      @Dependent(
+          type = MultipleManagedDependentResourceConfigMap2.class,
+          useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
+    })
 @ControllerConfiguration
 public class MultipleManagedDependentResourceReconciler
     implements Reconciler<MultipleManagedDependentResourceCustomResource>,
-    TestExecutionInfoProvider {
+        TestExecutionInfoProvider {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
   public static final String DATA_KEY = "key";
@@ -40,7 +43,6 @@ public class MultipleManagedDependentResourceReconciler
     return UpdateControl.noUpdate();
   }
 
-
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
@@ -50,8 +52,8 @@ public class MultipleManagedDependentResourceReconciler
       EventSourceContext<MultipleManagedDependentResourceCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentResourceCustomResource> ies =
         new InformerEventSource<>(
-            InformerEventSourceConfiguration
-                .from(ConfigMap.class, MultipleManagedDependentResourceCustomResource.class)
+            InformerEventSourceConfiguration.from(
+                    ConfigMap.class, MultipleManagedDependentResourceCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
                 .build(),
             context);

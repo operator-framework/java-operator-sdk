@@ -28,12 +28,13 @@ public class ManagedWorkflowSupport {
 
     final var uniqueNames = new HashSet<>(size);
     final var duplicatedNames = new HashSet<>(size);
-    dependentResourceSpecs.forEach(spec -> {
-      final var name = spec.getName();
-      if (!uniqueNames.add(name)) {
-        duplicatedNames.add(name);
-      }
-    });
+    dependentResourceSpecs.forEach(
+        spec -> {
+          final var name = spec.getName();
+          if (!uniqueNames.add(name)) {
+            duplicatedNames.add(name);
+          }
+        });
     if (!duplicatedNames.isEmpty()) {
       throw new OperatorException("Duplicated dependent resource name(s): " + duplicatedNames);
     }
@@ -65,23 +66,25 @@ public class ManagedWorkflowSupport {
 
     while (!toVisit.isEmpty()) {
       final var toVisitNext = new HashSet<DependentResourceSpec>();
-      toVisit.forEach(dr -> {
-        if (cleanerHolder != null) {
-          cleanerHolder[0] =
-              cleanerHolder[0] || DefaultWorkflow.isDeletable(dr.getDependentResourceClass());
-        }
-        final var name = dr.getName();
-        var drInfo = drInfosByName.get(name);
-        if (drInfo != null) {
-          drInfo.waitingForCompletion.forEach(spec -> {
-            if (isReadyForVisit(spec, alreadyVisited, name)) {
-              toVisitNext.add(spec);
+      toVisit.forEach(
+          dr -> {
+            if (cleanerHolder != null) {
+              cleanerHolder[0] =
+                  cleanerHolder[0] || DefaultWorkflow.isDeletable(dr.getDependentResourceClass());
             }
+            final var name = dr.getName();
+            var drInfo = drInfosByName.get(name);
+            if (drInfo != null) {
+              drInfo.waitingForCompletion.forEach(
+                  spec -> {
+                    if (isReadyForVisit(spec, alreadyVisited, name)) {
+                      toVisitNext.add(spec);
+                    }
+                  });
+              orderedSpecs.add(dr);
+            }
+            alreadyVisited.add(name);
           });
-          orderedSpecs.add(dr);
-        }
-        alreadyVisited.add(name);
-      });
 
       toVisit = toVisitNext;
     }
@@ -122,8 +125,8 @@ public class ManagedWorkflowSupport {
     }
   }
 
-  private boolean isReadyForVisit(DependentResourceSpec dr, Set<String> alreadyVisited,
-      String alreadyPresentName) {
+  private boolean isReadyForVisit(
+      DependentResourceSpec dr, Set<String> alreadyVisited, String alreadyPresentName) {
     for (var name : dr.getDependsOn()) {
       if (name.equals(alreadyPresentName)) {
         continue;
@@ -137,23 +140,28 @@ public class ManagedWorkflowSupport {
 
   private Set<DependentResourceSpec> getTopDependentResources(
       List<DependentResourceSpec> dependentResourceSpecs) {
-    return dependentResourceSpecs.stream().filter(r -> r.getDependsOn().isEmpty())
+    return dependentResourceSpecs.stream()
+        .filter(r -> r.getDependsOn().isEmpty())
         .collect(Collectors.toSet());
   }
 
   private Map<String, DRInfo> createDRInfos(List<DependentResourceSpec> dependentResourceSpecs) {
     // first create mappings
-    final var infos = dependentResourceSpecs.stream()
-        .map(DRInfo::new)
-        .collect(Collectors.toMap(DRInfo::name, Function.identity()));
+    final var infos =
+        dependentResourceSpecs.stream()
+            .map(DRInfo::new)
+            .collect(Collectors.toMap(DRInfo::name, Function.identity()));
 
     // then populate the reverse depends on information
-    dependentResourceSpecs.forEach(spec -> spec.getDependsOn().forEach(name -> {
-      final var drInfo = infos.get(name);
-      drInfo.add(spec);
-    }));
+    dependentResourceSpecs.forEach(
+        spec ->
+            spec.getDependsOn()
+                .forEach(
+                    name -> {
+                      final var drInfo = infos.get(name);
+                      drInfo.add(spec);
+                    }));
 
     return infos;
   }
-
 }

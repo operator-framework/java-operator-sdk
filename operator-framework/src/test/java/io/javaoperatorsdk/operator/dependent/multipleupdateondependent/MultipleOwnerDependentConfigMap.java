@@ -15,17 +15,13 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 @KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
 public class MultipleOwnerDependentConfigMap
-    extends
-    CRUDKubernetesDependentResource<ConfigMap, MultipleOwnerDependentCustomResource> {
+    extends CRUDKubernetesDependentResource<ConfigMap, MultipleOwnerDependentCustomResource> {
 
   public static final String RESOURCE_NAME = "test1";
 
-  public MultipleOwnerDependentConfigMap() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(MultipleOwnerDependentCustomResource primary,
+  protected ConfigMap desired(
+      MultipleOwnerDependentCustomResource primary,
       Context<MultipleOwnerDependentCustomResource> context) {
 
     var cm = getSecondaryResource(primary, context);
@@ -45,11 +41,12 @@ public class MultipleOwnerDependentConfigMap
 
   // need to change this since owner reference is present only for the creator primary resource.
   @Override
-  public Optional<ConfigMap> getSecondaryResource(MultipleOwnerDependentCustomResource primary,
+  public Optional<ConfigMap> getSecondaryResource(
+      MultipleOwnerDependentCustomResource primary,
       Context<MultipleOwnerDependentCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource> ies =
-        (InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource>) context
-            .eventSourceRetriever().getEventSourceFor(ConfigMap.class);
+        (InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource>)
+            context.eventSourceRetriever().getEventSourceFor(ConfigMap.class);
     return ies.get(new ResourceID(RESOURCE_NAME, primary.getMetadata().getNamespace()));
   }
 }

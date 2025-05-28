@@ -26,8 +26,8 @@ public @interface ControllerConfiguration {
   /**
    * Optional finalizer name, if it is not provided, one will be automatically generated. Note that
    * finalizers are only added when Reconciler implement {@link Cleaner} interface and/or at least
-   * one managed dependent resource implements the
-   * {@link io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter} interface.
+   * one managed dependent resource implements the {@link
+   * io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter} interface.
    *
    * @return the finalizer name
    */
@@ -44,18 +44,20 @@ public @interface ControllerConfiguration {
 
   /**
    * Optional configuration of the maximal interval the SDK will wait for a reconciliation request
-   * to happen before one will be automatically triggered.
+   * to happen before one will be automatically triggered. The intention behind this feature is to
+   * have a failsafe, not to artificially force repeated reconciliations. For that use {@link
+   * UpdateControl#rescheduleAfter(long)}.
    *
    * @return the maximal reconciliation interval configuration
    */
-  MaxReconciliationInterval maxReconciliationInterval() default @MaxReconciliationInterval(
-      interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
+  MaxReconciliationInterval maxReconciliationInterval() default
+      @MaxReconciliationInterval(interval = MaxReconciliationInterval.DEFAULT_INTERVAL);
 
   /**
    * Optional {@link Retry} implementation for the associated controller to use.
    *
    * @return the class providing the {@link Retry} implementation to use, needs to provide an
-   *         accessible no-arg constructor.
+   *     accessible no-arg constructor.
    */
   Class<? extends Retry> retry() default GenericRetry.class;
 
@@ -63,14 +65,14 @@ public @interface ControllerConfiguration {
    * Optional {@link RateLimiter} implementation for the associated controller to use.
    *
    * @return the class providing the {@link RateLimiter} implementation to use, needs to provide an
-   *         accessible no-arg constructor.
+   *     accessible no-arg constructor.
    */
   Class<? extends RateLimiter> rateLimiter() default LinearRateLimiter.class;
 
   /**
-   * Retrieves the name used to assign as field manager for
-   * <a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side
-   * Apply</a> (SSA) operations. If unset, the sanitized controller name will be used.
+   * Retrieves the name used to assign as field manager for <a
+   * href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Server-Side Apply</a>
+   * (SSA) operations. If unset, the sanitized controller name will be used.
    *
    * @return the name used as field manager for SSA operations
    */

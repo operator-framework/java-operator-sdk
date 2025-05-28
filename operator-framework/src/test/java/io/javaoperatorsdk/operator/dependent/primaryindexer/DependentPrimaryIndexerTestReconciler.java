@@ -22,12 +22,14 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 
 import static io.javaoperatorsdk.operator.dependent.primaryindexer.DependentPrimaryIndexerTestReconciler.CONFIG_MAP_EVENT_SOURCE;
 
-@Workflow(dependents = @Dependent(useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE,
-    type = DependentPrimaryIndexerTestReconciler.ReadOnlyConfigMapDependent.class))
+@Workflow(
+    dependents =
+        @Dependent(
+            useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE,
+            type = DependentPrimaryIndexerTestReconciler.ReadOnlyConfigMapDependent.class))
 @ControllerConfiguration
 public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexerTestReconciler
-    implements
-    Reconciler<PrimaryIndexerTestCustomResource> {
+    implements Reconciler<PrimaryIndexerTestCustomResource> {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "configMapEventSource";
 
@@ -40,14 +42,16 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
 
     InformerEventSource<ConfigMap, PrimaryIndexerTestCustomResource> es =
         new InformerEventSource<>(
-            InformerEventSourceConfiguration
-                .from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
+            InformerEventSourceConfiguration.from(
+                    ConfigMap.class, PrimaryIndexerTestCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
-                .withSecondaryToPrimaryMapper(resource -> cache
-                    .byIndex(CONFIG_MAP_RELATION_INDEXER, resource.getMetadata().getName())
-                    .stream()
-                    .map(ResourceID::fromResource)
-                    .collect(Collectors.toSet()))
+                .withSecondaryToPrimaryMapper(
+                    resource ->
+                        cache
+                            .byIndex(CONFIG_MAP_RELATION_INDEXER, resource.getMetadata().getName())
+                            .stream()
+                            .map(ResourceID::fromResource)
+                            .collect(Collectors.toSet()))
                 .build(),
             context);
 
@@ -57,18 +61,16 @@ public class DependentPrimaryIndexerTestReconciler extends AbstractPrimaryIndexe
   public static class ReadOnlyConfigMapDependent
       extends KubernetesDependentResource<ConfigMap, PrimaryIndexerTestCustomResource> {
 
-    public ReadOnlyConfigMapDependent() {
-      super(ConfigMap.class);
-    }
-
     @Override
-    protected ConfigMap desired(PrimaryIndexerTestCustomResource primary,
+    protected ConfigMap desired(
+        PrimaryIndexerTestCustomResource primary,
         Context<PrimaryIndexerTestCustomResource> context) {
       return new ConfigMapBuilder()
-          .withMetadata(new ObjectMetaBuilder()
-              .withName(CONFIG_MAP_NAME)
-              .withNamespace(primary.getMetadata().getNamespace())
-              .build())
+          .withMetadata(
+              new ObjectMetaBuilder()
+                  .withName(CONFIG_MAP_NAME)
+                  .withNamespace(primary.getMetadata().getNamespace())
+                  .build())
           .build();
     }
   }

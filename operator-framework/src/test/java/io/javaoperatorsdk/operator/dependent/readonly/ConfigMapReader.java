@@ -7,5 +7,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Version("v1")
 @Group("josdk.io")
-public class ConfigMapReader extends CustomResource<Void, String> implements Namespaced {
-}
+public class ConfigMapReader extends CustomResource<Void, String> implements Namespaced {}

@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.workflow.complexdependent;
 
-
 public class ComplexWorkflowStatus {
   private ComplexWorkflowReconciler.RECONCILE_STATUS status;
 

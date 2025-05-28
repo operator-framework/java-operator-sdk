@@ -23,17 +23,22 @@ public class MySQLSchemaOperator {
   public static void main(String[] args) throws IOException {
     log.info("MySQL Schema Operator starting");
 
-    Operator operator = new Operator(overrider -> overrider
-        .withMetrics(MicrometerMetrics.withoutPerResourceMetrics(new LoggingMeterRegistry())));
+    Operator operator =
+        new Operator(
+            overrider ->
+                overrider.withMetrics(
+                    MicrometerMetrics.withoutPerResourceMetrics(new LoggingMeterRegistry())));
 
     MySQLSchemaReconciler schemaReconciler = new MySQLSchemaReconciler();
 
     // override the default configuration
-    operator.register(schemaReconciler,
-        configOverrider -> configOverrider.replacingNamedDependentResourceConfig(
-            SchemaDependentResource.NAME,
-            new ResourcePollerConfig(Duration.ofMillis(300),
-                MySQLDbConfig.loadFromEnvironmentVars())));
+    operator.register(
+        schemaReconciler,
+        configOverrider ->
+            configOverrider.replacingNamedDependentResourceConfig(
+                SchemaDependentResource.NAME,
+                new ResourcePollerConfig(
+                    Duration.ofMillis(300), MySQLDbConfig.loadFromEnvironmentVars())));
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD!")), 8080).start(Exit.NEVER);

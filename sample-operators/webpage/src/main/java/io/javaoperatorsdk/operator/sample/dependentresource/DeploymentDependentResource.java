@@ -22,10 +22,6 @@ import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconci
 public class DeploymentDependentResource
     extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 
-  public DeploymentDependentResource() {
-    super(Deployment.class);
-  }
-
   @Override
   protected Deployment desired(WebPage webPage, Context<WebPage> context) {
     Map<String, String> labels = new HashMap<>();
@@ -37,20 +33,14 @@ public class DeploymentDependentResource
     deployment.getMetadata().setLabels(labels);
     deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
 
-    deployment
-        .getSpec()
-        .getTemplate()
-        .getMetadata()
-        .getLabels()
-        .put("app", deploymentName);
+    deployment.getSpec().getTemplate().getMetadata().getLabels().put("app", deploymentName);
     deployment
         .getSpec()
         .getTemplate()
         .getSpec()
         .getVolumes()
         .get(0)
-        .setConfigMap(
-            new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
+        .setConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName(webPage)).build());
 
     return deployment;
   }

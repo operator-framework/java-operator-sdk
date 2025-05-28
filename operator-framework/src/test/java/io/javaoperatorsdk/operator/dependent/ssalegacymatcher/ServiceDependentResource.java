@@ -18,16 +18,15 @@ public class ServiceDependentResource
 
   public static AtomicInteger createUpdateCount = new AtomicInteger(0);
 
-  public ServiceDependentResource() {
-    super(Service.class);
-  }
-
   @Override
-  protected Service desired(SSALegacyMatcherCustomResource primary,
-      Context<SSALegacyMatcherCustomResource> context) {
+  protected Service desired(
+      SSALegacyMatcherCustomResource primary, Context<SSALegacyMatcherCustomResource> context) {
 
-    Service service = loadYaml(Service.class, SSAWithLegacyMatcherIT.class,
-        "/io/javaoperatorsdk/operator/service.yaml");
+    Service service =
+        loadYaml(
+            Service.class,
+            SSAWithLegacyMatcherIT.class,
+            "/io/javaoperatorsdk/operator/service.yaml");
     service.getMetadata().setName(primary.getMetadata().getName());
     service.getMetadata().setNamespace(primary.getMetadata().getNamespace());
     Map<String, String> labels = new HashMap<>();
@@ -37,17 +36,22 @@ public class ServiceDependentResource
   }
 
   @Override
-  public Result<Service> match(Service actualResource, SSALegacyMatcherCustomResource primary,
+  public Result<Service> match(
+      Service actualResource,
+      SSALegacyMatcherCustomResource primary,
       Context<SSALegacyMatcherCustomResource> context) {
     var desired = desired(primary, context);
 
-    return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context,
-        false, false);
+    return GenericKubernetesResourceMatcher.match(
+        this, actualResource, primary, context, false, false);
   }
 
   // override just to check the exec count
   @Override
-  public Service update(Service actual, Service desired, SSALegacyMatcherCustomResource primary,
+  public Service update(
+      Service actual,
+      Service desired,
+      SSALegacyMatcherCustomResource primary,
       Context<SSALegacyMatcherCustomResource> context) {
     createUpdateCount.addAndGet(1);
     return super.update(actual, desired, primary, context);
@@ -55,7 +59,9 @@ public class ServiceDependentResource
 
   // override just to check the exec count
   @Override
-  public Service create(Service desired, SSALegacyMatcherCustomResource primary,
+  public Service create(
+      Service desired,
+      SSALegacyMatcherCustomResource primary,
       Context<SSALegacyMatcherCustomResource> context) {
     createUpdateCount.addAndGet(1);
     return super.create(desired, primary, context);

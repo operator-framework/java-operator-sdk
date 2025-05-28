@@ -11,18 +11,16 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class ConfigMapDependentResource
     extends CRUDKubernetesDependentResource<ConfigMap, DependentReInitializationCustomResource> {
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(DependentReInitializationCustomResource primary,
+  protected ConfigMap desired(
+      DependentReInitializationCustomResource primary,
       Context<DependentReInitializationCustomResource> context) {
     return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(primary.getMetadata().getName())
-            .withNamespace(primary.getMetadata().getNamespace())
-            .build())
+        .withMetadata(
+            new ObjectMetaBuilder()
+                .withName(primary.getMetadata().getName())
+                .withNamespace(primary.getMetadata().getNamespace())
+                .build())
         .withData(Map.of("key", "val"))
         .build();
   }

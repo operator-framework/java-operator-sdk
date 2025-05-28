@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: 'maven'
       - name: Check code format
         run: |
@@ -31,10 +31,4 @@ jobs:
         run: ./mvnw ${MAVEN_ARGS} clean install -Pno-apt --file pom.xml
 
   build:
-    name: Integration tests with Kubernetes ${{ matrix.kubernetes }}
-    strategy:
-      matrix:
-        kubernetes: [ 'v1.29.12','1.30.8', '1.31.4', '1.32.0' ]
     uses: ./.github/workflows/build.yml
-    with:
-      kube-version: ${{ matrix.kubernetes }}

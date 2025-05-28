@@ -7,5 +7,4 @@ public interface ResourceClassResolver {
 
   <P extends HasMetadata> Class<P> getPrimaryResourceClass(
       Class<? extends Reconciler<P>> reconcilerClass);
-
 }

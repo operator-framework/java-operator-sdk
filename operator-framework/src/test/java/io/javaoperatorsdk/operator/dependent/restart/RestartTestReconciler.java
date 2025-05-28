@@ -15,8 +15,7 @@ public class RestartTestReconciler
 
   @Override
   public UpdateControl<RestartTestCustomResource> reconcile(
-      RestartTestCustomResource resource,
-      Context<RestartTestCustomResource> context) {
+      RestartTestCustomResource resource, Context<RestartTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }
@@ -24,5 +23,4 @@ public class RestartTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

@@ -18,8 +18,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
  * intended to be a reusable code as it is, rather serves for deeper understanding of the problem.
  */
 @ControllerConfiguration()
-public class JobReconciler
-    implements Reconciler<Job> {
+public class JobReconciler implements Reconciler<Job> {
 
   private static final String JOB_CLUSTER_INDEX = "job-cluster-index";
 
@@ -38,20 +37,22 @@ public class JobReconciler
   }
 
   @Override
-  public UpdateControl<Job> reconcile(
-      Job resource, Context<Job> context) {
+  public UpdateControl<Job> reconcile(Job resource, Context<Job> context) {
 
     if (!getResourceDirectlyFromCache) {
       // this is only possible when there is primary to secondary mapper
-      context.getSecondaryResource(Cluster.class)
+      context
+          .getSecondaryResource(Cluster.class)
           .orElseThrow(() -> new IllegalStateException("Secondary resource should be present"));
     } else {
       // reading the resource from cache as alternative, works without primary to secondary mapper
-      var informerEventSource = (InformerEventSource<Cluster, Job>) context.eventSourceRetriever()
-          .getEventSourceFor(Cluster.class);
+      var informerEventSource =
+          (InformerEventSource<Cluster, Job>)
+              context.eventSourceRetriever().getEventSourceFor(Cluster.class);
       informerEventSource
-          .get(new ResourceID(resource.getSpec().getClusterName(),
-              resource.getMetadata().getNamespace()))
+          .get(
+              new ResourceID(
+                  resource.getSpec().getClusterName(), resource.getMetadata().getNamespace()))
           .orElseThrow(
               () -> new IllegalStateException("Secondary resource cannot be read from cache"));
     }
@@ -61,21 +62,39 @@ public class JobReconciler
 
   @Override
   public List<EventSource<?, Job>> prepareEventSources(EventSourceContext<Job> context) {
-    context.getPrimaryCache().addIndexer(JOB_CLUSTER_INDEX, (job -> List
-        .of(indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
+    context
+        .getPrimaryCache()
+        .addIndexer(
+            JOB_CLUSTER_INDEX,
+            (job ->
+                List.of(
+                    indexKey(job.getSpec().getClusterName(), job.getMetadata().getNamespace()))));
 
     InformerEventSourceConfiguration.Builder<Cluster> informerConfiguration =
         InformerEventSourceConfiguration.from(Cluster.class, Job.class)
-            .withSecondaryToPrimaryMapper(cluster -> context.getPrimaryCache()
-                .byIndex(JOB_CLUSTER_INDEX, indexKey(cluster.getMetadata().getName(),
-                    cluster.getMetadata().getNamespace()))
-                .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
+            .withSecondaryToPrimaryMapper(
+                cluster ->
+                    context
+                        .getPrimaryCache()
+                        .byIndex(
+                            JOB_CLUSTER_INDEX,
+                            indexKey(
+                                cluster.getMetadata().getName(),
+                                cluster.getMetadata().getNamespace()))
+                        .stream()
+                        .map(ResourceID::fromResource)
+                        .collect(Collectors.toSet()))
             .withNamespacesInheritedFromController();
 
     if (addPrimaryToSecondaryMapper) {
-      informerConfiguration = informerConfiguration.withPrimaryToSecondaryMapper(
-          (PrimaryToSecondaryMapper<Job>) primary -> Set.of(new ResourceID(
-              primary.getSpec().getClusterName(), primary.getMetadata().getNamespace())));
+      informerConfiguration =
+          informerConfiguration.withPrimaryToSecondaryMapper(
+              (PrimaryToSecondaryMapper<Job>)
+                  primary ->
+                      Set.of(
+                          new ResourceID(
+                              primary.getSpec().getClusterName(),
+                              primary.getMetadata().getNamespace())));
     }
 
     return List.of(new InformerEventSource<>(informerConfiguration.build(), context));
@@ -90,8 +109,8 @@ public class JobReconciler
   }
 
   @Override
-  public ErrorStatusUpdateControl<Job> updateErrorStatus(Job resource, Context<Job> context,
-      Exception e) {
+  public ErrorStatusUpdateControl<Job> updateErrorStatus(
+      Job resource, Context<Job> context, Exception e) {
     errorOccurred = true;
     return ErrorStatusUpdateControl.noStatusUpdate();
   }

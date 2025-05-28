@@ -13,17 +13,14 @@ import static io.javaoperatorsdk.operator.dependent.multiplemanageddependentsame
 
 @KubernetesDependent
 public class MultipleManagedDependentNoDiscriminatorConfigMap2
-    extends
-    CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> {
+    extends CRUDKubernetesDependentResource<
+        ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> {
 
   public static final String NAME_SUFFIX = "-2";
 
-  public MultipleManagedDependentNoDiscriminatorConfigMap2() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(MultipleManagedDependentNoDiscriminatorCustomResource primary,
+  protected ConfigMap desired(
+      MultipleManagedDependentNoDiscriminatorCustomResource primary,
       Context<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     Map<String, String> data = new HashMap<>();
     data.put(DATA_KEY, primary.getSpec().getValue());

@@ -22,7 +22,8 @@ public class StandaloneDependentResourceIT {
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
-      LocallyRunOperatorExtension.builder().withReconciler(new StandaloneDependentTestReconciler())
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(new StandaloneDependentTestReconciler())
           .build();
 
   @Test
@@ -37,7 +38,7 @@ public class StandaloneDependentResourceIT {
 
     awaitForDeploymentReadyReplicas(1);
     assertThat(
-        ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
+            ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
         .isFalse();
   }
 
@@ -58,7 +59,7 @@ public class StandaloneDependentResourceIT {
 
     awaitForDeploymentReadyReplicas(2);
     assertThat(
-        ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
+            ((StandaloneDependentTestReconciler) operator.getFirstReconciler()).isErrorOccurred())
         .isFalse();
   }
 
@@ -101,5 +102,4 @@ public class StandaloneDependentResourceIT {
       }
     }.getResourceCloner();
   }
-
 }

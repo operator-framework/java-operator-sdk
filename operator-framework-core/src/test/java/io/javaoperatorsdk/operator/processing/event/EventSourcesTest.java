@@ -40,9 +40,11 @@ class EventSourcesTest {
     when(es2.resourceType()).thenReturn(EventSource.class);
 
     eventSources.add(es1);
-    assertThrows(IllegalArgumentException.class, () -> {
-      eventSources.add(es2);
-    });
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          eventSources.add(es2);
+        });
   }
 
   @Test
@@ -65,9 +67,8 @@ class EventSourcesTest {
 
     eventSources.add(source);
 
-    assertThat(eventSources.additionalEventSources()).containsExactly(
-        eventSources.retryEventSource(),
-        source);
+    assertThat(eventSources.additionalEventSources())
+        .containsExactly(eventSources.retryEventSource(), source);
   }
 
   @Test
@@ -78,9 +79,8 @@ class EventSourcesTest {
     when(source.resourceType()).thenReturn(EventSource.class);
     eventSources.add(source);
 
-
-    assertThat(eventSources.additionalEventSources()).containsExactly(
-        eventSources.retryEventSource(), source);
+    assertThat(eventSources.additionalEventSources())
+        .containsExactly(eventSources.retryEventSource(), source);
   }
 
   @Test
@@ -88,24 +88,22 @@ class EventSourcesTest {
     final var eventSources = new EventSources();
     final var configuration = MockControllerConfiguration.forResource(HasMetadata.class);
     when(configuration.getConfigurationService()).thenReturn(new BaseConfigurationService());
-    final var controller = new Controller(mock(Reconciler.class), configuration,
-        MockKubernetesClient.client(HasMetadata.class));
+    final var controller =
+        new Controller(
+            mock(Reconciler.class), configuration, MockKubernetesClient.client(HasMetadata.class));
     eventSources.createControllerEventSource(controller);
     final var controllerEventSource = eventSources.controllerEventSource();
     assertNotNull(controllerEventSource);
     assertEquals(HasMetadata.class, controllerEventSource.resourceType());
 
-    assertEquals(controllerEventSource,
-        eventSources.controllerEventSource());
+    assertEquals(controllerEventSource, eventSources.controllerEventSource());
   }
 
   @Test
   void flatMappedSourcesShouldReturnOnlyUserRegisteredEventSources() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -118,10 +116,8 @@ class EventSourcesTest {
   @Test
   void clearShouldWork() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -135,10 +131,8 @@ class EventSourcesTest {
   @Test
   void getShouldWork() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -150,10 +144,9 @@ class EventSourcesTest {
     assertEquals(mock3, eventSources.get(ConfigMap.class, "name3"));
     assertEquals(mock3, eventSources.get(ConfigMap.class, null));
 
-
     assertThrows(IllegalArgumentException.class, () -> eventSources.get(HasMetadata.class, null));
-    assertThrows(IllegalArgumentException.class,
-        () -> eventSources.get(ConfigMap.class, "unknown"));
+    assertThrows(
+        IllegalArgumentException.class, () -> eventSources.get(ConfigMap.class, "unknown"));
     assertThrows(IllegalArgumentException.class, () -> eventSources.get(null, null));
     assertThrows(IllegalArgumentException.class, () -> eventSources.get(HasMetadata.class, null));
   }
@@ -161,10 +154,8 @@ class EventSourcesTest {
   @Test
   void getEventSourcesShouldWork() {
     final var eventSources = new EventSources();
-    final var mock1 =
-        eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
-    final var mock2 =
-        eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
+    final var mock1 = eventSourceMockWithName(EventSource.class, "name1", HasMetadata.class);
+    final var mock2 = eventSourceMockWithName(EventSource.class, "name2", HasMetadata.class);
     final var mock3 = eventSourceMockWithName(EventSource.class, "name3", ConfigMap.class);
 
     eventSources.add(mock1);
@@ -190,25 +181,31 @@ class EventSourcesTest {
     for (int i = 0; i < 1000 && !concurrentExceptionFound.get(); i++) {
       final var eventSources = new EventSources();
       var eventSourceList =
-          IntStream.range(1, 20).mapToObj(n -> eventSourceMockWithName(EventSource.class,
-              "name" + n, HasMetadata.class)).toList();
+          IntStream.range(1, 20)
+              .mapToObj(
+                  n -> eventSourceMockWithName(EventSource.class, "name" + n, HasMetadata.class))
+              .toList();
 
       IntStream.range(1, 10).forEach(n -> eventSources.add(eventSourceList.get(n - 1)));
 
       var phaser = new Phaser(2);
 
-      var t1 = new Thread(() -> {
-        phaser.arriveAndAwaitAdvance();
-        IntStream.range(11, 20).forEach(n -> eventSources.add(eventSourceList.get(n - 1)));
-      });
-      var t2 = new Thread(() -> {
-        phaser.arriveAndAwaitAdvance();
-        try {
-          eventSources.getEventSources(eventSourceList.get(0).resourceType());
-        } catch (ConcurrentModificationException e) {
-          concurrentExceptionFound.set(true);
-        }
-      });
+      var t1 =
+          new Thread(
+              () -> {
+                phaser.arriveAndAwaitAdvance();
+                IntStream.range(11, 20).forEach(n -> eventSources.add(eventSourceList.get(n - 1)));
+              });
+      var t2 =
+          new Thread(
+              () -> {
+                phaser.arriveAndAwaitAdvance();
+                try {
+                  eventSources.getEventSources(eventSourceList.get(0).resourceType());
+                } catch (ConcurrentModificationException e) {
+                  concurrentExceptionFound.set(true);
+                }
+              });
       t1.start();
       t2.start();
       t1.join();
@@ -220,12 +217,11 @@ class EventSourcesTest {
         .isFalse();
   }
 
-  <T extends EventSource> EventSource eventSourceMockWithName(Class<T> clazz, String name,
-      Class resourceType) {
+  <T extends EventSource> EventSource eventSourceMockWithName(
+      Class<T> clazz, String name, Class resourceType) {
     var mockedES = mock(clazz);
     when(mockedES.name()).thenReturn(name);
     when(mockedES.resourceType()).thenReturn(resourceType);
     return mockedES;
   }
-
 }

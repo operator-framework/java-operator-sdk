@@ -7,10 +7,9 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMES
 public interface NamespaceChangeable {
 
   /**
-   * If the controller and possibly registered
-   * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}
-   * watches a set of namespaces this set can be adjusted dynamically, this when the operator is
-   * running.
+   * If the controller and possibly registered {@link
+   * io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource} watches a set
+   * of namespaces this set can be adjusted dynamically, this when the operator is running.
    *
    * @param namespaces target namespaces to watch
    */
@@ -24,5 +23,4 @@ public interface NamespaceChangeable {
   default boolean allowsNamespaceChanges() {
     return true;
   }
-
 }

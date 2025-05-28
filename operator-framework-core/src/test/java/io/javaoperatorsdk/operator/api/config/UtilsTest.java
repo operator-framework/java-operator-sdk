@@ -87,23 +87,27 @@ class UtilsTest {
 
   @Test
   void getsFirstTypeArgumentFromInterface() {
-    assertThat(Utils.getFirstTypeArgumentFromInterface(EmptyTestDependentResource.class,
-        DependentResource.class))
+    assertThat(
+            Utils.getFirstTypeArgumentFromInterface(
+                EmptyTestDependentResource.class, DependentResource.class))
         .isEqualTo(Deployment.class);
 
-    assertThatIllegalArgumentException().isThrownBy(
-        () -> Utils.getFirstTypeArgumentFromInterface(TestKubernetesDependentResource.class,
-            DependentResource.class));
+    assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                Utils.getFirstTypeArgumentFromInterface(
+                    TestKubernetesDependentResource.class, DependentResource.class));
   }
 
   @Test
   void getsFirstTypeArgumentFromInterfaceFromParent() {
-    assertThat(Utils.getFirstTypeArgumentFromSuperClassOrInterface(ConcreteReconciler.class,
-        Reconciler.class)).isEqualTo(ConfigMap.class);
+    assertThat(
+            Utils.getFirstTypeArgumentFromSuperClassOrInterface(
+                ConcreteReconciler.class, Reconciler.class))
+        .isEqualTo(ConfigMap.class);
   }
 
-  public abstract static class AbstractReconciler<P extends HasMetadata> implements Reconciler<P> {
-  }
+  public abstract static class AbstractReconciler<P extends HasMetadata> implements Reconciler<P> {}
 
   public static class ConcreteReconciler extends AbstractReconciler<ConfigMap> {
     @Override
@@ -114,10 +118,5 @@ class UtilsTest {
   }
 
   public static class TestKubernetesDependentResource
-      extends KubernetesDependentResource<Deployment, TestCustomResource> {
-
-    public TestKubernetesDependentResource() {
-      super(Deployment.class);
-    }
-  }
+      extends KubernetesDependentResource<Deployment, TestCustomResource> {}
 }

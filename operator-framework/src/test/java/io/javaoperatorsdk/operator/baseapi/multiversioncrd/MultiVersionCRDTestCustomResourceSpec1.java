@@ -12,5 +12,4 @@ public class MultiVersionCRDTestCustomResourceSpec1 {
     this.value = value;
     return this;
   }
-
 }

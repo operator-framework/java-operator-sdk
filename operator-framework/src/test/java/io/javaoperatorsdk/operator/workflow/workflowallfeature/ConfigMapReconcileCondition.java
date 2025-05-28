@@ -15,7 +15,8 @@ public class ConfigMapReconcileCondition
   @Override
   public Result<String> detailedIsMet(
       DependentResource<ConfigMap, WorkflowAllFeatureCustomResource> dependentResource,
-      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
+      WorkflowAllFeatureCustomResource primary,
+      Context<WorkflowAllFeatureCustomResource> context) {
     final var createConfigMap = primary.getSpec().isCreateConfigMap();
     return Result.withResult(createConfigMap, createConfigMap ? CREATE_SET : CREATE_NOT_SET);
   }

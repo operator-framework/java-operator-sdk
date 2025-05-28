@@ -22,8 +22,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTR
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 
-public interface InformerEventSourceConfiguration<R extends HasMetadata>
-    extends Informable<R> {
+public interface InformerEventSourceConfiguration<R extends HasMetadata> extends Informable<R> {
 
   static <R extends HasMetadata> Builder<R> from(
       Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
@@ -55,7 +54,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
    *
    * @return the configured {@link SecondaryToPrimaryMapper}
    * @see SecondaryToPrimaryMapper for more explanations on when using such a mapper is useful /
-   *      needed
+   *     needed
    */
   SecondaryToPrimaryMapper<R> getSecondaryToPrimaryMapper();
 
@@ -135,19 +134,20 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private KubernetesClient kubernetesClient;
 
-    private Builder(Class<R> resourceClass,
-        Class<? extends HasMetadata> primaryResourceClass) {
+    private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
     }
 
     @SuppressWarnings("unchecked")
-    private Builder(GroupVersionKind groupVersionKind,
-        Class<? extends HasMetadata> primaryResourceClass) {
+    private Builder(
+        GroupVersionKind groupVersionKind, Class<? extends HasMetadata> primaryResourceClass) {
       this((Class<R>) GenericKubernetesResource.class, primaryResourceClass, groupVersionKind);
     }
 
-    private Builder(Class<R> resourceClass,
-        Class<? extends HasMetadata> primaryResourceClass, GroupVersionKind groupVersionKind) {
+    private Builder(
+        Class<R> resourceClass,
+        Class<? extends HasMetadata> primaryResourceClass,
+        GroupVersionKind groupVersionKind) {
       this.resourceClass = resourceClass;
       this.groupVersionKind = groupVersionKind;
       this.primaryResourceClass = primaryResourceClass;
@@ -176,8 +176,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
      * Use this is case want to create an InformerEventSource that handles resources from different
      * cluster.
      */
-    public Builder<R> withKubernetesClient(
-        KubernetesClient kubernetesClient) {
+    public Builder<R> withKubernetesClient(KubernetesClient kubernetesClient) {
       this.kubernetesClient = kubernetesClient;
       return this;
     }
@@ -192,6 +191,14 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
 
     public Builder<R> withNamespaces(Set<String> namespaces) {
       config.withNamespaces(namespaces);
+      return this;
+    }
+
+    /**
+     * @since 5.1.1
+     */
+    public Builder<R> withNamespaces(String... namespaces) {
+      config.withNamespaces(Set.of(namespaces));
       return this;
     }
 
@@ -210,13 +217,12 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       return this;
     }
 
-
     /**
-     * Whether the associated informer should track changes made to the parent
-     * {@link io.javaoperatorsdk.operator.processing.Controller}'s namespaces configuration.
+     * Whether the associated informer should track changes made to the parent {@link
+     * io.javaoperatorsdk.operator.processing.Controller}'s namespaces configuration.
      *
      * @param followChanges {@code true} to reconfigure the associated informer when the parent
-     *        controller's namespaces are reconfigured, {@code false} otherwise
+     *     controller's namespaces are reconfigured, {@code false} otherwise
      * @return the builder instance so that calls can be chained fluently
      */
     public Builder<R> withFollowControllerNamespacesChanges(boolean followChanges) {
@@ -229,26 +235,22 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       return this;
     }
 
-    public Builder<R> withOnAddFilter(
-        OnAddFilter<? super R> onAddFilter) {
+    public Builder<R> withOnAddFilter(OnAddFilter<? super R> onAddFilter) {
       config.withOnAddFilter(onAddFilter);
       return this;
     }
 
-    public Builder<R> withOnUpdateFilter(
-        OnUpdateFilter<? super R> onUpdateFilter) {
+    public Builder<R> withOnUpdateFilter(OnUpdateFilter<? super R> onUpdateFilter) {
       config.withOnUpdateFilter(onUpdateFilter);
       return this;
     }
 
-    public Builder<R> withOnDeleteFilter(
-        OnDeleteFilter<? super R> onDeleteFilter) {
+    public Builder<R> withOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter) {
       config.withOnDeleteFilter(onDeleteFilter);
       return this;
     }
 
-    public Builder<R> withGenericFilter(
-        GenericFilter<? super R> genericFilter) {
+    public Builder<R> withGenericFilter(GenericFilter<? super R> genericFilter) {
       config.withGenericFilter(genericFilter);
       return this;
     }
@@ -269,7 +271,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
         if (informerConfigName != null) {
           this.name = informerConfigName;
         }
-        config.withNamespaces(informerConfig.getNamespaces())
+        config
+            .withNamespaces(informerConfig.getNamespaces())
             .withFollowControllerNamespacesChanges(
                 informerConfig.getFollowControllerNamespaceChanges())
             .withLabelSelector(informerConfig.getLabelSelector())
@@ -286,16 +289,21 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata>
       if (groupVersionKind != null
           && !GenericKubernetesResource.class.isAssignableFrom(resourceClass)) {
         throw new IllegalStateException(
-            "If GroupVersionKind is set the resource type must be GenericKubernetesDependentResource");
+            "If GroupVersionKind is set the resource type must be"
+                + " GenericKubernetesDependentResource");
       }
 
       return new DefaultInformerEventSourceConfiguration<>(
           groupVersionKind,
           primaryToSecondaryMapper,
-          Objects.requireNonNullElse(secondaryToPrimaryMapper,
-              Mappers.fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceClass),
-                  HasMetadata.getKind(primaryResourceClass), false)),
-          config.build(), kubernetesClient);
+          Objects.requireNonNullElse(
+              secondaryToPrimaryMapper,
+              Mappers.fromOwnerReferences(
+                  HasMetadata.getApiVersion(primaryResourceClass),
+                  HasMetadata.getKind(primaryResourceClass),
+                  false)),
+          config.build(),
+          kubernetesClient);
     }
   }
 }

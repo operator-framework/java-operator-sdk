@@ -13,5 +13,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("du")
 public class PatchResourceAndStatusNoSSACustomResource
     extends CustomResource<PatchResourceAndStatusNoSSASpec, PatchResourceAndStatusNoSSAStatus>
-    implements Namespaced {
-}
+    implements Namespaced {}

@@ -12,8 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @ControllerConfiguration
-public class PrimaryIndexerTestReconciler
-    extends AbstractPrimaryIndexerTestReconciler {
+public class PrimaryIndexerTestReconciler extends AbstractPrimaryIndexerTestReconciler {
 
   @Override
   public List<EventSource<?, PrimaryIndexerTestCustomResource>> prepareEventSources(
@@ -22,17 +21,17 @@ public class PrimaryIndexerTestReconciler
     context.getPrimaryCache().addIndexer(CONFIG_MAP_RELATION_INDEXER, indexer);
 
     var informerConfiguration =
-        InformerEventSourceConfiguration
-            .from(ConfigMap.class, PrimaryIndexerTestCustomResource.class)
+        InformerEventSourceConfiguration.from(
+                ConfigMap.class, PrimaryIndexerTestCustomResource.class)
             .withSecondaryToPrimaryMapper(
-                (ConfigMap secondaryResource) -> context
-                    .getPrimaryCache()
-                    .byIndex(
-                        CONFIG_MAP_RELATION_INDEXER,
-                        secondaryResource.getMetadata().getName())
-                    .stream()
-                    .map(ResourceID::fromResource)
-                    .collect(Collectors.toSet()))
+                (ConfigMap secondaryResource) ->
+                    context
+                        .getPrimaryCache()
+                        .byIndex(
+                            CONFIG_MAP_RELATION_INDEXER, secondaryResource.getMetadata().getName())
+                        .stream()
+                        .map(ResourceID::fromResource)
+                        .collect(Collectors.toSet()))
             .build();
 
     return List.of(new InformerEventSource<>(informerConfiguration, context));

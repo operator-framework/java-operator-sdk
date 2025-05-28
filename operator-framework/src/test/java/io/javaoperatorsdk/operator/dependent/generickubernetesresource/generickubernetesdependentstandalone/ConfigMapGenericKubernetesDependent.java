@@ -12,12 +12,12 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
 
-public class ConfigMapGenericKubernetesDependent extends
-    GenericKubernetesDependentResource<GenericKubernetesDependentStandaloneCustomResource>
-    implements
-    Creator<GenericKubernetesResource, GenericKubernetesDependentStandaloneCustomResource>,
-    Updater<GenericKubernetesResource, GenericKubernetesDependentStandaloneCustomResource>,
-    GarbageCollected<GenericKubernetesDependentStandaloneCustomResource> {
+public class ConfigMapGenericKubernetesDependent
+    extends GenericKubernetesDependentResource<GenericKubernetesDependentStandaloneCustomResource>
+    implements Creator<
+            GenericKubernetesResource, GenericKubernetesDependentStandaloneCustomResource>,
+        Updater<GenericKubernetesResource, GenericKubernetesDependentStandaloneCustomResource>,
+        GarbageCollected<GenericKubernetesDependentStandaloneCustomResource> {
 
   public static final String VERSION = "v1";
   public static final String KIND = "ConfigMap";

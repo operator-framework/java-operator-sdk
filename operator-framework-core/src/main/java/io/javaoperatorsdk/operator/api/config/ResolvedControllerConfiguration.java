@@ -32,37 +32,61 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private WorkflowSpec workflowSpec;
 
   public ResolvedControllerConfiguration(ControllerConfiguration<P> other) {
-    this(other.getName(), other.isGenerationAware(),
-        other.getAssociatedReconcilerClassName(), other.getRetry(), other.getRateLimiter(),
+    this(
+        other.getName(),
+        other.isGenerationAware(),
+        other.getAssociatedReconcilerClassName(),
+        other.getRetry(),
+        other.getRateLimiter(),
         other.maxReconciliationInterval().orElse(null),
-        other.getFinalizerName(), Collections.emptyMap(),
+        other.getFinalizerName(),
+        Collections.emptyMap(),
         other.fieldManager(),
         other.getConfigurationService(),
         other.getInformerConfig(),
         other.getWorkflowSpec().orElse(null));
   }
 
-  public ResolvedControllerConfiguration(String name,
-      boolean generationAware, String associatedReconcilerClassName, Retry retry,
-      RateLimiter rateLimiter, Duration maxReconciliationInterval,
+  public ResolvedControllerConfiguration(
+      String name,
+      boolean generationAware,
+      String associatedReconcilerClassName,
+      Retry retry,
+      RateLimiter rateLimiter,
+      Duration maxReconciliationInterval,
       String finalizer,
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
       WorkflowSpec workflowSpec) {
-    this(name, generationAware, associatedReconcilerClassName, retry, rateLimiter,
-        maxReconciliationInterval, finalizer, configurations, fieldManager,
-        configurationService, informerConfig);
+    this(
+        name,
+        generationAware,
+        associatedReconcilerClassName,
+        retry,
+        rateLimiter,
+        maxReconciliationInterval,
+        finalizer,
+        configurations,
+        fieldManager,
+        configurationService,
+        informerConfig);
     setWorkflowSpec(workflowSpec);
   }
 
-  protected ResolvedControllerConfiguration(String name,
-      boolean generationAware, String associatedReconcilerClassName, Retry retry,
-      RateLimiter rateLimiter, Duration maxReconciliationInterval, String finalizer,
+  protected ResolvedControllerConfiguration(
+      String name,
+      boolean generationAware,
+      String associatedReconcilerClassName,
+      Retry retry,
+      RateLimiter rateLimiter,
+      Duration maxReconciliationInterval,
+      String finalizer,
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
-      ConfigurationService configurationService, InformerConfiguration<P> informerConfig) {
+      ConfigurationService configurationService,
+      InformerConfiguration<P> informerConfig) {
     this.informerConfig = informerConfig;
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
@@ -77,10 +101,22 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.fieldManager = fieldManager;
   }
 
-  protected ResolvedControllerConfiguration(Class<P> resourceClass, String name,
-      Class<? extends Reconciler> reconcilerClas, ConfigurationService configurationService) {
-    this(name, false, getAssociatedReconcilerClassName(reconcilerClas), null, null,
-        null, null, null, null, configurationService,
+  protected ResolvedControllerConfiguration(
+      Class<P> resourceClass,
+      String name,
+      Class<? extends Reconciler> reconcilerClas,
+      ConfigurationService configurationService) {
+    this(
+        name,
+        false,
+        getAssociatedReconcilerClassName(reconcilerClas),
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        configurationService,
         InformerConfiguration.builder(resourceClass).buildForController());
   }
 
@@ -135,7 +171,6 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   public RateLimiter getRateLimiter() {
     return rateLimiter;
   }
-
 
   @Override
   public Optional<WorkflowSpec> getWorkflowSpec() {

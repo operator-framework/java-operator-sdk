@@ -9,7 +9,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("sample.javaoperatorsdk")
 @Version("v1")
 @ShortNames("rbt")
-public class InformerRelatedBehaviorTestCustomResource
-    extends CustomResource<Void, Void>
-    implements Namespaced {
-}
+public class InformerRelatedBehaviorTestCustomResource extends CustomResource<Void, Void>
+    implements Namespaced {}

@@ -13,20 +13,20 @@ import static io.javaoperatorsdk.operator.dependent.primarytosecondaydependent.P
 public class SecretDependent
     extends CRUDKubernetesDependentResource<Secret, PrimaryToSecondaryDependentCustomResource> {
 
-  public SecretDependent() {
-    super(Secret.class);
-  }
-
   @Override
-  protected Secret desired(PrimaryToSecondaryDependentCustomResource primary,
+  protected Secret desired(
+      PrimaryToSecondaryDependentCustomResource primary,
       Context<PrimaryToSecondaryDependentCustomResource> context) {
     Secret secret = new Secret();
-    secret.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
-    secret.setData(Map.of(DATA_KEY, context.getSecondaryResource(ConfigMap.class)
-        .orElseThrow().getData().get(DATA_KEY)));
+    secret.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace())
+            .build());
+    secret.setData(
+        Map.of(
+            DATA_KEY,
+            context.getSecondaryResource(ConfigMap.class).orElseThrow().getData().get(DATA_KEY)));
     return secret;
   }
 }

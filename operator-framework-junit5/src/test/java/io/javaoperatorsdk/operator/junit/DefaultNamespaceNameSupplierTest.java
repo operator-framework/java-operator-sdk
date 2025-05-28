@@ -9,7 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class DefaultNamespaceNameSupplierTest {
 
-
   DefaultNamespaceNameSupplier supplier = new DefaultNamespaceNameSupplier();
 
   @Test
@@ -40,17 +39,17 @@ class DefaultNamespaceNameSupplierTest {
   void methodPartAndClassPartLonger() {
     String ns = supplier.apply(mockExtensionContext(LONG_CLASS_NAME, LONG_METHOD_NAME));
 
-    assertThat(ns).startsWith(LONG_CLASS_NAME.substring(0, PART_RESERVED_NAME_LENGTH) + DELIMITER
-        + LONG_METHOD_NAME.substring(0, PART_RESERVED_NAME_LENGTH)
-        + DELIMITER);
+    assertThat(ns)
+        .startsWith(
+            LONG_CLASS_NAME.substring(0, PART_RESERVED_NAME_LENGTH)
+                + DELIMITER
+                + LONG_METHOD_NAME.substring(0, PART_RESERVED_NAME_LENGTH)
+                + DELIMITER);
     shortEnoughAndEndsWithRandomString(ns);
   }
-
 
   private static void shortEnoughAndEndsWithRandomString(String ns) {
     assertThat(ns.length()).isLessThanOrEqualTo(MAX_NAMESPACE_NAME_LENGTH);
     assertThat(ns.split("-")[2]).hasSize(RANDOM_SUFFIX_LENGTH);
   }
-
-
 }

@@ -8,19 +8,17 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class RouteDependentResource
     extends CRUDKubernetesDependentResource<Route, WorkflowActivationConditionCustomResource> {
 
-  public RouteDependentResource() {
-    super(Route.class);
-  }
-
   @Override
-  protected Route desired(WorkflowActivationConditionCustomResource primary,
+  protected Route desired(
+      WorkflowActivationConditionCustomResource primary,
       Context<WorkflowActivationConditionCustomResource> context) {
     // basically does not matter since this should not be called
     Route route = new Route();
-    route.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    route.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace())
+            .build());
 
     return route;
   }

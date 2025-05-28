@@ -31,19 +31,21 @@ import static org.junit.jupiter.api.Assertions.*;
 class DependentResourceConfigurationResolverTest {
 
   // subclass to expose configFor method to this test class
-  private final static class TestConfigurationService extends BaseConfigurationService {
+  private static final class TestConfigurationService extends BaseConfigurationService {
 
     @Override
-    protected <P extends HasMetadata> io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
-        Reconciler<P> reconciler) {
+    protected <P extends HasMetadata>
+        io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
+            Reconciler<P> reconciler) {
       return super.configFor(reconciler);
     }
   }
 
   private final TestConfigurationService configurationService = new TestConfigurationService();
 
-  private <P extends HasMetadata> io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
-      Reconciler<P> reconciler) {
+  private <P extends HasMetadata>
+      io.javaoperatorsdk.operator.api.config.ControllerConfiguration<P> configFor(
+          Reconciler<P> reconciler) {
     // ensure that a new configuration is created each time
     return configurationService.configFor(reconciler);
   }
@@ -55,7 +57,8 @@ class DependentResourceConfigurationResolverTest {
     final var spec =
         configuration.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().stream()
             .filter(s -> target.isAssignableFrom(s.getDependentResourceClass()))
-            .findFirst().orElseThrow();
+            .findFirst()
+            .orElseThrow();
     return configuration.getConfigurationFor(spec);
   }
 
@@ -68,13 +71,15 @@ class DependentResourceConfigurationResolverTest {
     assertInstanceOf(CustomConfig.class, customConfig);
     assertEquals(CustomAnnotatedDep.PROVIDED_VALUE, ((CustomConfig) customConfig).getValue());
     final var newConfig = new CustomConfig(72);
-    final var overridden = ControllerConfigurationOverrider.override(cfg)
-        .replacingNamedDependentResourceConfig(DR_NAME, newConfig)
-        .build();
-    final var spec = cfg.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().stream()
-        .filter(s -> DR_NAME.equals(s.getName()))
-        .findFirst()
-        .orElseThrow();
+    final var overridden =
+        ControllerConfigurationOverrider.override(cfg)
+            .replacingNamedDependentResourceConfig(DR_NAME, newConfig)
+            .build();
+    final var spec =
+        cfg.getWorkflowSpec().orElseThrow().getDependentResourceSpecs().stream()
+            .filter(s -> DR_NAME.equals(s.getName()))
+            .findFirst()
+            .orElseThrow();
     assertEquals(newConfig, overridden.getConfigurationFor(spec));
   }
 
@@ -89,23 +94,25 @@ class DependentResourceConfigurationResolverTest {
     converter = DependentResourceConfigurationResolver.getConverter(ChildCustomAnnotatedDep.class);
     assertNotNull(converter);
     assertEquals(CustomConfigConverter.class, converter.getClass());
-    assertEquals(DependentResourceConfigurationResolver.getConverter(CustomAnnotatedDep.class),
-        converter);
+    assertEquals(
+        DependentResourceConfigurationResolver.getConverter(CustomAnnotatedDep.class), converter);
   }
 
   @SuppressWarnings("rawtypes")
   @Test
   void registerConverterShouldWork() {
-    final var overriddenConverter = new ConfigurationConverter() {
+    final var overriddenConverter =
+        new ConfigurationConverter() {
 
-      @Override
-      public Object configFrom(Annotation configAnnotation, DependentResourceSpec spec,
-          io.javaoperatorsdk.operator.api.config.ControllerConfiguration parentConfiguration) {
-        return null;
-      }
-    };
-    DependentResourceConfigurationResolver.registerConverter(ServiceDep.class,
-        overriddenConverter);
+          @Override
+          public Object configFrom(
+              Annotation configAnnotation,
+              DependentResourceSpec spec,
+              io.javaoperatorsdk.operator.api.config.ControllerConfiguration parentConfiguration) {
+            return null;
+          }
+        };
+    DependentResourceConfigurationResolver.registerConverter(ServiceDep.class, overriddenConverter);
     configFor(new CustomAnnotationReconciler());
 
     // non overridden dependents should use the default converter
@@ -117,12 +124,13 @@ class DependentResourceConfigurationResolverTest {
     assertEquals(overriddenConverter, converter);
   }
 
-  @Workflow(dependents = {
-      @Dependent(type = CustomAnnotatedDep.class, name = DR_NAME),
-      @Dependent(type = ChildCustomAnnotatedDep.class),
-      @Dependent(type = ConfigMapDep.class),
-      @Dependent(type = ServiceDep.class)
-  })
+  @Workflow(
+      dependents = {
+        @Dependent(type = CustomAnnotatedDep.class, name = DR_NAME),
+        @Dependent(type = ChildCustomAnnotatedDep.class),
+        @Dependent(type = ConfigMapDep.class),
+        @Dependent(type = ServiceDep.class)
+      })
   @ControllerConfiguration
   static class CustomAnnotationReconciler implements Reconciler<ConfigMap> {
 
@@ -136,26 +144,20 @@ class DependentResourceConfigurationResolverTest {
   }
 
   public static class ConfigMapDep extends KubernetesDependentResource<ConfigMap, ConfigMap>
-      implements GarbageCollected<ConfigMap> {
-
-    public ConfigMapDep() {
-      super(ConfigMap.class);
-    }
-  }
+      implements GarbageCollected<ConfigMap> {}
 
   public static class ServiceDep extends KubernetesDependentResource<Service, ConfigMap>
-      implements GarbageCollected<ConfigMap> {
-
-    public ServiceDep() {
-      super(Service.class);
-    }
-  }
+      implements GarbageCollected<ConfigMap> {}
 
   @CustomAnnotation(value = CustomAnnotatedDep.PROVIDED_VALUE)
-  @Configured(by = CustomAnnotation.class, with = CustomConfig.class,
+  @Configured(
+      by = CustomAnnotation.class,
+      with = CustomConfig.class,
       converter = CustomConfigConverter.class)
-  private static class CustomAnnotatedDep implements DependentResource<ConfigMap, ConfigMap>,
-      ConfiguredDependentResource<CustomConfig>, GarbageCollected<ConfigMap> {
+  private static class CustomAnnotatedDep
+      implements DependentResource<ConfigMap, ConfigMap>,
+          ConfiguredDependentResource<CustomConfig>,
+          GarbageCollected<ConfigMap> {
 
     public static final int PROVIDED_VALUE = 42;
     private CustomConfig config;
@@ -181,14 +183,10 @@ class DependentResourceConfigurationResolverTest {
     }
 
     @Override
-    public void delete(ConfigMap primary, Context<ConfigMap> context) {
-
-    }
+    public void delete(ConfigMap primary, Context<ConfigMap> context) {}
   }
 
-  private static class ChildCustomAnnotatedDep extends CustomAnnotatedDep {
-
-  }
+  private static class ChildCustomAnnotatedDep extends CustomAnnotatedDep {}
 
   @Retention(RetentionPolicy.RUNTIME)
   private @interface CustomAnnotation {
@@ -215,7 +213,8 @@ class DependentResourceConfigurationResolverTest {
     static final int CONVERTER_PROVIDED_DEFAULT = 7;
 
     @Override
-    public CustomConfig configFrom(CustomAnnotation configAnnotation,
+    public CustomConfig configFrom(
+        CustomAnnotation configAnnotation,
         DependentResourceSpec<?, ?, CustomConfig> spec,
         io.javaoperatorsdk.operator.api.config.ControllerConfiguration<?> parentConfiguration) {
       if (configAnnotation == null) {

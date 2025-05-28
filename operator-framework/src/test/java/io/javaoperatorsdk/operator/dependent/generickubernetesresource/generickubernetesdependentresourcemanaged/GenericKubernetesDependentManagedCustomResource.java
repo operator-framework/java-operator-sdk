@@ -11,6 +11,4 @@ import io.javaoperatorsdk.operator.dependent.generickubernetesresource.GenericKu
 @Version("v1")
 @ShortNames("gkdm")
 public class GenericKubernetesDependentManagedCustomResource
-    extends CustomResource<GenericKubernetesDependentSpec, Void>
-    implements Namespaced {
-}
+    extends CustomResource<GenericKubernetesDependentSpec, Void> implements Namespaced {}

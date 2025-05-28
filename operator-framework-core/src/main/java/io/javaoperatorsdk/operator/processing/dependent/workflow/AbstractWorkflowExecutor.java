@@ -25,10 +25,10 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
   protected final ResourceID primaryID;
   protected final Context<P> context;
   protected final Map<DependentResourceNode<?, P>, BaseWorkflowResult.DetailBuilder<?>> results;
-  /**
-   * Covers both deleted and reconciled
-   */
+
+  /** Covers both deleted and reconciled */
   private final Map<DependentResourceNode, Future<?>> actualExecutions = new ConcurrentHashMap<>();
+
   private final ExecutorService executorService;
 
   protected AbstractWorkflowExecutor(DefaultWorkflow<P> workflow, P primary, Context<P> context) {
@@ -87,8 +87,8 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
 
   protected synchronized BaseWorkflowResult.DetailBuilder createOrGetResultFor(
       DependentResourceNode<?, P> dependentResourceNode) {
-    return results.computeIfAbsent(dependentResourceNode,
-        unused -> new BaseWorkflowResult.DetailBuilder());
+    return results.computeIfAbsent(
+        dependentResourceNode, unused -> new BaseWorkflowResult.DetailBuilder());
   }
 
   protected synchronized Optional<BaseWorkflowResult.DetailBuilder<?>> getResultFor(
@@ -96,7 +96,8 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     return Optional.ofNullable(results.get(dependentResourceNode));
   }
 
-  protected boolean getResultFlagFor(DependentResourceNode<?, P> dependentResourceNode,
+  protected boolean getResultFlagFor(
+      DependentResourceNode<?, P> dependentResourceNode,
       Function<BaseWorkflowResult.DetailBuilder<?>, Boolean> flag) {
     return getResultFor(dependentResourceNode).map(flag).orElse(false);
   }
@@ -105,14 +106,13 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     return actualExecutions.containsKey(dependentResourceNode);
   }
 
-  protected void markAsExecuting(DependentResourceNode<?, P> dependentResourceNode,
-      Future<?> future) {
+  protected void markAsExecuting(
+      DependentResourceNode<?, P> dependentResourceNode, Future<?> future) {
     actualExecutions.put(dependentResourceNode, future);
   }
 
   protected synchronized void handleExceptionInExecutor(
-      DependentResourceNode<?, P> dependentResourceNode,
-      RuntimeException e) {
+      DependentResourceNode<?, P> dependentResourceNode, RuntimeException e) {
     createOrGetResultFor(dependentResourceNode).withError(e);
   }
 
@@ -138,27 +138,34 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
       Optional<ConditionWithType<R, P, ?>> condition,
       DependentResourceNode<R, P> dependentResource) {
     final var dr = dependentResource.getDependentResource();
-    return condition.map(c -> {
-      final DetailedCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
-      synchronized (this) {
-        results.computeIfAbsent(dependentResource, unused -> new BaseWorkflowResult.DetailBuilder())
-            .withResultForCondition(c, r);
-      }
-      return r;
-    }).orElse(DetailedCondition.Result.metWithoutResult).isSuccess();
+    return condition
+        .map(
+            c -> {
+              final DetailedCondition.Result<?> r = c.detailedIsMet(dr, primary, context);
+              synchronized (this) {
+                results
+                    .computeIfAbsent(
+                        dependentResource, unused -> new BaseWorkflowResult.DetailBuilder())
+                    .withResultForCondition(c, r);
+              }
+              return r;
+            })
+        .orElse(DetailedCondition.Result.metWithoutResult)
+        .isSuccess();
   }
 
-  protected <R> void submit(DependentResourceNode<R, P> dependentResourceNode,
-      NodeExecutor<R, P> nodeExecutor, String operation) {
+  protected <R> void submit(
+      DependentResourceNode<R, P> dependentResourceNode,
+      NodeExecutor<R, P> nodeExecutor,
+      String operation) {
     final Future<?> future = executorService.submit(nodeExecutor);
     markAsExecuting(dependentResourceNode, future);
-    logger().debug("Submitted to {}: {} primaryID: {}", operation, dependentResourceNode,
-        primaryID);
+    logger()
+        .debug("Submitted to {}: {} primaryID: {}", operation, dependentResourceNode, primaryID);
   }
 
   protected <R> void registerOrDeregisterEventSourceBasedOnActivation(
-      boolean activationConditionMet,
-      DependentResourceNode<R, P> dependentResourceNode) {
+      boolean activationConditionMet, DependentResourceNode<R, P> dependentResourceNode) {
     if (dependentResourceNode.getActivationCondition().isPresent()) {
       final var dr = dependentResourceNode.getDependentResource();
       final var eventSourceRetriever = context.eventSourceRetriever();

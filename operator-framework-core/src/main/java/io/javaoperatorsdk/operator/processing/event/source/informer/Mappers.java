@@ -26,27 +26,33 @@ public class Mappers {
 
   @SuppressWarnings("unused")
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromAnnotation(
-      String nameKey, String namespaceKey, String typeKey,
+      String nameKey,
+      String namespaceKey,
+      String typeKey,
       Class<? extends HasMetadata> primaryResourceType) {
     return fromMetadata(nameKey, namespaceKey, typeKey, primaryResourceType, false);
   }
 
   @SuppressWarnings("unused")
-  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(String nameKey,
-      String typeKey,
-      Class<? extends HasMetadata> primaryResourceType) {
+  public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
+      String nameKey, String typeKey, Class<? extends HasMetadata> primaryResourceType) {
     return fromLabel(nameKey, null, typeKey, primaryResourceType);
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromDefaultAnnotations(
       Class<? extends HasMetadata> primaryResourceType) {
-    return fromAnnotation(DEFAULT_ANNOTATION_FOR_NAME, DEFAULT_ANNOTATION_FOR_NAMESPACE,
-        DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE, primaryResourceType);
+    return fromAnnotation(
+        DEFAULT_ANNOTATION_FOR_NAME,
+        DEFAULT_ANNOTATION_FOR_NAMESPACE,
+        DEFAULT_ANNOTATION_FOR_PRIMARY_TYPE,
+        primaryResourceType);
   }
 
   @SuppressWarnings("unused")
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromLabel(
-      String nameKey, String namespaceKey, String typeKey,
+      String nameKey,
+      String namespaceKey,
+      String typeKey,
       Class<? extends HasMetadata> primaryResourceType) {
     return fromMetadata(nameKey, namespaceKey, typeKey, primaryResourceType, true);
   }
@@ -58,7 +64,8 @@ public class Mappers {
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
       Class<? extends HasMetadata> primaryResourceType, boolean clusterScoped) {
-    return fromOwnerReferences(HasMetadata.getApiVersion(primaryResourceType),
+    return fromOwnerReferences(
+        HasMetadata.getApiVersion(primaryResourceType),
         HasMetadata.getKind(primaryResourceType),
         clusterScoped);
   }
@@ -69,26 +76,27 @@ public class Mappers {
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
-      HasMetadata primaryResource,
-      boolean clusterScoped) {
-    return fromOwnerReferences(primaryResource.getApiVersion(), primaryResource.getKind(),
-        clusterScoped);
+      HasMetadata primaryResource, boolean clusterScoped) {
+    return fromOwnerReferences(
+        primaryResource.getApiVersion(), primaryResource.getKind(), clusterScoped);
   }
 
   public static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerReferences(
-      String apiVersion, String kind,
-      boolean clusterScope) {
-    return resource -> resource.getMetadata().getOwnerReferences()
-        .stream()
-        .filter(r -> r.getKind().equals(kind)
-            && r.getApiVersion().equals(apiVersion))
-        .map(or -> ResourceID.fromOwnerReference(resource, or, clusterScope))
-        .collect(Collectors.toSet());
+      String apiVersion, String kind, boolean clusterScope) {
+    String correctApiVersion = apiVersion.startsWith("/") ? apiVersion.substring(1) : apiVersion;
+    return resource ->
+        resource.getMetadata().getOwnerReferences().stream()
+            .filter(r -> r.getKind().equals(kind) && r.getApiVersion().equals(correctApiVersion))
+            .map(or -> ResourceID.fromOwnerReference(resource, or, clusterScope))
+            .collect(Collectors.toSet());
   }
 
   private static <T extends HasMetadata> SecondaryToPrimaryMapper<T> fromMetadata(
-      String nameKey, String namespaceKey, String typeKey,
-      Class<? extends HasMetadata> primaryResourceType, boolean isLabel) {
+      String nameKey,
+      String namespaceKey,
+      String typeKey,
+      Class<? extends HasMetadata> primaryResourceType,
+      boolean isLabel) {
     return resource -> {
       final var metadata = resource.getMetadata();
       if (metadata == null) {
@@ -107,8 +115,8 @@ public class Mappers {
 
         String gvkSimple = map.get(typeKey);
 
-        if (gvkSimple != null &&
-            !GroupVersionKind.fromString(gvkSimple)
+        if (gvkSimple != null
+            && !GroupVersionKind.fromString(gvkSimple)
                 .equals(GroupVersionKind.gvkFor(primaryResourceType))) {
           return Set.of();
         }
@@ -134,8 +142,8 @@ public class Mappers {
   /**
    * Produces a mapper that will associate a secondary resource with all owners of the primary type.
    */
-  public static <OWNER extends HasMetadata, T extends HasMetadata> SecondaryToPrimaryMapper<T> fromOwnerType(
-      Class<OWNER> clazz) {
+  public static <OWNER extends HasMetadata, T extends HasMetadata>
+      SecondaryToPrimaryMapper<T> fromOwnerType(Class<OWNER> clazz) {
     String kind = HasMetadata.getKind(clazz);
     return resource -> {
       var meta = resource.getMetadata();
@@ -168,5 +176,4 @@ public class Mappers {
       return Mappers.fromDefaultAnnotations(primaryResourceType).toPrimaryResourceIDs(resource);
     }
   }
-
 }

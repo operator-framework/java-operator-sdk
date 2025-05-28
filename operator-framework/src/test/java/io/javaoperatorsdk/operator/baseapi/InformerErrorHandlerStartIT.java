@@ -16,22 +16,21 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 class InformerErrorHandlerStartIT {
-  /**
-   * Test showcases that the operator starts even if there is no access right for some resource.
-   */
+  /** Test showcases that the operator starts even if there is no access right for some resource. */
   @Test
   @Timeout(5)
   void operatorStart() {
-    KubernetesClient client = new KubernetesClientBuilder()
-        .withConfig(new ConfigBuilder()
-            .withImpersonateUsername("user-with-no-rights")
-            .build())
-        .build();
+    KubernetesClient client =
+        new KubernetesClientBuilder()
+            .withConfig(new ConfigBuilder().withImpersonateUsername("user-with-no-rights").build())
+            .build();
 
-    Operator operator = new Operator(o -> o
-        .withKubernetesClient(client)
-        .withStopOnInformerErrorDuringStartup(false)
-        .withCacheSyncTimeout(Duration.ofSeconds(2)));
+    Operator operator =
+        new Operator(
+            o ->
+                o.withKubernetesClient(client)
+                    .withStopOnInformerErrorDuringStartup(false)
+                    .withCacheSyncTimeout(Duration.ofSeconds(2)));
     operator.register(new ConfigMapReconciler());
     operator.start();
   }
@@ -44,5 +43,4 @@ class InformerErrorHandlerStartIT {
       return UpdateControl.noUpdate();
     }
   }
-
 }

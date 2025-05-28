@@ -11,7 +11,6 @@ class ResourceStateManager {
   // take time and memory?
   private final Map<ResourceID, ResourceState> states = new ConcurrentHashMap<>(100);
 
-
   public ResourceState getOrCreate(ResourceID resourceID) {
     return states.computeIfAbsent(resourceID, ResourceState::new);
   }

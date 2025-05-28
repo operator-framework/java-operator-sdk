@@ -7,7 +7,8 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
   private final DependentResourceNode<R, P> dependentResourceNode;
   private final AbstractWorkflowExecutor<P> workflowExecutor;
 
-  protected NodeExecutor(DependentResourceNode<R, P> dependentResourceNode,
+  protected NodeExecutor(
+      DependentResourceNode<R, P> dependentResourceNode,
       AbstractWorkflowExecutor<P> workflowExecutor) {
     this.dependentResourceNode = dependentResourceNode;
     this.workflowExecutor = workflowExecutor;

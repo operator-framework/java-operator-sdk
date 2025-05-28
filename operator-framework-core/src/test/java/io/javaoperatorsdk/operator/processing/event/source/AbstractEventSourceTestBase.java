@@ -21,7 +21,6 @@ public class AbstractEventSourceTestBase<S extends EventSource, T extends EventH
     setUpSource(source, true);
   }
 
-
   public void setUpSource(S source, boolean start, ControllerConfiguration configurationService) {
     setUpSource(source, (T) mock(EventHandler.class), start, configurationService);
   }
@@ -39,8 +38,8 @@ public class AbstractEventSourceTestBase<S extends EventSource, T extends EventH
     setUpSource(source, eventHandler, start, mock(ControllerConfiguration.class));
   }
 
-  public void setUpSource(S source, T eventHandler, boolean start,
-      ControllerConfiguration controllerConfiguration) {
+  public void setUpSource(
+      S source, T eventHandler, boolean start, ControllerConfiguration controllerConfiguration) {
     this.eventHandler = eventHandler;
     this.source = source;
 

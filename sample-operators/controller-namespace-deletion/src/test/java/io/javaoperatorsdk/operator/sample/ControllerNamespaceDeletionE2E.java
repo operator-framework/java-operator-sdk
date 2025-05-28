@@ -26,7 +26,6 @@ import static io.javaoperatorsdk.operator.junit.AbstractOperatorExtension.CRD_RE
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-
 class ControllerNamespaceDeletionE2E {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerNamespaceDeletionE2E.class);
@@ -46,28 +45,44 @@ class ControllerNamespaceDeletionE2E {
     deployController();
     client.resource(testResource()).serverSideApply();
 
-    await().untilAsserted(() -> {
-      var res = client.resources(ControllerNamespaceDeletionCustomResource.class)
-          .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get();
-      assertThat(res.getStatus()).isNotNull();
-      assertThat(res.getStatus().getValue()).isEqualTo(INITIAL_VALUE);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var res =
+                  client
+                      .resources(ControllerNamespaceDeletionCustomResource.class)
+                      .inNamespace(namespace)
+                      .withName(TEST_RESOURCE_NAME)
+                      .get();
+              assertThat(res.getStatus()).isNotNull();
+              assertThat(res.getStatus().getValue()).isEqualTo(INITIAL_VALUE);
+            });
 
     client.namespaces().withName(namespace).delete();
 
-    await().timeout(Duration.ofSeconds(20)).untilAsserted(() -> {
-      var ns = client.resources(ControllerNamespaceDeletionCustomResource.class)
-          .inNamespace(namespace).withName(TEST_RESOURCE_NAME).get();
-      assertThat(ns).isNull();
-    });
+    await()
+        .timeout(Duration.ofSeconds(20))
+        .untilAsserted(
+            () -> {
+              var ns =
+                  client
+                      .resources(ControllerNamespaceDeletionCustomResource.class)
+                      .inNamespace(namespace)
+                      .withName(TEST_RESOURCE_NAME)
+                      .get();
+              assertThat(ns).isNull();
+            });
 
     log.info("Removing finalizers from role and role bing and service account");
     removeRoleAndRoleBindingFinalizers();
 
-    await().timeout(Duration.ofSeconds(20)).untilAsserted(() -> {
-      var ns = client.namespaces().withName(namespace).get();
-      assertThat(ns).isNull();
-    });
+    await()
+        .timeout(Duration.ofSeconds(20))
+        .untilAsserted(
+            () -> {
+              var ns = client.namespaces().withName(namespace).get();
+              assertThat(ns).isNull();
+            });
   }
 
   private void removeRoleAndRoleBindingFinalizers() {
@@ -87,42 +102,42 @@ class ControllerNamespaceDeletionE2E {
 
   ControllerNamespaceDeletionCustomResource testResource() {
     var cr = new ControllerNamespaceDeletionCustomResource();
-    cr.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .withNamespace(namespace)
-        .build());
+    cr.setMetadata(
+        new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).withNamespace(namespace).build());
     cr.setSpec(new ControllerNamespaceDeletionSpec());
     cr.getSpec().setValue(INITIAL_VALUE);
     return cr;
   }
 
-
   @BeforeEach
   void setup() {
     namespace = "controller-namespace-" + UUID.randomUUID();
-    client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
-        .withNamespace(namespace)
-        .build()).build();
+    client =
+        new KubernetesClientBuilder()
+            .withConfig(new ConfigBuilder().withNamespace(namespace).build())
+            .build();
     applyCRD();
-    client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace)
-        .endMetadata().build()).create();
+    client
+        .namespaces()
+        .resource(
+            new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build())
+        .create();
   }
 
   void deployController() {
     try {
       List<HasMetadata> resources = client.load(new FileInputStream("k8s/operator.yaml")).items();
-      resources.forEach(hm -> {
-        hm.getMetadata().setNamespace(namespace);
-        if (hm.getKind().equalsIgnoreCase("rolebinding")) {
-          var crb = (RoleBinding) hm;
-          for (var subject : crb.getSubjects()) {
-            subject.setNamespace(namespace);
-          }
-        }
-      });
-      client.resourceList(resources)
-          .inNamespace(namespace)
-          .createOrReplace();
+      resources.forEach(
+          hm -> {
+            hm.getMetadata().setNamespace(namespace);
+            if (hm.getKind().equalsIgnoreCase("rolebinding")) {
+              var crb = (RoleBinding) hm;
+              for (var subject : crb.getSubjects()) {
+                subject.setNamespace(namespace);
+              }
+            }
+          });
+      client.resourceList(resources).inNamespace(namespace).createOrReplace();
 
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);

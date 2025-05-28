@@ -18,42 +18,40 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 public class ConfigMapDependentResource
     extends KubernetesDependentResource<ConfigMap, WorkflowAllFeatureCustomResource>
     implements Creator<ConfigMap, WorkflowAllFeatureCustomResource>,
-    Updater<ConfigMap, WorkflowAllFeatureCustomResource>,
-    Deleter<WorkflowAllFeatureCustomResource> {
+        Updater<ConfigMap, WorkflowAllFeatureCustomResource>,
+        Deleter<WorkflowAllFeatureCustomResource> {
 
   public static final String READY_TO_DELETE_ANNOTATION = "ready-to-delete";
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapDependentResource.class);
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(WorkflowAllFeatureCustomResource primary,
-      Context<WorkflowAllFeatureCustomResource> context) {
+  protected ConfigMap desired(
+      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
     ConfigMap configMap = new ConfigMap();
-    configMap.setMetadata(new ObjectMetaBuilder()
-        .withName(primary.getMetadata().getName())
-        .withNamespace(primary.getMetadata().getNamespace())
-        .build());
+    configMap.setMetadata(
+        new ObjectMetaBuilder()
+            .withName(primary.getMetadata().getName())
+            .withNamespace(primary.getMetadata().getNamespace())
+            .build());
     configMap.setData(Map.of("key", "data"));
     return configMap;
   }
 
   @Override
-  public void delete(WorkflowAllFeatureCustomResource primary,
-      Context<WorkflowAllFeatureCustomResource> context) {
+  public void delete(
+      WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
     Optional<ConfigMap> optionalConfigMap = context.getSecondaryResource(ConfigMap.class);
     if (optionalConfigMap.isEmpty()) {
       log.debug("Config Map not found for primary: {}", ResourceID.fromResource(primary));
       return;
     }
-    optionalConfigMap.ifPresent((configMap -> {
-      if (configMap.getMetadata().getAnnotations() != null
-          && configMap.getMetadata().getAnnotations().get(READY_TO_DELETE_ANNOTATION) != null) {
-        context.getClient().resource(configMap).delete();
-      }
-    }));
+    optionalConfigMap.ifPresent(
+        (configMap -> {
+          if (configMap.getMetadata().getAnnotations() != null
+              && configMap.getMetadata().getAnnotations().get(READY_TO_DELETE_ANNOTATION) != null) {
+            context.getClient().resource(configMap).delete();
+          }
+        }));
   }
 }

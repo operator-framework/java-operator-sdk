@@ -27,18 +27,15 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
   public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
   public static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
 
-  public SecretDependentResource() {
-    super(Secret.class);
-  }
-
   private static String encode(String value) {
     return Base64.getEncoder().encodeToString(value.getBytes());
   }
 
   @Override
   protected Secret desired(MySQLSchema schema, Context<MySQLSchema> context) {
-    final var password = RandomStringUtils
-        .randomAlphanumeric(16); // NOSONAR: we don't need cryptographically-strong randomness here
+    final var password =
+        RandomStringUtils.randomAlphanumeric(
+            16); // NOSONAR: we don't need cryptographically-strong randomness here
     final var name = schema.getMetadata().getName();
     final var secretName = getSecretName(name);
     final var userName = String.format(USERNAME_FORMAT, name);
@@ -63,12 +60,12 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
     return Result.nonComputed(actual.getMetadata().getName().equals(desiredSecretName));
   }
 
-
   @Override
   public Set<ResourceID> toPrimaryResourceIDs(Secret resource) {
     String name = resource.getMetadata().getName();
-    return Set.of(new ResourceID(name.substring(0, name.length() - SECRET_SUFFIX.length()),
-        resource.getMetadata().getNamespace()));
+    return Set.of(
+        new ResourceID(
+            name.substring(0, name.length() - SECRET_SUFFIX.length()),
+            resource.getMetadata().getNamespace()));
   }
-
 }

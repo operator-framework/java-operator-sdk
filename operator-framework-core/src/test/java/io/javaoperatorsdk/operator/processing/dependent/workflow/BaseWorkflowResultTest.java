@@ -13,26 +13,26 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BaseWorkflowResultTest {
-  private final static BaseWorkflowResult.Detail<?> detail =
-      new BaseWorkflowResult.Detail<>(new RuntimeException(), null, null, null, null, null, false,
-          false, false);
+  private static final BaseWorkflowResult.Detail<?> detail =
+      new BaseWorkflowResult.Detail<>(
+          new RuntimeException(), null, null, null, null, null, false, false, false);
 
   @Test
   void throwsExceptionWithoutNumberingIfAllDifferentClass() {
-    var res = new BaseWorkflowResult(Map.of(new DependentA(), detail,
-        new DependentB(), detail));
+    var res = new BaseWorkflowResult(Map.of(new DependentA(), detail, new DependentB(), detail));
     try {
       res.throwAggregateExceptionIfErrorsPresent();
     } catch (AggregatedOperatorException e) {
-      assertThat(e.getAggregatedExceptions()).containsOnlyKeys(DependentA.class.getName(),
-          DependentB.class.getName());
+      assertThat(e.getAggregatedExceptions())
+          .containsOnlyKeys(DependentA.class.getName(), DependentB.class.getName());
     }
   }
 
   @Test
   void numbersDependentClassNamesIfMoreOfSameType() {
-    var res = new BaseWorkflowResult(Map.of(new DependentA("name1"), detail,
-        new DependentA("name2"), detail));
+    var res =
+        new BaseWorkflowResult(
+            Map.of(new DependentA("name1"), detail, new DependentA("name2"), detail));
     try {
       res.throwAggregateExceptionIfErrorsPresent();
     } catch (AggregatedOperatorException e) {

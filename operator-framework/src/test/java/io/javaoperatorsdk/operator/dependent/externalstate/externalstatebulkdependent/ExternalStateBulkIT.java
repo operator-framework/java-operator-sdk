@@ -52,42 +52,62 @@ class ExternalStateBulkIT {
   }
 
   private void assertResourcesDeleted(ExternalStateBulkDependentCustomResource resource) {
-    await().untilAsserted(() -> {
-      var configMaps =
-          operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
-              .list().getItems().stream().filter(
-                  cm -> cm.getMetadata().getName().startsWith(resource.getMetadata().getName()));
-      var resources = externalService.listResources();
-      assertThat(configMaps).isEmpty();
-      assertThat(resources).isEmpty();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var configMaps =
+                  operator
+                      .getKubernetesClient()
+                      .configMaps()
+                      .inNamespace(operator.getNamespace())
+                      .list()
+                      .getItems()
+                      .stream()
+                      .filter(
+                          cm ->
+                              cm.getMetadata()
+                                  .getName()
+                                  .startsWith(resource.getMetadata().getName()));
+              var resources = externalService.listResources();
+              assertThat(configMaps).isEmpty();
+              assertThat(resources).isEmpty();
+            });
   }
 
-  private void assertResources(ExternalStateBulkDependentCustomResource resource,
-      String initialTestData, int size) {
-    await().pollInterval(Duration.ofMillis(700)).untilAsserted(() -> {
-      var resources = externalService.listResources();
-      assertThat(resources).hasSize(size);
-      assertThat(resources).allMatch(r -> r.getData().startsWith(initialTestData));
+  private void assertResources(
+      ExternalStateBulkDependentCustomResource resource, String initialTestData, int size) {
+    await()
+        .pollInterval(Duration.ofMillis(700))
+        .untilAsserted(
+            () -> {
+              var resources = externalService.listResources();
+              assertThat(resources).hasSize(size);
+              assertThat(resources).allMatch(r -> r.getData().startsWith(initialTestData));
 
-      var configMaps =
-          operator.getKubernetesClient().configMaps().inNamespace(operator.getNamespace())
-              .list().getItems().stream().filter(
-                  cm -> cm.getMetadata().getName().startsWith(resource.getMetadata().getName()));
-      assertThat(configMaps).hasSize(size);
-    });
+              var configMaps =
+                  operator
+                      .getKubernetesClient()
+                      .configMaps()
+                      .inNamespace(operator.getNamespace())
+                      .list()
+                      .getItems()
+                      .stream()
+                      .filter(
+                          cm ->
+                              cm.getMetadata()
+                                  .getName()
+                                  .startsWith(resource.getMetadata().getName()));
+              assertThat(configMaps).hasSize(size);
+            });
   }
 
   private ExternalStateBulkDependentCustomResource testResource() {
     var res = new ExternalStateBulkDependentCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_RESOURCE_NAME)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_RESOURCE_NAME).build());
 
     res.setSpec(new ExternalStateBulkSpec());
     res.getSpec().setNumber(INITIAL_BULK_SIZE);
     res.getSpec().setData(INITIAL_TEST_DATA);
     return res;
   }
-
 }

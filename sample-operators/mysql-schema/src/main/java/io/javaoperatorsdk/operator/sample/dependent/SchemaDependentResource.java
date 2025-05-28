@@ -32,25 +32,27 @@ import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResour
 import static io.javaoperatorsdk.operator.sample.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 import static java.lang.String.format;
 
-@SchemaConfig(pollPeriod = 400, host = "127.0.0.1",
+@SchemaConfig(
+    pollPeriod = 400,
+    host = "127.0.0.1",
     port = SchemaDependentResource.LOCAL_PORT,
-    user = "root", password = "password") // NOSONAR: password is only used locally, example only
-@Configured(by = SchemaConfig.class, with = ResourcePollerConfig.class,
+    user = "root",
+    password = "password") // NOSONAR: password is only used locally, example only
+@Configured(
+    by = SchemaConfig.class,
+    with = ResourcePollerConfig.class,
     converter = ResourcePollerConfigConverter.class)
 public class SchemaDependentResource
     extends PerResourcePollingDependentResource<Schema, MySQLSchema>
     implements ConfiguredDependentResource<ResourcePollerConfig>,
-    Creator<Schema, MySQLSchema>, Deleter<MySQLSchema> {
+        Creator<Schema, MySQLSchema>,
+        Deleter<MySQLSchema> {
 
   public static final String NAME = "schema";
   public static final int LOCAL_PORT = 3307;
   private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
   private MySQLDbConfig dbConfig;
-
-  public SchemaDependentResource() {
-    super(Schema.class);
-  }
 
   @Override
   public Optional<ResourcePollerConfig> configuration() {
@@ -78,9 +80,7 @@ public class SchemaDependentResource
       var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
       log.debug("Creating schema: {}", target);
       return SchemaService.createSchemaAndRelatedUser(
-          connection,
-          target.getName(),
-          target.getCharacterSet(), username, password);
+          connection, target.getName(), target.getCharacterSet(), username, password);
     } catch (SQLException e) {
       log.error("Error while creating Schema", e);
       throw new IllegalStateException(e);
@@ -89,8 +89,7 @@ public class SchemaDependentResource
 
   private Connection getConnection() throws SQLException {
     String connectURL = format("jdbc:mysql://%1$s:%2$s", dbConfig.getHost(), dbConfig.getPort());
-    log.debug("Connecting to '{}' with user '{}'", connectURL,
-        dbConfig.getUser());
+    log.debug("Connecting to '{}' with user '{}'", connectURL, dbConfig.getUser());
     return DriverManager.getConnection(connectURL, dbConfig.getUser(), dbConfig.getPassword());
   }
 
@@ -98,8 +97,8 @@ public class SchemaDependentResource
   public void delete(MySQLSchema primary, Context<MySQLSchema> context) {
     try (Connection connection = getConnection()) {
       var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
-      SchemaService.deleteSchemaAndRelatedUser(connection, primary.getMetadata().getName(),
-          userName);
+      SchemaService.deleteSchemaAndRelatedUser(
+          connection, primary.getMetadata().getName(), userName);
     } catch (SQLException e) {
       throw new RuntimeException("Error while trying to delete Schema", e);
     }
@@ -112,8 +111,10 @@ public class SchemaDependentResource
   @Override
   public Set<Schema> fetchResources(MySQLSchema primaryResource) {
     try (Connection connection = getConnection()) {
-      var schema = SchemaService.getSchema(connection, primaryResource.getMetadata().getName())
-          .map(Set::of).orElseGet(Collections::emptySet);
+      var schema =
+          SchemaService.getSchema(connection, primaryResource.getMetadata().getName())
+              .map(Set::of)
+              .orElseGet(Collections::emptySet);
       log.debug("Fetched schema: {}", schema);
       return schema;
     } catch (SQLException e) {
@@ -121,19 +122,25 @@ public class SchemaDependentResource
     }
   }
 
-  static class ResourcePollerConfigConverter implements
-      ConfigurationConverter<SchemaConfig, ResourcePollerConfig> {
+  static class ResourcePollerConfigConverter
+      implements ConfigurationConverter<SchemaConfig, ResourcePollerConfig> {
 
     @Override
-    public ResourcePollerConfig configFrom(SchemaConfig configAnnotation,
+    public ResourcePollerConfig configFrom(
+        SchemaConfig configAnnotation,
         DependentResourceSpec<?, ?, ResourcePollerConfig> spec,
         ControllerConfiguration<?> parentConfiguration) {
       if (configAnnotation != null) {
-        return new ResourcePollerConfig(Duration.ofMillis(configAnnotation.pollPeriod()),
-            new MySQLDbConfig(configAnnotation.host(), String.valueOf(configAnnotation.port()),
-                configAnnotation.user(), configAnnotation.password()));
+        return new ResourcePollerConfig(
+            Duration.ofMillis(configAnnotation.pollPeriod()),
+            new MySQLDbConfig(
+                configAnnotation.host(),
+                String.valueOf(configAnnotation.port()),
+                configAnnotation.user(),
+                configAnnotation.password()));
       }
-      return new ResourcePollerConfig(Duration.ofMillis(SchemaConfig.DEFAULT_POLL_PERIOD),
+      return new ResourcePollerConfig(
+          Duration.ofMillis(SchemaConfig.DEFAULT_POLL_PERIOD),
           MySQLDbConfig.loadFromEnvironmentVars());
     }
   }

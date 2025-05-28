@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source;
 
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -80,18 +79,15 @@ public abstract class AbstractEventSource<R, P extends HasMetadata> implements E
     this.onAddFilter = onAddFilter;
   }
 
-  public void setOnUpdateFilter(
-      OnUpdateFilter<? super R> onUpdateFilter) {
+  public void setOnUpdateFilter(OnUpdateFilter<? super R> onUpdateFilter) {
     this.onUpdateFilter = onUpdateFilter;
   }
 
-  public void setOnDeleteFilter(
-      OnDeleteFilter<? super R> onDeleteFilter) {
+  public void setOnDeleteFilter(OnDeleteFilter<? super R> onDeleteFilter) {
     this.onDeleteFilter = onDeleteFilter;
   }
 
   public void setGenericFilter(GenericFilter<? super R> genericFilter) {
     this.genericFilter = genericFilter;
   }
-
 }

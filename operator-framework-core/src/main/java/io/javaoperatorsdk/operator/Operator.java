@@ -29,7 +29,6 @@ public class Operator implements LifecycleAware {
   private final ConfigurationService configurationService;
   private volatile boolean started = false;
 
-
   public Operator() {
     this((KubernetesClient) null);
   }
@@ -39,12 +38,12 @@ public class Operator implements LifecycleAware {
   }
 
   /**
-   * Creates an Operator based on the configuration provided by the specified
-   * {@link ConfigurationService}. If you intend to use different values than the default, you use
-   * {@link Operator#Operator(Consumer)} instead to override the default with your intended setup.
+   * Creates an Operator based on the configuration provided by the specified {@link
+   * ConfigurationService}. If you intend to use different values than the default, you use {@link
+   * Operator#Operator(Consumer)} instead to override the default with your intended setup.
    *
    * @param configurationService a {@link ConfigurationService} providing the configuration for the
-   *        operator
+   *     operator
    */
   public Operator(ConfigurationService configurationService) {
     this.configurationService = configurationService;
@@ -60,14 +59,14 @@ public class Operator implements LifecycleAware {
    * specified {@link ConfigurationServiceOverrider}.
    *
    * @param overrider a {@link ConfigurationServiceOverrider} consumer used to override the default
-   *        {@link ConfigurationService} values
+   *     {@link ConfigurationService} values
    */
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
     this(initConfigurationService(null, overrider));
   }
 
-  private static ConfigurationService initConfigurationService(KubernetesClient client,
-      Consumer<ConfigurationServiceOverrider> overrider) {
+  private static ConfigurationService initConfigurationService(
+      KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
       var configurationService = ConfigurationService.newOverriddenConfigurationService(overrider);
@@ -90,12 +89,12 @@ public class Operator implements LifecycleAware {
    * Adds a shutdown hook that automatically calls {@link #stop()} when the app shuts down. Note
    * that graceful shutdown is usually not needed, but some {@link Reconciler} implementations might
    * require it.
-   * <p>
-   * Note that you might want to tune "terminationGracePeriodSeconds" for the Pod running the
+   *
+   * <p>Note that you might want to tune "terminationGracePeriodSeconds" for the Pod running the
    * controller.
    *
    * @param gracefulShutdownTimeout timeout to wait for executor threads to complete actual
-   *        reconciliations
+   *     reconciliations
    */
   @SuppressWarnings("unused")
   public void installShutdownHook(Duration gracefulShutdownTimeout) {
@@ -152,8 +151,8 @@ public class Operator implements LifecycleAware {
     if (!started) {
       return;
     }
-    log.info("Operator SDK {} is shutting down...",
-        configurationService.getVersion().getSdkVersion());
+    log.info(
+        "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
     configurationService.getExecutorServiceManager().stop(reconciliationTerminationTimeout);
@@ -182,8 +181,8 @@ public class Operator implements LifecycleAware {
 
   /**
    * Add a registration requests for the specified reconciler with this operator, overriding its
-   * default configuration by the specified one (usually created via
-   * {@link io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
+   * default configuration by the specified one (usually created via {@link
+   * io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider#override(ControllerConfiguration)},
    * passing it the reconciler's original configuration. The effective registration of the
    * reconciler is delayed till the operator is started.
    *
@@ -193,19 +192,20 @@ public class Operator implements LifecycleAware {
    * @return registered controller
    * @throws OperatorException if a problem occurred during the registration process
    */
-  public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
-      ControllerConfiguration<P> configuration)
-      throws OperatorException {
+  public <P extends HasMetadata> RegisteredController<P> register(
+      Reconciler<P> reconciler, ControllerConfiguration<P> configuration) throws OperatorException {
     if (started) {
       throw new OperatorException("Operator already started. Register all the controllers before.");
     }
 
     if (configuration == null) {
       throw new OperatorException(
-          "Cannot register reconciler with name " + reconciler.getClass().getCanonicalName() +
-              " reconciler named " + ReconcilerUtils.getNameFor(reconciler)
-              + " because its configuration cannot be found.\n" +
-              " Known reconcilers are: "
+          "Cannot register reconciler with name "
+              + reconciler.getClass().getCanonicalName()
+              + " reconciler named "
+              + ReconcilerUtils.getNameFor(reconciler)
+              + " because its configuration cannot be found.\n"
+              + " Known reconcilers are: "
               + configurationService.getKnownReconcilerNames());
     }
 
@@ -214,8 +214,10 @@ public class Operator implements LifecycleAware {
     controllerManager.add(controller);
 
     final var informerConfig = configuration.getInformerConfig();
-    final var watchedNS = informerConfig.watchAllNamespaces() ? "[all namespaces]"
-        : informerConfig.getEffectiveNamespaces(configuration);
+    final var watchedNS =
+        informerConfig.watchAllNamespaces()
+            ? "[all namespaces]"
+            : informerConfig.getEffectiveNamespaces(configuration);
 
     log.info(
         "Registered reconciler: '{}' for resource: '{}' for namespace(s): {}",
@@ -233,10 +235,9 @@ public class Operator implements LifecycleAware {
    * @return registered controller
    * @param <P> the {@code HasMetadata} type associated with the reconciler
    */
-  public <P extends HasMetadata> RegisteredController<P> register(Reconciler<P> reconciler,
-      Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
-    final var controllerConfiguration =
-        configurationService.getConfigurationFor(reconciler);
+  public <P extends HasMetadata> RegisteredController<P> register(
+      Reconciler<P> reconciler, Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
+    final var controllerConfiguration = configurationService.getConfigurationFor(reconciler);
     var configToOverride = ControllerConfigurationOverrider.override(controllerConfiguration);
     configOverrider.accept(configToOverride);
     return register(reconciler, configToOverride.build());

@@ -13,16 +13,19 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 import static io.javaoperatorsdk.operator.dependent.multiplemanageddependentsametype.MultipleManagedDependentResourceReconciler.CONFIG_MAP_EVENT_SOURCE;
 
-@Workflow(dependents = {
-    @Dependent(type = MultipleManagedDependentNoDiscriminatorConfigMap1.class,
-        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
-    @Dependent(type = MultipleManagedDependentNoDiscriminatorConfigMap2.class,
-        useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
-})
+@Workflow(
+    dependents = {
+      @Dependent(
+          type = MultipleManagedDependentNoDiscriminatorConfigMap1.class,
+          useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE),
+      @Dependent(
+          type = MultipleManagedDependentNoDiscriminatorConfigMap2.class,
+          useEventSourceWithName = CONFIG_MAP_EVENT_SOURCE)
+    })
 @ControllerConfiguration
 public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
     implements Reconciler<MultipleManagedDependentNoDiscriminatorCustomResource>,
-    TestExecutionInfoProvider {
+        TestExecutionInfoProvider {
 
   public static final String CONFIG_MAP_EVENT_SOURCE = "ConfigMapEventSource";
   public static final String DATA_KEY = "key";
@@ -40,18 +43,18 @@ public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
     return UpdateControl.noUpdate();
   }
 
-
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
 
   @Override
-  public List<EventSource<?, MultipleManagedDependentNoDiscriminatorCustomResource>> prepareEventSources(
-      EventSourceContext<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
+  public List<EventSource<?, MultipleManagedDependentNoDiscriminatorCustomResource>>
+      prepareEventSources(
+          EventSourceContext<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     InformerEventSource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> ies =
         new InformerEventSource<>(
-            InformerEventSourceConfiguration.from(ConfigMap.class,
-                MultipleManagedDependentNoDiscriminatorCustomResource.class)
+            InformerEventSourceConfiguration.from(
+                    ConfigMap.class, MultipleManagedDependentNoDiscriminatorCustomResource.class)
                 .withName(CONFIG_MAP_EVENT_SOURCE)
                 .build(),
             context);

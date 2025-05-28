@@ -4,7 +4,7 @@
 
   <groupId>io.javaoperatorsdk</groupId>
   <artifactId>operator-framework-bom</artifactId>
-  <version>5.0.4-SNAPSHOT</version>
+  <version>5.1.2-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Operator SDK - Bill of Materials</name>
   <description>Java SDK for implementing Kubernetes operators</description>
@@ -78,25 +78,34 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>${spotless.version}</version>
         <configuration>
           <pom>
             <includes>
               <include>pom.xml</include>
               <include>./**/pom.xml</include>
             </includes>
-            <sortPom></sortPom>
+            <sortPom>
+              <expandEmptyElements>false</expandEmptyElements>
+            </sortPom>
           </pom>
           <java>
-            <eclipse>
-              <file>contributing/eclipse-google-style.xml</file>
-            </eclipse>
+            <googleJavaFormat>
+              <reflowLongStrings>true</reflowLongStrings>
+            </googleJavaFormat>
             <importOrder>
-              <file>contributing/eclipse.importorder</file>
+              <order>java,javax,org,io,com,,\#</order>
             </importOrder>
-            <removeUnusedImports></removeUnusedImports>
+            <removeUnusedImports/>
           </java>
         </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>apply</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

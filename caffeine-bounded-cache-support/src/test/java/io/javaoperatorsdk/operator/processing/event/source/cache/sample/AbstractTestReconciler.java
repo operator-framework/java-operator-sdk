@@ -28,7 +28,8 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
-public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
+public abstract class AbstractTestReconciler<
+        P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>>
     implements Reconciler<P> {
 
   private static final Logger log =
@@ -37,9 +38,7 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   public static final String DATA_KEY = "dataKey";
 
   @Override
-  public UpdateControl<P> reconcile(
-      P resource,
-      Context<P> context) {
+  public UpdateControl<P> reconcile(P resource, Context<P> context) {
     var maybeConfigMap = context.getSecondaryResource(ConfigMap.class);
     maybeConfigMap.ifPresentOrElse(
         cm -> updateConfigMapIfNeeded(cm, resource, context),
@@ -58,33 +57,39 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   protected void createConfigMap(P resource, Context<P> context) {
-    var cm = new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-            .withName(resource.getMetadata().getName())
-            .withNamespace(resource.getSpec().getTargetNamespace())
-            .build())
-        .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
-        .build();
+    var cm =
+        new ConfigMapBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName(resource.getMetadata().getName())
+                    .withNamespace(resource.getSpec().getTargetNamespace())
+                    .build())
+            .withData(Map.of(DATA_KEY, resource.getSpec().getData()))
+            .build();
     cm.addOwnerReference(resource);
     context.getClient().configMaps().resource(cm).create();
   }
 
   @Override
-  public List<EventSource<?, P>> prepareEventSources(
-      EventSourceContext<P> context) {
+  public List<EventSource<?, P>> prepareEventSources(EventSourceContext<P> context) {
 
     var boundedItemStore =
-        boundedItemStore(new KubernetesClientBuilder().build(),
-            ConfigMap.class, Duration.ofMinutes(1), 1); // setting max size for testing purposes
+        boundedItemStore(
+            new KubernetesClientBuilder().build(),
+            ConfigMap.class,
+            Duration.ofMinutes(1),
+            1); // setting max size for testing purposes
 
-    var es = new InformerEventSource<>(
-        InformerEventSourceConfiguration.from(ConfigMap.class, primaryClass())
-            .withItemStore(boundedItemStore)
-            .withSecondaryToPrimaryMapper(
-                Mappers.fromOwnerReferences(context.getPrimaryResourceClass(),
-                    this instanceof BoundedCacheClusterScopeTestReconciler))
-            .build(),
-        context);
+    var es =
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(ConfigMap.class, primaryClass())
+                .withItemStore(boundedItemStore)
+                .withSecondaryToPrimaryMapper(
+                    Mappers.fromOwnerReferences(
+                        context.getPrimaryResourceClass(),
+                        this instanceof BoundedCacheClusterScopeTestReconciler))
+                .build(),
+            context);
 
     return List.of(es);
   }
@@ -96,17 +101,18 @@ public abstract class AbstractTestReconciler<P extends CustomResource<BoundedCac
   }
 
   public static <R extends HasMetadata> BoundedItemStore<R> boundedItemStore(
-      KubernetesClient client, Class<R> rClass,
+      KubernetesClient client,
+      Class<R> rClass,
       Duration accessExpireDuration,
       // max size is only for testing purposes
       long cacheMaxSize) {
-    Cache<String, R> cache = Caffeine.newBuilder()
-        .expireAfterAccess(accessExpireDuration)
-        .maximumSize(cacheMaxSize)
-        .build();
+    Cache<String, R> cache =
+        Caffeine.newBuilder()
+            .expireAfterAccess(accessExpireDuration)
+            .maximumSize(cacheMaxSize)
+            .build();
     return CaffeineBoundedItemStores.boundedItemStore(client, rClass, cache);
   }
 
   protected abstract Class<P> primaryClass();
-
 }

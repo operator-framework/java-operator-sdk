@@ -30,26 +30,26 @@ class LeaderElectionPermissionIT {
     applyRole();
     applyRoleBinding();
 
-    var client = new KubernetesClientBuilder().withConfig(new ConfigBuilder()
-        .withImpersonateUsername("leader-elector-stop-noaccess")
-        .build()).build();
+    var client =
+        new KubernetesClientBuilder()
+            .withConfig(
+                new ConfigBuilder().withImpersonateUsername("leader-elector-stop-noaccess").build())
+            .build();
 
-    var operator = new Operator(o -> {
-      o.withKubernetesClient(client);
-      o.withLeaderElectionConfiguration(
-          new LeaderElectionConfiguration("lease1", "default"));
-      o.withStopOnInformerErrorDuringStartup(false);
-    });
+    var operator =
+        new Operator(
+            o -> {
+              o.withKubernetesClient(client);
+              o.withLeaderElectionConfiguration(
+                  new LeaderElectionConfiguration("lease1", "default"));
+              o.withStopOnInformerErrorDuringStartup(false);
+            });
     operator.register(new TestReconciler(), o -> o.settingNamespace("default"));
 
-    OperatorException exception = assertThrows(
-        OperatorException.class,
-        operator::start);
+    OperatorException exception = assertThrows(OperatorException.class, operator::start);
 
-    assertThat(exception.getCause().getMessage())
-        .contains(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
+    assertThat(exception.getCause().getMessage()).contains(NO_PERMISSION_TO_LEASE_RESOURCE_MESSAGE);
   }
-
 
   @ControllerConfiguration
   public static class TestReconciler implements Reconciler<ConfigMap> {
@@ -61,15 +61,16 @@ class LeaderElectionPermissionIT {
   }
 
   private void applyRoleBinding() {
-    var clusterRoleBinding = ReconcilerUtils
-        .loadYaml(RoleBinding.class, this.getClass(),
-            "leader-elector-stop-noaccess-role-binding.yaml");
+    var clusterRoleBinding =
+        ReconcilerUtils.loadYaml(
+            RoleBinding.class, this.getClass(), "leader-elector-stop-noaccess-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).createOrReplace();
   }
 
   private void applyRole() {
-    var role = ReconcilerUtils
-        .loadYaml(Role.class, this.getClass(), "leader-elector-stop-role-noaccess.yaml");
+    var role =
+        ReconcilerUtils.loadYaml(
+            Role.class, this.getClass(), "leader-elector-stop-role-noaccess.yaml");
     adminClient.resource(role).createOrReplace();
   }
 }

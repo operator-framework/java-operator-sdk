@@ -27,32 +27,42 @@ public class InClusterCurl {
   public String checkUrl(String... args) {
     String podName = KubernetesResourceUtil.sanitizeName("curl-" + UUID.randomUUID());
     try {
-      Pod curlPod = client.run().inNamespace(namespace)
-          .withRunConfig(new RunConfigBuilder()
-              .withArgs(args)
-              .withName(podName)
-              .withImage("curlimages/curl:7.78.0")
-              .withRestartPolicy("Never")
-              .build())
-          .done();
-      await("wait-for-curl-pod-run").atMost(2, MINUTES)
-          .until(() -> {
-            String phase =
-                client.pods().inNamespace(namespace).withName(podName).get()
-                    .getStatus().getPhase();
-            return phase.equals("Succeeded") || phase.equals("Failed");
-          });
+      Pod curlPod =
+          client
+              .run()
+              .inNamespace(namespace)
+              .withRunConfig(
+                  new RunConfigBuilder()
+                      .withArgs(args)
+                      .withName(podName)
+                      .withImage("curlimages/curl:7.78.0")
+                      .withRestartPolicy("Never")
+                      .build())
+              .done();
+      await("wait-for-curl-pod-run")
+          .atMost(2, MINUTES)
+          .until(
+              () -> {
+                String phase =
+                    client
+                        .pods()
+                        .inNamespace(namespace)
+                        .withName(podName)
+                        .get()
+                        .getStatus()
+                        .getPhase();
+                return phase.equals("Succeeded") || phase.equals("Failed");
+              });
 
       String curlOutput =
-          client.pods().inNamespace(namespace)
-              .withName(curlPod.getMetadata().getName()).getLog();
+          client.pods().inNamespace(namespace).withName(curlPod.getMetadata().getName()).getLog();
 
       return curlOutput;
     } finally {
       client.pods().inNamespace(namespace).withName(podName).delete();
-      await("wait-for-curl-pod-stop").atMost(1, MINUTES)
-          .until(() -> client.pods().inNamespace(namespace).withName(podName)
-              .get() == null);
+      await("wait-for-curl-pod-stop")
+          .atMost(1, MINUTES)
+          .until(() -> client.pods().inNamespace(namespace).withName(podName).get() == null);
     }
   }
 }

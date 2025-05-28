@@ -7,19 +7,17 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
-public class ConfigMapDependentResource extends
-    CRUDNoGCKubernetesDependentResource<ConfigMap, DependentDifferentNamespaceCustomResource> {
+public class ConfigMapDependentResource
+    extends CRUDNoGCKubernetesDependentResource<
+        ConfigMap, DependentDifferentNamespaceCustomResource> {
 
   public static final String KEY = "key";
 
   public static final String NAMESPACE = "default";
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(DependentDifferentNamespaceCustomResource primary,
+  protected ConfigMap desired(
+      DependentDifferentNamespaceCustomResource primary,
       Context<DependentDifferentNamespaceCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();

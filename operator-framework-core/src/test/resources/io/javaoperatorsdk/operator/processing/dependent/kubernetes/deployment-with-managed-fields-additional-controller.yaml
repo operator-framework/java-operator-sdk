@@ -25,6 +25,7 @@ metadata:
                   f:image: {}
                   f:name: {}
                   f:ports:
+                    .: {}
                     k:{"containerPort":80,"protocol":"TCP"}:
                       .: {}
                       f:containerPort: {}

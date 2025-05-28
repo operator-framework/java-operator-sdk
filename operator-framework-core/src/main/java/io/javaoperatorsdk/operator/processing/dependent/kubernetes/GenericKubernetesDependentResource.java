@@ -15,15 +15,24 @@ public class GenericKubernetesDependentResource<P extends HasMetadata>
     this(GroupVersionKindPlural.from(groupVersionKind));
   }
 
+  public GenericKubernetesDependentResource(GroupVersionKind groupVersionKind, String name) {
+    this(GroupVersionKindPlural.from(groupVersionKind), name);
+  }
+
   public GenericKubernetesDependentResource(GroupVersionKindPlural groupVersionKind) {
-    super(GenericKubernetesResource.class);
+    super(GenericKubernetesResource.class, null);
     this.groupVersionKind = groupVersionKind;
   }
 
-  protected InformerEventSourceConfiguration.Builder<GenericKubernetesResource> informerConfigurationBuilder(
-      EventSourceContext<P> context) {
-    return InformerEventSourceConfiguration.from(groupVersionKind,
-        context.getPrimaryResourceClass());
+  public GenericKubernetesDependentResource(GroupVersionKindPlural groupVersionKind, String name) {
+    super(GenericKubernetesResource.class, name);
+    this.groupVersionKind = groupVersionKind;
+  }
+
+  protected InformerEventSourceConfiguration.Builder<GenericKubernetesResource>
+      informerConfigurationBuilder(EventSourceContext<P> context) {
+    return InformerEventSourceConfiguration.from(
+        groupVersionKind, context.getPrimaryResourceClass());
   }
 
   @SuppressWarnings("unused")

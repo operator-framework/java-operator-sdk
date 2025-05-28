@@ -12,7 +12,6 @@ class DefaultWorkflowReconcileResult extends BaseWorkflowResult implements Workf
     super(results);
   }
 
-
   public List<DependentResource> getReconciledDependents() {
     return listFilteredBy(detail -> detail.reconcileResult() != null);
   }
@@ -21,8 +20,8 @@ class DefaultWorkflowReconcileResult extends BaseWorkflowResult implements Workf
     return listFilteredBy(detail -> !detail.isConditionWithTypeMet(Condition.Type.READY));
   }
 
-  public <T> Optional<T> getNotReadyDependentResult(DependentResource dependentResource,
-      Class<T> expectedResultType) {
+  public <T> Optional<T> getNotReadyDependentResult(
+      DependentResource dependentResource, Class<T> expectedResultType) {
     return getDependentConditionResult(dependentResource, Condition.Type.READY, expectedResultType);
   }
 }

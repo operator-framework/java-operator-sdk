@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.Pluralize;
@@ -24,10 +25,33 @@ public class GroupVersionKindPlural extends GroupVersionKind {
   }
 
   protected GroupVersionKindPlural(GroupVersionKind gvk, String plural) {
-    this(gvk.getGroup(), gvk.getVersion(), gvk.getKind(),
-        plural != null ? plural
-            : (gvk instanceof GroupVersionKindPlural ? ((GroupVersionKindPlural) gvk).plural
+    this(
+        gvk.getGroup(),
+        gvk.getVersion(),
+        gvk.getKind(),
+        plural != null
+            ? plural
+            : (gvk instanceof GroupVersionKindPlural
+                ? ((GroupVersionKindPlural) gvk).plural
                 : null));
+  }
+
+  @Override
+  protected boolean specificEquals(GroupVersionKind that) {
+    if (plural == null) {
+      return true;
+    }
+    return that instanceof GroupVersionKindPlural gvkp && gvkp.plural.equals(plural);
+  }
+
+  @Override
+  public int hashCode() {
+    return plural != null ? Objects.hash(super.hashCode(), plural) : super.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return toGVKString() + (plural != null ? " (plural: " + plural + ")" : "");
   }
 
   /**
@@ -37,7 +61,8 @@ public class GroupVersionKindPlural extends GroupVersionKind {
    * @return a new GroupVersionKindPlural object matching the specified {@link GroupVersionKind}
    */
   public static GroupVersionKindPlural from(GroupVersionKind gvk) {
-    return gvk instanceof GroupVersionKindPlural ? ((GroupVersionKindPlural) gvk)
+    return gvk instanceof GroupVersionKindPlural
+        ? ((GroupVersionKindPlural) gvk)
         : gvkWithPlural(gvk, null);
   }
 
@@ -47,13 +72,12 @@ public class GroupVersionKindPlural extends GroupVersionKind {
    *
    * @param gvk the base {@link GroupVersionKind} from which to derive a new GroupVersionKindPlural
    * @param plural the plural form to use for the new instance or {@code null} if the default plural
-   *        form is desired. Note that the specified plural form will override any existing plural
-   *        form for the specified {@link GroupVersionKind} (in particular, if the specified
-   *        {@link GroupVersionKind} was already an instance of GroupVersionKindPlural, its plural
-   *        form will only be considered in the new instance if the specified plural form is
-   *        {@code null}
+   *     form is desired. Note that the specified plural form will override any existing plural form
+   *     for the specified {@link GroupVersionKind} (in particular, if the specified {@link
+   *     GroupVersionKind} was already an instance of GroupVersionKindPlural, its plural form will
+   *     only be considered in the new instance if the specified plural form is {@code null}
    * @return a new GroupVersionKindPlural derived from the specified {@link GroupVersionKind} and
-   *         plural form
+   *     plural form
    */
   public static GroupVersionKindPlural gvkWithPlural(GroupVersionKind gvk, String plural) {
     return new GroupVersionKindPlural(gvk, plural);
@@ -64,9 +88,9 @@ public class GroupVersionKindPlural extends GroupVersionKind {
    * {@link HasMetadata} implementation
    *
    * @param resourceClass the {@link HasMetadata} from which group, version, kind and plural form
-   *        are extracted
+   *     are extracted
    * @return a new GroupVersionKindPlural instance based on the specified {@link HasMetadata}
-   *         implementation
+   *     implementation
    */
   public static GroupVersionKindPlural gvkFor(Class<? extends HasMetadata> resourceClass) {
     final var gvk = GroupVersionKind.gvkFor(resourceClass);
@@ -90,7 +114,7 @@ public class GroupVersionKindPlural extends GroupVersionKind {
    * manually by the user, or determined from the associated resource class definition)
    *
    * @return {@link Optional#empty()} if the plural form was not provided explicitly, or the plural
-   *         form if it was provided explicitly
+   *     form if it was provided explicitly
    */
   public Optional<String> getPlural() {
     return Optional.ofNullable(plural);

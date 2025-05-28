@@ -12,14 +12,10 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 @KubernetesDependent
 public class MultipleManagedDependentNoDiscriminatorConfigMap1
-    extends
-    CRUDKubernetesDependentResource<ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> {
+    extends CRUDKubernetesDependentResource<
+        ConfigMap, MultipleManagedDependentNoDiscriminatorCustomResource> {
 
   public static final String NAME_SUFFIX = "-1";
-
-  public MultipleManagedDependentNoDiscriminatorConfigMap1() {
-    super(ConfigMap.class);
-  }
 
   /*
    * Showcases optimization to avoid computing the whole desired state by providing the ResourceID
@@ -30,15 +26,17 @@ public class MultipleManagedDependentNoDiscriminatorConfigMap1
   protected ResourceID targetSecondaryResourceID(
       MultipleManagedDependentNoDiscriminatorCustomResource primary,
       Context<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
-    return new ResourceID(primary.getMetadata().getName() + NAME_SUFFIX,
-        primary.getMetadata().getNamespace());
+    return new ResourceID(
+        primary.getMetadata().getName() + NAME_SUFFIX, primary.getMetadata().getNamespace());
   }
 
   @Override
-  protected ConfigMap desired(MultipleManagedDependentNoDiscriminatorCustomResource primary,
+  protected ConfigMap desired(
+      MultipleManagedDependentNoDiscriminatorCustomResource primary,
       Context<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     Map<String, String> data = new HashMap<>();
-    data.put(MultipleManagedDependentSameTypeNoDiscriminatorReconciler.DATA_KEY,
+    data.put(
+        MultipleManagedDependentSameTypeNoDiscriminatorReconciler.DATA_KEY,
         primary.getSpec().getValue());
 
     return new ConfigMapBuilder()

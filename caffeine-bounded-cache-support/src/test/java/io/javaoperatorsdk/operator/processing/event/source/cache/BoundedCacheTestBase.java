@@ -17,7 +17,8 @@ import static io.javaoperatorsdk.operator.processing.event.source.cache.sample.A
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>> {
+public abstract class BoundedCacheTestBase<
+    P extends CustomResource<BoundedCacheTestSpec, BoundedCacheTestStatus>> {
 
   private static final Logger log = LoggerFactory.getLogger(BoundedCacheTestBase.class);
 
@@ -42,34 +43,46 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   }
 
   private void assertConfigMapsDeleted() {
-    await().atMost(Duration.ofSeconds(30))
-        .untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
-          var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
-          assertThat(cm).isNull();
-        }));
+    await()
+        .atMost(Duration.ofSeconds(120))
+        .untilAsserted(
+            () ->
+                IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
+                    .forEach(
+                        i -> {
+                          var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
+                          assertThat(cm).isNull();
+                        }));
   }
 
   private void deleteTestResources() {
-    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
-      var cm = extension().get(customResourceClass(), RESOURCE_NAME_PREFIX + i);
-      var deleted = extension().delete(cm);
-      if (!deleted) {
-        log.warn("Custom resource might not be deleted: {}", cm);
-      }
-    });
+    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
+        .forEach(
+            i -> {
+              var cm = extension().get(customResourceClass(), RESOURCE_NAME_PREFIX + i);
+              var deleted = extension().delete(cm);
+              if (!deleted) {
+                log.warn("Custom resource might not be deleted: {}", cm);
+              }
+            });
   }
 
   private void updateTestResources() {
-    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
-      var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
-      cm.getData().put(DATA_KEY, UPDATED_PREFIX + i);
-      extension().replace(cm);
-    });
+    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
+        .forEach(
+            i -> {
+              var cm = extension().get(ConfigMap.class, RESOURCE_NAME_PREFIX + i);
+              cm.getData().put(DATA_KEY, UPDATED_PREFIX + i);
+              extension().replace(cm);
+            });
   }
 
   void assertConfigMapData(String dataPrefix) {
-    await().untilAsserted(() -> IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
-        .forEach(i -> assertConfigMap(i, dataPrefix)));
+    await()
+        .untilAsserted(
+            () ->
+                IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
+                    .forEach(i -> assertConfigMap(i, dataPrefix)));
   }
 
   private void assertConfigMap(int i, String prefix) {
@@ -79,9 +92,11 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   }
 
   private void createTestResources() {
-    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST).forEach(i -> {
-      extension().create(createTestResource(i));
-    });
+    IntStream.range(0, NUMBER_OF_RESOURCE_TO_TEST)
+        .forEach(
+            i -> {
+              extension().create(createTestResource(i));
+            });
   }
 
   abstract P createTestResource(int index);
@@ -89,7 +104,4 @@ public abstract class BoundedCacheTestBase<P extends CustomResource<BoundedCache
   abstract Class<P> customResourceClass();
 
   abstract LocallyRunOperatorExtension extension();
-
-
-
 }

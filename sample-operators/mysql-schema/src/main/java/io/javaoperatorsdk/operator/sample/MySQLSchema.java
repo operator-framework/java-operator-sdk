@@ -7,5 +7,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("mysql.sample.javaoperatorsdk")
 @Version("v1")
-public class MySQLSchema extends CustomResource<SchemaSpec, SchemaStatus> implements Namespaced {
-}
+public class MySQLSchema extends CustomResource<SchemaSpec, SchemaStatus> implements Namespaced {}

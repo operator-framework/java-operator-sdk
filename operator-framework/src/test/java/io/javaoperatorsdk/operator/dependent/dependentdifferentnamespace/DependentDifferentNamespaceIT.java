@@ -27,41 +27,47 @@ class DependentDifferentNamespaceIT {
   void managesCRUDOperationsForDependentInDifferentNamespace() {
     var resource = extension.create(testResource());
 
-    await().untilAsserted(() -> {
-      var cm = getDependentConfigMap();
-      assertThat(cm).isNotNull();
-      assertThat(cm.getData()).containsEntry(KEY, INITIAL_VALUE);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = getDependentConfigMap();
+              assertThat(cm).isNotNull();
+              assertThat(cm.getData()).containsEntry(KEY, INITIAL_VALUE);
+            });
 
     resource.getSpec().setValue(CHANGED_VALUE);
     resource = extension.replace(resource);
 
-    await().untilAsserted(() -> {
-      var cm = getDependentConfigMap();
-      assertThat(cm.getData()).containsEntry(KEY, CHANGED_VALUE);
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = getDependentConfigMap();
+              assertThat(cm.getData()).containsEntry(KEY, CHANGED_VALUE);
+            });
 
     extension.delete(resource);
-    await().untilAsserted(() -> {
-      var cm = getDependentConfigMap();
-      assertThat(cm).isNull();
-    });
+    await()
+        .untilAsserted(
+            () -> {
+              var cm = getDependentConfigMap();
+              assertThat(cm).isNull();
+            });
   }
 
   private ConfigMap getDependentConfigMap() {
-    return extension.getKubernetesClient().configMaps()
+    return extension
+        .getKubernetesClient()
+        .configMaps()
         .inNamespace(ConfigMapDependentResource.NAMESPACE)
-        .withName(TEST_1).get();
+        .withName(TEST_1)
+        .get();
   }
 
   DependentDifferentNamespaceCustomResource testResource() {
     var res = new DependentDifferentNamespaceCustomResource();
-    res.setMetadata(new ObjectMetaBuilder()
-        .withName(TEST_1)
-        .build());
+    res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
     res.setSpec(new DependentDifferentNamespaceSpec());
     res.getSpec().setValue(INITIAL_VALUE);
     return res;
   }
-
 }

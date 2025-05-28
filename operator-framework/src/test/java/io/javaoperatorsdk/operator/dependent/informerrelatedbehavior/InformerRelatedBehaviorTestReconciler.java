@@ -10,9 +10,11 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
-@Workflow(dependents = @Dependent(
-    name = InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE,
-    type = ConfigMapDependentResource.class))
+@Workflow(
+    dependents =
+        @Dependent(
+            name = InformerRelatedBehaviorTestReconciler.CONFIG_MAP_DEPENDENT_RESOURCE,
+            type = ConfigMapDependentResource.class))
 @ControllerConfiguration(
     name = InformerRelatedBehaviorTestReconciler.INFORMER_RELATED_BEHAVIOR_TEST_RECONCILER)
 public class InformerRelatedBehaviorTestReconciler
@@ -39,5 +41,4 @@ public class InformerRelatedBehaviorTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

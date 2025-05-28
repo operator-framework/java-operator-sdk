@@ -13,11 +13,12 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 
-public abstract class AbstractExternalDependentResource extends
-    PollingDependentResource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>
+public abstract class AbstractExternalDependentResource
+    extends PollingDependentResource<
+        ExternalResource, MultipleManagedExternalDependentResourceCustomResource>
     implements Creator<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>,
-    Updater<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>,
-    Deleter<MultipleManagedExternalDependentResourceCustomResource> {
+        Updater<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>,
+        Deleter<MultipleManagedExternalDependentResourceCustomResource> {
 
   protected ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
 
@@ -31,14 +32,16 @@ public abstract class AbstractExternalDependentResource extends
   }
 
   @Override
-  public ExternalResource create(ExternalResource desired,
+  public ExternalResource create(
+      ExternalResource desired,
       MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
     return externalServiceMock.create(desired);
   }
 
   @Override
-  public ExternalResource update(ExternalResource actual,
+  public ExternalResource update(
+      ExternalResource actual,
       ExternalResource desired,
       MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
@@ -46,7 +49,8 @@ public abstract class AbstractExternalDependentResource extends
   }
 
   @Override
-  public Matcher.Result<ExternalResource> match(ExternalResource actualResource,
+  public Matcher.Result<ExternalResource> match(
+      ExternalResource actualResource,
       MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
     var desired = desired(primary, context);
@@ -54,15 +58,16 @@ public abstract class AbstractExternalDependentResource extends
   }
 
   @Override
-  public void delete(MultipleManagedExternalDependentResourceCustomResource primary,
+  public void delete(
+      MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
     externalServiceMock.delete(toExternalResourceID(primary));
   }
 
-  protected ExternalResource desired(MultipleManagedExternalDependentResourceCustomResource primary,
+  protected ExternalResource desired(
+      MultipleManagedExternalDependentResourceCustomResource primary,
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
-    return new ExternalResource(toExternalResourceID(primary),
-        primary.getSpec().getValue());
+    return new ExternalResource(toExternalResourceID(primary), primary.getSpec().getValue());
   }
 
   protected String toExternalResourceID(
@@ -71,5 +76,4 @@ public abstract class AbstractExternalDependentResource extends
   }
 
   protected abstract String resourceIDSuffix();
-
 }

@@ -36,8 +36,8 @@ public class Version {
   /**
    * Returns the date at which this SDK instance was built
    *
-   * @return the build time at which this SDK instance was built or the date corresponding to
-   *         {@link java.time.Instant#EPOCH} if the built time couldn't be retrieved
+   * @return the build time at which this SDK instance was built or the date corresponding to {@link
+   *     java.time.Instant#EPOCH} if the built time couldn't be retrieved
    */
   public Date getBuiltTime() {
     return builtTime;

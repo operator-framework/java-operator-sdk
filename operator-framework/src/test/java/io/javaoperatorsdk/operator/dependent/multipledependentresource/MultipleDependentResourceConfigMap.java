@@ -19,7 +19,8 @@ public class MultipleDependentResourceConfigMap
   }
 
   @Override
-  protected ConfigMap desired(MultipleDependentResourceCustomResource primary,
+  protected ConfigMap desired(
+      MultipleDependentResourceCustomResource primary,
       Context<MultipleDependentResourceCustomResource> context) {
 
     return new ConfigMapBuilder()

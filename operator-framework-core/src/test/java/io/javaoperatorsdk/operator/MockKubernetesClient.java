@@ -43,27 +43,26 @@ public class MockKubernetesClient {
     return client(clazz, null, null);
   }
 
-  public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
-      Object selfSubjectReview) {
+  public static <T extends HasMetadata> KubernetesClient client(
+      Class<T> clazz, Object selfSubjectReview) {
     return client(clazz, null, selfSubjectReview);
   }
 
-  public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
-      Consumer<Void> informerRunBehavior) {
+  public static <T extends HasMetadata> KubernetesClient client(
+      Class<T> clazz, Consumer<Void> informerRunBehavior) {
     return client(clazz, informerRunBehavior, null);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public static <T extends HasMetadata> KubernetesClient client(Class<T> clazz,
-      Consumer<Void> informerRunBehavior,
-      Object selfSubjectReview) {
+  public static <T extends HasMetadata> KubernetesClient client(
+      Class<T> clazz, Consumer<Void> informerRunBehavior, Object selfSubjectReview) {
     final var client = mock(KubernetesClient.class);
     MixedOperation<T, KubernetesResourceList<T>, Resource<T>> resources =
         mock(MixedOperation.class);
     NonNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> nonNamespaceOperation =
         mock(NonNamespaceOperation.class);
-    AnyNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> inAnyNamespace = mock(
-        AnyNamespaceOperation.class);
+    AnyNamespaceOperation<T, KubernetesResourceList<T>, Resource<T>> inAnyNamespace =
+        mock(AnyNamespaceOperation.class);
     FilterWatchListDeletable<T, KubernetesResourceList<T>, Resource<T>> filterable =
         mock(FilterWatchListDeletable.class);
     when(resources.inNamespace(anyString())).thenReturn(nonNamespaceOperation);
@@ -78,14 +77,17 @@ public class MockKubernetesClient {
     when(informer.stopped()).thenReturn(stopped);
     when(informer.getApiTypeClass()).thenReturn(clazz);
     if (informerRunBehavior != null) {
-      doAnswer(invocation -> {
-        try {
-          informerRunBehavior.accept(null);
-        } catch (Exception e) {
-          stopped.completeExceptionally(e);
-        }
-        return stopped;
-      }).when(informer).start();
+      doAnswer(
+              invocation -> {
+                try {
+                  informerRunBehavior.accept(null);
+                } catch (Exception e) {
+                  stopped.completeExceptionally(e);
+                }
+                return stopped;
+              })
+          .when(informer)
+          .start();
     }
     doAnswer(invocation -> null).when(informer).stop();
     Indexer mockIndexer = mock(Indexer.class);
@@ -105,8 +107,9 @@ public class MockKubernetesClient {
     when(client.resource(any(SelfSubjectRulesReview.class)))
         .thenReturn(selfSubjectResourceResourceMock);
     when(selfSubjectResourceResourceMock.create())
-        .thenReturn(Optional.ofNullable(selfSubjectReview)
-            .orElseGet(MockKubernetesClient::allowSelfSubjectReview));
+        .thenReturn(
+            Optional.ofNullable(selfSubjectReview)
+                .orElseGet(MockKubernetesClient::allowSelfSubjectReview));
 
     final var apiGroupDSL = mock(ApiextensionsAPIGroupDSL.class);
     when(client.apiextensions()).thenReturn(apiGroupDSL);

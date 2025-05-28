@@ -11,20 +11,17 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-public class ConfigMapDependentResource extends
-    KubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource>
+public class ConfigMapDependentResource
+    extends KubernetesDependentResource<ConfigMap, CleanerForManagedDependentCustomResource>
     implements Creator<ConfigMap, CleanerForManagedDependentCustomResource>,
-    Updater<ConfigMap, CleanerForManagedDependentCustomResource>,
-    Deleter<CleanerForManagedDependentCustomResource> {
+        Updater<ConfigMap, CleanerForManagedDependentCustomResource>,
+        Deleter<CleanerForManagedDependentCustomResource> {
 
   private static final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
 
-  public ConfigMapDependentResource() {
-    super(ConfigMap.class);
-  }
-
   @Override
-  protected ConfigMap desired(CleanerForManagedDependentCustomResource primary,
+  protected ConfigMap desired(
+      CleanerForManagedDependentCustomResource primary,
       Context<CleanerForManagedDependentCustomResource> context) {
 
     ConfigMap configMap = new ConfigMap();
@@ -38,7 +35,8 @@ public class ConfigMapDependentResource extends
   }
 
   @Override
-  public void delete(CleanerForManagedDependentCustomResource primary,
+  public void delete(
+      CleanerForManagedDependentCustomResource primary,
       Context<CleanerForManagedDependentCustomResource> context) {
     super.delete(primary, context);
     numberOfCleanupExecutions.incrementAndGet();

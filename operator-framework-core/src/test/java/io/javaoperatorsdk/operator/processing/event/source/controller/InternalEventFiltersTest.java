@@ -35,20 +35,25 @@ class InternalEventFiltersTest {
 
   @Test
   void acceptsEventIfNoGenerationOnResource() {
-    assertThat(InternalEventFilters.onUpdateGenerationAware(true)
-        .accept(testService(), testService())).isTrue();
+    assertThat(
+            InternalEventFilters.onUpdateGenerationAware(true).accept(testService(), testService()))
+        .isTrue();
   }
 
   @Test
   void finalizerCheckedIfConfigured() {
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
-        .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isTrue();
+    assertThat(
+            InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
+                .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1()))
+        .isTrue();
 
     var res = TestUtils.testCustomResource1();
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
-        .accept(res, res)).isFalse();
+    assertThat(
+            InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, FINALIZER)
+                .accept(res, res))
+        .isFalse();
   }
 
   @Test
@@ -56,14 +61,18 @@ class InternalEventFiltersTest {
     var res = TestUtils.testCustomResource1();
     res.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, "finalizer")
-        .accept(res, TestUtils.testCustomResource1())).isTrue();
+    assertThat(
+            InternalEventFilters.onUpdateFinalizerNeededAndApplied(true, "finalizer")
+                .accept(res, TestUtils.testCustomResource1()))
+        .isTrue();
   }
 
   @Test
   void dontAcceptIfFinalizerNotUsed() {
-    assertThat(InternalEventFilters.onUpdateFinalizerNeededAndApplied(false, FINALIZER)
-        .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1())).isFalse();
+    assertThat(
+            InternalEventFilters.onUpdateFinalizerNeededAndApplied(false, FINALIZER)
+                .accept(TestUtils.testCustomResource1(), TestUtils.testCustomResource1()))
+        .isFalse();
   }
 
   Service testService() {

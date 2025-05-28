@@ -64,5 +64,4 @@ class LinearRateLimiterTest {
 
     assertThat(res).isEmpty();
   }
-
 }

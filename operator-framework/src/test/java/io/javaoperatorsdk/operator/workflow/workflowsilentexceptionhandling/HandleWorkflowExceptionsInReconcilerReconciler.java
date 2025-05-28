@@ -9,12 +9,13 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
-@Workflow(handleExceptionsInReconciler = true,
+@Workflow(
+    handleExceptionsInReconciler = true,
     dependents = @Dependent(type = ConfigMapDependent.class))
 @ControllerConfiguration
 public class HandleWorkflowExceptionsInReconcilerReconciler
     implements Reconciler<HandleWorkflowExceptionsInReconcilerCustomResource>,
-    Cleaner<HandleWorkflowExceptionsInReconcilerCustomResource> {
+        Cleaner<HandleWorkflowExceptionsInReconcilerCustomResource> {
 
   private volatile boolean errorsFoundInReconcilerResult = false;
   private volatile boolean errorsFoundInCleanupResult = false;
@@ -24,19 +25,27 @@ public class HandleWorkflowExceptionsInReconcilerReconciler
       HandleWorkflowExceptionsInReconcilerCustomResource resource,
       Context<HandleWorkflowExceptionsInReconcilerCustomResource> context) {
 
-    errorsFoundInReconcilerResult = context.managedWorkflowAndDependentResourceContext()
-        .getWorkflowReconcileResult().orElseThrow().erroredDependentsExist();
-
+    errorsFoundInReconcilerResult =
+        context
+            .managedWorkflowAndDependentResourceContext()
+            .getWorkflowReconcileResult()
+            .orElseThrow()
+            .erroredDependentsExist();
 
     return UpdateControl.noUpdate();
   }
 
   @Override
-  public DeleteControl cleanup(HandleWorkflowExceptionsInReconcilerCustomResource resource,
+  public DeleteControl cleanup(
+      HandleWorkflowExceptionsInReconcilerCustomResource resource,
       Context<HandleWorkflowExceptionsInReconcilerCustomResource> context) {
 
-    errorsFoundInCleanupResult = context.managedWorkflowAndDependentResourceContext()
-        .getWorkflowCleanupResult().orElseThrow().erroredDependentsExist();
+    errorsFoundInCleanupResult =
+        context
+            .managedWorkflowAndDependentResourceContext()
+            .getWorkflowCleanupResult()
+            .orElseThrow()
+            .erroredDependentsExist();
     return DeleteControl.defaultDelete();
   }
 

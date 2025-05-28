@@ -1,4 +1,3 @@
-
 package io.javaoperatorsdk.operator;
 
 import java.lang.reflect.Constructor;
@@ -15,8 +14,12 @@ public final class BuilderUtils {
     try {
       Constructor<B> constructor = builderType.getDeclaredConstructor(builderTargetType);
       return constructor.newInstance(item);
-    } catch (NoSuchMethodException | SecurityException | InstantiationException
-        | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+    } catch (NoSuchMethodException
+        | SecurityException
+        | InstantiationException
+        | IllegalAccessException
+        | IllegalArgumentException
+        | InvocationTargetException e) {
       throw new OperatorException(
           "Failied to instantiate builder: " + builderType.getCanonicalName() + " using: " + item,
           e);

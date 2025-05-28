@@ -14,15 +14,14 @@ public class CleanupConflictReconciler
 
   @Override
   public UpdateControl<CleanupConflictCustomResource> reconcile(
-      CleanupConflictCustomResource resource,
-      Context<CleanupConflictCustomResource> context) {
+      CleanupConflictCustomResource resource, Context<CleanupConflictCustomResource> context) {
     numberReconcileExecutions.addAndGet(1);
     return UpdateControl.noUpdate();
   }
 
   @Override
-  public DeleteControl cleanup(CleanupConflictCustomResource resource,
-      Context<CleanupConflictCustomResource> context) {
+  public DeleteControl cleanup(
+      CleanupConflictCustomResource resource, Context<CleanupConflictCustomResource> context) {
     numberOfCleanupExecutions.addAndGet(1);
     try {
       Thread.sleep(WAIT_TIME);

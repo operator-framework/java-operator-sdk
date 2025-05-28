@@ -13,5 +13,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("rs")
 public class RetryTestCustomResource
     extends CustomResource<RetryTestCustomResourceSpec, RetryTestCustomResourceStatus>
-    implements Namespaced {
-}
+    implements Namespaced {}

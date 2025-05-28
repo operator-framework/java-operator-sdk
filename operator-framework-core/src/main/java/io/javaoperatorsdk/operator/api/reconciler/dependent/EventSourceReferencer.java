@@ -15,5 +15,4 @@ public interface EventSourceReferencer<P extends HasMetadata> {
    */
   void resolveEventSource(EventSourceRetriever<P> eventSourceRetriever)
       throws EventSourceNotFoundException;
-
 }

@@ -9,8 +9,10 @@ import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 public class ExposedIngressCondition implements Condition<Ingress, WebPage> {
 
   @Override
-  public boolean isMet(DependentResource<Ingress, WebPage> dependentResource,
-      WebPage primary, Context<WebPage> context) {
+  public boolean isMet(
+      DependentResource<Ingress, WebPage> dependentResource,
+      WebPage primary,
+      Context<WebPage> context) {
     return primary.getSpec().getExposed();
   }
 }

@@ -9,8 +9,7 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @Workflow(dependents = {@Dependent(type = ConfigMapDependentResource.class)})
 @ControllerConfiguration
 public class CleanerForManagedDependentTestReconciler
-    implements Reconciler<CleanerForManagedDependentCustomResource>,
-    TestExecutionInfoProvider {
+    implements Reconciler<CleanerForManagedDependentCustomResource>, TestExecutionInfoProvider {
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
@@ -25,5 +24,4 @@ public class CleanerForManagedDependentTestReconciler
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
-
 }

@@ -38,7 +38,9 @@ class InformerWrapper<T extends HasMetadata>
   private final String namespaceIdentifier;
   private final ConfigurationService configurationService;
 
-  public InformerWrapper(SharedIndexInformer<T> informer, ConfigurationService configurationService,
+  public InformerWrapper(
+      SharedIndexInformer<T> informer,
+      ConfigurationService configurationService,
       String namespaceIdentifier) {
     this.informer = informer;
     this.namespaceIdentifier = namespaceIdentifier;
@@ -51,23 +53,29 @@ class InformerWrapper<T extends HasMetadata>
     try {
 
       // register stopped handler if we have one defined
-      configurationService.getInformerStoppedHandler().ifPresent(ish -> {
-        final var stopped = informer.stopped();
-        if (stopped != null) {
-          stopped.handle((res, ex) -> {
-            ish.onStop(informer, ex);
-            return null;
-          });
-        } else {
-          final var apiTypeClass = informer.getApiTypeClass();
-          final var fullResourceName =
-              HasMetadata.getFullResourceName(apiTypeClass);
-          final var version = HasMetadata.getVersion(apiTypeClass);
-          throw new IllegalStateException(
-              "Cannot retrieve 'stopped' callback to listen to informer stopping for informer for "
-                  + fullResourceName + "/" + version);
-        }
-      });
+      configurationService
+          .getInformerStoppedHandler()
+          .ifPresent(
+              ish -> {
+                final var stopped = informer.stopped();
+                if (stopped != null) {
+                  stopped.handle(
+                      (res, ex) -> {
+                        ish.onStop(informer, ex);
+                        return null;
+                      });
+                } else {
+                  final var apiTypeClass = informer.getApiTypeClass();
+                  final var fullResourceName = HasMetadata.getFullResourceName(apiTypeClass);
+                  final var version = HasMetadata.getVersion(apiTypeClass);
+                  throw new IllegalStateException(
+                      "Cannot retrieve 'stopped' callback to listen to informer stopping for"
+                          + " informer for "
+                          + fullResourceName
+                          + "/"
+                          + version);
+                }
+              });
       if (!configurationService.stopOnInformerErrorDuringStartup()) {
         informer.exceptionHandler((b, t) -> !ExceptionHandler.isDeserializationException(t));
       }
@@ -77,18 +85,21 @@ class InformerWrapper<T extends HasMetadata>
       try {
         thread.setName(informerInfo() + " " + thread.getId());
         final var resourceName = informer.getApiTypeClass().getSimpleName();
-        log.debug("Starting informer for namespace: {} resource: {}", namespaceIdentifier,
-            resourceName);
+        log.debug(
+            "Starting informer for namespace: {} resource: {}", namespaceIdentifier, resourceName);
         var start = informer.start();
         // note that in case we don't put here timeout and stopOnInformerErrorDuringStartup is
         // false, and there is a rbac issue the get never returns; therefore operator never really
         // starts
-        log.trace("Waiting informer to start namespace: {} resource: {}", namespaceIdentifier,
+        log.trace(
+            "Waiting informer to start namespace: {} resource: {}",
+            namespaceIdentifier,
             resourceName);
-        start.toCompletableFuture().get(configurationService.cacheSyncTimeout().toMillis(),
-            TimeUnit.MILLISECONDS);
-        log.debug("Started informer for namespace: {} resource: {}", namespaceIdentifier,
-            resourceName);
+        start
+            .toCompletableFuture()
+            .get(configurationService.cacheSyncTimeout().toMillis(), TimeUnit.MILLISECONDS);
+        log.debug(
+            "Started informer for namespace: {} resource: {}", namespaceIdentifier, resourceName);
       } catch (TimeoutException | ExecutionException e) {
         if (configurationService.stopOnInformerErrorDuringStartup()) {
           log.error("Informer startup error. Operator will be stopped. Informer: {}", informer, e);
@@ -105,8 +116,8 @@ class InformerWrapper<T extends HasMetadata>
       }
 
     } catch (Exception e) {
-      ReconcilerUtils.handleKubernetesClientException(e,
-          HasMetadata.getFullResourceName(informer.getApiTypeClass()));
+      ReconcilerUtils.handleKubernetesClientException(
+          e, HasMetadata.getFullResourceName(informer.getApiTypeClass()));
       throw new OperatorException(
           "Couldn't start informer for " + versionedFullResourceName() + " resources", e);
     }
@@ -141,8 +152,8 @@ class InformerWrapper<T extends HasMetadata>
 
   @Override
   public Stream<T> list(String namespace, Predicate<T> predicate) {
-    final var stream = cache.list().stream()
-        .filter(r -> namespace.equals(r.getMetadata().getNamespace()));
+    final var stream =
+        cache.list().stream().filter(r -> namespace.equals(r.getMetadata().getNamespace()));
     return predicate != null ? stream.filter(predicate) : stream;
   }
 
@@ -193,9 +204,14 @@ class InformerWrapper<T extends HasMetadata>
   public Status getStatus() {
     var status = isRunning() && hasSynced() && isWatching() ? Status.HEALTHY : Status.UNHEALTHY;
     log.debug(
-        "Informer status: {} for for type: {}, namespace: {}, details[ is running: {}, has synced: {}, is watching: {} ]",
-        status, informer.getApiTypeClass().getSimpleName(), namespaceIdentifier, isRunning(),
-        hasSynced(), isWatching());
+        "Informer status: {} for for type: {}, namespace: {}, details[ is running: {}, has synced:"
+            + " {}, is watching: {} ]",
+        status,
+        informer.getApiTypeClass().getSimpleName(),
+        namespaceIdentifier,
+        isRunning(),
+        hasSynced(),
+        isWatching());
     return status;
   }
 

@@ -24,7 +24,8 @@ public class NextReconciliationImminentReconciler
   @Override
   public UpdateControl<NextReconciliationImminentCustomResource> reconcile(
       NextReconciliationImminentCustomResource resource,
-      Context<NextReconciliationImminentCustomResource> context) throws InterruptedException {
+      Context<NextReconciliationImminentCustomResource> context)
+      throws InterruptedException {
     log.info("started reconciliation");
     reconciliationWaiting = true;
     // wait long enough to get manually allowed

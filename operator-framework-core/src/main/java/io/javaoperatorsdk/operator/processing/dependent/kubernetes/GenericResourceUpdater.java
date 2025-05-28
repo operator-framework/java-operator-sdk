@@ -32,5 +32,4 @@ public class GenericResourceUpdater {
     actual.getMetadata().getLabels().putAll(desired.getMetadata().getLabels());
     actual.getMetadata().getAnnotations().putAll(desired.getMetadata().getAnnotations());
   }
-
 }

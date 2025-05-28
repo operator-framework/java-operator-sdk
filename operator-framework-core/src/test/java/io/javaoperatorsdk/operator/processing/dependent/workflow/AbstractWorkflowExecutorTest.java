@@ -33,6 +33,7 @@ public class AbstractWorkflowExecutorTest {
 
   @SuppressWarnings("rawtypes")
   protected final Condition notMetCondition = (primary, secondary, context) -> false;
+
   @SuppressWarnings("rawtypes")
   protected final Condition metCondition = (primary, secondary, context) -> true;
 
@@ -46,11 +47,11 @@ public class AbstractWorkflowExecutorTest {
     }
 
     @Override
-    public ReconcileResult<ConfigMap> reconcile(TestCustomResource primary,
-        Context<TestCustomResource> context) {
+    public ReconcileResult<ConfigMap> reconcile(
+        TestCustomResource primary, Context<TestCustomResource> context) {
       executionHistory.add(new ReconcileRecord(this));
-      return ReconcileResult
-          .resourceCreated(new ConfigMapBuilder().addToBinaryData("key", VALUE).build());
+      return ReconcileResult.resourceCreated(
+          new ConfigMapBuilder().addToBinaryData("key", VALUE).build());
     }
 
     @Override
@@ -110,8 +111,8 @@ public class AbstractWorkflowExecutorTest {
     }
 
     @Override
-    public ReconcileResult<String> reconcile(TestCustomResource primary,
-        Context<TestCustomResource> context) {
+    public ReconcileResult<String> reconcile(
+        TestCustomResource primary, Context<TestCustomResource> context) {
       executionHistory.add(new ReconcileRecord(this));
       throw new IllegalStateException("Test exception");
     }

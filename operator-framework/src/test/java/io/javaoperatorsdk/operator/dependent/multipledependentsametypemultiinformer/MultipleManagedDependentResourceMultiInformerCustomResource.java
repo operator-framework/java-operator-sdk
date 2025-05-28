@@ -11,6 +11,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames("mmi")
 public class MultipleManagedDependentResourceMultiInformerCustomResource
     extends CustomResource<MultipleManagedDependentResourceMultiInformerSpec, Void>
-    implements Namespaced {
-
-}
+    implements Namespaced {}

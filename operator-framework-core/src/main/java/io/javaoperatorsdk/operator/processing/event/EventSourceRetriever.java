@@ -6,6 +6,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
 public interface EventSourceRetriever<P extends HasMetadata> {
 
@@ -17,25 +18,23 @@ public interface EventSourceRetriever<P extends HasMetadata> {
 
   <R> List<EventSource<R, P>> getEventSourcesFor(Class<R> dependentType);
 
+  ControllerEventSource<P> getControllerEventSource();
+
   /**
-   * <p>
    * Registers (and starts) the specified {@link EventSource} dynamically during the reconciliation.
    * If an EventSource is already registered with the specified name, the registration will be
    * ignored. It is the user's responsibility to handle the naming correctly.
-   * </p>
-   * <p>
-   * This is only needed when your operator needs to adapt dynamically based on optional resources
-   * that may or may not be present on the target cluster. Even in this situation, it should be
-   * possible to make these decisions at when the "regular" EventSources are registered so this
-   * method should not typically be called directly but rather by the framework to support
+   *
+   * <p>This is only needed when your operator needs to adapt dynamically based on optional
+   * resources that may or may not be present on the target cluster. Even in this situation, it
+   * should be possible to make these decisions at when the "regular" EventSources are registered so
+   * this method should not typically be called directly but rather by the framework to support
    * activation conditions of dependents, for example.
-   * </p>
-   * <p>
-   * This method will block until the event source is synced (if needed, as it is the case for
+   *
+   * <p>This method will block until the event source is synced (if needed, as it is the case for
    * {@link io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}).
-   * </p>
-   * <p>
-   * <strong>IMPORTANT:</strong> Should multiple reconciliations happen concurrently, only one
+   *
+   * <p><strong>IMPORTANT:</strong> Should multiple reconciliations happen concurrently, only one
    * EventSource with the specified name will ever be registered. It is therefore important to
    * explicitly name the event sources that you want to reuse because the name will be used to
    * identify which event sources need to be created or not. If you let JOSDK implicitly name event
@@ -44,7 +43,6 @@ public interface EventSourceRetriever<P extends HasMetadata> {
    * to be registered under different, automatically generated names. If you clearly identify your
    * event sources with names, then, if the concurrent process determines that an event source with
    * the specified name, it won't register it again.
-   * </p>
    *
    * @param eventSource to register
    * @return the actual event source registered. Might not be the same as the parameter.
@@ -54,15 +52,13 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   /**
    * De-registers (and stops) the {@link EventSource} associated with the specified name. If no such
    * source exists, this method will do nothing.
-   * <p>
-   * This method will block until the event source is de-registered and stopped. If multiple
+   *
+   * <p>This method will block until the event source is de-registered and stopped. If multiple
    * reconciliations happen concurrently, all will be blocked until the event source is
    * de-registered.
-   * </p>
-   * <p>
-   * This method is meant only to be used for dynamically registered event sources and should not be
-   * typically called directly.
-   * </p>
+   *
+   * <p>This method is meant only to be used for dynamically registered event sources and should not
+   * be typically called directly.
    *
    * @param name of the event source
    * @return the actual event source deregistered if there is one.
@@ -70,5 +66,4 @@ public interface EventSourceRetriever<P extends HasMetadata> {
   <R> Optional<EventSource<R, P>> dynamicallyDeRegisterEventSource(String name);
 
   EventSourceContext<P> eventSourceContextForDynamicRegistration();
-
 }

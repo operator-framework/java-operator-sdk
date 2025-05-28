@@ -9,7 +9,4 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Version("v1")
 @ShortNames("csc")
 public class ClusterScopedCustomResource
-    extends CustomResource<ClusterScopedCustomResourceSpec, ClusterScopedCustomResourceStatus> {
-
-
-}
+    extends CustomResource<ClusterScopedCustomResourceSpec, ClusterScopedCustomResourceStatus> {}
