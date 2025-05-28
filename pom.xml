@@ -59,10 +59,9 @@
     <sonar.organization>java-operator-sdk</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
-
     <junit.version>5.12.2</junit.version>
     <fabric8-client.version>7.3.1</fabric8-client.version>
-    <slf4j.version>2.0.12</slf4j.version>
+    <slf4j.version>2.0.17</slf4j.version>
     <log4j.version>2.24.3</log4j.version>
     <mokito.version>5.18.0</mokito.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
