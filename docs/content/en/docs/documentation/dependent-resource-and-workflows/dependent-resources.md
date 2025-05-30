@@ -133,7 +133,7 @@ Deleted (or set to be garbage collected). The following example shows how to cre
 
 ```java
 
-@KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = SELECTOR))
 class DeploymentDependentResource extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 
     @Override
