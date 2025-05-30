@@ -133,7 +133,7 @@ Deleted (or set to be garbage collected). The following example shows how to cre
 
 ```java
 
-@KubernetesDependent(labelSelector = WebPageManagedDependentsReconciler.SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = SELECTOR))
 class DeploymentDependentResource extends CRUDKubernetesDependentResource<Deployment, WebPage> {
 
     @Override
@@ -174,7 +174,8 @@ JOSDK will take the appropriate steps to wire everything together and call your
 `DependentResource` implementations `reconcile` method before your primary resource is reconciled.
 This makes sense in most use cases where the logic associated with the primary resource is
 usually limited to status handling based on the state of the secondary resources and the
-resources are not dependent on each other.
+resources are not dependent on each other. As an alternative, you can also invoke reconciliation explicitly, 
+event for managed workflows.
 
 See [Workflows](https://javaoperatorsdk.io/docs/workflows) for more details on how the dependent
 resources are reconciled.
@@ -184,12 +185,14 @@ instances are managed by JOSDK, an example of which can be seen below:
 
 ```java
 
-@ControllerConfiguration(
-        labelSelector = SELECTOR,
+@Workflow(
         dependents = {
                 @Dependent(type = ConfigMapDependentResource.class),
                 @Dependent(type = DeploymentDependentResource.class),
-                @Dependent(type = ServiceDependentResource.class)
+                @Dependent(type = ServiceDependentResource.class),
+                @Dependent(
+                        type = IngressDependentResource.class,
+                        reconcilePrecondition = ExposedIngressCondition.class)
         })
 public class WebPageManagedDependentsReconciler
         implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
@@ -204,7 +207,6 @@ public class WebPageManagedDependentsReconciler
         webPage.setStatus(createStatus(name));
         return UpdateControl.patchStatus(webPage);
     }
-
 }
 ```
 
