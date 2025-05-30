@@ -174,7 +174,8 @@ JOSDK will take the appropriate steps to wire everything together and call your
 `DependentResource` implementations `reconcile` method before your primary resource is reconciled.
 This makes sense in most use cases where the logic associated with the primary resource is
 usually limited to status handling based on the state of the secondary resources and the
-resources are not dependent on each other.
+resources are not dependent on each other. As an alternative, you can also invoke reconciliation explicitly, 
+event for managed workflows.
 
 See [Workflows](https://javaoperatorsdk.io/docs/workflows) for more details on how the dependent
 resources are reconciled.
