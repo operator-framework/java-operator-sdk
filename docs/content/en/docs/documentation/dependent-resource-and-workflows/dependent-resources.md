@@ -184,12 +184,14 @@ instances are managed by JOSDK, an example of which can be seen below:
 
 ```java
 
-@ControllerConfiguration(
-        labelSelector = SELECTOR,
+@Workflow(
         dependents = {
                 @Dependent(type = ConfigMapDependentResource.class),
                 @Dependent(type = DeploymentDependentResource.class),
-                @Dependent(type = ServiceDependentResource.class)
+                @Dependent(type = ServiceDependentResource.class),
+                @Dependent(
+                        type = IngressDependentResource.class,
+                        reconcilePrecondition = ExposedIngressCondition.class)
         })
 public class WebPageManagedDependentsReconciler
         implements Reconciler<WebPage>, ErrorStatusHandler<WebPage> {
@@ -204,7 +206,6 @@ public class WebPageManagedDependentsReconciler
         webPage.setStatus(createStatus(name));
         return UpdateControl.patchStatus(webPage);
     }
-
 }
 ```
 
