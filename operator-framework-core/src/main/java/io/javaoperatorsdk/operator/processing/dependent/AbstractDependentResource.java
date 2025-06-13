@@ -33,6 +33,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   private final boolean updatable = this instanceof Updater;
   private final boolean deletable = this instanceof Deleter;
   private final DependentResourceReconciler<R, P> dependentResourceReconciler;
+  private final ThreadLocal<R> desiredCache = new ThreadLocal<>();
   protected Creator<R, P> creator;
   protected Updater<R, P> updater;
   protected String name;
@@ -67,52 +68,56 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
   }
 
   protected ReconcileResult<R> reconcile(P primary, R actualResource, Context<P> context) {
-    if (creatable() || updatable()) {
-      if (actualResource == null) {
-        if (creatable) {
-          var desired = desired(primary, context);
-          throwIfNull(desired, primary, "Desired");
-          logForOperation("Creating", primary, desired);
-          var createdResource = handleCreate(desired, primary, context);
-          return ReconcileResult.resourceCreated(createdResource);
-        }
-      } else {
-        if (updatable()) {
-          final Matcher.Result<R> match = match(actualResource, primary, context);
-          if (!match.matched()) {
-            final var desired = match.computedDesired().orElseGet(() -> desired(primary, context));
+    try {
+      if (creatable() || updatable()) {
+        if (actualResource == null) {
+          if (creatable) {
+            var desired = cachedDesired(primary, context);
             throwIfNull(desired, primary, "Desired");
-            logForOperation("Updating", primary, desired);
-            var updatedResource = handleUpdate(actualResource, desired, primary, context);
-            return ReconcileResult.resourceUpdated(updatedResource);
+            logForOperation("Creating", primary, desired);
+            var createdResource = handleCreate(desired, primary, context);
+            return ReconcileResult.resourceCreated(createdResource);
+          }
+        } else {
+          if (updatable()) {
+            final Result<R> match = match(actualResource, primary, context);
+            if (!match.matched()) {
+              final var desired =
+                  match.computedDesired().orElseGet(() -> cachedDesired(primary, context));
+              throwIfNull(desired, primary, "Desired");
+              logForOperation("Updating", primary, desired);
+              var updatedResource = handleUpdate(actualResource, desired, primary, context);
+              return ReconcileResult.resourceUpdated(updatedResource);
+            } else {
+              log.debug(
+                  "Update skipped for dependent {} as it matched the existing one",
+                  actualResource instanceof HasMetadata
+                      ? ResourceID.fromResource((HasMetadata) actualResource)
+                      : getClass().getSimpleName());
+            }
           } else {
             log.debug(
-                "Update skipped for dependent {} as it matched the existing one",
+                "Update skipped for dependent {} implement Updater interface to modify it",
                 actualResource instanceof HasMetadata
                     ? ResourceID.fromResource((HasMetadata) actualResource)
                     : getClass().getSimpleName());
           }
-        } else {
-          log.debug(
-              "Update skipped for dependent {} implement Updater interface to modify it",
-              actualResource instanceof HasMetadata
-                  ? ResourceID.fromResource((HasMetadata) actualResource)
-                  : getClass().getSimpleName());
         }
+      } else {
+        log.debug(
+            "Dependent {} is read-only, implement Creator and/or Updater interfaces to modify it",
+            getClass().getSimpleName());
       }
-    } else {
-      log.debug(
-          "Dependent {} is read-only, implement Creator and/or Updater interfaces to modify it",
-          getClass().getSimpleName());
+      return ReconcileResult.noOperation(actualResource);
+    } finally {
+      desiredCache.remove();
     }
-    return ReconcileResult.noOperation(actualResource);
   }
 
   public abstract Result<R> match(R resource, P primary, Context<P> context);
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-
     var secondaryResources = context.getSecondaryResources(resourceType());
     if (secondaryResources.isEmpty()) {
       return Optional.empty();
@@ -136,7 +141,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    */
   protected Optional<R> selectTargetSecondaryResource(
       Set<R> secondaryResources, P primary, Context<P> context) {
-    R desired = desired(primary, context);
+    R desired = cachedDesired(primary, context);
     var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
@@ -197,6 +202,16 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     throwIfNull(updated, primary, "Updated resource");
     onUpdated(primary, updated, actual, context);
     return updated;
+  }
+
+  protected R cachedDesired(P primary, Context<P> context) {
+    var desired = desiredCache.get();
+    if (desired != null) {
+      return desired;
+    }
+    desired = desired(primary, context);
+    desiredCache.set(desired);
+    return desired;
   }
 
   protected R desired(P primary, Context<P> context) {

@@ -123,7 +123,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       Context<P> context,
       boolean labelsAndAnnotationsEquality,
       String... ignorePaths) {
-    final var desired = dependentResource.desired(primary, context);
+    final var desired = dependentResource.cachedDesired(primary, context);
     return match(desired, actualResource, labelsAndAnnotationsEquality, context, ignorePaths);
   }
 
@@ -135,7 +135,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
       boolean specEquality,
       boolean labelsAndAnnotationsEquality,
       String... ignorePaths) {
-    final var desired = dependentResource.desired(primary, context);
+    final var desired = dependentResource.cachedDesired(primary, context);
     return match(
         desired, actualResource, labelsAndAnnotationsEquality, specEquality, context, ignorePaths);
   }

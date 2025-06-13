@@ -83,7 +83,7 @@ public abstract class AbstractExternalDependentResource<
 
   @Override
   public Matcher.Result<R> match(R resource, P primary, Context<P> context) {
-    var desired = desired(primary, context);
+    var desired = cachedDesired(primary, context);
     return Matcher.Result.computed(resource.equals(desired), desired);
   }
 
