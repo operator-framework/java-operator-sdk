@@ -28,7 +28,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFac
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
@@ -396,9 +395,6 @@ public interface ConfigurationService {
       Class<? extends KubernetesDependentResource> dependentResourceType,
       Class<? extends HasMetadata> resourceType,
       KubernetesDependentResourceConfig<? extends HasMetadata> config) {
-    if (ResourceUpdaterMatcher.class.isAssignableFrom(dependentResourceType)) {
-      return false;
-    }
     Boolean useSSAConfig =
         Optional.ofNullable(config).map(KubernetesDependentResourceConfig::useSSA).orElse(null);
     // don't use SSA for certain resources by default, only if explicitly overridden
