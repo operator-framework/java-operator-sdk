@@ -5,6 +5,7 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.health.EventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
@@ -22,7 +23,7 @@ public class RuntimeInfo {
   private final Operator operator;
 
   public RuntimeInfo(Operator operator) {
-    this.registeredControllers = operator.getRegisteredControllers();
+    this.registeredControllers = Collections.unmodifiableSet(operator.getRegisteredControllers());
     this.operator = operator;
   }
 
@@ -30,6 +31,7 @@ public class RuntimeInfo {
     return operator.isStarted();
   }
 
+  @SuppressWarnings("unused")
   public Set<RegisteredController> getRegisteredControllers() {
     checkIfStarted();
     return registeredControllers;
@@ -79,5 +81,15 @@ public class RuntimeInfo {
           rc.getControllerHealthInfo().unhealthyInformerEventSourceHealthIndicators());
     }
     return res;
+  }
+
+  @SuppressWarnings({"unchecked", "unused"})
+  public RegisteredController<? extends HasMetadata> getRegisteredController(
+      String controllerName) {
+    checkIfStarted();
+    return registeredControllers.stream()
+        .filter(rc -> rc.getConfiguration().getName().equals(controllerName))
+        .findFirst()
+        .orElse(null);
   }
 }
