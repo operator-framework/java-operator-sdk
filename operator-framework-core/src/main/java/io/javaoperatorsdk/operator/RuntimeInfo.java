@@ -83,6 +83,15 @@ public class RuntimeInfo {
     return res;
   }
 
+  /**
+   * Retrieves the {@link RegisteredController} associated with the specified controller name or
+   * {@code null} if no such controller is registered.
+   *
+   * @param controllerName the name of the {@link RegisteredController} to retrieve
+   * @return the {@link RegisteredController} associated with the specified controller name or
+   *     {@code null} if no such controller is registered
+   * @since 5.1.2
+   */
   @SuppressWarnings({"unchecked", "unused"})
   public RegisteredController<? extends HasMetadata> getRegisteredController(
       String controllerName) {
