@@ -43,10 +43,10 @@ public class Utils {
     return webPage.getMetadata().getName();
   }
 
-    public static ErrorStatusUpdateControl<WebPage> handleError(WebPage resource, Exception e) {
-      resource.getStatus().setErrorMessage("Error: " + e.getMessage());
-      return ErrorStatusUpdateControl.patchStatus(resource);
-    }
+  public static ErrorStatusUpdateControl<WebPage> handleError(WebPage resource, Exception e) {
+    resource.getStatus().setErrorMessage("Error: " + e.getMessage());
+    return ErrorStatusUpdateControl.patchStatus(resource);
+  }
 
   public static void simulateErrorIfRequested(WebPage webPage) throws ErrorSimulationException {
     if (webPage.getSpec().getHtml().contains("error")) {
