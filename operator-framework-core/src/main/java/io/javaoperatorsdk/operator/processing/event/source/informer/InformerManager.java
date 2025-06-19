@@ -134,6 +134,18 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
       ResourceEventHandler<R> eventHandler,
       String namespaceIdentifier) {
     final var informerConfig = configuration.getInformerConfig();
+
+    if (!informerConfig.getWithFields().isEmpty()) {
+      filteredBySelectorClient =
+          filteredBySelectorClient.withFields(informerConfig.getWithFields());
+    }
+
+    if (!informerConfig.getWithoutFields().isEmpty()) {
+      for (var e : informerConfig.getWithoutFields()) {
+        filteredBySelectorClient = filteredBySelectorClient.withoutField(e.getKey(), e.getValue());
+      }
+    }
+
     var informer =
         Optional.ofNullable(informerConfig.getInformerListLimit())
             .map(filteredBySelectorClient::withLimit)

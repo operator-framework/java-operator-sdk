@@ -1,7 +1,12 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,6 +41,8 @@ public class InformerConfiguration<R extends HasMetadata> {
   private GenericFilter<? super R> genericFilter;
   private ItemStore<R> itemStore;
   private Long informerListLimit;
+  private Map<String, String> withFields = new HashMap<>();
+  private List<AbstractMap.SimpleEntry<String, String>> withoutFields = new ArrayList<>();
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -264,6 +271,14 @@ public class InformerConfiguration<R extends HasMetadata> {
     return informerListLimit;
   }
 
+  public Map<String, String> getWithFields() {
+    return withFields;
+  }
+
+  public List<AbstractMap.SimpleEntry<String, String>> getWithoutFields() {
+    return withoutFields;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
@@ -422,6 +437,28 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withInformerListLimit(Long informerListLimit) {
       InformerConfiguration.this.informerListLimit = informerListLimit;
+      return this;
+    }
+
+    public Builder withField(String field, String value) {
+      InformerConfiguration.this.withFields.put(field, value);
+      return this;
+    }
+
+    public Builder withFields(Map<String, String> fields) {
+      InformerConfiguration.this.withFields.putAll(fields);
+      return this;
+    }
+
+    /**
+     * Note that there can be more values for the same field. Like key != value1,key != value2.
+     *
+     * @param field key
+     * @param value negated
+     * @return builder
+     */
+    public Builder withoutField(String field, String value) {
+      InformerConfiguration.this.withoutFields.add(new AbstractMap.SimpleEntry<>(field, value));
       return this;
     }
   }
