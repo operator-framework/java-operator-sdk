@@ -15,8 +15,11 @@ conversion hooks and dynamic admission controllers are supported as a separate p
 Under the hood it uses the excellent [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client),
 which provides additional facilities, like generating CRD from source code (and vice versa). 
 
-Java Operator SDK is a CNCF project as a subproject of Operator Framework.
-![cncf](docs/static/images/cncf_logo2.svg | width=100 ) 
+
+
+## <div style="display: flex; align-items: center;"><img src="docs/static/images/cncf_logo2.svg" alt="Image" style="width: 50px; height: auto; margin-right: 16px;"><p style="margin: 0;">CNCF Project</p></div>
+
+Java Operator SDK is a CNCF project as part of Operator Framework.
 
 ## Documentation
 
