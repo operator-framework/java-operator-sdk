@@ -17,7 +17,7 @@ which provides additional facilities, like generating CRD from source code (and 
 
 
 
-## <div style="display: flex; align-items: center;"><img src="docs/static/images/cncf_logo2.svg" alt="Image" style="width: 50px; height: auto; margin-right: 16px;"><p style="margin: 0;">CNCF Project</p></div>
+<h2 style="display: flex; align-items: center;"><img src="docs/static/images/cncf_logo2.svg" alt="Image" style="width: 50px; height: auto; margin-right: 16px;"><p style="margin: 0;">CNCF Project</p></h2>
 
 Java Operator SDK is a CNCF project as part of Operator Framework.
 
