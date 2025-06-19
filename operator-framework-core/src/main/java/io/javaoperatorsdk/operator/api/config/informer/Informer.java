@@ -113,4 +113,10 @@ public @interface Informer {
    * the informer cache.
    */
   long informerListLimit() default NO_LONG_VALUE_SET;
+
+  /** Field selector for informer, for matching field with the value: field=value; */
+  Field[] withFields() default {};
+
+  /** Negated field selector for informer, for Non-matching field with the value: field!=value; */
+  Field[] withoutFields() default {};
 }

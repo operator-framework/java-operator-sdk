@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.api.config.informer;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,7 +56,9 @@ public class InformerConfiguration<R extends HasMetadata> {
       OnDeleteFilter<? super R> onDeleteFilter,
       GenericFilter<? super R> genericFilter,
       ItemStore<R> itemStore,
-      Long informerListLimit) {
+      Long informerListLimit,
+      Map<String, String> withFields,
+      List<AbstractMap.SimpleEntry<String, String>> withoutFields) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -67,6 +70,8 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.genericFilter = genericFilter;
     this.itemStore = itemStore;
     this.informerListLimit = informerListLimit;
+    this.withFields = withFields;
+    this.withoutFields = withoutFields;
   }
 
   private InformerConfiguration(Class<R> resourceClass) {
@@ -100,7 +105,9 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.onDeleteFilter,
             original.genericFilter,
             original.itemStore,
-            original.informerListLimit)
+            original.informerListLimit,
+            original.withFields,
+            original.withoutFields)
         .builder;
   }
 
@@ -344,6 +351,10 @@ public class InformerConfiguration<R extends HasMetadata> {
         final var informerListLimit =
             informerListLimitValue == Constants.NO_LONG_VALUE_SET ? null : informerListLimitValue;
         withInformerListLimit(informerListLimit);
+
+        Arrays.stream(informerConfig.withFields()).forEach(f -> withField(f.field(), f.value()));
+        Arrays.stream(informerConfig.withoutFields())
+            .forEach(f -> withoutField(f.field(), f.value()));
       }
       return this;
     }
