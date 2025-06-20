@@ -19,7 +19,7 @@ public class FieldSelector {
   }
 
   public record Field(String path, String value, boolean negated) {
-    public Field(String value, String path) {
+    public Field(String path, String value) {
       this(path, value, false);
     }
   }
