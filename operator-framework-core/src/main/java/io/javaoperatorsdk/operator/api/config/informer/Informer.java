@@ -117,6 +117,6 @@ public @interface Informer {
   /** Field selector for informer, for matching field with the value: field=value; */
   Field[] withFields() default {};
 
-  /** Negated field selector for informer, for Non-matching field with the value: field!=value; */
+  /** Negated field selector for informer, for non-matching field with the value: field!=value; */
   Field[] withoutFields() default {};
 }
