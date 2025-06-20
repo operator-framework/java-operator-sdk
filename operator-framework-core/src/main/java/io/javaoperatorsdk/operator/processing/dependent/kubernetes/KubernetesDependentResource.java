@@ -107,7 +107,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    final var desired = desired(primary, context);
+    final var desired = cachedDesired(primary, context);
     return match(actualResource, desired, primary, context);
   }
 
@@ -286,7 +286,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    * @return id of the target managed resource
    */
   protected ResourceID targetSecondaryResourceID(P primary, Context<P> context) {
-    return ResourceID.fromResource(desired(primary, context));
+    return ResourceID.fromResource(cachedDesired(primary, context));
   }
 
   protected boolean addOwnerReference() {
@@ -294,8 +294,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected R desired(P primary, Context<P> context) {
-    return super.desired(primary, context);
+  protected R cachedDesired(P primary, Context<P> context) {
+    return super.cachedDesired(primary, context);
   }
 
   @Override
