@@ -113,4 +113,7 @@ public @interface Informer {
    * the informer cache.
    */
   long informerListLimit() default NO_LONG_VALUE_SET;
+
+  /** Kubernetes field selector for additional resource filtering */
+  Field[] fieldSelector() default {};
 }
