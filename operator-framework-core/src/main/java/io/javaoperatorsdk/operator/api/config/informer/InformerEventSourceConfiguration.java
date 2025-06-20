@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -265,6 +266,21 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withField(String field, String value) {
+      config.withField(field, value);
+      return this;
+    }
+
+    public Builder<R> withFields(Map<String, String> fields) {
+      config.withFields(fields);
+      return this;
+    }
+
+    public Builder<R> withoutField(String field, String value) {
+      config.withoutField(field, value);
+      return this;
+    }
+
     public void updateFrom(InformerConfiguration<R> informerConfig) {
       if (informerConfig != null) {
         final var informerConfigName = informerConfig.getName();
@@ -281,7 +297,12 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
             .withOnUpdateFilter(informerConfig.getOnUpdateFilter())
             .withOnDeleteFilter(informerConfig.getOnDeleteFilter())
             .withGenericFilter(informerConfig.getGenericFilter())
-            .withInformerListLimit(informerConfig.getInformerListLimit());
+            .withInformerListLimit(informerConfig.getInformerListLimit())
+            .withFields(informerConfig.getWithFields());
+
+        informerConfig
+            .getWithoutFields()
+            .forEach(f -> config.withoutField(f.getKey(), f.getValue()));
       }
     }
 

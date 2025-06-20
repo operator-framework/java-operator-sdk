@@ -2,16 +2,21 @@ package io.javaoperatorsdk.operator.baseapi.fieldselector;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.config.informer.Field;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(
@@ -22,9 +27,11 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 public class FieldSelectorTestReconciler implements Reconciler<Secret>, TestExecutionInfoProvider {
 
   public static final String MY_SECRET_TYPE = "my-secret-type";
+  public static final String OTHER_SECRET_TYPE = "my-dependent-secret-type";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
   private Set<String> reconciledSecrets = Collections.synchronizedSet(new HashSet<>());
+  private InformerEventSource<Secret, Secret> dependentSecretEventSource;
 
   @Override
   public UpdateControl<Secret> reconcile(Secret resource, Context<Secret> context) {
@@ -39,5 +46,22 @@ public class FieldSelectorTestReconciler implements Reconciler<Secret>, TestExec
 
   public Set<String> getReconciledSecrets() {
     return reconciledSecrets;
+  }
+
+  @Override
+  public List<EventSource<?, Secret>> prepareEventSources(EventSourceContext<Secret> context) {
+    dependentSecretEventSource =
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(Secret.class, Secret.class)
+                .withNamespacesInheritedFromController()
+                .withField("type", OTHER_SECRET_TYPE)
+                .build(),
+            context);
+
+    return List.of(dependentSecretEventSource);
+  }
+
+  public InformerEventSource<Secret, Secret> getDependentSecretEventSource() {
+    return dependentSecretEventSource;
   }
 }
