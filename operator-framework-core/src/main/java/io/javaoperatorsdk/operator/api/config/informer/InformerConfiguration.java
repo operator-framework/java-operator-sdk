@@ -342,7 +342,7 @@ public class InformerConfiguration<R extends HasMetadata> {
         withFieldSelector(
             new FieldSelector(
                 Arrays.stream(informerConfig.fieldSelector())
-                    .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negate()))
+                    .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
                     .toList()));
       }
       return this;

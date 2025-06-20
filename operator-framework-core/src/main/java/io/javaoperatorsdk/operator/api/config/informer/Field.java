@@ -6,5 +6,5 @@ public @interface Field {
 
   String value();
 
-  boolean negate() default false;
+  boolean negated() default false;
 }
