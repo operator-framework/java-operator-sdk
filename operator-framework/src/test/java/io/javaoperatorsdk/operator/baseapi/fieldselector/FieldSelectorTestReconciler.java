@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.config.informer.Field;
+import io.javaoperatorsdk.operator.api.config.informer.FieldSelectorBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -22,8 +23,8 @@ import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 @ControllerConfiguration(
     informer =
         @Informer(
-            withFields =
-                @Field(field = "type", value = FieldSelectorTestReconciler.MY_SECRET_TYPE)))
+            fieldSelector =
+                @Field(path = "type", value = FieldSelectorTestReconciler.MY_SECRET_TYPE)))
 public class FieldSelectorTestReconciler implements Reconciler<Secret>, TestExecutionInfoProvider {
 
   public static final String MY_SECRET_TYPE = "my-secret-type";
@@ -54,7 +55,8 @@ public class FieldSelectorTestReconciler implements Reconciler<Secret>, TestExec
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(Secret.class, Secret.class)
                 .withNamespacesInheritedFromController()
-                .withField("type", OTHER_SECRET_TYPE)
+                .withFieldSelector(
+                    new FieldSelectorBuilder().withField("type", OTHER_SECRET_TYPE).build())
                 .build(),
             context);
 

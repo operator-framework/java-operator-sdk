@@ -135,14 +135,14 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
       String namespaceIdentifier) {
     final var informerConfig = configuration.getInformerConfig();
 
-    if (!informerConfig.getWithFields().isEmpty()) {
-      filteredBySelectorClient =
-          filteredBySelectorClient.withFields(informerConfig.getWithFields());
-    }
-
-    if (!informerConfig.getWithoutFields().isEmpty()) {
-      for (var e : informerConfig.getWithoutFields()) {
-        filteredBySelectorClient = filteredBySelectorClient.withoutField(e.getKey(), e.getValue());
+    if (informerConfig.getFieldSelector() != null
+        && !informerConfig.getFieldSelector().getFields().isEmpty()) {
+      for (var f : informerConfig.getFieldSelector().getFields()) {
+        if (f.negated()) {
+          filteredBySelectorClient = filteredBySelectorClient.withoutField(f.path(), f.value());
+        } else {
+          filteredBySelectorClient = filteredBySelectorClient.withField(f.path(), f.value());
+        }
       }
     }
 

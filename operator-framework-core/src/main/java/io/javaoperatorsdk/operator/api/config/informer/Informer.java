@@ -114,9 +114,6 @@ public @interface Informer {
    */
   long informerListLimit() default NO_LONG_VALUE_SET;
 
-  /** Field selector for informer, for matching field with the value: field=value; */
-  Field[] withFields() default {};
-
-  /** Negated field selector for informer, for non-matching field with the value: field!=value; */
-  Field[] withoutFields() default {};
+  /** Kubernetes field selector for additional resource filtering */
+  Field[] fieldSelector() default {};
 }

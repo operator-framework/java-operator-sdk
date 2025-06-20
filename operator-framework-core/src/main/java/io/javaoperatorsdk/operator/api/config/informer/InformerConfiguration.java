@@ -1,13 +1,8 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,8 +37,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private GenericFilter<? super R> genericFilter;
   private ItemStore<R> itemStore;
   private Long informerListLimit;
-  private Map<String, String> withFields = new HashMap<>();
-  private List<AbstractMap.SimpleEntry<String, String>> withoutFields = new ArrayList<>();
+  private FieldSelector fieldSelector;
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -57,8 +51,7 @@ public class InformerConfiguration<R extends HasMetadata> {
       GenericFilter<? super R> genericFilter,
       ItemStore<R> itemStore,
       Long informerListLimit,
-      Map<String, String> withFields,
-      List<AbstractMap.SimpleEntry<String, String>> withoutFields) {
+      FieldSelector fieldSelector) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -70,8 +63,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.genericFilter = genericFilter;
     this.itemStore = itemStore;
     this.informerListLimit = informerListLimit;
-    this.withFields = withFields;
-    this.withoutFields = withoutFields;
+    this.fieldSelector = fieldSelector;
   }
 
   private InformerConfiguration(Class<R> resourceClass) {
@@ -106,8 +98,7 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.genericFilter,
             original.itemStore,
             original.informerListLimit,
-            original.withFields,
-            original.withoutFields)
+            original.fieldSelector)
         .builder;
   }
 
@@ -278,12 +269,8 @@ public class InformerConfiguration<R extends HasMetadata> {
     return informerListLimit;
   }
 
-  public Map<String, String> getWithFields() {
-    return withFields;
-  }
-
-  public List<AbstractMap.SimpleEntry<String, String>> getWithoutFields() {
-    return withoutFields;
+  public FieldSelector getFieldSelector() {
+    return fieldSelector;
   }
 
   @SuppressWarnings("UnusedReturnValue")
@@ -352,9 +339,11 @@ public class InformerConfiguration<R extends HasMetadata> {
             informerListLimitValue == Constants.NO_LONG_VALUE_SET ? null : informerListLimitValue;
         withInformerListLimit(informerListLimit);
 
-        Arrays.stream(informerConfig.withFields()).forEach(f -> withField(f.field(), f.value()));
-        Arrays.stream(informerConfig.withoutFields())
-            .forEach(f -> withoutField(f.field(), f.value()));
+        withFieldSelector(
+            new FieldSelector(
+                Arrays.stream(informerConfig.fieldSelector())
+                    .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negate()))
+                    .toList()));
       }
       return this;
     }
@@ -451,25 +440,8 @@ public class InformerConfiguration<R extends HasMetadata> {
       return this;
     }
 
-    public Builder withField(String field, String value) {
-      InformerConfiguration.this.withFields.put(field, value);
-      return this;
-    }
-
-    public Builder withFields(Map<String, String> fields) {
-      InformerConfiguration.this.withFields.putAll(fields);
-      return this;
-    }
-
-    /**
-     * Note that there can be more values for the same field. Like key != value1,key != value2.
-     *
-     * @param field key
-     * @param value negated
-     * @return builder
-     */
-    public Builder withoutField(String field, String value) {
-      InformerConfiguration.this.withoutFields.add(new AbstractMap.SimpleEntry<>(field, value));
+    public Builder withFieldSelector(FieldSelector fieldSelector) {
+      InformerConfiguration.this.fieldSelector = fieldSelector;
       return this;
     }
   }
