@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationResult;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassException;
@@ -117,6 +118,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return controller
         .getEventProcessor()
         .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
+  }
+
+  @Override
+  public Optional<ExpectationResult> expectationResult() {
+    return Optional.empty();
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
