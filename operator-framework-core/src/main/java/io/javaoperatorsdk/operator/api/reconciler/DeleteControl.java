@@ -1,6 +1,8 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
-public class DeleteControl extends BaseControl<DeleteControl> {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+
+public class DeleteControl<P extends HasMetadata> extends BaseControl<DeleteControl<P>, P> {
 
   private final boolean removeFinalizer;
 
@@ -27,7 +29,7 @@ public class DeleteControl extends BaseControl<DeleteControl> {
    *
    * @return delete control that will not remove finalizer.
    */
-  public static DeleteControl noFinalizerRemoval() {
+  public static <T extends HasMetadata> DeleteControl<T> noFinalizerRemoval() {
     return new DeleteControl(false);
   }
 
@@ -36,7 +38,7 @@ public class DeleteControl extends BaseControl<DeleteControl> {
   }
 
   @Override
-  public DeleteControl rescheduleAfter(long delay) {
+  public DeleteControl<P> rescheduleAfter(long delay) {
     if (removeFinalizer) {
       throw new IllegalStateException("Cannot reschedule cleanup if removing finalizer");
     }

@@ -1,15 +1,11 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
-import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
 public interface Context<P extends HasMetadata> extends CacheAware<P> {

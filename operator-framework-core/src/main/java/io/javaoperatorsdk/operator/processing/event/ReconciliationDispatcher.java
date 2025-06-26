@@ -250,7 +250,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private void updatePostExecutionControlWithReschedule(
-      PostExecutionControl<P> postExecutionControl, BaseControl<?> baseControl) {
+      PostExecutionControl<P> postExecutionControl, BaseControl<?, ?> baseControl) {
     baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
   }
 
