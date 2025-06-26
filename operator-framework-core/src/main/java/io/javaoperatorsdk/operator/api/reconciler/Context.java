@@ -12,23 +12,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkf
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
-public interface Context<P extends HasMetadata> {
+public interface Context<P extends HasMetadata> extends CacheAware<P> {
 
   Optional<RetryInfo> getRetryInfo();
-
-  default <R> Optional<R> getSecondaryResource(Class<R> expectedType) {
-    return getSecondaryResource(expectedType, null);
-  }
-
-  <R> Set<R> getSecondaryResources(Class<R> expectedType);
-
-  default <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return getSecondaryResources(expectedType).stream();
-  }
-
-  <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
-
-  ControllerConfiguration<P> getControllerConfiguration();
 
   /**
    * Retrieve the {@link ManagedWorkflowAndDependentResourceContext} used to interact with {@link
@@ -38,8 +24,6 @@ public interface Context<P extends HasMetadata> {
    * @return the {@link ManagedWorkflowAndDependentResourceContext}
    */
   ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext();
-
-  EventSourceRetriever<P> eventSourceRetriever();
 
   KubernetesClient getClient();
 
