@@ -54,5 +54,5 @@ public interface Context<P extends HasMetadata> extends CacheAware<P> {
    */
   boolean isNextReconciliationImminent();
 
-  Optional<ExpectationResult> expectationResult();
+  Optional<ExpectationResult<P>> expectationResult();
 }
