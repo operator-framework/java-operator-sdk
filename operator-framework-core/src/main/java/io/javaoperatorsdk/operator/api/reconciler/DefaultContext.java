@@ -121,7 +121,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public Optional<ExpectationResult> expectationResult() {
+  public Optional<ExpectationResult<P>> expectationResult() {
     return Optional.empty();
   }
 
