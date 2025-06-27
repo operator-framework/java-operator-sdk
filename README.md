@@ -67,6 +67,7 @@ projects want to advertise that fact here. For this reason, we ask that if you'd
 to be featured in this section, please open a PR, adding a link to and short description of your 
 project, as shown below:
 
+- [kroxylicious](https://github.com/kroxylicious/kroxylicious/tree/main/kroxylicious-operator) Kafka proxy operator  
 - [ExposedApp operator](https://github.com/halkyonio/exposedapp-rhdblog): a sample operator 
   written to illustrate JOSDK concepts and its Quarkus extension in the ["Write Kubernetes 
   Operators in Java with the Java Operator SDK" blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk#).
