@@ -97,29 +97,30 @@ Dependent Resources feature supports the [first approach](../documentation/depen
     
 ### How can I make the status update of my custom resource trigger a reconciliation?
 
-For the primary resource, the framework by default specially checks if the change on the primary 
-resource is increased the `generation` field in the metadata, and filters out the related event if not. 
-This field is increased when `.spec` of the resource is changed. Therefore, a change in the `.status` field
-will not trigger a reconciliation. 
+The framework checks, by default, when an event occurs, that could trigger a reconciliation, if the event increased the
+`generation` field of the primary resource's metadata and filters out the event if it did not. `generation` is typically
+only increased when the `.spec` field of a resource is changed. As a result, a change in the `.status` field would not
+normally trigger a reconciliation.
 
-To change this behavior, you can set the [`generationAwareEventProcessing`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L43)
+To change this behavior, you can set the [
+`generationAwareEventProcessing`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L43)
 to `false`:
 
 ```java
+
 @ControllerConfiguration(generationAwareEventProcessing = false)
-  static class TestCustomReconciler implements Reconciler<TestCustomResource> {
+static class TestCustomReconciler implements Reconciler<TestCustomResource> {
 
     @Override
     public UpdateControl<TestCustomResource> reconcile(TestCustomResource resource, Context<TestCustomResource> context) {
         // code omitted
     }
-  }
+}
 ```
 
-For secondary resources, every change should trigger a reconciliation by default. 
-Except when you add explicit filter or use dependent resources that by default filter out own changes,
+For secondary resources, every change should trigger a reconciliation by default, except when you add explicit filters
+or use dependent resource implementations that filter out changes they trigger themselves by default,
 see [related docs](../documentation/dependent-resource-and-workflows/dependent-resources.md#caching-and-event-handling-in-kubernetesdependentresource).
-
 
 ### How can I skip the reconciliation of a dependent resource?
 
