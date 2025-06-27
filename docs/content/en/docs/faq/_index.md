@@ -90,7 +90,10 @@ reconciliation. For example if you patch the status at the end of the reconcilia
 it is not guaranteed that during the next reconciliation you will see the fresh resource. Therefore, controllers
 which do this, usually cache the updated status in memory to make sure it is present for next reconciliation.
 
-Dependent Resources feature supports the [first approach](../dependent-resources/_index.md#external-state-tracking-dependent-resources).
+From version 5.1 you can use [this utility](../documentation/reconciler.md#making-sure-the-primary-resource-is-up-to-date-for-the-next-reconciliation) 
+to make sure an updated status is present for the next reconciliation.
+
+Dependent Resources feature supports the [first approach](../documentation/dependent-resource-and-workflows/dependent-resources.md#external-state-tracking-dependent-resources).
     
 ### How can I skip the reconciliation of a dependent resource?
 
