@@ -345,7 +345,7 @@ public class ConfigurationServiceOverrider {
       @Override
       public boolean useSSAToManageFinalizer() {
         return overriddenValueOrDefault(
-                useSSAToManageFinalizer, ConfigurationService::useSSAToPatchPrimaryResource);
+            useSSAToManageFinalizer, ConfigurationService::useSSAToPatchPrimaryResource);
       }
 
       @Override

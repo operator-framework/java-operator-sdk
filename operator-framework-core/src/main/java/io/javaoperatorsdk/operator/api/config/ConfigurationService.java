@@ -510,15 +510,14 @@ public interface ConfigurationService {
    * either use simple patches or SSA. Setting this to {@code true}, controllers will use SSA for
    * adding finalizers, patching resources and status.
    *
-   * @return {@code true} if Server-Side Apply (SSA) should be used when managing finalizers,
-   *     {@code false} otherwise
+   * @return {@code true} if Server-Side Apply (SSA) should be used when managing finalizers, {@code
+   *     false} otherwise
    * @see ConfigurationServiceOverrider#withUseSSAToManageFinalizer(boolean)
    * @since 5.1.2
    */
   default boolean useSSAToManageFinalizer() {
     return true;
   }
-
 
   /**
    * Determines whether resources retrieved from caches such as via calls to {@link

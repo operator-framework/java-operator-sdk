@@ -62,18 +62,18 @@ class ReconciliationDispatcherTest {
 
   @BeforeEach
   void setup() {
-    initConfigService(true);
+    initConfigService(true, true);
     testCustomResource = TestUtils.testCustomResource();
     reconciler = spy(new TestReconciler());
     reconciliationDispatcher =
         init(testCustomResource, reconciler, null, customResourceFacade, true);
   }
 
-  static void initConfigService(boolean useSSA) {
-    initConfigService(useSSA, true);
+  static void initConfigService(boolean useSSA, boolean useSSAForFinalizer) {
+    initConfigService(useSSA, useSSAForFinalizer, true);
   }
 
-  static void initConfigService(boolean useSSA, boolean noCloning) {
+  static void initConfigService(boolean useSSA, boolean useSSAForFinalizer, boolean noCloning) {
     /*
      * We need this for mock reconcilers to properly generate the expected UpdateControl: without
      * this, calls such as `when(reconciler.reconcile(eq(testCustomResource),
@@ -98,7 +98,8 @@ class ReconciliationDispatcherTest {
                             }
                           }
                         })
-                    .withUseSSAToPatchPrimaryResource(useSSA));
+                    .withUseSSAToPatchPrimaryResource(useSSA)
+                    .withUseSSAToManageFinalizer(useSSAForFinalizer));
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(
@@ -149,7 +150,7 @@ class ReconciliationDispatcherTest {
 
   @Test
   void addFinalizerOnNewResourceWithoutSSA() {
-    initConfigService(false);
+    initConfigService(false, false);
     final ReconciliationDispatcher<TestCustomResource> dispatcher =
         init(testCustomResource, reconciler, null, customResourceFacade, true);
 
@@ -640,7 +641,7 @@ class ReconciliationDispatcherTest {
 
   @Test
   void retriesAddingFinalizerWithoutSSA() {
-    initConfigService(false);
+    initConfigService(true, false);
     reconciliationDispatcher =
         init(testCustomResource, reconciler, null, customResourceFacade, true);
 
@@ -683,7 +684,7 @@ class ReconciliationDispatcherTest {
 
   @Test
   void reconcilerContextUsesTheSameInstanceOfResourceAsParam() {
-    initConfigService(false, false);
+    initConfigService(false, false, false);
 
     final ReconciliationDispatcher<TestCustomResource> dispatcher =
         init(testCustomResource, reconciler, null, customResourceFacade, true);
