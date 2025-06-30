@@ -505,16 +505,14 @@ public interface ConfigurationService {
   }
 
   /**
-   * {@link io.javaoperatorsdk.operator.api.reconciler.UpdateControl} patch resource or status can
-   * either use simple patches or SSA. Setting this to {@code true}, controllers will use SSA for
-   * adding finalizers.
+   * Setting this to {@code true}, controllers will use SSA for adding finalizers.
    *
    * @return {@code true} if Server-Side Apply (SSA) should be used when managing finalizers, {@code
    *     false} otherwise
-   * @see ConfigurationServiceOverrider#withUseSSAToManageFinalizer(boolean)
+   * @see ConfigurationServiceOverrider#withUseSSAToAddFinalizer(boolean)
    * @since 5.1.2
    */
-  default boolean useSSAToManageFinalizer() {
+  default boolean useSSAToAddFinalizer() {
     return true;
   }
 

@@ -99,7 +99,7 @@ class ReconciliationDispatcherTest {
                           }
                         })
                     .withUseSSAToPatchPrimaryResource(useSSA)
-                    .withUseSSAToManageFinalizer(useSSAForFinalizer));
+                    .withUseSSAToAddFinalizer(useSSAForFinalizer));
   }
 
   private <R extends HasMetadata> ReconciliationDispatcher<R> init(

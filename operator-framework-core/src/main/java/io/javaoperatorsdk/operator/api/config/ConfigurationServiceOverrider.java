@@ -39,7 +39,7 @@ public class ConfigurationServiceOverrider {
   private Boolean previousAnnotationForDependentResources;
   private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
-  private Boolean useSSAToManageFinalizer;
+  private Boolean useSSAToAddFinalizer;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
   private Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist;
 
@@ -184,8 +184,8 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withUseSSAToManageFinalizer(boolean value) {
-    this.useSSAToManageFinalizer = value;
+  public ConfigurationServiceOverrider withUseSSAToAddFinalizer(boolean value) {
+    this.useSSAToAddFinalizer = value;
     return this;
   }
 
@@ -343,9 +343,9 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean useSSAToManageFinalizer() {
+      public boolean useSSAToAddFinalizer() {
         return overriddenValueOrDefault(
-            useSSAToManageFinalizer, ConfigurationService::useSSAToPatchPrimaryResource);
+            useSSAToAddFinalizer, ConfigurationService::useSSAToPatchPrimaryResource);
       }
 
       @Override

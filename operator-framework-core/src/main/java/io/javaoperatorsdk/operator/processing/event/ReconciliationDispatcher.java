@@ -42,7 +42,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   private final boolean retryConfigurationHasZeroAttempts;
   private final Cloner cloner;
   private final boolean useSSA;
-  private final boolean useSSAForFinalizer;
+  private final boolean useSSAToAddFinalizer;
 
   ReconciliationDispatcher(Controller<P> controller, CustomResourceFacade<P> customResourceFacade) {
     this.controller = controller;
@@ -53,7 +53,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     var retry = configuration.getRetry();
     retryConfigurationHasZeroAttempts = retry == null || retry.initExecution().isLastAttempt();
     useSSA = configuration.getConfigurationService().useSSAToPatchPrimaryResource();
-    useSSAForFinalizer = configuration.getConfigurationService().useSSAToManageFinalizer();
+    useSSAToAddFinalizer = configuration.getConfigurationService().useSSAToAddFinalizer();
   }
 
   public ReconciliationDispatcher(Controller<P> controller) {
@@ -121,7 +121,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
        * finalizer.
        */
       P updatedResource;
-      if (useSSAForFinalizer) {
+      if (useSSAToAddFinalizer) {
         updatedResource = addFinalizerWithSSA(originalResource);
       } else {
         updatedResource = updateCustomResourceWithFinalizer(resourceForExecution, originalResource);
