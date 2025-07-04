@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.ssaissue;
+package io.javaoperatorsdk.operator.baseapi.ssaissue.finalizer;
 
 import java.util.List;
 
@@ -21,6 +21,11 @@ class SSAFinalizerIssueIT {
           .withReconciler(new SSAFinalizerIssueReconciler())
           .build();
 
+  /**
+   * Showcases the problem when we add a finalizer and in the spec a list is initialized with an
+   * empty list by default. This at the end results in a change that when adding the finalizer the
+   * SSA patch deletes the initial values in the spec.
+   */
   @Test
   void addingFinalizerRemoveListValues() {
     operator.create(testResource());

@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.ssaissue;
+package io.javaoperatorsdk.operator.baseapi.ssaissue.finalizer;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
