@@ -18,9 +18,11 @@ public class SSASpecUpdateReconciler
 
     var copy = createFreshCopy(resource);
     copy.getSpec().setValue("value");
-    context.getClient().resource(copy).fieldManager(context.getControllerConfiguration()
-            .fieldManager())
-            .serverSideApply();
+    context
+        .getClient()
+        .resource(copy)
+        .fieldManager(context.getControllerConfiguration().fieldManager())
+        .serverSideApply();
 
     return UpdateControl.noUpdate();
   }
