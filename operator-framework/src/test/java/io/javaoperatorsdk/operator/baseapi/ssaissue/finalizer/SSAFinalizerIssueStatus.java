@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.ssaissue;
+package io.javaoperatorsdk.operator.baseapi.ssaissue.finalizer;
 
 public class SSAFinalizerIssueStatus {
 
