@@ -1,34 +1,17 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
-import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationResult;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
-public interface Context<P extends HasMetadata> {
+public interface Context<P extends HasMetadata> extends CacheAware<P> {
 
   Optional<RetryInfo> getRetryInfo();
-
-  default <R> Optional<R> getSecondaryResource(Class<R> expectedType) {
-    return getSecondaryResource(expectedType, null);
-  }
-
-  <R> Set<R> getSecondaryResources(Class<R> expectedType);
-
-  default <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return getSecondaryResources(expectedType).stream();
-  }
-
-  <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
-
-  ControllerConfiguration<P> getControllerConfiguration();
 
   /**
    * Retrieve the {@link ManagedWorkflowAndDependentResourceContext} used to interact with {@link
@@ -38,8 +21,6 @@ public interface Context<P extends HasMetadata> {
    * @return the {@link ManagedWorkflowAndDependentResourceContext}
    */
   ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext();
-
-  EventSourceRetriever<P> eventSourceRetriever();
 
   KubernetesClient getClient();
 
@@ -72,4 +53,6 @@ public interface Context<P extends HasMetadata> {
    * @return {@code true} is another reconciliation is already scheduled, {@code false} otherwise
    */
   boolean isNextReconciliationImminent();
+
+  Optional<ExpectationResult<P>> expectationResult();
 }
