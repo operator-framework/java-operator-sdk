@@ -90,7 +90,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     Context<P> context =
-        new DefaultContext<>(executionScope.getRetryInfo(), controller, resourceForExecution);
+        new DefaultContext<>(executionScope.getRetryInfo(), controller, resourceForExecution, null);
     if (markedForDeletion) {
       return handleCleanup(resourceForExecution, originalResource, context);
     } else {
@@ -246,7 +246,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       postExecutionControl = PostExecutionControl.defaultDispatch();
     }
     updatePostExecutionControlWithReschedule(postExecutionControl, updateControl);
+    updatePostExecutionControlWithExpectation(postExecutionControl, updateControl);
+
     return postExecutionControl;
+  }
+
+  private void updatePostExecutionControlWithExpectation(
+      PostExecutionControl<P> postExecutionControl, BaseControl<?, P> baseControl) {
+    baseControl.getExpectation().ifPresent(postExecutionControl::withExpectation);
   }
 
   private void updatePostExecutionControlWithReschedule(
@@ -262,7 +269,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           ResourceID.fromResource(resourceForExecution),
           getVersion(resourceForExecution));
     }
-    DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
+    DeleteControl<P> deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
     if (useFinalizer) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
@@ -299,6 +306,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         useFinalizer);
     PostExecutionControl<P> postExecutionControl = PostExecutionControl.defaultDispatch();
     updatePostExecutionControlWithReschedule(postExecutionControl, deleteControl);
+    updatePostExecutionControlWithExpectation(postExecutionControl, deleteControl);
     return postExecutionControl;
   }
 

@@ -18,7 +18,8 @@ class DefaultContextTest {
   private final Secret primary = new Secret();
   private final Controller<Secret> mockController = mock();
 
-  private final DefaultContext<?> context = new DefaultContext<>(null, mockController, primary);
+  private final DefaultContext<?> context =
+      new DefaultContext<>(null, mockController, primary, null);
 
   @Test
   @SuppressWarnings("unchecked")

@@ -41,7 +41,7 @@ public abstract class BaseControl<T extends BaseControl<T, P>, P extends HasMeta
     this.expectation = new ExpectationAdapter<>(expectation, timeout);
   }
 
-  public Expectation<P> getExpectation() {
-    return expectation;
+  public Optional<Expectation<P>> getExpectation() {
+    return Optional.ofNullable(expectation);
   }
 }

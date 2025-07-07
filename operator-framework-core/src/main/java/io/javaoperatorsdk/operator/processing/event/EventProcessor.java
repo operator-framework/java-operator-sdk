@@ -17,6 +17,8 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.DefaultExpectationContext;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationContext;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -136,6 +138,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       Optional<P> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && maybeLatest.isPresent()) {
+        if (!shouldProceedWithExpectation(state, maybeLatest.orElseThrow())) {
+          return;
+        }
+
         var rateLimit = state.getRateLimit();
         if (rateLimit == null) {
           rateLimit = rateLimiter.initState();
@@ -172,6 +178,21 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     } finally {
       MDCUtils.removeResourceInfo();
     }
+  }
+
+  boolean shouldProceedWithExpectation(ResourceState state, P primary) {
+    var optionalHolder = state.getExpectationHolder();
+    if (optionalHolder.isEmpty()) {
+      return true;
+    }
+    var holder = optionalHolder.orElseThrow();
+    if (holder.isTimedOut()) {
+      return true;
+    }
+    // todo cleanup state etc
+    ExpectationContext<P> expectationContext =
+        new DefaultExpectationContext<>(this.eventSourceManager.getController(), primary);
+    return holder.getExpectation().isFulfilled(primary, expectationContext);
   }
 
   private void handleEventMarking(Event event, ResourceState state) {
@@ -257,12 +278,19 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       state.markProcessedMarkForDeletion();
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
+      // TODO what should be the relation between re-schedule and expectation
+      // should we add a flag if trigger if expectation fails
+      setExpectation(state, postExecutionControl);
       if (state.eventPresent()) {
         submitReconciliationExecution(state);
       } else {
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
       }
     }
+  }
+
+  private void setExpectation(ResourceState state, PostExecutionControl<P> postExecutionControl) {
+    postExecutionControl.getExpectation().ifPresent(state::setExpectation);
   }
 
   /**

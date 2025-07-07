@@ -122,7 +122,7 @@ class ControllerTest {
         new Controller<Secret>(
             reconciler, configuration, MockKubernetesClient.client(Secret.class));
 
-    controller.cleanup(new Secret(), new DefaultContext<>(null, controller, new Secret()));
+    controller.cleanup(new Secret(), new DefaultContext<>(null, controller, new Secret(), null));
 
     verify(managedWorkflowMock, times(workflowCleanerExecuted ? 1 : 0)).cleanup(any(), any());
   }

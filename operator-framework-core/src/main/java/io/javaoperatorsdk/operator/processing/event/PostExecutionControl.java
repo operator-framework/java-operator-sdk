@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.processing.event;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.Expectation;
 
 final class PostExecutionControl<R extends HasMetadata> {
 
@@ -10,6 +11,7 @@ final class PostExecutionControl<R extends HasMetadata> {
   private final R updatedCustomResource;
   private final boolean updateIsStatusPatch;
   private final Exception runtimeException;
+  private Expectation<R> expectation;
 
   private Long reScheduleDelay = null;
 
@@ -66,6 +68,11 @@ final class PostExecutionControl<R extends HasMetadata> {
     return this;
   }
 
+  public PostExecutionControl<R> withExpectation(Expectation<R> expectation) {
+    this.expectation = expectation;
+    return this;
+  }
+
   public Optional<Exception> getRuntimeException() {
     return Optional.ofNullable(runtimeException);
   }
@@ -92,5 +99,9 @@ final class PostExecutionControl<R extends HasMetadata> {
 
   public boolean isFinalizerRemoved() {
     return finalizerRemoved;
+  }
+
+  public Optional<Expectation<R>> getExpectation() {
+    return Optional.ofNullable(expectation);
   }
 }
