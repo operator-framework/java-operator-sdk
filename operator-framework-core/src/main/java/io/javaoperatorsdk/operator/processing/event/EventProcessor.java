@@ -19,6 +19,8 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.expectation.DefaultExpectationContext;
 import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationContext;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationResult;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationStatus;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -138,8 +140,18 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       Optional<P> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && maybeLatest.isPresent()) {
-        if (!shouldProceedWithExpectation(state, maybeLatest.orElseThrow())) {
-          return;
+        ExpectationResult<P> expectationResult = null;
+        if (isExpectationPresent(state)) {
+          var expectationCheckResult =
+              shouldProceedWithExpectation(state, maybeLatest.orElseThrow());
+          if (expectationCheckResult.isEmpty()) {
+            log.debug(
+                "Skipping processing since expectation is not fulfilled. ResourceID: {}",
+                resourceID);
+            return;
+          } else {
+            expectationResult = expectationCheckResult.orElseThrow();
+          }
         }
 
         var rateLimit = state.getRateLimit();
@@ -154,7 +166,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         }
         state.setUnderProcessing(true);
         final var latest = maybeLatest.get();
-        ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
+        ExecutionScope<P> executionScope =
+            new ExecutionScope<>(state.getRetry(), expectationResult);
         state.unMarkEventReceived();
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
@@ -180,19 +193,24 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
   }
 
-  boolean shouldProceedWithExpectation(ResourceState state, P primary) {
-    var optionalHolder = state.getExpectationHolder();
-    if (optionalHolder.isEmpty()) {
-      return true;
-    }
-    var holder = optionalHolder.orElseThrow();
+  private boolean isExpectationPresent(ResourceState state) {
+    return state.getExpectationHolder().isPresent();
+  }
+
+  @SuppressWarnings("unchecked")
+  Optional<ExpectationResult<P>> shouldProceedWithExpectation(ResourceState state, P primary) {
+
+    var holder = state.getExpectationHolder().orElseThrow();
     if (holder.isTimedOut()) {
-      return true;
+      return Optional.of(
+          new ExpectationResult<P>(ExpectationStatus.TIMEOUT, holder.getExpectation()));
     }
-    // todo cleanup state etc
     ExpectationContext<P> expectationContext =
         new DefaultExpectationContext<>(this.eventSourceManager.getController(), primary);
-    return holder.getExpectation().isFulfilled(primary, expectationContext);
+    return holder.getExpectation().isFulfilled(primary, expectationContext)
+        ? Optional.of(
+            new ExpectationResult<P>(ExpectationStatus.FULFILLED, holder.getExpectation()))
+        : Optional.empty();
   }
 
   private void handleEventMarking(Event event, ResourceState state) {
