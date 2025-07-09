@@ -12,5 +12,13 @@ import java.lang.annotation.Target;
  * the feedback of the users.
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface Experimental {}
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.PACKAGE})
+public @interface Experimental {
+
+  /**
+   * Describes why the annotated element is experimental.
+   *
+   * @return the experimental description.
+   */
+  String value();
+}
