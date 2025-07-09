@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.Expectation;
 import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationResult;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -19,13 +20,15 @@ public class DefaultContext<P extends HasMetadata> extends DefaultCacheAware<P>
   private final DefaultManagedWorkflowAndDependentResourceContext<P>
       defaultManagedDependentResourceContext;
 
-  private final ExpectationResult<P> expectationResult;
+  @SuppressWarnings("rawtypes")
+  private final ExpectationResult expectationResult;
 
+  @SuppressWarnings("rawtypes")
   public DefaultContext(
       RetryInfo retryInfo,
       Controller<P> controller,
       P primaryResource,
-      ExpectationResult<P> expectationResult) {
+      ExpectationResult expectationResult) {
     super(controller, primaryResource);
     this.retryInfo = retryInfo;
     this.defaultManagedDependentResourceContext =
@@ -63,7 +66,8 @@ public class DefaultContext<P extends HasMetadata> extends DefaultCacheAware<P>
   }
 
   @Override
-  public Optional<ExpectationResult<P>> expectationResult() {
+  @SuppressWarnings("unchecked")
+  public <T extends Expectation<P>> Optional<ExpectationResult<P, T>> expectationResult() {
     return Optional.ofNullable(expectationResult);
   }
 

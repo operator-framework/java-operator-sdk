@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.Expectation;
 import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationResult;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 
@@ -54,5 +55,5 @@ public interface Context<P extends HasMetadata> extends CacheAware<P> {
    */
   boolean isNextReconciliationImminent();
 
-  Optional<ExpectationResult<P>> expectationResult();
+  <T extends Expectation<P>> Optional<ExpectationResult<P, T>> expectationResult();
 }

@@ -9,9 +9,9 @@ class ExecutionScope<R extends HasMetadata> {
   // the latest custom resource from cache
   private R resource;
   private final RetryInfo retryInfo;
-  private final ExpectationResult<R> expectationResult;
+  private final ExpectationResult<R, ?> expectationResult;
 
-  ExecutionScope(RetryInfo retryInfo, ExpectationResult<R> expectationResult) {
+  ExecutionScope(RetryInfo retryInfo, ExpectationResult<R, ?> expectationResult) {
     this.retryInfo = retryInfo;
     this.expectationResult = expectationResult;
   }
@@ -46,7 +46,7 @@ class ExecutionScope<R extends HasMetadata> {
     return retryInfo;
   }
 
-  public ExpectationResult<R> getExpectationResult() {
+  public ExpectationResult<R, ?> getExpectationResult() {
     return expectationResult;
   }
 }

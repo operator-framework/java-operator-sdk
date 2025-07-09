@@ -133,6 +133,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
   }
 
+  @SuppressWarnings("rawtypes")
   private void submitReconciliationExecution(ResourceState state) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(state);
@@ -140,7 +141,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       Optional<P> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && maybeLatest.isPresent()) {
-        ExpectationResult<P> expectationResult = null;
+        ExpectationResult expectationResult = null;
         if (isExpectationPresent(state)) {
           var expectationCheckResult =
               shouldProceedWithExpectation(state, maybeLatest.orElseThrow());
@@ -197,19 +198,17 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     return state.getExpectationHolder().isPresent();
   }
 
-  @SuppressWarnings("unchecked")
-  Optional<ExpectationResult<P>> shouldProceedWithExpectation(ResourceState state, P primary) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  Optional<ExpectationResult> shouldProceedWithExpectation(ResourceState state, P primary) {
 
     var holder = state.getExpectationHolder().orElseThrow();
     if (holder.isTimedOut()) {
-      return Optional.of(
-          new ExpectationResult<P>(ExpectationStatus.TIMEOUT, holder.getExpectation()));
+      return Optional.of(new ExpectationResult(ExpectationStatus.TIMEOUT, holder.getExpectation()));
     }
     ExpectationContext<P> expectationContext =
         new DefaultExpectationContext<>(this.eventSourceManager.getController(), primary);
     return holder.getExpectation().isFulfilled(primary, expectationContext)
-        ? Optional.of(
-            new ExpectationResult<P>(ExpectationStatus.FULFILLED, holder.getExpectation()))
+        ? Optional.of(new ExpectationResult(ExpectationStatus.FULFILLED, holder.getExpectation()))
         : Optional.empty();
   }
 
