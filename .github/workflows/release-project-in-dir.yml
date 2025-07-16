@@ -29,6 +29,11 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: 'maven'
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_CENTRAL_TOKEN
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: Change version to release version
         # Assume that RELEASE_VERSION will have form like: "v1.0.1". So we cut the "v"
@@ -37,15 +42,12 @@ jobs:
         env:
           RELEASE_VERSION: ${{ github.event.release.tag_name }}
 
-      - name: Release Maven package
-        uses: samuelmeuli/action-maven-publish@v1
-        with:
-          maven_profiles: "release"
-          maven_args: ${{ env.MAVEN_ARGS }}
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          nexus_username: ${{ secrets.OSSRH_USERNAME }}
-          nexus_password: ${{ secrets.OSSRH_TOKEN }}
+      - name: Publish to Apache Maven Central
+        run: mvn package deploy -Prelease
+        env:
+          MAVEN_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.NEXUS_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
   # This is separate job because there were issues with git after release step, was not able to commit changes.
   update-working-version:
