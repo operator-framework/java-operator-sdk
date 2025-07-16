@@ -43,7 +43,7 @@
     <developerConnection>scm:git:git@github.com/operator-framework/java-operator-sdk.git</developerConnection>
     <url>https://github.com/operator-framework/java-operator-sdk/tree/main</url>
   </scm>
-  
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>17</java.version>
