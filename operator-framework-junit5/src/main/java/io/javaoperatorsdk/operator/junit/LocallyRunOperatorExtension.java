@@ -54,6 +54,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
   private final Map<String, String> crdMappings;
+  private final List<? extends HasMetadata> initialPrimaryResources;
+  private final List<? extends HasMetadata> initialSecondaryResources;
 
   private LocallyRunOperatorExtension(
       List<ReconcilerSpec> reconcilers,
@@ -68,7 +70,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
-      List<String> additionalCrds) {
+      List<String> additionalCrds,
+      List<? extends HasMetadata> initialPrimaryResources,
+      List<? extends HasMetadata> initialSecondaryResources) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -90,6 +94,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.operator = new Operator(configurationServiceOverrider);
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
+    this.initialPrimaryResources = initialPrimaryResources;
+    this.initialSecondaryResources = initialSecondaryResources;
   }
 
   static Map<String, String> getAdditionalCRDsFromFiles(
@@ -298,6 +304,14 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         });
     crdMappings.clear();
 
+    for (var resource : initialPrimaryResources) {
+      this.create(resource);
+    }
+
+    for (var resource : initialSecondaryResources) {
+      this.create(resource);
+    }
+
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
   }
@@ -357,6 +371,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
     private final List<String> additionalCRDs = new ArrayList<>();
     private KubernetesClient kubernetesClient;
+    private List<? extends HasMetadata> initialPrimaryResources = new ArrayList<>();
+    private List<? extends HasMetadata> initialSecondaryResources = new ArrayList<>();
 
     protected Builder() {
       super();
@@ -424,6 +440,16 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    public Builder withInitialPrimaryResources(List<? extends HasMetadata> initialPrimaryResources) {
+      this.initialPrimaryResources = initialPrimaryResources;
+      return this;
+    }
+
+    public Builder withInitialSecondaryResources(List<? extends HasMetadata> initialSecondaryResources) {
+      this.initialSecondaryResources = initialSecondaryResources;
+      return this;
+    }
+
     public LocallyRunOperatorExtension build() {
       return new LocallyRunOperatorExtension(
           reconcilers,
@@ -438,7 +464,9 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           configurationServiceOverrider,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier,
-          additionalCRDs);
+          additionalCRDs,
+          initialPrimaryResources,
+          initialSecondaryResources);
     }
   }
 
