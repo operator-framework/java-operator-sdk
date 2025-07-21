@@ -41,9 +41,8 @@ jobs:
       - name: Set up Minikube
         uses: manusa/actions-setup-minikube@v2.14.0
         with:
-          minikube version: 'v1.34.0'
+          minikube version: 'v1.35.0'
           kubernetes version: '${{ inputs.kube-version }}'
-          driver: 'docker'
           github token: ${{ github.token }}
       - name: "${{inputs.it-category}} integration tests (kube: ${{ inputs.kube-version }} / java: ${{ inputs.java-version }} / client: ${{ inputs.http-client }})"
         run: |
