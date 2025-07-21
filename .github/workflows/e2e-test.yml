@@ -34,7 +34,7 @@ jobs:
         with:
           minikube version: v1.34.0
           kubernetes version: v1.33.0
-          github token: ${{ secrets.GITHUB_TOKEN }}
+          github token: ${{ github.token }}
           driver: docker
 
       - name: Set up Java and Maven
