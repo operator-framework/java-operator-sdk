@@ -33,7 +33,7 @@ jobs:
         uses: manusa/actions-setup-minikube@v2.14.0
         with:
           minikube version: v1.36.0
-          kubernetes version: v1.33.3
+          kubernetes version: v1.33.1
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
 
