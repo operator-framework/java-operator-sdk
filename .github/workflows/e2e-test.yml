@@ -1,6 +1,6 @@
 # Integration and end to end tests which runs locally and deploys the Operator to a Kubernetes
 # (Minikube) cluster and creates custom resources to verify the operator's functionality
-name: Integration & End to End tests
+name: End to End tests
 on:
   pull_request:
     paths-ignore:
