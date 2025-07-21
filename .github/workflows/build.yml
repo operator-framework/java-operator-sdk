@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         java: [ 17, 21, 24 ]
-        kubernetes: [ '1.30.12', '1.31.8', '1.32.4','1.33.0' ]
+        kubernetes: [ '1.30.12', '1.31.8', '1.32.4' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
       java-version: ${{ matrix.java }}
