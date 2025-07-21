@@ -35,7 +35,8 @@ jobs:
           minikube version: v1.35.0
           kubernetes version: v1.33.0
           github token: ${{ github.GITHUB_TOKEN }}
-
+          start args: '--force'
+          
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
         with:
