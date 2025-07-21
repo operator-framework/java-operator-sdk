@@ -66,7 +66,7 @@
     <micrometer-core.version>1.15.2</micrometer-core.version>
     <caffeine.version>3.2.2</caffeine.version>
     <mustache.version>0.9.14</mustache.version>
-    <commons.io.version>2.19.0</commons.io.version>
+    <commons.io.version>2.20.0</commons.io.version>
     <java.diff.version>4.16</java.diff.version>
 
     <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
