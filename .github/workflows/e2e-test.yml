@@ -33,6 +33,9 @@ jobs:
         uses: manusa/actions-setup-minikube@v2.14.0
         with:
           minikube version: v1.36.0
+          # Use the latest versions supported by minikube, otherwise GitHub it will
+          # end up in a throttling requests from minikube and workflow will fail.
+          # Minikube does such requests only if a version is not officially supported.
           kubernetes version: v1.33.1
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker

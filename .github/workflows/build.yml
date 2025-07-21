@@ -11,6 +11,9 @@ jobs:
     strategy:
       matrix:
         java: [ 17, 21, 24 ]
+        # Use the latest versions supported by minikube, otherwise GitHub it will
+        # end up in a throttling requests from minikube and workflow will fail.
+        # Minikube does such requests only if a version is not officially supported.
         kubernetes: [ '1.30.12', '1.31.8', '1.32.4','1.33.1' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
