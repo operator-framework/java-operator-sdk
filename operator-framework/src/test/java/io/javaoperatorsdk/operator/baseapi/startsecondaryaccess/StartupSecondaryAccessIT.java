@@ -16,7 +16,7 @@ import static org.awaitility.Awaitility.await;
 
 class StartupSecondaryAccessIT {
 
-  public static final int SECONDARY_NUMBER = 100;
+  public static final int SECONDARY_NUMBER = 200;
 
   @RegisterExtension
   static LocallyRunOperatorExtension extension =

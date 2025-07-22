@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -58,10 +59,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     extends ManagedInformerEventSource<R, P, InformerEventSourceConfiguration<R>>
     implements ResourceEventHandler<R> {
 
+  public static final String PRIMARY_TO_SECONDARY_INDEX_NAME = "primaryToSecondary";
+
   public static final String PREVIOUS_ANNOTATION_KEY = "javaoperatorsdk.io/previous";
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
   // we need direct control for the indexer to propagate the just update resource also to the index
-  private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
   private final String id = UUID.randomUUID().toString();
 
@@ -96,11 +98,13 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (primaryToSecondaryMapper == null) {
-      primaryToSecondaryIndex =
-          // The index uses the secondary to primary mapper (always present) to build the index
-          new DefaultPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
-    } else {
-      primaryToSecondaryIndex = NOOPPrimaryToSecondaryIndex.getInstance();
+      addIndexers(
+          Map.of(
+              PRIMARY_TO_SECONDARY_INDEX_NAME,
+              (R r) ->
+                  configuration.getSecondaryToPrimaryMapper().toPrimaryResourceIDs(r).stream()
+                      .map(InformerEventSource::resourceIdToString)
+                      .toList()));
     }
 
     final var informerConfig = configuration.getInformerConfig();
@@ -119,7 +123,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceType().getSimpleName(),
           newResource.getMetadata().getResourceVersion());
     }
-    primaryToSecondaryIndex.onAddOrUpdate(newResource);
+
     onAddOrUpdate(
         Operation.ADD, newResource, null, () -> InformerEventSource.super.onAdd(newResource));
   }
@@ -134,7 +138,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           newObject.getMetadata().getResourceVersion(),
           oldObject.getMetadata().getResourceVersion());
     }
-    primaryToSecondaryIndex.onAddOrUpdate(newObject);
+
     onAddOrUpdate(
         Operation.UPDATE,
         newObject,
@@ -150,7 +154,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           ResourceID.fromResource(resource),
           resourceType().getSimpleName());
     }
-    primaryToSecondaryIndex.onDelete(resource);
+
     super.onDelete(resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
@@ -244,27 +248,42 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public Set<R> getSecondaryResources(P primary) {
-    Set<ResourceID> secondaryIDs;
+
     if (useSecondaryToPrimaryIndex()) {
-      var primaryResourceID = ResourceID.fromResource(primary);
-      secondaryIDs = primaryToSecondaryIndex.getSecondaryResources(primaryResourceID);
+
+      var resources =
+          byIndex(
+              PRIMARY_TO_SECONDARY_INDEX_NAME,
+              resourceIdToString(ResourceID.fromResource(primary)));
+
       log.debug(
-          "Using PrimaryToSecondaryIndex to find secondary resources for primary: {}. Found"
-              + " secondary ids: {} ",
-          primaryResourceID,
-          secondaryIDs);
+          "Using informer primary to secondary index to find secondary resources for primary name:"
+              + " {} namespace: {}. Found {}",
+          primary.getMetadata().getName(),
+          primary.getMetadata().getNamespace(),
+          resources.size());
+
+      return resources.stream()
+          .map(
+              r -> {
+                Optional<R> resource =
+                    temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(r));
+                return resource.orElse(r);
+              })
+          .collect(Collectors.toSet());
+
     } else {
-      secondaryIDs = primaryToSecondaryMapper.toSecondaryResourceIDs(primary);
+      Set<ResourceID> secondaryIDs = primaryToSecondaryMapper.toSecondaryResourceIDs(primary);
       log.debug(
           "Using PrimaryToSecondaryMapper to find secondary resources for primary: {}. Found"
               + " secondary ids: {} ",
           primary,
           secondaryIDs);
+      return secondaryIDs.stream()
+          .map(this::get)
+          .flatMap(Optional::stream)
+          .collect(Collectors.toSet());
     }
-    return secondaryIDs.stream()
-        .map(this::get)
-        .flatMap(Optional::stream)
-        .collect(Collectors.toSet());
   }
 
   @Override
@@ -279,7 +298,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
-    primaryToSecondaryIndex.onAddOrUpdate(newResource);
+    //    todo
+    //    primaryToSecondaryIndex.onAddOrUpdate(newResource);
     temporaryResourceCache.putResource(
         newResource,
         Optional.ofNullable(oldResource)
@@ -331,5 +351,9 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private enum Operation {
     ADD,
     UPDATE
+  }
+
+  private static String resourceIdToString(ResourceID resourceID) {
+    return resourceID.getName() + "#" + resourceID.getNamespace().orElse("$na");
   }
 }
