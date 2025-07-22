@@ -44,13 +44,6 @@
     <url>https://github.com/operator-framework/java-operator-sdk/tree/main</url>
   </scm>
 
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>17</java.version>
@@ -59,38 +52,39 @@
     <sonar.organization>java-operator-sdk</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
-    <junit.version>5.13.2</junit.version>
+    <junit.version>5.13.3</junit.version>
     <fabric8-client.version>7.3.1</fabric8-client.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <log4j.version>2.25.0</log4j.version>
+    <log4j.version>2.25.1</log4j.version>
     <mokito.version>5.18.0</mokito.version>
-    <commons-lang3.version>3.17.0</commons-lang3.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
     <compile-testing.version>0.21.0</compile-testing.version>
     <javapoet.version>1.13.0</javapoet.version>
     <assertj.version>3.27.3</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
     <spring-boot.version>2.7.3</spring-boot.version>
-    <micrometer-core.version>1.15.1</micrometer-core.version>
-    <caffeine.version>3.2.1</caffeine.version>
+    <micrometer-core.version>1.15.2</micrometer-core.version>
+    <caffeine.version>3.2.2</caffeine.version>
     <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.19.0</commons.io.version>
-    <java.diff.version>4.15</java.diff.version>
+    <java.diff.version>4.16</java.diff.version>
 
     <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
     <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+    <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
     <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
-    <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+    <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
     <jib-maven-plugin.version>3.4.6</jib-maven-plugin.version>
-    <spotless.version>2.44.5</spotless.version>
+    <spotless.version>2.46.0</spotless.version>
   </properties>
 
   <dependencyManagement>
@@ -293,6 +287,15 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
           <version>${maven-source-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              <phase>verify</phase>
+            </execution>
+          </executions>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -515,14 +518,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -544,14 +539,15 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>${nexus-staging-maven-plugin.version}</version>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>${central-publishing-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              <publishingServerId>central</publishingServerId>
+              <tokenAuth>true</tokenAuth>
+              <autoPublish>true</autoPublish>
+              <waitUntil>published</waitUntil>
             </configuration>
           </plugin>
         </plugins>
