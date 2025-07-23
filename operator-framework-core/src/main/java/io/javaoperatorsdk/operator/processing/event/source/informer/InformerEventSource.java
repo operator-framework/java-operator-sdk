@@ -278,7 +278,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
               .collect(Collectors.toSet());
       complementaryIds.forEach(
           id -> {
-            Optional<R> resource = temporaryResourceCache.getResourceFromCache(id);
+            Optional<R> resource = get(id);
             resource.ifPresent(res::add);
           });
       return res;
