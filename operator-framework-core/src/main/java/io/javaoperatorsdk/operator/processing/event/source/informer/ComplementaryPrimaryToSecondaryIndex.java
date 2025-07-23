@@ -7,9 +7,9 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public interface ComplementaryPrimaryToSecondaryIndex<R extends HasMetadata> {
 
-  void explicitAddOrUpdate(R resource);
+  void explicitAdd(R resource);
 
-  void onCreateOrUpdateEvent(R resourceID);
+  void cleanupForResource(R resourceID);
 
   Set<ResourceID> getComplementarySecondaryResources(ResourceID primary);
 }
