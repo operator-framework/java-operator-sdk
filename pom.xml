@@ -84,7 +84,7 @@
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
     <jib-maven-plugin.version>3.4.6</jib-maven-plugin.version>
-    <spotless.version>2.46.0</spotless.version>
+    <spotless.version>2.46.1</spotless.version>
   </properties>
 
   <dependencyManagement>
