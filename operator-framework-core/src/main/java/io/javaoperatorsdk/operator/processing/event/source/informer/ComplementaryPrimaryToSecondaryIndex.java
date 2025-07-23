@@ -11,5 +11,5 @@ public interface ComplementaryPrimaryToSecondaryIndex<R extends HasMetadata> {
 
   void cleanupForResource(R resourceID);
 
-  Set<ResourceID> getComplementarySecondaryResources(ResourceID primary);
+  Set<ResourceID> getSecondaryResources(ResourceID primary);
 }

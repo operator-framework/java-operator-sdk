@@ -98,7 +98,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         parseResourceVersions);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
-    if (primaryToSecondaryMapper == null) {
+    if (useSecondaryToPrimaryIndex()) {
       complementaryPrimaryToSecondaryIndex =
           new DefaultComplementaryPrimaryToSecondaryIndex<>(
               configuration.getSecondaryToPrimaryMapper());
@@ -264,8 +264,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           primary.getMetadata().getName(),
           primary.getMetadata().getNamespace(),
           resources.size());
-      var complementaryIds =
-          complementaryPrimaryToSecondaryIndex.getComplementarySecondaryResources(primaryID);
+      var complementaryIds = complementaryPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
       var res =
           resources.stream()
               .map(

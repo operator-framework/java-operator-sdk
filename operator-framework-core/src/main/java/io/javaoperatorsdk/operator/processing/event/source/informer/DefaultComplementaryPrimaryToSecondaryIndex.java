@@ -50,7 +50,7 @@ public class DefaultComplementaryPrimaryToSecondaryIndex<R extends HasMetadata>
   }
 
   @Override
-  public Set<ResourceID> getComplementarySecondaryResources(ResourceID primary) {
+  public Set<ResourceID> getSecondaryResources(ResourceID primary) {
     var resourceIDs = index.get(primary);
     if (resourceIDs == null) {
       return Collections.emptySet();

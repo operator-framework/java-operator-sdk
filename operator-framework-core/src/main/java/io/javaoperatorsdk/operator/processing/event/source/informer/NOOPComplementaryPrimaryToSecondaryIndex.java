@@ -15,7 +15,7 @@ public class NOOPComplementaryPrimaryToSecondaryIndex<R extends HasMetadata>
   public void cleanupForResource(R resourceID) {}
 
   @Override
-  public Set<ResourceID> getComplementarySecondaryResources(ResourceID primary) {
+  public Set<ResourceID> getSecondaryResources(ResourceID primary) {
     return Set.of();
   }
 }
