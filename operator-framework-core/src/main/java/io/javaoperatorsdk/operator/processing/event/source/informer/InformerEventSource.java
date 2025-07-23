@@ -256,15 +256,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     if (useSecondaryToPrimaryIndex()) {
       var primaryID = ResourceID.fromResource(primary);
+      var complementaryIds = complementaryPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
       var resources = byIndex(PRIMARY_TO_SECONDARY_INDEX_NAME, resourceIdToString(primaryID));
-      log.debug("Resources in cache: {}", resources);
+      log.debug("Resources in cache: {} kind: {}", resources, resourceType().getSimpleName());
       log.debug(
           "Using informer primary to secondary index to find secondary resources for primary name:"
               + " {} namespace: {}. Found {}",
           primary.getMetadata().getName(),
           primary.getMetadata().getNamespace(),
           resources.size());
-      var complementaryIds = complementaryPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
+
       log.debug("Complementary ids: {}", complementaryIds);
       var res =
           resources.stream()
@@ -279,7 +280,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       complementaryIds.forEach(
           id -> {
             Optional<R> resource = get(id);
-            resource.ifPresentOrElse(res::add, () -> log.debug("Resource not found: {}", id));
+            resource.ifPresentOrElse(res::add, () -> log.warn("Resource not found: {}", id));
           });
       return res;
     } else {
