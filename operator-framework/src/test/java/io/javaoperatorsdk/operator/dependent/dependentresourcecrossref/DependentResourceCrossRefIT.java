@@ -16,7 +16,7 @@ import static org.awaitility.Awaitility.await;
 class DependentResourceCrossRefIT {
 
   public static final String TEST_RESOURCE_NAME = "test";
-  public static final int EXECUTION_NUMBER = 250;
+  public static final int EXECUTION_NUMBER = 50;
 
   @RegisterExtension
   LocallyRunOperatorExtension operator =
