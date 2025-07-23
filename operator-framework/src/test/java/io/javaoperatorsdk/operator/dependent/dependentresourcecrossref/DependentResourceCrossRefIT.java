@@ -44,6 +44,22 @@ class DependentResourceCrossRefIT {
                 assertThat(operator.get(Secret.class, TEST_RESOURCE_NAME + i)).isNotNull();
               }
             });
+
+    for (int i = 0; i < EXECUTION_NUMBER; i++) {
+      operator.delete(testResource(i));
+    }
+    await()
+        .timeout(Duration.ofSeconds(30))
+        .untilAsserted(
+            () -> {
+              for (int i = 0; i < EXECUTION_NUMBER; i++) {
+                assertThat(
+                        operator.get(
+                            DependentResourceCrossRefResource.class,
+                            testResource(i).getMetadata().getName()))
+                    .isNull();
+              }
+            });
   }
 
   DependentResourceCrossRefResource testResource(int n) {
