@@ -21,7 +21,7 @@ public class DefaultComplementaryPrimaryToSecondaryIndex<R extends HasMetadata>
   }
 
   @Override
-  public void explicitAdd(R resource) {
+  public void explicitAddOrUpdate(R resource) {
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
     primaryResources.forEach(
         primaryResource -> {

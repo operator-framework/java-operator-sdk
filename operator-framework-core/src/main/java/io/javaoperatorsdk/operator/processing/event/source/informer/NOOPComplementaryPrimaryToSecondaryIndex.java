@@ -9,7 +9,7 @@ public class NOOPComplementaryPrimaryToSecondaryIndex<R extends HasMetadata>
     implements ComplementaryPrimaryToSecondaryIndex<R> {
 
   @Override
-  public void explicitAdd(R resource) {}
+  public void explicitAddOrUpdate(R resource) {}
 
   @Override
   public void cleanupForResource(R resourceID) {}

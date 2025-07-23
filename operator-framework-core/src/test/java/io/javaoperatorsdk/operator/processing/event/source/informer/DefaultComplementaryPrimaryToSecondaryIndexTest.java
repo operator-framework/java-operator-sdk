@@ -48,7 +48,7 @@ class DefaultComplementaryPrimaryToSecondaryIndexTest {
 
   @Test
   void indexesNewResources() {
-    primaryToSecondaryIndex.explicitAdd(secondary1);
+    primaryToSecondaryIndex.explicitAddOrUpdate(secondary1);
 
     var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
     var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
@@ -59,8 +59,8 @@ class DefaultComplementaryPrimaryToSecondaryIndexTest {
 
   @Test
   void indexesAdditionalResources() {
-    primaryToSecondaryIndex.explicitAdd(secondary1);
-    primaryToSecondaryIndex.explicitAdd(secondary2);
+    primaryToSecondaryIndex.explicitAddOrUpdate(secondary1);
+    primaryToSecondaryIndex.explicitAddOrUpdate(secondary2);
 
     var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
     var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
@@ -73,8 +73,8 @@ class DefaultComplementaryPrimaryToSecondaryIndexTest {
 
   @Test
   void removingResourceFromIndex() {
-    primaryToSecondaryIndex.explicitAdd(secondary1);
-    primaryToSecondaryIndex.explicitAdd(secondary2);
+    primaryToSecondaryIndex.explicitAddOrUpdate(secondary1);
+    primaryToSecondaryIndex.explicitAddOrUpdate(secondary2);
     primaryToSecondaryIndex.cleanupForResource(secondary1);
 
     var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
@@ -106,7 +106,7 @@ class DefaultComplementaryPrimaryToSecondaryIndexTest {
             });
     var start = LocalDateTime.now();
     for (int i = 0; i < 1_000_000; i++) {
-      primaryToSecondaryIndex.explicitAdd(cm(i));
+      primaryToSecondaryIndex.explicitAddOrUpdate(cm(i));
     }
     System.out.println(ChronoUnit.MILLIS.between(start, LocalDateTime.now()));
 
