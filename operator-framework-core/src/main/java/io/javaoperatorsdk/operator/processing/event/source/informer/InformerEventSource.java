@@ -129,7 +129,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceType().getSimpleName(),
           newResource.getMetadata().getResourceVersion());
     }
-    complementaryPrimaryToSecondaryIndex.cleanupForResource(newResource);
     onAddOrUpdate(
         Operation.ADD, newResource, null, () -> InformerEventSource.super.onAdd(newResource));
   }
@@ -160,7 +159,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           ResourceID.fromResource(resource),
           resourceType().getSimpleName());
     }
-
+    complementaryPrimaryToSecondaryIndex.cleanupForResource(resource);
     super.onDelete(resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
@@ -170,7 +169,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private synchronized void onAddOrUpdate(
       Operation operation, R newObject, R oldObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
-
+    complementaryPrimaryToSecondaryIndex.cleanupForResource(newObject);
     if (canSkipEvent(newObject, oldObject, resourceID)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource"
@@ -309,9 +308,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
-    if (operation == Operation.ADD) {
-      complementaryPrimaryToSecondaryIndex.explicitAdd(newResource);
-    }
+    complementaryPrimaryToSecondaryIndex.explicitAdd(newResource);
     temporaryResourceCache.putResource(
         newResource,
         Optional.ofNullable(oldResource)
