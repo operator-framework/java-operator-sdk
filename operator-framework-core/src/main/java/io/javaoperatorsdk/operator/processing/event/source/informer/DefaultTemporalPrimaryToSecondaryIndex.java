@@ -53,7 +53,7 @@ class DefaultTemporalPrimaryToSecondaryIndex<R extends HasMetadata>
     if (resourceIDs == null) {
       return Collections.emptySet();
     } else {
-      return Collections.unmodifiableSet(resourceIDs);
+      return new HashSet<>(resourceIDs);
     }
   }
 }
