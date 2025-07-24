@@ -31,9 +31,7 @@ class TemporaryPrimaryResourceCacheTest {
   @BeforeEach
   void setup() {
     informerEventSource = mock(InformerEventSource.class);
-    temporaryResourceCache =
-        new TemporaryResourceCache<>(
-            informerEventSource, NOOPTemporalPrimaryToSecondaryIndex.getInstance(), false);
+    temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, false);
   }
 
   @Test
@@ -96,9 +94,7 @@ class TemporaryPrimaryResourceCacheTest {
 
   @Test
   void resourceVersionParsing() {
-    this.temporaryResourceCache =
-        new TemporaryResourceCache<>(
-            informerEventSource, NOOPTemporalPrimaryToSecondaryIndex.getInstance(), true);
+    this.temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, true);
 
     assertThat(temporaryResourceCache.isKnownResourceVersion(testResource())).isFalse();
 

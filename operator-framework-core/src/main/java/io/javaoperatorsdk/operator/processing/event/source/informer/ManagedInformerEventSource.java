@@ -40,7 +40,7 @@ public abstract class ManagedInformerEventSource<
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
   private InformerManager<R, C> cache;
-  protected final boolean parseResourceVersions;
+  private final boolean parseResourceVersions;
   private ControllerConfiguration<R> controllerConfiguration;
   private final C configuration;
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
@@ -87,7 +87,7 @@ public abstract class ManagedInformerEventSource<
     if (isRunning()) {
       return;
     }
-    temporaryResourceCache = temporaryResourceCache();
+    temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
@@ -131,11 +131,6 @@ public abstract class ManagedInformerEventSource<
       log.debug("Resource found in cache: {} for id: {}", res.isPresent(), resourceID);
       return res;
     }
-  }
-
-  protected TemporaryResourceCache temporaryResourceCache() {
-    return new TemporaryResourceCache<>(
-        this, NOOPTemporalPrimaryToSecondaryIndex.getInstance(), parseResourceVersions);
   }
 
   @SuppressWarnings("unused")

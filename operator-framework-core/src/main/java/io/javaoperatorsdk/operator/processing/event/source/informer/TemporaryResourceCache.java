@@ -31,6 +31,47 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public class TemporaryResourceCache<T extends HasMetadata> {
 
+  static class ExpirationCache<K> {
+    private final LinkedHashMap<K, Long> cache;
+    private final int ttlMs;
+
+    public ExpirationCache(int maxEntries, int ttlMs) {
+      this.ttlMs = ttlMs;
+      this.cache =
+          new LinkedHashMap<>() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<K, Long> eldest) {
+              return size() > maxEntries;
+            }
+          };
+    }
+
+    public void add(K key) {
+      clean();
+      cache.putIfAbsent(key, System.currentTimeMillis());
+    }
+
+    public boolean contains(K key) {
+      clean();
+      return cache.get(key) != null;
+    }
+
+    void clean() {
+      if (!cache.isEmpty()) {
+        long currentTimeMillis = System.currentTimeMillis();
+        var iter = cache.entrySet().iterator();
+        // the order will already be from oldest to newest, clean a fixed number of entries to
+        // amortize the cost amongst multiple calls
+        for (int i = 0; i < 10 && iter.hasNext(); i++) {
+          var entry = iter.next();
+          if (currentTimeMillis - entry.getValue() > ttlMs) {
+            iter.remove();
+          }
+        }
+      }
+    }
+  }
+
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
@@ -40,15 +81,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
   private final boolean parseResourceVersions;
   private final ExpirationCache<String> knownResourceVersions;
-  private final TemporalPrimaryToSecondaryIndex<T> temporalPrimaryToSecondaryIndex;
 
   public TemporaryResourceCache(
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
-      TemporalPrimaryToSecondaryIndex<T> temporalPrimaryToSecondaryIndex,
       boolean parseResourceVersions) {
     this.managedInformerEventSource = managedInformerEventSource;
     this.parseResourceVersions = parseResourceVersions;
-    this.temporalPrimaryToSecondaryIndex = temporalPrimaryToSecondaryIndex;
     if (parseResourceVersions) {
       // keep up to the 50000 add/updates for up to 5 minutes
       knownResourceVersions = new ExpirationCache<>(50000, 600000);
@@ -67,14 +105,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   synchronized void onEvent(T resource, boolean unknownState) {
-    var res =
-        cache.computeIfPresent(
-            ResourceID.fromResource(resource),
-            (id, cached) ->
-                (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null : cached);
-    if (res == null) {
-      temporalPrimaryToSecondaryIndex.cleanupForResource(resource);
-    }
+    cache.computeIfPresent(
+        ResourceID.fromResource(resource),
+        (id, cached) ->
+            (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null : cached);
   }
 
   public synchronized void putAddedResource(T newResource) {
@@ -120,7 +154,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
-      temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
     } else if (cache.remove(resourceId) != null) {
       log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
     }
@@ -155,50 +188,5 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
-  }
-
-  public TemporalPrimaryToSecondaryIndex<T> getTemporalPrimaryToSecondaryIndex() {
-    return temporalPrimaryToSecondaryIndex;
-  }
-
-  static class ExpirationCache<K> {
-    private final LinkedHashMap<K, Long> cache;
-    private final int ttlMs;
-
-    public ExpirationCache(int maxEntries, int ttlMs) {
-      this.ttlMs = ttlMs;
-      this.cache =
-          new LinkedHashMap<>() {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<K, Long> eldest) {
-              return size() > maxEntries;
-            }
-          };
-    }
-
-    public void add(K key) {
-      clean();
-      cache.putIfAbsent(key, System.currentTimeMillis());
-    }
-
-    public boolean contains(K key) {
-      clean();
-      return cache.get(key) != null;
-    }
-
-    void clean() {
-      if (!cache.isEmpty()) {
-        long currentTimeMillis = System.currentTimeMillis();
-        var iter = cache.entrySet().iterator();
-        // the order will already be from oldest to newest, clean a fixed number of entries to
-        // amortize the cost amongst multiple calls
-        for (int i = 0; i < 10 && iter.hasNext(); i++) {
-          var entry = iter.next();
-          if (currentTimeMillis - entry.getValue() > ttlMs) {
-            iter.remove();
-          }
-        }
-      }
-    }
   }
 }
