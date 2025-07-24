@@ -21,7 +21,9 @@ class PrimaryToSecondaryDependentIT {
 
   public static final String TEST_CR_NAME = "test1";
   public static final String TEST_DATA = "testData";
-  public @RegisterExtension static LocallyRunOperatorExtension operator =
+
+  @RegisterExtension
+  public static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new PrimaryToSecondaryDependentReconciler())
           .build();
