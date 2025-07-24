@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 public class ExternalStateDependentIT extends ExternalStateTestBase {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(ExternalStateDependentReconciler.class)
           .build();

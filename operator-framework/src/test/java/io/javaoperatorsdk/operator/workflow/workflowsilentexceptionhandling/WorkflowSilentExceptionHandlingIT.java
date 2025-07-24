@@ -12,7 +12,7 @@ import static org.awaitility.Awaitility.await;
 public class WorkflowSilentExceptionHandlingIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(HandleWorkflowExceptionsInReconcilerReconciler.class)
           .build();

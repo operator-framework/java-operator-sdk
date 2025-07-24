@@ -16,7 +16,7 @@ public class StatusPatchCacheIT {
   public static final String TEST_1 = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(StatusPatchCacheReconciler.class)
           .build();

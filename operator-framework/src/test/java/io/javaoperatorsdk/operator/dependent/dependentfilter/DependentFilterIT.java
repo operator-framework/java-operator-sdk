@@ -20,7 +20,7 @@ class DependentFilterIT {
   public static final String RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(DependentFilterTestReconciler.class)
           .build();

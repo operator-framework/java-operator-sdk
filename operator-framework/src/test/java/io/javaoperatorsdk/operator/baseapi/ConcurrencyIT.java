@@ -26,7 +26,7 @@ class ConcurrencyIT {
   private static final Logger log = LoggerFactory.getLogger(ConcurrencyIT.class);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
 
   @Test

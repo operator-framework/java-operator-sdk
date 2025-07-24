@@ -29,7 +29,7 @@ class ChangeNamespaceIT {
   public static final String ADDITIONAL_TEST_NAMESPACE = "additional-test-namespace";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new ChangeNamespaceTestReconciler())
           .build();

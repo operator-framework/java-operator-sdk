@@ -16,7 +16,7 @@ import static org.awaitility.Awaitility.await;
 class CreateUpdateInformerEventSourceEventFilterIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new CreateUpdateEventFilterTestReconciler())
           .build();

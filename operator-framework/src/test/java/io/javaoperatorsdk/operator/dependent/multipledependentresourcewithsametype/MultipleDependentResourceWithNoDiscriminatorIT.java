@@ -18,7 +18,7 @@ class MultipleDependentResourceWithNoDiscriminatorIT {
   public static final String TEST_RESOURCE_NAME = "multipledependentresource-testresource";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(MultipleDependentResourceWithDiscriminatorReconciler.class)
           .waitForNamespaceDeletion(true)

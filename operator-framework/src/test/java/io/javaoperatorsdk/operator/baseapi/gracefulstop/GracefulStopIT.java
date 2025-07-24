@@ -17,7 +17,7 @@ public class GracefulStopIT {
   public static final String TEST_1 = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(
               o ->

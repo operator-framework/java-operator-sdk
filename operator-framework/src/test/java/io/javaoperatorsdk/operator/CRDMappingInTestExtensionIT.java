@@ -25,7 +25,7 @@ public class CRDMappingInTestExtensionIT {
   private final KubernetesClient client = new KubernetesClientBuilder().build();
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new TestReconciler())
           .withAdditionalCRD("src/test/resources/crd/test.crd", "src/test/crd/test.crd")

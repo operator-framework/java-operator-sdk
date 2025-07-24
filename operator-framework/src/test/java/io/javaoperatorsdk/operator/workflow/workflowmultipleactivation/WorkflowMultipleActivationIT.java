@@ -23,7 +23,7 @@ public class WorkflowMultipleActivationIT {
   public static final int POLL_DELAY = 300;
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(WorkflowMultipleActivationReconciler.class)
           .build();

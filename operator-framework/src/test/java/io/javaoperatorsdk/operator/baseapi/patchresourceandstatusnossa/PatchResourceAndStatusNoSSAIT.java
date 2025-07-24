@@ -14,7 +14,7 @@ import static org.awaitility.Awaitility.await;
 
 class PatchResourceAndStatusNoSSAIT {
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(o -> o.withUseSSAToPatchPrimaryResource(false))
           .withReconciler(PatchResourceAndStatusNoSSAReconciler.class)

@@ -20,9 +20,10 @@ class SubResourceUpdateIT {
   public static final int EVENT_RECEIVE_WAIT = 200;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(SubResourceTestCustomReconciler.class)
+          .withConfigurationService(o -> o.withCloseClientOnStop(false))
           .build();
 
   @Test

@@ -16,7 +16,7 @@ import static org.awaitility.Awaitility.await;
 class ReconcilerExecutorIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(new TestReconciler(true)).build();
 
   @Test

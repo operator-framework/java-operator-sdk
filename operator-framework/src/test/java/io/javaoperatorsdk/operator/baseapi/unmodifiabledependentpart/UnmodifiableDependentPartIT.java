@@ -19,7 +19,7 @@ public class UnmodifiableDependentPartIT {
   public static final String UPDATED_DATA = "updatedData";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(UnmodifiableDependentPartReconciler.class)
           .build();

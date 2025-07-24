@@ -20,7 +20,7 @@ class RetryIT {
   public static final int NUMBER_FAILED_EXECUTIONS = 3;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(
               new RetryTestCustomReconciler(NUMBER_FAILED_EXECUTIONS),

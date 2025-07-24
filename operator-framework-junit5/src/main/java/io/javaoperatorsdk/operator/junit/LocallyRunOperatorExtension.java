@@ -47,13 +47,14 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private static final boolean deleteCRDs =
       Boolean.parseBoolean(System.getProperty("testsuite.deleteCRDs", "true"));
 
-  private final Operator operator;
+  private Operator operator;
   private final List<ReconcilerSpec> reconcilers;
   private final List<PortForwardSpec> portForwards;
   private final List<LocalPortForward> localPortForwards;
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
   private final Map<String, String> crdMappings;
+  private final Consumer<ConfigurationServiceOverrider> configurationServiceOverrider;
 
   private LocallyRunOperatorExtension(
       List<ReconcilerSpec> reconcilers,
@@ -82,12 +83,13 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
-    configurationServiceOverrider =
+    this.configurationServiceOverrider =
         configurationServiceOverrider != null
             ? configurationServiceOverrider.andThen(
-                overrider -> overrider.withKubernetesClient(kubernetesClient))
-            : overrider -> overrider.withKubernetesClient(kubernetesClient);
-    this.operator = new Operator(configurationServiceOverrider);
+                overrider ->
+                    overrider.withKubernetesClient(kubernetesClient).withCloseClientOnStop(false))
+            : (o -> o.withKubernetesClient(kubernetesClient).withCloseClientOnStop(false));
+
     this.registeredControllers = new HashMap<>();
     crdMappings = getAdditionalCRDsFromFiles(additionalCrds, getKubernetesClient());
   }
@@ -261,6 +263,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
 
     additionalCustomResourceDefinitions.forEach(this::applyCrd);
     for (var ref : reconcilers) {
+      this.operator = new Operator(configurationServiceOverrider);
       final var config = operator.getConfigurationService().getConfigurationFor(ref.reconciler);
       final var oconfig = override(config);
 
@@ -313,8 +316,6 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       deleteCrd(iterator.next(), kubernetesClient);
       iterator.remove();
     }
-
-    kubernetesClient.close();
 
     try {
       this.operator.stop();

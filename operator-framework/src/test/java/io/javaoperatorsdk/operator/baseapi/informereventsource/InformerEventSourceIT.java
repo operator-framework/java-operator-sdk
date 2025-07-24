@@ -24,7 +24,7 @@ class InformerEventSourceIT {
   public static final String UPDATE_STATUS_MESSAGE = "Updated Status";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new InformerEventSourceTestCustomReconciler())
           .build();

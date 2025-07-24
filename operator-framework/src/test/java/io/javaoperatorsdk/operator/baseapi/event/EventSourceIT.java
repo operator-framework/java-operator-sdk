@@ -15,7 +15,7 @@ import static org.awaitility.Awaitility.await;
 class EventSourceIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(EventSourceTestCustomReconciler.class)
           .build();

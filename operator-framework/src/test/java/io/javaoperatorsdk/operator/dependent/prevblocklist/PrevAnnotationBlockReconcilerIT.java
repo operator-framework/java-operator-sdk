@@ -17,7 +17,7 @@ class PrevAnnotationBlockReconcilerIT {
   public static final String TEST_1 = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           // Removing resource from blocklist List would result in test failure
           //          .withConfigurationService(

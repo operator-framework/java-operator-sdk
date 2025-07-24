@@ -15,10 +15,11 @@ class RetryMaxAttemptIT {
   public static final int RETRY_INTERVAL = 100;
   public static final int ALL_EXECUTION_TO_FAIL = 99;
 
-  RetryTestCustomReconciler reconciler = new RetryTestCustomReconciler(ALL_EXECUTION_TO_FAIL);
+  static RetryTestCustomReconciler reconciler =
+      new RetryTestCustomReconciler(ALL_EXECUTION_TO_FAIL);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(
               reconciler,

@@ -17,7 +17,7 @@ public class WorkflowActivationConditionIT {
   public static final String TEST_DATA = "test data";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(WorkflowActivationConditionReconciler.class)
           .build();

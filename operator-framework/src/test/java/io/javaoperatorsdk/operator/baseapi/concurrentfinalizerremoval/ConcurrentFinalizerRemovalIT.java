@@ -18,7 +18,7 @@ class ConcurrentFinalizerRemovalIT {
   public static final String TEST_RESOURCE_NAME = "test";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           // should work without a retry, thus not retry the whole reconciliation but to retry
           // finalizer removal only.

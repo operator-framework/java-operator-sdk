@@ -21,7 +21,7 @@ public class SpecialResourcesDependentIT {
   public static final String RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new SpecialResourceTestReconciler())
           .build();

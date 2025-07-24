@@ -18,7 +18,7 @@ class DependentDifferentNamespaceIT {
   public static final String CHANGED_VALUE = "changed_value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(DependentDifferentNamespaceReconciler.class)
           .build();

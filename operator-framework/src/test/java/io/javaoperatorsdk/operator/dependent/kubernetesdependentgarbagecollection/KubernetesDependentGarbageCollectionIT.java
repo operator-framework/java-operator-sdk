@@ -18,7 +18,7 @@ class KubernetesDependentGarbageCollectionIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new DependentGarbageCollectionTestReconciler())
           .build();

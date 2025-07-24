@@ -14,7 +14,7 @@ import static org.awaitility.Awaitility.await;
 public class ServiceStrictMatcherIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new ServiceStrictMatcherTestReconciler())
           .build();

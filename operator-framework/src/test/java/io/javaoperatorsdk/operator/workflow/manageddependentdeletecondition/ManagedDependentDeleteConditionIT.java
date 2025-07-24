@@ -20,7 +20,7 @@ public class ManagedDependentDeleteConditionIT {
   public static final String CUSTOM_FINALIZER = "test/customfinalizer";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
           .withReconciler(new ManagedDependentDefaultDeleteConditionReconciler())

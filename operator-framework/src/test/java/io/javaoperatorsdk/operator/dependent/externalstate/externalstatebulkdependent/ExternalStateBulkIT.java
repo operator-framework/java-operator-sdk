@@ -25,7 +25,7 @@ class ExternalStateBulkIT {
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(ExternalStateBulkDependentReconciler.class)
           .build();

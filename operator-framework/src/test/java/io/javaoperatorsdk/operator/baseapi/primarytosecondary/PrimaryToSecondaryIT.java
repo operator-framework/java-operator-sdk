@@ -17,7 +17,7 @@ class PrimaryToSecondaryIT {
   public static final int MIN_DELAY = 150;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withAdditionalCustomResourceDefinition(Cluster.class)
           .withReconciler(new JobReconciler())

@@ -20,7 +20,7 @@ public class MultipleManagedDependentNoDiscriminatorIT {
   public static final String CHANGED_VALUE = "changed_value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new MultipleManagedDependentSameTypeNoDiscriminatorReconciler())
           .build();

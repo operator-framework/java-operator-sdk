@@ -12,7 +12,7 @@ import static org.awaitility.Awaitility.await;
 class BulkExternalDependentIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new ExternalBulkResourceReconciler())
           .build();

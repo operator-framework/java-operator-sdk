@@ -17,7 +17,7 @@ public class WorkflowExplicitInvocationIT {
   public static final String RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(WorkflowExplicitInvocationReconciler.class)
           .build();

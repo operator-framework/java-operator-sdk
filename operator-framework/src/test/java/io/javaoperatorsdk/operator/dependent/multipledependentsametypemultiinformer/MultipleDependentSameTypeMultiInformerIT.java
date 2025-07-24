@@ -22,7 +22,7 @@ class MultipleDependentSameTypeMultiInformerIT {
   public static final int SECONDS = 30;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new MultipleManagedDependentResourceMultiInformerReconciler())
           .build();

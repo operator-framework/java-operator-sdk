@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 class StandaloneBulkDependentIT extends BulkDependentTestBase {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new StandaloneBulkDependentReconciler())
           .build();

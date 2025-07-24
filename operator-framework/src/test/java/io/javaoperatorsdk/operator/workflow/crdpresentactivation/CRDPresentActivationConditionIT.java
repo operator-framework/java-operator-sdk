@@ -20,7 +20,7 @@ public class CRDPresentActivationConditionIT {
       "crdpresentactivationdependentcustomresources.sample.javaoperatorsdk";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new CRDPresentActivationReconciler())
           .build();

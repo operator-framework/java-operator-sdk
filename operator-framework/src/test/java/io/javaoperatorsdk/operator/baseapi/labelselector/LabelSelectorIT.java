@@ -18,7 +18,7 @@ import static org.awaitility.Awaitility.await;
 class LabelSelectorIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new LabelSelectorTestReconciler())
           .build();

@@ -15,7 +15,7 @@ public class WorkflowExplicitCleanupIT {
   public static final String RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(WorkflowExplicitCleanupReconciler.class)
           .build();
