@@ -5,11 +5,11 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public interface PrimaryToSecondaryIndex<R extends HasMetadata> {
+public interface TemporalPrimaryToSecondaryIndex<R extends HasMetadata> {
 
-  void onAddOrUpdate(R resource);
+  void explicitAddOrUpdate(R resource);
 
-  void onDelete(R resource);
+  void cleanupForResource(R resource);
 
   Set<ResourceID> getSecondaryResources(ResourceID primary);
 }
