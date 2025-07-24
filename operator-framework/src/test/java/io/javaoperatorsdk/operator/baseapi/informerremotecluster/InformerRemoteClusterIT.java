@@ -30,7 +30,7 @@ class InformerRemoteClusterIT {
   static KubernetesClient kubernetesClient;
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new InformerRemoteClusterReconciler(kubernetesClient))
           .build();

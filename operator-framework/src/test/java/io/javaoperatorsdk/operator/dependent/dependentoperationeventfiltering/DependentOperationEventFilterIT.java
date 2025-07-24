@@ -19,7 +19,7 @@ class DependentOperationEventFilterIT {
   public static final String SPEC_VAL_2 = "val2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withNamespaceDeleteTimeout(2)
           .withReconciler(new DependentOperationEventFilterCustomResourceTestReconciler())

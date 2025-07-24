@@ -21,7 +21,7 @@ public class NextReconciliationImminentIT {
   public static final String TEST_RESOURCE_NAME = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new NextReconciliationImminentReconciler())
           .build();

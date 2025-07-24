@@ -18,7 +18,7 @@ class FilterIT {
   public static final int POLL_DELAY = 150;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(FilterTestReconciler.class).build();
 
   @Test

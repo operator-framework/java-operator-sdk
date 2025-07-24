@@ -15,10 +15,10 @@ import static org.awaitility.Awaitility.await;
 class ErrorStatusHandlerIT {
 
   public static final int MAX_RETRY_ATTEMPTS = 3;
-  ErrorStatusHandlerTestReconciler reconciler = new ErrorStatusHandlerTestReconciler();
+  static ErrorStatusHandlerTestReconciler reconciler = new ErrorStatusHandlerTestReconciler();
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(
               reconciler, new GenericRetry().setMaxAttempts(MAX_RETRY_ATTEMPTS).withLinearRetry())

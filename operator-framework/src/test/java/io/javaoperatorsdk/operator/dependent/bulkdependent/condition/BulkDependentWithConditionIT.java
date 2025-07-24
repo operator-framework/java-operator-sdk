@@ -16,7 +16,7 @@ import static org.awaitility.Awaitility.await;
 class BulkDependentWithConditionIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new ManagedBulkDependentWithReadyConditionReconciler())
           .build();

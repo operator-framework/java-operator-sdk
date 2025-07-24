@@ -18,7 +18,7 @@ public class PrimaryIndexerIT {
   public static final String RESOURCE_NAME1 = "test1";
   public static final String RESOURCE_NAME2 = "test2";
 
-  @RegisterExtension LocallyRunOperatorExtension operator = buildOperator();
+  @RegisterExtension LocallyRunOperatorExtension extension = buildOperator();
 
   protected LocallyRunOperatorExtension buildOperator() {
     return LocallyRunOperatorExtension.builder()
@@ -28,9 +28,9 @@ public class PrimaryIndexerIT {
 
   @Test
   void changesToSecondaryResourcesCorrectlyTriggerReconciler() {
-    var reconciler = (AbstractPrimaryIndexerTestReconciler) operator.getFirstReconciler();
-    operator.create(createTestResource(RESOURCE_NAME1));
-    operator.create(createTestResource(RESOURCE_NAME2));
+    var reconciler = (AbstractPrimaryIndexerTestReconciler) extension.getFirstReconciler();
+    extension.create(createTestResource(RESOURCE_NAME1));
+    extension.create(createTestResource(RESOURCE_NAME2));
 
     await()
         .pollDelay(Duration.ofMillis(500))
@@ -40,7 +40,7 @@ public class PrimaryIndexerIT {
               assertThat(reconciler.getNumberOfExecutions().get(RESOURCE_NAME2).get()).isEqualTo(1);
             });
 
-    operator.create(configMap());
+    extension.create(configMap());
 
     await()
         .pollDelay(Duration.ofMillis(500))

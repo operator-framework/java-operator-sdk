@@ -26,7 +26,7 @@ import static org.awaitility.Awaitility.await;
 class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(new DeploymentReconciler()).build();
 
   @Test

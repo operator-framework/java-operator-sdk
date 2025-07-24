@@ -20,7 +20,7 @@ class MultiOwnerDependentTriggeringIT {
   public static final String NEW_VALUE_2 = "newValue2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
           .withReconciler(MultipleOwnerDependentReconciler.class)

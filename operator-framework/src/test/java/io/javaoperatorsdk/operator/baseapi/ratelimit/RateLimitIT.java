@@ -20,7 +20,7 @@ class RateLimitIT {
   private static final Logger log = LoggerFactory.getLogger(RateLimitIT.class);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(new RateLimitReconciler()).build();
 
   @Test

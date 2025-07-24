@@ -14,7 +14,7 @@ class CleanerForManagedDependentResourcesOnlyIT {
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new CleanerForManagedDependentTestReconciler())
           .build();

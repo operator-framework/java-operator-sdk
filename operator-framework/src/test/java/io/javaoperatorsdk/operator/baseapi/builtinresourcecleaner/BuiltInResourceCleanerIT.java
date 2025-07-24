@@ -20,7 +20,7 @@ class BuiltInResourceCleanerIT {
   private static final Logger log = LoggerFactory.getLogger(BuiltInResourceCleanerIT.class);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new BuiltInResourceCleanerReconciler())
           .build();

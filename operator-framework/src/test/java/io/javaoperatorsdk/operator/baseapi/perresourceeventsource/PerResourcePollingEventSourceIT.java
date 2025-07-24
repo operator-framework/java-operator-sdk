@@ -15,7 +15,7 @@ class PerResourcePollingEventSourceIT {
   public static final String NAME_2 = "name2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new PerResourcePollingEventSourceTestReconciler())
           .build();

@@ -21,7 +21,7 @@ public class StandaloneDependentResourceIT {
   public static final String DEPENDENT_TEST_NAME = "dependent-test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new StandaloneDependentTestReconciler())
           .build();

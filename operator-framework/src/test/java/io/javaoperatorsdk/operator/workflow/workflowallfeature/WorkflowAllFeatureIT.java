@@ -21,7 +21,7 @@ public class WorkflowAllFeatureIT {
   private static final Duration ONE_MINUTE = Duration.ofMinutes(1);
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(WorkflowAllFeatureReconciler.class)
           .build();

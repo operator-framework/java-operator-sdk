@@ -17,7 +17,7 @@ import static org.awaitility.Awaitility.await;
 class PrimaryToSecondaryMissingIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withAdditionalCustomResourceDefinition(Cluster.class)
           .withReconciler(new JobReconciler(false))

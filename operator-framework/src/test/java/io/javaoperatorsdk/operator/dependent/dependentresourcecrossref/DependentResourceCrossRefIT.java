@@ -19,7 +19,7 @@ class DependentResourceCrossRefIT {
   public static final int EXECUTION_NUMBER = 50;
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new DependentResourceCrossRefReconciler())
           .build();

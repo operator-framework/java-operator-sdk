@@ -28,8 +28,11 @@ class MultiVersionCRDIT {
   public static final String CR_V1_NAME = "crv1";
   public static final String CR_V2_NAME = "crv2";
 
+  private static final TestInformerStoppedHandler informerStoppedHandler =
+      new TestInformerStoppedHandler();
+
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(MultiVersionCRDTestReconciler1.class)
           .withReconciler(MultiVersionCRDTestReconciler2.class)
@@ -126,9 +129,6 @@ class MultiVersionCRDIT {
       return (existing == null || existing.equals(newValue)) ? newValue : null;
     }
   }
-
-  private static final TestInformerStoppedHandler informerStoppedHandler =
-      new TestInformerStoppedHandler();
 
   @Test
   void multipleCRDVersions() {

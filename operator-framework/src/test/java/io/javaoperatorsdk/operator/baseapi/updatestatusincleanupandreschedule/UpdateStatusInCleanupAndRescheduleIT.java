@@ -14,7 +14,7 @@ public class UpdateStatusInCleanupAndRescheduleIT {
   public static final String TEST_RESOURCE = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(UpdateStatusInCleanupAndRescheduleReconciler.class)
           .build();

@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 class PreviousAnnotationDisabledIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new CreateUpdateEventFilterTestReconciler())
           .withConfigurationService(

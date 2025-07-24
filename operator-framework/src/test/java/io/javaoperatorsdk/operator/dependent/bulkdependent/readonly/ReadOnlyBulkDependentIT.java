@@ -20,7 +20,7 @@ public class ReadOnlyBulkDependentIT {
   public static final String TEST = "test";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new ReadOnlyBulkReconciler()).build();
 
   @Test

@@ -16,7 +16,7 @@ class MultipleSecondaryEventSourceIT {
   public static final String TEST_RESOURCE_NAME = "testresource";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(MultipleSecondaryEventSourceReconciler.class)
           .build();

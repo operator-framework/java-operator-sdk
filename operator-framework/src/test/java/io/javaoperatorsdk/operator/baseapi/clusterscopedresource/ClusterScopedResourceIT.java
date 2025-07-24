@@ -20,7 +20,7 @@ class ClusterScopedResourceIT {
   public static final String UPDATED_DATA = "updatedData";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new ClusterScopedCustomResourceReconciler())
           .build();

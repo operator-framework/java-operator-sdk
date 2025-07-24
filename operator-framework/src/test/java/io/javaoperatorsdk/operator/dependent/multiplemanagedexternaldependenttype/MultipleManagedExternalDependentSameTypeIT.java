@@ -14,7 +14,7 @@ import static org.awaitility.Awaitility.await;
 class MultipleManagedExternalDependentSameTypeIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new MultipleManagedExternalDependentResourceReconciler())
           .build();

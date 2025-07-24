@@ -11,7 +11,7 @@ public class GenericKubernetesResourceHandlingIT
     extends GenericKubernetesDependentTestBase<GenericKubernetesResourceHandlingCustomResource> {
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new GenericKubernetesResourceHandlingReconciler())
           .build();

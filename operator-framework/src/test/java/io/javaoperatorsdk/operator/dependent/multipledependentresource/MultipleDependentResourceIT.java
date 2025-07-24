@@ -22,7 +22,7 @@ public class MultipleDependentResourceIT {
   public static final String INITIAL_VALUE = "initial value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new MultipleDependentResourceReconciler())
           .build();

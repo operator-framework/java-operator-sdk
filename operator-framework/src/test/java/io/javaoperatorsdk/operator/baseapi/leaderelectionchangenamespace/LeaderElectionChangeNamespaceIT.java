@@ -25,7 +25,7 @@ public class LeaderElectionChangeNamespaceIT {
   public static final String LEASE_NAME = "nschangelease";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withConfigurationService(
               o -> o.withLeaderElectionConfiguration(new LeaderElectionConfiguration(LEASE_NAME)))

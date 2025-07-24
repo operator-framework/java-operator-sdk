@@ -22,7 +22,7 @@ class ExternalStateIT {
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(ExternalStateReconciler.class).build();
 
   @Test

@@ -15,7 +15,7 @@ public class MultipleReconcilerSameTypeIT {
   public static final String TEST_RESOURCE_2 = "test2";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(MultipleReconcilerSameTypeReconciler1.class)
           .withReconciler(MultipleReconcilerSameTypeReconciler2.class)

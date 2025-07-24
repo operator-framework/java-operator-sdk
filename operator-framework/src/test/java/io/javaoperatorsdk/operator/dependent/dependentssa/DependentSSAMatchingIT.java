@@ -28,7 +28,7 @@ public class DependentSSAMatchingIT {
   public static final String ADDITIONAL_VALUE = "Additional Value";
 
   @RegisterExtension
-  LocallyRunOperatorExtension extension =
+  static LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(
               new DependentSSAReconciler(), o -> o.withFieldManager(CUSTOM_FIELD_MANAGER_NAME))
