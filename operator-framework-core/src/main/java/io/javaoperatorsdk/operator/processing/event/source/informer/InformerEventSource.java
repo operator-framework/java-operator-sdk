@@ -255,28 +255,33 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     if (useSecondaryToPrimaryIndex()) {
       var primaryID = ResourceID.fromResource(primary);
-      var complementaryIds = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
+      // Note that the order matter is these lines. This method is not synchronized
+      // because of performance reasons. If it was in reverse order, it could happen
+      // that we did not receive yet an event in the informer so the index would not
+      // be updated. However, before reading it from temp IDs the event arrives and erases
+      // the temp index. So in case of Add not id would be found.
+      var temporalIds = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
       var resources = byIndex(PRIMARY_TO_SECONDARY_INDEX_NAME, resourceIdToString(primaryID));
-      log.debug("Resources in cache: {} kind: {}", resources, resourceType().getSimpleName());
+
       log.debug(
           "Using informer primary to secondary index to find secondary resources for primary name:"
-              + " {} namespace: {}. Found {}",
+              + " {} namespace: {}. Found number {}",
           primary.getMetadata().getName(),
           primary.getMetadata().getNamespace(),
           resources.size());
 
-      log.debug("Complementary ids: {}", complementaryIds);
+      log.debug("Complementary ids: {}", temporalIds);
       var res =
           resources.stream()
               .map(
                   r -> {
                     var resourceId = ResourceID.fromResource(r);
                     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceId);
-                    complementaryIds.remove(resourceId);
+                    temporalIds.remove(resourceId);
                     return resource.orElse(r);
                   })
               .collect(Collectors.toSet());
-      complementaryIds.forEach(
+      temporalIds.forEach(
           id -> {
             Optional<R> resource = get(id);
             resource.ifPresentOrElse(res::add, () -> log.warn("Resource not found: {}", id));
@@ -299,15 +304,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public synchronized void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource);
+    handleRecentCreateOrUpdate(resource, previousVersionOfResource);
   }
 
   @Override
   public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(Operation.ADD, resource, null);
+    handleRecentCreateOrUpdate(resource, null);
   }
 
-  private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
+  private void handleRecentCreateOrUpdate(R newResource, R oldResource) {
     temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
     temporaryResourceCache.putResource(
         newResource,
