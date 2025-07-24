@@ -18,8 +18,7 @@ public class PrimaryIndexerIT {
   public static final String RESOURCE_NAME1 = "test1";
   public static final String RESOURCE_NAME2 = "test2";
 
-  @RegisterExtension
-  LocallyRunOperatorExtension extension = buildOperator();
+  @RegisterExtension LocallyRunOperatorExtension extension = buildOperator();
 
   protected LocallyRunOperatorExtension buildOperator() {
     return LocallyRunOperatorExtension.builder()

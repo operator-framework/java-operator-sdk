@@ -23,6 +23,7 @@ class SubResourceUpdateIT {
   static LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
           .withReconciler(SubResourceTestCustomReconciler.class)
+          .withConfigurationService(o -> o.withCloseClientOnStop(false))
           .build();
 
   @Test
