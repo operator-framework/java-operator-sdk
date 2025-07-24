@@ -65,7 +65,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
-  private final ComplementaryPrimaryToSecondaryIndex<R> complementaryPrimaryToSecondaryIndex;
+  private final TemporalPrimaryToSecondaryIndex<R> temporalPrimaryToSecondaryIndex;
   private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
@@ -99,9 +99,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (useSecondaryToPrimaryIndex()) {
-      complementaryPrimaryToSecondaryIndex =
-          new DefaultComplementaryPrimaryToSecondaryIndex<>(
-              configuration.getSecondaryToPrimaryMapper());
+      temporalPrimaryToSecondaryIndex =
+          new DefaultTemporalPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
       addIndexers(
           Map.of(
               PRIMARY_TO_SECONDARY_INDEX_NAME,
@@ -110,7 +109,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
                       .map(InformerEventSource::resourceIdToString)
                       .toList()));
     } else {
-      complementaryPrimaryToSecondaryIndex = new NOOPComplementaryPrimaryToSecondaryIndex();
+      temporalPrimaryToSecondaryIndex = NOOPTemporalPrimaryToSecondaryIndex.getInstance();
     }
 
     final var informerConfig = configuration.getInformerConfig();
@@ -159,7 +158,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           ResourceID.fromResource(resource),
           resourceType().getSimpleName());
     }
-    complementaryPrimaryToSecondaryIndex.cleanupForResource(resource);
+    temporalPrimaryToSecondaryIndex.cleanupForResource(resource);
     super.onDelete(resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
@@ -169,7 +168,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private synchronized void onAddOrUpdate(
       Operation operation, R newObject, R oldObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
-    complementaryPrimaryToSecondaryIndex.cleanupForResource(newObject);
+    temporalPrimaryToSecondaryIndex.cleanupForResource(newObject);
     if (canSkipEvent(newObject, oldObject, resourceID)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource"
@@ -256,7 +255,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     if (useSecondaryToPrimaryIndex()) {
       var primaryID = ResourceID.fromResource(primary);
-      var complementaryIds = complementaryPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
+      var complementaryIds = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
       var resources = byIndex(PRIMARY_TO_SECONDARY_INDEX_NAME, resourceIdToString(primaryID));
       log.debug("Resources in cache: {} kind: {}", resources, resourceType().getSimpleName());
       log.debug(
@@ -309,7 +308,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
-    complementaryPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
+    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
     temporaryResourceCache.putResource(
         newResource,
         Optional.ofNullable(oldResource)

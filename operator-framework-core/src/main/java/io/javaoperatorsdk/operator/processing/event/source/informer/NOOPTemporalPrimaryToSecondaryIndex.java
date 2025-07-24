@@ -5,25 +5,27 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-class NOOPPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryToSecondaryIndex<R> {
+class NOOPTemporalPrimaryToSecondaryIndex<R extends HasMetadata>
+    implements TemporalPrimaryToSecondaryIndex<R> {
 
   @SuppressWarnings("rawtypes")
-  private static final NOOPPrimaryToSecondaryIndex instance = new NOOPPrimaryToSecondaryIndex();
+  private static final NOOPTemporalPrimaryToSecondaryIndex instance =
+      new NOOPTemporalPrimaryToSecondaryIndex();
 
   @SuppressWarnings("unchecked")
-  public static <T extends HasMetadata> NOOPPrimaryToSecondaryIndex<T> getInstance() {
+  public static <T extends HasMetadata> NOOPTemporalPrimaryToSecondaryIndex<T> getInstance() {
     return instance;
   }
 
-  private NOOPPrimaryToSecondaryIndex() {}
+  private NOOPTemporalPrimaryToSecondaryIndex() {}
 
   @Override
-  public void onAddOrUpdate(R resource) {
+  public void explicitAddOrUpdate(R resource) {
     // empty method because of noop implementation
   }
 
   @Override
-  public void onDelete(R resource) {
+  public void cleanupForResource(R resource) {
     // empty method because of noop implementation
   }
 

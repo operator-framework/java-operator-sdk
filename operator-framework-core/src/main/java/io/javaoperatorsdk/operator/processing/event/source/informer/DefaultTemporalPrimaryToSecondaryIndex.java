@@ -7,17 +7,19 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
-class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryToSecondaryIndex<R> {
+class DefaultTemporalPrimaryToSecondaryIndex<R extends HasMetadata>
+    implements TemporalPrimaryToSecondaryIndex<R> {
 
   private final SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
   private final Map<ResourceID, Set<ResourceID>> index = new HashMap<>();
 
-  public DefaultPrimaryToSecondaryIndex(SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
+  public DefaultTemporalPrimaryToSecondaryIndex(
+      SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper) {
     this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
   }
 
   @Override
-  public synchronized void onAddOrUpdate(R resource) {
+  public synchronized void explicitAddOrUpdate(R resource) {
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
     primaryResources.forEach(
         primaryResource -> {
@@ -28,7 +30,7 @@ class DefaultPrimaryToSecondaryIndex<R extends HasMetadata> implements PrimaryTo
   }
 
   @Override
-  public synchronized void onDelete(R resource) {
+  public synchronized void cleanupForResource(R resource) {
     Set<ResourceID> primaryResources = secondaryToPrimaryMapper.toPrimaryResourceIDs(resource);
     primaryResources.forEach(
         primaryResource -> {
