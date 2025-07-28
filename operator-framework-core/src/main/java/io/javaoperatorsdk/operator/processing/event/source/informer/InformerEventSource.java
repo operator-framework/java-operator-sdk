@@ -65,7 +65,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private static final Logger log = LoggerFactory.getLogger(InformerEventSource.class);
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
-  private final TemporalPrimaryToSecondaryIndex<R> temporalPrimaryToSecondaryIndex;
   private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
@@ -99,8 +98,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (useSecondaryToPrimaryIndex()) {
-      temporalPrimaryToSecondaryIndex =
-          new DefaultTemporalPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
       addIndexers(
           Map.of(
               PRIMARY_TO_SECONDARY_INDEX_NAME,
@@ -108,8 +105,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
                   configuration.getSecondaryToPrimaryMapper().toPrimaryResourceIDs(r).stream()
                       .map(InformerEventSource::resourceIdToString)
                       .toList()));
-    } else {
-      temporalPrimaryToSecondaryIndex = NOOPTemporalPrimaryToSecondaryIndex.getInstance();
     }
 
     final var informerConfig = configuration.getInformerConfig();
@@ -158,7 +153,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           ResourceID.fromResource(resource),
           resourceType().getSimpleName());
     }
-    temporalPrimaryToSecondaryIndex.cleanupForResource(resource);
     super.onDelete(resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
@@ -168,7 +162,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private synchronized void onAddOrUpdate(
       Operation operation, R newObject, R oldObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
-    temporalPrimaryToSecondaryIndex.cleanupForResource(newObject);
     if (canSkipEvent(newObject, oldObject, resourceID)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource"
@@ -260,7 +253,10 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       // that we did not receive yet an event in the informer so the index would not
       // be updated. However, before reading it from temp IDs the event arrives and erases
       // the temp index. So in case of Add not id would be found.
-      var temporalIds = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID);
+      var temporalIds =
+          temporaryResourceCache
+              .getTemporalPrimaryToSecondaryIndex()
+              .getSecondaryResources(primaryID);
       var resources = byIndex(PRIMARY_TO_SECONDARY_INDEX_NAME, resourceIdToString(primaryID));
 
       log.debug(
@@ -313,7 +309,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private void handleRecentCreateOrUpdate(R newResource, R oldResource) {
-    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
     temporaryResourceCache.putResource(
         newResource,
         Optional.ofNullable(oldResource)
@@ -369,5 +364,17 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private static String resourceIdToString(ResourceID resourceID) {
     return resourceID.getName() + "#" + resourceID.getNamespace().orElse("$na");
+  }
+
+  @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  protected TemporaryResourceCache<R> temporaryResourceCache() {
+    return new TemporaryResourceCache<>(
+        this,
+        useSecondaryToPrimaryIndex()
+            ? new DefaultTemporalPrimaryToSecondaryIndex(
+                configuration().getSecondaryToPrimaryMapper())
+            : NOOPTemporalPrimaryToSecondaryIndex.getInstance(),
+        parseResourceVersions);
   }
 }
