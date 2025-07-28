@@ -119,8 +119,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
           resourceId);
-      cache.put(resourceId, newResource);
       temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
+      cache.put(resourceId, newResource);
     } else if (cache.remove(resourceId) != null) {
       log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
     }
