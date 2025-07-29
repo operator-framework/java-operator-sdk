@@ -253,18 +253,20 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       // that we did not receive yet an event in the informer so the index would not
       // be updated. However, before reading it from temp IDs the event arrives and erases
       // the temp index. So in case of Add not id would be found.
+      var sid = resourceIdToString(primaryID);
       var temporalIds =
           temporaryResourceCache
               .getTemporalPrimaryToSecondaryIndex()
               .getSecondaryResources(primaryID);
-      var resources = byIndex(PRIMARY_TO_SECONDARY_INDEX_NAME, resourceIdToString(primaryID));
+      var resources = byIndex(PRIMARY_TO_SECONDARY_INDEX_NAME, sid);
 
       log.debug(
           "Using informer primary to secondary index to find secondary resources for primary name:"
-              + " {} namespace: {}. Found number {}",
+              + " {} namespace: {}. Found number {}, String id: {}",
           primary.getMetadata().getName(),
           primary.getMetadata().getNamespace(),
-          resources.size());
+          resources.size(),
+          sid);
 
       log.debug("Complementary ids: {}", temporalIds);
       var res =
