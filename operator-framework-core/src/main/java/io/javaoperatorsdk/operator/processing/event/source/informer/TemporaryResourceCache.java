@@ -93,7 +93,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
     var resourceId = ResourceID.fromResource(newResource);
     var cachedResource = managedInformerEventSource.get(resourceId).orElse(null);
-
+    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
     boolean moveAhead = false;
     if (previousResourceVersion == null && cachedResource == null) {
       if (tombstones.contains(newResource.getMetadata().getUid())) {
@@ -119,7 +119,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
           resourceId);
-      temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(newResource);
+
       cache.put(resourceId, newResource);
     } else if (cache.remove(resourceId) != null) {
       log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
