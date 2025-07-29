@@ -262,11 +262,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
       log.debug(
           "Using informer primary to secondary index to find secondary resources for primary name:"
-              + " {} namespace: {}. Found number {}, String id: {}",
+              + " {} namespace: {}. Found number {}, String id: {}. All resources: {}",
           primary.getMetadata().getName(),
           primary.getMetadata().getNamespace(),
           resources.size(),
-          sid);
+          sid,
+          manager().list());
 
       log.debug("Complementary ids: {}", temporalIds);
       var res =
@@ -274,8 +275,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
               .map(
                   r -> {
                     var resourceId = ResourceID.fromResource(r);
-                    Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceId);
                     temporalIds.remove(resourceId);
+                    Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceId);
                     return resource.orElse(r);
                   })
               .collect(Collectors.toSet());
