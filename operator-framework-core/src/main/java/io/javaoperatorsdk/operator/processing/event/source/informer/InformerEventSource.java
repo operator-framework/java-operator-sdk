@@ -267,7 +267,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           primary.getMetadata().getNamespace(),
           resources.size(),
           sid,
-          manager().list());
+          manager().list().toList());
 
       log.debug("Complementary ids: {}", temporalIds);
       var res =

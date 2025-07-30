@@ -73,6 +73,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
             (id, cached) ->
                 (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null : cached);
     if (res == null) {
+      log.debug(
+          "Cleaning up for resource name: {} ns: {} ",
+          resource.getMetadata().getName(),
+          resource.getMetadata().getNamespace());
       temporalPrimaryToSecondaryIndex.cleanupForResource(resource);
     }
   }

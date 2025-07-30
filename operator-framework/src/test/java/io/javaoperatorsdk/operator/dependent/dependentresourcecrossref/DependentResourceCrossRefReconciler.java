@@ -53,7 +53,7 @@ public class DependentResourceCrossRefReconciler
       DependentResourceCrossRefResource resource,
       Context<DependentResourceCrossRefResource> context,
       Exception e) {
-    log.error("Status update on error", e);
+    log.error("Status update on error for resource: {}", resource.getMetadata().getName(), e);
     errorHappened = true;
     return ErrorStatusUpdateControl.noStatusUpdate();
   }
