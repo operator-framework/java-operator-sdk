@@ -15,14 +15,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TemporalPrimaryToSecondaryIndexTest {
+class PrimaryToSecondaryIndexTest {
 
   @SuppressWarnings("unchecked")
   private final SecondaryToPrimaryMapper<ConfigMap> secondaryToPrimaryMapperMock =
       mock(SecondaryToPrimaryMapper.class);
 
-  private final TemporalPrimaryToSecondaryIndex<ConfigMap> temporalPrimaryToSecondaryIndex =
-      new DefaultTemporalPrimaryToSecondaryIndex<>(secondaryToPrimaryMapperMock);
+  private final PrimaryToSecondaryIndex<ConfigMap> primaryToSecondaryIndex =
+      new DefaultPrimaryToSecondaryIndex<>(secondaryToPrimaryMapperMock);
 
   private final ResourceID primaryID1 = new ResourceID("id1", "default");
   private final ResourceID primaryID2 = new ResourceID("id2", "default");
@@ -37,17 +37,16 @@ class TemporalPrimaryToSecondaryIndexTest {
 
   @Test
   void returnsEmptySetOnEmptyIndex() {
-    var res =
-        temporalPrimaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(secondary1));
+    var res = primaryToSecondaryIndex.getSecondaryResources(ResourceID.fromResource(secondary1));
     assertThat(res).isEmpty();
   }
 
   @Test
   void indexesNewResources() {
-    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(secondary1);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1);
 
-    var secondaryResources1 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID1);
-    var secondaryResources2 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID2);
+    var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
+    var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
 
     assertThat(secondaryResources1).containsOnly(ResourceID.fromResource(secondary1));
     assertThat(secondaryResources2).containsOnly(ResourceID.fromResource(secondary1));
@@ -55,11 +54,11 @@ class TemporalPrimaryToSecondaryIndexTest {
 
   @Test
   void indexesAdditionalResources() {
-    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(secondary1);
-    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(secondary2);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary2);
 
-    var secondaryResources1 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID1);
-    var secondaryResources2 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID2);
+    var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
+    var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
 
     assertThat(secondaryResources1)
         .containsOnly(ResourceID.fromResource(secondary1), ResourceID.fromResource(secondary2));
@@ -69,20 +68,20 @@ class TemporalPrimaryToSecondaryIndexTest {
 
   @Test
   void removingResourceFromIndex() {
-    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(secondary1);
-    temporalPrimaryToSecondaryIndex.explicitAddOrUpdate(secondary2);
-    temporalPrimaryToSecondaryIndex.cleanupForResource(secondary1);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary1);
+    primaryToSecondaryIndex.onAddOrUpdate(secondary2);
+    primaryToSecondaryIndex.onDelete(secondary1);
 
-    var secondaryResources1 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID1);
-    var secondaryResources2 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID2);
+    var secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
+    var secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
 
     assertThat(secondaryResources1).containsOnly(ResourceID.fromResource(secondary2));
     assertThat(secondaryResources2).containsOnly(ResourceID.fromResource(secondary2));
 
-    temporalPrimaryToSecondaryIndex.cleanupForResource(secondary2);
+    primaryToSecondaryIndex.onDelete(secondary2);
 
-    secondaryResources1 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID1);
-    secondaryResources2 = temporalPrimaryToSecondaryIndex.getSecondaryResources(primaryID2);
+    secondaryResources1 = primaryToSecondaryIndex.getSecondaryResources(primaryID1);
+    secondaryResources2 = primaryToSecondaryIndex.getSecondaryResources(primaryID2);
 
     assertThat(secondaryResources1).isEmpty();
     assertThat(secondaryResources2).isEmpty();
