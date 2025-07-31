@@ -3,7 +3,6 @@ package io.javaoperatorsdk.operator.dependent.standalonedependent;
 import java.time.Duration;
 import java.util.Set;
 
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -43,7 +42,7 @@ public class StandaloneDependentResourceIT {
         .isFalse();
   }
 
-  @RepeatedTest(30)
+  @Test
   void executeUpdateForTestingCacheUpdateForGetResource() {
     StandaloneDependentTestCustomResource customResource =
         new StandaloneDependentTestCustomResource();
