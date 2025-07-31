@@ -54,6 +54,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
   private final Map<Reconciler, RegisteredController> registeredControllers;
   private final Map<String, String> crdMappings;
+  private final Consumer<LocallyRunOperatorExtension> beforeStartHook;
 
   private LocallyRunOperatorExtension(
       List<ReconcilerSpec> reconcilers,
@@ -68,7 +69,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
-      List<String> additionalCrds) {
+      List<String> additionalCrds,
+      Consumer<LocallyRunOperatorExtension> beforeStartHook) {
     super(
         infrastructure,
         infrastructureTimeout,
@@ -82,6 +84,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
+    this.beforeStartHook = beforeStartHook;
     configurationServiceOverrider =
         configurationServiceOverrider != null
             ? configurationServiceOverrider.andThen(
@@ -298,6 +301,10 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         });
     crdMappings.clear();
 
+    if (beforeStartHook != null) {
+      beforeStartHook.accept(this);
+    }
+
     LOGGER.debug("Starting the operator locally");
     this.operator.start();
   }
@@ -356,6 +363,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<PortForwardSpec> portForwards;
     private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
     private final List<String> additionalCRDs = new ArrayList<>();
+    private Consumer<LocallyRunOperatorExtension> beforeStartHook;
     private KubernetesClient kubernetesClient;
 
     protected Builder() {
@@ -424,6 +432,15 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    /**
+     * Used to initialize resources when the namespace is generated but the operator is not started
+     * yet.
+     */
+    public Builder withBeforeStartHook(Consumer<LocallyRunOperatorExtension> beforeStartHook) {
+      this.beforeStartHook = beforeStartHook;
+      return this;
+    }
+
     public LocallyRunOperatorExtension build() {
       return new LocallyRunOperatorExtension(
           reconcilers,
@@ -438,7 +455,8 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           configurationServiceOverrider,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier,
-          additionalCRDs);
+          additionalCRDs,
+          beforeStartHook);
     }
   }
 

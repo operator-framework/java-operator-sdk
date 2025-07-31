@@ -57,7 +57,12 @@ class InformerEventSourceTest {
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
-    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration, clientMock);
+    informerEventSource =
+        new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
+          // mocking start
+          @Override
+          public synchronized void start() {}
+        };
 
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());
