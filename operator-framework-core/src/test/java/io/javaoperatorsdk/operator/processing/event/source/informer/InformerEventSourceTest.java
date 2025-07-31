@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -36,7 +35,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-@Disabled
 class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
@@ -59,7 +57,12 @@ class InformerEventSourceTest {
         .thenReturn(mock(SecondaryToPrimaryMapper.class));
     when(informerEventSourceConfiguration.getResourceClass()).thenReturn(Deployment.class);
 
-    informerEventSource = new InformerEventSource<>(informerEventSourceConfiguration, clientMock);
+    informerEventSource =
+        new InformerEventSource<>(informerEventSourceConfiguration, clientMock) {
+          // mocking start
+          @Override
+          public synchronized void start() {}
+        };
 
     var mockControllerConfig = mock(ControllerConfiguration.class);
     when(mockControllerConfig.getConfigurationService()).thenReturn(new BaseConfigurationService());

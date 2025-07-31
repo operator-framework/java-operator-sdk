@@ -160,6 +160,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public synchronized void start() {
     super.start();
+    // this makes sure that on first reconciliation all resources are
+    // present on the index
     manager().list().forEach(primaryToSecondaryIndex::onAddOrUpdate);
   }
 
