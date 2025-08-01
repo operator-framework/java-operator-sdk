@@ -33,6 +33,7 @@
     <module>operator-framework-junit5</module>
     <module>operator-framework</module>
     <module>micrometer-support</module>
+    <module>open-telemetry-support</module>
     <module>sample-operators</module>
     <module>caffeine-bounded-cache-support</module>
     <module>bootstrapper-maven-plugin</module>
@@ -68,6 +69,7 @@
     <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.20.0</commons.io.version>
     <java.diff.version>4.16</java.diff.version>
+    <opentelemetry.version>1.52.0</opentelemetry.version>
 
     <fmt-maven-plugin.version>2.11</fmt-maven-plugin.version>
     <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
