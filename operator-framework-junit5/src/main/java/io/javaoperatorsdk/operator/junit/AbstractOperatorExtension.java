@@ -111,6 +111,10 @@ public abstract class AbstractOperatorExtension
     return kubernetesClient.resource(resource).inNamespace(namespace).create();
   }
 
+  public <T extends HasMetadata> T serverSideApply(T resource) {
+    return kubernetesClient.resource(resource).inNamespace(namespace).serverSideApply();
+  }
+
   public <T extends HasMetadata> T replace(T resource) {
     return kubernetesClient.resource(resource).inNamespace(namespace).replace();
   }

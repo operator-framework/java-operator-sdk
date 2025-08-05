@@ -95,7 +95,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         parseResourceVersions);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
-    if (primaryToSecondaryMapper == null) {
+    if (useSecondaryToPrimaryIndex()) {
       primaryToSecondaryIndex =
           // The index uses the secondary to primary mapper (always present) to build the index
           new DefaultPrimaryToSecondaryIndex<>(configuration.getSecondaryToPrimaryMapper());
@@ -155,6 +155,14 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
     }
+  }
+
+  @Override
+  public synchronized void start() {
+    super.start();
+    // this makes sure that on first reconciliation all resources are
+    // present on the index
+    manager().list().forEach(primaryToSecondaryIndex::onAddOrUpdate);
   }
 
   private synchronized void onAddOrUpdate(
