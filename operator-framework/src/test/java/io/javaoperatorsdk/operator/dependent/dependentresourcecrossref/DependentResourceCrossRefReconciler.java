@@ -5,6 +5,9 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -26,6 +29,8 @@ import static io.javaoperatorsdk.operator.dependent.dependentresourcecrossref.De
 @ControllerConfiguration
 public class DependentResourceCrossRefReconciler
     implements Reconciler<DependentResourceCrossRefResource> {
+  private static final Logger log =
+      LoggerFactory.getLogger(DependentResourceCrossRefReconciler.class);
 
   public static final String SECRET_NAME = "secret";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
@@ -48,6 +53,7 @@ public class DependentResourceCrossRefReconciler
       DependentResourceCrossRefResource resource,
       Context<DependentResourceCrossRefResource> context,
       Exception e) {
+    log.error("Status update on error", e);
     errorHappened = true;
     return ErrorStatusUpdateControl.noStatusUpdate();
   }
