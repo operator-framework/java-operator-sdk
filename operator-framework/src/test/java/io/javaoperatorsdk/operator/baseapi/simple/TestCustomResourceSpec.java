@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.baseapi.simple;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.databind.JsonNode;
+
 public class TestCustomResourceSpec {
 
   private String configMapName;
@@ -7,6 +11,18 @@ public class TestCustomResourceSpec {
   private String key;
 
   private String value;
+
+  private JsonNode someValue;
+
+  @JsonAnyGetter
+  public JsonNode getSomeValue() {
+    return someValue;
+  }
+
+  @JsonAnySetter
+  public void setSomeValue(JsonNode value) {
+    this.someValue = value;
+  }
 
   public String getConfigMapName() {
     return configMapName;

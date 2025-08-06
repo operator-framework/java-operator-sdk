@@ -24,6 +24,7 @@ class ReconcilerExecutorIT {
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
+    //    resource.getSpec()
     operator.create(resource);
 
     awaitResourcesCreatedOrUpdated();
