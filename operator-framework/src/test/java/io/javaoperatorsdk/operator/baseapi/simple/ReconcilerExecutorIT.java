@@ -1,6 +1,7 @@
 package io.javaoperatorsdk.operator.baseapi.simple;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -24,8 +25,8 @@ class ReconcilerExecutorIT {
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    //    resource.getSpec()
-    operator.create(resource);
+    resource.getSpec().setSomeValue(Map.of("key1", Map.of("key2", "value2")));
+    var res = operator.create(resource);
 
     awaitResourcesCreatedOrUpdated();
     awaitStatusUpdated();
