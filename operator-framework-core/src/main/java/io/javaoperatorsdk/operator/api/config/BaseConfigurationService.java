@@ -147,14 +147,6 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     }
   }
 
-  @Override
-  protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
-    logger.warn(
-        "Configuration for reconciler '{}' was not found. {}",
-        reconcilerKey,
-        reconcilersNameMessage);
-  }
-
   @SuppressWarnings("unused")
   public String getLoggerName() {
     return LOGGER_NAME;

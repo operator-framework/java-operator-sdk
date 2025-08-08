@@ -113,20 +113,7 @@ public class AbstractConfigurationService implements ConfigurationService {
       Reconciler<R> reconciler) {
     final var key = keyFor(reconciler);
     final var configuration = configurations.get(key);
-    if (configuration == null) {
-      logMissingReconcilerWarning(key, getReconcilersNameMessage());
-    }
     return configuration;
-  }
-
-  protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
-    log.warn("Cannot find reconciler named '{}'. {}", reconcilerKey, reconcilersNameMessage);
-  }
-
-  private String getReconcilersNameMessage() {
-    return "Known reconcilers: "
-        + getKnownReconcilerNames().stream().reduce((s, s2) -> s + ", " + s2).orElse("None")
-        + ".";
   }
 
   protected <R extends HasMetadata> String keyFor(Reconciler<R> reconciler) {
