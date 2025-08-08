@@ -30,6 +30,12 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 
 import static io.javaoperatorsdk.operator.api.config.ControllerConfiguration.CONTROLLER_NAME_AS_FIELD_MANAGER;
 
+/**
+ * A default {@link ConfigurationService} implementation, resolving {@link Reconciler}s
+ * configuration when it has already been resolved before. If this behavior is not adequate, please
+ * use {@link AbstractConfigurationService} instead as a base for your {@code ConfigurationService}
+ * implementation.
+ */
 public class BaseConfigurationService extends AbstractConfigurationService {
 
   private static final String LOGGER_NAME = "Default ConfigurationService implementation";
@@ -149,10 +155,12 @@ public class BaseConfigurationService extends AbstractConfigurationService {
 
   @Override
   protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
-    logger.warn(
-        "Configuration for reconciler '{}' was not found. {}",
-        reconcilerKey,
-        reconcilersNameMessage);
+    if (!createIfNeeded()) {
+      logger.warn(
+          "Configuration for reconciler '{}' was not found. {}",
+          reconcilerKey,
+          reconcilersNameMessage);
+    }
   }
 
   @SuppressWarnings("unused")
@@ -318,6 +326,13 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         informerConfig);
   }
 
+  /**
+   * @deprecated This method was meant to allow subclasses to prevent automatic creation of the
+   *     configuration when not found. This functionality is now removed, if you want to be able to
+   *     prevent automated, on-demand creation of a reconciler's configuration, please use the
+   *     {@link AbstractConfigurationService} implementation instead as base for your extension.
+   */
+  @Deprecated(forRemoval = true)
   protected boolean createIfNeeded() {
     return true;
   }
