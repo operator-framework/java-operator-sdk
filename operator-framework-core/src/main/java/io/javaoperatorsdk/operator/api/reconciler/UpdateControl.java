@@ -21,8 +21,7 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
   }
 
   /**
-   * Preferred way to update the status. It does not do optimistic locking. Uses JSON Patch to patch
-   * the resource.
+   * Preferred way to update the status. Uses JSON Patch to patch the resource.
    *
    * <p>Note that this does not work, if the {@link CustomResource#initStatus()} is implemented,
    * since it breaks the diffing process. Don't implement it if using this method. There is also an
