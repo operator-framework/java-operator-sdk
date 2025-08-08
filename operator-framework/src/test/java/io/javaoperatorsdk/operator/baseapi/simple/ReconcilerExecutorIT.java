@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -22,10 +24,11 @@ class ReconcilerExecutorIT {
 
   @Test
   void configMapGetsCreatedForTestCustomResource() {
+    var om = new ObjectMapper();
     operator.getReconcilerOfType(TestReconciler.class).setUpdateStatus(true);
 
     TestCustomResource resource = TestUtils.testCustomResource();
-    resource.getSpec().setSomeValue(Map.of("key1", Map.of("key2", "value2")));
+    resource.getSpec().setSomeValue(om.valueToTree(Map.of("k", "v")));
     var res = operator.create(resource);
 
     awaitResourcesCreatedOrUpdated();

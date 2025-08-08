@@ -1,8 +1,6 @@
 package io.javaoperatorsdk.operator.baseapi.simple;
 
-import java.util.Map;
-
-import io.fabric8.crd.generator.annotation.PreserveUnknownFields;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class TestCustomResourceSpec {
 
@@ -12,13 +10,13 @@ public class TestCustomResourceSpec {
 
   private String value;
 
-  @PreserveUnknownFields private Map<String, Object> someValue;
+  private JsonNode someValue;
 
-  public Map<String, Object> getSomeValue() {
+  public JsonNode getSomeValue() {
     return someValue;
   }
 
-  public void setSomeValue(Map<String, Object> value) {
+  public void setSomeValue(JsonNode value) {
     this.someValue = value;
   }
 
