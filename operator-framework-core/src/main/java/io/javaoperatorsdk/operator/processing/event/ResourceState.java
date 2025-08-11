@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
@@ -29,6 +30,7 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
+  private HasMetadata lastKnownResource;
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -63,8 +65,9 @@ class ResourceState {
     this.underProcessing = underProcessing;
   }
 
-  public void markDeleteEventReceived() {
+  public void markDeleteEventReceived(HasMetadata lastKnownResource) {
     eventing = EventingState.DELETE_EVENT_PRESENT;
+    this.lastKnownResource = lastKnownResource;
   }
 
   public boolean deleteEventPresent() {
@@ -92,6 +95,10 @@ class ResourceState {
 
   public boolean noEventPresent() {
     return eventing == EventingState.NO_EVENT_PRESENT;
+  }
+
+  public HasMetadata getLastKnownResource() {
+    return lastKnownResource;
   }
 
   public void unMarkEventReceived() {
