@@ -8,6 +8,8 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
+import io.javaoperatorsdk.operator.TestUtils;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ResourceStateManagerTest {
@@ -42,7 +44,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void marksDeleteEvent() {
-    state.markDeleteEventReceived();
+    state.markDeleteEventReceived(TestUtils.testCustomResource());
 
     assertThat(state.deleteEventPresent()).isTrue();
     assertThat(state.eventPresent()).isFalse();
@@ -52,7 +54,7 @@ class ResourceStateManagerTest {
   public void afterDeleteEventMarkEventIsNotRelevant() {
     state.markEventReceived();
 
-    state.markDeleteEventReceived();
+    state.markDeleteEventReceived(TestUtils.testCustomResource());
 
     assertThat(state.deleteEventPresent()).isTrue();
     assertThat(state.eventPresent()).isFalse();
@@ -61,7 +63,7 @@ class ResourceStateManagerTest {
   @Test
   public void cleansUp() {
     state.markEventReceived();
-    state.markDeleteEventReceived();
+    state.markDeleteEventReceived(TestUtils.testCustomResource());
 
     manager.remove(sampleResourceID);
 
@@ -75,7 +77,7 @@ class ResourceStateManagerTest {
     Assertions.assertThrows(
         IllegalStateException.class,
         () -> {
-          state.markDeleteEventReceived();
+          state.markDeleteEventReceived(TestUtils.testCustomResource());
           state.markEventReceived();
         });
   }
