@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ControllerMode;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -130,7 +131,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private void handleMarkedEventForResource(ResourceState state) {
-    if (state.deleteEventPresent()) {
+    if (state.deleteEventPresent() && !isAllEventMode()) {
       cleanupForDeletedEvent(state.getId());
     } else if (!state.processedMarkForDeletionPresent()) {
       submitReconciliationExecution(state);
@@ -187,7 +188,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
         log.debug("Marking delete event received for: {}", relatedCustomResourceID);
-        state.markDeleteEventReceived();
+        state.markDeleteEventReceived(resourceEvent.getResource().orElseThrow());
       } else {
         if (state.processedMarkForDeletionPresent() && isResourceMarkedForDeletion(resourceEvent)) {
           log.debug(
@@ -508,5 +509,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   public synchronized boolean isRunning() {
     return running;
+  }
+
+  private boolean isAllEventMode() {
+    return controllerConfiguration.getMode() == ControllerMode.ALL_EVENT_MODE;
   }
 }
