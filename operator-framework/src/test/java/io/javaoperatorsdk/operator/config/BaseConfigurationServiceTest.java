@@ -82,13 +82,6 @@ class BaseConfigurationServiceTest {
   }
 
   @Test
-  void test() {
-    final var service = new BaseConfigurationService();
-    final var config = service.getConfigurationFor(new NoDepReconciler());
-    System.out.println(config);
-  }
-
-  @Test
   @SuppressWarnings({"rawtypes", "unchecked"})
   void getDependentResources() {
     var configuration = configFor(new NoDepReconciler());
