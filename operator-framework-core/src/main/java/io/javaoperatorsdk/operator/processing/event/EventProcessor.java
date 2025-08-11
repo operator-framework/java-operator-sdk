@@ -473,6 +473,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       try {
         var actualResource = cache.get(resourceID);
         if (actualResource.isEmpty()) {
+          if (isAllEventMode()) {
+            var state = resourceStateManager.get(resourceID);
+            actualResource =
+                (Optional<P>)
+                    state.filter(s -> s.deleteEventPresent()).map(s -> s.getLastKnownResource());
+          }
+
           log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
           return;
         }
@@ -512,6 +519,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private boolean isAllEventMode() {
-    return controllerConfiguration.getMode() == ControllerMode.ALL_EVENT_MODE;
+    return controllerConfiguration.getMode() == ControllerMode.RECONCILE_ALL_EVENT;
   }
 }
