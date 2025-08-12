@@ -38,7 +38,7 @@ jobs:
       matrix:
         java: [ 17, 21, 24 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
         with:
