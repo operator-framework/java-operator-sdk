@@ -17,7 +17,7 @@ jobs:
   check_format_and_unit_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Java and Maven
         uses: actions/setup-java@v4
         with:
