@@ -485,7 +485,6 @@ public interface ConfigurationService {
    *
    * @return if resource version should be parsed (as integer)
    * @since 4.5.0
-   * @return if resource version should be parsed (as integer)
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
     return false;
