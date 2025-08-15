@@ -239,7 +239,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       return;
     }
     ResourceID resourceID = executionScope.getResourceID();
-    final var state = resourceStateManager.getOrCreate(resourceID);
+    final var state = resourceStateManager.getOrThrow(resourceID);
     log.debug(
         "Event processing finished. Scope: {}, PostExecutionControl: {}",
         executionScope,
@@ -386,13 +386,13 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     log.debug(
         "Cleanup for successful execution for resource: {}", getName(executionScope.getResource()));
     if (isRetryConfigured()) {
-      resourceStateManager.getOrCreate(executionScope.getResourceID()).setRetry(null);
+      resourceStateManager.getOrThrow(executionScope.getResourceID()).setRetry(null);
     }
     retryEventSource().cancelOnceSchedule(executionScope.getResourceID());
   }
 
   private ResourceState getOrInitRetryExecution(ExecutionScope<P> executionScope) {
-    final var state = resourceStateManager.getOrCreate(executionScope.getResourceID());
+    final var state = resourceStateManager.getOrThrow(executionScope.getResourceID());
     RetryExecution retryExecution = state.getRetry();
     if (retryExecution == null) {
       retryExecution = retry.initExecution();
@@ -412,7 +412,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private void unsetUnderExecution(ResourceID resourceID) {
-    resourceStateManager.getOrCreate(resourceID).setUnderProcessing(false);
+    resourceStateManager.getOrThrow(resourceID).setUnderProcessing(false);
   }
 
   private boolean isRetryConfigured() {
@@ -438,7 +438,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   public boolean isNextReconciliationImminent(ResourceID resourceID) {
-    return resourceStateManager.getOrCreate(resourceID).eventPresent();
+    return resourceStateManager.getOrThrow(resourceID).eventPresent();
   }
 
   private void handleAlreadyMarkedEvents() {
@@ -503,7 +503,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   public synchronized boolean isUnderProcessing(ResourceID resourceID) {
-    return isControllerUnderExecution(resourceStateManager.getOrCreate(resourceID));
+    return isControllerUnderExecution(resourceStateManager.getOrThrow(resourceID));
   }
 
   public synchronized boolean isRunning() {

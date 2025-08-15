@@ -23,8 +23,8 @@ class ResourceStateManagerTest {
     manager.remove(sampleResourceID);
     manager.remove(sampleResourceID2);
 
-    state = manager.getOrCreate(sampleResourceID);
-    state2 = manager.getOrCreate(sampleResourceID2);
+    state = manager.getOrThrow(sampleResourceID);
+    state2 = manager.getOrThrow(sampleResourceID2);
   }
 
   @Test
@@ -65,7 +65,7 @@ class ResourceStateManagerTest {
 
     manager.remove(sampleResourceID);
 
-    state = manager.getOrCreate(sampleResourceID);
+    state = manager.getOrThrow(sampleResourceID);
     assertThat(state.deleteEventPresent()).isFalse();
     assertThat(state.eventPresent()).isFalse();
   }
@@ -108,7 +108,7 @@ class ResourceStateManagerTest {
 
   @Test
   void createsOnlyResourceEventReturnsPreviouslyCreatedState() {
-    manager.getOrCreate(new ResourceID("newEvent"));
+    manager.getOrThrow(new ResourceID("newEvent"));
 
     var res = manager.getOrCreateOnResourceEvent(new Event(new ResourceID("newEvent")));
     assertThat(res).isNotNull();

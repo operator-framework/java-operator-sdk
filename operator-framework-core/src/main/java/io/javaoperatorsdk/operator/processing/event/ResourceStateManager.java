@@ -29,8 +29,12 @@ class ResourceStateManager {
     }
   }
 
-  public ResourceState getOrCreate(ResourceID resourceID) {
-    return states.computeIfAbsent(resourceID, ResourceState::new);
+  public ResourceState getOrThrow(ResourceID resourceID) {
+    var state = states.get(resourceID);
+    if (state == null) {
+      throw new IllegalStateException("No state for resource id: " + resourceID);
+    }
+    return state;
   }
 
   public ResourceState remove(ResourceID resourceID) {
