@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
@@ -21,6 +22,8 @@ class ResourceState {
     PROCESSED_MARK_FOR_DELETION,
     /** Delete event present, from this point other events are not relevant */
     DELETE_EVENT_PRESENT,
+    // todo we probably need an additional state for the case when procesing delete event
+    // that fails we want to retry the delete event but meanwhile additional event is received
   }
 
   private final ResourceID id;
@@ -29,6 +32,8 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
+  private HasMetadata lastKnownResource;
+  private boolean isDeleteFinalStateUnknown;
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -63,8 +68,11 @@ class ResourceState {
     this.underProcessing = underProcessing;
   }
 
-  public void markDeleteEventReceived() {
+  public void markDeleteEventReceived(
+      HasMetadata lastKnownResource, boolean isDeleteFinalStateUnknown) {
     eventing = EventingState.DELETE_EVENT_PRESENT;
+    this.lastKnownResource = lastKnownResource;
+    this.isDeleteFinalStateUnknown = isDeleteFinalStateUnknown;
   }
 
   public boolean deleteEventPresent() {
@@ -92,6 +100,14 @@ class ResourceState {
 
   public boolean noEventPresent() {
     return eventing == EventingState.NO_EVENT_PRESENT;
+  }
+
+  public boolean isDeleteFinalStateUnknown() {
+    return isDeleteFinalStateUnknown;
+  }
+
+  public HasMetadata getLastKnownResource() {
+    return lastKnownResource;
   }
 
   public void unMarkEventReceived() {
