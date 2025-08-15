@@ -277,6 +277,30 @@ class EventProcessorTest {
   }
 
   @Test
+  void skipsGenericEventIfNoResourceEventReceivedBefore() {
+    var crID = new ResourceID("test-cr", TEST_NAMESPACE);
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfiguration(null, LinearRateLimiter.deactivatedRateLimiter()),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                metricsMock));
+
+    verify(reconciliationDispatcherMock, timeout(100).times(0)).handleExecution(any());
+
+    eventProcessor.start();
+    eventProcessor.handleEvent(new Event(crID));
+
+    await()
+        .pollDelay(Duration.ofMillis(100))
+        .untilAsserted(
+            () -> {
+              verify(reconciliationDispatcherMock, never()).handleExecution(any());
+            });
+  }
+
+  @Test
   void startProcessedMarkedEventReceivedBefore() {
     var crID = new ResourceID("test-cr", TEST_NAMESPACE);
     eventProcessor =
@@ -287,7 +311,7 @@ class EventProcessorTest {
                 eventSourceManagerMock,
                 metricsMock));
     when(controllerEventSourceMock.get(eq(crID))).thenReturn(Optional.of(testCustomResource()));
-    eventProcessor.handleEvent(new Event(crID));
+    eventProcessor.handleEvent(new ResourceEvent(ResourceAction.ADDED, crID, testCustomResource()));
 
     verify(reconciliationDispatcherMock, timeout(100).times(0)).handleExecution(any());
 
