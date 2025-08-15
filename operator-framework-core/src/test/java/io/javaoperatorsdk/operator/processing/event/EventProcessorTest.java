@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -24,6 +25,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -482,7 +484,9 @@ class EventProcessorTest {
                 null));
 
     eventProcessor.handleEvent(prepareCREvent(resourceID));
-    eventProcessor.handleEvent(new ResourceEvent(ResourceAction.DELETED, resourceID, null));
+    eventProcessor.handleEvent(
+        new ResourceDeleteEvent(
+            ResourceAction.DELETED, resourceID, TestUtils.testCustomResource(), true));
     eventProcessor.handleEvent(prepareCREvent(resourceID));
     // no exception thrown
   }

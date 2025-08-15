@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ControllerMode;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -24,6 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -131,7 +131,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private void handleMarkedEventForResource(ResourceState state) {
-    if (state.deleteEventPresent() && !isAllEventMode()) {
+    if (state.deleteEventPresent() && !controllerConfiguration.isAllEventReconcileMode()) {
       cleanupForDeletedEvent(state.getId());
     } else if (!state.processedMarkForDeletionPresent()) {
       submitReconciliationExecution(state);
@@ -188,7 +188,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
         log.debug("Marking delete event received for: {}", relatedCustomResourceID);
-        state.markDeleteEventReceived(resourceEvent.getResource().orElseThrow());
+        state.markDeleteEventReceived(
+            resourceEvent.getResource().orElseThrow(),
+            ((ResourceDeleteEvent) resourceEvent).isDeletedFinalStateUnknown());
       } else {
         if (state.processedMarkForDeletionPresent() && isResourceMarkedForDeletion(resourceEvent)) {
           log.debug(
@@ -260,7 +262,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
     cleanupOnSuccessfulExecution(executionScope);
     metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
-    if (state.deleteEventPresent()) {
+    if ((controllerConfiguration.isAllEventReconcileMode() && executionScope.isDeleteEvent())
+        || (!controllerConfiguration.isAllEventReconcileMode() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
       state.markProcessedMarkForDeletion();
@@ -459,6 +462,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run() {
       if (!running) {
         // this is needed for the case when controller stopped, but there is a graceful shutdown
@@ -473,15 +477,26 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       try {
         var actualResource = cache.get(resourceID);
         if (actualResource.isEmpty()) {
-          if (isAllEventMode()) {
+          if (controllerConfiguration.isAllEventReconcileMode()) {
+            log.debug(
+                "Resource not found in the cache, checking for delete event resource: {}",
+                resourceID);
             var state = resourceStateManager.get(resourceID);
             actualResource =
                 (Optional<P>)
-                    state.filter(s -> s.deleteEventPresent()).map(s -> s.getLastKnownResource());
+                    state
+                        .filter(ResourceState::deleteEventPresent)
+                        .map(ResourceState::getLastKnownResource);
+            if (actualResource.isEmpty()) {
+              log.debug(
+                  "Skipping execution; delete event resource not found in state: {}", resourceID);
+              return;
+            }
+            executionScope.setDeleteEvent(true);
+          } else {
+            log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
+            return;
           }
-
-          log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
-          return;
         }
         actualResource.ifPresent(executionScope::setResource);
         MDCUtils.addResourceInfo(executionScope.getResource());
@@ -516,9 +531,5 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   public synchronized boolean isRunning() {
     return running;
-  }
-
-  private boolean isAllEventMode() {
-    return controllerConfiguration.getMode() == ControllerMode.RECONCILE_ALL_EVENT;
   }
 }

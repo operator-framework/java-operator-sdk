@@ -30,6 +30,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final ConfigurationService configurationService;
   private final String fieldManager;
   private WorkflowSpec workflowSpec;
+  private ControllerMode controllerMode;
 
   public ResolvedControllerConfiguration(ControllerConfiguration<P> other) {
     this(
@@ -44,6 +45,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.fieldManager(),
         other.getConfigurationService(),
         other.getInformerConfig(),
+        other.getControllerMode(),
         other.getWorkflowSpec().orElse(null));
   }
 
@@ -59,6 +61,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       String fieldManager,
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
+      ControllerMode controllerMode,
       WorkflowSpec workflowSpec) {
     this(
         name,
@@ -71,7 +74,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         configurations,
         fieldManager,
         configurationService,
-        informerConfig);
+        informerConfig,
+        controllerMode);
     setWorkflowSpec(workflowSpec);
   }
 
@@ -86,7 +90,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
       ConfigurationService configurationService,
-      InformerConfiguration<P> informerConfig) {
+      InformerConfiguration<P> informerConfig,
+      ControllerMode controllerMode) {
     this.informerConfig = informerConfig;
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
@@ -99,6 +104,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.finalizer =
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
     this.fieldManager = fieldManager;
+    this.controllerMode = controllerMode;
   }
 
   protected ResolvedControllerConfiguration(
@@ -117,7 +123,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         null,
         null,
         configurationService,
-        InformerConfiguration.builder(resourceClass).buildForController());
+        InformerConfiguration.builder(resourceClass).buildForController(),
+        null);
   }
 
   @Override
@@ -206,5 +213,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public String fieldManager() {
     return fieldManager;
+  }
+
+  @Override
+  public ControllerMode getControllerMode() {
+    return controllerMode;
   }
 }

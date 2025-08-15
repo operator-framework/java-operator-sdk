@@ -81,7 +81,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         originalResource.getMetadata().getNamespace());
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
-    if (markedForDeletion && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
+    if (!configuration().isAllEventReconcileMode()
+        && markedForDeletion
+        && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
       log.debug(
           "Skipping cleanup of resource {} because finalizer(s) {} don't allow processing yet",
           getName(originalResource),
@@ -90,8 +92,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     Context<P> context =
-        new DefaultContext<>(executionScope.getRetryInfo(), controller, resourceForExecution);
-    if (markedForDeletion) {
+        new DefaultContext<>(
+            executionScope.getRetryInfo(),
+            controller,
+            resourceForExecution,
+            executionScope.isDeleteEvent(),
+            executionScope.isDeleteFinalStateUnknown());
+    if (markedForDeletion && !configuration().isAllEventReconcileMode()) {
       return handleCleanup(resourceForExecution, originalResource, context);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
@@ -110,7 +117,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       P originalResource,
       Context<P> context)
       throws Exception {
-    if (controller.useFinalizer()
+    if (!configuration().isAllEventReconcileMode()
+        && controller.useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.

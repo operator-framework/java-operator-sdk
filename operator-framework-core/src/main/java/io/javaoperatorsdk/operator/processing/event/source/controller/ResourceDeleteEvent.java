@@ -15,4 +15,8 @@ public class ResourceDeleteEvent extends ResourceEvent {
     super(action, resourceID, resource);
     this.deletedFinalStateUnknown = deletedFinalStateUnknown;
   }
+
+  public boolean isDeletedFinalStateUnknown() {
+    return deletedFinalStateUnknown;
+  }
 }
