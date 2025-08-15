@@ -208,7 +208,8 @@ class ControllerEventSourceTest
               .withOnAddFilter(onAddFilter)
               .withOnUpdateFilter(onUpdateFilter)
               .withGenericFilter(genericFilter)
-              .buildForController());
+              .buildForController(),
+          null);
     }
   }
 }

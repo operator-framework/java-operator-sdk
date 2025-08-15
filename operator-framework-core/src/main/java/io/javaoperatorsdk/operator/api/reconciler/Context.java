@@ -72,4 +72,8 @@ public interface Context<P extends HasMetadata> {
    * @return {@code true} is another reconciliation is already scheduled, {@code false} otherwise
    */
   boolean isNextReconciliationImminent();
+
+  boolean isDeleteEventPresent();
+
+  boolean isDeleteFinalStateUnknown();
 }

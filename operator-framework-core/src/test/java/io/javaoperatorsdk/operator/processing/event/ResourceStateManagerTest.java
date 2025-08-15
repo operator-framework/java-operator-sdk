@@ -44,7 +44,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void marksDeleteEvent() {
-    state.markDeleteEventReceived(TestUtils.testCustomResource());
+    state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     assertThat(state.deleteEventPresent()).isTrue();
     assertThat(state.eventPresent()).isFalse();
@@ -54,7 +54,7 @@ class ResourceStateManagerTest {
   public void afterDeleteEventMarkEventIsNotRelevant() {
     state.markEventReceived();
 
-    state.markDeleteEventReceived(TestUtils.testCustomResource());
+    state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     assertThat(state.deleteEventPresent()).isTrue();
     assertThat(state.eventPresent()).isFalse();
@@ -63,7 +63,7 @@ class ResourceStateManagerTest {
   @Test
   public void cleansUp() {
     state.markEventReceived();
-    state.markDeleteEventReceived(TestUtils.testCustomResource());
+    state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     manager.remove(sampleResourceID);
 
@@ -77,7 +77,7 @@ class ResourceStateManagerTest {
     Assertions.assertThrows(
         IllegalStateException.class,
         () -> {
-          state.markDeleteEventReceived(TestUtils.testCustomResource());
+          state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
           state.markEventReceived();
         });
   }

@@ -31,6 +31,7 @@ class ResourceState {
   private EventingState eventing;
   private RateLimitState rateLimit;
   private HasMetadata lastKnownResource;
+  private boolean isDeleteFinalStateUnknown;
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -65,9 +66,11 @@ class ResourceState {
     this.underProcessing = underProcessing;
   }
 
-  public void markDeleteEventReceived(HasMetadata lastKnownResource) {
+  public void markDeleteEventReceived(
+      HasMetadata lastKnownResource, boolean isDeleteFinalStateUnknown) {
     eventing = EventingState.DELETE_EVENT_PRESENT;
     this.lastKnownResource = lastKnownResource;
+    this.isDeleteFinalStateUnknown = isDeleteFinalStateUnknown;
   }
 
   public boolean deleteEventPresent() {
@@ -95,6 +98,10 @@ class ResourceState {
 
   public boolean noEventPresent() {
     return eventing == EventingState.NO_EVENT_PRESENT;
+  }
+
+  public boolean isDeleteFinalStateUnknown() {
+    return isDeleteFinalStateUnknown;
   }
 
   public HasMetadata getLastKnownResource() {
