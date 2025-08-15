@@ -255,7 +255,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     // Either way we don't want to retry.
     if (isRetryConfigured()
         && postExecutionControl.exceptionDuringExecution()
-        && !state.deleteEventPresent()) {
+        && (!state.deleteEventPresent() || controllerConfiguration.isAllEventReconcileMode())) {
       handleRetryOnException(
           executionScope, postExecutionControl.getRuntimeException().orElseThrow());
       return;
