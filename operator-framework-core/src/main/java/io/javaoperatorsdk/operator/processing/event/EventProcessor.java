@@ -102,8 +102,16 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     try {
       log.debug("Received event: {}", event);
 
+      final var optionalState = resourceStateManager.getOrCreateOnResourceEvent(event);
+      if (optionalState.isEmpty()) {
+        log.debug(
+            "Skipping event, since no state present and it is not a resource event. Resource ID:"
+                + " {}",
+            event.getRelatedCustomResourceID());
+        return;
+      }
+      var state = optionalState.orElseThrow();
       final var resourceID = event.getRelatedCustomResourceID();
-      final var state = resourceStateManager.getOrCreate(event.getRelatedCustomResourceID());
       MDCUtils.addResourceIDInfo(resourceID);
       metrics.receivedEvent(event, metricsMetadata);
       handleEventMarking(event, state);
