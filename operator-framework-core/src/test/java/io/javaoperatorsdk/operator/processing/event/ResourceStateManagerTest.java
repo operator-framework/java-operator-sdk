@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ResourceStateManagerTest {
@@ -86,5 +90,27 @@ class ResourceStateManagerTest {
 
     assertThat(res).hasSize(1);
     assertThat(res.get(0).getId()).isEqualTo(sampleResourceID2);
+  }
+
+  @Test
+  void createStateOnlyOnResourceEvent() {
+    var state = manager.getOrCreateOnResourceEvent(new Event(new ResourceID("newEvent")));
+
+    assertThat(state).isEmpty();
+
+    state =
+        manager.getOrCreateOnResourceEvent(
+            new ResourceEvent(
+                ResourceAction.ADDED, new ResourceID("newEvent"), TestUtils.testCustomResource()));
+
+    assertThat(state).isNotNull();
+  }
+
+  @Test
+  void createsOnlyResourceEventReturnsPreviouslyCreatedState() {
+    manager.getOrCreate(new ResourceID("newEvent"));
+
+    var res = manager.getOrCreateOnResourceEvent(new Event(new ResourceID("newEvent")));
+    assertThat(res).isNotNull();
   }
 }
