@@ -368,35 +368,34 @@ class InformerRelatedBehaviorITS {
   }
 
   private void setNoConfigMapAccess() {
-    applyClusterRole("rback-test-no-configmap-access.yaml");
+    applyClusterRole("rbac-test-no-configmap-access.yaml");
     applyClusterRoleBinding();
   }
 
   private void setNoCustomResourceAccess() {
-    applyClusterRole("rback-test-no-cr-access.yaml");
+    applyClusterRole("rbac-test-no-cr-access.yaml");
     applyClusterRoleBinding();
   }
 
   private void setFullResourcesAccess() {
-    applyClusterRole("rback-test-full-access-role.yaml");
+    applyClusterRole("rbac-test-full-access-role.yaml");
     applyClusterRoleBinding();
   }
 
   private void addRoleBindingsToTestNamespaces() {
     var role =
-        ReconcilerUtils.loadYaml(
-            Role.class, this.getClass(), "rback-test-only-main-ns-access.yaml");
+        ReconcilerUtils.loadYaml(Role.class, this.getClass(), "rbac-test-only-main-ns-access.yaml");
     adminClient.resource(role).inNamespace(actualNamespace).createOrReplace();
     var roleBinding =
         ReconcilerUtils.loadYaml(
-            RoleBinding.class, this.getClass(), "rback-test-only-main-ns-access-binding.yaml");
+            RoleBinding.class, this.getClass(), "rbac-test-only-main-ns-access-binding.yaml");
     adminClient.resource(roleBinding).inNamespace(actualNamespace).createOrReplace();
   }
 
   private void applyClusterRoleBinding() {
     var clusterRoleBinding =
         ReconcilerUtils.loadYaml(
-            ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+            ClusterRoleBinding.class, this.getClass(), "rbac-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).createOrReplace();
   }
 
@@ -418,7 +417,7 @@ class InformerRelatedBehaviorITS {
   private void removeClusterRoleBinding() {
     var clusterRoleBinding =
         ReconcilerUtils.loadYaml(
-            ClusterRoleBinding.class, this.getClass(), "rback-test-role-binding.yaml");
+            ClusterRoleBinding.class, this.getClass(), "rbac-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).delete();
   }
 }
