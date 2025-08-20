@@ -55,7 +55,7 @@ explicitly to the Operator constructor, it is now recommended to provide that va
 ## Using Server-Side Apply in Dependent Resources
 
 From this version by
-default [Dependent Resources](https://javaoperatorsdk.io/docs/dependent-resources) use
+default [Dependent Resources](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/dependent-resources/) use
 [Server Side Apply (SSA)](https://kubernetes.io/docs/reference/using-api/server-side-apply/) to
 create and
 update Kubernetes resources. A

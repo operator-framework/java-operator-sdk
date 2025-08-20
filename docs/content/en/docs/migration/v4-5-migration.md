@@ -5,7 +5,7 @@ permalink: /docs/v4-5-migration
 ---
 
 Version 4.5 introduces improvements related to event handling for Dependent Resources, more precisely the
-[caching and event handling](https://javaoperatorsdk.io/docs/dependent-resources#caching-and-event-handling-in-kubernetesdependentresource)
+[caching and event handling](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/dependent-resources/#caching-and-event-handling-in-kubernetesdependentresource)
 features. As a result the Kubernetes resources managed using
 [KubernetesDependentResource](https://github.com/java-operator-sdk/java-operator-sdk/blob/73b1d8db926a24502c3a70da34f6bcac4f66b4eb/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java#L72-L72)
 or its subclasses, will add an annotation recording the resource's version whenever JOSDK updates or creates such

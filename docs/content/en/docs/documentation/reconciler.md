@@ -138,7 +138,7 @@ Kubernetes [garbage collection](https://kubernetes.io/docs/concepts/architecture
 mechanism as much as possible by setting owner references for your secondary resources so that
 the cluster can automatically delete them for you whenever the associated primary resource is
 deleted. Note that setting owner references is the responsibility of the `Reconciler`
-implementation, though [dependent resources](https://javaoperatorsdk.io/docs/dependent-resources)
+implementation, though [dependent resources](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/dependent-resources/)
 make that process easier.
 
 If you do need to clean such a state, you need to use finalizers so that their

@@ -12,12 +12,12 @@ depends on the state of other resources or cannot be processed until these other
 a given state or some condition holds true for them. Dealing with such scenarios are therefore
 rather common for operators and the purpose of the workflow feature of the Java Operator SDK
 (JOSDK) is to simplify supporting such cases in a declarative way. Workflows build on top of the
-[dependent resources](https://javaoperatorsdk.io/docs/dependent-resources) feature.
+[dependent resources](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/dependent-resources/) feature.
 While dependent resources focus on how a given secondary resource should be reconciled,
 workflows focus on orchestrating how these dependent resources should be reconciled.
 
 Workflows describe how as a set of
-[dependent resources](https://javaoperatorsdk.io/docs/dependent-resources) (DR) depend on one
+[dependent resources](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/dependent-resources/) (DR) depend on one
 another, along with the conditions that need to hold true at certain stages of the
 reconciliation process.
 
@@ -135,7 +135,7 @@ public class SampleWorkflowReconciler implements Reconciler<WorkflowAllFeatureCu
 ### Standalone
 
 In this mode workflow is built manually
-using [standalone dependent resources](https://javaoperatorsdk.io/docs/dependent-resources#standalone-dependent-resources)
+using [standalone dependent resources](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/dependent-resources/#standalone-dependent-resources)
 . The workflow is created using a builder, that is explicitly called in the reconciler (from web
 page sample):
 
@@ -194,7 +194,7 @@ public class WebPageDependentsWorkflowReconciler
 This section describes how a workflow is executed in details, how the ordering is determined and
 how conditions and errors affect the behavior. The workflow execution is divided in two parts
 similarly to how `Reconciler` and `Cleaner` behavior are separated.
-[Cleanup](https://javaoperatorsdk.io/docs/features#the-reconcile-and-cleanup) is
+[Cleanup](https://javaoperatorsdk.io/docs/documentation/reconciler/#implementing-a-reconciler-and-cleaner-interfaces) is
 executed if a resource is marked for deletion.
 
 ## Common Principles

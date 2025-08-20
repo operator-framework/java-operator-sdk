@@ -13,7 +13,7 @@ renamed accordingly.
 
 Version 3.1 comes with a workflow engine that replaces the previous behavior of managed dependent
 resources.
-See [Workflows documentation](https://javaoperatorsdk.io/docs/workflows) for further details.
+See [Workflows documentation](https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/workflows/) for further details.
 The primary impact after upgrade is a change of the order in which managed dependent resources
 are reconciled. They are now reconciled in parallel with optional ordering defined using the
 ['depends_on'](https://github.com/java-operator-sdk/java-operator-sdk/blob/df44917ef81725c10bbcb772ab7b434d511b13b9/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/dependent/Dependent.java#L23-L23)
