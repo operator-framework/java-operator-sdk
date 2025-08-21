@@ -131,7 +131,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private void handleMarkedEventForResource(ResourceState state) {
-    if (state.deleteEventPresent() && !controllerConfiguration.isAllEventReconcileMode()) {
+    if (state.deleteEventPresent() && !isAllEventMode()) {
       cleanupForDeletedEvent(state.getId());
     } else if (!state.processedMarkForDeletionPresent()) {
       submitReconciliationExecution(state);
@@ -158,7 +158,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         state.setUnderProcessing(true);
         final var latest = maybeLatest.get();
         ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
-        state.unMarkEventReceived(controllerConfiguration.isAllEventReconcileMode());
+        state.unMarkEventReceived(isAllEventMode());
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
@@ -209,7 +209,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
       state.markEventReceived();
-    } else if (controllerConfiguration.isAllEventReconcileMode() && state.deleteEventPresent()) {
+    } else if (isAllEventMode() && state.deleteEventPresent()) {
       state.markAdditionalEventAfterDeleteEvent();
     } else if (log.isDebugEnabled()) {
       log.debug(
@@ -252,15 +252,15 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     // Either way we don't want to retry.
     if (isRetryConfigured()
         && postExecutionControl.exceptionDuringExecution()
-        && (!state.deleteEventPresent() || controllerConfiguration.isAllEventReconcileMode())) {
+        && (!state.deleteEventPresent() || isAllEventMode())) {
       handleRetryOnException(
           executionScope, postExecutionControl.getRuntimeException().orElseThrow());
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
     metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
-    if ((controllerConfiguration.isAllEventReconcileMode() && executionScope.isDeleteEvent())
-        || (!controllerConfiguration.isAllEventReconcileMode() && state.deleteEventPresent())) {
+    if ((isAllEventMode() && executionScope.isDeleteEvent())
+        || (!isAllEventMode() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
       state.markProcessedMarkForDeletion();
@@ -329,7 +329,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void handleRetryOnException(ExecutionScope<P> executionScope, Exception exception) {
     final var state = getOrInitRetryExecution(executionScope);
     var resourceID = state.getId();
-    boolean eventPresent = state.eventPresent();
+    boolean eventPresent =
+        state.eventPresent()
+            || (isAllEventMode() && state.isAdditionalEventPresentAfterDeleteEvent());
     state.markEventReceived();
 
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
@@ -474,7 +476,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       try {
         var actualResource = cache.get(resourceID);
         if (actualResource.isEmpty()) {
-          if (controllerConfiguration.isAllEventReconcileMode()) {
+          if (isAllEventMode()) {
             log.debug(
                 "Resource not found in the cache, checking for delete event resource: {}",
                 resourceID);
@@ -528,5 +530,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   public synchronized boolean isRunning() {
     return running;
+  }
+
+  // shortening
+  private boolean isAllEventMode() {
+    return controllerConfiguration.isAllEventReconcileMode();
   }
 }
