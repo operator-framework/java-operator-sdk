@@ -304,7 +304,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     final var dependentFieldManager =
         fieldManager.equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name : fieldManager;
 
-    var controllerMode = annotation == null ? ControllerMode.DEFAULT : annotation.controllerMode();
+    var controllerMode = annotation == null ? ControllerMode.DEFAULT : annotation.mode();
 
     InformerConfiguration<P> informerConfig =
         InformerConfiguration.builder(resourceClass)
