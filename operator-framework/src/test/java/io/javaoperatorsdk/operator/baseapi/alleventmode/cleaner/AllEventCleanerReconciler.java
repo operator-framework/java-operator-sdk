@@ -19,7 +19,7 @@ public class AllEventCleanerReconciler extends AbstractAllEventReconciler
 
     increaseEventCount();
     if (!resource.isMarkedForDeletion()) {
-      setResourceEvent(true);
+      setResourceEventPresent(true);
     }
 
     if (!resource.hasFinalizer(FINALIZER)) {
@@ -46,7 +46,7 @@ public class AllEventCleanerReconciler extends AbstractAllEventReconciler
     }
 
     if (context.isDeleteEventPresent()) {
-      setDeleteEvent(true);
+      setDeleteEventPresent(true);
     }
     // todo handle this document
     return DeleteControl.defaultDelete();

@@ -18,10 +18,10 @@ public class AllEventReconciler extends AbstractAllEventReconciler
     increaseEventCount();
 
     if (!resource.isMarkedForDeletion()) {
-      setResourceEvent(true);
+      setResourceEventPresent(true);
     }
 
-    if (!resource.hasFinalizer(FINALIZER)) {
+    if (getUseFinalizer() && !resource.hasFinalizer(FINALIZER)) {
       resource.addFinalizer(FINALIZER);
       context.getClient().resource(resource).update();
       return UpdateControl.noUpdate();
@@ -29,14 +29,21 @@ public class AllEventReconciler extends AbstractAllEventReconciler
 
     if (resource.isMarkedForDeletion() && !context.isDeleteEventPresent()) {
       setEventOnMarkedForDeletion(true);
-      if (resource.hasFinalizer(FINALIZER)) {
+      if (getUseFinalizer() && resource.hasFinalizer(FINALIZER)) {
         resource.removeFinalizer(FINALIZER);
         context.getClient().resource(resource).update();
       }
     }
 
+    if (context.isDeleteEventPresent()
+        && isFirstDeleteEvent()
+        && isThrowExceptionOnFirstDeleteEvent()) {
+      isFirstDeleteEvent = false;
+      throw new RuntimeException("On purpose exception");
+    }
+
     if (context.isDeleteEventPresent()) {
-      setDeleteEvent(true);
+      setDeleteEventPresent(true);
     }
 
     return UpdateControl.noUpdate();

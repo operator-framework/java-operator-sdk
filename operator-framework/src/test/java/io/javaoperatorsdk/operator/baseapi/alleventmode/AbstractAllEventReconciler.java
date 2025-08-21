@@ -7,25 +7,30 @@ public class AbstractAllEventReconciler {
   public static final String FINALIZER = "all.event.mode/finalizer";
   public static final String ADDITIONAL_FINALIZER = "all.event.mode/finalizer2";
 
-  private boolean resourceEvent = false;
-  private boolean deleteEvent = false;
+  protected volatile boolean useFinalizer = true;
+  protected volatile boolean throwExceptionOnFirstDeleteEvent = false;
+  protected volatile boolean isFirstDeleteEvent = true;
+
+  private boolean resourceEventPresent = false;
+  private boolean deleteEventPresent = false;
   private boolean eventOnMarkedForDeletion = false;
-  private AtomicInteger eventCounter = new AtomicInteger(0);
 
-  public boolean isResourceEvent() {
-    return resourceEvent;
+  private final AtomicInteger eventCounter = new AtomicInteger(0);
+
+  public boolean isResourceEventPresent() {
+    return resourceEventPresent;
   }
 
-  public void setResourceEvent(boolean resourceEvent) {
-    this.resourceEvent = resourceEvent;
+  public void setResourceEventPresent(boolean resourceEventPresent) {
+    this.resourceEventPresent = resourceEventPresent;
   }
 
-  public boolean isDeleteEvent() {
-    return deleteEvent;
+  public boolean isDeleteEventPresent() {
+    return deleteEventPresent;
   }
 
-  public void setDeleteEvent(boolean deleteEvent) {
-    this.deleteEvent = deleteEvent;
+  public void setDeleteEventPresent(boolean deleteEventPresent) {
+    this.deleteEventPresent = deleteEventPresent;
   }
 
   public boolean isEventOnMarkedForDeletion() {
@@ -42,5 +47,29 @@ public class AbstractAllEventReconciler {
 
   public void increaseEventCount() {
     eventCounter.incrementAndGet();
+  }
+
+  public boolean getUseFinalizer() {
+    return useFinalizer;
+  }
+
+  public void setUseFinalizer(boolean useFinalizer) {
+    this.useFinalizer = useFinalizer;
+  }
+
+  public boolean isFirstDeleteEvent() {
+    return isFirstDeleteEvent;
+  }
+
+  public void setFirstDeleteEvent(boolean firstDeleteEvent) {
+    isFirstDeleteEvent = firstDeleteEvent;
+  }
+
+  public boolean isThrowExceptionOnFirstDeleteEvent() {
+    return throwExceptionOnFirstDeleteEvent;
+  }
+
+  public void setThrowExceptionOnFirstDeleteEvent(boolean throwExceptionOnFirstDeleteEvent) {
+    this.throwExceptionOnFirstDeleteEvent = throwExceptionOnFirstDeleteEvent;
   }
 }
