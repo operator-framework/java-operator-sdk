@@ -18,6 +18,7 @@ public class AllEventCleanerIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new AllEventCleanerReconciler()).build();
 
+  // todo delete event without finalizer
   @Test
   void eventsPresent() {
     var reconciler = extension.getReconcilerOfType(AllEventCleanerReconciler.class);
@@ -26,7 +27,7 @@ public class AllEventCleanerIT {
     await()
         .untilAsserted(
             () -> {
-              assertThat(reconciler.isResourceEvent()).isTrue();
+              assertThat(reconciler.isResourceEventPresent()).isTrue();
               assertThat(getResource().hasFinalizer(FINALIZER)).isTrue();
             });
 
@@ -37,7 +38,7 @@ public class AllEventCleanerIT {
             () -> {
               var r = getResource();
               assertThat(r).isNull();
-              assertThat(reconciler.isDeleteEvent()).isTrue();
+              assertThat(reconciler.isDeleteEventPresent()).isTrue();
               assertThat(reconciler.isEventOnMarkedForDeletion()).isTrue();
             });
   }
