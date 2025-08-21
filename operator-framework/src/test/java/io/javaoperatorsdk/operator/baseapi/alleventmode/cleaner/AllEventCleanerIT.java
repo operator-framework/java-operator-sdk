@@ -4,8 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile.AllEventCustomResource;
-import io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile.AllEventReconciler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.alleventmode.AbstractAllEventReconciler.FINALIZER;
@@ -22,7 +20,7 @@ public class AllEventCleanerIT {
 
   @Test
   void eventsPresent() {
-    var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
+    var reconciler = extension.getReconcilerOfType(AllEventCleanerReconciler.class);
     extension.serverSideApply(testResource());
 
     await()
@@ -44,12 +42,12 @@ public class AllEventCleanerIT {
             });
   }
 
-  AllEventCustomResource getResource() {
-    return extension.get(AllEventCustomResource.class, TEST);
+  AllEventCleanerCustomResource getResource() {
+    return extension.get(AllEventCleanerCustomResource.class, TEST);
   }
 
-  AllEventCustomResource testResource() {
-    var res = new AllEventCustomResource();
+  AllEventCleanerCustomResource testResource() {
+    var res = new AllEventCleanerCustomResource();
     res.setMetadata(new ObjectMetaBuilder().withName(TEST).build());
     return res;
   }

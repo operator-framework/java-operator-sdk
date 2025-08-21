@@ -8,6 +8,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("sample.javaoperatorsdk")
 @Version("v1")
-@ShortNames("aeccs")
+@ShortNames("eccs")
 public class AllEventCleanerCustomResource extends CustomResource<AllEventCleanerSpec, Void>
     implements Namespaced {}
