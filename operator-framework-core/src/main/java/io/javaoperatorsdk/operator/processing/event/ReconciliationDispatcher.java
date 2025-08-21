@@ -98,7 +98,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             resourceForExecution,
             executionScope.isDeleteEvent(),
             executionScope.isDeleteFinalStateUnknown());
-    if (markedForDeletion && !configuration().isAllEventReconcileMode()) {
+
+    // checking the cleaner for all-event-mode
+    if (markedForDeletion && controller.isCleaner()) {
       return handleCleanup(resourceForExecution, originalResource, context);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);

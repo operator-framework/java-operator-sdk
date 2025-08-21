@@ -486,4 +486,8 @@ public class Controller<P extends HasMetadata>
     return managedWorkflow.getDependentResourcesByName().values().stream()
         .anyMatch(d -> d.resourceType().equals(clazz));
   }
+
+  public boolean isCleaner() {
+    return isCleaner;
+  }
 }

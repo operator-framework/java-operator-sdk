@@ -82,7 +82,7 @@ class ResourceStateManagerTest {
   public void listsResourceIDSWithEventsPresent() {
     state.markEventReceived();
     state2.markEventReceived();
-    state.unMarkEventReceived();
+    state.unMarkEventReceived(false);
 
     var res = manager.resourcesWithEventPresent();
 
