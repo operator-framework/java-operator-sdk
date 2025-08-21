@@ -45,7 +45,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.fieldManager(),
         other.getConfigurationService(),
         other.getInformerConfig(),
-        other.getControllerMode(),
+        other.mode(),
         other.getWorkflowSpec().orElse(null));
   }
 
@@ -216,7 +216,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public ControllerMode getControllerMode() {
+  public ControllerMode mode() {
     return controllerMode;
   }
 }

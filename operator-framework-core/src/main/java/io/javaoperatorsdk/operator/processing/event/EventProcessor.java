@@ -144,7 +144,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       final var resourceID = state.getId();
       Optional<P> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
-      if (!controllerUnderExecution && maybeLatest.isPresent()) {
+      if (!controllerUnderExecution
+          && (maybeLatest.isPresent() || (isAllEventMode() && state.deleteEventPresent()))) {
         var rateLimit = state.getRateLimit();
         if (rateLimit == null) {
           rateLimit = rateLimiter.initState();
@@ -156,7 +157,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           return;
         }
         state.setUnderProcessing(true);
-        final var latest = maybeLatest.get();
+        final var latest = maybeLatest.orElseGet(() -> getResourceFromState(state));
         ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
         state.unMarkEventReceived(isAllEventMode());
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
@@ -180,6 +181,17 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       }
     } finally {
       MDCUtils.removeResourceInfo();
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private P getResourceFromState(ResourceState state) {
+    if (isAllEventMode()) {
+      log.debug("Getting resource from state for {}", state.getId());
+      return (P) state.getLastKnownResource();
+    } else {
+      throw new IllegalStateException(
+          "No resource found, this indicates issue with implementation.");
     }
   }
 
@@ -266,7 +278,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       state.markProcessedMarkForDeletion();
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
-      if (state.eventPresent()) {
+      if (state.eventPresent() || (isAllEventMode() && state.deleteEventPresent())) {
         submitReconciliationExecution(state);
       } else {
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
