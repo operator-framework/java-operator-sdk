@@ -176,4 +176,15 @@ public class Mappers {
       return Mappers.fromDefaultAnnotations(primaryResourceType).toPrimaryResourceIDs(resource);
     }
   }
+
+  /**
+   * The purpose of this mapper is to cover the cover case, when you don't want to be notified about
+   * changes of a resource. For example, it is read-only, and not expected to be changed. Note that
+   * having this you won't be able to access the resource through {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResources(Class)} only directly
+   * from event source like by {@link InformerEventSource#get(ResourceID)}.
+   */
+  public static <T> SecondaryToPrimaryMapper<T> voidSecondaryToPrimaryMapper() {
+    return resource -> Set.of();
+  }
 }
