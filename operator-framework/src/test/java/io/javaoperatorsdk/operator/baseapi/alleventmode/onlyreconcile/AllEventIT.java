@@ -18,8 +18,8 @@ public class AllEventIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new AllEventReconciler()).build();
 
-  // todo additional finalizer
-  // todo retry
+  // todo additional finalizer, events after that
+  // todo retry on delete event + event received meanwhile
   @Test
   void eventsPresent() {
     var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
