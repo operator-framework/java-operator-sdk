@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.event.source.Cache;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -122,7 +123,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private void handleMarkedEventForResource(ResourceState state) {
-    if (state.deleteEventPresent()) {
+    if (state.deleteEventPresent() && !isAllEventMode()) {
       cleanupForDeletedEvent(state.getId());
     } else if (!state.processedMarkForDeletionPresent()) {
       submitReconciliationExecution(state);
@@ -135,7 +136,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       final var resourceID = state.getId();
       Optional<P> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
-      if (!controllerUnderExecution && maybeLatest.isPresent()) {
+      if (!controllerUnderExecution
+          && (maybeLatest.isPresent() || (isAllEventMode() && state.deleteEventPresent()))) {
         var rateLimit = state.getRateLimit();
         if (rateLimit == null) {
           rateLimit = rateLimiter.initState();
@@ -147,9 +149,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           return;
         }
         state.setUnderProcessing(true);
-        final var latest = maybeLatest.get();
+        final var latest = maybeLatest.orElseGet(() -> getResourceFromState(state));
         ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
-        state.unMarkEventReceived();
+        state.unMarkEventReceived(isAllEventMode());
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
@@ -174,12 +176,25 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
   }
 
+  @SuppressWarnings("unchecked")
+  private P getResourceFromState(ResourceState state) {
+    if (isAllEventMode()) {
+      log.debug("Getting resource from state for {}", state.getId());
+      return (P) state.getLastKnownResource();
+    } else {
+      throw new IllegalStateException(
+          "No resource found, this indicates issue with implementation.");
+    }
+  }
+
   private void handleEventMarking(Event event, ResourceState state) {
     final var relatedCustomResourceID = event.getRelatedCustomResourceID();
     if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
         log.debug("Marking delete event received for: {}", relatedCustomResourceID);
-        state.markDeleteEventReceived();
+        state.markDeleteEventReceived(
+            resourceEvent.getResource().orElseThrow(),
+            ((ResourceDeleteEvent) resourceEvent).isDeletedFinalStateUnknown());
       } else {
         if (state.processedMarkForDeletionPresent() && isResourceMarkedForDeletion(resourceEvent)) {
           log.debug(
@@ -194,10 +209,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // removed, but also the informers websocket is disconnected and later reconnected. So
         // meanwhile the resource could be deleted and recreated. In this case we just mark a new
         // event as below.
-        markEventReceived(state);
+        state.markEventReceived();
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
-      markEventReceived(state);
+      state.markEventReceived();
+    } else if (isAllEventMode() && state.deleteEventPresent()) {
+      state.markAdditionalEventAfterDeleteEvent();
     } else if (log.isDebugEnabled()) {
       log.debug(
           "Skipped marking event as received. Delete event present: {}, processed mark for"
@@ -205,11 +222,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           state.deleteEventPresent(),
           state.processedMarkForDeletionPresent());
     }
-  }
-
-  private void markEventReceived(ResourceState state) {
-    log.debug("Marking event received for: {}", state.getId());
-    state.markEventReceived();
   }
 
   private boolean isResourceMarkedForDeletion(ResourceEvent resourceEvent) {
@@ -244,20 +256,21 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     // Either way we don't want to retry.
     if (isRetryConfigured()
         && postExecutionControl.exceptionDuringExecution()
-        && !state.deleteEventPresent()) {
+        && (!state.deleteEventPresent() || isAllEventMode())) {
       handleRetryOnException(
           executionScope, postExecutionControl.getRuntimeException().orElseThrow());
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
     metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
-    if (state.deleteEventPresent()) {
+    if ((isAllEventMode() && executionScope.isDeleteEvent())
+        || (!isAllEventMode() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
       state.markProcessedMarkForDeletion();
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
-      if (state.eventPresent()) {
+      if (state.eventPresent() || (isAllEventMode() && state.deleteEventPresent())) {
         submitReconciliationExecution(state);
       } else {
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
@@ -320,7 +333,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   private void handleRetryOnException(ExecutionScope<P> executionScope, Exception exception) {
     final var state = getOrInitRetryExecution(executionScope);
     var resourceID = state.getId();
-    boolean eventPresent = state.eventPresent();
+    boolean eventPresent =
+        state.eventPresent()
+            || (isAllEventMode() && state.isAdditionalEventPresentAfterDeleteEvent());
     state.markEventReceived();
 
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
@@ -450,6 +465,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run() {
       if (!running) {
         // this is needed for the case when controller stopped, but there is a graceful shutdown
@@ -464,8 +480,26 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       try {
         var actualResource = cache.get(resourceID);
         if (actualResource.isEmpty()) {
-          log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
-          return;
+          if (isAllEventMode()) {
+            log.debug(
+                "Resource not found in the cache, checking for delete event resource: {}",
+                resourceID);
+            var state = resourceStateManager.get(resourceID);
+            actualResource =
+                (Optional<P>)
+                    state
+                        .filter(ResourceState::deleteEventPresent)
+                        .map(ResourceState::getLastKnownResource);
+            if (actualResource.isEmpty()) {
+              log.debug(
+                  "Skipping execution; delete event resource not found in state: {}", resourceID);
+              return;
+            }
+            executionScope.setDeleteEvent(true);
+          } else {
+            log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
+            return;
+          }
         }
         actualResource.ifPresent(executionScope::setResource);
         MDCUtils.addResourceInfo(executionScope.getResource());
@@ -500,5 +534,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   public synchronized boolean isRunning() {
     return running;
+  }
+
+  // shortening
+  private boolean isAllEventMode() {
+    return controllerConfiguration.isAllEventReconcileMode();
   }
 }

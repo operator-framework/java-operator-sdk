@@ -92,4 +92,12 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
   }
 
   <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec);
+
+  default ControllerMode mode() {
+    return ControllerMode.DEFAULT;
+  }
+
+  default boolean isAllEventReconcileMode() {
+    return mode() == ControllerMode.RECONCILE_ALL_EVENT;
+  }
 }
