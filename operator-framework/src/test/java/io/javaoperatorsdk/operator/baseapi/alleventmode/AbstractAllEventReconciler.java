@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AbstractAllEventReconciler {
 
   public static final String FINALIZER = "all.event.mode/finalizer";
+  public static final String ADDITIONAL_FINALIZER = "all.event.mode/finalizer2";
 
   private boolean resourceEvent = false;
   private boolean deleteEvent = false;

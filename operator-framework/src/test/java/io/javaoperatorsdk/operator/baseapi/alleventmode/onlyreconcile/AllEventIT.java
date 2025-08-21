@@ -18,11 +18,12 @@ public class AllEventIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new AllEventReconciler()).build();
 
+  // todo additional finalizer
+  // todo retry
   @Test
   void eventsPresent() {
     var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
     extension.serverSideApply(testResource());
-
     await()
         .untilAsserted(
             () -> {
