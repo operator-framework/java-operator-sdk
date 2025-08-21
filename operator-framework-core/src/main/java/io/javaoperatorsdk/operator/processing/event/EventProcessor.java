@@ -158,7 +158,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         state.setUnderProcessing(true);
         final var latest = maybeLatest.get();
         ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
-        state.unMarkEventReceived();
+        state.unMarkEventReceived(controllerConfiguration.isAllEventReconcileMode());
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
@@ -205,10 +205,12 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // removed, but also the informers websocket is disconnected and later reconnected. So
         // meanwhile the resource could be deleted and recreated. In this case we just mark a new
         // event as below.
-        markEventReceived(state);
+        state.markEventReceived();
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
-      markEventReceived(state);
+      state.markEventReceived();
+    } else if (controllerConfiguration.isAllEventReconcileMode() && state.deleteEventPresent()) {
+      state.markAdditionalEventAfterDeleteEvent();
     } else if (log.isDebugEnabled()) {
       log.debug(
           "Skipped marking event as received. Delete event present: {}, processed mark for"
@@ -216,11 +218,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
           state.deleteEventPresent(),
           state.processedMarkForDeletionPresent());
     }
-  }
-
-  private void markEventReceived(ResourceState state) {
-    log.debug("Marking event received for: {}", state.getId());
-    state.markEventReceived();
   }
 
   private boolean isResourceMarkedForDeletion(ResourceEvent resourceEvent) {
