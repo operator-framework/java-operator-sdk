@@ -17,6 +17,10 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.DefaultExpectationContext;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationContext;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationResult;
+import io.javaoperatorsdk.operator.api.reconciler.expectation.ExpectationStatus;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -129,6 +133,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
   }
 
+  @SuppressWarnings("rawtypes")
   private void submitReconciliationExecution(ResourceState state) {
     try {
       boolean controllerUnderExecution = isControllerUnderExecution(state);
@@ -136,6 +141,20 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       Optional<P> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution && maybeLatest.isPresent()) {
+        ExpectationResult expectationResult = null;
+        if (isExpectationPresent(state)) {
+          var expectationCheckResult =
+              shouldProceedWithExpectation(state, maybeLatest.orElseThrow());
+          if (expectationCheckResult.isEmpty()) {
+            log.debug(
+                "Skipping processing since expectation is not fulfilled. ResourceID: {}",
+                resourceID);
+            return;
+          } else {
+            expectationResult = expectationCheckResult.orElseThrow();
+          }
+        }
+
         var rateLimit = state.getRateLimit();
         if (rateLimit == null) {
           rateLimit = rateLimiter.initState();
@@ -148,7 +167,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         }
         state.setUnderProcessing(true);
         final var latest = maybeLatest.get();
-        ExecutionScope<P> executionScope = new ExecutionScope<>(state.getRetry());
+        ExecutionScope<P> executionScope =
+            new ExecutionScope<>(state.getRetry(), expectationResult);
         state.unMarkEventReceived();
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
@@ -172,6 +192,24 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     } finally {
       MDCUtils.removeResourceInfo();
     }
+  }
+
+  private boolean isExpectationPresent(ResourceState state) {
+    return state.getExpectationHolder().isPresent();
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  Optional<ExpectationResult> shouldProceedWithExpectation(ResourceState state, P primary) {
+
+    var holder = state.getExpectationHolder().orElseThrow();
+    if (holder.isTimedOut()) {
+      return Optional.of(new ExpectationResult(ExpectationStatus.TIMEOUT, holder.getExpectation()));
+    }
+    ExpectationContext<P> expectationContext =
+        new DefaultExpectationContext<>(this.eventSourceManager.getController(), primary);
+    return holder.getExpectation().isFulfilled(primary, expectationContext)
+        ? Optional.of(new ExpectationResult(ExpectationStatus.FULFILLED, holder.getExpectation()))
+        : Optional.empty();
   }
 
   private void handleEventMarking(Event event, ResourceState state) {
@@ -257,12 +295,19 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       state.markProcessedMarkForDeletion();
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
+      // TODO what should be the relation between re-schedule and expectation
+      // should we add a flag if trigger if expectation fails
+      setExpectation(state, postExecutionControl);
       if (state.eventPresent()) {
         submitReconciliationExecution(state);
       } else {
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
       }
     }
+  }
+
+  private void setExpectation(ResourceState state, PostExecutionControl<P> postExecutionControl) {
+    postExecutionControl.getExpectation().ifPresent(state::setExpectation);
   }
 
   /**
