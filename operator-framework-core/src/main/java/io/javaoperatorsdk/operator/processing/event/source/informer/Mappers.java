@@ -182,7 +182,8 @@ public class Mappers {
    * changes of a resource. For example, it is read-only, and not expected to be changed. Note that
    * having this you won't be able to access the resource through {@link
    * io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResources(Class)} only directly
-   * from event source like by {@link InformerEventSource#get(ResourceID)}.
+   * from event source like by {@link InformerEventSource#get(ResourceID)}. Use this with caution
+   * since usually this is not something that you require from an event source.
    */
   public static <T> SecondaryToPrimaryMapper<T> voidSecondaryToPrimaryMapper() {
     return resource -> Set.of();
