@@ -26,34 +26,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NA
 
 public class MicrometerMetrics implements Metrics {
 
-  private static final String PREFIX = "operator.sdk.";
-  private static final String RECONCILIATIONS = "reconciliations.";
-  private static final String RECONCILIATIONS_FAILED = RECONCILIATIONS + "failed";
-  private static final String RECONCILIATIONS_SUCCESS = RECONCILIATIONS + "success";
-  private static final String RECONCILIATIONS_RETRIES_LAST = RECONCILIATIONS + "retries.last";
-  private static final String RECONCILIATIONS_RETRIES_NUMBER = RECONCILIATIONS + "retries.number";
-  private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started";
-  private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
-  private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
-  private static final String NAME = "name";
-  private static final String NAMESPACE = "namespace";
-  private static final String GROUP = "group";
-  private static final String VERSION = "version";
-  private static final String KIND = "kind";
-  private static final String SCOPE = "scope";
-  private static final String METADATA_PREFIX = "resource.";
-  private static final String CONTROLLERS_EXECUTION = "controllers.execution.";
-  private static final String CONTROLLER = "controller";
-  private static final String SUCCESS_SUFFIX = ".success";
-  private static final String FAILURE_SUFFIX = ".failure";
-  private static final String TYPE = "type";
-  private static final String EXCEPTION = "exception";
-  private static final String EVENT = "event";
-  private static final String ACTION = "action";
-  private static final String EVENTS_RECEIVED = "events.received";
-  private static final String EVENTS_DELETE = "events.delete";
-  private static final String CLUSTER = "cluster";
-  private static final String SIZE_SUFFIX = ".size";
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
@@ -167,13 +139,13 @@ public class MicrometerMetrics implements Metrics {
 
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
-    if (event instanceof ResourceEvent) {
+    if (event instanceof ResourceEvent resourceEvent) {
       incrementCounter(
           event.getRelatedCustomResourceID(),
           EVENTS_RECEIVED,
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
-          Tag.of(ACTION, ((ResourceEvent) event).getAction().toString()));
+          Tag.of(ACTION, resourceEvent.getAction().toString()));
     } else {
       incrementCounter(
           event.getRelatedCustomResourceID(),
