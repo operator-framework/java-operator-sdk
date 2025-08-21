@@ -2,5 +2,5 @@ package io.javaoperatorsdk.operator.api.config;
 
 public enum ControllerMode {
   DEFAULT,
-  ALL_EVENT_RECONCILE
+  RECONCILE_ALL_EVENT
 }

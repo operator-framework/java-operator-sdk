@@ -79,5 +79,5 @@ public @interface ControllerConfiguration {
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 
-  ControllerMode controllerMode() default ControllerMode.DEFAULT;
+  ControllerMode mode() default ControllerMode.DEFAULT;
 }
