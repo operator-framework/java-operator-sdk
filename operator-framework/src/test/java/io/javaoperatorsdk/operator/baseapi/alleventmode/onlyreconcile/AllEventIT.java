@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -27,7 +28,7 @@ public class AllEventIT {
     await()
         .untilAsserted(
             () -> {
-              assertThat(reconciler.isResourceEvent()).isTrue();
+              assertThat(reconciler.isResourceEventPresent()).isTrue();
               assertThat(getResource().hasFinalizer(FINALIZER)).isTrue();
             });
 
@@ -38,8 +39,49 @@ public class AllEventIT {
             () -> {
               var r = getResource();
               assertThat(r).isNull();
-              assertThat(reconciler.isDeleteEvent()).isTrue();
+              assertThat(reconciler.isDeleteEventPresent()).isTrue();
               assertThat(reconciler.isEventOnMarkedForDeletion()).isTrue();
+            });
+  }
+
+  @Test
+  void deleteEventPresentWithoutFinalizer() {
+    var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
+    reconciler.setUseFinalizer(false);
+    extension.serverSideApply(testResource());
+
+    await().untilAsserted(() -> assertThat(reconciler.isResourceEventPresent()).isTrue());
+
+    extension.delete(getResource());
+
+    await()
+        .untilAsserted(
+            () -> {
+              var r = getResource();
+              assertThat(r).isNull();
+              assertThat(reconciler.isDeleteEventPresent()).isTrue();
+            });
+  }
+
+  @Disabled("fix")
+  @Test
+  void retriesExceptionOnDeleteEvent() {
+    var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
+    reconciler.setUseFinalizer(false);
+    reconciler.setThrowExceptionOnFirstDeleteEvent(true);
+
+    extension.serverSideApply(testResource());
+
+    await().untilAsserted(() -> assertThat(reconciler.isResourceEventPresent()).isTrue());
+
+    extension.delete(getResource());
+
+    await()
+        .untilAsserted(
+            () -> {
+              var r = getResource();
+              assertThat(r).isNull();
+              assertThat(reconciler.isDeleteEventPresent()).isTrue();
             });
   }
 
