@@ -22,8 +22,8 @@ class ResourceState {
     PROCESSED_MARK_FOR_DELETION,
     /** Delete event present, from this point other events are not relevant */
     DELETE_EVENT_PRESENT,
-    // todo we probably need an additional state for the case when procesing delete event
-    // that fails we want to retry the delete event but meanwhile additional event is received
+    /** */
+    ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT
   }
 
   private final ResourceID id;
