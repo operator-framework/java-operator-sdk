@@ -81,7 +81,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         originalResource.getMetadata().getNamespace());
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
-    if (!configuration().isAllEventReconcileMode()
+    if (!isAllEventMode()
         && markedForDeletion
         && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
       log.debug(
@@ -100,7 +100,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             executionScope.isDeleteFinalStateUnknown());
 
     // checking the cleaner for all-event-mode
-    if (markedForDeletion && controller.isCleaner()) {
+    if ((!isAllEventMode() && markedForDeletion) || (isAllEventMode() && controller.isCleaner())) {
       return handleCleanup(resourceForExecution, originalResource, context, executionScope);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
@@ -119,7 +119,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       P originalResource,
       Context<P> context)
       throws Exception {
-    if (!configuration().isAllEventReconcileMode()
+    if (!isAllEventMode()
         && controller.useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
@@ -289,7 +289,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
     DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
-    if (useFinalizer && !configuration().isAllEventReconcileMode()) {
+    if (useFinalizer && !isAllEventMode()) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
@@ -534,5 +534,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           ? resourceOperation.inNamespace(resource.getMetadata().getNamespace()).resource(resource)
           : resourceOperation.resource(resource);
     }
+  }
+
+  private boolean isAllEventMode() {
+    return configuration().isAllEventReconcileMode();
   }
 }
