@@ -85,6 +85,10 @@ class ResourceState {
         || eventing == EventingState.ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT;
   }
 
+  public boolean isAdditionalEventPresentAfterDeleteEvent() {
+    return eventing == EventingState.ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT;
+  }
+
   public boolean processedMarkForDeletionPresent() {
     return eventing == EventingState.PROCESSED_MARK_FOR_DELETION;
   }
