@@ -156,6 +156,11 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       return this;
     }
 
+    public Builder withInfrastructureKubernetesClient(KubernetesClient kubernetesClient) {
+      this.infrastructureKubernetesClient = kubernetesClient;
+      return this;
+    }
+
     public ClusterDeployedOperatorExtension build() {
       infrastructureKubernetesClient =
           infrastructureKubernetesClient != null
