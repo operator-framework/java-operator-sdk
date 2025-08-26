@@ -3,25 +3,22 @@ title: FAQ
 weight: 90
 ---
 
-### How can I access the events which triggered the Reconciliation?
+### How can I access the events that triggered reconciliation?
 
-In the v1.* version events were exposed to `Reconciler` (which was called `ResourceController`
-then). This included events (Create, Update) of the custom resource, but also events produced by
-Event Sources. After long discussions also with developers of golang version (controller-runtime),
-we decided to remove access to these events. We already advocated to not use events in the
-reconciliation logic, since events can be lost. Instead, reconcile all the resources on every
-execution of reconciliation. On first this might sound a little opinionated, but there is a
-sound agreement between the developers that this is the way to go.
+In v1.* versions, events were exposed to `Reconciler` (then called `ResourceController`). This included custom resource events (Create, Update) and events from Event Sources. After extensive discussions with golang controller-runtime developers, we decided to remove event access.
 
-Note that this is also consistent with Kubernetes 
-[level based](https://cloud.redhat.com/blog/kubernetes-operators-best-practices) reconciliation approach. 
+**Why this change?**
+- Events can be lost in distributed systems
+- Best practice is to reconcile all resources on every execution
+- Aligns with Kubernetes [level-based](https://cloud.redhat.com/blog/kubernetes-operators-best-practices) reconciliation approach
 
-### Can I re-schedule a reconciliation, possibly with a specific delay?
+**Recommendation**: Always reconcile all resources instead of relying on specific events. 
 
-Yes, this can be done
-using [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java)
-and [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java)
-, see:
+### Can I reschedule a reconciliation with a specific delay?
+
+Yes, you can reschedule reconciliation using [`UpdateControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/UpdateControl.java) and [`DeleteControl`](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/DeleteControl.java).
+
+**With status update:**
 
 ```java 
   @Override
@@ -43,20 +40,19 @@ without an update:
   }
 ```
 
-Although you might consider using `EventSources`, to handle reconciliation triggering in a smarter
-way. 
+**Note**: Consider using `EventSources` for smarter reconciliation triggering instead of time-based scheduling. 
 
-### How can I run an operator without cluster scope rights?
+### How can I run an operator without cluster-scope rights?
 
-By default, JOSDK requires access to CRs at cluster scope. You may not be granted such
-rights and you will see some error at startup that looks like:
+By default, JOSDK requires cluster-scope access to custom resources. If you don't have these rights, you'll see startup errors like:
 
 ```plain
 io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: GET at: https://kubernetes.local.svc/apis/mygroup/v1alpha1/mycr. Message: Forbidden! Configured service account doesn't have access. Service account may have been revoked. mycrs.mygroup is forbidden: User "system:serviceaccount:ns:sa" cannot list resource "mycrs" in API group "mygroup" at the cluster scope.
 ```
 
-To restrict the operator to a set of namespaces, you may override which namespaces are watched by a reconciler
-at [Reconciler-level configuration](../configuration.md#reconciler-level-configuration):
+**Solution 1: Restrict to specific namespaces**
+
+Override watched namespaces using [Reconciler-level configuration](../configuration.md#reconciler-level-configuration):
 
 ```java
 Operator operator;
@@ -65,35 +61,33 @@ Reconciler reconciler;
 operator.register(reconciler, configOverrider ->
         configOverrider.settingNamespace("mynamespace"));
 ```
-Note that configuring the watched namespaces can also be done using the `@ControllerConfiguration` annotation.
 
-Furthermore, you may not be able to list CRDs at startup which is required when `checkingCRDAndValidateLocalModel`
-is `true` (`false` by default). To disable, set it to `false` at [Operator-level configuration](../configuration#operator-level-configuration):
+**Note**: You can also configure watched namespaces using the `@ControllerConfiguration` annotation.
+
+**Solution 2: Disable CRD validation**
+
+If you can't list CRDs at startup (required when `checkingCRDAndValidateLocalModel` is `true`), disable it using [Operator-level configuration](../configuration#operator-level-configuration):
 
 ```java
 Operator operator = new Operator( override -> override.checkingCRDAndValidateLocalModel(false));
 ```
 
-### I'm managing an external resource that has a generated ID, where should I store that?
+### Where should I store generated IDs for external resources?
 
-It is common that a non-Kubernetes or external resource is managed from a controller. Those external resources might
-have a generated ID, so are not simply addressable based on the spec of a custom resources. Therefore, the 
-generated ID needs to be stored somewhere in order to address the resource during the subsequent reconciliations.
+When managing external (non-Kubernetes) resources, they often have generated IDs that aren't simply addressable based on your custom resource spec. You need to store these IDs for subsequent reconciliations.
 
-Usually there are two options you can consider to store the ID:
+**Storage Options:**
 
-1. Create a separate resource (usually ConfigMap, Secret or dedicated CustomResource) where you store the ID.
-2. Store the ID in the status of the custom resource.
+1. **Separate resource** (usually ConfigMap, Secret, or dedicated CustomResource)
+2. **Custom resource status field**
 
-Note that both approaches are a bit tricky, since you have to guarantee the resources are cached for the next
-reconciliation. For example if you patch the status at the end of the reconciliation (`UpdateControl.patchStatus(...)`)
-it is not guaranteed that during the next reconciliation you will see the fresh resource. Therefore, controllers
-which do this, usually cache the updated status in memory to make sure it is present for next reconciliation.
+**Important considerations:**
 
-From version 5.1 you can use [this utility](../documentation/reconciler.md#making-sure-the-primary-resource-is-up-to-date-for-the-next-reconciliation) 
-to make sure an updated status is present for the next reconciliation.
+Both approaches require guaranteeing resources are cached for the next reconciliation. If you patch status at the end of reconciliation (`UpdateControl.patchStatus(...)`), it's not guaranteed the fresh resource will be available during the next reconciliation. Controllers typically cache updated status in memory to ensure availability.
 
-Dependent Resources feature supports the [first approach](../documentation/dependent-resource-and-workflows/dependent-resources.md#external-state-tracking-dependent-resources).
+**Modern solution**: From version 5.1, use [this utility](../documentation/reconciler.md#making-sure-the-primary-resource-is-up-to-date-for-the-next-reconciliation) to ensure updated status is available for the next reconciliation.
+
+**Dependent Resources**: The feature supports [the first approach](../documentation/dependent-resource-and-workflows/dependent-resources.md#external-state-tracking-dependent-resources) natively.
     
 ### How can I make the status update of my custom resource trigger a reconciliation?
 
