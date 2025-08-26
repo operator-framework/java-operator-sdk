@@ -9,6 +9,7 @@ import io.micrometer.core.instrument.Meter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class NoPerResourceCollectionIT extends AbstractMicrometerMetricsTestFixture {
+
   @Override
   protected MicrometerMetrics getMetrics() {
     return MicrometerMetrics.withoutPerResourceMetrics(registry);

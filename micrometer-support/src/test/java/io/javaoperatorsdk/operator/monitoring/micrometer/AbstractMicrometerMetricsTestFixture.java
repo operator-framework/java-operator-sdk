@@ -87,7 +87,7 @@ public abstract class AbstractMicrometerMetricsTestFixture {
     }
   }
 
-  static class TestSimpleMeterRegistry extends SimpleMeterRegistry {
+  protected static class TestSimpleMeterRegistry extends SimpleMeterRegistry {
     private final Set<Meter.Id> removed = new HashSet<>();
 
     @Override

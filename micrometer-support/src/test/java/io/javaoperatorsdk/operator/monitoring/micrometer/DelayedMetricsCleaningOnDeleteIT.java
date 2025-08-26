@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class DelayedMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixture {
 
-  private static final int testDelay = 1;
+  protected static final int testDelay = 1;
 
   @Override
   protected MicrometerMetrics getMetrics() {
