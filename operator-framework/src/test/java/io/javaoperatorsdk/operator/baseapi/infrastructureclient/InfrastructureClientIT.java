@@ -128,7 +128,7 @@ class InfrastructureClientIT {
   }
 
   private void removeClusterRole(String filename) {
-    var clusterRoleBinding = ReconcilerUtils.loadYaml(ClusterRole.class, this.getClass(), filename);
-    operator.getInfrastructureKubernetesClient().resource(clusterRoleBinding).delete();
+    var clusterRole = ReconcilerUtils.loadYaml(ClusterRole.class, this.getClass(), filename);
+    operator.getInfrastructureKubernetesClient().resource(clusterRole).delete();
   }
 }
