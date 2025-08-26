@@ -82,15 +82,17 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   public R update(R actual, R desired, P primary, Context<P> context) {
+    boolean useSSA = useSSA(context);
     if (log.isDebugEnabled()) {
       log.debug(
-          "Updating actual resource: {} version: {}",
+          "Updating actual resource: {} version: {}; SSA: {}",
           ResourceID.fromResource(actual),
-          actual.getMetadata().getResourceVersion());
+          actual.getMetadata().getResourceVersion(),
+          useSSA);
     }
     R updatedResource;
     addMetadata(false, actual, desired, primary, context);
-    if (useSSA(context)) {
+    if (useSSA) {
       updatedResource =
           prepare(context, desired, primary, "Updating")
               .fieldManager(context.getControllerConfiguration().fieldManager())

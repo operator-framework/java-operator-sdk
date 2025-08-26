@@ -341,7 +341,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private P patchResource(P resource, P originalResource) {
-    log.debug("Updating resource: {} with version: {}", getUID(resource), getVersion(resource));
+    log.debug(
+        "Updating resource: {} with version: {}; SSA: {}",
+        getUID(resource),
+        getVersion(resource),
+        useSSA);
     log.trace("Resource before update: {}", resource);
 
     final var finalizerName = configuration().getFinalizerName();
