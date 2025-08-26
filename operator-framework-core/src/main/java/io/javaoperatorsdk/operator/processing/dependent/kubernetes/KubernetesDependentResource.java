@@ -1,9 +1,7 @@
 package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -264,17 +262,9 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected Optional<R> selectTargetSecondaryResource(
-      Set<R> secondaryResources, P primary, Context<P> context) {
-    ResourceID managedResourceID = targetSecondaryResourceID(primary, context);
-    return secondaryResources.stream()
-        .filter(
-            r ->
-                r.getMetadata().getName().equals(managedResourceID.getName())
-                    && Objects.equals(
-                        r.getMetadata().getNamespace(),
-                        managedResourceID.getNamespace().orElse(null)))
-        .findFirst();
+  public Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    final var targetResourceID = targetSecondaryResourceID(primary, context);
+    return eventSource().flatMap(informer -> informer.get(targetResourceID));
   }
 
   /**
