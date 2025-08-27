@@ -3,29 +3,19 @@ title: Configurations
 weight: 55
 ---
 
-The Java Operator SDK (JOSDK) provides several abstractions that work great out of the 
-box. However, while we strive to cover the most common cases with the default behavior, we also 
-recognize that that default behavior is not always what any given user might want for their 
-operator. Numerous configuration options are therefore provided to help people tailor the 
-framework to their needs.
+The Java Operator SDK (JOSDK) provides abstractions that work great out of the box. However, we recognize that default behavior isn't always suitable for every use case. Numerous configuration options help you tailor the framework to your specific needs.
 
-Configuration options act at several levels, depending on which behavior you wish to act upon:
-- `Operator`-level using `ConfigurationService`
-- `Reconciler`-level using `ControllerConfiguration`
-- `DependentResouce`-level using the `DependentResourceConfigurator` interface
-- `EventSource`-level: some event sources, such as `InformerEventSource`, might need to be 
-  fine-tuned to properly identify which events will trigger the associated reconciler.
+Configuration options operate at several levels:
+- **Operator-level** using `ConfigurationService`
+- **Reconciler-level** using `ControllerConfiguration`
+- **DependentResource-level** using the `DependentResourceConfigurator` interface
+- **EventSource-level** where some event sources (like `InformerEventSource`) need fine-tuning to identify which events trigger the associated reconciler
 
-## Operator-level configuration
+## Operator-Level Configuration
 
-Configuration that impacts the whole operator is performed via the `ConfigurationService` class. 
-`ConfigurationService` is an abstract class, and the implementation can be different based 
-on which flavor of the framework is used. For example Quarkus Operator SDK replaces the 
-default implementation. Configurations are initialized with sensible defaults, but can 
-be changed during initialization.
+Configuration that impacts the entire operator is performed via the `ConfigurationService` class. `ConfigurationService` is an abstract class with different implementations based on which framework flavor you use (e.g., Quarkus Operator SDK replaces the default implementation). Configurations initialize with sensible defaults but can be changed during initialization.
 
-For instance, if you wish to not validate that the CRDs are present on your cluster when the 
-operator starts and configure leader election, you would do something similar to:
+For example, to disable CRD validation on startup and configure leader election:
 
 ```java
 Operator operator = new Operator( override -> override
@@ -33,13 +23,11 @@ Operator operator = new Operator( override -> override
         .withLeaderElectionConfiguration(new LeaderElectionConfiguration("bar", "barNS")));
 ```
 
-## Reconciler-level configuration
+## Reconciler-Level Configuration
 
-While reconcilers are typically configured using the `@ControllerConfiguration` annotation, it 
-is also possible to override the configuration at runtime, when the reconciler is registered 
-with the operator instance, either by passing it a completely new `ControllerConfiguration` 
-instance or by preferably overriding some aspects of the current configuration using a 
-`ControllerConfigurationOverrider` `Consumer`:
+While reconcilers are typically configured using the `@ControllerConfiguration` annotation, you can also override configuration at runtime when registering the reconciler with the operator. You can either:
+- Pass a completely new `ControllerConfiguration` instance
+- Override specific aspects using a `ControllerConfigurationOverrider` `Consumer` (preferred)
 
 ```java
 Operator operator;

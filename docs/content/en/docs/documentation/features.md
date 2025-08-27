@@ -3,19 +3,13 @@ title: Other Features
 weight: 57
 ---
 
-The Java Operator SDK (JOSDK) is a high level framework and related tooling aimed at
-facilitating the implementation of Kubernetes operators. The features are by default following
-the best practices in an opinionated way. However, feature flags and other configuration options
-are provided to fine tune or turn off these features.
+The Java Operator SDK (JOSDK) is a high-level framework and tooling suite for implementing Kubernetes operators. By default, features follow best practices in an opinionated way. However, configuration options and feature flags are available to fine-tune or disable these features.
 
-## Support for Well Known (non-custom) Kubernetes Resources
+## Support for Well-Known Kubernetes Resources
 
-A Controller can be registered for a non-custom resource, so well known Kubernetes resources like (
-`Ingress`, `Deployment`,...).
+Controllers can be registered for standard Kubernetes resources (not just custom resources), such as `Ingress`, `Deployment`, and others.
 
-See
-the [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/deployment)
-for reconciling deployments.
+See the [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/deployment) for an example of reconciling deployments.
 
 ```java 
 public class DeploymentReconciler
@@ -31,25 +25,17 @@ public class DeploymentReconciler
 
 ## Leader Election
 
-Operators are generally deployed with a single running or active instance. However, it is
-possible to deploy multiple instances in such a way that only one, called the "leader", processes the
-events. This is achieved via a mechanism called "leader election". While all the instances are
-running, and even start their event sources to populate the caches, only the leader will process
-the events. This means that should the leader change for any reason, for example because it
-crashed, the other instances are already warmed up and ready to pick up where the previous
-leader left off should one of them become elected leader.
+Operators are typically deployed with a single active instance. However, you can deploy multiple instances where only one (the "leader") processes events. This is achieved through "leader election."
 
-See sample configuration in
-the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/8865302ac0346ee31f2d7b348997ec2913d5922b/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L21-L23)
-.
+While all instances run and start their event sources to populate caches, only the leader processes events. If the leader crashes, other instances are already warmed up and ready to take over when a new leader is elected.
 
-## Automatic Generation of CRDs
+See sample configuration in the [E2E test](https://github.com/java-operator-sdk/java-operator-sdk/blob/8865302ac0346ee31f2d7b348997ec2913d5922b/sample-operators/leader-election/src/main/java/io/javaoperatorsdk/operator/sample/LeaderElectionTestOperator.java#L21-L23).
 
-Note that this feature is provided by the
-[Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client), not JOSDK itself.
+## Automatic CRD Generation
 
-To automatically generate CRD manifests from your annotated Custom Resource classes, you only need
-to add the following dependencies to your project:
+**Note:** This feature is provided by the [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client), not JOSDK itself.
+
+To automatically generate CRD manifests from your annotated Custom Resource classes, add this dependency to your project:
 
 ```xml
 
@@ -60,14 +46,10 @@ to add the following dependencies to your project:
 </dependency>
 ```
 
-The CRD will be generated in `target/classes/META-INF/fabric8` (or
-in `target/test-classes/META-INF/fabric8`, if you use the `test` scope) with the CRD name
-suffixed by the generated spec version. For example, a CR using the `java-operator-sdk.io` group
-with a `mycrs` plural form will result in 2 files:
+The CRD will be generated in `target/classes/META-INF/fabric8` (or `target/test-classes/META-INF/fabric8` for test scope) with the CRD name suffixed by the generated spec version. 
 
+For example, a CR using the `java-operator-sdk.io` group with a `mycrs` plural form will result in these files:
 - `mycrs.java-operator-sdk.io-v1.yml`
 - `mycrs.java-operator-sdk.io-v1beta1.yml`
 
-**NOTE:**
-> Quarkus users using the `quarkus-operator-sdk` extension do not need to add any extra dependency
-> to get their CRD generated as this is handled by the extension itself.
+**Note for Quarkus users:** If you're using the `quarkus-operator-sdk` extension, you don't need to add any extra dependency for CRD generation - the extension handles this automatically.

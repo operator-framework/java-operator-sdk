@@ -5,34 +5,31 @@ weight: 20
 
 ## Generating Project Skeleton
 
-Project includes a maven plugin to generate a skeleton project:
+The project includes a Maven plugin to generate a skeleton project:
 
 ```shell
 mvn io.javaoperatorsdk:bootstrapper:[version]:create -DprojectGroupId=org.acme -DprojectArtifactId=getting-started
 ```
 
-You can build this project with maven,
-the build will generate also the [CustomResourceDefinition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) 
-for you.
+You can build this project with Maven. The build will also generate the [CustomResourceDefinition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) for you.
 
-## Getting started with samples
+## Getting Started with Samples
 
-You can find examples under [sample-operators](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/sample-operators)
-directory which are intended to demonstrate the usage of different components in different scenarios, but mainly are more real world
-examples:
+You can find examples in the [sample-operators](https://github.com/java-operator-sdk/java-operator-sdk/tree/master/sample-operators) directory. These samples demonstrate different components and scenarios with real-world examples:
 
-* *webpage*: Simple example creating an NGINX webserver from a Custom Resource containing HTML code. We provide more 
-  flavors of implementation, both with the low level APIs and higher level abstractions.
-* *mysql-schema*: Operator managing schemas in a MySQL database. Shows how to manage non Kubernetes resources.
-* *tomcat*: Operator with two controllers, managing Tomcat instances and Webapps running in Tomcat. The intention
-  with this example to show how to manage multiple related custom resources and/or more controllers.
+* **webpage**: Simple example creating an NGINX webserver from a Custom Resource containing HTML code. Multiple implementation flavors are provided, using both low-level APIs and higher-level abstractions.
+* **mysql-schema**: Operator managing schemas in a MySQL database. Shows how to manage non-Kubernetes resources.  
+* **tomcat**: Operator with two controllers managing Tomcat instances and Webapps. Demonstrates how to manage multiple related custom resources and controllers.
 
-The easiest way to run / try out is to run one of the samples on
-[minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) or [kind](https://kind.sigs.k8s.io/).
-After applying the generated CRD, you can simply run your main class. The controller will automatically
-start communicate with you local Kubernetes cluster and reconcile custom resource after you create one.
+## Running the Samples
 
-See also detailed instructions under [`samples/mysql-schema/README.md`](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/mysql-schema/README.md).
+The easiest way to try the samples is to run them on [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) or [kind](https://kind.sigs.k8s.io/).
+
+1. Apply the generated CRD
+2. Run your main class
+3. The controller will automatically communicate with your local Kubernetes cluster and reconcile custom resources when you create them
+
+See detailed instructions in [`samples/mysql-schema/README.md`](https://github.com/operator-framework/java-operator-sdk/blob/main/sample-operators/mysql-schema/README.md).
 
 
 
