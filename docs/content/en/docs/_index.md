@@ -28,10 +28,10 @@ The Java Operator SDK is a high-level framework designed to make implementing Ku
 ## Key Features
 
 - Support for both custom and well-known Kubernetes resources
-- Automatic finalizer management
+- Dependent resource management with optional workflow capabilities
 - Event-driven reconciliation
+- Automatic finalizer management
 - Leader election support
-- Dependent resource management
 - Comprehensive testing utilities
 - Integration with popular Java frameworks
 
