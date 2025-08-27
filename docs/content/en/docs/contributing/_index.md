@@ -7,7 +7,7 @@ Thank you for considering contributing to the Java Operator SDK project! We're b
 
 ## Code of Conduct
 
-We're committed to making this a welcoming, inclusive project. We do not tolerate discrimination, aggressive, or insulting behavior.
+We're committed to making this a welcoming, inclusive project. We do not tolerate discrimination, aggressive or insulting behavior.
 
 This project and all participants are bound by our [Code of Conduct]({{baseurl}}/coc). By participating, you're expected to uphold this code. Please report unacceptable behavior to any project admin.
 

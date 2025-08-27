@@ -11,12 +11,12 @@ This section contains detailed documentation for all Java Operator SDK features 
 
 - **[Implementing a Reconciler](reconciler/)** - The heart of any operator
 - **[Architecture](architecture/)** - How JOSDK works under the hood
+- **[Dependent Resources & Workflows](dependent-resource-and-workflows/)** - Managing resource relationships
 - **[Configuration](configuration/)** - Customizing operator behavior
 - **[Error Handling & Retries](error-handling-retries/)** - Managing failures gracefully
 
 ## Advanced Features
 
-- **[Dependent Resources & Workflows](dependent-resource-and-workflows/)** - Managing complex resource relationships
 - **[Eventing](eventing/)** - Understanding the event-driven model
 - **[Observability](observability/)** - Monitoring and debugging your operators
 - **[Other Features](features/)** - Additional capabilities and integrations
