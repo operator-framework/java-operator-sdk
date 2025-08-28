@@ -51,7 +51,7 @@ Operator operator = new Operator(client, o -> o.withMetrics(metrics));
 ### Micrometer implementation
 
 The micrometer implementation is typically created using one of the provided factory methods which, depending on which
-is used, will return either a ready to use instance or a builder allowing users to customized how the implementation
+is used, will return either a ready to use instance or a builder allowing users to customize how the implementation
 behaves, in particular when it comes to the granularity of collected metrics. It is, for example, possible to collect
 metrics on a per-resource basis via tags that are associated with meters. This is the default, historical behavior but
 this will change in a future version of JOSDK because this dramatically increases the cardinality of metrics, which
@@ -62,14 +62,13 @@ instance via:
 
 ```java
 MeterRegistry registry; // initialize your registry implementation
-Metrics metrics = new MicrometerMetrics(registry);
+Metrics metrics = MicrometerMetrics.newMicrometerMetricsBuilder(registry).build();
 ```
 
-Note, however, that this constructor is deprecated and we encourage you to use the factory methods instead, which either
-return a fully pre-configured instance or a builder object that will allow you to configure more easily how the instance
-will behave. You can, for example, configure whether or not the implementation should collect metrics on a per-resource
-basis, whether or not associated meters should be removed when a resource is deleted and how the clean-up is performed.
-See the relevant classes documentation for more details.
+The class provides factory methods which either return a fully pre-configured instance or a builder object that will
+allow you to configure more easily how the instance will behave. You can, for example, configure whether the
+implementation should collect metrics on a per-resource basis, whether associated meters should be removed when a
+resource is deleted and how the clean-up is performed. See the relevant classes documentation for more details.
 
 For example, the following will create a `MicrometerMetrics` instance configured to collect metrics on a per-resource
 basis, deleting the associated meters after 5 seconds when a resource is deleted, using up to 2 threads to do so.
@@ -109,4 +108,30 @@ brackets (`[]`) won't be present when per-resource collection is disabled and ta
 omitted if the associated value is empty. Of note, when in the context of controllers' execution metrics, these tag
 names are prefixed with `resource.`. This prefix might be removed in a future version for greater consistency.
 
+### Aggregated Metrics
 
+The `AggregatedMetrics` class provides a way to combine multiple metrics providers into a single metrics instance using
+the composite pattern. This is particularly useful when you want to simultaneously collect metrics data from different
+monitoring systems or providers.
+
+You can create an `AggregatedMetrics` instance by providing a list of existing metrics implementations:
+
+```java
+// create individual metrics instances
+Metrics micrometerMetrics = MicrometerMetrics.withoutPerResourceMetrics(registry);
+Metrics customMetrics = new MyCustomMetrics();
+Metrics loggingMetrics = new LoggingMetrics();
+
+// combine them into a single aggregated instance
+Metrics aggregatedMetrics = new AggregatedMetrics(List.of(
+    micrometerMetrics, 
+    customMetrics, 
+    loggingMetrics
+));
+
+// use the aggregated metrics with your operator
+Operator operator = new Operator(client, o -> o.withMetrics(aggregatedMetrics));
+```
+
+This approach allows you to easily combine different metrics collection strategies, such as sending metrics to both
+Prometheus (via Micrometer) and a custom logging system simultaneously.
