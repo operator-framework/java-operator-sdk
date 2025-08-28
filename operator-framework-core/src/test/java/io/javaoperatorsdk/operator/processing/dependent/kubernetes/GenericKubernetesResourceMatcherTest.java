@@ -18,36 +18,47 @@ package io.javaoperatorsdk.operator.processing.dependent.kubernetes;
 import java.util.Map;
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.match;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked"})
 class GenericKubernetesResourceMatcherTest {
 
-  private static final Context context = mock(Context.class);
+  private static final Context context = new TestContext();
+
+  private static class TestContext extends DefaultContext<HasMetadata> {
+    private final KubernetesClient client = MockKubernetesClient.client(HasMetadata.class);
+
+    public TestContext() {
+      this(null);
+    }
+
+    public TestContext(HasMetadata primary) {
+      super(mock(), mock(), primary);
+    }
+
+    @Override
+    public KubernetesClient getClient() {
+      return client;
+    }
+  }
 
   Deployment actual = createDeployment();
   Deployment desired = createDeployment();
   TestDependentResource dependentResource = new TestDependentResource(desired);
-
-  @BeforeAll
-  static void setUp() {
-    final var client = MockKubernetesClient.client(HasMetadata.class);
-    when(context.getClient()).thenReturn(client);
-  }
 
   @Test
   void matchesTrivialCases() {
@@ -77,9 +88,10 @@ class GenericKubernetesResourceMatcherTest {
   @Test
   void doesNotMatchRemovedValues() {
     actual = createDeployment();
+    final var localContext = new TestContext(createPrimary("removed"));
     assertThat(
             GenericKubernetesResourceMatcher.match(
-                    dependentResource.desired(createPrimary("removed"), null), actual, context)
+                    dependentResource.doDesired(localContext), actual, localContext)
                 .matched())
         .withFailMessage("Removing values in metadata should lead to a mismatch")
         .isFalse();

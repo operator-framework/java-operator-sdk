@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -85,7 +86,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     if (creatable() || updatable()) {
       if (actualResource == null) {
         if (creatable) {
-          var desired = desired(primary, context);
+          var desired = doDesired(context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -95,7 +96,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable()) {
           final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
-            final var desired = match.computedDesired().orElseGet(() -> desired(primary, context));
+            final var desired = match.computedDesired().orElseGet(() -> doDesired(context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
@@ -127,7 +128,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-
     var secondaryResources = context.getSecondaryResources(resourceType());
     if (secondaryResources.isEmpty()) {
       return Optional.empty();
@@ -210,6 +210,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     throw new IllegalStateException(
         "desired method must be implemented if this DependentResource can be created and/or"
             + " updated");
+  }
+
+  protected R doDesired(Context<P> context) {
+    assert context instanceof DefaultContext<P>;
+    DefaultContext<P> defaultContext = (DefaultContext<P>) context;
+    return defaultContext.desiredStateFor(this, p -> desired(p, defaultContext));
   }
 
   public void delete(P primary, Context<P> context) {
