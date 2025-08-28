@@ -1,14 +1,18 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -24,6 +28,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final ControllerConfiguration<P> controllerConfiguration;
   private final DefaultManagedWorkflowAndDependentResourceContext<P>
       defaultManagedDependentResourceContext;
+  private final Map<DependentResource<?, P>, Object> desiredStates = new ConcurrentHashMap<>();
 
   public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
     this.retryInfo = retryInfo;
@@ -122,5 +127,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
     this.retryInfo = retryInfo;
     return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <R> R desiredStateFor(
+      DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {
+    return (R)
+        desiredStates.computeIfAbsent(
+            dependentResource, ignored -> desiredStateComputer.apply(getPrimaryResource()));
   }
 }
