@@ -205,7 +205,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   protected void addReferenceHandlingMetadata(R desired, P primary) {
     if (addOwnerReference()) {
-      desired.addOwnerReference(primary);
+      var ref = desired.addOwnerReference(primary);
+      ref.setController(true);
     } else if (useNonOwnerRefBasedSecondaryToPrimaryMapping()) {
       addSecondaryToPrimaryMapperAnnotations(desired, primary);
     }

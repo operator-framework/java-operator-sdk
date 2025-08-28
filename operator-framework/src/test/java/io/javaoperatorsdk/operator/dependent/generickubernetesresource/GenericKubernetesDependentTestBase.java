@@ -31,6 +31,7 @@ public abstract class GenericKubernetesDependentTestBase<
               assertThat(cm).isNotNull();
               assertThat(cm.getData())
                   .containsEntry(ConfigMapGenericKubernetesDependent.KEY, INITIAL_DATA);
+              assertThat(cm.getMetadata().getOwnerReferences().get(0).getController()).isTrue();
             });
 
     resource.getSpec().setValue(CHANGED_DATA);
