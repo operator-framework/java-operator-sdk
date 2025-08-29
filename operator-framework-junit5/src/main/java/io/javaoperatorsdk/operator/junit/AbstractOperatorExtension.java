@@ -38,6 +38,7 @@ public abstract class AbstractOperatorExtension
   public static final int DEFAULT_NAMESPACE_DELETE_TIMEOUT = 90;
 
   private final KubernetesClient kubernetesClient;
+  private final KubernetesClient infrastructureKubernetesClient;
   protected final List<HasMetadata> infrastructure;
   protected Duration infrastructureTimeout;
   protected final boolean oneNamespacePerClass;
@@ -56,10 +57,15 @@ public abstract class AbstractOperatorExtension
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
       KubernetesClient kubernetesClient,
+      KubernetesClient infrastructureKubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
+    this.infrastructureKubernetesClient =
+        infrastructureKubernetesClient != null
+            ? infrastructureKubernetesClient
+            : new KubernetesClientBuilder().build();
     this.kubernetesClient =
-        kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
+        kubernetesClient != null ? kubernetesClient : this.infrastructureKubernetesClient;
     this.infrastructure = infrastructure;
     this.infrastructureTimeout = infrastructureTimeout;
     this.oneNamespacePerClass = oneNamespacePerClass;
@@ -92,6 +98,11 @@ public abstract class AbstractOperatorExtension
   @Override
   public KubernetesClient getKubernetesClient() {
     return kubernetesClient;
+  }
+
+  @Override
+  public KubernetesClient getInfrastructureKubernetesClient() {
+    return infrastructureKubernetesClient;
   }
 
   public String getNamespace() {
@@ -141,7 +152,7 @@ public abstract class AbstractOperatorExtension
   protected void before(ExtensionContext context) {
     LOGGER.info("Initializing integration test in namespace {}", namespace);
 
-    kubernetesClient
+    infrastructureKubernetesClient
         .namespaces()
         .resource(
             new NamespaceBuilder()
@@ -149,8 +160,8 @@ public abstract class AbstractOperatorExtension
                 .build())
         .serverSideApply();
 
-    kubernetesClient.resourceList(infrastructure).serverSideApply();
-    kubernetesClient
+    infrastructureKubernetesClient.resourceList(infrastructure).serverSideApply();
+    infrastructureKubernetesClient
         .resourceList(infrastructure)
         .waitUntilReady(infrastructureTimeout.toMillis(), TimeUnit.MILLISECONDS);
   }
@@ -172,16 +183,19 @@ public abstract class AbstractOperatorExtension
       if (preserveNamespaceOnError && context.getExecutionException().isPresent()) {
         LOGGER.info("Preserving namespace {}", namespace);
       } else {
-        kubernetesClient.resourceList(infrastructure).delete();
+        infrastructureKubernetesClient.resourceList(infrastructure).delete();
         deleteOperator();
         LOGGER.info("Deleting namespace {} and stopping operator", namespace);
-        kubernetesClient.namespaces().withName(namespace).delete();
+        infrastructureKubernetesClient.namespaces().withName(namespace).delete();
         if (waitForNamespaceDeletion) {
           LOGGER.info("Waiting for namespace {} to be deleted", namespace);
           Awaitility.await("namespace deleted")
               .pollInterval(50, TimeUnit.MILLISECONDS)
               .atMost(namespaceDeleteTimeout, TimeUnit.SECONDS)
-              .until(() -> kubernetesClient.namespaces().withName(namespace).get() == null);
+              .until(
+                  () ->
+                      infrastructureKubernetesClient.namespaces().withName(namespace).get()
+                          == null);
         }
       }
     }
