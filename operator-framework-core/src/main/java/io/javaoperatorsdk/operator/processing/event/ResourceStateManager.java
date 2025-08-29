@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.processing.event;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -13,6 +14,10 @@ class ResourceStateManager {
 
   public ResourceState getOrCreate(ResourceID resourceID) {
     return states.computeIfAbsent(resourceID, ResourceState::new);
+  }
+
+  public Optional<ResourceState> get(ResourceID resourceID) {
+    return Optional.ofNullable(states.get(resourceID));
   }
 
   public ResourceState remove(ResourceID resourceID) {
