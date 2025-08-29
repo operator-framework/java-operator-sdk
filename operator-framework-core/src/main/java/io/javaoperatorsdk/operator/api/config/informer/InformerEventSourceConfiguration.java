@@ -265,6 +265,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withFieldSelector(FieldSelector fieldSelector) {
+      config.withFieldSelector(fieldSelector);
+      return this;
+    }
+
     public void updateFrom(InformerConfiguration<R> informerConfig) {
       if (informerConfig != null) {
         final var informerConfigName = informerConfig.getName();
@@ -281,7 +286,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
             .withOnUpdateFilter(informerConfig.getOnUpdateFilter())
             .withOnDeleteFilter(informerConfig.getOnDeleteFilter())
             .withGenericFilter(informerConfig.getGenericFilter())
-            .withInformerListLimit(informerConfig.getInformerListLimit());
+            .withInformerListLimit(informerConfig.getInformerListLimit())
+            .withFieldSelector(informerConfig.getFieldSelector());
       }
     }
 
