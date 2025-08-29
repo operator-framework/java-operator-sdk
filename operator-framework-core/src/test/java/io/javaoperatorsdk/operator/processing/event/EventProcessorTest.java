@@ -129,7 +129,7 @@ class EventProcessorTest {
   void schedulesAnEventRetryOnException() {
     TestCustomResource customResource = testCustomResource();
 
-    ExecutionScope executionScope = new ExecutionScope(null);
+    ExecutionScope executionScope = new ExecutionScope(null, null);
     executionScope.setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
@@ -271,7 +271,7 @@ class EventProcessorTest {
     var cr = testCustomResource(crID);
 
     eventProcessor.eventProcessingFinished(
-        new ExecutionScope(null).setResource(cr), PostExecutionControl.defaultDispatch());
+        new ExecutionScope(null, null).setResource(cr), PostExecutionControl.defaultDispatch());
 
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
   }
@@ -300,7 +300,7 @@ class EventProcessorTest {
   @Test
   void notUpdatesEventSourceHandlerIfResourceUpdated() {
     TestCustomResource customResource = testCustomResource();
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope = new ExecutionScope(null, null).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceStatusPatched(customResource);
 
@@ -313,7 +313,7 @@ class EventProcessorTest {
   void notReschedulesAfterTheFinalizerRemoveProcessed() {
     TestCustomResource customResource = testCustomResource();
     markForDeletion(customResource);
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope = new ExecutionScope(null, null).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceFinalizerRemoved(customResource);
 
@@ -326,7 +326,7 @@ class EventProcessorTest {
   void skipEventProcessingIfFinalizerRemoveProcessed() {
     TestCustomResource customResource = testCustomResource();
     markForDeletion(customResource);
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope = new ExecutionScope(null, null).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceFinalizerRemoved(customResource);
 
@@ -343,7 +343,7 @@ class EventProcessorTest {
   void newResourceAfterMissedDeleteEvent() {
     TestCustomResource customResource = testCustomResource();
     markForDeletion(customResource);
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope = new ExecutionScope(null, null).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceFinalizerRemoved(customResource);
     var newResource = testCustomResource();
@@ -379,7 +379,7 @@ class EventProcessorTest {
   @Test
   void schedulesRetryForMarReconciliationInterval() {
     TestCustomResource customResource = testCustomResource();
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope = new ExecutionScope(null, null).setResource(customResource);
     PostExecutionControl postExecutionControl = PostExecutionControl.defaultDispatch();
 
     eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
@@ -401,7 +401,8 @@ class EventProcessorTest {
                 eventSourceManagerMock,
                 metricsMock));
     eventProcessorWithRetry.start();
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(testCustomResource());
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null).setResource(testCustomResource());
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException());
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);

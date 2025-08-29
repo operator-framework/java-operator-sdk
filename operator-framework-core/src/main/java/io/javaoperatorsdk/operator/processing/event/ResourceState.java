@@ -1,5 +1,9 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import io.javaoperatorsdk.operator.api.reconciler.expectation.Expectation;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
@@ -29,6 +33,7 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
+  private ExpectationHolder expectationHolder;
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -73,6 +78,18 @@ class ResourceState {
 
   public boolean processedMarkForDeletionPresent() {
     return eventing == EventingState.PROCESSED_MARK_FOR_DELETION;
+  }
+
+  public void setExpectation(Expectation<?> expectation) {
+    expectationHolder = new ExpectationHolder(LocalDateTime.now(), expectation);
+  }
+
+  public void cleanExpectation() {
+    expectationHolder = null;
+  }
+
+  public Optional<ExpectationHolder> getExpectationHolder() {
+    return Optional.ofNullable(expectationHolder);
   }
 
   public void markEventReceived() {
