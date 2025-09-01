@@ -43,7 +43,8 @@ public class MyReconciler implements Reconciler<MyResource> {
 
 Your custom retry class must:
 - Provide a no-argument constructor for automatic instantiation
-- Optionally implement `AnnotationConfigurable` for configuration from annotations
+- Optionally implement `AnnotationConfigurable` for configuration from annotations. See [`GenericRetry`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/retry/GenericRetry.java#) 
+  implementation for more details.
 
 ### Accessing Retry Information
 
