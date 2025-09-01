@@ -1,5 +1,5 @@
 ---
-title: Contributing To Java Operator SDK
+title: Contributing
 weight: 110
 ---
 
