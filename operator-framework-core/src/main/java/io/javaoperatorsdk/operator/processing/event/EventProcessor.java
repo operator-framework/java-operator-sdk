@@ -217,10 +217,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // removed, but also the informers websocket is disconnected and later reconnected. So
         // meanwhile the resource could be deleted and recreated. In this case we just mark a new
         // event as below.
-        state.markEventReceived();
+        state.markEventReceived(isAllEventMode());
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
-      state.markEventReceived();
+      state.markEventReceived(isAllEventMode());
     } else if (isAllEventMode() && state.deleteEventPresent()) {
       state.markAdditionalEventAfterDeleteEvent();
     } else if (log.isDebugEnabled()) {
@@ -344,7 +344,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     boolean eventPresent =
         state.eventPresent()
             || (isAllEventMode() && state.isAdditionalEventPresentAfterDeleteEvent());
-    state.markEventReceived();
+    state.markEventReceived(isAllEventMode());
 
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
     if (eventPresent) {
