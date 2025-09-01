@@ -93,12 +93,16 @@ class ResourceState {
     return eventing == EventingState.PROCESSED_MARK_FOR_DELETION;
   }
 
-  public void markEventReceived() {
-    if (deleteEventPresent()) {
+  public void markEventReceived(boolean isAllEventMode) {
+    if (!isAllEventMode && deleteEventPresent()) {
       throw new IllegalStateException("Cannot receive event after a delete event received");
     }
     log.debug("Marking event received for: {}", getId());
-    eventing = EventingState.EVENT_PRESENT;
+    if (eventing == EventingState.DELETE_EVENT_PRESENT) {
+      eventing = EventingState.ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT;
+    } else {
+      eventing = EventingState.EVENT_PRESENT;
+    }
   }
 
   public void markAdditionalEventAfterDeleteEvent() {

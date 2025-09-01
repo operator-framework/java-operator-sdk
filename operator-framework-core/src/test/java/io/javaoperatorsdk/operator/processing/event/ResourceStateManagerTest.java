@@ -36,7 +36,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void marksEvent() {
-    state.markEventReceived();
+    state.markEventReceived(false);
 
     assertThat(state.eventPresent()).isTrue();
     assertThat(state.deleteEventPresent()).isFalse();
@@ -52,7 +52,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void afterDeleteEventMarkEventIsNotRelevant() {
-    state.markEventReceived();
+    state.markEventReceived(false);
 
     state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
@@ -62,7 +62,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void cleansUp() {
-    state.markEventReceived();
+    state.markEventReceived(false);
     state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     manager.remove(sampleResourceID);
@@ -78,14 +78,14 @@ class ResourceStateManagerTest {
         IllegalStateException.class,
         () -> {
           state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
-          state.markEventReceived();
+          state.markEventReceived(false);
         });
   }
 
   @Test
   public void listsResourceIDSWithEventsPresent() {
-    state.markEventReceived();
-    state2.markEventReceived();
+    state.markEventReceived(false);
+    state2.markEventReceived(false);
     state.unMarkEventReceived(false);
 
     var res = manager.resourcesWithEventPresent();

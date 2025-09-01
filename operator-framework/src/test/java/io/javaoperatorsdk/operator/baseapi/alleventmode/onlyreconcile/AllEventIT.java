@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -63,7 +62,6 @@ public class AllEventIT {
             });
   }
 
-  @Disabled("fix")
   @Test
   void retriesExceptionOnDeleteEvent() {
     var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
