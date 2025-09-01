@@ -3,41 +3,71 @@ title: Error handling and retries
 weight: 46
 ---
 
-## Automatic Retries on Error
+## How Automatic Retries Work
 
-JOSDK will schedule an automatic retry of the reconciliation whenever an exception is thrown by
-your `Reconciler`. The retry behavior is configurable, but a default implementation is provided
-covering most of the typical use-cases, see
-[GenericRetry](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/retry/GenericRetry.java)
-.
+JOSDK automatically schedules retries whenever your `Reconciler` throws an exception. This robust retry mechanism helps handle transient issues like network problems or temporary resource unavailability.
+
+### Default Retry Behavior
+
+The default retry implementation covers most typical use cases with exponential backoff:
 
 ```java
-    GenericRetry.defaultLimitedExponentialRetry()
-        .setInitialInterval(5000)
-        .setIntervalMultiplier(1.5D)
-        .setMaxAttempts(5);
+GenericRetry.defaultLimitedExponentialRetry()
+    .setInitialInterval(5000)       // Start with 5-second delay
+    .setIntervalMultiplier(1.5D)    // Increase delay by 1.5x each retry
+    .setMaxAttempts(5);             // Maximum 5 attempts
 ```
 
-You can also configure the default retry behavior using the `@GradualRetry` annotation.
+### Configuration Options
 
-It is possible to provide a custom implementation using the `retry` field of the
-`@ControllerConfiguration` annotation and specifying the class of your custom implementation.
-Note that this class must provide an accessible no-arg constructor for automated
-instantiation. Additionally, your implementation can be automatically configured from an
-annotation that you can provide by having your `Retry` implementation implement the
-`AnnotationConfigurable` interface, parameterized with your annotation type. See the
-`GenericRetry` implementation for more details.
+**Using the `@GradualRetry` annotation:**
 
-Information about the current retry state is accessible from
-the [Context](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Context.java)
-object. Of note, particularly interesting is the `isLastAttempt` method, which could allow your
-`Reconciler` to implement a different behavior based on this status, by setting an error message
-in your resource status, for example, when attempting a last retry.
+```java
+@ControllerConfiguration
+@GradualRetry(maxAttempts = 3, initialInterval = 2000)
+public class MyReconciler implements Reconciler<MyResource> {
+    // reconciler implementation
+}
+```
 
-Note, though, that reaching the retry limit won't prevent new events to be processed. New
-reconciliations will happen for new events as usual. However, if an error also occurs that
-would trigger a retry, the SDK won't schedule one at this point since the retry limit
-has already been reached.
+**Custom retry implementation:**
+
+Specify a custom retry class in the `@ControllerConfiguration` annotation:
+
+```java
+@ControllerConfiguration(retry = MyCustomRetry.class)
+public class MyReconciler implements Reconciler<MyResource> {
+    // reconciler implementation
+}
+```
+
+Your custom retry class must:
+- Provide a no-argument constructor for automatic instantiation
+- Optionally implement `AnnotationConfigurable` for configuration from annotations
+
+### Accessing Retry Information
+
+The [Context](https://github.com/java-operator-sdk/java-operator-sdk/blob/master/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/Context.java) object provides retry state information:
+
+```java
+@Override
+public UpdateControl<MyResource> reconcile(MyResource resource, Context<MyResource> context) {
+    if (context.isLastAttempt()) {
+        // Handle final retry attempt differently
+        resource.getStatus().setErrorMessage("Failed after all retry attempts");
+        return UpdateControl.patchStatus(resource);
+    }
+    
+    // Normal reconciliation logic
+    // ...
+}
+```
+
+### Important Retry Behavior Notes
+
+- **Retry limits don't block new events**: When retry limits are reached, new reconciliations still occur for new events
+- **No retry on limit reached**: If an error occurs after reaching the retry limit, no additional retries are scheduled until new events arrive
+- **Event-driven recovery**: Fresh events can restart the retry cycle, allowing recovery from previously failed states
 
 A successful execution resets the retry state.
 
