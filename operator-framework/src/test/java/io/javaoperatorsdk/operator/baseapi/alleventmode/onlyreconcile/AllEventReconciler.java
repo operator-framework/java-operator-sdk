@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile;
 import io.javaoperatorsdk.operator.api.config.ControllerMode;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.FinalizerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.baseapi.alleventmode.AbstractAllEventReconciler;
@@ -22,16 +23,14 @@ public class AllEventReconciler extends AbstractAllEventReconciler
     }
 
     if (getUseFinalizer() && !resource.hasFinalizer(FINALIZER)) {
-      resource.addFinalizer(FINALIZER);
-      context.getClient().resource(resource).update();
+      FinalizerUtils.patchFinalizer(resource, FINALIZER, context);
       return UpdateControl.noUpdate();
     }
 
     if (resource.isMarkedForDeletion() && !context.isDeleteEventPresent()) {
       setEventOnMarkedForDeletion(true);
       if (getUseFinalizer() && resource.hasFinalizer(FINALIZER)) {
-        resource.removeFinalizer(FINALIZER);
-        context.getClient().resource(resource).update();
+        FinalizerUtils.removeFinalizer(resource, FINALIZER, context);
       }
     }
 
