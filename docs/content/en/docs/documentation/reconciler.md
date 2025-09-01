@@ -3,22 +3,23 @@ title: Implementing a reconciler
 weight: 45
 ---
 
-## Reconciliation Execution Overview
+## How Reconciliation Works
 
-Events always trigger reconciliation execution. These events typically come from:
-- **Primary resources** (usually custom resources) when they are created, updated, or deleted on the server
-- **Secondary resources** through registered event sources
+The reconciliation process is event-driven and follows this flow:
 
-Reconciler implementations are associated with a specific resource type and listen for events from the Kubernetes API server. When we receive an event, it triggers reconciliation unless one is already running for that particular resource. The framework guarantees that no concurrent reconciliation happens for the same resource.
+1. **Event Reception**: Events trigger reconciliation from:
+   - **Primary resources** (usually custom resources) when created, updated, or deleted
+   - **Secondary resources** through registered event sources
 
-Once reconciliation completes, the framework checks if:
+2. **Reconciliation Execution**: Each reconciler handles a specific resource type and listens for events from the Kubernetes API server. When an event arrives, it triggers reconciliation unless one is already running for that resource. The framework ensures no concurrent reconciliation occurs for the same resource.
 
-- An exception was thrown during execution - if yes, schedules a retry
-- New events were received during execution - if yes, schedules a new reconciliation
-- The reconciler explicitly requested rescheduling (`UpdateControl.rescheduleAfter(..)`) - if yes, schedules a timer event with the specified delay
-- If none of the above applies, reconciliation is finished
+3. **Post-Reconciliation Processing**: After reconciliation completes, the framework:
+   - Schedules a retry if an exception was thrown
+   - Schedules new reconciliation if events were received during execution  
+   - Schedules a timer event if rescheduling was requested (`UpdateControl.rescheduleAfter(..)`)
+   - Finishes reconciliation if none of the above apply
 
-In summary, the SDK core is implemented as an event-driven system where events trigger reconciliation requests.
+The SDK core implements an event-driven system where events trigger reconciliation requests.
 
 ## Implementing Reconciler and Cleaner Interfaces
 

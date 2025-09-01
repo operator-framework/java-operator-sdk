@@ -3,25 +3,31 @@ title: Introduction to Kubernetes operators
 weight: 15
 ---
 
-## Introduction & Resources 
+## What are Kubernetes Operators?
 
-Operators manage both cluster and non-cluster resources on behalf of Kubernetes. The Java Operator SDK (JOSDK) makes it easy to implement Kubernetes operators in Java. Our APIs are designed to feel natural to Java developers, and the framework handles common problems out of the box so you can focus on your business logic.
+Kubernetes operators are software extensions that manage both cluster and non-cluster resources on behalf of Kubernetes. The Java Operator SDK (JOSDK) makes it easy to implement Kubernetes operators in Java, with APIs designed to feel natural to Java developers and framework handling of common problems so you can focus on your business logic.
 
-For an introduction to operators, see this [blog post](https://blog.container-solutions.com/kubernetes-operators-explained).
+## Why Use Java Operator SDK?
 
-For introductions to JOSDK, watch [this talk](https://www.youtube.com/watch?v=CvftaV-xrB4).
+JOSDK provides several key advantages:
 
-Learn about the common problems JOSDK solves [here](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk).
+- **Java-native APIs** that feel familiar to Java developers
+- **Automatic handling** of common operator challenges (caching, event handling, retries)
+- **Production-ready features** like observability, metrics, and error handling
+- **Simplified development** so you can focus on business logic instead of Kubernetes complexities
 
-You can also refer to the [Writing Kubernetes operators using JOSDK blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk).
+## Learning Resources
 
+### Getting Started
+- [Introduction to Kubernetes operators](https://blog.container-solutions.com/kubernetes-operators-explained) - Core concepts explained
+- [Implementing Kubernetes Operators in Java](https://www.youtube.com/watch?v=CvftaV-xrB4) - Introduction talk
+- [Kubernetes operator pattern documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) - Official Kubernetes docs
 
-## Operators in General
+### Deep Dives
+- [Problems JOSDK solves](https://blog.container-solutions.com/a-deep-dive-into-the-java-operator-sdk) - Technical deep dive
+- [Why Java operators make sense](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators) - Java in cloud-native infrastructure
+- [Building a Kubernetes operator SDK for Java](https://csviri.medium.com/deep-dive-building-a-kubernetes-operator-sdk-for-java-developers-5008218822cb) - Framework design principles
 
-- [Implementing Kubernetes Operators in Java talk](https://www.youtube.com/watch?v=CvftaV-xrB4)
-- [Introduction to the concept of Kubernetes Operators](https://blog.container-solutions.com/kubernetes-operators-explained)
-- [Operator pattern explained in Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) 
-- [Why Java Operators make sense](https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators)
-- [What problems an operator framework solves](https://csviri.medium.com/deep-dive-building-a-kubernetes-operator-sdk-for-java-developers-5008218822cb)
-- [Writing Kubernetes operators using JOSDK blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk)
+### Tutorials
+- [Writing Kubernetes operators using JOSDK](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk) - Step-by-step blog series
  
