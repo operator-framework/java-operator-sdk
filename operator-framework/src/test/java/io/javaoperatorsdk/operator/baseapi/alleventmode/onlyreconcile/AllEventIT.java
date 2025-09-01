@@ -83,6 +83,9 @@ public class AllEventIT {
             });
   }
 
+  @Test
+  void eventReceivedOnDeleteEventRetry() {}
+
   AllEventCustomResource getResource() {
     return extension.get(AllEventCustomResource.class, TEST);
   }
