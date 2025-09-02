@@ -18,7 +18,6 @@ public class AllEventCleanerIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder().withReconciler(new AllEventCleanerReconciler()).build();
 
-  // todo delete event without finalizer
   @Test
   void eventsPresent() {
     var reconciler = extension.getReconcilerOfType(AllEventCleanerReconciler.class);

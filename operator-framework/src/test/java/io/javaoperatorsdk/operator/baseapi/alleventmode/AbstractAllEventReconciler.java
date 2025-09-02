@@ -6,9 +6,16 @@ public class AbstractAllEventReconciler {
 
   public static final String FINALIZER = "all.event.mode/finalizer";
   public static final String ADDITIONAL_FINALIZER = "all.event.mode/finalizer2";
+  public static final String NO_MORE_EXCEPTION_ANNOTATION_KEY = "no.more.exception";
 
   protected volatile boolean useFinalizer = true;
   protected volatile boolean throwExceptionOnFirstDeleteEvent = false;
+  protected volatile boolean throwExceptionIfNoAnnotation = false;
+
+  protected volatile boolean waitAfterFirstRetry = false;
+  protected volatile boolean continuerOnRetryWait = false;
+  protected volatile boolean waiting = false;
+
   protected volatile boolean isFirstDeleteEvent = true;
 
   private boolean resourceEventPresent = false;
@@ -41,7 +48,7 @@ public class AbstractAllEventReconciler {
     this.eventOnMarkedForDeletion = eventOnMarkedForDeletion;
   }
 
-  public int getEventCounter() {
+  public int getEventCount() {
     return eventCounter.get();
   }
 
@@ -71,5 +78,37 @@ public class AbstractAllEventReconciler {
 
   public void setThrowExceptionOnFirstDeleteEvent(boolean throwExceptionOnFirstDeleteEvent) {
     this.throwExceptionOnFirstDeleteEvent = throwExceptionOnFirstDeleteEvent;
+  }
+
+  public boolean isThrowExceptionIfNoAnnotation() {
+    return throwExceptionIfNoAnnotation;
+  }
+
+  public void setThrowExceptionIfNoAnnotation(boolean throwExceptionIfNoAnnotation) {
+    this.throwExceptionIfNoAnnotation = throwExceptionIfNoAnnotation;
+  }
+
+  public boolean isWaitAfterFirstRetry() {
+    return waitAfterFirstRetry;
+  }
+
+  public void setWaitAfterFirstRetry(boolean waitAfterFirstRetry) {
+    this.waitAfterFirstRetry = waitAfterFirstRetry;
+  }
+
+  public boolean isContinuerOnRetryWait() {
+    return continuerOnRetryWait;
+  }
+
+  public void setContinuerOnRetryWait(boolean continuerOnRetryWait) {
+    this.continuerOnRetryWait = continuerOnRetryWait;
+  }
+
+  public boolean isWaiting() {
+    return waiting;
+  }
+
+  public void setWaiting(boolean waiting) {
+    this.waiting = waiting;
   }
 }
