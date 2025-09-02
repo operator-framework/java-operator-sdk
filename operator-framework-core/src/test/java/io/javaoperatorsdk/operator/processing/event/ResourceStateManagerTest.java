@@ -8,8 +8,6 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
-import io.javaoperatorsdk.operator.TestUtils;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ResourceStateManagerTest {
