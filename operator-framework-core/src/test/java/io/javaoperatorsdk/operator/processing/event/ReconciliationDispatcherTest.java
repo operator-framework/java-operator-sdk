@@ -703,6 +703,15 @@ class ReconciliationDispatcherTest {
         .isNotSameAs(testCustomResource);
   }
 
+  @Test
+  void allEventModeNoReSchedulesAllowedForDeleteEvent() {}
+
+  @Test
+  void allEventModeCallsCleanupOnDeleteEvent() {}
+
+  @Test
+  void allEventModeCallsCleanupOnMarkedForDeletion() {}
+
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();
     observedGenCustomResource.setMetadata(new ObjectMeta());

@@ -504,6 +504,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
               return;
             }
             executionScope.setDeleteEvent(true);
+            executionScope.setDeleteFinalStateUnknown(
+                state.orElseThrow().isDeleteFinalStateUnknown());
           } else {
             log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
             return;
