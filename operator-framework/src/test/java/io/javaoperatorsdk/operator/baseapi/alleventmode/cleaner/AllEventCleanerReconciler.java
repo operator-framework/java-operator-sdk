@@ -5,6 +5,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.FinalizerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.baseapi.alleventmode.AbstractAllEventReconciler;
@@ -15,16 +16,15 @@ public class AllEventCleanerReconciler extends AbstractAllEventReconciler
 
   @Override
   public UpdateControl<AllEventCleanerCustomResource> reconcile(
-      AllEventCleanerCustomResource resource, Context<AllEventCleanerCustomResource> context) {
+      AllEventCleanerCustomResource primary, Context<AllEventCleanerCustomResource> context) {
 
     increaseEventCount();
-    if (!resource.isMarkedForDeletion()) {
+    if (!primary.isMarkedForDeletion()) {
       setResourceEventPresent(true);
     }
 
-    if (!resource.hasFinalizer(FINALIZER)) {
-      resource.addFinalizer(FINALIZER);
-      context.getClient().resource(resource).update();
+    if (useFinalizer && !primary.hasFinalizer(FINALIZER)) {
+      FinalizerUtils.patchFinalizer(primary, FINALIZER, context);
       return UpdateControl.noUpdate();
     }
 
@@ -40,15 +40,13 @@ public class AllEventCleanerReconciler extends AbstractAllEventReconciler
     if (resource.isMarkedForDeletion() && !context.isDeleteEventPresent()) {
       setEventOnMarkedForDeletion(true);
       if (resource.hasFinalizer(FINALIZER)) {
-        resource.removeFinalizer(FINALIZER);
-        context.getClient().resource(resource).update();
+        FinalizerUtils.removeFinalizer(resource, FINALIZER, context);
       }
     }
 
     if (context.isDeleteEventPresent()) {
       setDeleteEventPresent(true);
     }
-    // todo handle this document
     return DeleteControl.defaultDelete();
   }
 }

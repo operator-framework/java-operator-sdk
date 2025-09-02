@@ -1,25 +1,38 @@
 package io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
+import static io.javaoperatorsdk.operator.baseapi.alleventmode.AbstractAllEventReconciler.ADDITIONAL_FINALIZER;
 import static io.javaoperatorsdk.operator.baseapi.alleventmode.AbstractAllEventReconciler.FINALIZER;
+import static io.javaoperatorsdk.operator.baseapi.alleventmode.AbstractAllEventReconciler.NO_MORE_EXCEPTION_ANNOTATION_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 public class AllEventIT {
 
   public static final String TEST = "test1";
+  public static final int MAX_RETRY_ATTEMPTS = 2;
 
   @RegisterExtension
   LocallyRunOperatorExtension extension =
-      LocallyRunOperatorExtension.builder().withReconciler(new AllEventReconciler()).build();
+      LocallyRunOperatorExtension.builder()
+          .withReconciler(
+              new AllEventReconciler(),
+              o ->
+                  o.withRetry(
+                      new GenericRetry()
+                          .setInitialInterval(800)
+                          .setMaxAttempts(MAX_RETRY_ATTEMPTS)
+                          .setIntervalMultiplier(1)))
+          .build();
 
-  // todo additional finalizer, events after that
-  // todo retry on delete event + event received meanwhile
   @Test
   void eventsPresent() {
     var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
@@ -84,7 +97,137 @@ public class AllEventIT {
   }
 
   @Test
-  void eventReceivedOnDeleteEventRetry() {}
+  void additionalFinalizer() {
+    var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
+    reconciler.setUseFinalizer(true);
+    var res = testResource();
+    res.addFinalizer(ADDITIONAL_FINALIZER);
+
+    extension.create(res);
+
+    extension.delete(getResource());
+
+    await()
+        .untilAsserted(
+            () -> {
+              var r = getResource();
+              assertThat(r).isNotNull();
+              assertThat(r.getMetadata().getFinalizers()).containsExactly(ADDITIONAL_FINALIZER);
+            });
+    var eventCount = reconciler.getEventCount();
+
+    res = getResource();
+    res.removeFinalizer(ADDITIONAL_FINALIZER);
+    extension.update(res);
+
+    await()
+        .untilAsserted(
+            () -> {
+              var r = getResource();
+              assertThat(r).isNull();
+              assertThat(reconciler.getEventCount()).isEqualTo(eventCount + 1);
+            });
+  }
+
+  @Test
+  void additionalEventDuringRetryOnDeleteEvent() {
+
+    var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
+    reconciler.setThrowExceptionIfNoAnnotation(true);
+    reconciler.setWaitAfterFirstRetry(true);
+    var res = testResource();
+    res.addFinalizer(ADDITIONAL_FINALIZER);
+    extension.create(res);
+    extension.delete(getResource());
+
+    await()
+        .pollDelay(Duration.ofMillis(30))
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getEventCount()).isGreaterThan(2);
+            });
+    var eventCount = reconciler.getEventCount();
+
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.isWaiting());
+            });
+
+    res = getResource();
+    res.getMetadata().getAnnotations().put("my-annotation", "true");
+    extension.update(res);
+    reconciler.setContinuerOnRetryWait(true);
+
+    await()
+        .pollDelay(Duration.ofMillis(30))
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getEventCount()).isEqualTo(eventCount + 1);
+            });
+
+    // second retry
+    await()
+        .pollDelay(Duration.ofMillis(30))
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getEventCount()).isEqualTo(eventCount + 2);
+            });
+
+    addNoMoreExceptionAnnotation();
+
+    await()
+        .untilAsserted(
+            () -> {
+              var r = getResource();
+              assertThat(r.getMetadata().getFinalizers()).doesNotContain(FINALIZER);
+            });
+
+    removeAdditionalFinalizerWaitForResourceDeletion();
+  }
+
+  @Test
+  void additionalEventAfterExhaustedRetry() {
+
+    var reconciler = extension.getReconcilerOfType(AllEventReconciler.class);
+    reconciler.setThrowExceptionIfNoAnnotation(true);
+    var res = testResource();
+    res.addFinalizer(ADDITIONAL_FINALIZER);
+    extension.create(res);
+    extension.delete(getResource());
+
+    await()
+        .pollDelay(Duration.ofMillis(30))
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getEventCount()).isEqualTo(MAX_RETRY_ATTEMPTS + 1);
+            });
+
+    addNoMoreExceptionAnnotation();
+
+    await()
+        .pollDelay(Duration.ofMillis(30))
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getEventCount()).isGreaterThan(MAX_RETRY_ATTEMPTS + 1);
+            });
+
+    removeAdditionalFinalizerWaitForResourceDeletion();
+  }
+
+  private void removeAdditionalFinalizerWaitForResourceDeletion() {
+    var res = getResource();
+    res.removeFinalizer(ADDITIONAL_FINALIZER);
+    extension.update(res);
+    await().untilAsserted(() -> assertThat(getResource()).isNull());
+  }
+
+  private void addNoMoreExceptionAnnotation() {
+    AllEventCustomResource res;
+    res = getResource();
+    res.getMetadata().getAnnotations().put(NO_MORE_EXCEPTION_ANNOTATION_KEY, "true");
+    extension.update(res);
+  }
 
   AllEventCustomResource getResource() {
     return extension.get(AllEventCustomResource.class, TEST);
