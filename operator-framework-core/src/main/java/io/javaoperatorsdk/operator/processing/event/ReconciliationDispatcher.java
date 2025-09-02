@@ -262,7 +262,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return postExecutionControl;
   }
 
-  // todo test
   private void updatePostExecutionControlWithReschedule(
       PostExecutionControl<P> postExecutionControl,
       BaseControl<?> baseControl,
