@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
+import java.time.Duration;
+
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 
 public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry> {
@@ -38,6 +40,11 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
 
   public long getInitialInterval() {
     return initialInterval;
+  }
+
+  public GenericRetry setInitialInterval(Duration initialInterval) {
+    setInitialInterval(initialInterval.toMillis());
+    return this;
   }
 
   public GenericRetry setInitialInterval(long initialInterval) {
