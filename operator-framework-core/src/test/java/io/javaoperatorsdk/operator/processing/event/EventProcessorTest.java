@@ -491,6 +491,28 @@ class EventProcessorTest {
     // no exception thrown
   }
 
+  @Test
+  void allEventModeProcessesDeleteEvent() {}
+
+  @Test
+  void allEventModeRetriesDeleteEventError() {}
+
+  @Test
+  void processesAdditionalEventWhileInDeleteModeRetry() {}
+
+  @Test
+  void allEventModeIfNoRetryInCleanupOnError() {
+  }
+
+  @Test
+  void onAllEventModeIfRetryExhaustedCleansUpState() {
+  }
+
+  @Test
+  void passesResourceFromStateToDispatcher() {
+    // check also last state unknown
+  }
+
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
