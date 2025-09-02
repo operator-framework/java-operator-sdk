@@ -21,6 +21,31 @@ public class AllEventCleanerIT {
   @Test
   void eventsPresent() {
     var reconciler = extension.getReconcilerOfType(AllEventCleanerReconciler.class);
+    reconciler.setUseFinalizer(true);
+    extension.serverSideApply(testResource());
+
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.isResourceEventPresent()).isTrue();
+              assertThat(getResource().hasFinalizer(FINALIZER)).isTrue();
+            });
+
+    extension.delete(getResource());
+
+    await()
+        .untilAsserted(
+            () -> {
+              var r = getResource();
+              assertThat(r).isNull();
+              assertThat(reconciler.isDeleteEventPresent()).isTrue();
+              assertThat(reconciler.isEventOnMarkedForDeletion()).isTrue();
+            });
+  }
+
+  @Test
+  void deleteEventPresentWithoutFinalizer() {
+    var reconciler = extension.getReconcilerOfType(AllEventCleanerReconciler.class);
     extension.serverSideApply(testResource());
 
     await()
