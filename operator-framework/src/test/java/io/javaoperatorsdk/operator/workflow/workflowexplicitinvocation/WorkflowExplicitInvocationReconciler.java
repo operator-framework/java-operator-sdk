@@ -24,7 +24,7 @@ public class WorkflowExplicitInvocationReconciler
       context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
     }
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

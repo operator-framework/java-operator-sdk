@@ -17,6 +17,6 @@ public class GenericKubernetesDependentManagedReconciler
       GenericKubernetesDependentManagedCustomResource resource,
       Context<GenericKubernetesDependentManagedCustomResource> context) {
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

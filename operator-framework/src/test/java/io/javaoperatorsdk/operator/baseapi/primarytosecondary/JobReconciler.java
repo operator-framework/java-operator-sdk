@@ -57,7 +57,7 @@ public class JobReconciler implements Reconciler<Job> {
               () -> new IllegalStateException("Secondary resource cannot be read from cache"));
     }
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

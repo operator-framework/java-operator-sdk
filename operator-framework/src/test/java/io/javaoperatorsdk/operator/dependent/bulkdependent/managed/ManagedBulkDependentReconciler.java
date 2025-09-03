@@ -19,6 +19,6 @@ public class ManagedBulkDependentReconciler implements Reconciler<BulkDependentT
       throws Exception {
 
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

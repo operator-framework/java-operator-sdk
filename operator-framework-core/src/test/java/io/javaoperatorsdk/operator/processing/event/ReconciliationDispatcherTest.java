@@ -346,7 +346,7 @@ class ReconciliationDispatcherTest {
   void doesNotUpdateTheResourceIfNoUpdateUpdateControlIfFinalizerSet() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    reconciler.reconcile = (r, c) -> UpdateControl.newInstance();
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(customResourceFacade, never()).patchResource(any(), any());
@@ -356,7 +356,7 @@ class ReconciliationDispatcherTest {
   @Test
   void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
     removeFinalizers(testCustomResource);
-    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    reconciler.reconcile = (r, c) -> UpdateControl.newInstance();
     when(customResourceFacade.patchResourceWithSSA(any())).thenReturn(testCustomResource);
 
     var postExecControl =
@@ -452,7 +452,7 @@ class ReconciliationDispatcherTest {
     final var config = MockControllerConfiguration.forResource(ObservedGenCustomResource.class);
     CustomResourceFacade<ObservedGenCustomResource> facade = mock(CustomResourceFacade.class);
     when(config.isGenerationAware()).thenReturn(true);
-    when(reconciler.reconcile(any(), any())).thenReturn(UpdateControl.noUpdate());
+    when(reconciler.reconcile(any(), any())).thenReturn(UpdateControl.newInstance());
     when(facade.patchStatus(any(), any())).thenReturn(observedGenResource);
     var dispatcher = init(observedGenResource, reconciler, config, facade, true);
 
@@ -628,7 +628,7 @@ class ReconciliationDispatcherTest {
   void canSkipSchedulingMaxDelayIf() {
     testCustomResource.addFinalizer(DEFAULT_FINALIZER);
 
-    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    reconciler.reconcile = (r, c) -> UpdateControl.newInstance();
     when(reconciliationDispatcher.configuration().maxReconciliationInterval())
         .thenReturn(Optional.empty());
 
@@ -645,7 +645,7 @@ class ReconciliationDispatcherTest {
         init(testCustomResource, reconciler, null, customResourceFacade, true);
 
     removeFinalizers(testCustomResource);
-    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    reconciler.reconcile = (r, c) -> UpdateControl.newInstance();
     when(customResourceFacade.patchResource(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
@@ -739,7 +739,7 @@ class ReconciliationDispatcherTest {
       if (reconcile != null && resource.equals(testCustomResource)) {
         return reconcile.apply(resource, context);
       }
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
 
     @Override

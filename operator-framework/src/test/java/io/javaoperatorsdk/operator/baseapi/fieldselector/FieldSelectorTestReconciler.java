@@ -38,7 +38,7 @@ public class FieldSelectorTestReconciler implements Reconciler<Secret>, TestExec
   public UpdateControl<Secret> reconcile(Secret resource, Context<Secret> context) {
     reconciledSecrets.add(resource.getMetadata().getName());
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

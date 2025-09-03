@@ -69,7 +69,7 @@ public class MultipleSecondaryEventSourceReconciler
         throw new IllegalStateException("There should be 2 related config maps");
       }
     }
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

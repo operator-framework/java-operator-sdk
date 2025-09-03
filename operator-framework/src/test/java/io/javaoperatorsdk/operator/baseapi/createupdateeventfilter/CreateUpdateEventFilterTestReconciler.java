@@ -50,7 +50,7 @@ public class CreateUpdateEventFilterTestReconciler
         configMapDR.reconcile(resource, context);
       }
     }
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   private ConfigMap createConfigMap(CreateUpdateEventFilterTestCustomResource resource) {

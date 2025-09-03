@@ -19,6 +19,6 @@ public class WorkflowActivationConditionReconciler
       WorkflowActivationConditionCustomResource resource,
       Context<WorkflowActivationConditionCustomResource> context) {
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

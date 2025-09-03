@@ -21,7 +21,7 @@ public class SpecialResourceTestReconciler
   public UpdateControl<SpecialResourceCustomResource> reconcile(
       SpecialResourceCustomResource resource, Context<SpecialResourceCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

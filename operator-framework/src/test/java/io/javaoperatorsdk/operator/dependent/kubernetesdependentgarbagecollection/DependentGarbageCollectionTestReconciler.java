@@ -44,7 +44,7 @@ public class DependentGarbageCollectionTestReconciler
       configMapDependent.delete(primary, context);
     }
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

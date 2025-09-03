@@ -34,7 +34,7 @@ public class NextReconciliationImminentReconciler
     reconciliationWaiting = false;
 
     if (context.isNextReconciliationImminent()) {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     } else {
       if (resource.getStatus() == null) {
         resource.setStatus(new NextReconciliationImminentStatus());

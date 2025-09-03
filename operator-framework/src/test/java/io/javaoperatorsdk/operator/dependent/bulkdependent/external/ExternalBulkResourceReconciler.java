@@ -12,6 +12,6 @@ public class ExternalBulkResourceReconciler implements Reconciler<BulkDependentT
   public UpdateControl<BulkDependentTestCustomResource> reconcile(
       BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context)
       throws Exception {
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

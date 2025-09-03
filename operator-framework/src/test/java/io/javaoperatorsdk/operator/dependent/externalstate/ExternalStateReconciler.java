@@ -62,7 +62,7 @@ public class ExternalStateReconciler
           }
         });
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   private void updateExternalResource(

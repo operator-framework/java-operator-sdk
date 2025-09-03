@@ -25,7 +25,7 @@ public class PrevAnnotationBlockReconciler
       Context<PrevAnnotationBlockCustomResource> context) {
     numberOfExecutions.getAndIncrement();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

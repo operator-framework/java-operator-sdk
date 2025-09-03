@@ -18,7 +18,7 @@ public class CleanerForManagedDependentTestReconciler
       CleanerForManagedDependentCustomResource resource,
       Context<CleanerForManagedDependentCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

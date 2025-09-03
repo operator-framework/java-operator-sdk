@@ -13,6 +13,6 @@ public class ManagedDeleterBulkReconciler implements Reconciler<BulkDependentTes
       BulkDependentTestCustomResource resource, Context<BulkDependentTestCustomResource> context)
       throws Exception {
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

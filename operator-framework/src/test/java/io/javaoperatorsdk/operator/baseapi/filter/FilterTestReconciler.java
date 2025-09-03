@@ -35,7 +35,7 @@ public class FilterTestReconciler implements Reconciler<FilterTestCustomResource
         .inNamespace(resource.getMetadata().getNamespace())
         .resource(createConfigMap(resource))
         .createOrReplace();
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   private ConfigMap createConfigMap(FilterTestCustomResource resource) {

@@ -29,7 +29,7 @@ public class MultipleDependentResourceReconciler
       Context<MultipleDependentResourceCustomResource> context) {
     firstDependentResourceConfigMap.reconcile(resource, context);
     secondDependentResourceConfigMap.reconcile(resource, context);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

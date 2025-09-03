@@ -152,7 +152,7 @@ class ControllerEventSourceTest
   private static class TestController extends Controller<TestCustomResource> {
 
     private static final Reconciler<TestCustomResource> reconciler =
-        (resource, context) -> UpdateControl.noUpdate();
+        (resource, context) -> UpdateControl.newInstance();
 
     private final EventSourceManager<TestCustomResource> eventSourceManager =
         mock(EventSourceManager.class);

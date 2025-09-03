@@ -45,7 +45,7 @@ public class DeploymentReconciler implements Reconciler<Deployment>, TestExecuti
               null, null, STATUS_MESSAGE, null, "unknown", "DeploymentReconciler"));
       return UpdateControl.patchStatus(resource);
     } else {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
   }
 

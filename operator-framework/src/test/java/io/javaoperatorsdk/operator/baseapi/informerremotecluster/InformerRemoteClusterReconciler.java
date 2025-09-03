@@ -47,7 +47,7 @@ public class InformerRemoteClusterReconciler
               r.getStatus().setRemoteConfigMapMessage(cm.getData().get(DATA_KEY));
               return UpdateControl.patchStatus(r);
             })
-        .orElseGet(UpdateControl::noUpdate);
+        .orElseGet(UpdateControl::newInstance);
   }
 
   @Override

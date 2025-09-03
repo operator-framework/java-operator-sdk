@@ -78,7 +78,7 @@ public abstract class AbstractMicrometerMetricsTestFixture {
       implements Reconciler<ConfigMap>, Cleaner<ConfigMap> {
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
 
     @Override

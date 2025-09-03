@@ -40,7 +40,7 @@ public class MultipleManagedDependentSameTypeNoDiscriminatorReconciler
       Context<MultipleManagedDependentNoDiscriminatorCustomResource> context) {
     numberOfExecutions.getAndIncrement();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

@@ -49,7 +49,7 @@ public class StartupSecondaryAccessReconciler
       secondaryAndCacheSameAmount = false;
     }
     reconciled = true;
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

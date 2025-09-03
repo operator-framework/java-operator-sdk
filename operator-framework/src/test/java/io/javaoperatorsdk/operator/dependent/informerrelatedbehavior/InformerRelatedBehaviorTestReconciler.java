@@ -35,7 +35,7 @@ public class InformerRelatedBehaviorTestReconciler
       Context<InformerRelatedBehaviorTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     log.info("Reconciled for: {}", ResourceID.fromResource(resource));
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

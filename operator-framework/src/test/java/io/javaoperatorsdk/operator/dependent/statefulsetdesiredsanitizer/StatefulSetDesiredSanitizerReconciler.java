@@ -13,6 +13,6 @@ public class StatefulSetDesiredSanitizerReconciler
       StatefulSetDesiredSanitizerCustomResource resource,
       Context<StatefulSetDesiredSanitizerCustomResource> context)
       throws Exception {
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

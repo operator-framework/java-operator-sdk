@@ -15,7 +15,7 @@ public class SSALegacyMatcherReconciler implements Reconciler<SSALegacyMatcherCu
   public UpdateControl<SSALegacyMatcherCustomResource> reconcile(
       SSALegacyMatcherCustomResource resource, Context<SSALegacyMatcherCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

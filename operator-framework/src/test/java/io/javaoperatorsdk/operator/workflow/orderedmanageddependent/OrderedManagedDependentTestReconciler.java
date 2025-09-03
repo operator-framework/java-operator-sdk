@@ -28,7 +28,7 @@ public class OrderedManagedDependentTestReconciler
       OrderedManagedDependentCustomResource resource,
       Context<OrderedManagedDependentCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

@@ -16,7 +16,7 @@ public class WorkflowExplicitCleanupReconciler
 
     context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

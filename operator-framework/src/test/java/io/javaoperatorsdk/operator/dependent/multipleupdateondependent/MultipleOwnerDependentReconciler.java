@@ -21,7 +21,7 @@ public class MultipleOwnerDependentReconciler
       Context<MultipleOwnerDependentCustomResource> context) {
     numberOfExecutions.getAndIncrement();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

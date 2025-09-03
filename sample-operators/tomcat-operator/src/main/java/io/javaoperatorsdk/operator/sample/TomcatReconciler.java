@@ -39,7 +39,7 @@ public class TomcatReconciler implements Reconciler<Tomcat> {
                   tomcat.getStatus() == null ? 0 : tomcat.getStatus().getReadyReplicas());
               return UpdateControl.patchStatus(updatedTomcat);
             })
-        .orElseGet(UpdateControl::noUpdate);
+        .orElseGet(UpdateControl::newInstance);
   }
 
   private Tomcat createTomcatForStatusUpdate(Tomcat tomcat, Deployment deployment) {

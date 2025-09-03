@@ -79,7 +79,7 @@ public class WebappReconciler implements Reconciler<Webapp>, Cleaner<Webapp> {
   public UpdateControl<Webapp> reconcile(Webapp webapp, Context<Webapp> context) {
     if (webapp.getStatus() != null
         && Objects.equals(webapp.getSpec().getUrl(), webapp.getStatus().getDeployedArtifact())) {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
 
     Tomcat tomcat =
@@ -127,7 +127,7 @@ public class WebappReconciler implements Reconciler<Webapp>, Cleaner<Webapp> {
           "WebappController invoked but Tomcat not ready yet ({}/{})",
           tomcat.getStatus() != null ? tomcat.getStatus().getReadyReplicas() : 0,
           tomcat.getSpec().getReplicas());
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
   }
 

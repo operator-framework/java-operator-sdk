@@ -56,7 +56,7 @@ class OperatorTest {
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context context) {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
   }
 }

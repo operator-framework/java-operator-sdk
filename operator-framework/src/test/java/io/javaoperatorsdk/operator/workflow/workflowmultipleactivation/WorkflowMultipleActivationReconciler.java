@@ -25,7 +25,7 @@ public class WorkflowMultipleActivationReconciler
 
     numberOfReconciliationExecution.incrementAndGet();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfReconciliationExecution() {

@@ -45,9 +45,11 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
                       secret.getMetadata().getName(),
                       decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
               log.info("Schema {} created - updating CR status", s.getName());
-              return UpdateControl.patchStatus(statusUpdateResource);
+              statusUpdateResource.getMetadata().setResourceVersion(null);
+              context.getClient().resource(statusUpdateResource).patchStatus();
+              return UpdateControl.<MySQLSchema>newInstance();
             })
-        .orElseGet(UpdateControl::noUpdate);
+        .orElseGet(UpdateControl::newInstance);
   }
 
   @Override

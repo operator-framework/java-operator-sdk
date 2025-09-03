@@ -21,7 +21,7 @@ public class CRDPresentActivationReconciler
       CRDPresentActivationCustomResource resource,
       Context<CRDPresentActivationCustomResource> context) {
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

@@ -29,6 +29,6 @@ public class ManagedDependentDefaultDeleteConditionReconciler
 
     log.debug("Reconciled: {}", resource);
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

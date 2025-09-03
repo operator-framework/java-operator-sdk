@@ -21,7 +21,7 @@ public class DependentReInitializationReconciler
       Context<DependentReInitializationCustomResource> context)
       throws Exception {
     configMapDependentResource.reconcile(resource, context);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

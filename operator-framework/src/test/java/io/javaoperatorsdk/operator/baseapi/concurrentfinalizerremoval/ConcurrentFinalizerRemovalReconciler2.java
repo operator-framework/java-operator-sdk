@@ -16,7 +16,7 @@ public class ConcurrentFinalizerRemovalReconciler2
   public UpdateControl<ConcurrentFinalizerRemovalCustomResource> reconcile(
       ConcurrentFinalizerRemovalCustomResource resource,
       Context<ConcurrentFinalizerRemovalCustomResource> context) {
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

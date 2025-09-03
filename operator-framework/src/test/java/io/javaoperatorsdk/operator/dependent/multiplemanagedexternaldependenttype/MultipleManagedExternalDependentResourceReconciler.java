@@ -51,7 +51,7 @@ public class MultipleManagedExternalDependentResourceReconciler
       Context<MultipleManagedExternalDependentResourceCustomResource> context) {
     numberOfExecutions.getAndIncrement();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

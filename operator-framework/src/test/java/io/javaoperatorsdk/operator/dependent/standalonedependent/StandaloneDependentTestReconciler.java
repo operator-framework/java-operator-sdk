@@ -47,7 +47,7 @@ public class StandaloneDependentTestReconciler
       // see https://github.com/operator-framework/java-operator-sdk/issues/924
       throw new IllegalStateException("Something went wrong with the cache mechanism.");
     }
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

@@ -34,7 +34,7 @@ public class MultipleDependentResourceWithDiscriminatorReconciler
     numberOfExecutions.getAndIncrement();
     firstDependentResourceConfigMap.reconcile(resource, context);
     secondDependentResourceConfigMap.reconcile(resource, context);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

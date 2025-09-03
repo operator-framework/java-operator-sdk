@@ -26,7 +26,7 @@ public class ManualObservedGenerationReconciler
           .setObservedGeneration(resource.getMetadata().getGeneration());
       return UpdateControl.patchStatus(resourceForStatusPatch);
     } else {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
   }
 

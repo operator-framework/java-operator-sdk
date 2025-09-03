@@ -32,7 +32,7 @@ public class HandleWorkflowExceptionsInReconcilerReconciler
             .orElseThrow()
             .erroredDependentsExist();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

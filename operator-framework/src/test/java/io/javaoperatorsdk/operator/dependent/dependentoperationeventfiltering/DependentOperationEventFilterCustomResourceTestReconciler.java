@@ -19,7 +19,7 @@ public class DependentOperationEventFilterCustomResourceTestReconciler
       DependentOperationEventFilterCustomResource resource,
       Context<DependentOperationEventFilterCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

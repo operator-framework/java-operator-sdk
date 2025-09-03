@@ -25,7 +25,7 @@ public class RateLimitReconciler implements Reconciler<RateLimitCustomResource> 
       RateLimitCustomResource resource, Context<RateLimitCustomResource> context) {
 
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

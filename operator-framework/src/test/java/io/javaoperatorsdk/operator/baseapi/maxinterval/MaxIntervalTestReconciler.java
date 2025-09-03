@@ -22,7 +22,7 @@ public class MaxIntervalTestReconciler
   public UpdateControl<MaxIntervalTestCustomResource> reconcile(
       MaxIntervalTestCustomResource resource, Context<MaxIntervalTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

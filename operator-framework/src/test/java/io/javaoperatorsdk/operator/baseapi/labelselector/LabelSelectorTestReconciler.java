@@ -23,7 +23,7 @@ public class LabelSelectorTestReconciler
       LabelSelectorTestCustomResource resource, Context<LabelSelectorTestCustomResource> context) {
 
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

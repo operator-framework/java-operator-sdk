@@ -40,7 +40,7 @@ class InformerErrorHandlerStartIT {
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context)
         throws Exception {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
   }
 }

@@ -15,7 +15,7 @@ public class BuiltInResourceCleanerReconciler implements Reconciler<Service>, Cl
   @Override
   public UpdateControl<Service> reconcile(Service resource, Context<Service> context) {
     reconciled.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

@@ -26,7 +26,7 @@ public class UpdateStatusInCleanupAndRescheduleReconciler
       UpdateStatusInCleanupAndRescheduleCustomResource resource,
       Context<UpdateStatusInCleanupAndRescheduleCustomResource> context) {
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

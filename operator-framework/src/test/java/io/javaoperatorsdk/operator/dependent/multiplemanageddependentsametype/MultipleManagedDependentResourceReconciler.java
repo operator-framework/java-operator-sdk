@@ -40,7 +40,7 @@ public class MultipleManagedDependentResourceReconciler
       Context<MultipleManagedDependentResourceCustomResource> context) {
     numberOfExecutions.getAndIncrement();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

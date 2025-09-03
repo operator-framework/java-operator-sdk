@@ -48,7 +48,7 @@ public class PrimaryToSecondaryDependentReconciler
       PrimaryToSecondaryDependentCustomResource resource,
       Context<PrimaryToSecondaryDependentCustomResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

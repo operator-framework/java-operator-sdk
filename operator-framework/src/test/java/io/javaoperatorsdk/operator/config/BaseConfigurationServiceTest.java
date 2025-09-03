@@ -479,7 +479,7 @@ class BaseConfigurationServiceTest {
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
   }
 
@@ -498,7 +498,7 @@ class BaseConfigurationServiceTest {
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap resource, Context<ConfigMap> context) {
-      return UpdateControl.noUpdate();
+      return UpdateControl.newInstance();
     }
   }
 

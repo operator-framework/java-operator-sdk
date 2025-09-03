@@ -30,7 +30,7 @@ public class AbstractPrimaryIndexerTestReconciler
       Context<PrimaryIndexerTestCustomResource> context) {
     numberOfExecutions.computeIfAbsent(resource.getMetadata().getName(), r -> new AtomicInteger(0));
     numberOfExecutions.get(resource.getMetadata().getName()).incrementAndGet();
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public Map<String, AtomicInteger> getNumberOfExecutions() {

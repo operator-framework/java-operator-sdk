@@ -33,7 +33,7 @@ public class WorkflowActivationConditionReconciler
 
     numberOfReconciliationExecution.incrementAndGet();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfReconciliationExecution() {

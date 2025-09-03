@@ -16,7 +16,7 @@ public class CleanupConflictReconciler
   public UpdateControl<CleanupConflictCustomResource> reconcile(
       CleanupConflictCustomResource resource, Context<CleanupConflictCustomResource> context) {
     numberReconcileExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

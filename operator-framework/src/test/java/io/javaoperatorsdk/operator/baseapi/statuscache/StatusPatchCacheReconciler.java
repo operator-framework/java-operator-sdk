@@ -44,7 +44,7 @@ public class StatusPatchCacheReconciler implements Reconciler<StatusPatchCacheCu
         PrimaryUpdateAndCacheUtils.ssaPatchStatusAndCacheResource(resource, freshCopy, context);
     latestValue = updated.getStatus().getValue();
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

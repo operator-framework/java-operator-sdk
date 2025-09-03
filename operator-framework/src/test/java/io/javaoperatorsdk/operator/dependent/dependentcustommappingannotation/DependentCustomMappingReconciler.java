@@ -14,6 +14,6 @@ public class DependentCustomMappingReconciler
       Context<DependentCustomMappingCustomResource> context)
       throws Exception {
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 }

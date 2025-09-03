@@ -46,7 +46,7 @@ public class GenericKubernetesResourceHandlingReconciler
                 .resource(desiredConfigMap(primary, context))
                 .create());
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @SuppressWarnings("unchecked")

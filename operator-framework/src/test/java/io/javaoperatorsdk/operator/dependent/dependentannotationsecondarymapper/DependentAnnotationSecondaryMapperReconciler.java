@@ -28,7 +28,7 @@ public class DependentAnnotationSecondaryMapperReconciler
       DependentAnnotationSecondaryMapperResource resource,
       Context<DependentAnnotationSecondaryMapperResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

@@ -33,10 +33,12 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @param customResource the custom resource with target status
    * @return UpdateControl instance
    */
+  @Deprecated
   public static <T extends HasMetadata> UpdateControl<T> patchStatus(T customResource) {
     return new UpdateControl<>(customResource, false, true);
   }
 
+  @Deprecated
   public static <T extends HasMetadata> UpdateControl<T> patchResource(T customResource) {
     return new UpdateControl<>(customResource, true, false);
   }
@@ -46,10 +48,16 @@ public class UpdateControl<P extends HasMetadata> extends BaseControl<UpdateCont
    * @return UpdateControl instance
    * @param <T> resource type
    */
+  @Deprecated
   public static <T extends HasMetadata> UpdateControl<T> patchResourceAndStatus(T customResource) {
     return new UpdateControl<>(customResource, true, true);
   }
 
+  public static <T extends HasMetadata> UpdateControl<T> newInstance() {
+    return new UpdateControl<>(null, false, false);
+  }
+
+  @Deprecated
   public static <T extends HasMetadata> UpdateControl<T> noUpdate() {
     return new UpdateControl<>(null, false, false);
   }

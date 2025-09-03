@@ -31,7 +31,7 @@ public class PerResourcePollingEventSourceTestReconciler
       throws Exception {
     numberOfExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
     numberOfExecutions.compute(resource.getMetadata().getName(), (s, v) -> v + 1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

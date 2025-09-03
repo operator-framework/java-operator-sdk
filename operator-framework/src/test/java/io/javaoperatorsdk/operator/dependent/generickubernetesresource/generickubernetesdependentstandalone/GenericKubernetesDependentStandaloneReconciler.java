@@ -25,7 +25,7 @@ public class GenericKubernetesDependentStandaloneReconciler
 
     dependent.reconcile(resource, context);
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

@@ -41,7 +41,7 @@ public class DynamicGenericEventSourceRegistrationReconciler
     numberOfEventSources.set(
         context.eventSourceRetriever().getEventSourcesFor(GenericKubernetesResource.class).size());
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   private Secret secret(DynamicGenericEventSourceRegistrationCustomResource primary) {

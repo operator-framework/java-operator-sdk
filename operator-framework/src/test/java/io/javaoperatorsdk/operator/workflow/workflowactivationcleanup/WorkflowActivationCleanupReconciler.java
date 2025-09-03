@@ -19,7 +19,7 @@ public class WorkflowActivationCleanupReconciler
       WorkflowActivationCleanupCustomResource resource,
       Context<WorkflowActivationCleanupCustomResource> context) {
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   @Override

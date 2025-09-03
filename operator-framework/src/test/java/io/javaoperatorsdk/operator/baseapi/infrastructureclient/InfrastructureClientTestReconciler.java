@@ -28,7 +28,7 @@ public class InfrastructureClientTestReconciler
       Context<InfrastructureClientTestCustomResource> context) {
     numberOfExecutions.addAndGet(1);
     log.info("Reconciled for: {}", ResourceID.fromResource(resource));
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

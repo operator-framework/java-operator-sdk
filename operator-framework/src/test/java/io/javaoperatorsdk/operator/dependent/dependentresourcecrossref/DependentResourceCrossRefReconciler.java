@@ -41,7 +41,7 @@ public class DependentResourceCrossRefReconciler
       DependentResourceCrossRefResource resource,
       Context<DependentResourceCrossRefResource> context) {
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {

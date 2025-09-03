@@ -29,7 +29,7 @@ public class StandaloneBulkDependentReconciler
 
     dependent.reconcile(resource, context);
 
-    return UpdateControl.noUpdate();
+    return UpdateControl.newInstance();
   }
 
   public int getNumberOfExecutions() {
