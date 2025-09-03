@@ -1,6 +1,6 @@
-package io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile;
+package io.javaoperatorsdk.operator.baseapi.propagateallevent.onlyreconcile;
 
-public class AllEventSpec {
+public class PropagateAllEventSpec {
 
   private String value;
 

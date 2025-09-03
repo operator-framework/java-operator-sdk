@@ -81,7 +81,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         originalResource.getMetadata().getNamespace());
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
-    if (!isAllEventMode()
+    if (!propagateAllEvent()
         && markedForDeletion
         && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
       log.debug(
@@ -100,10 +100,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             executionScope.isDeleteFinalStateUnknown());
 
     // checking the cleaner for all-event-mode
-    if ((!isAllEventMode() && markedForDeletion)
-        || (isAllEventMode()
-            && controller.isCleaner()
-            && (markedForDeletion || executionScope.isDeleteEvent()))) {
+    if (!propagateAllEvent() && markedForDeletion) {
       return handleCleanup(resourceForExecution, originalResource, context, executionScope);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
@@ -122,7 +119,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       P originalResource,
       Context<P> context)
       throws Exception {
-    if (!isAllEventMode()
+    if (!propagateAllEvent()
         && controller.useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
@@ -291,7 +288,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
     DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
-    if (useFinalizer && !isAllEventMode()) {
+    if (useFinalizer && !propagateAllEvent()) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
@@ -538,7 +535,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
   }
 
-  private boolean isAllEventMode() {
-    return configuration().isAllEventReconcileMode();
+  private boolean propagateAllEvent() {
+    return configuration().propagateAllEventToReconciler();
   }
 }

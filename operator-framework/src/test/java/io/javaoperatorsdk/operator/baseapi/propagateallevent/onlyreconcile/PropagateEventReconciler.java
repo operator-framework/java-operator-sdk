@@ -1,23 +1,22 @@
-package io.javaoperatorsdk.operator.baseapi.alleventmode.onlyreconcile;
+package io.javaoperatorsdk.operator.baseapi.propagateallevent.onlyreconcile;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.javaoperatorsdk.operator.api.config.ControllerMode;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.FinalizerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.baseapi.alleventmode.AbstractAllEventReconciler;
 
 @ControllerConfiguration(
-    mode = ControllerMode.RECONCILE_ALL_EVENT,
+    propagateAllEventToReconciler = true,
     generationAwareEventProcessing = false)
-public class AllEventReconciler extends AbstractAllEventReconciler
-    implements Reconciler<AllEventCustomResource> {
+public class PropagateEventReconciler implements Reconciler<PropagateAllEventCustomResource> {
 
-  private static final Logger log = LoggerFactory.getLogger(AllEventReconciler.class);
+  private static final Logger log = LoggerFactory.getLogger(PropagateEventReconciler.class);
 
   private volatile boolean throwExceptionOnFirstDeleteEvent = false;
   private volatile boolean throwExceptionIfNoAnnotation = false;
@@ -28,9 +27,21 @@ public class AllEventReconciler extends AbstractAllEventReconciler
 
   private volatile boolean isFirstDeleteEvent = true;
 
+  public static final String FINALIZER = "all.event.mode/finalizer";
+  public static final String ADDITIONAL_FINALIZER = "all.event.mode/finalizer2";
+  public static final String NO_MORE_EXCEPTION_ANNOTATION_KEY = "no.more.exception";
+
+  protected volatile boolean useFinalizer = true;
+
+  private final AtomicInteger eventCounter = new AtomicInteger(0);
+
+  private boolean deleteEventPresent = false;
+  private boolean eventOnMarkedForDeletion = false;
+  private boolean resourceEventPresent = false;
+
   @Override
-  public UpdateControl<AllEventCustomResource> reconcile(
-      AllEventCustomResource primary, Context<AllEventCustomResource> context)
+  public UpdateControl<PropagateAllEventCustomResource> reconcile(
+      PropagateAllEventCustomResource primary, Context<PropagateAllEventCustomResource> context)
       throws InterruptedException {
     log.info("Reconciling");
     increaseEventCount();
@@ -128,5 +139,45 @@ public class AllEventReconciler extends AbstractAllEventReconciler
 
   public void setWaiting(boolean waiting) {
     this.waiting = waiting;
+  }
+
+  public int getEventCount() {
+    return eventCounter.get();
+  }
+
+  public void increaseEventCount() {
+    eventCounter.incrementAndGet();
+  }
+
+  public boolean getUseFinalizer() {
+    return useFinalizer;
+  }
+
+  public void setUseFinalizer(boolean useFinalizer) {
+    this.useFinalizer = useFinalizer;
+  }
+
+  public boolean isDeleteEventPresent() {
+    return deleteEventPresent;
+  }
+
+  public void setDeleteEventPresent(boolean deleteEventPresent) {
+    this.deleteEventPresent = deleteEventPresent;
+  }
+
+  public boolean isEventOnMarkedForDeletion() {
+    return eventOnMarkedForDeletion;
+  }
+
+  public void setEventOnMarkedForDeletion(boolean eventOnMarkedForDeletion) {
+    this.eventOnMarkedForDeletion = eventOnMarkedForDeletion;
+  }
+
+  public boolean isResourceEventPresent() {
+    return resourceEventPresent;
+  }
+
+  public void setResourceEventPresent(boolean resourceEventPresent) {
+    this.resourceEventPresent = resourceEventPresent;
   }
 }
