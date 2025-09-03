@@ -23,6 +23,8 @@ class CreateOnlyIfNotExistingDependentWithSSAIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
+          // for the sake of this test, we allow to manage ConfigMaps with SSA
+          // by removing it from the non SSA resources (it is not managed with SSA by default)
           .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
           .withReconciler(new CreateOnlyIfNotExistingDependentWithSSAReconciler())
           .build();
