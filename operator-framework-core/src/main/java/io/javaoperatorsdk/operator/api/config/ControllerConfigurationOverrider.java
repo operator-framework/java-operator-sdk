@@ -30,7 +30,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Duration reconciliationMaxInterval;
   private Map<DependentResourceSpec, Object> configurations;
   private final InformerConfiguration<R>.Builder config;
-  private ControllerMode mode;
+  private boolean propagateAllEventToReconciler;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -43,7 +43,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
-    this.mode = original.mode();
+    this.propagateAllEventToReconciler = original.propagateAllEventToReconciler();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -156,8 +156,9 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
-  public ControllerConfigurationOverrider<R> withMode(ControllerMode controllerMode) {
-    this.mode = controllerMode;
+  public ControllerConfigurationOverrider<R> withPropagateAllEventToReconciler(
+      boolean propagateAllEventToReconciler) {
+    this.propagateAllEventToReconciler = propagateAllEventToReconciler;
     return this;
   }
 
@@ -205,7 +206,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         fieldManager,
         original.getConfigurationService(),
         config.buildForController(),
-        mode,
+        propagateAllEventToReconciler,
         original.getWorkflowSpec().orElse(null));
   }
 
