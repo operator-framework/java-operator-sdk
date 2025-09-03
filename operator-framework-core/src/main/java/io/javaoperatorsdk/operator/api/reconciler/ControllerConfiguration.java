@@ -6,7 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.javaoperatorsdk.operator.api.config.ControllerMode;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -79,5 +78,5 @@ public @interface ControllerConfiguration {
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 
-  ControllerMode mode() default ControllerMode.DEFAULT;
+  boolean propagateAllEventToReconciler() default false;
 }

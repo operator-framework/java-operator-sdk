@@ -501,12 +501,10 @@ class EventProcessorTest {
   void processesAdditionalEventWhileInDeleteModeRetry() {}
 
   @Test
-  void allEventModeIfNoRetryInCleanupOnError() {
-  }
+  void allEventModeIfNoRetryInCleanupOnError() {}
 
   @Test
-  void onAllEventModeIfRetryExhaustedCleansUpState() {
-  }
+  void onAllEventModeIfRetryExhaustedCleansUpState() {}
 
   @Test
   void passesResourceFromStateToDispatcher() {
