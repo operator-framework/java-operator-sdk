@@ -11,9 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.FinalizerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration(
-    propagateAllEventToReconciler = true,
-    generationAwareEventProcessing = false)
+@ControllerConfiguration(triggerReconcilerOnAllEvent = true, generationAwareEventProcessing = false)
 public class PropagateEventReconciler implements Reconciler<PropagateAllEventCustomResource> {
 
   private static final Logger log = LoggerFactory.getLogger(PropagateEventReconciler.class);

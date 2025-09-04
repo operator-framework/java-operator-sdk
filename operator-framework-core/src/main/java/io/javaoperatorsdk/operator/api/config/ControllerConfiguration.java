@@ -93,7 +93,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
 
   <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec);
 
-  default boolean propagateAllEventToReconciler() {
+  default boolean triggerReconcilerOnAllEvent() {
     return false;
   }
 }

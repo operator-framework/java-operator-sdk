@@ -304,8 +304,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     final var dependentFieldManager =
         fieldManager.equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name : fieldManager;
 
-    var propagateAllEventToReconciler =
-        annotation != null && annotation.propagateAllEventToReconciler();
+    var triggerReconcilerOnAllEvent =
+        annotation != null && annotation.triggerReconcilerOnAllEvent();
 
     InformerConfiguration<P> informerConfig =
         InformerConfiguration.builder(resourceClass)
@@ -327,7 +327,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         dependentFieldManager,
         this,
         informerConfig,
-        propagateAllEventToReconciler);
+        triggerReconcilerOnAllEvent);
   }
 
   /**
