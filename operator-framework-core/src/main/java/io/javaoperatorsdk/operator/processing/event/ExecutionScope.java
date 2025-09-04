@@ -11,10 +11,12 @@ class ExecutionScope<R extends HasMetadata> {
   private boolean deleteEvent;
   private boolean isDeleteFinalStateUnknown;
 
-  ExecutionScope(RetryInfo retryInfo, boolean deleteEvent, boolean isDeleteFinalStateUnknown) {
+  ExecutionScope(
+      R resource, RetryInfo retryInfo, boolean deleteEvent, boolean isDeleteFinalStateUnknown) {
     this.retryInfo = retryInfo;
     this.deleteEvent = deleteEvent;
     this.isDeleteFinalStateUnknown = isDeleteFinalStateUnknown;
+    this.resource = resource;
   }
 
   public ExecutionScope<R> setResource(R resource) {
@@ -48,15 +50,16 @@ class ExecutionScope<R extends HasMetadata> {
 
   @Override
   public String toString() {
-    if (resource == null) {
-      return "ExecutionScope{resource: null}";
-    } else
-      return "ExecutionScope{"
-          + " resource id: "
-          + ResourceID.fromResource(resource)
-          + ", version: "
-          + resource.getMetadata().getResourceVersion()
-          + '}';
+    return "ExecutionScope{"
+        + "resource="
+        + ResourceID.fromResource(resource)
+        + ", retryInfo="
+        + retryInfo
+        + ", deleteEvent="
+        + deleteEvent
+        + ", isDeleteFinalStateUnknown="
+        + isDeleteFinalStateUnknown
+        + '}';
   }
 
   public RetryInfo getRetryInfo() {

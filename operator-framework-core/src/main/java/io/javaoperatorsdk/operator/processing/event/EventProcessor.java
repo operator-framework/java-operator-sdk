@@ -158,9 +158,14 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         }
         state.setUnderProcessing(true);
         final var latest = maybeLatest.orElseGet(() -> getResourceFromState(state));
+        // passing the latest resources for a corner case when delete event received
+        // during processing an event
         ExecutionScope<P> executionScope =
             new ExecutionScope<>(
-                state.getRetry(), state.deleteEventPresent(), state.isDeleteFinalStateUnknown());
+                latest,
+                state.getRetry(),
+                state.deleteEventPresent(),
+                state.isDeleteFinalStateUnknown());
         state.unMarkEventReceived(triggerOnAllEvent());
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
@@ -281,6 +286,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
       if (state.eventPresent() || (triggerOnAllEvent() && state.deleteEventPresent())) {
+        log.debug("Submitting for reconciliation.");
         submitReconciliationExecution(state);
       } else {
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
@@ -484,25 +490,36 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         log.debug("Event processor not running skipping resource processing: {}", resourceID);
         return;
       }
+      log.debug("Running reconcile executor for: {}", executionScope);
       // change thread name for easier debugging
       final var thread = Thread.currentThread();
       final var name = thread.getName();
       try {
+        // we try to get the most up-to-date resource from cache
         var actualResource = cache.get(resourceID);
         if (actualResource.isEmpty()) {
-          if (triggerOnAllEvent() && executionScope.isDeleteEvent()) {
+          if (triggerOnAllEvent()) {
             log.debug(
                 "Resource not found in the cache, checking for delete event resource: {}",
                 resourceID);
             var state = resourceStateManager.get(resourceID);
-            actualResource =
-                (Optional<P>)
-                    state
-                        .filter(ResourceState::deleteEventPresent)
-                        .map(ResourceState::getLastKnownResource);
-            if (actualResource.isEmpty()) {
-              throw new IllegalStateException("This should not happen");
+            if (executionScope.isDeleteEvent()) {
+              actualResource =
+                  (Optional<P>)
+                      state
+                          .filter(ResourceState::deleteEventPresent)
+                          .map(ResourceState::getLastKnownResource);
+              if (actualResource.isEmpty()) {
+                throw new IllegalStateException("this should not happen");
+              }
+            } else {
+              log.debug("Skipping execution since delete event received meanwhile");
+              eventProcessingFinished(executionScope, PostExecutionControl.defaultDispatch());
+              return;
             }
+          } else {
+            log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
+            return;
           }
         }
         actualResource.ifPresent(executionScope::setResource);
