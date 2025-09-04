@@ -548,6 +548,6 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   // shortening
   private boolean propagateAllEvent() {
-    return controllerConfiguration.propagateAllEventToReconciler();
+    return controllerConfiguration.triggerReconcilerOnAllEvent();
   }
 }
