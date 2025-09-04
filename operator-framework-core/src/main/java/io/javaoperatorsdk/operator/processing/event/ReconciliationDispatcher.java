@@ -81,7 +81,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         originalResource.getMetadata().getNamespace());
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
-    if (!propagateAllEvent()
+    if (!triggerOnAllEvent()
         && markedForDeletion
         && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
       log.debug(
@@ -100,7 +100,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             executionScope.isDeleteFinalStateUnknown());
 
     // checking the cleaner for all-event-mode
-    if (!propagateAllEvent() && markedForDeletion) {
+    if (!triggerOnAllEvent() && markedForDeletion) {
       return handleCleanup(resourceForExecution, originalResource, context, executionScope);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
@@ -119,7 +119,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       P originalResource,
       Context<P> context)
       throws Exception {
-    if (!propagateAllEvent()
+    if (!triggerOnAllEvent()
         && controller.useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
@@ -288,7 +288,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
     DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
-    if (useFinalizer && !propagateAllEvent()) {
+    if (useFinalizer && !triggerOnAllEvent()) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
@@ -535,7 +535,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
   }
 
-  private boolean propagateAllEvent() {
+  private boolean triggerOnAllEvent() {
     return configuration().triggerReconcilerOnAllEvent();
   }
 }
