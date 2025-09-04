@@ -501,13 +501,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
                         .filter(ResourceState::deleteEventPresent)
                         .map(ResourceState::getLastKnownResource);
             if (actualResource.isEmpty()) {
-              log.debug(
-                  "Skipping execution; delete event resource not found in state: {}", resourceID);
-              return;
+              throw new IllegalStateException("This should not happen");
             }
-          } else {
-            log.debug("Skipping execution; primary resource missing from cache: {}", resourceID);
-            return;
           }
         }
         actualResource.ifPresent(executionScope::setResource);
