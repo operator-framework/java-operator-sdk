@@ -29,7 +29,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final Map<DependentResourceSpec, Object> configurations;
   private final ConfigurationService configurationService;
   private final String fieldManager;
-  private final boolean propagateAllEventToReconciler;
+  private final boolean triggerReconcilerOnAllEvent;
   private WorkflowSpec workflowSpec;
 
   public ResolvedControllerConfiguration(ControllerConfiguration<P> other) {
@@ -45,7 +45,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.fieldManager(),
         other.getConfigurationService(),
         other.getInformerConfig(),
-        other.propagateAllEventToReconciler(),
+        other.triggerReconcilerOnAllEvent(),
         other.getWorkflowSpec().orElse(null));
   }
 
@@ -61,7 +61,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       String fieldManager,
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
-      boolean propagateAllEventToReconciler,
+      boolean triggerReconcilerOnAllEvent,
       WorkflowSpec workflowSpec) {
     this(
         name,
@@ -75,7 +75,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         fieldManager,
         configurationService,
         informerConfig,
-        propagateAllEventToReconciler);
+        triggerReconcilerOnAllEvent);
     setWorkflowSpec(workflowSpec);
   }
 
@@ -91,7 +91,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       String fieldManager,
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
-      boolean propagateAllEventToReconciler) {
+      boolean triggerReconcilerOnAllEvent) {
     this.informerConfig = informerConfig;
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
@@ -104,7 +104,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.finalizer =
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
     this.fieldManager = fieldManager;
-    this.propagateAllEventToReconciler = propagateAllEventToReconciler;
+    this.triggerReconcilerOnAllEvent = triggerReconcilerOnAllEvent;
   }
 
   protected ResolvedControllerConfiguration(
@@ -216,7 +216,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   }
 
   @Override
-  public boolean propagateAllEventToReconciler() {
-    return ControllerConfiguration.super.propagateAllEventToReconciler();
+  public boolean triggerReconcilerOnAllEvent() {
+    return triggerReconcilerOnAllEvent;
   }
 }

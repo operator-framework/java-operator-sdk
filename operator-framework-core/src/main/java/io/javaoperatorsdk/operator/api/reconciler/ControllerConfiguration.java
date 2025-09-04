@@ -78,5 +78,5 @@ public @interface ControllerConfiguration {
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 
-  boolean propagateAllEventToReconciler() default false;
+  boolean triggerReconcilerOnAllEvent() default false;
 }

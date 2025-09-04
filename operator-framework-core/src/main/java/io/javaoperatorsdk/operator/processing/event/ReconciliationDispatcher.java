@@ -536,6 +536,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private boolean propagateAllEvent() {
-    return configuration().propagateAllEventToReconciler();
+    return configuration().triggerReconcilerOnAllEvent();
   }
 }
