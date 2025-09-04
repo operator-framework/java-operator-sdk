@@ -404,7 +404,9 @@ class ReconciliationDispatcherTest {
                   public boolean isLastAttempt() {
                     return true;
                   }
-                })
+                },
+                false,
+                false)
             .setResource(testCustomResource));
 
     ArgumentCaptor<Context> contextArgumentCaptor = ArgumentCaptor.forClass(Context.class);
@@ -505,7 +507,9 @@ class ReconciliationDispatcherTest {
                   public boolean isLastAttempt() {
                     return true;
                   }
-                })
+                },
+                false,
+                false)
             .setResource(testCustomResource));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
@@ -528,7 +532,7 @@ class ReconciliationDispatcherTest {
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, false, false).setResource(testCustomResource));
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
     assertThat(postExecControl.exceptionDuringExecution()).isTrue();
@@ -549,7 +553,7 @@ class ReconciliationDispatcherTest {
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, false, false).setResource(testCustomResource));
 
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
@@ -571,7 +575,7 @@ class ReconciliationDispatcherTest {
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, false, false).setResource(testCustomResource));
 
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
     verify(customResourceFacade, times(0)).patchStatus(eq(testCustomResource), any());
@@ -588,7 +592,7 @@ class ReconciliationDispatcherTest {
     reconciler.errorHandler = () -> ErrorStatusUpdateControl.patchStatus(testCustomResource);
 
     reconciliationDispatcher.handleExecution(
-        new ExecutionScope(null).setResource(testCustomResource));
+        new ExecutionScope(null, false, false).setResource(testCustomResource));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
@@ -611,7 +615,7 @@ class ReconciliationDispatcherTest {
     reconciler.errorHandler = () -> ErrorStatusUpdateControl.noStatusUpdate();
 
     reconciliationDispatcher.handleExecution(
-        new ExecutionScope(null).setResource(testCustomResource));
+        new ExecutionScope(null, false, false).setResource(testCustomResource));
 
     verify(reconciler, times(1))
         .updateErrorStatus(
@@ -675,7 +679,7 @@ class ReconciliationDispatcherTest {
 
     var res =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, false, false).setResource(testCustomResource));
 
     assertThat(res.getReScheduleDelay()).contains(delay);
     assertThat(res.getRuntimeException()).isEmpty();
@@ -726,7 +730,7 @@ class ReconciliationDispatcherTest {
   }
 
   public <T extends HasMetadata> ExecutionScope<T> executionScopeWithCREvent(T resource) {
-    return (ExecutionScope<T>) new ExecutionScope<>(null).setResource(resource);
+    return (ExecutionScope<T>) new ExecutionScope<>(null, false, false).setResource(resource);
   }
 
   private class TestReconciler
