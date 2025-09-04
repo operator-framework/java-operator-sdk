@@ -8,11 +8,13 @@ class ExecutionScope<R extends HasMetadata> {
   // the latest custom resource from cache
   private R resource;
   private final RetryInfo retryInfo;
-  private boolean deleteEvent = false;
-  private boolean isDeleteFinalStateUnknown = false;
+  private boolean deleteEvent;
+  private boolean isDeleteFinalStateUnknown;
 
-  ExecutionScope(RetryInfo retryInfo) {
+  ExecutionScope(RetryInfo retryInfo, boolean deleteEvent, boolean isDeleteFinalStateUnknown) {
     this.retryInfo = retryInfo;
+    this.deleteEvent = deleteEvent;
+    this.isDeleteFinalStateUnknown = isDeleteFinalStateUnknown;
   }
 
   public ExecutionScope<R> setResource(R resource) {
