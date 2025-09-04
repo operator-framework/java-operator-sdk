@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.propagateallevent.onlyreconcile;
+package io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile;
 
 import java.time.Duration;
 
@@ -9,13 +9,13 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
-import static io.javaoperatorsdk.operator.baseapi.propagateallevent.onlyreconcile.PropagateEventReconciler.ADDITIONAL_FINALIZER;
-import static io.javaoperatorsdk.operator.baseapi.propagateallevent.onlyreconcile.PropagateEventReconciler.FINALIZER;
-import static io.javaoperatorsdk.operator.baseapi.propagateallevent.onlyreconcile.PropagateEventReconciler.NO_MORE_EXCEPTION_ANNOTATION_KEY;
+import static io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile.TriggerReconcilerOnAllEventReconciler.ADDITIONAL_FINALIZER;
+import static io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile.TriggerReconcilerOnAllEventReconciler.FINALIZER;
+import static io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile.TriggerReconcilerOnAllEventReconciler.NO_MORE_EXCEPTION_ANNOTATION_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-public class PropagateAllEventIT {
+public class TriggerReconcilerOnAllEventIT {
 
   public static final String TEST = "test1";
   public static final int MAX_RETRY_ATTEMPTS = 2;
@@ -24,7 +24,7 @@ public class PropagateAllEventIT {
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(
-              new PropagateEventReconciler(),
+              new TriggerReconcilerOnAllEventReconciler(),
               o ->
                   o.withRetry(
                       new GenericRetry()
@@ -35,7 +35,7 @@ public class PropagateAllEventIT {
 
   @Test
   void eventsPresent() {
-    var reconciler = extension.getReconcilerOfType(PropagateEventReconciler.class);
+    var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
     extension.serverSideApply(testResource());
     await()
         .untilAsserted(
@@ -58,7 +58,7 @@ public class PropagateAllEventIT {
 
   @Test
   void deleteEventPresentWithoutFinalizer() {
-    var reconciler = extension.getReconcilerOfType(PropagateEventReconciler.class);
+    var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
     reconciler.setUseFinalizer(false);
     extension.serverSideApply(testResource());
 
@@ -77,7 +77,7 @@ public class PropagateAllEventIT {
 
   @Test
   void retriesExceptionOnDeleteEvent() {
-    var reconciler = extension.getReconcilerOfType(PropagateEventReconciler.class);
+    var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
     reconciler.setUseFinalizer(false);
     reconciler.setThrowExceptionOnFirstDeleteEvent(true);
 
@@ -98,7 +98,7 @@ public class PropagateAllEventIT {
 
   @Test
   void additionalFinalizer() {
-    var reconciler = extension.getReconcilerOfType(PropagateEventReconciler.class);
+    var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
     reconciler.setUseFinalizer(true);
     var res = testResource();
     res.addFinalizer(ADDITIONAL_FINALIZER);
@@ -132,7 +132,7 @@ public class PropagateAllEventIT {
   @Test
   void additionalEventDuringRetryOnDeleteEvent() {
 
-    var reconciler = extension.getReconcilerOfType(PropagateEventReconciler.class);
+    var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
     reconciler.setThrowExceptionIfNoAnnotation(true);
     reconciler.setWaitAfterFirstRetry(true);
     var res = testResource();
@@ -189,7 +189,7 @@ public class PropagateAllEventIT {
   @Test
   void additionalEventAfterExhaustedRetry() {
 
-    var reconciler = extension.getReconcilerOfType(PropagateEventReconciler.class);
+    var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
     reconciler.setThrowExceptionIfNoAnnotation(true);
     var res = testResource();
     res.addFinalizer(ADDITIONAL_FINALIZER);
@@ -223,18 +223,18 @@ public class PropagateAllEventIT {
   }
 
   private void addNoMoreExceptionAnnotation() {
-    PropagateAllEventCustomResource res;
+    TriggerReconcilerOnAllEventCustomResource res;
     res = getResource();
     res.getMetadata().getAnnotations().put(NO_MORE_EXCEPTION_ANNOTATION_KEY, "true");
     extension.update(res);
   }
 
-  PropagateAllEventCustomResource getResource() {
-    return extension.get(PropagateAllEventCustomResource.class, TEST);
+  TriggerReconcilerOnAllEventCustomResource getResource() {
+    return extension.get(TriggerReconcilerOnAllEventCustomResource.class, TEST);
   }
 
-  PropagateAllEventCustomResource testResource() {
-    var res = new PropagateAllEventCustomResource();
+  TriggerReconcilerOnAllEventCustomResource testResource() {
+    var res = new TriggerReconcilerOnAllEventCustomResource();
     res.setMetadata(new ObjectMetaBuilder().withName(TEST).build());
     return res;
   }

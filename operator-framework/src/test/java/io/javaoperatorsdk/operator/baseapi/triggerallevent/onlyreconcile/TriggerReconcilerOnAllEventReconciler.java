@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.propagateallevent.onlyreconcile;
+package io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,9 +12,11 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration(triggerReconcilerOnAllEvent = true, generationAwareEventProcessing = false)
-public class PropagateEventReconciler implements Reconciler<PropagateAllEventCustomResource> {
+public class TriggerReconcilerOnAllEventReconciler
+    implements Reconciler<TriggerReconcilerOnAllEventCustomResource> {
 
-  private static final Logger log = LoggerFactory.getLogger(PropagateEventReconciler.class);
+  private static final Logger log =
+      LoggerFactory.getLogger(TriggerReconcilerOnAllEventReconciler.class);
 
   private volatile boolean throwExceptionOnFirstDeleteEvent = false;
   private volatile boolean throwExceptionIfNoAnnotation = false;
@@ -38,8 +40,9 @@ public class PropagateEventReconciler implements Reconciler<PropagateAllEventCus
   private boolean resourceEventPresent = false;
 
   @Override
-  public UpdateControl<PropagateAllEventCustomResource> reconcile(
-      PropagateAllEventCustomResource primary, Context<PropagateAllEventCustomResource> context)
+  public UpdateControl<TriggerReconcilerOnAllEventCustomResource> reconcile(
+      TriggerReconcilerOnAllEventCustomResource primary,
+      Context<TriggerReconcilerOnAllEventCustomResource> context)
       throws InterruptedException {
     log.info("Reconciling");
     increaseEventCount();
