@@ -73,7 +73,7 @@ public interface Context<P extends HasMetadata> {
    */
   boolean isNextReconciliationImminent();
 
-  boolean isDeleteEventPresent();
+  boolean isPrimaryResourceDeleted();
 
-  boolean isDeleteFinalStateUnknown();
+  boolean isPrimaryResourceFinalStateUnknown();
 }

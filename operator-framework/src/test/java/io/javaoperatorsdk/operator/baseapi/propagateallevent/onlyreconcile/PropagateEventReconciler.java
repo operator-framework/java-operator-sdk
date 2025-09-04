@@ -71,7 +71,7 @@ public class PropagateEventReconciler implements Reconciler<PropagateAllEventCus
       throw new RuntimeException("On purpose exception for missing annotation");
     }
 
-    if (primary.isMarkedForDeletion() && !context.isDeleteEventPresent()) {
+    if (primary.isMarkedForDeletion() && !context.isPrimaryResourceDeleted()) {
       setEventOnMarkedForDeletion(true);
       if (getUseFinalizer() && primary.hasFinalizer(FINALIZER)) {
         log.info("Removing finalizer");
@@ -79,14 +79,14 @@ public class PropagateEventReconciler implements Reconciler<PropagateAllEventCus
       }
     }
 
-    if (context.isDeleteEventPresent()
+    if (context.isPrimaryResourceDeleted()
         && isFirstDeleteEvent()
         && isThrowExceptionOnFirstDeleteEvent()) {
       isFirstDeleteEvent = false;
       throw new RuntimeException("On purpose exception");
     }
 
-    if (context.isDeleteEventPresent()) {
+    if (context.isPrimaryResourceDeleted()) {
       setDeleteEventPresent(true);
     }
     log.info("Reconciliation finished");

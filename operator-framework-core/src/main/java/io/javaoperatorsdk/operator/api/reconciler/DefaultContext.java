@@ -24,21 +24,21 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final ControllerConfiguration<P> controllerConfiguration;
   private final DefaultManagedWorkflowAndDependentResourceContext<P>
       defaultManagedDependentResourceContext;
-  private final boolean isDeleteEventPresent;
-  private final boolean isDeleteFinalStateUnknown;
+  private final boolean primaryResourceDeleted;
+  private final boolean primaryResourceFinalStateUnknown;
 
   public DefaultContext(
       RetryInfo retryInfo,
       Controller<P> controller,
       P primaryResource,
-      boolean isDeleteEventPresent,
-      boolean isDeleteFinalStateUnknown) {
+      boolean primaryResourceDeleted,
+      boolean primaryResourceFinalStateUnknown) {
     this.retryInfo = retryInfo;
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
-    this.isDeleteEventPresent = isDeleteEventPresent;
-    this.isDeleteFinalStateUnknown = isDeleteFinalStateUnknown;
+    this.primaryResourceDeleted = primaryResourceDeleted;
+    this.primaryResourceFinalStateUnknown = primaryResourceFinalStateUnknown;
     this.defaultManagedDependentResourceContext =
         new DefaultManagedWorkflowAndDependentResourceContext<>(controller, primaryResource, this);
   }
@@ -129,13 +129,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public boolean isDeleteEventPresent() {
-    return isDeleteEventPresent;
+  public boolean isPrimaryResourceDeleted() {
+    return primaryResourceDeleted;
   }
 
   @Override
-  public boolean isDeleteFinalStateUnknown() {
-    return isDeleteFinalStateUnknown;
+  public boolean isPrimaryResourceFinalStateUnknown() {
+    return primaryResourceFinalStateUnknown;
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
