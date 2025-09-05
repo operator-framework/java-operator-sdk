@@ -26,6 +26,10 @@ class EventSources<P extends HasMetadata> {
       new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
   private ControllerEventSource<P> controllerEventSource;
 
+  public EventSources(boolean triggerReconcilerOnAllEvent) {
+    this.controllerEventSource = controllerEventSource;
+  }
+
   public void add(EventSource eventSource) {
     final var name = eventSource.name();
     var existing = sourceByName.get(name);
