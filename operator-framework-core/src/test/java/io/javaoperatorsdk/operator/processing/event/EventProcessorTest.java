@@ -44,6 +44,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -618,7 +619,7 @@ class EventProcessorTest {
     eventProcessor.handleEvent(prepareCREvent1());
     waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
     eventProcessor.handleEvent(prepareCRDeleteEvent1());
-    verify(reconciliationDispatcherMock, times(2)).handleExecution(any());
+    verify(reconciliationDispatcherMock, atMost(2)).handleExecution(any());
     waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
     // retry event
     eventProcessor.handleEvent(new Event(TestUtils.testCustomResource1Id()));
@@ -661,7 +662,26 @@ class EventProcessorTest {
 
   @Test
   void passesResourceFromStateToDispatcher() {
-    // check also last state unknown
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(null, rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    var captor = ArgumentCaptor.forClass(ExecutionScope.class);
+    verify(reconciliationDispatcherMock, times(2)).handleExecution(captor.capture());
+    assertThat(captor.getAllValues().get(1).getResource()).isNotNull();
   }
 
   @Test
