@@ -710,7 +710,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void allEventModeNoReSchedulesAllowedForDeleteEvent() {}
+  void procAllEventModeNoReSchedulesAllowedForDeleteEvent() {}
 
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();

@@ -22,12 +22,16 @@ class EventSources<P extends HasMetadata> {
       new ConcurrentSkipListMap<>();
   private final Map<String, EventSource> sourceByName = new HashMap<>();
 
-  private final TimerEventSource<P> retryAndRescheduleTimerEventSource =
-      new TimerEventSource<>("RetryAndRescheduleTimerEventSource");
+  private final TimerEventSource<P> retryAndRescheduleTimerEventSource;
   private ControllerEventSource<P> controllerEventSource;
 
   public EventSources(boolean triggerReconcilerOnAllEvent) {
-    this.controllerEventSource = controllerEventSource;
+    retryAndRescheduleTimerEventSource =
+        new TimerEventSource<>("RetryAndRescheduleTimerEventSource", triggerReconcilerOnAllEvent);
+  }
+
+  EventSources() {
+    this(false);
   }
 
   public void add(EventSource eventSource) {
