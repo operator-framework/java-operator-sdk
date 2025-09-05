@@ -13,7 +13,7 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
   public static final GenericRetry DEFAULT = new GenericRetry();
 
   public static GenericRetry defaultLimitedExponentialRetry() {
-    return DEFAULT;
+    return new GenericRetry();
   }
 
   public static GenericRetry noRetry() {
