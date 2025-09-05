@@ -77,4 +77,6 @@ public @interface ControllerConfiguration {
    * @return the name used as field manager for SSA operations
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
+
+  boolean triggerReconcilerOnAllEvent() default false;
 }
