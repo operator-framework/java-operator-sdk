@@ -106,7 +106,7 @@ single namespace (i.e. you cannot have an owner reference to a resource in a dif
 and are, by essence, limited to Kubernetes resources so you're out of luck if your secondary
 resources live outside of a cluster.
 
-This is why JOSDK provides the `SecondayToPrimaryMapper` interface so that you can provide
+This is why JOSDK provides the `SecondaryToPrimaryMapper` interface so that you can provide
 alternative ways for the SDK to identify which primary resource needs to be reconciled when
 something occurs to your secondary resources. We even provide some of these alternatives in the
 [Mappers](https://github.com/java-operator-sdk/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/Mappers.java)
