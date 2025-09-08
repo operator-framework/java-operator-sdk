@@ -57,7 +57,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
   String getAssociatedReconcilerClassName();
 
   default Retry getRetry() {
-    return GenericRetry.DEFAULT;
+    return GenericRetry.defaultLimitedExponentialRetry();
   }
 
   @SuppressWarnings("rawtypes")
