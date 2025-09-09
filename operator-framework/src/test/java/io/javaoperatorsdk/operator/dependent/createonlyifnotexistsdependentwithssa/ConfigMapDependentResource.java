@@ -11,6 +11,8 @@ public class ConfigMapDependentResource
     extends CRUDKubernetesDependentResource<
         ConfigMap, CreateOnlyIfNotExistingDependentWithSSACustomResource> {
 
+  public static final String DRKEY = "drkey";
+
   @Override
   protected ConfigMap desired(
       CreateOnlyIfNotExistingDependentWithSSACustomResource primary,
@@ -21,7 +23,7 @@ public class ConfigMapDependentResource
             .withName(primary.getMetadata().getName())
             .withNamespace(primary.getMetadata().getNamespace())
             .build());
-    configMap.setData(Map.of("drkey", "v"));
+    configMap.setData(Map.of(DRKEY, "v"));
     return configMap;
   }
 }
