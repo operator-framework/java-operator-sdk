@@ -63,7 +63,7 @@
     <assertj.version>3.27.4</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
     <spring-boot.version>2.7.3</spring-boot.version>
-    <micrometer-core.version>1.15.3</micrometer-core.version>
+    <micrometer-core.version>1.15.4</micrometer-core.version>
     <caffeine.version>3.2.2</caffeine.version>
     <mustache.version>0.9.14</mustache.version>
     <commons.io.version>2.20.0</commons.io.version>
