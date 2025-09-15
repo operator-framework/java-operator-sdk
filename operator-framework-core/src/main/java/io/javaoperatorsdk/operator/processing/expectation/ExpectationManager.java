@@ -22,7 +22,7 @@ public class ExpectationManager<P extends HasMetadata> {
 
   /**
    * Checks if provided expectation is fulfilled. Return the expectation result. If the result of
-   * expectation is fulfilled or timeout, the expectation is automatically removed;
+   * expectation is fulfilled or timed out, the expectation is automatically removed;
    */
   public Optional<ExpectationResult<P>> checkOnExpectation(P primary, Context<P> context) {
     var resourceID = ResourceID.fromResource(primary);
