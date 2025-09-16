@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class FinalizerUtils {
+public class ControllerUtils {
 
-  private static final Logger log = LoggerFactory.getLogger(FinalizerUtils.class);
+  private static final Logger log = LoggerFactory.getLogger(ControllerUtils.class);
 
   // todo SSA, revisit if informer is ok for this
 
