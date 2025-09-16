@@ -2,6 +2,7 @@ package io.javaoperatorsdk.operator.dependent.createonlyifnotexistsdependentwith
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -22,6 +23,9 @@ class CreateOnlyIfNotExistingDependentWithSSAIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
+          // for the sake of this test, we allow to manage ConfigMaps with SSA
+          // by removing it from the non SSA resources (it is not managed with SSA by default)
+          .withConfigurationService(o -> o.withDefaultNonSSAResource(Set.of()))
           .withReconciler(new CreateOnlyIfNotExistingDependentWithSSAReconciler())
           .build();
 
@@ -41,7 +45,7 @@ class CreateOnlyIfNotExistingDependentWithSSAIT {
         .untilAsserted(
             () -> {
               var currentCM = extension.get(ConfigMap.class, TEST_RESOURCE_NAME);
-              assertThat(currentCM.getData()).containsKey(KEY);
+              assertThat(currentCM.getData()).containsOnlyKeys(KEY);
             });
   }
 
