@@ -15,6 +15,35 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  */
 public interface Metrics {
 
+  String PREFIX = "operator.sdk.";
+  String RECONCILIATIONS = "reconciliations.";
+  String RECONCILIATIONS_FAILED = RECONCILIATIONS + "failed";
+  String RECONCILIATIONS_SUCCESS = RECONCILIATIONS + "success";
+  String RECONCILIATIONS_RETRIES_LAST = RECONCILIATIONS + "retries.last";
+  String RECONCILIATIONS_RETRIES_NUMBER = RECONCILIATIONS + "retries.number";
+  String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started";
+  String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
+  String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
+  String NAME = "name";
+  String NAMESPACE = "namespace";
+  String GROUP = "group";
+  String VERSION = "version";
+  String KIND = "kind";
+  String SCOPE = "scope";
+  String METADATA_PREFIX = "resource.";
+  String CONTROLLERS_EXECUTION = "controllers.execution.";
+  String CONTROLLER = "controller";
+  String SUCCESS_SUFFIX = ".success";
+  String FAILURE_SUFFIX = ".failure";
+  String TYPE = "type";
+  String EXCEPTION = "exception";
+  String EVENT = "event";
+  String ACTION = "action";
+  String EVENTS_RECEIVED = "events.received";
+  String EVENTS_DELETE = "events.delete";
+  String CLUSTER = "cluster";
+  String SIZE_SUFFIX = ".size";
+
   /** The default Metrics provider: a no-operation implementation. */
   Metrics NOOP = new Metrics() {};
 
