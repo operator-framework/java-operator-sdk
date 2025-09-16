@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.FinalizerUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
@@ -53,7 +53,7 @@ public class TriggerReconcilerOnAllEventReconciler
 
     if (!primary.isMarkedForDeletion() && getUseFinalizer() && !primary.hasFinalizer(FINALIZER)) {
       log.info("Adding finalizer");
-      FinalizerUtils.patchFinalizer(primary, FINALIZER, context);
+      ControllerUtils.patchFinalizer(primary, FINALIZER, context);
       return UpdateControl.noUpdate();
     }
 
@@ -76,7 +76,7 @@ public class TriggerReconcilerOnAllEventReconciler
       setEventOnMarkedForDeletion(true);
       if (getUseFinalizer() && primary.hasFinalizer(FINALIZER)) {
         log.info("Removing finalizer");
-        FinalizerUtils.removeFinalizer(primary, FINALIZER, context);
+        ControllerUtils.removeFinalizer(primary, FINALIZER, context);
       }
     }
 
