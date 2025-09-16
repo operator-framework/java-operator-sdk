@@ -61,6 +61,11 @@ public class Controller<P extends HasMetadata>
   private static final String RESOURCE = "resource";
   private static final String STATUS = "status";
   private static final String BOTH = "both";
+  public static final String CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE =
+      "Cleaner is not supported when triggerReconcilerOnAllEvent enabled.";
+  public static final String
+      MANAGED_WORKFLOWS_NOT_SUPPORTED_TRIGGER_RECONCILER_ON_ALL_EVENT_ERROR_MESSAGE =
+          "Managed workflows are not supported when triggerReconcilerOnAllEvent enabled.";
 
   private final Reconciler<P> reconciler;
   private final ControllerConfiguration<P> configuration;
@@ -96,6 +101,16 @@ public class Controller<P extends HasMetadata>
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
     explicitWorkflowInvocation =
         configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation).orElse(false);
+
+    if (configuration.triggerReconcilerOnAllEvent()) {
+      if (isCleaner) {
+        throw new OperatorException(CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE);
+      }
+      if (managedWorkflow != null && !managedWorkflow.isEmpty()) {
+        throw new OperatorException(
+            MANAGED_WORKFLOWS_NOT_SUPPORTED_TRIGGER_RECONCILER_ON_ALL_EVENT_ERROR_MESSAGE);
+      }
+    }
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
