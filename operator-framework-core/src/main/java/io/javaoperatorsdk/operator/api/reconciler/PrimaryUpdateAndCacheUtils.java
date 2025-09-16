@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.function.UnaryOperator;
@@ -8,11 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
  * Utility methods to patch the primary resource state and store it to the related cache, to make
@@ -228,5 +234,166 @@ public class PrimaryUpdateAndCacheUtils {
       Thread.currentThread().interrupt();
       throw new OperatorException(e);
     }
+  }
+
+  /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
+  @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P addFinalizer(
+      Context<P> context, P resource, String finalizerName) {
+    if (log.isDebugEnabled()) {
+      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
+    }
+    int retryIndex = 0;
+    while (true) {
+      try {
+        if (resource.hasFinalizer(finalizerName)) {
+          return resource;
+        }
+        return context
+            .getClient()
+            .resource(resource)
+            .edit(
+                r -> {
+                  r.addFinalizer(finalizerName);
+                  return r;
+                });
+      } catch (KubernetesClientException e) {
+        log.trace("Exception during patch for resource: {}", resource);
+        retryIndex++;
+        // only retry on conflict (409) and unprocessable content (422) which
+        // can happen if JSON Patch is not a valid request since there was
+        // a concurrent request which already removed another finalizer:
+        // List element removal from a list is by index in JSON Patch
+        // so if addressing a second finalizer but first is meanwhile removed
+        // it is a wrong request.
+        if (e.getCode() != 409 && e.getCode() != 422) {
+          throw e;
+        }
+        if (retryIndex >= DEFAULT_MAX_RETRY) {
+          throw new OperatorException(
+              "Exceeded maximum ("
+                  + DEFAULT_MAX_RETRY
+                  + ") retry attempts to patch resource: "
+                  + ResourceID.fromResource(resource));
+        }
+        log.debug(
+            "Retrying patch for resource name: {}, namespace: {}; HTTP code: {}",
+            resource.getMetadata().getName(),
+            resource.getMetadata().getNamespace(),
+            e.getCode());
+        var operation = context.getClient().resources(resource.getClass());
+        if (resource.getMetadata().getNamespace() != null) {
+          resource =
+              (P)
+                  operation
+                      .inNamespace(resource.getMetadata().getNamespace())
+                      .withName(resource.getMetadata().getName())
+                      .get();
+        } else {
+          resource = (P) operation.withName(resource.getMetadata().getName()).get();
+        }
+      }
+    }
+  }
+
+  /** Adds finalizer using Server-Side Apply. */
+  public static <P extends HasMetadata> P addFinalizerWithSSA(
+      Context<P> context, P originalResource, String finalizerName) {
+    return addFinalizerWithSSA(
+        context.getClient(),
+        originalResource,
+        finalizerName,
+        context.getControllerConfiguration().fieldManager());
+  }
+
+  /** Adds finalizer using Server-Side Apply. */
+  public static <P extends HasMetadata> P addFinalizerWithSSA(
+      KubernetesClient client, P originalResource, String finalizerName, String fieldManager) {
+    log.debug(
+        "Adding finalizer (using SSA) for resource: {} version: {}",
+        getUID(originalResource),
+        getVersion(originalResource));
+    try {
+      P resource = (P) originalResource.getClass().getConstructor().newInstance();
+      ObjectMeta objectMeta = new ObjectMeta();
+      objectMeta.setName(originalResource.getMetadata().getName());
+      objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
+      resource.setMetadata(objectMeta);
+      resource.addFinalizer(finalizerName);
+      return client
+          .resource(resource)
+          .patch(
+              new PatchContext.Builder()
+                  .withFieldManager(fieldManager)
+                  .withForce(true)
+                  .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                  .build());
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new RuntimeException(
+          "Issue with creating custom resource instance with reflection."
+              + " Custom Resources must provide a no-arg constructor. Class: "
+              + originalResource.getClass().getName(),
+          e);
+    }
+  }
+
+  // todo
+  public static <P extends HasMetadata> P removeFinalizer() {
+    return null;
+  }
+
+  /**
+   * Experimental. Patches finalizer. For retry uses informer cache to get the fresh resources.
+   * Therefore makes less Kubernetes API Calls.
+   */
+  public static <P extends HasMetadata> P addFinalizer(
+      P resource, String finalizer, Context<P> context) {
+
+    if (resource.hasFinalizer(finalizer)) {
+      log.debug("Skipping adding finalizer, since already present.");
+      return resource;
+    }
+
+    return updateAndCacheResource(
+        resource,
+        context,
+        r -> r,
+        r ->
+            context
+                .getClient()
+                .resource(r)
+                .edit(
+                    res -> {
+                      res.addFinalizer(finalizer);
+                      return res;
+                    }));
+  }
+
+  /**
+   * Experimental. Removes finalizer, for retry uses informer cache to get the fresh resources.
+   * Therefore makes less Kubernetes API Calls.
+   */
+  public static <P extends HasMetadata> P removeFinalizer(
+      P resource, String finalizer, Context<P> context) {
+    if (!resource.hasFinalizer(finalizer)) {
+      log.debug("Skipping removing finalizer, since not present.");
+      return resource;
+    }
+    return updateAndCacheResource(
+        resource,
+        context,
+        r -> r,
+        r ->
+            context
+                .getClient()
+                .resource(r)
+                .edit(
+                    res -> {
+                      res.removeFinalizer(finalizer);
+                      return res;
+                    }));
   }
 }
