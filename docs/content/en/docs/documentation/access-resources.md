@@ -34,7 +34,7 @@ Such capabilities are:
 The question is, how to trigger reconciliation of a primary resources (your custom resource),
 when Informer receives a new resource.
 For this purpose the framework uses [`SecondaryToPrimaryMapper`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java)
-that tells (mostly) based on the resource which primary resource reconciliation to trigger.
+that tells (usually) based on the resource which primary resource reconciliation to trigger.
 The mapping is usually done based on the owner reference or annotation on the secondary resource. 
 (But not always, as we will see)
 
@@ -94,16 +94,17 @@ public class WebPageReconciler implements Reconciler<WebPage> {
 
 ## The Use Case for PrimaryToSecondaryMapper
 
-As we discussed, we provide an unified API to access related resources using `Context.getSecondaryResources(...)`.
+As we discussed, we provide a unified API to access related resources using `Context.getSecondaryResources(...)`.
 This method was on purpose uses `Secondary` resource, since those are not only child resources - how
 resources that are created by the reconciler are sometimes called in Kubernetes world - and usually have owner references for the custom resources;
-neither related resources which are usually resources that serves as input for the primary (not managed). It is the union of both.
+neither related resources which are usually resources that serves as input for the primary (not managed). 
+It is the union of both.
 
 The issue is if we want to trigger reconciliation for a resource, that does not have an owner reference or other direct
 association with the primary resource. 
 Typically, if you have ConfigMap where you have input parameters for a set of primary resources, 
-and the primary is actually referencing the secondary resource. Like having the name of the ConfigMap in the spec part
-of the primary resource.
+and the primary is actually referencing the secondary resource. 
+In other words, having the name of the ConfigMap in the spec part of the primary resource.
 
 As an example we provide, have a primary resource a `Job` that references a `Cluster` resource.
 So multiple `Job` can reference the same `Cluster`, and we want to trigger `Job` reconciliation if cluster changes.
