@@ -6,6 +6,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
  * Maps secondary resource to primary resources.
+ *
  * @param <R>
  */
 @FunctionalInterface
