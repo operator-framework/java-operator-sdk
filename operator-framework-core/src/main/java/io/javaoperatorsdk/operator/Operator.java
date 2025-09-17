@@ -24,17 +24,17 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
 
-  private final ControllerManager controllerManager;
-  private final LeaderElectionManager leaderElectionManager;
-  private final ConfigurationService configurationService;
+  private ControllerManager controllerManager;
+  private LeaderElectionManager leaderElectionManager;
+  private ConfigurationService configurationService;
   private volatile boolean started = false;
 
   public Operator() {
-    this((KubernetesClient) null);
+    init(initConfigurationService(null, null), true);
   }
 
   Operator(KubernetesClient kubernetesClient) {
-    this(initConfigurationService(kubernetesClient, null));
+    init(initConfigurationService(kubernetesClient, null), false);
   }
 
   /**
@@ -46,12 +46,23 @@ public class Operator implements LifecycleAware {
    *     operator
    */
   public Operator(ConfigurationService configurationService) {
-    this.configurationService = configurationService;
+    init(configurationService, false);
+  }
 
-    final var executorServiceManager = configurationService.getExecutorServiceManager();
-    controllerManager = new ControllerManager(executorServiceManager);
+  private void init(ConfigurationService configurationService, boolean allowDeferredInit) {
+    if (configurationService == null) {
+      if (!allowDeferredInit) {
+        throw new IllegalStateException(
+            "Deferred initialization of ConfigurationService is not allowed");
+      }
+    } else {
+      this.configurationService = configurationService;
 
-    leaderElectionManager = new LeaderElectionManager(controllerManager, configurationService);
+      final var executorServiceManager = configurationService.getExecutorServiceManager();
+      controllerManager = new ControllerManager(executorServiceManager);
+
+      leaderElectionManager = new LeaderElectionManager(controllerManager, configurationService);
+    }
   }
 
   /**
@@ -62,10 +73,14 @@ public class Operator implements LifecycleAware {
    *     {@link ConfigurationService} values
    */
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
-    this(initConfigurationService(null, overrider));
+    init(initConfigurationService(null, overrider), false);
   }
 
-  private static ConfigurationService initConfigurationService(
+  /**
+   * Overridable by subclasses to enable deferred configuration, useful to avoid unneeded processing
+   * in injection scenarios
+   */
+  protected ConfigurationService initConfigurationService(
       KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
