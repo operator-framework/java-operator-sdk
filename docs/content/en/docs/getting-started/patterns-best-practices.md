@@ -112,5 +112,5 @@ The `stopOnInformerErrorDuringStartup` setting affects [cache sync timeout](http
 You can provide sufficient time for the reconciler to process and complete ongoing events before shutting down. Simply set an appropriate duration value for `reconciliationTerminationTimeout` using `ConfigurationServiceOverrider`.
 
 ```java
-final var operator = new Operator(override->override.withReconciliationTerminationTimeout(Duration.ofSeconds(5)));
+final var operator = new Operator(override -> override.withReconciliationTerminationTimeout(Duration.ofSeconds(5)));
 ```
