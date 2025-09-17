@@ -38,7 +38,9 @@ public class EventSourceManager<P extends HasMetadata>
   private final ExecutorServiceManager executorServiceManager;
 
   public EventSourceManager(Controller<P> controller) {
-    this(controller, new EventSources<>());
+    this(
+        controller,
+        new EventSources<>(controller.getConfiguration().triggerReconcilerOnAllEvent()));
   }
 
   EventSourceManager(Controller<P> controller, EventSources<P> eventSources) {

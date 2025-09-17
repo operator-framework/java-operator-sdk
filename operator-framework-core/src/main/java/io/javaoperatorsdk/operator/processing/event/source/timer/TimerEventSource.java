@@ -21,13 +21,15 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   private Timer timer;
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
+  private boolean triggerReconcilerOnAllEvent;
 
   public TimerEventSource() {
     super(Void.class);
   }
 
-  public TimerEventSource(String name) {
+  public TimerEventSource(String name, boolean triggerReconcilerOnAllEvent) {
     super(Void.class, name);
+    this.triggerReconcilerOnAllEvent = triggerReconcilerOnAllEvent;
   }
 
   @SuppressWarnings("unused")
@@ -50,7 +52,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   @Override
   public void onResourceDeleted(R resource) {
-    cancelOnceSchedule(ResourceID.fromResource(resource));
+    // for triggerReconcilerOnAllEvent the cancelOnceSchedule will be called on
+    // successful delete event processing
+    if (!triggerReconcilerOnAllEvent) {
+      cancelOnceSchedule(ResourceID.fromResource(resource));
+    }
   }
 
   public void cancelOnceSchedule(ResourceID customResourceUid) {

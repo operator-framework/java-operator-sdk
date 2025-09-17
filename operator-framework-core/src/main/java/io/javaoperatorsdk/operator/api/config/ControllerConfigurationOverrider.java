@@ -30,6 +30,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Duration reconciliationMaxInterval;
   private Map<DependentResourceSpec, Object> configurations;
   private final InformerConfiguration<R>.Builder config;
+  private boolean triggerReconcilerOnAllEvent;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -42,6 +43,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
+    this.triggerReconcilerOnAllEvent = original.triggerReconcilerOnAllEvent();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -154,6 +156,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withTriggerReconcilerOnAllEvent(
+      boolean triggerReconcilerOnAllEvent) {
+    this.triggerReconcilerOnAllEvent = triggerReconcilerOnAllEvent;
+    return this;
+  }
+
   /**
    * Sets a max page size limit when starting the informer. This will result in pagination while
    * populating the cache. This means that longer lists will take multiple requests to fetch. See
@@ -198,6 +206,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         fieldManager,
         original.getConfigurationService(),
         config.buildForController(),
+        triggerReconcilerOnAllEvent,
         original.getWorkflowSpec().orElse(null));
   }
 

@@ -1,18 +1,25 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
+import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
 /**
  * Utility methods to patch the primary resource state and store it to the related cache, to make
@@ -152,7 +159,7 @@ public class PrimaryUpdateAndCacheUtils {
       long cachePollPeriodMillis) {
 
     if (log.isDebugEnabled()) {
-      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resourceToUpdate));
+      log.debug("Update and cache: {}", ResourceID.fromResource(resourceToUpdate));
     }
     P modified = null;
     int retryIndex = 0;
@@ -227,6 +234,145 @@ public class PrimaryUpdateAndCacheUtils {
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new OperatorException(e);
+    }
+  }
+
+  /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
+  @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P addFinalizer(Context<P> context, String finalizer) {
+    return addFinalizer(context.getClient(), context.getPrimaryResource(), finalizer);
+  }
+
+  /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
+  @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P addFinalizer(
+      KubernetesClient client, P resource, String finalizerName) {
+    return conflictRetryingPatch(
+        client,
+        resource,
+        r -> {
+          r.addFinalizer(finalizerName);
+          return r;
+        },
+        r -> !r.hasFinalizer(finalizerName));
+  }
+
+  public static <P extends HasMetadata> P removeFinalizer(
+      Context<P> context, String finalizerName) {
+    return removeFinalizer(context.getClient(), context.getPrimaryResource(), finalizerName);
+  }
+
+  public static <P extends HasMetadata> P removeFinalizer(
+      KubernetesClient client, P resource, String finalizerName) {
+    return conflictRetryingPatch(
+        client,
+        resource,
+        r -> {
+          r.removeFinalizer(finalizerName);
+          return r;
+        },
+        r -> r.hasFinalizer(finalizerName));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P conflictRetryingPatch(
+      KubernetesClient client,
+      P resource,
+      UnaryOperator<P> unaryOperator,
+      Predicate<P> preCondition) {
+    if (log.isDebugEnabled()) {
+      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
+    }
+    int retryIndex = 0;
+    while (true) {
+      try {
+        if (!preCondition.test(resource)) {
+          return resource;
+        }
+        return client.resource(resource).edit(unaryOperator);
+      } catch (KubernetesClientException e) {
+        log.trace("Exception during patch for resource: {}", resource);
+        retryIndex++;
+        // only retry on conflict (409) and unprocessable content (422) which
+        // can happen if JSON Patch is not a valid request since there was
+        // a concurrent request which already removed another finalizer:
+        // List element removal from a list is by index in JSON Patch
+        // so if addressing a second finalizer but first is meanwhile removed
+        // it is a wrong request.
+        if (e.getCode() != 409 && e.getCode() != 422) {
+          throw e;
+        }
+        if (retryIndex >= DEFAULT_MAX_RETRY) {
+          throw new OperatorException(
+              "Exceeded maximum ("
+                  + DEFAULT_MAX_RETRY
+                  + ") retry attempts to patch resource: "
+                  + ResourceID.fromResource(resource));
+        }
+        log.debug(
+            "Retrying patch for resource name: {}, namespace: {}; HTTP code: {}",
+            resource.getMetadata().getName(),
+            resource.getMetadata().getNamespace(),
+            e.getCode());
+        var operation = client.resources(resource.getClass());
+        if (resource.getMetadata().getNamespace() != null) {
+          resource =
+              (P)
+                  operation
+                      .inNamespace(resource.getMetadata().getNamespace())
+                      .withName(resource.getMetadata().getName())
+                      .get();
+        } else {
+          resource = (P) operation.withName(resource.getMetadata().getName()).get();
+        }
+      }
+    }
+  }
+
+  /** Adds finalizer using Server-Side Apply. */
+  public static <P extends HasMetadata> P addFinalizerWithSSA(
+      Context<P> context, P originalResource, String finalizerName) {
+    return addFinalizerWithSSA(
+        context.getClient(),
+        originalResource,
+        finalizerName,
+        context.getControllerConfiguration().fieldManager());
+  }
+
+  /** Adds finalizer using Server-Side Apply. */
+  @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P addFinalizerWithSSA(
+      KubernetesClient client, P originalResource, String finalizerName, String fieldManager) {
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Adding finalizer (using SSA) for resource: {} version: {}",
+          getUID(originalResource),
+          getVersion(originalResource));
+    }
+    try {
+      P resource = (P) originalResource.getClass().getConstructor().newInstance();
+      ObjectMeta objectMeta = new ObjectMeta();
+      objectMeta.setName(originalResource.getMetadata().getName());
+      objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
+      resource.setMetadata(objectMeta);
+      resource.addFinalizer(finalizerName);
+      return client
+          .resource(resource)
+          .patch(
+              new PatchContext.Builder()
+                  .withFieldManager(fieldManager)
+                  .withForce(true)
+                  .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                  .build());
+    } catch (InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
+      throw new RuntimeException(
+          "Issue with creating custom resource instance with reflection."
+              + " Custom Resources must provide a no-arg constructor. Class: "
+              + originalResource.getClass().getName(),
+          e);
     }
   }
 }

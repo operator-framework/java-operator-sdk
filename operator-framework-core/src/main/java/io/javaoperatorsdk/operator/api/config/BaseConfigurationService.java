@@ -304,12 +304,15 @@ public class BaseConfigurationService extends AbstractConfigurationService {
     final var dependentFieldManager =
         fieldManager.equals(CONTROLLER_NAME_AS_FIELD_MANAGER) ? name : fieldManager;
 
+    var triggerReconcilerOnAllEvent =
+        annotation != null && annotation.triggerReconcilerOnAllEvent();
+
     InformerConfiguration<P> informerConfig =
         InformerConfiguration.builder(resourceClass)
             .initFromAnnotation(annotation != null ? annotation.informer() : null, context)
             .buildForController();
 
-    return new ResolvedControllerConfiguration<P>(
+    return new ResolvedControllerConfiguration<>(
         name,
         generationAware,
         associatedReconcilerClass,
@@ -323,7 +326,8 @@ public class BaseConfigurationService extends AbstractConfigurationService {
         null,
         dependentFieldManager,
         this,
-        informerConfig);
+        informerConfig,
+        triggerReconcilerOnAllEvent);
   }
 
   /**

@@ -24,12 +24,21 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final ControllerConfiguration<P> controllerConfiguration;
   private final DefaultManagedWorkflowAndDependentResourceContext<P>
       defaultManagedDependentResourceContext;
+  private final boolean primaryResourceDeleted;
+  private final boolean primaryResourceFinalStateUnknown;
 
-  public DefaultContext(RetryInfo retryInfo, Controller<P> controller, P primaryResource) {
+  public DefaultContext(
+      RetryInfo retryInfo,
+      Controller<P> controller,
+      P primaryResource,
+      boolean primaryResourceDeleted,
+      boolean primaryResourceFinalStateUnknown) {
     this.retryInfo = retryInfo;
     this.controller = controller;
     this.primaryResource = primaryResource;
     this.controllerConfiguration = controller.getConfiguration();
+    this.primaryResourceDeleted = primaryResourceDeleted;
+    this.primaryResourceFinalStateUnknown = primaryResourceFinalStateUnknown;
     this.defaultManagedDependentResourceContext =
         new DefaultManagedWorkflowAndDependentResourceContext<>(controller, primaryResource, this);
   }
@@ -117,6 +126,16 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     return controller
         .getEventProcessor()
         .isNextReconciliationImminent(ResourceID.fromResource(primaryResource));
+  }
+
+  @Override
+  public boolean isPrimaryResourceDeleted() {
+    return primaryResourceDeleted;
+  }
+
+  @Override
+  public boolean isPrimaryResourceFinalStateUnknown() {
+    return primaryResourceFinalStateUnknown;
   }
 
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
