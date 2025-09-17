@@ -53,7 +53,7 @@ public class TriggerReconcilerOnAllEventReconciler
 
     if (!primary.isMarkedForDeletion() && getUseFinalizer() && !primary.hasFinalizer(FINALIZER)) {
       log.info("Adding finalizer");
-      PrimaryUpdateAndCacheUtils.addFinalizer(primary, FINALIZER, context);
+      PrimaryUpdateAndCacheUtils.addFinalizer(context, FINALIZER);
       return UpdateControl.noUpdate();
     }
 
@@ -76,7 +76,7 @@ public class TriggerReconcilerOnAllEventReconciler
       setEventOnMarkedForDeletion(true);
       if (getUseFinalizer() && primary.hasFinalizer(FINALIZER)) {
         log.info("Removing finalizer");
-        PrimaryUpdateAndCacheUtils.removeFinalizer(primary, FINALIZER, context);
+        PrimaryUpdateAndCacheUtils.removeFinalizer(context, FINALIZER);
       }
     }
 

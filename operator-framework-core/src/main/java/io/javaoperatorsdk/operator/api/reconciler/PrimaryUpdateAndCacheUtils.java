@@ -239,6 +239,12 @@ public class PrimaryUpdateAndCacheUtils {
 
   /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
   @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P addFinalizer(Context<P> context, String finalizer) {
+    return addFinalizer(context.getClient(), context.getPrimaryResource(), finalizer);
+  }
+
+  /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
+  @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P addFinalizer(
       KubernetesClient client, P resource, String finalizerName) {
     return conflictRetryingPatch(
@@ -249,6 +255,11 @@ public class PrimaryUpdateAndCacheUtils {
           return r;
         },
         r -> !r.hasFinalizer(finalizerName));
+  }
+
+  public static <P extends HasMetadata> P removeFinalizer(
+      Context<P> context, String finalizerName) {
+    return removeFinalizer(context.getClient(), context.getPrimaryResource(), finalizerName);
   }
 
   public static <P extends HasMetadata> P removeFinalizer(
