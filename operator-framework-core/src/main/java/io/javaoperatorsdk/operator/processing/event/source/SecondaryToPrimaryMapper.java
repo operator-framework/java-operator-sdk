@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 /**
  * Maps secondary resource to primary resources.
  *
- * @param <R>
+ * @param <R> secondary resource type
  */
 @FunctionalInterface
 public interface SecondaryToPrimaryMapper<R> {
