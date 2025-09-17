@@ -240,13 +240,14 @@ to `true`, as a result, `reconcile` method will be triggered on ALL events (so a
 are free to optimize you reconciliation for the use cases above and possibly others. 
 
 In this mode:
-- you cannot use `Cleaner` interface. The framework assumes you will explicitly manage the finalizers. To 
-  add finalizer you can use [`PrimeUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java#L308).
 - even if the primary resource is already deleted from the Informer's cache, we will still pass the last known state
   as the parameter for the reconciler. You can check if the resource is deleted using `Context.isPrimaryResourceDeleted()`.
-- The retry, rate limiting, re-schedule mechanisms work normally. (The internal caches related to the resource 
+- The retry, rate limiting, re-schedule, filters mechanisms work normally. (The internal caches related to the resource 
   are cleaned up only when there was a successful reconiliation after `Delete` event received for the primary resource
   and reconciliation was not re-scheduled.
+- you cannot use `Cleaner` interface. The framework assumes you will explicitly manage the finalizers. To
+  add finalizer you can use [`PrimeUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java#L308).
 - you cannot use managed dependent resources since those manage the finalizers and other logic related to the normal
   execution mode.
+
   
