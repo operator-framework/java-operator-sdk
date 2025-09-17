@@ -77,13 +77,15 @@ Thanks to Kubernetes resources' declarative nature, operators dealing only with 
 
 ### When State Management Becomes Necessary
 
-This stateless approach typically breaks down when dealing with external resources. You might need to track external state for future reconciliations.
+This stateless approach typically breaks down when dealing with external resources. You might need to track external state or allocated 
+values for future reconciliations. There are multiple options:
 
-**Anti-pattern**: Putting state in the primary resource's status sub-resource
-- Becomes difficult to manage with large amounts of state  
-- Violates best practice: status should represent actual resource state, while spec represents desired state
 
-**Recommended approach**: Store state in separate resources designed for this purpose:
+1. Putting state in the primary resource's status sub-resource. This is a bit more complex that might seem at the first look.
+   Refer to the [documentation](../documentation/reconciler.md#making-sure-the-primary-resource-is-up-to-date-for-the-next-reconciliation)
+   for further details.
+
+2. Store state in separate resources designed for this purpose:
 - Kubernetes Secret or ConfigMap
 - Dedicated Custom Resource with validated structure
 
