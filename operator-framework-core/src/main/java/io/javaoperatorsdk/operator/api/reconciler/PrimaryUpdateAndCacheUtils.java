@@ -235,10 +235,10 @@ public class PrimaryUpdateAndCacheUtils {
    * therefore makes less Kubernetes API Calls.
    */
   @Experimental(
-          "Not used internally for now. Therefor we don't consider it well tested. But the intention is"
-                  + " to have it as default in the future.")
+      "Not used internally for now. Therefor we don't consider it well tested. But the intention is"
+          + " to have it as default in the future.")
   public static <P extends HasMetadata> P addFinalizer(
-          P resource, String finalizer, Context<P> context) {
+      P resource, String finalizer, Context<P> context) {
 
     if (resource.hasFinalizer(finalizer)) {
       log.debug("Skipping adding finalizer, since already present.");
@@ -246,18 +246,18 @@ public class PrimaryUpdateAndCacheUtils {
     }
 
     return updateAndCacheResource(
-            resource,
-            context,
-            r -> r,
-            r ->
-                    context
-                            .getClient()
-                            .resource(r)
-                            .edit(
-                                    res -> {
-                                      res.addFinalizer(finalizer);
-                                      return res;
-                                    }));
+        resource,
+        context,
+        r -> r,
+        r ->
+            context
+                .getClient()
+                .resource(r)
+                .edit(
+                    res -> {
+                      res.addFinalizer(finalizer);
+                      return res;
+                    }));
   }
 
   /**
@@ -265,26 +265,26 @@ public class PrimaryUpdateAndCacheUtils {
    * therefore makes less Kubernetes API Calls.
    */
   @Experimental(
-          "Not used internally for now. Therefor we don't consider it well tested. But the intention is"
-                  + " to have it as default in the future.")
+      "Not used internally for now. Therefor we don't consider it well tested. But the intention is"
+          + " to have it as default in the future.")
   public static <P extends HasMetadata> P removeFinalizer(
-          P resource, String finalizer, Context<P> context) {
+      P resource, String finalizer, Context<P> context) {
     if (!resource.hasFinalizer(finalizer)) {
       log.debug("Skipping removing finalizer, since not present.");
       return resource;
     }
     return updateAndCacheResource(
-            resource,
-            context,
-            r -> r,
-            r ->
-                    context
-                            .getClient()
-                            .resource(r)
-                            .edit(
-                                    res -> {
-                                      res.removeFinalizer(finalizer);
-                                      return res;
-                                    }));
+        resource,
+        context,
+        r -> r,
+        r ->
+            context
+                .getClient()
+                .resource(r)
+                .edit(
+                    res -> {
+                      res.removeFinalizer(finalizer);
+                      return res;
+                    }));
   }
 }
