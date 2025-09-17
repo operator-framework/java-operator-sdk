@@ -20,7 +20,7 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: 17
           cache: 'maven'
       - name: Build and test project
@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: temurin
+          distribution: zulu
           cache: 'maven'
           server-id: central
           server-username: MAVEN_USERNAME

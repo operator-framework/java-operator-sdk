@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: temurin
+          distribution: zulu
           cache: 'maven'
           server-id: central
           server-username: MAVEN_USERNAME
@@ -64,7 +64,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: temurin
+          distribution: zulu
           cache: 'maven'
 
       - name: Update version to new SNAPSHOT version
