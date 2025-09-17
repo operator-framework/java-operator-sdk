@@ -239,7 +239,7 @@ public class PrimaryUpdateAndCacheUtils {
   /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P addFinalizer(
-      Context<P> context, P resource, String finalizerName) {
+      KubernetesClient client, P resource, String finalizerName) {
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
     }
@@ -249,8 +249,7 @@ public class PrimaryUpdateAndCacheUtils {
         if (resource.hasFinalizer(finalizerName)) {
           return resource;
         }
-        return context
-            .getClient()
+        return client
             .resource(resource)
             .edit(
                 r -> {
@@ -281,7 +280,7 @@ public class PrimaryUpdateAndCacheUtils {
             resource.getMetadata().getName(),
             resource.getMetadata().getNamespace(),
             e.getCode());
-        var operation = context.getClient().resources(resource.getClass());
+        var operation = client.resources(resource.getClass());
         if (resource.getMetadata().getNamespace() != null) {
           resource =
               (P)
@@ -307,12 +306,15 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /** Adds finalizer using Server-Side Apply. */
+  @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P addFinalizerWithSSA(
       KubernetesClient client, P originalResource, String finalizerName, String fieldManager) {
-    log.debug(
-        "Adding finalizer (using SSA) for resource: {} version: {}",
-        getUID(originalResource),
-        getVersion(originalResource));
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Adding finalizer (using SSA) for resource: {} version: {}",
+          getUID(originalResource),
+          getVersion(originalResource));
+    }
     try {
       P resource = (P) originalResource.getClass().getConstructor().newInstance();
       ObjectMeta objectMeta = new ObjectMeta();
@@ -340,14 +342,13 @@ public class PrimaryUpdateAndCacheUtils {
     }
   }
 
-  // todo
   public static <P extends HasMetadata> P removeFinalizer() {
     return null;
   }
 
   /**
-   * Experimental. Patches finalizer. For retry uses informer cache to get the fresh resources.
-   * Therefore makes less Kubernetes API Calls.
+   * Experimental. Patches finalizer. For retry uses informer cache to get the fresh resources,
+   * therefore makes less Kubernetes API Calls.
    */
   public static <P extends HasMetadata> P addFinalizer(
       P resource, String finalizer, Context<P> context) {
@@ -373,8 +374,8 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Experimental. Removes finalizer, for retry uses informer cache to get the fresh resources.
-   * Therefore makes less Kubernetes API Calls.
+   * Experimental. Removes finalizer, for retry uses informer cache to get the fresh resources,
+   * therefore makes less Kubernetes API Calls.
    */
   public static <P extends HasMetadata> P removeFinalizer(
       P resource, String finalizer, Context<P> context) {
