@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.api.reconciler;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import org.slf4j.Logger;
@@ -158,7 +159,7 @@ public class PrimaryUpdateAndCacheUtils {
       long cachePollPeriodMillis) {
 
     if (log.isDebugEnabled()) {
-      log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resourceToUpdate));
+      log.debug("Update and cache: {}", ResourceID.fromResource(resourceToUpdate));
     }
     P modified = null;
     int retryIndex = 0;
@@ -240,22 +241,44 @@ public class PrimaryUpdateAndCacheUtils {
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P addFinalizer(
       KubernetesClient client, P resource, String finalizerName) {
+    return conflictRetryingPatch(
+        client,
+        resource,
+        r -> {
+          r.addFinalizer(finalizerName);
+          return r;
+        },
+        r -> !r.hasFinalizer(finalizerName));
+  }
+
+  public static <P extends HasMetadata> P removeFinalizer(
+      KubernetesClient client, P resource, String finalizerName) {
+    return conflictRetryingPatch(
+        client,
+        resource,
+        r -> {
+          r.removeFinalizer(finalizerName);
+          return r;
+        },
+        r -> r.hasFinalizer(finalizerName));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <P extends HasMetadata> P conflictRetryingPatch(
+      KubernetesClient client,
+      P resource,
+      UnaryOperator<P> unaryOperator,
+      Predicate<P> preCondition) {
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
     }
     int retryIndex = 0;
     while (true) {
       try {
-        if (resource.hasFinalizer(finalizerName)) {
+        if (!preCondition.test(resource)) {
           return resource;
         }
-        return client
-            .resource(resource)
-            .edit(
-                r -> {
-                  r.addFinalizer(finalizerName);
-                  return r;
-                });
+        return client.resource(resource).edit(unaryOperator);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -342,14 +365,13 @@ public class PrimaryUpdateAndCacheUtils {
     }
   }
 
-  public static <P extends HasMetadata> P removeFinalizer() {
-    return null;
-  }
-
   /**
    * Experimental. Patches finalizer. For retry uses informer cache to get the fresh resources,
    * therefore makes less Kubernetes API Calls.
    */
+  @Experimental(
+      "Not used internally for now. Therefor we don't consider it well tested. But the intention is"
+          + " to have it as default in the future.")
   public static <P extends HasMetadata> P addFinalizer(
       P resource, String finalizer, Context<P> context) {
 
@@ -377,6 +399,9 @@ public class PrimaryUpdateAndCacheUtils {
    * Experimental. Removes finalizer, for retry uses informer cache to get the fresh resources,
    * therefore makes less Kubernetes API Calls.
    */
+  @Experimental(
+      "Not used internally for now. Therefor we don't consider it well tested. But the intention is"
+          + " to have it as default in the future.")
   public static <P extends HasMetadata> P removeFinalizer(
       P resource, String finalizer, Context<P> context) {
     if (!resource.hasFinalizer(finalizer)) {
