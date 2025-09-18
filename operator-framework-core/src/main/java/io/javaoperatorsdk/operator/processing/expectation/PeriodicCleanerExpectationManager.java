@@ -2,6 +2,9 @@ package io.javaoperatorsdk.operator.processing.expectation;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
@@ -9,18 +12,32 @@ import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
 public class PeriodicCleanerExpectationManager<P extends HasMetadata>
     extends ExpectationManager<P> {
 
+  private final ScheduledExecutorService scheduler =
+      Executors.newScheduledThreadPool(
+          1,
+          r -> {
+            Thread thread = Executors.defaultThreadFactory().newThread(r);
+            thread.setDaemon(true);
+            return thread;
+          });
+
   private final Duration cleanupDelayAfterExpiration;
   private final IndexedResourceCache<P> primaryCache;
 
-  // todo fixes schedule
   public PeriodicCleanerExpectationManager(Duration period, Duration cleanupDelayAfterExpiration) {
-    this.cleanupDelayAfterExpiration = cleanupDelayAfterExpiration;
-    this.primaryCache = null;
+    this(period, cleanupDelayAfterExpiration, null);
   }
 
   public PeriodicCleanerExpectationManager(Duration period, IndexedResourceCache<P> primaryCache) {
-    this.cleanupDelayAfterExpiration = null;
+    this(period, null, primaryCache);
+  }
+
+  private PeriodicCleanerExpectationManager(
+      Duration period, Duration cleanupDelayAfterExpiration, IndexedResourceCache<P> primaryCache) {
+    this.cleanupDelayAfterExpiration = cleanupDelayAfterExpiration;
     this.primaryCache = primaryCache;
+    scheduler.scheduleWithFixedDelay(
+        this::clean, period.toMillis(), period.toMillis(), TimeUnit.MICROSECONDS);
   }
 
   public void clean() {
@@ -39,5 +56,9 @@ public class PeriodicCleanerExpectationManager<P extends HasMetadata>
                 return primaryCache.get(e.getKey()).isEmpty();
               }
             });
+  }
+
+  void stop() {
+    scheduler.shutdownNow();
   }
 }
