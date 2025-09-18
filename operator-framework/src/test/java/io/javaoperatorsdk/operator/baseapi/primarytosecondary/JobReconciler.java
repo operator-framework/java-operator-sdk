@@ -38,26 +38,37 @@ public class JobReconciler implements Reconciler<Job> {
 
   @Override
   public UpdateControl<Job> reconcile(Job resource, Context<Job> context) {
-
+    Cluster cluster;
     if (!getResourceDirectlyFromCache) {
       // this is only possible when there is primary to secondary mapper
-      context
-          .getSecondaryResource(Cluster.class)
-          .orElseThrow(() -> new IllegalStateException("Secondary resource should be present"));
+      cluster =
+          context
+              .getSecondaryResource(Cluster.class)
+              .orElseThrow(() -> new IllegalStateException("Secondary resource should be present"));
     } else {
       // reading the resource from cache as alternative, works without primary to secondary mapper
       var informerEventSource =
           (InformerEventSource<Cluster, Job>)
               context.eventSourceRetriever().getEventSourceFor(Cluster.class);
-      informerEventSource
-          .get(
-              new ResourceID(
-                  resource.getSpec().getClusterName(), resource.getMetadata().getNamespace()))
-          .orElseThrow(
-              () -> new IllegalStateException("Secondary resource cannot be read from cache"));
+      cluster =
+          informerEventSource
+              .get(
+                  new ResourceID(
+                      resource.getSpec().getClusterName(), resource.getMetadata().getNamespace()))
+              .orElseThrow(
+                  () -> new IllegalStateException("Secondary resource cannot be read from cache"));
+    }
+    if (resource.getStatus() == null) {
+      resource.setStatus(new JobStatus());
     }
     numberOfExecutions.addAndGet(1);
-    return UpdateControl.noUpdate();
+    // copy a value to job status, to we can test triggering
+    if (!cluster.getSpec().getClusterValue().equals(resource.getStatus().getValueFromCluster())) {
+      resource.getStatus().setValueFromCluster(cluster.getSpec().getClusterValue());
+      return UpdateControl.patchStatus(resource);
+    } else {
+      return UpdateControl.noUpdate();
+    }
   }
 
   @Override
