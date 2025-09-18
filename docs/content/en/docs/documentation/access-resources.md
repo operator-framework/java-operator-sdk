@@ -7,7 +7,7 @@ As described in [Event sources and related topics](eventing.md), event sources a
 for caching resources and triggering the reconciliation for primary resources that are related 
 to cached resources.
 
-In Kubernetes world, the component that does this is called Informer. Without going into
+In the Kubernetes world, the component that does this is called an Informer. Without going into
 the details (there are plenty of good documents online regarding informers), its responsibility
 is to watch resources, cache them, and emit an event if the resource changed.
 
