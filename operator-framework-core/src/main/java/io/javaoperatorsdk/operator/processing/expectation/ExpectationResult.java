@@ -12,4 +12,8 @@ public record ExpectationResult<P extends HasMetadata>(
   public boolean isTimedOut() {
     return status == ExpectationStatus.TIMED_OUT;
   }
+
+  public String name() {
+    return expectation.name();
+  }
 }
