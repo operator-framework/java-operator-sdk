@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class ExpectationManager<P extends HasMetadata> {
 
-  private final ConcurrentHashMap<ResourceID, RegisteredExpectation<P>> registeredExpectations =
+  protected final ConcurrentHashMap<ResourceID, RegisteredExpectation<P>> registeredExpectations =
       new ConcurrentHashMap<>();
 
   public void setExpectation(P primary, Expectation<P> expectation, Duration timeout) {
@@ -51,6 +51,10 @@ public class ExpectationManager<P extends HasMetadata> {
   public Optional<Expectation<P>> getExpectation(P primary) {
     var regExp = registeredExpectations.get(ResourceID.fromResource(primary));
     return Optional.ofNullable(regExp).map(RegisteredExpectation::expectation);
+  }
+
+  public Optional<String> getExpectationName(P primary) {
+    return getExpectation(primary).map(Expectation::name);
   }
 
   public void cleanup(P primary) {
