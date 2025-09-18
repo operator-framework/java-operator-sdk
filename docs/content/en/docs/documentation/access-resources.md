@@ -41,7 +41,7 @@ The mapping is usually done based on the owner reference or annotation on the se
 It is important to realize that if a resource triggers the reconciliation of a primary resource, that
 resource naturally will be used during reconciliation. So the reconciler will need to access them. 
 Therefore, InformerEventSource maintains a reverse index [PrimaryToSecondaryIndex](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/DefaultPrimaryToSecondaryIndex.java), 
-based on the result of the `SecondaryToPrimaryMapper`result. 
+based on the result of the `SecondaryToPrimaryMapper` result. 
 
 ## Unified API for Related Resources
 
