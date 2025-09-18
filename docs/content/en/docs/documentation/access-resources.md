@@ -4,7 +4,7 @@ weight: 48
 ---
 
 As described in [Event sources and related topics](eventing.md), event sources are the backbone
-for caching resources and triggering the reconciliation for primary resources thar are related 
+for caching resources and triggering the reconciliation for primary resources that are related 
 to cached resources.
 
 In Kubernetes world, the component that does this is called Informer. Without going into
