@@ -38,7 +38,6 @@ public class JobReconciler implements Reconciler<Job> {
 
   @Override
   public UpdateControl<Job> reconcile(Job resource, Context<Job> context) {
-
     if (!getResourceDirectlyFromCache) {
       // this is only possible when there is primary to secondary mapper
       context
