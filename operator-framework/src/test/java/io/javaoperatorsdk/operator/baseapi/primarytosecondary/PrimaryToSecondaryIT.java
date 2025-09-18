@@ -18,9 +18,10 @@ class PrimaryToSecondaryIT {
 
   public static final String CLUSTER_VALUE = "clusterValue";
   public static final String JOB_1 = "job1";
+  public static final String CHANGED_VALUE = "CHANGED_VALUE";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withAdditionalCustomResourceDefinition(Cluster.class)
           .withReconciler(new JobReconciler())
@@ -28,19 +29,31 @@ class PrimaryToSecondaryIT {
 
   @Test
   void readsSecondaryInManyToOneCases() throws InterruptedException {
-    operator.create(cluster());
+    var cluster = extension.create(cluster());
     Thread.sleep(MIN_DELAY);
-    operator.create(job());
+    extension.create(job());
 
     await()
         .pollDelay(Duration.ofMillis(300))
         .untilAsserted(
             () -> {
-              assertThat(operator.getReconcilerOfType(JobReconciler.class).getNumberOfExecutions())
+              assertThat(extension.getReconcilerOfType(JobReconciler.class).getNumberOfExecutions())
                   .isEqualTo(1);
-              var job = operator.get(Job.class, JOB_1);
+              var job = extension.get(Job.class, JOB_1);
               assertThat(job.getStatus()).isNotNull();
               assertThat(job.getStatus().getValueFromCluster()).isEqualTo(CLUSTER_VALUE);
+            });
+
+    cluster.getSpec().setClusterValue(CHANGED_VALUE);
+    extension.replace(cluster);
+
+    // cluster change triggers job reconciliations
+    await()
+        .pollDelay(Duration.ofMillis(300))
+        .untilAsserted(
+            () -> {
+              var job = extension.get(Job.class, JOB_1);
+              assertThat(job.getStatus().getValueFromCluster()).isEqualTo(CHANGED_VALUE);
             });
   }
 

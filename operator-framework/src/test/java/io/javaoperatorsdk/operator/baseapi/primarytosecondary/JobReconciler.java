@@ -17,7 +17,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
  * needed, and to show the use cases when some mechanisms would not work without that. It's not
  * intended to be a reusable code as it is, rather serves for deeper understanding of the problem.
  */
-@ControllerConfiguration()
+@ControllerConfiguration
 public class JobReconciler implements Reconciler<Job> {
 
   private static final String JOB_CLUSTER_INDEX = "job-cluster-index";
