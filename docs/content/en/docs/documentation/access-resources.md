@@ -100,7 +100,7 @@ resources that are created by the reconciler are sometimes called in Kubernetes 
 neither related resources which are usually resources that serves as input for the primary (not managed). 
 It is the union of both.
 
-The issue is if we want to trigger reconciliation for a resource, that does not have an owner reference or other direct
+The issue arises when we want to trigger reconciliation for a resource, that does not have an owner reference or other direct
 association with the primary resource. 
 Typically, if you have ConfigMap where you have input parameters for a set of primary resources, 
 and the primary is actually referencing the secondary resource. 
