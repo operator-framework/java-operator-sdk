@@ -177,7 +177,7 @@ public UpdateControl<Job> reconcile(Job resource, Context<Job> context) {
 }
 ```
 
-But if still want to use the unified API (thus `context.getSecondaryResources()`), we can add 
+But if you still want to use the unified API (thus `context.getSecondaryResources()`), we can add 
 `PrimaryToSecondaryMapper`:
 
 ```java
