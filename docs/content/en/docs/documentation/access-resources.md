@@ -25,7 +25,7 @@ The purpose of such wrapping is to add additional capabilities required for cont
 Such capabilities are:
 - maintaining an index to which primary are the secondary resources in the informer cache are related to.
 - setting up multiple informers for the same type if needed (you need informer per namespace if the informer 
-  is not watching the whole cluster.
+  is not watching the whole cluster)
 - Dynamically adding/removing watched namespaces.
 - Some others, what is out of the scope of this document.
 
