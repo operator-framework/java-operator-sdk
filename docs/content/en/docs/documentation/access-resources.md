@@ -3,7 +3,7 @@ title: Accessing resources in caches
 weight: 48
 ---
 
-As described in [Event sources and related topics](eventing.md) event sources are the backbone
+As described in [Event sources and related topics](eventing.md), event sources are the backbone
 for caching resources and triggering the reconciliation for primary resources thar are related 
 to cached resources.
 
