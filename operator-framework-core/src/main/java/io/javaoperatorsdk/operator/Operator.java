@@ -16,6 +16,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.api.config.UpdatableConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.LifecycleAware;
@@ -26,7 +27,7 @@ public class Operator implements LifecycleAware {
 
   private final ControllerManager controllerManager;
   private final LeaderElectionManager leaderElectionManager;
-  private final ConfigurationService configurationService;
+  private final UpdatableConfigurationService configurationService;
   private volatile boolean started = false;
 
   public Operator() {
@@ -45,7 +46,7 @@ public class Operator implements LifecycleAware {
    * @param configurationService a {@link ConfigurationService} providing the configuration for the
    *     operator
    */
-  public Operator(ConfigurationService configurationService) {
+  public Operator(UpdatableConfigurationService configurationService) {
     this.configurationService = configurationService;
 
     final var executorServiceManager = configurationService.getExecutorServiceManager();
@@ -65,7 +66,7 @@ public class Operator implements LifecycleAware {
     this(initConfigurationService(null, overrider));
   }
 
-  private static ConfigurationService initConfigurationService(
+  private static UpdatableConfigurationService initConfigurationService(
       KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
@@ -82,7 +83,7 @@ public class Operator implements LifecycleAware {
       overrider = o -> o.withKubernetesClient(kubernetesClient);
     }
 
-    return ConfigurationService.newOverriddenConfigurationService(overrider);
+    return UpdatableConfigurationService.newOverriddenConfigurationService(overrider);
   }
 
   /**
@@ -207,6 +208,12 @@ public class Operator implements LifecycleAware {
               + " because its configuration cannot be found.\n"
               + " Known reconcilers are: "
               + configurationService.getKnownReconcilerNames());
+    }
+
+    // update the reconciler's configuration in the ConfigurationService if needed
+    final var existing = configurationService.getConfigurationFor(reconciler);
+    if (!configuration.equals(existing)) {
+      configurationService.replace(configuration);
     }
 
     final var controller = new Controller<>(reconciler, configuration, getKubernetesClient());
