@@ -1,5 +1,7 @@
 package io.javaoperatorsdk.operator.processing.retry;
 
+import java.time.Duration;
+
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 
 public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry> {
@@ -8,10 +10,15 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
   private double intervalMultiplier = GradualRetry.DEFAULT_MULTIPLIER;
   private long maxInterval = GradualRetry.DEFAULT_MAX_INTERVAL;
 
+  /**
+   * @deprecated use {@link GenericRetry#defaultLimitedExponentialRetry()} instead this instance.
+   *     Since GenericRetry is mutable, singleton is problematic.
+   */
+  @Deprecated(forRemoval = true)
   public static final Retry DEFAULT = new GenericRetry();
 
   public static GenericRetry defaultLimitedExponentialRetry() {
-    return (GenericRetry) DEFAULT;
+    return new GenericRetry();
   }
 
   public static GenericRetry noRetry() {
@@ -38,6 +45,11 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
 
   public long getInitialInterval() {
     return initialInterval;
+  }
+
+  public GenericRetry setInitialInterval(Duration initialInterval) {
+    setInitialInterval(initialInterval.toMillis());
+    return this;
   }
 
   public GenericRetry setInitialInterval(long initialInterval) {
