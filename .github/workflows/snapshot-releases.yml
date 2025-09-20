@@ -20,8 +20,8 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
-          distribution: zulu
-          java-version: 17
+          distribution: temurin
+          java-version: 21
           cache: 'maven'
       - name: Build and test project
         run: ./mvnw ${MAVEN_ARGS} clean install --file pom.xml
@@ -33,8 +33,8 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
-          java-version: 17
-          distribution: zulu
+          java-version: 21
+          distribution: temurin
           cache: 'maven'
           server-id: central
           server-username: MAVEN_USERNAME

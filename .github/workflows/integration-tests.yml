@@ -35,7 +35,7 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
-          distribution: zulu
+          distribution: temurin
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
       - name: Set up Minikube

@@ -42,7 +42,7 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
-          distribution: zulu
+          distribution: temurin
           java-version: ${{ matrix.java }}
       - name: Run Special Integration Tests
         run: ./mvnw ${MAVEN_ARGS} -B package -P minimal-watch-timeout-dependent-it --file pom.xml
