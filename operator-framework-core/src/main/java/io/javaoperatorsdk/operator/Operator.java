@@ -24,17 +24,17 @@ import io.javaoperatorsdk.operator.processing.LifecycleAware;
 public class Operator implements LifecycleAware {
   private static final Logger log = LoggerFactory.getLogger(Operator.class);
 
-  private final ControllerManager controllerManager;
-  private final LeaderElectionManager leaderElectionManager;
-  private final ConfigurationService configurationService;
+  private ControllerManager controllerManager;
+  private LeaderElectionManager leaderElectionManager;
+  private ConfigurationService configurationService;
   private volatile boolean started = false;
 
   public Operator() {
-    this((KubernetesClient) null);
+    init(initConfigurationService(null, null), true);
   }
 
   Operator(KubernetesClient kubernetesClient) {
-    this(initConfigurationService(kubernetesClient, null));
+    init(initConfigurationService(kubernetesClient, null), false);
   }
 
   /**
@@ -46,12 +46,7 @@ public class Operator implements LifecycleAware {
    *     operator
    */
   public Operator(ConfigurationService configurationService) {
-    this.configurationService = configurationService;
-
-    final var executorServiceManager = configurationService.getExecutorServiceManager();
-    controllerManager = new ControllerManager(executorServiceManager);
-
-    leaderElectionManager = new LeaderElectionManager(controllerManager, configurationService);
+    init(configurationService, false);
   }
 
   /**
@@ -62,10 +57,55 @@ public class Operator implements LifecycleAware {
    *     {@link ConfigurationService} values
    */
   public Operator(Consumer<ConfigurationServiceOverrider> overrider) {
-    this(initConfigurationService(null, overrider));
+    init(initConfigurationService(null, overrider), false);
   }
 
-  private static ConfigurationService initConfigurationService(
+  /**
+   * In a deferred initialization scenario, the default constructor will typically be called to
+   * create a proxy instance, usually to be replaced at some later time when the dependents (in this
+   * case the ConfigurationService instance) are available. In this situation, we want to make it
+   * possible to not perform the initialization steps directly so this implementation makes it
+   * possible to not crash when a null ConfigurationService is passed only if deferred
+   * initialization is allowed
+   *
+   * @param configurationService the potentially {@code null} {@link ConfigurationService} to use
+   *     for this operator
+   * @param allowDeferredInit whether or not deferred initialization of the configuration service is
+   *     allowed
+   * @throws IllegalStateException if the specified configuration service is {@code null} but
+   *     deferred initialization is not allowed
+   */
+  private void init(ConfigurationService configurationService, boolean allowDeferredInit) {
+    if (configurationService == null) {
+      if (!allowDeferredInit) {
+        throw new IllegalStateException(
+            "Deferred initialization of ConfigurationService is not allowed");
+      }
+    } else {
+      this.configurationService = configurationService;
+
+      final var executorServiceManager = configurationService.getExecutorServiceManager();
+      controllerManager = new ControllerManager(executorServiceManager);
+
+      leaderElectionManager = new LeaderElectionManager(controllerManager, configurationService);
+    }
+  }
+
+  /**
+   * Overridable by subclasses to enable deferred configuration, useful to avoid unneeded processing
+   * in injection scenarios, typically returning {@code null} here instead of performing any
+   * configuration
+   *
+   * @param client a potentially {@code null} {@link KubernetesClient} to initialize the operator's
+   *     {@link ConfigurationService} with
+   * @param overrider a potentially {@code null} {@link ConfigurationServiceOverrider} consumer to
+   *     override the default {@link ConfigurationService} with
+   * @return a ready to use {@link ConfigurationService} using values provided by the specified
+   *     overrides and kubernetes client, if provided or {@code null} in case deferred
+   *     initialization is possible, in which case it is up to the extension to ensure that the
+   *     {@link ConfigurationService} is properly set before the operator instance is used
+   */
+  protected ConfigurationService initConfigurationService(
       KubernetesClient client, Consumer<ConfigurationServiceOverrider> overrider) {
     // initialize the client if the user didn't provide one
     if (client == null) {
@@ -232,8 +272,8 @@ public class Operator implements LifecycleAware {
    *
    * @param reconciler part of the reconciler to register
    * @param configOverrider consumer to use to change config values
-   * @return registered controller
    * @param <P> the {@code HasMetadata} type associated with the reconciler
+   * @return registered controller
    */
   public <P extends HasMetadata> RegisteredController<P> register(
       Reconciler<P> reconciler, Consumer<ControllerConfigurationOverrider<P>> configOverrider) {
@@ -265,5 +305,15 @@ public class Operator implements LifecycleAware {
 
   public ConfigurationService getConfigurationService() {
     return configurationService;
+  }
+
+  /**
+   * Make it possible for extensions to set the {@link ConfigurationService} after the operator has
+   * been initialized
+   *
+   * @param configurationService the {@link ConfigurationService} to use for this operator
+   */
+  protected void setConfigurationService(ConfigurationService configurationService) {
+    init(configurationService, false);
   }
 }
