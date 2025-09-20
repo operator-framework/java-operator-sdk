@@ -43,8 +43,8 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
-          java-version: 17
-          distribution: zulu
+          java-version: 25
+          distribution: temurin
           cache: 'maven'
 
       - name: Build SDK

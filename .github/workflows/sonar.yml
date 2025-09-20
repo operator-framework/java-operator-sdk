@@ -27,8 +27,8 @@ jobs:
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
-          distribution: zulu
-          java-version: 17
+          distribution: temurin
+          java-version: 25
           cache: 'maven'
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
