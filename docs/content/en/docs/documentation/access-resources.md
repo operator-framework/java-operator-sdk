@@ -3,69 +3,67 @@ title: Accessing resources in caches
 weight: 48
 ---
 
-As described in [Event sources and related topics](eventing.md) event sources are the backbone
-for caching resources and triggering the reconciliation for primary resources that are related 
+As described in [Event sources and related topics](eventing.md), event sources serve as the backbone
+for caching resources and triggering reconciliation for primary resources that are related
 to cached resources.
 
-In Kubernetes world, the component that does this is called Informer. Without going into
-the details (there are plenty of good documents online regarding informers), its responsibility
-is to watch resources, cache them, and emit an event if the resource changed.
+In the Kubernetes ecosystem, the component responsible for this is called an Informer. Without delving into
+the details (there are plenty of excellent resources online about informers), its responsibility
+is to watch resources, cache them, and emit events when resources change.
 
-EventSource is a generalized concept of Informer to non-Kubernetes resources. Thus,
-to cache external resources, and trigger reconciliation if those change.
+EventSource is a generalized concept that extends the Informer pattern to non-Kubernetes resources,
+allowing you to cache external resources and trigger reconciliation when those resources change.
 
 ## The InformerEventSource
 
-The underlying informer implementation comes from the fabric8 client, called [DefaultSharedIndexInformer](https://github.com/fabric8io/kubernetes-client/blob/main/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java).
-[InformerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java) 
-in Java Operator SDK wraps informers from fabric8 client.
-The purpose of such wrapping is to add additional capabilities required for controllers.
-(In general, Informers are not used only for implementing controllers).
+The underlying informer implementation comes from the fabric8 client, specifically the [DefaultSharedIndexInformer](https://github.com/fabric8io/kubernetes-client/blob/main/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java).
+[InformerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
+in Java Operator SDK wraps the fabric8 client informers.
+This wrapper adds additional capabilities specifically required for controllers
+(note that informers have broader applications beyond just implementing controllers).
 
-Such capabilities are:
-- maintaining an index to which primary resources the secondary resources in informer cache are related to.
-- setting up multiple informers for the same type if needed. You need informer per namespace if the informer 
-  is not watching the whole cluster.
-- Dynamically adding/removing watched namespaces.
-- Some others, which are out of the scope of this document.
+These additional capabilities include:
+- Maintaining an index that maps secondary resources in the informer cache to their related primary resources
+- Setting up multiple informers for the same resource type when needed (for example, you need one informer per namespace if the informer is not watching the entire cluster)
+- Dynamically adding and removing watched namespaces
+- Other capabilities that are beyond the scope of this document
 
 ### Associating Secondary Resources to Primary Resource
 
-The question is, how to trigger reconciliation of a primary resource (your custom resource),
-when Informer receives a new resource.
-For this purpose the framework uses [`SecondaryToPrimaryMapper`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java)
-that tells (usually) based on the resource which primary resource reconciliation to trigger.
-The mapping is usually done based on the owner reference or annotation on the secondary resource. 
-(But not always, as we will see)
+The key question is: how do you trigger reconciliation of a primary resource (your custom resource)
+when an Informer receives a new resource?
+The framework uses [`SecondaryToPrimaryMapper`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java)
+to determine which primary resource reconciliation to trigger based on the received resource.
+This mapping is typically done using owner references or annotations on the secondary resource,
+though other mapping strategies are possible (as we'll see later).
 
-It is important to realize that if a resource triggers the reconciliation of a primary resource, that
-resource naturally will be used during reconciliation. So the reconciler will need to access it. 
-Therefore, InformerEventSource maintains a reverse index [PrimaryToSecondaryIndex](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/DefaultPrimaryToSecondaryIndex.java), 
-based on the result of the `SecondaryToPrimaryMapper`. 
+It's important to understand that when a resource triggers reconciliation of a primary resource,
+that resource will naturally be needed during the reconciliation process, so the reconciler must be able to access it.
+Therefore, InformerEventSource maintains a reverse index called [PrimaryToSecondaryIndex](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/DefaultPrimaryToSecondaryIndex.java),
+which is built based on the results of the `SecondaryToPrimaryMapper`. 
 
 ## Unified API for Related Resources
 
-To access all related resources for a primary resource, the framework provides an API to access the related 
-secondary resources using:
+To access all related resources for a primary resource, the framework provides a unified API:
 
 ```java
 Context.getSecondaryResources(Class<R> expectedType);
 ```
 
-That will list all the related resources of a certain type, based on the `InformerEventSource`'s `PrimaryToSecondaryIndex`.
-Based on that index, it reads the resources from the Informers cache. Note that since all those steps work
-on top of indexes, those operations are very fast, usually O(1).
+This method lists all related resources of a specific type, based on the `InformerEventSource`'s `PrimaryToSecondaryIndex`.
+It reads the resources from the Informer's cache using this index. Since these operations work
+directly with indexes, they are very fast—typically O(1) performance.
 
-We mostly talk about InformerEventSource, but this works in similar ways for the generalized EventSources concept, since
-the [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L93)
-actually implements the `Set<R> getSecondaryResources(P primary);` method. That is just called from the context.
+While we've focused on InformerEventSource, this pattern works similarly for the broader EventSource concept.
+The [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L93)
+interface actually implements the `Set<R> getSecondaryResources(P primary);` method, which is called by the context.
 
-It is a bit more complex than that, since there can be multiple event sources for the same type, in that case
-the union of the results is returned.
+The implementation is slightly more complex when multiple event sources exist for the same resource type—
+in such cases, the union of all results is returned.
 
 ## Getting Resources Directly from Event Sources
 
-Note that nothing stops you to directly access the resources in the cache (so not just through `getSecondaryResources(...)`):
+You can also directly access resources in the cache (not just through `getSecondaryResources(...)`):
 
 ```java
 public class WebPageReconciler implements Reconciler<WebPage> {
@@ -94,27 +92,26 @@ public class WebPageReconciler implements Reconciler<WebPage> {
 
 ## The Use Case for PrimaryToSecondaryMapper
 
-TL;DR: `PrimaryToSecondaryMapper` is used to access secondary resources in `InformerEventSource` instead 
-of the PrimaryToSecondaryIndex, thus `InfomerEventSource.getSecondaryResources(..)` will call this mapper
-to get the target secondary resources. This is usually required in cases when the `SecondaryToPrimaryMapper`
-is using the informer caches to list the target resources.
+**TL;DR**: `PrimaryToSecondaryMapper` allows `InformerEventSource` to access secondary resources directly
+instead of using the PrimaryToSecondaryIndex. When this mapper is configured, `InformerEventSource.getSecondaryResources(..)`
+will call the mapper to retrieve the target secondary resources. This is typically required when the `SecondaryToPrimaryMapper`
+uses informer caches to list the target resources.
 
-As we discussed, we provide a unified API to access related resources using `Context.getSecondaryResources(...)`.
-The name `Secondary` refers to resources that a reconciler needs to take into account to properly reconcile a primary
-resource. These resources cover more than only `child` resources as resources created by a reconciler are sometimes
-called and which usually have an owner reference pointing to the primary (and, typically, custom) resource. These also
-cover `related` resources (which might or might not be managed by Kubernetes) that serve as input for reconciliations.
+As discussed, we provide a unified API to access related resources using `Context.getSecondaryResources(...)`.
+The term "Secondary" refers to resources that a reconciler needs to consider when properly reconciling a primary
+resource. These resources encompass more than just "child" resources (resources created by a reconciler that
+typically have an owner reference pointing to the primary custom resource). They also include
+"related" resources (which may or may not be managed by Kubernetes) that serve as input for reconciliations.
 
-There are cases where the SDK needs more information than what is readily available, in particular when some of these
-secondary resources do not have owner references or any direct link to the primary resource they are associated
-with.
+In some cases, the SDK needs additional information beyond what's readily available, particularly when
+secondary resources lack owner references or any direct link to their associated primary resource.
 
-As an example we provide, consider a `Job` primary resource which can be assigned to run on a cluster, represented by a
+Consider this example: a `Job` primary resource can be assigned to run on a cluster, represented by a
 `Cluster` resource.
-Multiple jobs can run on a given cluster so multiple `Job` resources can reference the same `Cluster` resource. However,
-a `Cluster` resource should not know about `Job` resources as this information is not part of what a cluster *is*.
-However, when a cluster changes, we might want to redirect the associated jobs to other clusters. Our reconciler
-therefore needs to figure out which `Job` (primary) resources are associated with the changed `Cluster` (secondary)
+Multiple jobs can run on the same cluster, so multiple `Job` resources can reference the same `Cluster` resource. However,
+a `Cluster` resource shouldn't know about `Job` resources, as this information isn't part of what defines a cluster.
+When a cluster changes, we might want to redirect associated jobs to other clusters. Our reconciler
+therefore needs to determine which `Job` (primary) resources are associated with the changed `Cluster` (secondary)
 resource.
 See full
 sample [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/primarytosecondary).
@@ -128,15 +125,15 @@ InformerEventSourceConfiguration
               .collect(Collectors.toSet()))
 ```
 
-This will trigger all the related `Jobs` if the related cluster changes. Also, it maintains the `PrimaryToSecondaryIndex`.
-So we can use the `getSecondaryResources` in the `Job` reconciler to access the cluster.
-However, there is an issue: what if a new `Job` is created? The new job does not propagate
-automatically to `PrimaryToSecondaryIndex` in the `InformerEventSource` of the `Cluster`. That re-indexing
-happens when there is an event received for the `Cluster` and triggers all the `Jobs` again.
-Until that happens again you could not use `getSecondaryResources` for the new `Job`, since the new
-job won't be present in the reverse index.
+This configuration will trigger all related `Jobs` when the associated cluster changes and maintains the `PrimaryToSecondaryIndex`,
+allowing us to use `getSecondaryResources` in the `Job` reconciler to access the cluster.
+However, there's a potential issue: when a new `Job` is created, it doesn't automatically propagate
+to the `PrimaryToSecondaryIndex` in the `Cluster`'s `InformerEventSource`. Re-indexing only occurs
+when a `Cluster` event is received, which triggers all related `Jobs` again.
+Until this re-indexing happens, you cannot use `getSecondaryResources` for the new `Job`, since it
+won't be present in the reverse index.
 
-You could access the Cluster directly from cache though in the reconciler:
+You can work around this by accessing the Cluster directly from the cache in the reconciler:
 
 ```java 
 
@@ -149,29 +146,29 @@ public UpdateControl<Job> reconcile(Job resource, Context<Job> context) {
 }
 ```
 
-But if you still want to use the unified API (thus `context.getSecondaryResources()`), we have to add 
-`PrimaryToSecondaryMapper`:
+However, if you prefer to use the unified API (`context.getSecondaryResources()`), you need to add
+a `PrimaryToSecondaryMapper`:
 
 ```java
 clusterInformer.withPrimaryToSecondaryMapper( job -> 
         Set.of(new ResourceID(job.getSpec().getClusterName(), job.getMetadata().getNamespace())));
 ```
 
-Using `PrimaryToSecondaryMapper` the InformerEventSource won't use the `PrimaryToSecondaryIndex`
-to get the resources, instead will call this mapper and will get the resources based on its result.
-In fact if this mapper is set the `PrimaryToSecondaryIndex` is not even initialized.
+When using `PrimaryToSecondaryMapper`, the InformerEventSource bypasses the `PrimaryToSecondaryIndex`
+and instead calls the mapper to retrieve resources based on its results.
+In fact, when this mapper is configured, the `PrimaryToSecondaryIndex` isn't even initialized.
 
 ### Using Informer Indexes to Improve Performance
 
-In the `SecondaryToPrimaryMapper` above we are looping through all the resources in the cache:
+In the `SecondaryToPrimaryMapper` example above, we iterate through all resources in the cache:
 
 ```java
 context.getPrimaryCache()
               .list().filter(job -> job.getSpec().getClusterName().equals(cluster.getMetadata().getName()))
 ```
 
-This can be inefficient in case there is a large number of primary (Job) resources. To make it more efficient, we can
- create an index in the underlying Informer that indexes the target jobs for a cluster: 
+This approach can be inefficient when dealing with a large number of primary (Job) resources. To improve performance,
+you can create an index in the underlying Informer that indexes the target jobs for each cluster: 
 
 ```java
 
@@ -194,7 +191,7 @@ private String indexKey(String clusterName, String namespace) {
   }
 ```
 
-From this point, we can use the index to get the target resources very efficiently:
+With this index in place, you can retrieve the target resources very efficiently:
 
 ```java
 
