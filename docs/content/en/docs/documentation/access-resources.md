@@ -4,7 +4,7 @@ weight: 48
 ---
 
 As described in [Event sources and related topics](eventing.md) event sources are the backbone
-for caching resources and triggering the reconciliation for primary resources thar are related 
+for caching resources and triggering the reconciliation for primary resources that are related 
 to cached resources.
 
 In Kubernetes world, the component that does this is called Informer. Without going into
@@ -23,15 +23,15 @@ The purpose of such wrapping is to add additional capabilities required for cont
 (In general, Informers are not used only for implementing controllers).
 
 Such capabilities are:
-- maintaining and index to which primary are the secondary resources in informer cache are related to.
+- maintaining an index to which primary resources the secondary resources in informer cache are related to.
 - setting up multiple informers for the same type if needed. You need informer per namespace if the informer 
   is not watching the whole cluster.
 - Dynamically adding/removing watched namespaces.
-- Some others, what is out of the scope of this document.
+- Some others, which are out of the scope of this document.
 
 ### Associating Secondary Resources to Primary Resource
 
-The question is, how to trigger reconciliation of a primary resources (your custom resource),
+The question is, how to trigger reconciliation of a primary resource (your custom resource),
 when Informer receives a new resource.
 For this purpose the framework uses [`SecondaryToPrimaryMapper`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java)
 that tells (usually) based on the resource which primary resource reconciliation to trigger.
@@ -39,9 +39,9 @@ The mapping is usually done based on the owner reference or annotation on the se
 (But not always, as we will see)
 
 It is important to realize that if a resource triggers the reconciliation of a primary resource, that
-resource naturally will be used during reconciliation. So the reconciler will need to access them. 
-Therefore, InformerEventSource maintains a revers index [PrimaryToSecondaryIndex](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/DefaultPrimaryToSecondaryIndex.java), 
-based on the result of the `SecondaryToPrimaryMapper`result. 
+resource naturally will be used during reconciliation. So the reconciler will need to access it. 
+Therefore, InformerEventSource maintains a reverse index [PrimaryToSecondaryIndex](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/DefaultPrimaryToSecondaryIndex.java), 
+based on the result of the `SecondaryToPrimaryMapper`. 
 
 ## Unified API for Related Resources
 
@@ -56,7 +56,7 @@ That will list all the related resources of a certain type, based on the `Inform
 Based on that index, it reads the resources from the Informers cache. Note that since all those steps work
 on top of indexes, those operations are very fast, usually O(1).
 
-We mostly talk about InformerEventSource, but this works in similar ways for generalized EventSources concept, since
+We mostly talk about InformerEventSource, but this works in similar ways for the generalized EventSources concept, since
 the [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L93)
 actually implements the `Set<R> getSecondaryResources(P primary);` method. That is just called from the context.
 
@@ -106,7 +106,7 @@ called and which usually have an owner reference pointing to the primary (and, t
 cover `related` resources (which might or might not be managed by Kubernetes) that serve as input for reconciliations.
 
 There are cases where the SDK needs more information than what is readily available, in particular when some of these
-secondary resources do not have owner references or anything direct link to the primary resource they are associated
+secondary resources do not have owner references or any direct link to the primary resource they are associated
 with.
 
 As an example we provide, consider a `Job` primary resource which can be assigned to run on a cluster, represented by a
@@ -128,13 +128,13 @@ InformerEventSourceConfiguration
               .collect(Collectors.toSet()))
 ```
 
-This will trigger all the related `Jobs` if the related cluster changes. Also, the maintaining the `PrimaryToSecondaryIndex`.
+This will trigger all the related `Jobs` if the related cluster changes. Also, it maintains the `PrimaryToSecondaryIndex`.
 So we can use the `getSecondaryResources` in the `Job` reconciler to access the cluster.
-However, there is an issue, what if now there is a new `Job` created? The new job does not propagate
+However, there is an issue: what if a new `Job` is created? The new job does not propagate
 automatically to `PrimaryToSecondaryIndex` in the `InformerEventSource` of the `Cluster`. That re-indexing
-happens where there is an event received for the `Cluster` and triggers all the `Jobs` again.
-Until that would happen again you could not use `getSecondaryResources` for the new `Job`, since the new
-job won't bre present in the reverse index.
+happens when there is an event received for the `Cluster` and triggers all the `Jobs` again.
+Until that happens again you could not use `getSecondaryResources` for the new `Job`, since the new
+job won't be present in the reverse index.
 
 You could access the Cluster directly from cache though in the reconciler:
 
@@ -171,7 +171,7 @@ context.getPrimaryCache()
 ```
 
 This can be inefficient in case there is a large number of primary (Job) resources. To make it more efficient, we can
- create an index in the underlying Informer, that indexed the target jobs for a cluster: 
+ create an index in the underlying Informer that indexes the target jobs for a cluster: 
 
 ```java
 
