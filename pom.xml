@@ -55,7 +55,7 @@
     <junit.version>5.13.4</junit.version>
     <fabric8-client.version>7.3.1</fabric8-client.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <log4j.version>2.25.1</log4j.version>
+    <log4j.version>2.25.2</log4j.version>
     <mokito.version>5.20.0</mokito.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <compile-testing.version>0.23.0</compile-testing.version>
