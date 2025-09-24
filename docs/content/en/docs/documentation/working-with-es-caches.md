@@ -1,24 +1,24 @@
 ---
-title: Accessing resources in caches
+title: Working with EventSource caches
 weight: 48
 ---
 
 As described in [Event sources and related topics](eventing.md), event sources serve as the backbone
 for caching resources and triggering reconciliation for primary resources that are related
-to cached resources.
+to these secondary resources.
 
 In the Kubernetes ecosystem, the component responsible for this is called an Informer. Without delving into
-the details (there are plenty of excellent resources online about informers), its responsibility
-is to watch resources, cache them, and emit events when resources change.
+the details (there are plenty of excellent resources online about informers), informers
+watch resources, cache them, and emit events when resources change.
 
-EventSource is a generalized concept that extends the Informer pattern to non-Kubernetes resources,
+`EventSource` is a generalized concept that extends the Informer pattern to non-Kubernetes resources,
 allowing you to cache external resources and trigger reconciliation when those resources change.
 
 ## The InformerEventSource
 
-The underlying informer implementation comes from the fabric8 client, specifically the [DefaultSharedIndexInformer](https://github.com/fabric8io/kubernetes-client/blob/main/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java).
+The underlying informer implementation comes from the Fabric8 client, called [DefaultSharedIndexInformer](https://github.com/fabric8io/kubernetes-client/blob/main/kubernetes-client/src/main/java/io/fabric8/kubernetes/client/informers/impl/DefaultSharedIndexInformer.java).
 [InformerEventSource](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/InformerEventSource.java)
-in Java Operator SDK wraps the fabric8 client informers.
+in Java Operator SDK wraps the Fabric8 client informers.
 This wrapper adds additional capabilities specifically required for controllers
 (note that informers have broader applications beyond just implementing controllers).
 
@@ -30,40 +30,43 @@ These additional capabilities include:
 
 ### Associating Secondary Resources to Primary Resource
 
-The key question is: how do you trigger reconciliation of a primary resource (your custom resource)
-when an Informer receives a new resource?
+Event sources need to trigger the appropriate reconciler, providing the correct primary resource, whenever one of their
+handled secondary resources changes. It is thus core to an event source's role to identify which primary resource (
+usually, your custom resource) is potentially impacted by that change.
 The framework uses [`SecondaryToPrimaryMapper`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/SecondaryToPrimaryMapper.java)
-to determine which primary resource reconciliation to trigger based on the received resource.
-This mapping is typically done using owner references or annotations on the secondary resource,
-though other mapping strategies are possible (as we'll see later).
+for this purpose. For `InformerEventSources`, which target Kubernetes resources, this mapping is typically done using
+either the owner reference or an annotation on the secondary resource. For external resources, other mechanisms need to
+be used and there are also cases where the default mechanisms provided by the SDK do not work, even for Kubernetes
+resources.
 
-It's important to understand that when a resource triggers reconciliation of a primary resource,
-that resource will naturally be needed during the reconciliation process, so the reconciler must be able to access it.
-Therefore, InformerEventSource maintains a reverse index called [PrimaryToSecondaryIndex](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/DefaultPrimaryToSecondaryIndex.java),
-which is built based on the results of the `SecondaryToPrimaryMapper`. 
+However, once the event source has triggered a primary resource reconciliation, the associated reconciler needs to
+access the secondary resources which changes caused the reconciliation. Indeed, the information from the secondary
+resources might be needed during the reconciliation. For that purpose,  
+`InformerEventSource` maintains a reverse
+index [PrimaryToSecondaryIndex](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/informer/DefaultPrimaryToSecondaryIndex.java),
+based on the result of the `SecondaryToPrimaryMapper`result.
 
 ## Unified API for Related Resources
 
-To access all related resources for a primary resource, the framework provides a unified API:
+To access all related resources for a primary resource, the framework provides an API to access the related
+secondary resources using the `Set<R> getSecondaryResources(Class<R> expectedType)` method of the `Context` object
+provided as part of the `reconcile` method.
 
-```java
-Context.getSecondaryResources(Class<R> expectedType);
-```
+For `InformerEventSource`, this will leverage the associated `PrimaryToSecondaryIndex`. Resources are then retrieved
+from the informer's cache. Note that since all those steps work
+on top of indexes, those operations are very fast, usually O(1).
 
-This method lists all related resources of a specific type, based on the `InformerEventSource`'s `PrimaryToSecondaryIndex`.
-It reads the resources from the Informer's cache using this index. Since these operations work
-directly with indexes, they are very fast—typically O(1) performance.
+While we've focused mostly on `InformerEventSource`, this concept can be extended to all `EventSources`, since
+[`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L93)
+actually implements the `Set<R> getSecondaryResources(P primary)` method that can be called from the `Context`.
 
-While we've focused on InformerEventSource, this pattern works similarly for the broader EventSource concept.
-The [`EventSource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/event/source/EventSource.java#L93)
-interface actually implements the `Set<R> getSecondaryResources(P primary);` method, which is called by the context.
-
-The implementation is slightly more complex when multiple event sources exist for the same resource type—
-in such cases, the union of all results is returned.
+As there can be multiple event sources for the same resource types, things are a little more complex: the union of each
+event source results is returned.
 
 ## Getting Resources Directly from Event Sources
 
-You can also directly access resources in the cache (not just through `getSecondaryResources(...)`):
+Note that nothing prevents you from directly accessing resources in the cache without going through
+`getSecondaryResources(...)`:
 
 ```java
 public class WebPageReconciler implements Reconciler<WebPage> {
