@@ -1,15 +1,12 @@
 package io.javaoperatorsdk.operator.baseapi.ssaissue.finalizer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SSAFinalizerIssueSpec {
 
   private String value;
 
-  // List is initialized, that at the end becomes problematic when adding the finalizer
-  // If the list is not initialized like this (this its null) it works fine
-  private List<String> list = new ArrayList<>();
+  private List<String> list = null;
 
   public String getValue() {
     return value;
