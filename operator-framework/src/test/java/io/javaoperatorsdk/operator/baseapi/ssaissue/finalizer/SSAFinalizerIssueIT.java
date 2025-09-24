@@ -18,7 +18,7 @@ class SSAFinalizerIssueIT {
   public static final String TEST_1 = "test1";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new SSAFinalizerIssueReconciler())
           .build();
@@ -30,15 +30,15 @@ class SSAFinalizerIssueIT {
   @Test
   void addingFinalizerRemoveListValues() {
     var fieldManager =
-        operator
+        extension
             .getRegisteredControllerForReconcile(SSAFinalizerIssueReconciler.class)
             .getConfiguration()
             .fieldManager();
 
-    operator
+    extension
         .getKubernetesClient()
         .resource(testResource())
-        .inNamespace(operator.getNamespace())
+        .inNamespace(extension.getNamespace())
         .patch(
             new PatchContext.Builder()
                 .withFieldManager(fieldManager)
@@ -49,7 +49,7 @@ class SSAFinalizerIssueIT {
     await()
         .untilAsserted(
             () -> {
-              var actual = operator.get(SSAFinalizerIssueCustomResource.class, TEST_1);
+              var actual = extension.get(SSAFinalizerIssueCustomResource.class, TEST_1);
               assertThat(actual.getFinalizers()).hasSize(1);
               assertThat(actual.getSpec()).isNull();
             });
