@@ -4,6 +4,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public interface DependentResourceFactory<
@@ -35,5 +36,14 @@ public interface DependentResourceFactory<
         Utils.instantiateAndConfigureIfNeeded(
             dependentResourceClass, DependentResource.class, null, null);
     return dr != null ? dr.resourceType() : null;
+  }
+
+  default DependentResourceNode createNodeFrom(D spec, DependentResource dependentResource) {
+    return new DependentResourceNode(
+        spec.getReconcileCondition(),
+        spec.getDeletePostCondition(),
+        spec.getReadyCondition(),
+        spec.getActivationCondition(),
+        dependentResource);
   }
 }
