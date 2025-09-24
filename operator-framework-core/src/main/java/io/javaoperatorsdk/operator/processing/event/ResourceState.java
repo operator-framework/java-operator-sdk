@@ -38,7 +38,7 @@ class ResourceState {
   private EventingState eventing;
   private RateLimitState rateLimit;
   private HasMetadata lastKnownResource;
-  private boolean isDeleteFinalStateUnknown;
+  private boolean isDeleteFinalStateUnknown = false;
 
   public ResourceState(ResourceID id) {
     this.id = id;

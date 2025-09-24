@@ -274,11 +274,20 @@ public class PrimaryUpdateAndCacheUtils {
         r -> r.hasFinalizer(finalizerName));
   }
 
+  /**
+   * @param client KubernetesClient
+   * @param resource to update
+   * @param resourceChangesOperator changes to be done on the resource before update
+   * @param preCondition condition to check if the patch operation still needs to be performed or
+   *     not.
+   * @return updated resource or unchanged if the precondition does not hold.
+   * @param <P> resource type
+   */
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P conflictRetryingPatch(
       KubernetesClient client,
       P resource,
-      UnaryOperator<P> unaryOperator,
+      UnaryOperator<P> resourceChangesOperator,
       Predicate<P> preCondition) {
     if (log.isDebugEnabled()) {
       log.debug("Conflict retrying update for: {}", ResourceID.fromResource(resource));
@@ -289,7 +298,7 @@ public class PrimaryUpdateAndCacheUtils {
         if (!preCondition.test(resource)) {
           return resource;
         }
-        return client.resource(resource).edit(unaryOperator);
+        return client.resource(resource).edit(resourceChangesOperator);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;

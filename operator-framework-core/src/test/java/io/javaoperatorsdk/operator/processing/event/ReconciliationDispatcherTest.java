@@ -688,6 +688,24 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
+  void isDeleteEventCannotBeTrueIfNotTriggerOnAllEvent() {
+    assertThrows(
+        OperatorException.class,
+        () ->
+            reconciliationDispatcher.handleExecution(
+                new ExecutionScope(null, null, true, false).setResource(testCustomResource)));
+  }
+
+  @Test
+  void isDeleteFinalStateUnknownEventCannotBeTrueIfNotTriggerOnAllEvent() {
+    assertThrows(
+        OperatorException.class,
+        () ->
+            reconciliationDispatcher.handleExecution(
+                new ExecutionScope(null, null, false, true).setResource(testCustomResource)));
+  }
+
+  @Test
   void reconcilerContextUsesTheSameInstanceOfResourceAsParam() {
     initConfigService(false, false);
 
@@ -708,9 +726,6 @@ class ReconciliationDispatcherTest {
         .isSameAs(customResourceCaptor.getValue())
         .isNotSameAs(testCustomResource);
   }
-
-  @Test
-  void procAllEventModeNoReSchedulesAllowedForDeleteEvent() {}
 
   private ObservedGenCustomResource createObservedGenCustomResource() {
     ObservedGenCustomResource observedGenCustomResource = new ObservedGenCustomResource();

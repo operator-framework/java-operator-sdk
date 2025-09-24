@@ -145,7 +145,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       Optional<P> maybeLatest = cache.get(resourceID);
       maybeLatest.ifPresent(MDCUtils::addResourceInfo);
       if (!controllerUnderExecution
-          && (maybeLatest.isPresent() || (triggerOnAllEvent() && state.deleteEventPresent()))) {
+          && (maybeLatest.isPresent() || isTriggerOnAllEventAndDeleteEventPresent(state))) {
         var rateLimit = state.getRateLimit();
         if (rateLimit == null) {
           rateLimit = rateLimiter.initState();
@@ -228,7 +228,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
       state.markEventReceived(triggerOnAllEvent());
-    } else if (triggerOnAllEvent() && state.deleteEventPresent()) {
+    } else if (isTriggerOnAllEventAndDeleteEventPresent(state)) {
       state.markAdditionalEventAfterDeleteEvent();
     } else if (log.isDebugEnabled()) {
       log.debug(
@@ -285,13 +285,17 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       state.markProcessedMarkForDeletion();
       metrics.cleanupDoneFor(resourceID, metricsMetadata);
     } else {
-      if (state.eventPresent() || (triggerOnAllEvent() && state.deleteEventPresent())) {
+      if (state.eventPresent() || isTriggerOnAllEventAndDeleteEventPresent(state)) {
         log.debug("Submitting for reconciliation.");
         submitReconciliationExecution(state);
       } else {
         reScheduleExecutionIfInstructed(postExecutionControl, executionScope.getResource());
       }
     }
+  }
+
+  private boolean isTriggerOnAllEventAndDeleteEventPresent(ResourceState state) {
+    return triggerOnAllEvent() && state.deleteEventPresent();
   }
 
   /**
@@ -502,15 +506,16 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             log.debug(
                 "Resource not found in the cache, checking for delete event resource: {}",
                 resourceID);
-            var state = resourceStateManager.get(resourceID);
             if (executionScope.isDeleteEvent()) {
+              var state = resourceStateManager.get(resourceID);
               actualResource =
                   (Optional<P>)
                       state
                           .filter(ResourceState::deleteEventPresent)
                           .map(ResourceState::getLastKnownResource);
               if (actualResource.isEmpty()) {
-                throw new IllegalStateException("this should not happen");
+                throw new IllegalStateException(
+                    "ActualResource should be always present, either from cache or delete event.");
               }
             } else {
               log.debug("Skipping execution since delete event received meanwhile");

@@ -124,9 +124,9 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void onDelete(T resource, boolean b) {
-    super.onDelete(resource, b);
-    eventReceived(ResourceAction.DELETED, resource, null, b);
+  public void onDelete(T resource, boolean deletedFinalStateUnknown) {
+    super.onDelete(resource, deletedFinalStateUnknown);
+    eventReceived(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
   }
 
   @Override

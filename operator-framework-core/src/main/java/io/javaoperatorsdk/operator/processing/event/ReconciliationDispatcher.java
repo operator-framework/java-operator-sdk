@@ -64,6 +64,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
+    validateExecutionScope(executionScope);
     try {
       return handleDispatch(executionScope);
     } catch (Exception e) {
@@ -90,7 +91,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           originalResource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
-
     Context<P> context =
         new DefaultContext<>(
             executionScope.getRetryInfo(),
@@ -432,6 +432,15 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             customResourceFacade.getResource(
                 resource.getMetadata().getNamespace(), resource.getMetadata().getName());
       }
+    }
+  }
+
+  private void validateExecutionScope(ExecutionScope<P> executionScope) {
+    if (!triggerOnAllEvent()
+        && (executionScope.isDeleteEvent() || executionScope.isDeleteFinalStateUnknown())) {
+      throw new OperatorException(
+          "isDeleteEvent or isDeleteFinalStateUnknown cannot be true if not triggerOnAllEvent."
+              + " This indicates an issue with the implementation.");
     }
   }
 
