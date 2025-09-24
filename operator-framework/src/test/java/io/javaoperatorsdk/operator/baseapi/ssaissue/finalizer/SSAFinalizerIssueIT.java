@@ -1,7 +1,5 @@
 package io.javaoperatorsdk.operator.baseapi.ssaissue.finalizer;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -23,7 +21,7 @@ class SSAFinalizerIssueIT {
 
   /**
    * Showcases the problem when we add a finalizer and in the spec a list is initialized with an
-   * empty list by default. This at the end results in a change that when adding the finalizer the
+   * empty list by default. This at the end results in a change that when adding the finalizer, the
    * SSA patch deletes the initial values in the spec.
    */
   @Test
@@ -44,7 +42,6 @@ class SSAFinalizerIssueIT {
     res.setMetadata(new ObjectMetaBuilder().withName(TEST_1).build());
     res.setSpec(new SSAFinalizerIssueSpec());
     res.getSpec().setValue("val");
-    res.getSpec().setList(List.of("val1", "val2"));
     return res;
   }
 }
