@@ -33,6 +33,10 @@ class ResourceStateManager {
     return states.computeIfAbsent(resourceID, ResourceState::new);
   }
 
+  public Optional<ResourceState> get(ResourceID resourceID) {
+    return Optional.ofNullable(states.get(resourceID));
+  }
+
   public ResourceState remove(ResourceID resourceID) {
     return states.remove(resourceID);
   }

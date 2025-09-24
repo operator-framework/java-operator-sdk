@@ -62,7 +62,8 @@ public class ControllerEventSource<T extends HasMetadata>
     }
   }
 
-  public void eventReceived(ResourceAction action, T resource, T oldResource) {
+  public void eventReceived(
+      ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
         log.debug(
@@ -76,8 +77,18 @@ public class ControllerEventSource<T extends HasMetadata>
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
       if (isAcceptedByFilters(action, resource, oldResource)) {
-        getEventHandler()
-            .handleEvent(new ResourceEvent(action, ResourceID.fromResource(resource), resource));
+        if (deletedFinalStateUnknown != null) {
+          getEventHandler()
+              .handleEvent(
+                  new ResourceDeleteEvent(
+                      action,
+                      ResourceID.fromResource(resource),
+                      resource,
+                      deletedFinalStateUnknown));
+        } else {
+          getEventHandler()
+              .handleEvent(new ResourceEvent(action, ResourceID.fromResource(resource), resource));
+        }
       } else {
         log.debug("Skipping event handling resource {}", ResourceID.fromResource(resource));
       }
@@ -103,19 +114,19 @@ public class ControllerEventSource<T extends HasMetadata>
   @Override
   public void onAdd(T resource) {
     super.onAdd(resource);
-    eventReceived(ResourceAction.ADDED, resource, null);
+    eventReceived(ResourceAction.ADDED, resource, null, null);
   }
 
   @Override
   public void onUpdate(T oldCustomResource, T newCustomResource) {
     super.onUpdate(oldCustomResource, newCustomResource);
-    eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource);
+    eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource, null);
   }
 
   @Override
-  public void onDelete(T resource, boolean b) {
-    super.onDelete(resource, b);
-    eventReceived(ResourceAction.DELETED, resource, null);
+  public void onDelete(T resource, boolean deletedFinalStateUnknown) {
+    super.onDelete(resource, deletedFinalStateUnknown);
+    eventReceived(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
   }
 
   @Override
