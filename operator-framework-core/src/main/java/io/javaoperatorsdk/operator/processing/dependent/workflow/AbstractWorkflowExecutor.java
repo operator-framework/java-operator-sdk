@@ -111,8 +111,9 @@ abstract class AbstractWorkflowExecutor<P extends HasMetadata> {
     actualExecutions.put(dependentResourceNode, future);
   }
 
+  // Exception is required because of Kotlin
   protected synchronized void handleExceptionInExecutor(
-      DependentResourceNode<?, P> dependentResourceNode, RuntimeException e) {
+      DependentResourceNode<?, P> dependentResourceNode, Exception e) {
     createOrGetResultFor(dependentResourceNode).withError(e);
   }
 

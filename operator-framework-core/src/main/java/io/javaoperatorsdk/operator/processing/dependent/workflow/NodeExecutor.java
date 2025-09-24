@@ -19,7 +19,8 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
     try {
       doRun(dependentResourceNode);
 
-    } catch (RuntimeException e) {
+    } catch (Exception e) {
+      // Exception is required because of Kotlin
       workflowExecutor.handleExceptionInExecutor(dependentResourceNode, e);
     } finally {
       workflowExecutor.handleNodeExecutionFinish(dependentResourceNode);
