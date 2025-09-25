@@ -57,7 +57,7 @@
     <slf4j.version>2.0.17</slf4j.version>
     <log4j.version>2.25.2</log4j.version>
     <mokito.version>5.20.0</mokito.version>
-    <commons-lang3.version>3.18.0</commons-lang3.version>
+    <commons-lang3.version>3.19.0</commons-lang3.version>
     <compile-testing.version>0.23.0</compile-testing.version>
     <javapoet.version>1.13.0</javapoet.version>
     <assertj.version>3.27.6</assertj.version>
