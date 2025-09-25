@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,6 +16,10 @@ import static org.mockito.Mockito.when;
 
 class AbstractDependentResourceTest {
 
+  private static final TestCustomResource PRIMARY = new TestCustomResource();
+  private static final DefaultContext<TestCustomResource> CONTEXT =
+      new DefaultContext<>(mock(), mock(), PRIMARY);
+
   @Test
   void throwsExceptionIfDesiredIsNullOnCreate() {
     TestDependentResource testDependentResource = new TestDependentResource();
@@ -22,8 +27,7 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(null);
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
   }
 
   @Test
@@ -33,8 +37,7 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(null);
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
   }
 
   @Test
@@ -44,8 +47,7 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(configMap());
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
   }
 
   @Test
@@ -55,8 +57,7 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(configMap());
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
   }
 
   private ConfigMap configMap() {
