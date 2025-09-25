@@ -18,7 +18,9 @@ package io.javaoperatorsdk.operator.sample.schema;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class Schema implements Serializable {
+import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
+
+public class Schema implements Serializable, ExternalDependentIDProvider<String> {
 
   private final String name;
   private final String characterSet;
@@ -52,5 +54,10 @@ public class Schema implements Serializable {
   @Override
   public String toString() {
     return "Schema{" + "name='" + name + '\'' + ", characterSet='" + characterSet + '\'' + '}';
+  }
+
+  @Override
+  public String id() {
+    return name;
   }
 }

@@ -15,6 +15,10 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
@@ -120,5 +124,25 @@ public abstract class AbstractExternalDependentResource<
   @SuppressWarnings("rawtypes")
   protected InformerEventSource getExternalStateEventSource() {
     return externalStateEventSource;
+  }
+
+  @Override
+  protected Optional<R> selectTargetSecondaryResource(
+      Set<R> secondaryResources, P primary, Context<P> context) {
+    R desired = desired(primary, context);
+    List<R> targetResources;
+    if (desired instanceof ExternalDependentIDProvider<?> desiredWithId) {
+      targetResources =
+          secondaryResources.stream()
+              .filter(r -> ((ExternalDependentIDProvider<?>) r).id().equals(desiredWithId.id()))
+              .toList();
+    } else {
+      targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
+    }
+    if (targetResources.size() > 1) {
+      throw new IllegalStateException(
+          "More than one secondary resource related to primary: " + targetResources);
+    }
+    return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
   }
 }
