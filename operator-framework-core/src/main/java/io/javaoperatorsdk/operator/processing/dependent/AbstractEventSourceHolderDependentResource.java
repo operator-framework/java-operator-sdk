@@ -97,6 +97,11 @@ public abstract class AbstractEventSourceHolderDependentResource<
     return resourceType;
   }
 
+  @Override
+  public Optional<R> getSecondaryResource(P primary, Context<P> context) {
+    return this.eventSource.getSecondaryResource(primary);
+  }
+
   protected abstract T createEventSource(EventSourceContext<P> context);
 
   public void setEventSource(T eventSource) {
