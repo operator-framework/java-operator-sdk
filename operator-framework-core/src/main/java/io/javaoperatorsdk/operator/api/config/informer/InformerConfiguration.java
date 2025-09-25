@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.api.config.informer;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -36,6 +37,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private GenericFilter<? super R> genericFilter;
   private ItemStore<R> itemStore;
   private Long informerListLimit;
+  private FieldSelector fieldSelector;
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -48,7 +50,8 @@ public class InformerConfiguration<R extends HasMetadata> {
       OnDeleteFilter<? super R> onDeleteFilter,
       GenericFilter<? super R> genericFilter,
       ItemStore<R> itemStore,
-      Long informerListLimit) {
+      Long informerListLimit,
+      FieldSelector fieldSelector) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -60,6 +63,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.genericFilter = genericFilter;
     this.itemStore = itemStore;
     this.informerListLimit = informerListLimit;
+    this.fieldSelector = fieldSelector;
   }
 
   private InformerConfiguration(Class<R> resourceClass) {
@@ -93,7 +97,8 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.onDeleteFilter,
             original.genericFilter,
             original.itemStore,
-            original.informerListLimit)
+            original.informerListLimit,
+            original.fieldSelector)
         .builder;
   }
 
@@ -264,6 +269,10 @@ public class InformerConfiguration<R extends HasMetadata> {
     return informerListLimit;
   }
 
+  public FieldSelector getFieldSelector() {
+    return fieldSelector;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
@@ -329,6 +338,12 @@ public class InformerConfiguration<R extends HasMetadata> {
         final var informerListLimit =
             informerListLimitValue == Constants.NO_LONG_VALUE_SET ? null : informerListLimitValue;
         withInformerListLimit(informerListLimit);
+
+        withFieldSelector(
+            new FieldSelector(
+                Arrays.stream(informerConfig.fieldSelector())
+                    .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
+                    .toList()));
       }
       return this;
     }
@@ -422,6 +437,11 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withInformerListLimit(Long informerListLimit) {
       InformerConfiguration.this.informerListLimit = informerListLimit;
+      return this;
+    }
+
+    public Builder withFieldSelector(FieldSelector fieldSelector) {
+      InformerConfiguration.this.fieldSelector = fieldSelector;
       return this;
     }
   }
