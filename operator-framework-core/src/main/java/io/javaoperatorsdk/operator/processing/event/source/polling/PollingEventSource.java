@@ -73,7 +73,8 @@ public class PollingEventSource<R, P extends HasMetadata>
               }
               getStateAndFillCache();
               healthy.set(true);
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
+              // Exception is required because of Kotlin
               healthy.set(false);
               log.error("Error during polling.", e);
             }
