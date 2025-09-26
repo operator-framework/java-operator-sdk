@@ -137,7 +137,9 @@ public abstract class AbstractExternalDependentResource<
               .filter(r -> ((ExternalDependentIDProvider<?>) r).id().equals(desiredWithId.id()))
               .toList();
     } else {
-      targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
+      throw new IllegalStateException(
+          "Either implement ExternalDependentIDProvider or override"
+              + " selectTargetSecondaryResource.");
     }
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
