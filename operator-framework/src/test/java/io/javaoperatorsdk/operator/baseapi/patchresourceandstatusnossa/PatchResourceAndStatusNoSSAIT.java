@@ -39,12 +39,7 @@ class PatchResourceAndStatusNoSSAIT {
     assertThat(TestUtils.getNumberOfExecutions(operator)).isEqualTo(1);
     assertThat(customResource.getStatus().getState())
         .isEqualTo(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
-    assertThat(
-            customResource
-                .getMetadata()
-                .getAnnotations()
-                .get(TEST_ANNOTATION))
-        .isNotNull();
+    assertThat(customResource.getMetadata().getAnnotations().get(TEST_ANNOTATION)).isNotNull();
   }
 
   void awaitStatusUpdated(String name) {
@@ -65,7 +60,7 @@ class PatchResourceAndStatusNoSSAIT {
     PatchResourceAndStatusNoSSACustomResource resource =
         new PatchResourceAndStatusNoSSACustomResource();
     resource.setMetadata(new ObjectMetaBuilder().withName("doubleupdateresource-" + id).build());
-    resource.getMetadata().setAnnotations(Map.of(TEST_ANNOTATION,TEST_ANNOTATION_VALUE));
+    resource.getMetadata().setAnnotations(Map.of(TEST_ANNOTATION, TEST_ANNOTATION_VALUE));
     resource.setSpec(new PatchResourceAndStatusNoSSASpec());
     resource.getSpec().setValue(id);
     return resource;

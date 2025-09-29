@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.baseapi.patchresourceandstatusnossa;
 
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;

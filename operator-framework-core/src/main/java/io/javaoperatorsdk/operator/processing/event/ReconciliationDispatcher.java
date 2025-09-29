@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -477,6 +478,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
+    @SuppressWarnings("unchecked")
     private R editStatus(R resource, R originalResource) {
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // the cached resource should not be changed in any circumstances
@@ -486,7 +488,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         clonedOriginal.getMetadata().setResourceVersion(null);
         resource.getMetadata().setResourceVersion(null);
         var res = resource(clonedOriginal);
-        return res.editStatus(r -> resource);
+        return res.editStatus(
+            r -> {
+              ((CustomResource) r).setStatus(((CustomResource) resource).getStatus());
+              return r;
+            });
       } finally {
         // restore initial resource version
         clonedOriginal.getMetadata().setResourceVersion(resourceVersion);
