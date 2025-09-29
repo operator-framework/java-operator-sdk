@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -114,6 +115,29 @@ class ReconcilerUtilsTest {
     ReconcilerUtils.setSpec(tomcat, newSpec);
 
     assertThat(tomcat.getSpec().getReplicas()).isEqualTo(1);
+  }
+
+  @Test
+  void setsStatusWithReflection() {
+    Deployment deployment = new Deployment();
+    DeploymentStatus status = new DeploymentStatus();
+    status.setReplicas(2);
+
+    ReconcilerUtils.setStatus(deployment, status);
+
+    assertThat(deployment.getStatus().getReplicas()).isEqualTo(2);
+  }
+
+  @Test
+  void getsStatusWithReflection() {
+    Deployment deployment = new Deployment();
+    DeploymentStatus status = new DeploymentStatus();
+    status.setReplicas(2);
+    deployment.setStatus(status);
+
+    var res = ReconcilerUtils.getStatus(deployment);
+
+    assertThat(((DeploymentStatus) res).getReplicas()).isEqualTo(2);
   }
 
   @Test

@@ -28,6 +28,8 @@ public class ReconcilerUtils {
   protected static final String MISSING_GROUP_SUFFIX = ".javaoperatorsdk.io";
   private static final String GET_SPEC = "getSpec";
   private static final String SET_SPEC = "setSpec";
+  private static final String SET_STATUS = "setStatus";
+  private static final String GET_STATUS = "getStatus";
   private static final Pattern API_URI_PATTERN =
       Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*"); // NOSONAR: input is controlled
 
@@ -135,11 +137,23 @@ public class ReconcilerUtils {
       return cr.getSpec();
     }
 
+    return getSpecOrStatus(resource, GET_SPEC);
+  }
+
+  public static Object getStatus(HasMetadata resource) {
+    // optimize CustomResource case
+    if (resource instanceof CustomResource cr) {
+      return cr.getStatus();
+    }
+    return getSpecOrStatus(resource, GET_STATUS);
+  }
+
+  private static Object getSpecOrStatus(HasMetadata resource, String getMethod) {
     try {
-      Method getSpecMethod = resource.getClass().getMethod(GET_SPEC);
+      Method getSpecMethod = resource.getClass().getMethod(getMethod);
       return getSpecMethod.invoke(resource);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-      throw noSpecException(resource, e);
+      throw noMethodException(resource, e, getMethod);
     }
   }
 
@@ -151,31 +165,46 @@ public class ReconcilerUtils {
       return null;
     }
 
+    return setSpecOrStatus(resource, spec, SET_SPEC);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static Object setStatus(HasMetadata resource, Object status) {
+    // optimize CustomResource case
+    if (resource instanceof CustomResource cr) {
+      cr.setStatus(status);
+      return null;
+    }
+    return setSpecOrStatus(resource, status, SET_STATUS);
+  }
+
+  private static Object setSpecOrStatus(
+      HasMetadata resource, Object spec, String setterMethodName) {
     try {
       Class<? extends HasMetadata> resourceClass = resource.getClass();
 
       // if given spec is null, find the method just using its name
-      Method setSpecMethod;
+      Method setMethod;
       if (spec != null) {
-        setSpecMethod = resourceClass.getMethod(SET_SPEC, spec.getClass());
+        setMethod = resourceClass.getMethod(setterMethodName, spec.getClass());
       } else {
-        setSpecMethod =
+        setMethod =
             Arrays.stream(resourceClass.getMethods())
-                .filter(method -> SET_SPEC.equals(method.getName()))
+                .filter(method -> setterMethodName.equals(method.getName()))
                 .findFirst()
-                .orElseThrow(() -> noSpecException(resource, null));
+                .orElseThrow(() -> noMethodException(resource, null, setterMethodName));
       }
 
-      return setSpecMethod.invoke(resource, spec);
+      return setMethod.invoke(resource, spec);
     } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-      throw noSpecException(resource, e);
+      throw noMethodException(resource, e, setterMethodName);
     }
   }
 
-  private static IllegalStateException noSpecException(
-      HasMetadata resource, ReflectiveOperationException e) {
+  private static IllegalStateException noMethodException(
+      HasMetadata resource, ReflectiveOperationException e, String methodName) {
     return new IllegalStateException(
-        "No spec found on resource " + resource.getClass().getName(), e);
+        "No method: " + methodName + " found on resource " + resource.getClass().getName(), e);
   }
 
   public static <T> T loadYaml(Class<T> clazz, Class loader, String yaml) {

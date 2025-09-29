@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
@@ -477,6 +478,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
+    @SuppressWarnings("unchecked")
     private R editStatus(R resource, R originalResource) {
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // the cached resource should not be changed in any circumstances
@@ -486,7 +488,11 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         clonedOriginal.getMetadata().setResourceVersion(null);
         resource.getMetadata().setResourceVersion(null);
         var res = resource(clonedOriginal);
-        return res.editStatus(r -> resource);
+        return res.editStatus(
+            r -> {
+              ReconcilerUtils.setStatus(r, ReconcilerUtils.getStatus(resource));
+              return r;
+            });
       } finally {
         // restore initial resource version
         clonedOriginal.getMetadata().setResourceVersion(resourceVersion);
