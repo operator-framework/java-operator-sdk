@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.baseapi.patchresourceandstatusnossa;
 
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -21,6 +22,8 @@ public class PatchResourceAndStatusNoSSAReconciler
   public static final String TEST_ANNOTATION_VALUE = "TestAnnotationValue";
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
 
+  private volatile boolean removeAnnotation = false;
+
   @Override
   public UpdateControl<PatchResourceAndStatusNoSSACustomResource> reconcile(
       PatchResourceAndStatusNoSSACustomResource resource,
@@ -29,7 +32,12 @@ public class PatchResourceAndStatusNoSSAReconciler
 
     log.info("Value: " + resource.getSpec().getValue());
 
-    resource.getMetadata().getAnnotations().remove(TEST_ANNOTATION);
+    if (removeAnnotation) {
+      resource.getMetadata().getAnnotations().remove(TEST_ANNOTATION);
+    } else {
+      resource.getMetadata().setAnnotations(new HashMap<>());
+      resource.getMetadata().getAnnotations().put(TEST_ANNOTATION, TEST_ANNOTATION_VALUE);
+    }
     ensureStatusExists(resource);
     resource.getStatus().setState(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
 
@@ -46,5 +54,9 @@ public class PatchResourceAndStatusNoSSAReconciler
 
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
+  }
+
+  public void setRemoveAnnotation(boolean removeAnnotation) {
+    this.removeAnnotation = removeAnnotation;
   }
 }
