@@ -1,5 +1,6 @@
 package io.javaoperatorsdk.operator.baseapi.patchresourceandstatusnossa;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,8 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
+import static io.javaoperatorsdk.operator.baseapi.patchresourceandstatusnossa.PatchResourceAndStatusNoSSAReconciler.TEST_ANNOTATION;
+import static io.javaoperatorsdk.operator.baseapi.patchresourceandstatusnossa.PatchResourceAndStatusNoSSAReconciler.TEST_ANNOTATION_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -40,7 +43,7 @@ class PatchResourceAndStatusNoSSAIT {
             customResource
                 .getMetadata()
                 .getAnnotations()
-                .get(PatchResourceAndStatusNoSSAReconciler.TEST_ANNOTATION))
+                .get(TEST_ANNOTATION))
         .isNotNull();
   }
 
@@ -62,6 +65,7 @@ class PatchResourceAndStatusNoSSAIT {
     PatchResourceAndStatusNoSSACustomResource resource =
         new PatchResourceAndStatusNoSSACustomResource();
     resource.setMetadata(new ObjectMetaBuilder().withName("doubleupdateresource-" + id).build());
+    resource.getMetadata().setAnnotations(Map.of(TEST_ANNOTATION,TEST_ANNOTATION_VALUE));
     resource.setSpec(new PatchResourceAndStatusNoSSASpec());
     resource.getSpec().setValue(id);
     return resource;

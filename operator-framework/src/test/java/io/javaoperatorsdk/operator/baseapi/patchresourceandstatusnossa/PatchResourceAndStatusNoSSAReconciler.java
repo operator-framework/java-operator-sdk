@@ -30,8 +30,7 @@ public class PatchResourceAndStatusNoSSAReconciler
 
     log.info("Value: " + resource.getSpec().getValue());
 
-    resource.getMetadata().setAnnotations(new HashMap<>());
-    resource.getMetadata().getAnnotations().put(TEST_ANNOTATION, TEST_ANNOTATION_VALUE);
+    resource.getMetadata().getAnnotations().remove(TEST_ANNOTATION);
     ensureStatusExists(resource);
     resource.getStatus().setState(PatchResourceAndStatusNoSSAStatus.State.SUCCESS);
 
