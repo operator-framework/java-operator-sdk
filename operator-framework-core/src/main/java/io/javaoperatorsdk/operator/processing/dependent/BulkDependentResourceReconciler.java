@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -118,6 +119,13 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     @Override
     public Result<R> match(R resource, P primary, Context<P> context) {
       return bulkDependentResource.match(resource, desired, primary, context);
+    }
+
+    @Override
+    protected Optional<R> selectTargetSecondaryResource(
+        Set<R> secondaryResources, P primary, Context<P> context) {
+      throw new IllegalStateException(
+          "BulkDependentResource should not call selectTargetSecondaryResource.");
     }
 
     @Override
