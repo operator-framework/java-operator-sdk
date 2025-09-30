@@ -57,7 +57,7 @@ public class Schema implements Serializable, ExternalDependentIDProvider<String>
   }
 
   @Override
-  public String id() {
+  public String externalResourceId() {
     return name;
   }
 }
