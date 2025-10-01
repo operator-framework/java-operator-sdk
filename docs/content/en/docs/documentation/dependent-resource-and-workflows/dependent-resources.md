@@ -358,7 +358,7 @@ To see how bulk dependent resources interact with workflow conditions, please re
 ## Dependent Resources with External Resource
 
 Dependent resources are designed to manage also non-Kubernetes or external resources.
-To implement such dependent you can extend `AbstractExternalDependentResource` or one of it 
+To implement such dependent you can extend `AbstractExternalDependentResource` or one of its 
 [subclasses](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/external).
 
 While with kubernetes resources we do some nice assumptions, like
