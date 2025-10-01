@@ -361,7 +361,7 @@ Dependent resources are designed to manage also non-Kubernetes or external resou
 To implement such dependent you can extend `AbstractExternalDependentResource` or one of its 
 [subclasses](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/external).
 
-While with kubernetes resources we do some nice assumptions, like
+For Kubernetes resources we can have nice assumptions, like
 if there are multiple resources of the same type, we can select the target resource
 that dependent resource manages based on the name and namespace of the desired resource;
 or we can use a matcher based SSA in most of the cases if the resource is managed using SSA.
