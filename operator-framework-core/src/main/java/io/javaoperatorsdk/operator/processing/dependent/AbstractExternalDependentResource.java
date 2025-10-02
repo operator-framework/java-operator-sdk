@@ -142,8 +142,8 @@ public abstract class AbstractExternalDependentResource<
               .toList();
     } else {
       throw new IllegalStateException(
-          "Either implement ExternalDependentIDProvider or override"
-              + " selectTargetSecondaryResource.");
+          "Either implement ExternalDependentIDProvider or override this "
+              + " (selectTargetSecondaryResource) method.");
     }
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
