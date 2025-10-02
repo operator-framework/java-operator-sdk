@@ -237,13 +237,26 @@ public class PrimaryUpdateAndCacheUtils {
     }
   }
 
-  /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
+  /**
+   * Adds finalizer to the primary resource from the context using JSON Patch. Retries conflicts and
+   * unprocessable content (HTTP 422), see {@link
+   * PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata, UnaryOperator,
+   * Predicate)} for details on retry.
+   *
+   * @return updated resource from the server response
+   */
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P addFinalizer(Context<P> context, String finalizer) {
     return addFinalizer(context.getClient(), context.getPrimaryResource(), finalizer);
   }
 
-  /** Adds finalizer using JSON Patch. Retries conflicts and unprocessable content (HTTP 422) */
+  /**
+   * Adds finalizer to the resource using JSON Patch. Retries conflicts and unprocessable content
+   * (HTTP 422), see {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient,
+   * HasMetadata, UnaryOperator, Predicate)} for details on retry.
+   *
+   * @return updated resource from the server response
+   */
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P addFinalizer(
       KubernetesClient client, P resource, String finalizerName) {
@@ -257,6 +270,14 @@ public class PrimaryUpdateAndCacheUtils {
         r -> !r.hasFinalizer(finalizerName));
   }
 
+  /**
+   * Removes the target finalizer from the primary resource from the Context. Uses JSON Patch and
+   * reties the operation if failed, see {@link
+   * PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata, UnaryOperator,
+   * Predicate)} for details.
+   *
+   * @return updated resource from the response from the server
+   */
   public static <P extends HasMetadata> P removeFinalizer(
       Context<P> context, String finalizerName) {
     return removeFinalizer(context.getClient(), context.getPrimaryResource(), finalizerName);
@@ -275,12 +296,16 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
+   * Parches the resource using JSON Patch. In case the server responds with conflict (HTTP 409) or
+   * unprocessable content (HTTP 422) it retries the operation up to the maximum number defined in
+   * {@link PrimaryUpdateAndCacheUtils#DEFAULT_MAX_RETRY}.
+   *
    * @param client KubernetesClient
    * @param resource to update
    * @param resourceChangesOperator changes to be done on the resource before update
    * @param preCondition condition to check if the patch operation still needs to be performed or
    *     not.
-   * @return updated resource or unchanged if the precondition does not hold.
+   * @return updated resource from the server or unchanged if the precondition does not hold.
    * @param <P> resource type
    */
   @SuppressWarnings("unchecked")
@@ -338,7 +363,13 @@ public class PrimaryUpdateAndCacheUtils {
     }
   }
 
-  /** Adds finalizer using Server-Side Apply. */
+  /**
+   * Adds finalizer using Server-Side Apply. In the background this method creates a fresh copy of
+   * the target resource, setting only name, namespace and finalizer. Does not use optimistic
+   * locking for the patch.
+   *
+   * @return the patched resource from the server response
+   */
   public static <P extends HasMetadata> P addFinalizerWithSSA(
       Context<P> context, P originalResource, String finalizerName) {
     return addFinalizerWithSSA(
@@ -348,7 +379,13 @@ public class PrimaryUpdateAndCacheUtils {
         context.getControllerConfiguration().fieldManager());
   }
 
-  /** Adds finalizer using Server-Side Apply. */
+  /**
+   * Adds finalizer using Server-Side Apply. In the background this method creates a fresh copy of
+   * the target resource, setting only name, namespace and finalizer. Does not use optimistic
+   * locking for the patch.
+   *
+   * @return the patched resource from the server response
+   */
   @SuppressWarnings("unchecked")
   public static <P extends HasMetadata> P addFinalizerWithSSA(
       KubernetesClient client, P originalResource, String finalizerName, String fieldManager) {
