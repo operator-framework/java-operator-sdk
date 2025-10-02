@@ -108,7 +108,7 @@ class ResourceState {
   public void markAdditionalEventAfterDeleteEvent() {
     if (!deleteEventPresent()) {
       throw new IllegalStateException(
-          "Cannot mark additional event after delete event, if in current state not delete event"
+          "Cannot mark additional event after delete event, if in current state there is not delete event"
               + " present");
     }
     log.debug("Marking additional event after delete event: {}", getId());
