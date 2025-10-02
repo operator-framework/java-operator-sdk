@@ -6,7 +6,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /**
- * Extends ResourceEvent for informer Delete events, it holds also information if the final stat is
+ * Extends ResourceEvent for informer Delete events, it holds also information if the final state is
  * unknown for the deleted resource.
  */
 public class ResourceDeleteEvent extends ResourceEvent {
