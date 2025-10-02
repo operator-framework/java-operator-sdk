@@ -686,9 +686,6 @@ class EventProcessorTest {
     assertThat(captor.getAllValues().get(1).getResource()).isNotNull();
   }
 
-  @Test
-  void onAllEventRateLimiting() {}
-
   private ResourceID eventAlreadyUnderProcessing() {
     when(reconciliationDispatcherMock.handleExecution(any()))
         .then(
