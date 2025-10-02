@@ -211,43 +211,50 @@ updated via `PrimaryUpdateAndCacheUtils`.
 
 See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache).
 
-### Trigger reconciliation on all events 
+### Trigger reconciliation even for `Delete` events
 
 TLDR; We provide an execution mode where `reconcile` method is called on every event from event source.
 
-The framework optimizes execution for generic use cases, which in almost all cases falls into two categories:
+The framework optimizes execution for generic use cases, which, in almost all cases, fall into two categories:
 
-1. The controller does not use finalizers; thus when the primary resource is deleted, all the managed secondary 
-   resources are cleaned up using the Kubernetes garbage collection mechanism, a.k.a., using owner references.
-2. When finalizers are used (using `Cleaner` interface), thus when controller requires some explicit cleanup logic, typically for external 
-   resources and when secondary resources are in different namespace than the primary resources (owner references
-   cannot be used in this case).
+1. The controller does not use finalizers; thus when the primary resource is deleted, all the managed secondary
+   resources are cleaned up using the Kubernetes garbage collection mechanism, a.k.a., using owner references. This
+   mechanism, however, only works when all secondary resources are Kubernetes resources in the same namespace as the
+   primary resource.
+2. The controller uses finalizers (the controller implements the `Cleaner` interface), when explicit cleanup logic is
+   required, typically for external resources and when secondary resources are in different namespace than the primary
+   resources (owner references cannot be used in this case).
 
-Note that for example framework neither of those cases triggers the reconciler on the `Delete` event of the primary resource.
-When finalizer is used, it calls `cleaner(..)` method when resource is marked for deletion and our (not other) finalizer
-is present. When there is no finalizer, does not make sense to call the `reconciel(..)` method on a `Delete` event
-since all the cleanup will be done by the garbage collector. This way we spare reconciliation cycles.
+Note that neither of those cases trigger the `reconcile` method of the controller on the `Delete` event of the primary
+resource. When a finalizer is used, the SDK calls the `cleanup` method of the `Cleaner` implementation when the resource
+is marked for deletion and the finalizer specified by the controller is present on the primary resource. When there is
+no finalizer, there is no need to call the `reconcile` method on a `Delete` event since all the cleanup will be done by
+the garbage collector. This avoids reconciliation cycles.
 
 However, there are cases when controllers do not strictly follow those patterns, typically when:
-- Only some of the primary resources use finalizers, e.g., for some of the primary resources you need 
+
+- Only some of the primary resources use finalizers, e.g., for some of the primary resources you need
   to create an external resource for others not.
 - You maintain some additional in memory caches (so not all the caches are encapsulated by an `EventSource`)
   and you don't want to use finalizers. For those cases, you typically want to clean up your caches when the primary
   resource is deleted.
 
 For such use cases you can set [`triggerReconcilerOnAllEvent`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L81)
-to `true`, as a result, `reconcile` method will be triggered on ALL events (so also `Delete` events), and you
-are free to optimize you reconciliation for the use cases above and possibly others. 
+to `true`, as a result, the `reconcile` method will be triggered on ALL events (so also `Delete` events), making it
+possible to support the above use cases.
 
 In this mode:
+
 - even if the primary resource is already deleted from the Informer's cache, we will still pass the last known state
-  as the parameter for the reconciler. You can check if the resource is deleted using `Context.isPrimaryResourceDeleted()`.
-- The retry, rate limiting, re-schedule, filters mechanisms work normally. (The internal caches related to the resource 
-  are cleaned up only when there was a successful reconiliation after `Delete` event received for the primary resource
-  and reconciliation was not re-scheduled.
-- you cannot use `Cleaner` interface. The framework assumes you will explicitly manage the finalizers. To
-  add finalizer you can use [`PrimeUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java#L308).
+  as the parameter for the reconciler. You can check if the resource is deleted using
+  `Context.isPrimaryResourceDeleted()`.
+- The retry, rate limiting, re-schedule, filters mechanisms work normally. The internal caches related to the resource
+  are cleaned up only when there is a successful reconciliation after a `Delete` event was received for the primary
+  resource
+  and reconciliation is not re-scheduled.
+- you cannot use the `Cleaner` interface. The framework assumes you will explicitly manage the finalizers. To
+  add finalizer you can use [
+  `PrimeUpdateAndCacheUtils`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/PrimaryUpdateAndCacheUtils.java#L308).
 - you cannot use managed dependent resources since those manage the finalizers and other logic related to the normal
   execution mode.
 
-  
