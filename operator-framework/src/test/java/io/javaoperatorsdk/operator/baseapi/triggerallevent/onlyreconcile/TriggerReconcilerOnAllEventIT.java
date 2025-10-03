@@ -51,7 +51,9 @@ public class TriggerReconcilerOnAllEventIT {
             () -> {
               var r = getResource();
               assertThat(r).isNull();
+              // check if reconciler also triggered when delete event received
               assertThat(reconciler.isDeleteEventPresent()).isTrue();
+              // also when it was marked for deletion
               assertThat(reconciler.isEventOnMarkedForDeletion()).isTrue();
             });
   }
@@ -96,6 +98,10 @@ public class TriggerReconcilerOnAllEventIT {
             });
   }
 
+  /**
+   * Checks if we receive event even after our finalizer is removed but there is an additional
+   * finalizer
+   */
   @Test
   void additionalFinalizer() {
     var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
@@ -129,6 +135,10 @@ public class TriggerReconcilerOnAllEventIT {
             });
   }
 
+  // tests the situation where we received a delete event, but there is an exception during
+  // reconiliation
+  // what is retried, but during retry we receive an additional event, that should instantly
+  // trigger the reconciliation again when current finished.
   @Test
   void additionalEventDuringRetryOnDeleteEvent() {
 
@@ -154,9 +164,11 @@ public class TriggerReconcilerOnAllEventIT {
               assertThat(reconciler.isWaiting());
             });
 
+    // trigger reconciliation while waiting in reconciler
     res = getResource();
     res.getMetadata().getAnnotations().put("my-annotation", "true");
     extension.update(res);
+    // continue reconciliation
     reconciler.setContinuerOnRetryWait(true);
 
     await()
@@ -188,7 +200,6 @@ public class TriggerReconcilerOnAllEventIT {
 
   @Test
   void additionalEventAfterExhaustedRetry() {
-
     var reconciler = extension.getReconcilerOfType(TriggerReconcilerOnAllEventReconciler.class);
     reconciler.setThrowExceptionIfNoAnnotation(true);
     var res = testResource();
@@ -203,6 +214,7 @@ public class TriggerReconcilerOnAllEventIT {
               assertThat(reconciler.getEventCount()).isEqualTo(MAX_RETRY_ATTEMPTS + 1);
             });
 
+    // this also triggers the reconciliation
     addNoMoreExceptionAnnotation();
 
     await()

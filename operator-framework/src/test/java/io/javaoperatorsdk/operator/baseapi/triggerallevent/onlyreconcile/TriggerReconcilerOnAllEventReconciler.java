@@ -15,29 +15,34 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 public class TriggerReconcilerOnAllEventReconciler
     implements Reconciler<TriggerReconcilerOnAllEventCustomResource> {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(TriggerReconcilerOnAllEventReconciler.class);
-
-  private volatile boolean throwExceptionOnFirstDeleteEvent = false;
-  private volatile boolean throwExceptionIfNoAnnotation = false;
-
-  private volatile boolean waitAfterFirstRetry = false;
-  private volatile boolean continuerOnRetryWait = false;
-  private volatile boolean waiting = false;
-
-  private volatile boolean isFirstDeleteEvent = true;
-
   public static final String FINALIZER = "all.event.mode/finalizer";
   public static final String ADDITIONAL_FINALIZER = "all.event.mode/finalizer2";
   public static final String NO_MORE_EXCEPTION_ANNOTATION_KEY = "no.more.exception";
 
-  protected volatile boolean useFinalizer = true;
+  private static final Logger log =
+      LoggerFactory.getLogger(TriggerReconcilerOnAllEventReconciler.class);
 
-  private final AtomicInteger eventCounter = new AtomicInteger(0);
+  // control flags to throw exceptions in certain situations
+  private volatile boolean throwExceptionOnFirstDeleteEvent = false;
+  private volatile boolean throwExceptionIfNoAnnotation = false;
 
+  // flags for managing wait within reconciliation,
+  // so we can send an update while reconciliation is in progress
+  private volatile boolean waitAfterFirstRetry = false;
+  private volatile boolean continuerOnRetryWait = false;
+  private volatile boolean waiting = false;
+
+  // control flag to throw an exception on first delete event
+  private volatile boolean isFirstDeleteEvent = true;
+  // control if the reconciler should add / remove the finalizer
+  private volatile boolean useFinalizer = true;
+
+  // flags to flip if reconciled primary resource in certain state
   private boolean deleteEventPresent = false;
   private boolean eventOnMarkedForDeletion = false;
   private boolean resourceEventPresent = false;
+  // counter for how many times the reconciler has been called
+  private final AtomicInteger reconciliationCounter = new AtomicInteger(0);
 
   @Override
   public UpdateControl<TriggerReconcilerOnAllEventCustomResource> reconcile(
@@ -143,11 +148,11 @@ public class TriggerReconcilerOnAllEventReconciler
   }
 
   public int getEventCount() {
-    return eventCounter.get();
+    return reconciliationCounter.get();
   }
 
   public void increaseEventCount() {
-    eventCounter.incrementAndGet();
+    reconciliationCounter.incrementAndGet();
   }
 
   public boolean getUseFinalizer() {
