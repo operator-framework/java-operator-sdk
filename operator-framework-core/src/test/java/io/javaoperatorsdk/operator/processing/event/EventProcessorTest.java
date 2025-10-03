@@ -390,6 +390,8 @@ class EventProcessorTest {
 
   @Test
   void rateLimitsReconciliationSubmission() {
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
     // the refresh defaultPollingPeriod value does not matter here
     var refreshPeriod = Duration.ofMillis(100);
     var event = prepareCREvent();
@@ -403,10 +405,12 @@ class EventProcessorTest {
     eventProcessor.handleEvent(event);
     verify(reconciliationDispatcherMock, after(FAKE_CONTROLLER_EXECUTION_DURATION).times(1))
         .handleExecution(any());
-    verify(retryTimerEventSourceMock, times(0)).scheduleOnce((ResourceID) any(), anyLong());
+    verify(retryTimerEventSourceMock, times(0))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
 
     eventProcessor.handleEvent(event);
-    verify(retryTimerEventSourceMock, times(1)).scheduleOnce((ResourceID) any(), anyLong());
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
   }
 
   @Test
@@ -660,6 +664,45 @@ class EventProcessorTest {
     eventProcessor.handleEvent(new Event(TestUtils.testCustomResource1Id()));
     waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
     verify(reconciliationDispatcherMock, times(4)).handleExecution(any());
+  }
+
+  @Test
+  void rateLimitsDeleteEventInAllEventMode() {
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(
+                    GenericRetry.defaultLimitedExponentialRetry()
+                        .setInitialInterval(100)
+                        .setIntervalMultiplier(1)
+                        .setMaxAttempts(1),
+                    rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    eventProcessor.start();
+    // the refresh defaultPollingPeriod value does not matter here
+    var refreshPeriod = Duration.ofMillis(100);
+    var event = prepareCREvent();
+
+    final var rateLimit = new RateLimitState() {};
+    when(rateLimiterMock.initState()).thenReturn(rateLimit);
+    when(rateLimiterMock.isLimited(rateLimit))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(refreshPeriod));
+
+    eventProcessor.handleEvent(event);
+    verify(reconciliationDispatcherMock, after(FAKE_CONTROLLER_EXECUTION_DURATION).times(1))
+        .handleExecution(any());
+    verify(retryTimerEventSourceMock, times(0))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
+
+    eventProcessor.handleEvent(event);
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
   }
 
   @Test
