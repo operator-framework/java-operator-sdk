@@ -272,17 +272,23 @@ public class PrimaryUpdateAndCacheUtils {
 
   /**
    * Removes the target finalizer from the primary resource from the Context. Uses JSON Patch and
-   * reties the operation if failed, see {@link
-   * PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata, UnaryOperator,
-   * Predicate)} for details.
+   * handles retries, see {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient,
+   * HasMetadata, UnaryOperator, Predicate)} for details.
    *
-   * @return updated resource from the response from the server
+   * @return updated resource from the server response
    */
   public static <P extends HasMetadata> P removeFinalizer(
       Context<P> context, String finalizerName) {
     return removeFinalizer(context.getClient(), context.getPrimaryResource(), finalizerName);
   }
 
+  /**
+   * Removes the target finalizer from target resource. Uses JSON Patch and handles retries, see
+   * {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata,
+   * UnaryOperator, Predicate)} for details.
+   *
+   * @return updated resource from the server response
+   */
   public static <P extends HasMetadata> P removeFinalizer(
       KubernetesClient client, P resource, String finalizerName) {
     return conflictRetryingPatch(
