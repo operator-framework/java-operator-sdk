@@ -296,7 +296,7 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   /**
-   * Parches the resource using JSON Patch. In case the server responds with conflict (HTTP 409) or
+   * Patches the resource using JSON Patch. In case the server responds with conflict (HTTP 409) or
    * unprocessable content (HTTP 422) it retries the operation up to the maximum number defined in
    * {@link PrimaryUpdateAndCacheUtils#DEFAULT_MAX_RETRY}.
    *
