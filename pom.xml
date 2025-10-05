@@ -397,6 +397,7 @@
                 <exclude>mvnw.cmd</exclude>
                 <exclude>docs/public/**</exclude>
                 <exclude>docs/resources/**</exclude>
+                <exclude>docs/layouts/**</exclude>
                 <exclude>/**/*txt</exclude>
               </excludes>
             </licenseSet>
