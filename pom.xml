@@ -361,7 +361,33 @@
           </execution>
         </executions>
       </plugin>
-
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>5.0.0</version>
+        <configuration>
+          <aggregate>true</aggregate>
+          <licenseSets>
+            <licenseSet>
+              <header>license-header.txt</header>
+              <excludes>
+                <exclude>**/.idea</exclude>
+                <exclude>.idea</exclude>
+                <exclude>license-header.txt</exclude>
+                <exclude>OWNERS</exclude>
+                <exclude>.mvn/**/*</exclude>
+                <exclude>mvnw</exclude>
+                <exclude>mvnw.cmd</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
+          <mapping>
+            <go>JAVADOC_STYLE</go>
+            <svg>XML_STYLE</svg>
+            <Makefile>SCRIPT_STYLE</Makefile>
+          </mapping>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>
