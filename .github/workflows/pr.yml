@@ -27,6 +27,7 @@ jobs:
       - name: Check code format
         run: |
           ./mvnw ${MAVEN_ARGS} spotless:check --file pom.xml
+          ./mvnw -N license:check --file pom.xml
       - name: Run unit tests
         run: ./mvnw ${MAVEN_ARGS} clean install -Pno-apt --file pom.xml
 

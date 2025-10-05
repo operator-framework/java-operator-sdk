@@ -387,9 +387,6 @@
           <licenseSets>
             <licenseSet>
               <header>license-header.txt</header>
-<!--              <includes>-->
-<!--                <include>**/*.md</include>-->
-<!--              </includes>-->
               <excludes>
                 <exclude>**/.idea</exclude>
                 <exclude>.idea</exclude>
@@ -405,7 +402,6 @@
             </licenseSet>
           </licenseSets>
           <mapping>
-<!--            <md></md>-->
             <go>JAVADOC_STYLE</go>
             <svg>XML_STYLE</svg>
             <Makefile>SCRIPT_STYLE</Makefile>
