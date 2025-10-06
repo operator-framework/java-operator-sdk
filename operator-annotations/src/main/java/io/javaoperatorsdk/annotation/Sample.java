@@ -1,4 +1,4 @@
-package io.javaoperatorsdk;
+package io.javaoperatorsdk.annotation;
 
 import java.lang.annotation.*;
 
