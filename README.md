@@ -47,7 +47,7 @@ It makes it easy to implement best practices and patterns for an Operator. Featu
 * Easy to use Error Handling
 * ... and everything that a batteries included framework needs 
 
-For all features and their usage see the [related section on the website](https://javaoperatorsdk.io/docs/features). 
+For all features and their usage see the [related sections on the website](https://javaoperatorsdk.io/docs/documentation/). 
 
 ## Related Projects
 
