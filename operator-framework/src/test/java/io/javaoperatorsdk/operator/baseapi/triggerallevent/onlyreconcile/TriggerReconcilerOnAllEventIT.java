@@ -15,6 +15,10 @@ import static io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile.
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+/**
+ * This is quite a technical test to check if we receive events properly for various lifecycle
+ * events, and situations in the reconciler.
+ */
 public class TriggerReconcilerOnAllEventIT {
 
   public static final String TEST = "test1";

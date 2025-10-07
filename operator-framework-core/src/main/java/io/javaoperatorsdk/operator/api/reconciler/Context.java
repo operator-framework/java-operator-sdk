@@ -79,6 +79,7 @@ public interface Context<P extends HasMetadata> {
    * io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration#triggerReconcilerOnAllEvent()}
    *
    * @return true Delete event received for primary resource
+   * @since 5.2.0
    */
   boolean isPrimaryResourceDeleted();
 
@@ -87,6 +88,7 @@ public interface Context<P extends HasMetadata> {
    *
    * @return true if the primary resource is deleted, but the last known state is only available
    *     from the caches of the underlying Informer, not from Delete event.
+   * @since 5.2.0
    */
   boolean isPrimaryResourceFinalStateUnknown();
 }
