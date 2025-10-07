@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile;
+package io.javaoperatorsdk.operator.baseapi.triggerallevent.eventing;
 
 public class TriggerReconcilerOnAllEventSpec {
 

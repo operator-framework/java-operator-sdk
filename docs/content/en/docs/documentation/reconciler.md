@@ -211,7 +211,7 @@ updated via `PrimaryUpdateAndCacheUtils`.
 
 See related integration test [here](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/statuscache).
 
-### Trigger reconciliation even for `Delete` events
+### Trigger reconciliation for all events
 
 TLDR; We provide an execution mode where `reconcile` method is called on every event from event source.
 
@@ -258,3 +258,4 @@ In this mode:
 - you cannot use managed dependent resources since those manage the finalizers and other logic related to the normal
   execution mode.
 
+See also [sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/triggerallevent/finalizerhandling) for selectively adding finalizers for resources;

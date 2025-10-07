@@ -1,4 +1,4 @@
-package io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile;
+package io.javaoperatorsdk.operator.baseapi.triggerallevent.eventing;
 
 import java.time.Duration;
 
@@ -9,9 +9,9 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
-import static io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile.TriggerReconcilerOnAllEventReconciler.ADDITIONAL_FINALIZER;
-import static io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile.TriggerReconcilerOnAllEventReconciler.FINALIZER;
-import static io.javaoperatorsdk.operator.baseapi.triggerallevent.onlyreconcile.TriggerReconcilerOnAllEventReconciler.NO_MORE_EXCEPTION_ANNOTATION_KEY;
+import static io.javaoperatorsdk.operator.baseapi.triggerallevent.eventing.TriggerReconcilerOnAllEventReconciler.ADDITIONAL_FINALIZER;
+import static io.javaoperatorsdk.operator.baseapi.triggerallevent.eventing.TriggerReconcilerOnAllEventReconciler.FINALIZER;
+import static io.javaoperatorsdk.operator.baseapi.triggerallevent.eventing.TriggerReconcilerOnAllEventReconciler.NO_MORE_EXCEPTION_ANNOTATION_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
