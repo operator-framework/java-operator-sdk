@@ -32,6 +32,10 @@ public class TestUtils {
     return testCustomResource(new ResourceID("test1", "default"));
   }
 
+  public static ResourceID testCustomResource1Id() {
+    return new ResourceID("test1", "default");
+  }
+
   public static TestCustomResource testCustomResource(ResourceID id) {
     TestCustomResource resource = new TestCustomResource();
     resource.setMetadata(
