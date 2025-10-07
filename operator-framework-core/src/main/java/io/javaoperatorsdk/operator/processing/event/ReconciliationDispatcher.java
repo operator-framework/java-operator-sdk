@@ -65,6 +65,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
+    validateExecutionScope(executionScope);
     try {
       return handleDispatch(executionScope);
     } catch (Exception e) {
@@ -82,18 +83,26 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         originalResource.getMetadata().getNamespace());
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
-    if (markedForDeletion && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
+    if (!triggerOnAllEvent()
+        && markedForDeletion
+        && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
       log.debug(
           "Skipping cleanup of resource {} because finalizer(s) {} don't allow processing yet",
           getName(originalResource),
           originalResource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
-
     Context<P> context =
-        new DefaultContext<>(executionScope.getRetryInfo(), controller, resourceForExecution);
-    if (markedForDeletion) {
-      return handleCleanup(resourceForExecution, originalResource, context);
+        new DefaultContext<>(
+            executionScope.getRetryInfo(),
+            controller,
+            resourceForExecution,
+            executionScope.isDeleteEvent(),
+            executionScope.isDeleteFinalStateUnknown());
+
+    // checking the cleaner for all-event-mode
+    if (!triggerOnAllEvent() && markedForDeletion) {
+      return handleCleanup(resourceForExecution, originalResource, context, executionScope);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
     }
@@ -111,7 +120,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       P originalResource,
       Context<P> context)
       throws Exception {
-    if (controller.useFinalizer()
+    if (!triggerOnAllEvent()
+        && controller.useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
        * We always add the finalizer if missing and the controller is configured to use a finalizer.
@@ -157,7 +167,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     P updatedCustomResource = null;
     if (useSSA) {
       if (updateControl.isNoUpdate()) {
-        return createPostExecutionControl(null, updateControl);
+        return createPostExecutionControl(null, updateControl, executionScope);
       } else {
         toUpdate = updateControl.getResource().orElseThrow();
       }
@@ -178,7 +188,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     if (updateControl.isPatchStatus()) {
       customResourceFacade.patchStatus(toUpdate, originalResource);
     }
-    return createPostExecutionControl(updatedCustomResource, updateControl);
+    return createPostExecutionControl(updatedCustomResource, updateControl, executionScope);
   }
 
   private PostExecutionControl<P> handleErrorStatusHandler(
@@ -238,7 +248,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private PostExecutionControl<P> createPostExecutionControl(
-      P updatedCustomResource, UpdateControl<P> updateControl) {
+      P updatedCustomResource, UpdateControl<P> updateControl, ExecutionScope<P> executionScope) {
     PostExecutionControl<P> postExecutionControl;
     if (updatedCustomResource != null) {
       postExecutionControl =
@@ -246,17 +256,31 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     } else {
       postExecutionControl = PostExecutionControl.defaultDispatch();
     }
-    updatePostExecutionControlWithReschedule(postExecutionControl, updateControl);
+    updatePostExecutionControlWithReschedule(postExecutionControl, updateControl, executionScope);
     return postExecutionControl;
   }
 
   private void updatePostExecutionControlWithReschedule(
-      PostExecutionControl<P> postExecutionControl, BaseControl<?> baseControl) {
-    baseControl.getScheduleDelay().ifPresent(postExecutionControl::withReSchedule);
+      PostExecutionControl<P> postExecutionControl,
+      BaseControl<?> baseControl,
+      ExecutionScope<P> executionScope) {
+    baseControl
+        .getScheduleDelay()
+        .ifPresent(
+            r -> {
+              if (executionScope.isDeleteEvent()) {
+                log.warn("No re-schedules allowed when delete event present. Will be ignored.");
+              } else {
+                postExecutionControl.withReSchedule(r);
+              }
+            });
   }
 
   private PostExecutionControl<P> handleCleanup(
-      P resourceForExecution, P originalResource, Context<P> context) {
+      P resourceForExecution,
+      P originalResource,
+      Context<P> context,
+      ExecutionScope<P> executionScope) {
     if (log.isDebugEnabled()) {
       log.debug(
           "Executing delete for resource: {} with version: {}",
@@ -265,7 +289,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
     DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
-    if (useFinalizer) {
+    if (useFinalizer && !triggerOnAllEvent()) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
@@ -299,7 +323,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         deleteControl,
         useFinalizer);
     PostExecutionControl<P> postExecutionControl = PostExecutionControl.defaultDispatch();
-    updatePostExecutionControlWithReschedule(postExecutionControl, deleteControl);
+    updatePostExecutionControlWithReschedule(postExecutionControl, deleteControl, executionScope);
     return postExecutionControl;
   }
 
@@ -412,6 +436,15 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
   }
 
+  private void validateExecutionScope(ExecutionScope<P> executionScope) {
+    if (!triggerOnAllEvent()
+        && (executionScope.isDeleteEvent() || executionScope.isDeleteFinalStateUnknown())) {
+      throw new OperatorException(
+          "isDeleteEvent or isDeleteFinalStateUnknown cannot be true if not triggerOnAllEvent."
+              + " This indicates an issue with the implementation.");
+    }
+  }
+
   // created to support unit testing
   static class CustomResourceFacade<R extends HasMetadata> {
 
@@ -515,5 +548,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           ? resourceOperation.inNamespace(resource.getMetadata().getNamespace()).resource(resource)
           : resourceOperation.resource(resource);
     }
+  }
+
+  private boolean triggerOnAllEvent() {
+    return configuration().triggerReconcilerOnAllEvent();
   }
 }

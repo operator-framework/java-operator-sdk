@@ -1,9 +1,15 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 class ResourceState {
+
+  private static final Logger log = LoggerFactory.getLogger(ResourceState.class);
 
   /**
    * Manages the state of received events. Basically there can be only three distinct states
@@ -21,6 +27,8 @@ class ResourceState {
     PROCESSED_MARK_FOR_DELETION,
     /** Delete event present, from this point other events are not relevant */
     DELETE_EVENT_PRESENT,
+    /** */
+    ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT
   }
 
   private final ResourceID id;
@@ -29,6 +37,8 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
+  private HasMetadata lastKnownResource;
+  private boolean isDeleteFinalStateUnknown = false;
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -63,26 +73,50 @@ class ResourceState {
     this.underProcessing = underProcessing;
   }
 
-  public void markDeleteEventReceived() {
+  public void markDeleteEventReceived(
+      HasMetadata lastKnownResource, boolean isDeleteFinalStateUnknown) {
     eventing = EventingState.DELETE_EVENT_PRESENT;
+    this.lastKnownResource = lastKnownResource;
+    this.isDeleteFinalStateUnknown = isDeleteFinalStateUnknown;
   }
 
   public boolean deleteEventPresent() {
-    return eventing == EventingState.DELETE_EVENT_PRESENT;
+    return eventing == EventingState.DELETE_EVENT_PRESENT
+        || eventing == EventingState.ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT;
+  }
+
+  public boolean isAdditionalEventPresentAfterDeleteEvent() {
+    return eventing == EventingState.ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT;
   }
 
   public boolean processedMarkForDeletionPresent() {
     return eventing == EventingState.PROCESSED_MARK_FOR_DELETION;
   }
 
-  public void markEventReceived() {
-    if (deleteEventPresent()) {
+  public void markEventReceived(boolean isAllEventMode) {
+    if (!isAllEventMode && deleteEventPresent()) {
       throw new IllegalStateException("Cannot receive event after a delete event received");
     }
-    eventing = EventingState.EVENT_PRESENT;
+    log.debug("Marking event received for: {}", getId());
+    if (eventing == EventingState.DELETE_EVENT_PRESENT) {
+      eventing = EventingState.ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT;
+    } else {
+      eventing = EventingState.EVENT_PRESENT;
+    }
+  }
+
+  public void markAdditionalEventAfterDeleteEvent() {
+    if (!deleteEventPresent()) {
+      throw new IllegalStateException(
+          "Cannot mark additional event after delete event, if in current state there is not delete"
+              + " event present");
+    }
+    log.debug("Marking additional event after delete event: {}", getId());
+    eventing = EventingState.ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT;
   }
 
   public void markProcessedMarkForDeletion() {
+    log.debug("Marking processed mark for deletion: {}", getId());
     eventing = EventingState.PROCESSED_MARK_FOR_DELETION;
   }
 
@@ -94,7 +128,15 @@ class ResourceState {
     return eventing == EventingState.NO_EVENT_PRESENT;
   }
 
-  public void unMarkEventReceived() {
+  public boolean isDeleteFinalStateUnknown() {
+    return isDeleteFinalStateUnknown;
+  }
+
+  public HasMetadata getLastKnownResource() {
+    return lastKnownResource;
+  }
+
+  public void unMarkEventReceived(boolean isAllEventReconcileMode) {
     switch (eventing) {
       case EVENT_PRESENT:
         eventing = EventingState.NO_EVENT_PRESENT;
@@ -102,7 +144,17 @@ class ResourceState {
       case PROCESSED_MARK_FOR_DELETION:
         throw new IllegalStateException("Cannot unmark processed marked for deletion.");
       case DELETE_EVENT_PRESENT:
-        throw new IllegalStateException("Cannot unmark delete event.");
+        if (!isAllEventReconcileMode) {
+          throw new IllegalStateException("Cannot unmark delete event.");
+        }
+        break;
+      case ADDITIONAL_EVENT_PRESENT_AFTER_DELETE_EVENT:
+        if (!isAllEventReconcileMode) {
+          throw new IllegalStateException(
+              "This state should not happen in non all-event-reconciliation mode");
+        }
+        eventing = EventingState.DELETE_EVENT_PRESENT;
+        break;
       case NO_EVENT_PRESENT:
         // do nothing
         break;

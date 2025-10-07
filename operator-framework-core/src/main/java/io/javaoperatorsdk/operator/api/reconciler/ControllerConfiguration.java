@@ -77,4 +77,11 @@ public @interface ControllerConfiguration {
    * @return the name used as field manager for SSA operations
    */
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
+
+  /**
+   * By settings to true, reconcile method will be triggered on every event, thus even for Delete
+   * event. You cannot use {@link Cleaner} or managed dependent resources in that case. See
+   * documentation for further details.
+   */
+  boolean triggerReconcilerOnAllEvent() default false;
 }
