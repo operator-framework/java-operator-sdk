@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -24,6 +25,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.javaoperatorsdk.operator.processing.event.source.timer.TimerEventSource;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
@@ -34,6 +36,7 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.TestUtils.markForDeletion;
 import static io.javaoperatorsdk.operator.TestUtils.testCustomResource;
+import static io.javaoperatorsdk.operator.TestUtils.testCustomResource1;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,6 +44,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -129,7 +133,7 @@ class EventProcessorTest {
   void schedulesAnEventRetryOnException() {
     TestCustomResource customResource = testCustomResource();
 
-    ExecutionScope executionScope = new ExecutionScope(null);
+    ExecutionScope executionScope = new ExecutionScope(null, null, false, false);
     executionScope.setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException("test"));
@@ -271,7 +275,8 @@ class EventProcessorTest {
     var cr = testCustomResource(crID);
 
     eventProcessor.eventProcessingFinished(
-        new ExecutionScope(null).setResource(cr), PostExecutionControl.defaultDispatch());
+        new ExecutionScope(null, null, false, false).setResource(cr),
+        PostExecutionControl.defaultDispatch());
 
     verify(retryTimerEventSourceMock, times(1)).cancelOnceSchedule(eq(crID));
   }
@@ -324,7 +329,8 @@ class EventProcessorTest {
   @Test
   void notUpdatesEventSourceHandlerIfResourceUpdated() {
     TestCustomResource customResource = testCustomResource();
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceStatusPatched(customResource);
 
@@ -337,7 +343,8 @@ class EventProcessorTest {
   void notReschedulesAfterTheFinalizerRemoveProcessed() {
     TestCustomResource customResource = testCustomResource();
     markForDeletion(customResource);
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceFinalizerRemoved(customResource);
 
@@ -350,7 +357,8 @@ class EventProcessorTest {
   void skipEventProcessingIfFinalizerRemoveProcessed() {
     TestCustomResource customResource = testCustomResource();
     markForDeletion(customResource);
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceFinalizerRemoved(customResource);
 
@@ -367,7 +375,8 @@ class EventProcessorTest {
   void newResourceAfterMissedDeleteEvent() {
     TestCustomResource customResource = testCustomResource();
     markForDeletion(customResource);
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
     PostExecutionControl postExecutionControl =
         PostExecutionControl.customResourceFinalizerRemoved(customResource);
     var newResource = testCustomResource();
@@ -381,6 +390,8 @@ class EventProcessorTest {
 
   @Test
   void rateLimitsReconciliationSubmission() {
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
     // the refresh defaultPollingPeriod value does not matter here
     var refreshPeriod = Duration.ofMillis(100);
     var event = prepareCREvent();
@@ -394,16 +405,19 @@ class EventProcessorTest {
     eventProcessor.handleEvent(event);
     verify(reconciliationDispatcherMock, after(FAKE_CONTROLLER_EXECUTION_DURATION).times(1))
         .handleExecution(any());
-    verify(retryTimerEventSourceMock, times(0)).scheduleOnce((ResourceID) any(), anyLong());
+    verify(retryTimerEventSourceMock, times(0))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
 
     eventProcessor.handleEvent(event);
-    verify(retryTimerEventSourceMock, times(1)).scheduleOnce((ResourceID) any(), anyLong());
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
   }
 
   @Test
   void schedulesRetryForMarReconciliationInterval() {
     TestCustomResource customResource = testCustomResource();
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(customResource);
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(customResource);
     PostExecutionControl postExecutionControl = PostExecutionControl.defaultDispatch();
 
     eventProcessorWithRetry.eventProcessingFinished(executionScope, postExecutionControl);
@@ -425,7 +439,8 @@ class EventProcessorTest {
                 eventSourceManagerMock,
                 metricsMock));
     eventProcessorWithRetry.start();
-    ExecutionScope executionScope = new ExecutionScope(null).setResource(testCustomResource());
+    ExecutionScope executionScope =
+        new ExecutionScope(null, null, false, false).setResource(testCustomResource());
     PostExecutionControl postExecutionControl =
         PostExecutionControl.exceptionDuringExecution(new RuntimeException());
     when(eventProcessorWithRetry.retryEventSource()).thenReturn(retryTimerEventSourceMock);
@@ -454,7 +469,7 @@ class EventProcessorTest {
     eventProcessor =
         spy(
             new EventProcessor(
-                controllerConfiguration(null, rateLimiterMock, configurationService),
+                controllerConfiguration(null, rateLimiterMock, configurationService, false),
                 reconciliationDispatcherMock,
                 eventSourceManagerMock,
                 null));
@@ -482,9 +497,236 @@ class EventProcessorTest {
                 null));
 
     eventProcessor.handleEvent(prepareCREvent(resourceID));
-    eventProcessor.handleEvent(new ResourceEvent(ResourceAction.DELETED, resourceID, null));
+    eventProcessor.handleEvent(
+        new ResourceDeleteEvent(
+            ResourceAction.DELETED, resourceID, TestUtils.testCustomResource(), true));
     eventProcessor.handleEvent(prepareCREvent(resourceID));
     // no exception thrown
+  }
+
+  @Test
+  void triggerOnAllEventProcessesDeleteEvent() {
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(null, rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+
+    verify(reconciliationDispatcherMock, times(2)).handleExecution(any());
+  }
+
+  // this is a special corner case that needs special care
+  @Test
+  void triggerOnAllEventDeleteEventInstantlyAfterEvent() {
+    var reconciliationDispatcherMock = mock(ReconciliationDispatcher.class);
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(null, rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    verify(reconciliationDispatcherMock, times(1)).handleExecution(any());
+  }
+
+  @Test
+  void triggerOnAllEventDeleteEventAfterEventProcessed() {
+    var reconciliationDispatcherMock = mock(ReconciliationDispatcher.class);
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(null, rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    verify(reconciliationDispatcherMock, times(2)).handleExecution(any());
+  }
+
+  @Test
+  void triggerOnAllEventRetriesDeleteEventError() {
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(
+                    GenericRetry.defaultLimitedExponentialRetry(), rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch())
+        .thenReturn(PostExecutionControl.exceptionDuringExecution(new RuntimeException()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    // retry event
+    eventProcessor.handleEvent(new Event(TestUtils.testCustomResource1Id()));
+
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+
+    verify(reconciliationDispatcherMock, times(3)).handleExecution(any());
+  }
+
+  @Test
+  void processesAdditionalEventWhileInDeleteModeRetry() {
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(
+                    GenericRetry.defaultLimitedExponentialRetry()
+                        .setInitialInterval(1000)
+                        .setMaxAttempts(-1),
+                    rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch())
+        .thenReturn(PostExecutionControl.exceptionDuringExecution(new RuntimeException()));
+
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+    verify(reconciliationDispatcherMock, atMost(2)).handleExecution(any());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    // retry event
+    eventProcessor.handleEvent(new Event(TestUtils.testCustomResource1Id()));
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    verify(reconciliationDispatcherMock, times(3)).handleExecution(any());
+  }
+
+  @Test
+  void afterRetryExhaustedAdditionalEventTriggerReconciliationWhenDeleteEventPresent() {
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(
+                    GenericRetry.defaultLimitedExponentialRetry()
+                        .setInitialInterval(100)
+                        .setIntervalMultiplier(1)
+                        .setMaxAttempts(1),
+                    rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch())
+        .thenReturn(PostExecutionControl.exceptionDuringExecution(new RuntimeException()));
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    eventProcessor.handleEvent(new Event(TestUtils.testCustomResource1Id()));
+    await()
+        .untilAsserted(() -> verify(reconciliationDispatcherMock, times(3)).handleExecution(any()));
+
+    eventProcessor.handleEvent(new Event(TestUtils.testCustomResource1Id()));
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    verify(reconciliationDispatcherMock, times(4)).handleExecution(any());
+  }
+
+  @Test
+  void rateLimitsDeleteEventInAllEventMode() {
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(retryTimerEventSourceMock);
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(
+                    GenericRetry.defaultLimitedExponentialRetry()
+                        .setInitialInterval(100)
+                        .setIntervalMultiplier(1)
+                        .setMaxAttempts(1),
+                    rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    eventProcessor.start();
+    // the refresh defaultPollingPeriod value does not matter here
+    var refreshPeriod = Duration.ofMillis(100);
+    var event = prepareCREvent();
+
+    final var rateLimit = new RateLimitState() {};
+    when(rateLimiterMock.initState()).thenReturn(rateLimit);
+    when(rateLimiterMock.isLimited(rateLimit))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(refreshPeriod));
+
+    eventProcessor.handleEvent(event);
+    verify(reconciliationDispatcherMock, after(FAKE_CONTROLLER_EXECUTION_DURATION).times(1))
+        .handleExecution(any());
+    verify(retryTimerEventSourceMock, times(0))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
+
+    eventProcessor.handleEvent(event);
+    verify(retryTimerEventSourceMock, times(1))
+        .scheduleOnce((ResourceID) any(), eq(refreshPeriod.toMillis()));
+  }
+
+  @Test
+  void passesResourceFromStateToDispatcher() {
+    eventProcessor =
+        spy(
+            new EventProcessor(
+                controllerConfigTriggerAllEvent(null, rateLimiterMock),
+                reconciliationDispatcherMock,
+                eventSourceManagerMock,
+                null));
+    when(reconciliationDispatcherMock.handleExecution(any()))
+        .thenReturn(PostExecutionControl.defaultDispatch());
+    when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
+    eventProcessor.start();
+
+    eventProcessor.handleEvent(prepareCREvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+
+    eventProcessor.handleEvent(prepareCRDeleteEvent1());
+    waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
+    var captor = ArgumentCaptor.forClass(ExecutionScope.class);
+    verify(reconciliationDispatcherMock, times(2)).handleExecution(captor.capture());
+    assertThat(captor.getAllValues().get(1).getResource()).isNotNull();
   }
 
   private ResourceID eventAlreadyUnderProcessing() {
@@ -502,6 +744,20 @@ class EventProcessorTest {
 
   private ResourceEvent prepareCREvent() {
     return prepareCREvent(new ResourceID(UUID.randomUUID().toString(), TEST_NAMESPACE));
+  }
+
+  private ResourceEvent prepareCREvent1() {
+    return prepareCREvent(testCustomResource1());
+  }
+
+  private ResourceEvent prepareCRDeleteEvent1() {
+    when(controllerEventSourceMock.get(eq(TestUtils.testCustomResource1Id())))
+        .thenReturn(Optional.empty());
+    return new ResourceDeleteEvent(
+        ResourceAction.DELETED,
+        ResourceID.fromResource(TestUtils.testCustomResource1()),
+        TestUtils.testCustomResource1(),
+        true);
   }
 
   private ResourceEvent prepareCREvent(HasMetadata hasMetadata) {
@@ -528,17 +784,25 @@ class EventProcessorTest {
   }
 
   ControllerConfiguration controllerConfiguration(Retry retry, RateLimiter rateLimiter) {
-    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService());
+    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService(), false);
+  }
+
+  ControllerConfiguration controllerConfigTriggerAllEvent(Retry retry, RateLimiter rateLimiter) {
+    return controllerConfiguration(retry, rateLimiter, new BaseConfigurationService(), true);
   }
 
   ControllerConfiguration controllerConfiguration(
-      Retry retry, RateLimiter rateLimiter, ConfigurationService configurationService) {
+      Retry retry,
+      RateLimiter rateLimiter,
+      ConfigurationService configurationService,
+      boolean triggerOnAllEvent) {
     ControllerConfiguration res = mock(ControllerConfiguration.class);
     when(res.getName()).thenReturn("Test");
     when(res.getRetry()).thenReturn(retry);
     when(res.getRateLimiter()).thenReturn(rateLimiter);
     when(res.maxReconciliationInterval()).thenReturn(Optional.of(Duration.ofMillis(1000)));
     when(res.getConfigurationService()).thenReturn(configurationService);
+    when(res.triggerReconcilerOnAllEvent()).thenReturn(triggerOnAllEvent);
     return res;
   }
 }

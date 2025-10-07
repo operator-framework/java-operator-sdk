@@ -72,4 +72,23 @@ public interface Context<P extends HasMetadata> {
    * @return {@code true} is another reconciliation is already scheduled, {@code false} otherwise
    */
   boolean isNextReconciliationImminent();
+
+  /**
+   * To check if the primary resource is already deleted. This value can be true only if you turn on
+   * {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration#triggerReconcilerOnAllEvent()}
+   *
+   * @return true Delete event received for primary resource
+   * @since 5.2.0
+   */
+  boolean isPrimaryResourceDeleted();
+
+  /**
+   * Check this only if {@link #isPrimaryResourceDeleted()} is true.
+   *
+   * @return true if the primary resource is deleted, but the last known state is only available
+   *     from the caches of the underlying Informer, not from Delete event.
+   * @since 5.2.0
+   */
+  boolean isPrimaryResourceFinalStateUnknown();
 }
