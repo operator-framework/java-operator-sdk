@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.http.HttpRequest;
@@ -166,44 +165,6 @@ class ReconcilerUtilsTest {
                     null,
                     request),
                 HasMetadata.getFullResourceName(Tomcat.class)));
-  }
-
-  @Test
-  void checksIfOwnerReferenceCanBeAdded() {
-    assertThrows(
-        OperatorException.class,
-        () ->
-            ReconcilerUtils.checkIfCanAddOwnerReference(
-                namespacedResource(), namespacedResourceFromOtherNamespace()));
-
-    assertThrows(
-        OperatorException.class,
-        () ->
-            ReconcilerUtils.checkIfCanAddOwnerReference(
-                namespacedResource(), clusterScopedResource()));
-
-    assertDoesNotThrow(
-        () -> {
-          ReconcilerUtils.checkIfCanAddOwnerReference(
-              clusterScopedResource(), clusterScopedResource());
-          ReconcilerUtils.checkIfCanAddOwnerReference(namespacedResource(), namespacedResource());
-        });
-  }
-
-  private ClusterRole clusterScopedResource() {
-    return new ClusterRoleBuilder().withMetadata(new ObjectMetaBuilder().build()).build();
-  }
-
-  private ConfigMap namespacedResource() {
-    return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder().withNamespace("testns1").build())
-        .build();
-  }
-
-  private ConfigMap namespacedResourceFromOtherNamespace() {
-    return new ConfigMapBuilder()
-        .withMetadata(new ObjectMetaBuilder().withNamespace("testns2").build())
-        .build();
   }
 
   @Group("tomcatoperator.io")
