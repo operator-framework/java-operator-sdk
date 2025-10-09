@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -97,6 +98,20 @@ class AbstractDependentResourceTest {
     public Optional<ConfigMap> getSecondaryResource(
         TestCustomResource primary, Context<TestCustomResource> context) {
       return Optional.ofNullable(secondary);
+    }
+
+    @Override
+    protected Optional<ConfigMap> selectTargetSecondaryResource(
+        Set<ConfigMap> secondaryResources,
+        TestCustomResource primary,
+        Context<TestCustomResource> context) {
+      if (secondaryResources.size() == 1) {
+        return Optional.of(secondaryResources.iterator().next());
+      } else if (secondaryResources.isEmpty()) {
+        return Optional.empty();
+      } else {
+        throw new IllegalStateException();
+      }
     }
 
     @Override
