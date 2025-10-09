@@ -18,9 +18,10 @@ package io.javaoperatorsdk.operator.support;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class ExternalResource {
+public class ExternalResource implements ExternalDependentIDProvider<String> {
 
   public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
 
@@ -79,5 +80,10 @@ public class ExternalResource {
     return primary.getMetadata().getName()
         + EXTERNAL_RESOURCE_NAME_DELIMITER
         + primary.getMetadata().getNamespace();
+  }
+
+  @Override
+  public String externalResourceId() {
+    return id;
   }
 }

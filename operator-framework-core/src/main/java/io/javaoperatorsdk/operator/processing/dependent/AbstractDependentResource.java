@@ -149,16 +149,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @throws IllegalStateException if more than one candidate is found, in which case some other
    *     mechanism might be necessary to distinguish between candidate secondary resources
    */
-  protected Optional<R> selectTargetSecondaryResource(
-      Set<R> secondaryResources, P primary, Context<P> context) {
-    R desired = desired(primary, context);
-    var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
-    if (targetResources.size() > 1) {
-      throw new IllegalStateException(
-          "More than one secondary resource related to primary: " + targetResources);
-    }
-    return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
-  }
+  protected abstract Optional<R> selectTargetSecondaryResource(
+      Set<R> secondaryResources, P primary, Context<P> context);
 
   private void throwIfNull(R desired, P primary, String descriptor) {
     if (desired == null) {
