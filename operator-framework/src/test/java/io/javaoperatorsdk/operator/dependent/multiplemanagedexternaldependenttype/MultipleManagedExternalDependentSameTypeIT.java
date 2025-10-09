@@ -38,7 +38,7 @@ import static org.awaitility.Awaitility.await;
 class MultipleManagedExternalDependentSameTypeIT {
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(new MultipleManagedExternalDependentResourceReconciler())
           .build();
@@ -51,15 +51,15 @@ class MultipleManagedExternalDependentSameTypeIT {
 
   @Test
   void handlesExternalCrudOperations() {
-    operator.create(testResource());
+    extension.create(testResource());
     assertResourceCreatedWithData(DEFAULT_SPEC_VALUE);
 
     var updatedResource = testResource();
     updatedResource.getSpec().setValue(UPDATED_SPEC_VALUE);
-    operator.replace(updatedResource);
+    extension.replace(updatedResource);
     assertResourceCreatedWithData(UPDATED_SPEC_VALUE);
 
-    operator.delete(testResource());
+    extension.delete(testResource());
     assertExternalResourceDeleted();
   }
 

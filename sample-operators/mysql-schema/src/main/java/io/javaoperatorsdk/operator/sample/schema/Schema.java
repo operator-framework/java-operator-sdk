@@ -18,7 +18,9 @@ package io.javaoperatorsdk.operator.sample.schema;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class Schema implements Serializable {
+import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
+
+public class Schema implements Serializable, ExternalDependentIDProvider<String> {
 
   private final String name;
   private final String characterSet;
@@ -41,7 +43,7 @@ public class Schema implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Schema schema = (Schema) o;
-    return Objects.equals(name, schema.name);
+    return Objects.equals(name, schema.name) && Objects.equals(characterSet, schema.characterSet);
   }
 
   @Override
@@ -52,5 +54,10 @@ public class Schema implements Serializable {
   @Override
   public String toString() {
     return "Schema{" + "name='" + name + '\'' + ", characterSet='" + characterSet + '\'' + '}';
+  }
+
+  @Override
+  public String externalResourceId() {
+    return name;
   }
 }
