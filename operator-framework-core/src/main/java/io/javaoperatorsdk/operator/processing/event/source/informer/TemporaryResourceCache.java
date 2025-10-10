@@ -94,13 +94,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   // keep up to the last million deletions for up to 10 minutes
   private final ExpirationCache<String> tombstones = new ExpirationCache<>(1000000, 1200000);
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
-  private final boolean parseResourceVersions;
 
   public TemporaryResourceCache(
-      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
-      boolean parseResourceVersions) {
+      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.managedInformerEventSource = managedInformerEventSource;
-    this.parseResourceVersions = parseResourceVersions;
   }
 
   public synchronized void onDeleteEvent(T resource, boolean unknownState) {
@@ -164,20 +161,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
-  /**
-   * @return true if {@link ConfigurationService#parseResourceVersionsForEventFilteringAndCaching()}
-   *     is enabled and the resourceVersion of newResource is numerically greater than
-   *     cachedResource, otherwise false
-   */
-  public boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
+  private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
     try {
-      if (parseResourceVersions
-          && Long.parseLong(newResource.getMetadata().getResourceVersion())
-              > Long.parseLong(cachedResource.getMetadata().getResourceVersion())) {
-        return true;
-      }
+       return Long.parseLong(newResource.getMetadata().getResourceVersion())
+              > Long.parseLong(cachedResource.getMetadata().getResourceVersion());
     } catch (NumberFormatException e) {
-      log.debug(
+      log.warn(
           "Could not compare resourceVersions {} and {} for {}",
           newResource.getMetadata().getResourceVersion(),
           cachedResource.getMetadata().getResourceVersion(),

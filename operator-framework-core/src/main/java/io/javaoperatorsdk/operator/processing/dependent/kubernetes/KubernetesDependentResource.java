@@ -55,7 +55,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
-  private volatile Boolean usePreviousAnnotationForEventFiltering;
 
   public KubernetesDependentResource() {}
 
@@ -158,14 +157,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       } else {
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
-    } else if (usePreviousAnnotation(context)) { // set a new one
-      eventSource()
-          .orElseThrow()
-          .addPreviousAnnotation(
-              Optional.ofNullable(actualResource)
-                  .map(r -> r.getMetadata().getResourceVersion())
-                  .orElse(null),
-              target);
     }
     addReferenceHandlingMetadata(target, primary);
   }
@@ -179,22 +170,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
               .shouldUseSSA(getClass(), resourceType(), configuration().orElse(null));
     }
     return useSSA;
-  }
-
-  private boolean usePreviousAnnotation(Context<P> context) {
-    if (usePreviousAnnotationForEventFiltering == null) {
-      usePreviousAnnotationForEventFiltering =
-          context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .previousAnnotationForDependentResourcesEventFiltering()
-              && !context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .withPreviousAnnotationForDependentResourcesBlocklist()
-                  .contains(this.resourceType());
-    }
-    return usePreviousAnnotationForEventFiltering;
   }
 
   @Override
