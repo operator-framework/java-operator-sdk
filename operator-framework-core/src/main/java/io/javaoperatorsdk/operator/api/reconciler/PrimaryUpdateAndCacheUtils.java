@@ -453,53 +453,39 @@ public class PrimaryUpdateAndCacheUtils {
 
   public static int compareResourceVersions(String v1, String v2) {
     var v1Length = v1.length();
-    if (v1Length == 0) {
-      throw new IllegalStateException("Resource version (1) is empty");
-    }
     var v2Length = v2.length();
-    if (v2Length == 0) {
-      throw new IllegalStateException("Resource version (2) is empty");
+    if (v1Length == 0) {
+      throw new IllegalArgumentException("resource version must not be empty (1)");
     }
-    var maxLength = Math.max(v1Length, v2Length);
-    boolean v1LeadingZero = true;
-    boolean v2LeadingZero = true;
-    int comparison = 0;
-    for (int i = 0; i < maxLength; i++) {
-      char char1 = 0;
-      if (i < v1Length) {
-        char1 = v1.charAt(i);
-        if (v1LeadingZero) {
-          if (char1 == '0') {
-            throw new IllegalStateException("Resource version (1) cannot begin with 0");
-          }
-          v1LeadingZero = false;
-        }
+    if (v2Length == 0) {
+      throw new IllegalArgumentException("resource version must not be empty (2)");
+    }
+    if (v1Length > v2Length) {
+      return 1;
+    }
+    if (v2Length > v1Length) {
+      return -1;
+    }
+    for (int i = 0; i < v1Length; i++) {
+      if (v1.charAt(i) > v2.charAt(i)) {
+        var char1 = v1.charAt(i);
+        var char2 = v2.charAt(i);
         if (!Character.isDigit(char1)) {
-          throw new IllegalStateException(
+          throw new IllegalArgumentException(
               "Non numeric characters in resource version (1): " + char1);
         }
-      }
-      if (i < v2Length) {
-        var char2 = v2.charAt(i);
-        if (v2LeadingZero) {
-          if (char2 == '0') {
-            throw new IllegalStateException("Resource version (2) cannot begin with 0");
-          }
-          v2LeadingZero = false;
-        }
         if (!Character.isDigit(char2)) {
-          throw new IllegalStateException(
+          throw new IllegalArgumentException(
               "Non numeric characters in resource version (2): " + char2);
         }
-        if (char1 == 0) {
-          comparison = -1;
-        } else if (comparison == 0) {
-          comparison = Character.compare(char1, char2);
+        if (char1 > char2) {
+          return 1;
         }
-      } else {
-        comparison = 1;
+        if (char1 < char2) {
+          return -1;
+        }
       }
     }
-    return comparison;
+    return 0;
   }
 }
