@@ -191,14 +191,14 @@ class PrimaryUpdateAndCacheUtilsTest {
     assertThat(compareResourceVersions("123", "2")).isPositive();
     assertThat(compareResourceVersions("3", "211")).isNegative();
 
-    assertThrows(IllegalStateException.class, () -> compareResourceVersions("aa", "22"));
-    assertThrows(IllegalStateException.class, () -> compareResourceVersions("11", "ba"));
+    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("aa", "22"));
+    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("11", "ba"));
   }
 
   // naive performance that compares the works case scenario for non parsing variant
   @Test
   public void compareResourcePerformanceTest() {
-    var execNum = 10000000;
+    var execNum = 20000000;
     var startTime = System.currentTimeMillis();
     for (int i = 0; i < execNum; i++) {
       var res = compareResourceVersions("123456788", "123456789");
