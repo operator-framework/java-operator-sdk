@@ -95,19 +95,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final ExpirationCache<String> tombstones = new ExpirationCache<>(1000000, 1200000);
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
   private final boolean parseResourceVersions;
-  private final ExpirationCache<String> knownResourceVersions;
 
   public TemporaryResourceCache(
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
       boolean parseResourceVersions) {
     this.managedInformerEventSource = managedInformerEventSource;
     this.parseResourceVersions = parseResourceVersions;
-    if (parseResourceVersions) {
-      // keep up to the 50000 add/updates for up to 5 minutes
-      knownResourceVersions = new ExpirationCache<>(50000, 600000);
-    } else {
-      knownResourceVersions = null;
-    }
   }
 
   public synchronized void onDeleteEvent(T resource, boolean unknownState) {
@@ -137,9 +130,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * @param previousResourceVersion null indicates an add
    */
   public synchronized void putResource(T newResource, String previousResourceVersion) {
-    if (knownResourceVersions != null) {
-      knownResourceVersions.add(newResource.getMetadata().getResourceVersion());
-    }
     var resourceId = ResourceID.fromResource(newResource);
     var cachedResource = managedInformerEventSource.get(resourceId).orElse(null);
 
@@ -174,17 +164,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
-  public synchronized boolean isKnownResourceVersion(T resource) {
-    return knownResourceVersions != null
-        && knownResourceVersions.contains(resource.getMetadata().getResourceVersion());
-  }
-
   /**
    * @return true if {@link ConfigurationService#parseResourceVersionsForEventFilteringAndCaching()}
    *     is enabled and the resourceVersion of newResource is numerically greater than
    *     cachedResource, otherwise false
    */
-  private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
+  public boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
     try {
       if (parseResourceVersions
           && Long.parseLong(newResource.getMetadata().getResourceVersion())
