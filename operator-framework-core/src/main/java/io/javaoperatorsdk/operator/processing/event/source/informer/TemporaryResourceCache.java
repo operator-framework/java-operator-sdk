@@ -176,7 +176,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return isLaterResourceVersion(newResource, resource.get());
     }
     var latestUpdated = latestUpdatedVersion.get(resourceID);
-    return latestUpdated != null && parseResourceVersion(newResource) > latestUpdated;
+    return latestUpdated == null || parseResourceVersion(newResource) > latestUpdated;
   }
 
   private static <T extends HasMetadata> long parseResourceVersion(T newResource) {
