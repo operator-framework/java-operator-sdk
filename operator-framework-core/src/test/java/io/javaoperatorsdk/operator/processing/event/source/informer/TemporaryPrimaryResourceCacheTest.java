@@ -66,7 +66,7 @@ class TemporaryPrimaryResourceCacheTest {
   void updateNotAddsTheResourceIntoCacheIfTheInformerHasOtherVersion() {
     var testResource = testResource();
     var informerCachedResource = testResource();
-    informerCachedResource.getMetadata().setResourceVersion("x");
+    informerCachedResource.getMetadata().setResourceVersion("2");
     when(informerEventSource.get(any())).thenReturn(Optional.of(informerCachedResource));
 
     temporaryResourceCache.putResource(testResource, "0");

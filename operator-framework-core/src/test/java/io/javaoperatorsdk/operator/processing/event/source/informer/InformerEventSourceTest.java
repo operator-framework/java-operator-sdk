@@ -95,8 +95,7 @@ class InformerEventSourceTest {
 
   @Test
   void skipsEventPropagationIfResourceWithSameVersionInResourceCache() {
-    when(temporaryResourceCacheMock.getResourceFromCache(any()))
-        .thenReturn(Optional.of(testDeployment()));
+    when(temporaryResourceCacheMock.isNewerThenKnownResource(any(), any())).thenReturn(false);
 
     informerEventSource.onAdd(testDeployment());
     informerEventSource.onUpdate(testDeployment(), testDeployment());
@@ -106,6 +105,7 @@ class InformerEventSourceTest {
 
   @Test
   void processEventPropagationWithoutAnnotation() {
+    when(temporaryResourceCacheMock.isNewerThenKnownResource(any(), any())).thenReturn(true);
     informerEventSource.onUpdate(testDeployment(), testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
@@ -113,6 +113,7 @@ class InformerEventSourceTest {
 
   @Test
   void processEventPropagationWithIncorrectAnnotation() {
+    when(temporaryResourceCacheMock.isNewerThenKnownResource(any(), any())).thenReturn(true);
     informerEventSource.onAdd(
         new DeploymentBuilder(testDeployment())
             .editMetadata()
@@ -127,8 +128,7 @@ class InformerEventSourceTest {
   void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
     Deployment cachedDeployment = testDeployment();
     cachedDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
-    when(temporaryResourceCacheMock.getResourceFromCache(any()))
-        .thenReturn(Optional.of(cachedDeployment));
+    when(temporaryResourceCacheMock.isNewerThenKnownResource(any(), any())).thenReturn(true);
 
     informerEventSource.onUpdate(cachedDeployment, testDeployment());
 

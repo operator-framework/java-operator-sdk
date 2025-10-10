@@ -194,7 +194,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
-    return temporaryResourceCache.isNewerThenKnownResource(newObject, resourceID);
+    return !temporaryResourceCache.isNewerThenKnownResource(newObject, resourceID);
     //    if (res.isEmpty()) {
     //      return false;
     //    }
