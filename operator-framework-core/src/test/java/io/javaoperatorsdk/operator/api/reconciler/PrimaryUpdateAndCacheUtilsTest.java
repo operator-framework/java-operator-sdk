@@ -193,6 +193,8 @@ class PrimaryUpdateAndCacheUtilsTest {
 
     assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("aa", "22"));
     assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("11", "ba"));
+    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("", "22"));
+    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("11", ""));
   }
 
   // naive performance that compares the works case scenario for non parsing variant

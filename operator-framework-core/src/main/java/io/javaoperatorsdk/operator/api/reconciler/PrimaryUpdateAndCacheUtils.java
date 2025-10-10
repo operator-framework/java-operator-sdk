@@ -463,27 +463,25 @@ public class PrimaryUpdateAndCacheUtils {
     if (v1Length > v2Length) {
       return 1;
     }
-    if (v2Length > v1Length) {
+    if (v1Length < v2Length) {
       return -1;
     }
     for (int i = 0; i < v1Length; i++) {
-      if (v1.charAt(i) > v2.charAt(i)) {
-        var char1 = v1.charAt(i);
-        var char2 = v2.charAt(i);
-        if (!Character.isDigit(char1)) {
-          throw new IllegalArgumentException(
-              "Non numeric characters in resource version (1): " + char1);
-        }
-        if (!Character.isDigit(char2)) {
-          throw new IllegalArgumentException(
-              "Non numeric characters in resource version (2): " + char2);
-        }
-        if (char1 > char2) {
-          return 1;
-        }
-        if (char1 < char2) {
-          return -1;
-        }
+      var char1 = v1.charAt(i);
+      var char2 = v2.charAt(i);
+      if (!Character.isDigit(char1)) {
+        throw new IllegalArgumentException(
+            "Non numeric characters in resource version (1): " + char1);
+      }
+      if (!Character.isDigit(char2)) {
+        throw new IllegalArgumentException(
+            "Non numeric characters in resource version (2): " + char2);
+      }
+      if (char1 > char2) {
+        return 1;
+      }
+      if (char1 < char2) {
+        return -1;
       }
     }
     return 0;
