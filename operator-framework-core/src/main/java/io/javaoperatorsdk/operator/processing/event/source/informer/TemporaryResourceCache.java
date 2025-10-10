@@ -89,6 +89,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
+  // resource version that was the result of the update done by us
+  private final Map<ResourceID, Long> latestUpdatedVersion = new ConcurrentHashMap<>();
 
   // keep up to the last million deletions for up to 10 minutes
   private final ExpirationCache<String> tombstones = new ExpirationCache<>(1000000, 1200000);
@@ -111,19 +113,19 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     cache.computeIfPresent(
         ResourceID.fromResource(resource),
         (id, cached) ->
-            (unknownState || !isLaterResourceVersion(id, cached, resource)) ? null : cached);
+            (unknownState || !isLaterResourceVersion(cached, resource)) ? null : cached);
+    latestUpdatedVersion.computeIfPresent(
+        ResourceID.fromResource(resource),
+        (id, cachedVersion) ->
+            (unknownState || parseResourceVersion(resource) > cachedVersion)
+                ? null
+                : cachedVersion);
   }
 
   public synchronized void putAddedResource(T newResource) {
     putResource(newResource, null);
   }
 
-  /**
-   * put the item into the cache if the previousResourceVersion matches the current state. If not
-   * the currently cached item is removed.
-   *
-   * @param previousResourceVersion null indicates an add
-   */
   public synchronized void putResource(T newResource, String previousResourceVersion) {
     var resourceId = ResourceID.fromResource(newResource);
     var cachedResource = managedInformerEventSource.get(resourceId).orElse(null);
@@ -143,12 +145,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
 
     if (moveAhead
-        || (cachedResource != null
-                && (cachedResource
-                    .getMetadata()
-                    .getResourceVersion()
-                    .equals(previousResourceVersion))
-            || isLaterResourceVersion(resourceId, newResource, cachedResource))) {
+        || (cachedResource != null && isLaterResourceVersion(newResource, cachedResource))) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
@@ -156,24 +153,37 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       cache.put(resourceId, newResource);
     } else if (cache.remove(resourceId) != null) {
       log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
+      latestUpdatedVersion.put(
+          resourceId, Long.parseLong(newResource.getMetadata().getResourceVersion()));
     }
   }
 
-  public boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
+  public boolean isLaterResourceVersion(T newResource, T cachedResource) {
     try {
-      return Long.parseLong(newResource.getMetadata().getResourceVersion())
-          > Long.parseLong(cachedResource.getMetadata().getResourceVersion());
+      return parseResourceVersion(newResource) > parseResourceVersion(cachedResource);
     } catch (NumberFormatException e) {
-      log.warn(
-          "Could not compare resourceVersions {} and {} for {}",
-          newResource.getMetadata().getResourceVersion(),
-          cachedResource.getMetadata().getResourceVersion(),
-          resourceId);
+      throw new IllegalStateException("Resource version does not seem to be an integer.");
     }
-    return false;
   }
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
+  }
+
+  public boolean isNewerThenKnownResource(T newResource, ResourceID resourceID) {
+    var resource = getResourceFromCache(resourceID);
+    if (resource.isPresent()) {
+      return isLaterResourceVersion(newResource, resource.get());
+    }
+    var latestUpdated = latestUpdatedVersion.get(resourceID);
+    return latestUpdated != null && parseResourceVersion(newResource) > latestUpdated;
+  }
+
+  private static <T extends HasMetadata> long parseResourceVersion(T newResource) {
+    try {
+      return Long.parseLong(newResource.getMetadata().getResourceVersion());
+    } catch (NumberFormatException e) {
+      throw new IllegalStateException("Resource version does not seem to be an integer.");
+    }
   }
 }
