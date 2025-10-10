@@ -453,30 +453,54 @@ public class PrimaryUpdateAndCacheUtils {
 
   public static int compareResourceVersions(String v1, String v2) {
     var v1Length = v1.length();
+    if (v1Length == 0) {
+      throw new IllegalStateException("Resource version (1) is empty");
+    }
     var v2Length = v2.length();
-    if (v1Length > v2Length) {
-      return 1;
+    if (v2Length == 0) {
+      throw new IllegalStateException("Resource version (2) is empty");
     }
-    if (v2Length > v1Length) {
-      return -1;
+    var maxLength = Math.max(v1Length, v2Length);
+    boolean v1LeadingZero = true;
+    boolean v2LeadingZero = true;
+    int lengthComparison = 0;
+    int comparison = 0;
+    for (int i = 0; i < maxLength; i++) {
+      char char1 = 0;
+      if (i < v1Length) {
+        char1 = v1.charAt(i);
+        if (v1LeadingZero) {
+          if (char1 == '0') {
+            throw new IllegalStateException("Resource version (1) cannot begin with 0");
+          }
+          v1LeadingZero = false;
+        }
+        if (!Character.isDigit(char1)) {
+          throw new IllegalStateException(
+              "Non numeric characters in resource version (1): " + char1);
+        }
+      }
+      if (i < v2Length) {
+        var char2 = v2.charAt(i);
+        if (v2LeadingZero) {
+          if (char2 == '0') {
+            throw new IllegalStateException("Resource version (1) cannot begin with 0");
+          }
+          v2LeadingZero = false;
+        }
+        if (!Character.isDigit(char2)) {
+          throw new IllegalStateException(
+              "Non numeric characters in resource version (2): " + char2);
+        }
+        if (char1 == 0) {
+          lengthComparison = -1;
+        } else if (comparison == 0) {
+          comparison = Character.compare(char1, char2);
+        }
+      } else {
+        lengthComparison = 1;
+      }
     }
-    for (int i = 0; i < v1Length; i++) {
-      var char1 = v1.charAt(i);
-      var char2 = v2.charAt(i);
-      if (!Character.isDigit(char1)) {
-        throw new IllegalStateException("Non numeric characters in resource version (1): " + char1);
-      }
-      if (!Character.isDigit(char2)) {
-        throw new IllegalStateException("Non numeric characters in resource version (2): " + char2);
-      }
-
-      if (char1 > char2) {
-        return 1;
-      }
-      if (char1 < char2) {
-        return -1;
-      }
-    }
-    return 0;
+    return lengthComparison != 0 ? lengthComparison : comparison;
   }
 }
