@@ -195,20 +195,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
     return !temporaryResourceCache.isNewerThenKnownResource(newObject, resourceID);
-    //    if (res.isEmpty()) {
-    //      return false;
-    //    }
-    //    boolean resVersionsEqual =
-    //        newObject
-    //            .getMetadata()
-    //            .getResourceVersion()
-    //            .equals(res.get().getMetadata().getResourceVersion());
-    //    log.debug(
-    //        "Resource found in temporal cache for id: {} resource versions equal: {}",
-    //        resourceID,
-    //        resVersionsEqual);
-    //    return resVersionsEqual || temporaryResourceCache.isLaterResourceVersion(res.get(),
-    // newObject);
   }
 
   private void propagateEvent(R object) {

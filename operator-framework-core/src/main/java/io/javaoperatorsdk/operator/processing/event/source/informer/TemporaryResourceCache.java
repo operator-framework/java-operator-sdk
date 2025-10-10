@@ -151,10 +151,17 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
-    } else if (cache.remove(resourceId) != null) {
-      log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
-      latestUpdatedVersion.put(
-          resourceId, Long.parseLong(newResource.getMetadata().getResourceVersion()));
+    } else {
+      if (newResource
+          .getMetadata()
+          .getResourceVersion()
+          .equals(cachedResource.getMetadata().getResourceVersion())) {
+        latestUpdatedVersion.put(
+            resourceId, Long.parseLong(newResource.getMetadata().getResourceVersion()));
+      }
+      if (cache.remove(resourceId) != null) {
+        log.debug("Removed an obsolete resource from cache for id: {}", resourceId);
+      }
     }
   }
 
