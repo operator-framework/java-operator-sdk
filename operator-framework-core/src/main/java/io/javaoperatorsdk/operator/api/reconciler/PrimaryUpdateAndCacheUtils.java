@@ -484,7 +484,7 @@ public class PrimaryUpdateAndCacheUtils {
         var char2 = v2.charAt(i);
         if (v2LeadingZero) {
           if (char2 == '0') {
-            throw new IllegalStateException("Resource version (1) cannot begin with 0");
+            throw new IllegalStateException("Resource version (2) cannot begin with 0");
           }
           v2LeadingZero = false;
         }
