@@ -145,7 +145,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
 
     if (moveAhead
-        || (cachedResource != null && isLaterResourceVersion(newResource, cachedResource))) {
+        || cachedResource == null
+        || isLaterResourceVersion(newResource, cachedResource)) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
