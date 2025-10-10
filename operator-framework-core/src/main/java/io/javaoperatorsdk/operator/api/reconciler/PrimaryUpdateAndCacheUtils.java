@@ -450,4 +450,24 @@ public class PrimaryUpdateAndCacheUtils {
           e);
     }
   }
+
+  public static int compareResourceVersions(String v1, String v2) {
+    var v1Length = v1.length();
+    var v2Length = v2.length();
+    if (v1Length > v2Length) {
+      return 1;
+    }
+    if (v2Length > v1Length) {
+      return -1;
+    }
+    for (int i = 0; i < v1Length; i++) {
+      if (v1.charAt(i) > v2.charAt(i)) {
+        return 1;
+      }
+      if (v1.charAt(i) < v2.charAt(i)) {
+        return -1;
+      }
+    }
+    return 0;
+  }
 }
