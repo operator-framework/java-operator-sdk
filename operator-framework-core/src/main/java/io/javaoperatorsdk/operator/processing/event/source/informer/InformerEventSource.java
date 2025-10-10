@@ -82,32 +82,19 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(
-        configuration,
-        configuration.getKubernetesClient().orElse(context.getClient()),
-        context
-            .getControllerConfiguration()
-            .getConfigurationService()
-            .parseResourceVersionsForEventFilteringAndCaching());
+    this(configuration, configuration.getKubernetesClient().orElse(context.getClient()));
   }
 
-  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
-    this(configuration, client, false);
-  }
-
+  // visible for testing
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private InformerEventSource(
-      InformerEventSourceConfiguration<R> configuration,
-      KubernetesClient client,
-      boolean parseResourceVersions) {
+  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
     super(
         configuration.name(),
         configuration
             .getGroupVersionKind()
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
-        configuration,
-        parseResourceVersions);
+        configuration);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (useSecondaryToPrimaryIndex()) {
@@ -207,39 +194,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
-    var res = temporaryResourceCache.getResourceFromCache(resourceID);
-    if (res.isEmpty()) {
-      return isEventKnownFromAnnotation(newObject, oldObject);
-    }
-    boolean resVersionsEqual =
-        newObject
-            .getMetadata()
-            .getResourceVersion()
-            .equals(res.get().getMetadata().getResourceVersion());
-    log.debug(
-        "Resource found in temporal cache for id: {} resource versions equal: {}",
-        resourceID,
-        resVersionsEqual);
-    return resVersionsEqual
-        || temporaryResourceCache.isLaterResourceVersion(resourceID, res.get(), newObject);
-  }
-
-  private boolean isEventKnownFromAnnotation(R newObject, R oldObject) {
-    String previous = newObject.getMetadata().getAnnotations().get(PREVIOUS_ANNOTATION_KEY);
-    boolean known = false;
-    if (previous != null) {
-      String[] parts = previous.split(",");
-      if (id.equals(parts[0])) {
-        if (oldObject == null && parts.length == 1) {
-          known = true;
-        } else if (oldObject != null
-            && parts.length == 2
-            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
-          known = true;
-        }
-      }
-    }
-    return known;
+    return !temporaryResourceCache.isNewerThenKnownResource(newObject, resourceID);
   }
 
   private void propagateEvent(R object) {
@@ -331,22 +286,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
     return (onDeleteFilter == null || onDeleteFilter.accept(resource, b))
         && (genericFilter == null || genericFilter.accept(resource));
-  }
-
-  /**
-   * Add an annotation to the resource so that the subsequent will be omitted
-   *
-   * @param resourceVersion null if there is no prior version
-   * @param target mutable resource that will be returned
-   */
-  public R addPreviousAnnotation(String resourceVersion, R target) {
-    target
-        .getMetadata()
-        .getAnnotations()
-        .put(
-            PREVIOUS_ANNOTATION_KEY,
-            id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
-    return target;
   }
 
   private enum Operation {
