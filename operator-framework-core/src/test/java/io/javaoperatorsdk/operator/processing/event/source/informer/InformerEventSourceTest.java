@@ -63,6 +63,8 @@ class InformerEventSourceTest {
   private final InformerEventSourceConfiguration<Deployment> informerEventSourceConfiguration =
       mock(InformerEventSourceConfiguration.class);
 
+  // todo double check naming, maybe improve with a non temp resource cache in some cases
+
   @BeforeEach
   void setup() {
     final var informerConfig = mock(InformerConfiguration.class);
