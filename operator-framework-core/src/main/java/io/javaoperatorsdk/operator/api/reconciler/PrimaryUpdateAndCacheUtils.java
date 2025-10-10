@@ -460,6 +460,12 @@ public class PrimaryUpdateAndCacheUtils {
     if (v2Length == 0) {
       throw new IllegalArgumentException("resource version must not be empty (2)");
     }
+    if (v1.charAt(0) == '0') {
+      throw new IllegalArgumentException("resource version (1) must not start with 0");
+    }
+    if (v2.charAt(0) == '0') {
+      throw new IllegalArgumentException("resource version (2) must not start with 0");
+    }
     if (v1Length > v2Length) {
       return 1;
     }
