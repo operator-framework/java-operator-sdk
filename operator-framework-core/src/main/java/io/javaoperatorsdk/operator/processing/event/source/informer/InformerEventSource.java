@@ -82,15 +82,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
-    this(
-        configuration,
-        configuration.getKubernetesClient().orElse(context.getClient()));
+    this(configuration, configuration.getKubernetesClient().orElse(context.getClient()));
   }
 
+  // visible for testing
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private InformerEventSource(
-      InformerEventSourceConfiguration<R> configuration,
-      KubernetesClient client) {
+  InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
     super(
         configuration.name(),
         configuration
@@ -199,7 +196,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
     var res = temporaryResourceCache.getResourceFromCache(resourceID);
     if (res.isEmpty()) {
-      return isEventKnownFromAnnotation(newObject, oldObject);
+      return false;
     }
     boolean resVersionsEqual =
         newObject
@@ -212,24 +209,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         resVersionsEqual);
     return resVersionsEqual
         || temporaryResourceCache.isLaterResourceVersion(resourceID, res.get(), newObject);
-  }
-
-  private boolean isEventKnownFromAnnotation(R newObject, R oldObject) {
-    String previous = newObject.getMetadata().getAnnotations().get(PREVIOUS_ANNOTATION_KEY);
-    boolean known = false;
-    if (previous != null) {
-      String[] parts = previous.split(",");
-      if (id.equals(parts[0])) {
-        if (oldObject == null && parts.length == 1) {
-          known = true;
-        } else if (oldObject != null
-            && parts.length == 2
-            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
-          known = true;
-        }
-      }
-    }
-    return known;
   }
 
   private void propagateEvent(R object) {

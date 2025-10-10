@@ -184,43 +184,43 @@ public class ConfigurationServiceOverrider {
       }
 
       private <T> T overriddenValueOrDefault(
-              T value, Function<ConfigurationService, T> defaultValue) {
+          T value, Function<ConfigurationService, T> defaultValue) {
         return value != null ? value : defaultValue.apply(original);
       }
 
       @Override
       public boolean checkCRDAndValidateLocalModel() {
         return overriddenValueOrDefault(
-                checkCR, ConfigurationService::checkCRDAndValidateLocalModel);
+            checkCR, ConfigurationService::checkCRDAndValidateLocalModel);
       }
 
       @SuppressWarnings("rawtypes")
       @Override
       public DependentResourceFactory dependentResourceFactory() {
         return overriddenValueOrDefault(
-                dependentResourceFactory, ConfigurationService::dependentResourceFactory);
+            dependentResourceFactory, ConfigurationService::dependentResourceFactory);
       }
 
       @Override
       public int concurrentReconciliationThreads() {
         return Utils.ensureValid(
-                overriddenValueOrDefault(
-                        concurrentReconciliationThreads,
-                        ConfigurationService::concurrentReconciliationThreads),
-                "maximum reconciliation threads",
-                1,
-                original.concurrentReconciliationThreads());
+            overriddenValueOrDefault(
+                concurrentReconciliationThreads,
+                ConfigurationService::concurrentReconciliationThreads),
+            "maximum reconciliation threads",
+            1,
+            original.concurrentReconciliationThreads());
       }
 
       @Override
       public int concurrentWorkflowExecutorThreads() {
         return Utils.ensureValid(
-                overriddenValueOrDefault(
-                        concurrentWorkflowExecutorThreads,
-                        ConfigurationService::concurrentWorkflowExecutorThreads),
-                "maximum workflow execution threads",
-                1,
-                original.concurrentWorkflowExecutorThreads());
+            overriddenValueOrDefault(
+                concurrentWorkflowExecutorThreads,
+                ConfigurationService::concurrentWorkflowExecutorThreads),
+            "maximum workflow execution threads",
+            1,
+            original.concurrentWorkflowExecutorThreads());
       }
 
       @Override
@@ -254,22 +254,22 @@ public class ConfigurationServiceOverrider {
       @Override
       public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
         return leaderElectionConfiguration != null
-                ? Optional.of(leaderElectionConfiguration)
-                : original.getLeaderElectionConfiguration();
+            ? Optional.of(leaderElectionConfiguration)
+            : original.getLeaderElectionConfiguration();
       }
 
       @Override
       public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
         return informerStoppedHandler != null
-                ? Optional.of(informerStoppedHandler)
-                : original.getInformerStoppedHandler();
+            ? Optional.of(informerStoppedHandler)
+            : original.getInformerStoppedHandler();
       }
 
       @Override
       public boolean stopOnInformerErrorDuringStartup() {
         return overriddenValueOrDefault(
-                stopOnInformerErrorDuringStartup,
-                ConfigurationService::stopOnInformerErrorDuringStartup);
+            stopOnInformerErrorDuringStartup,
+            ConfigurationService::stopOnInformerErrorDuringStartup);
       }
 
       @Override
@@ -280,34 +280,35 @@ public class ConfigurationServiceOverrider {
       @Override
       public Duration reconciliationTerminationTimeout() {
         return overriddenValueOrDefault(
-                reconciliationTerminationTimeout,
-                ConfigurationService::reconciliationTerminationTimeout);
+            reconciliationTerminationTimeout,
+            ConfigurationService::reconciliationTerminationTimeout);
       }
 
       @Override
       public boolean ssaBasedCreateUpdateMatchForDependentResources() {
         return overriddenValueOrDefault(
-                ssaBasedCreateUpdateMatchForDependentResources,
-                ConfigurationService::ssaBasedCreateUpdateMatchForDependentResources);
+            ssaBasedCreateUpdateMatchForDependentResources,
+            ConfigurationService::ssaBasedCreateUpdateMatchForDependentResources);
       }
 
       @Override
       public Set<Class<? extends HasMetadata>> defaultNonSSAResources() {
         return overriddenValueOrDefault(
-                defaultNonSSAResource, ConfigurationService::defaultNonSSAResources);
+            defaultNonSSAResource, ConfigurationService::defaultNonSSAResources);
       }
 
       @Override
       public boolean useSSAToPatchPrimaryResource() {
         return overriddenValueOrDefault(
-                useSSAToPatchPrimaryResource, ConfigurationService::useSSAToPatchPrimaryResource);
+            useSSAToPatchPrimaryResource, ConfigurationService::useSSAToPatchPrimaryResource);
       }
 
       @Override
       public boolean cloneSecondaryResourcesWhenGettingFromCache() {
         return overriddenValueOrDefault(
-                cloneSecondaryResourcesWhenGettingFromCache,
-                ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
+            cloneSecondaryResourcesWhenGettingFromCache,
+            ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
       }
     };
-}}
+  }
+}

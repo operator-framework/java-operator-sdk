@@ -46,7 +46,7 @@ class TemporaryPrimaryResourceCacheTest {
   @BeforeEach
   void setup() {
     informerEventSource = mock(InformerEventSource.class);
-    temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, false);
+    temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource);
   }
 
   @Test
@@ -109,7 +109,7 @@ class TemporaryPrimaryResourceCacheTest {
 
   @Test
   void resourceVersionParsing() {
-    this.temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, true);
+    this.temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource);
 
     ConfigMap testResource = propagateTestResourceToCache();
 

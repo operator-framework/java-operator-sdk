@@ -105,21 +105,6 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void skipsAddEventPropagationViaAnnotation() {
-    informerEventSource.onAdd(informerEventSource.addPreviousAnnotation(null, testDeployment()));
-
-    verify(eventHandlerMock, never()).handleEvent(any());
-  }
-
-  @Test
-  void skipsUpdateEventPropagationViaAnnotation() {
-    informerEventSource.onUpdate(
-        testDeployment(), informerEventSource.addPreviousAnnotation("1", testDeployment()));
-
-    verify(eventHandlerMock, never()).handleEvent(any());
-  }
-
-  @Test
   void processEventPropagationWithoutAnnotation() {
     informerEventSource.onUpdate(testDeployment(), testDeployment());
 

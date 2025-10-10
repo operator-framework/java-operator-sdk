@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -95,8 +94,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final ExpirationCache<String> tombstones = new ExpirationCache<>(1000000, 1200000);
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
 
-  public TemporaryResourceCache(
-      ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
+  public TemporaryResourceCache(ManagedInformerEventSource<T, ?, ?> managedInformerEventSource) {
     this.managedInformerEventSource = managedInformerEventSource;
   }
 
@@ -161,10 +159,10 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
-  private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
+  public boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
     try {
-       return Long.parseLong(newResource.getMetadata().getResourceVersion())
-              > Long.parseLong(cachedResource.getMetadata().getResourceVersion());
+      return Long.parseLong(newResource.getMetadata().getResourceVersion())
+          > Long.parseLong(cachedResource.getMetadata().getResourceVersion());
     } catch (NumberFormatException e) {
       log.warn(
           "Could not compare resourceVersions {} and {} for {}",
