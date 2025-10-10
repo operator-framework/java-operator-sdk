@@ -463,7 +463,6 @@ public class PrimaryUpdateAndCacheUtils {
     var maxLength = Math.max(v1Length, v2Length);
     boolean v1LeadingZero = true;
     boolean v2LeadingZero = true;
-    int lengthComparison = 0;
     int comparison = 0;
     for (int i = 0; i < maxLength; i++) {
       char char1 = 0;
@@ -493,14 +492,14 @@ public class PrimaryUpdateAndCacheUtils {
               "Non numeric characters in resource version (2): " + char2);
         }
         if (char1 == 0) {
-          lengthComparison = -1;
+          comparison = -1;
         } else if (comparison == 0) {
           comparison = Character.compare(char1, char2);
         }
       } else {
-        lengthComparison = 1;
+        comparison = 1;
       }
     }
-    return lengthComparison != 0 ? lengthComparison : comparison;
+    return comparison;
   }
 }
