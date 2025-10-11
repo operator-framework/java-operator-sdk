@@ -186,8 +186,8 @@ class PrimaryUpdateAndCacheUtilsTest {
   public void compareResourceVersionsTest() {
     assertThat(compareResourceVersions("11", "22")).isNegative();
     assertThat(compareResourceVersions("22", "11")).isPositive();
+    assertThat(compareResourceVersions("1", "1")).isZero();
     assertThat(compareResourceVersions("11", "11")).isZero();
-
     assertThat(compareResourceVersions("123", "2")).isPositive();
     assertThat(compareResourceVersions("3", "211")).isNegative();
 
