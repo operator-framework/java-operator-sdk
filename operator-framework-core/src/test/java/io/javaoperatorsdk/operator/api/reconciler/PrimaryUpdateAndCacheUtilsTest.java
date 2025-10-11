@@ -190,13 +190,6 @@ class PrimaryUpdateAndCacheUtilsTest {
 
     assertThat(compareResourceVersions("123", "2")).isPositive();
     assertThat(compareResourceVersions("3", "211")).isNegative();
-
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("aa", "22"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("11", "ba"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("", "22"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("11", ""));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("01", "123"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("123", "01"));
   }
 
   // naive performance that compares the works case scenario for non parsing variant

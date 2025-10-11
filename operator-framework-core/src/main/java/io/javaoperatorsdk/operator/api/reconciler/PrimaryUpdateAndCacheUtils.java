@@ -454,18 +454,6 @@ public class PrimaryUpdateAndCacheUtils {
   public static int compareResourceVersions(String v1, String v2) {
     var v1Length = v1.length();
     var v2Length = v2.length();
-    if (v1Length == 0) {
-      throw new IllegalArgumentException("resource version must not be empty (1)");
-    }
-    if (v2Length == 0) {
-      throw new IllegalArgumentException("resource version must not be empty (2)");
-    }
-    if (v1.charAt(0) == '0') {
-      throw new IllegalArgumentException("resource version (1) must not start with 0");
-    }
-    if (v2.charAt(0) == '0') {
-      throw new IllegalArgumentException("resource version (2) must not start with 0");
-    }
     if (v1Length > v2Length) {
       return 1;
     }
@@ -475,14 +463,6 @@ public class PrimaryUpdateAndCacheUtils {
     for (int i = 0; i < v1Length; i++) {
       var char1 = v1.charAt(i);
       var char2 = v2.charAt(i);
-      if (!Character.isDigit(char1)) {
-        throw new IllegalArgumentException(
-            "Non numeric characters in resource version (1): " + char1);
-      }
-      if (!Character.isDigit(char2)) {
-        throw new IllegalArgumentException(
-            "Non numeric characters in resource version (2): " + char2);
-      }
       if (char1 > char2) {
         return 1;
       }
