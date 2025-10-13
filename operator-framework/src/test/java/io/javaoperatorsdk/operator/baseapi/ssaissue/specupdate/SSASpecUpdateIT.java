@@ -17,8 +17,8 @@ class SSASpecUpdateIT {
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder().withReconciler(SSASpecUpdateReconciler.class).build();
 
-  // showcases that is the spec of the resources is updated with SSA, but the finalizer
-  // is not explicitly added to the fresh resource it removes the finalizer
+  // showcases that if the spec of the resources is updated with SSA, but the finalizer
+  // is not explicitly added to the fresh resource, the update removes the finalizer
   @Test
   void showFinalizerRemovalWhenSpecUpdated() {
     SSASpecUpdateCustomResource res = createResource();
