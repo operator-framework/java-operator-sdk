@@ -201,7 +201,7 @@ class PrimaryUpdateAndCacheUtilsTest {
     assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("321", "123a"));
   }
 
-  // naive performance that compares the works case scenario for non parsing variant
+  // naive performance test that compares the work case scenario for the parsing and non-parsing variants
   @Test
   public void compareResourcePerformanceTest() {
     var execNum = 30000000;
