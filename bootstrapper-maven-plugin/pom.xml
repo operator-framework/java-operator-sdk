@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>java-operator-sdk</artifactId>
-    <version>5.2.0-SNAPSHOT</version>
+    <version>5.3.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>bootstrapper</artifactId>
