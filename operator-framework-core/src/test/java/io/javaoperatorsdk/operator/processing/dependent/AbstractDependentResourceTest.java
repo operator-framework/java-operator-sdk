@@ -34,7 +34,7 @@ class AbstractDependentResourceTest {
 
   private static final TestCustomResource PRIMARY = new TestCustomResource();
   private static final DefaultContext<TestCustomResource> CONTEXT =
-      new DefaultContext<>(mock(), mock(), PRIMARY);
+      new DefaultContext<>(mock(), mock(), PRIMARY, false, false);
 
   @Test
   void throwsExceptionIfDesiredIsNullOnCreate() {

@@ -47,7 +47,7 @@ class GenericKubernetesResourceMatcherTest {
     }
 
     public TestContext(HasMetadata primary) {
-      super(mock(), mock(), primary);
+      super(mock(), mock(), primary, false, false);
     }
 
     @Override
@@ -91,7 +91,7 @@ class GenericKubernetesResourceMatcherTest {
     final var localContext = new TestContext(createPrimary("removed"));
     assertThat(
             GenericKubernetesResourceMatcher.match(
-                    dependentResource.doDesired(localContext), actual, localContext)
+                    dependentResource.getOrComputeDesired(localContext), actual, localContext)
                 .matched())
         .withFailMessage("Removing values in metadata should lead to a mismatch")
         .isFalse();

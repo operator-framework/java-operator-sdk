@@ -164,7 +164,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @SuppressWarnings("unchecked")
-  public <R> R desiredStateFor(
+  public <R> R getOrComputeDesiredStateFor(
       DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {
     return (R)
         desiredStates.computeIfAbsent(
