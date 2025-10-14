@@ -191,14 +191,22 @@ class PrimaryUpdateAndCacheUtilsTest {
     assertThat(compareResourceVersions("123", "2")).isPositive();
     assertThat(compareResourceVersions("3", "211")).isNegative();
 
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("aa", "22"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("11", "ba"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("", "22"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("11", ""));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("01", "123"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("123", "01"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("3213", "123a"));
-    assertThrows(IllegalArgumentException.class, () -> compareResourceVersions("321", "123a"));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("aa", "22"));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("11", "ba"));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("", "22"));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("11", ""));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("01", "123"));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("123", "01"));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("3213", "123a"));
+    assertThrows(
+        NonComparableResourceVersionException.class, () -> compareResourceVersions("321", "123a"));
   }
 
   // naive performance test that compares the work case scenario for the parsing and non-parsing
