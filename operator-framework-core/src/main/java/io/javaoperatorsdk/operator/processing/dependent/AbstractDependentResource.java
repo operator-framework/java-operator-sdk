@@ -71,7 +71,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     if (creatable() || updatable()) {
       if (actualResource == null) {
         if (creatable) {
-          var desired = doDesired(context);
+          var desired = getOrComputeDesired(context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -81,7 +81,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable()) {
           final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
-            final var desired = match.computedDesired().orElseGet(() -> doDesired(context));
+            final var desired =
+                match.computedDesired().orElseGet(() -> getOrComputeDesired(context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
@@ -136,7 +137,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    */
   protected Optional<R> selectTargetSecondaryResource(
       Set<R> secondaryResources, P primary, Context<P> context) {
-    R desired = doDesired(context);
+    R desired = getOrComputeDesired(context);
     var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
@@ -205,10 +206,10 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
             + " updated");
   }
 
-  protected R doDesired(Context<P> context) {
+  protected R getOrComputeDesired(Context<P> context) {
     assert context instanceof DefaultContext<P>;
     DefaultContext<P> defaultContext = (DefaultContext<P>) context;
-    return defaultContext.desiredStateFor(this, p -> desired(p, defaultContext));
+    return defaultContext.getOrComputeDesiredStateFor(this, p -> desired(p, defaultContext));
   }
 
   public void delete(P primary, Context<P> context) {
