@@ -153,7 +153,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     primaryToSecondaryIndex.onDelete(resource);
     super.onDelete(resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
-      propagateEvent(resource);
+      propagateEvent(resource, false);
     }
   }
 
@@ -169,25 +169,23 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
       Operation operation, R newObject, R oldObject, Runnable superOnOp) {
     var resourceID = ResourceID.fromResource(newObject);
 
+    superOnOp.run();
+
     if (canSkipEvent(newObject, oldObject, resourceID)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource"
               + " ID: {}",
           operation,
           ResourceID.fromResource(newObject));
-      superOnOp.run();
+    } else if (eventAcceptedByFilter(operation, newObject, oldObject)) {
+      log.debug(
+          "Propagating event for {}, resource with same version not result of a reconciliation."
+              + " Resource ID: {}",
+          operation,
+          resourceID);
+      propagateEvent(newObject, false);
     } else {
-      superOnOp.run();
-      if (eventAcceptedByFilter(operation, newObject, oldObject)) {
-        log.debug(
-            "Propagating event for {}, resource with same version not result of a reconciliation."
-                + " Resource ID: {}",
-            operation,
-            resourceID);
-        propagateEvent(newObject);
-      } else {
-        log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
-      }
+      log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
     }
   }
 
@@ -229,7 +227,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return known;
   }
 
-  private void propagateEvent(R object) {
+  private void propagateEvent(R object, boolean fromOperator) {
     var primaryResourceIdSet =
         configuration().getSecondaryToPrimaryMapper().toPrimaryResourceIDs(object);
     if (primaryResourceIdSet.isEmpty()) {
@@ -237,7 +235,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     primaryResourceIdSet.forEach(
         resourceId -> {
-          Event event = new Event(resourceId);
+          Event event =
+              new DependentEvent(
+                  resourceId,
+                  object,
+                  fromOperator);
           /*
            * In fabric8 client for certain cases informers can be created on in a way that they are
            * automatically started, what would cause a NullPointerException here, since an event
@@ -293,6 +295,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         Optional.ofNullable(oldResource)
             .map(r -> r.getMetadata().getResourceVersion())
             .orElse(null));
+    propagateEvent(newResource, true);
   }
 
   private boolean useSecondaryToPrimaryIndex() {

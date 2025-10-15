@@ -41,7 +41,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
-  private volatile Boolean usePreviousAnnotationForEventFiltering;
+  private volatile Boolean usePreviousAnnotationForEventFiltering = false;
 
   public KubernetesDependentResource() {}
 

@@ -1,6 +1,10 @@
 package io.javaoperatorsdk.operator.processing.event;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter.RateLimitState;
+import io.javaoperatorsdk.operator.processing.event.source.informer.DependentEvent;
 import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 class ResourceState {
@@ -29,6 +33,12 @@ class ResourceState {
   private RetryExecution retry;
   private EventingState eventing;
   private RateLimitState rateLimit;
+  
+  record DependentKey(String kind, ResourceID id) {
+    
+  }
+  
+  private Map<DependentKey, String> dependentEvents = new HashMap<>();
 
   public ResourceState(ResourceID id) {
     this.id = id;
@@ -60,6 +70,12 @@ class ResourceState {
   }
 
   public void setUnderProcessing(boolean underProcessing) {
+    if (!underProcessing && !dependentEvents.isEmpty()) {
+      dependentEvents.clear();
+      if (eventing == EventingState.NO_EVENT_PRESENT) {
+        eventing = EventingState.EVENT_PRESENT;
+      }
+    }
     this.underProcessing = underProcessing;
   }
 
@@ -76,10 +92,27 @@ class ResourceState {
   }
 
   public void markEventReceived() {
+    markEventReceived(null);
+  }
+
+  public void markEventReceived(Event event) {
     if (deleteEventPresent()) {
       throw new IllegalStateException("Cannot receive event after a delete event received");
     }
-    eventing = EventingState.EVENT_PRESENT;
+    if (!underProcessing || !(event instanceof DependentEvent)) {
+      eventing = EventingState.EVENT_PRESENT;
+      dependentEvents.clear();
+    } else {
+      DependentEvent de = (DependentEvent) event;
+      DependentKey key = new DependentKey(de.getKind(), de.getDependent());
+      if (de.isFromOperator()) {
+        // if the event is from the operator, we don't care about anything older
+        dependentEvents.computeIfPresent(
+            key, (ignored, rv) -> rv <= de.getDependentResourceVersion() ? null : rv);
+      } else {
+        dependentEvents.put(key, de.getDependentResourceVersion());
+      }
+    }
   }
 
   public void markProcessedMarkForDeletion() {
@@ -107,6 +140,7 @@ class ResourceState {
         // do nothing
         break;
     }
+    dependentEvents.clear();
   }
 
   @Override

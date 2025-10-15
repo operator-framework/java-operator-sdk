@@ -202,10 +202,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // removed, but also the informers websocket is disconnected and later reconnected. So
         // meanwhile the resource could be deleted and recreated. In this case we just mark a new
         // event as below.
-        markEventReceived(state);
+        markEventReceived(state, event);
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
-      markEventReceived(state);
+      markEventReceived(state, event);
     } else if (log.isDebugEnabled()) {
       log.debug(
           "Skipped marking event as received. Delete event present: {}, processed mark for"
@@ -215,9 +215,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     }
   }
 
-  private void markEventReceived(ResourceState state) {
+  private void markEventReceived(ResourceState state, Event event) {
     log.debug("Marking event received for: {}", state.getId());
-    state.markEventReceived();
+    state.markEventReceived(event);
   }
 
   private boolean isResourceMarkedForDeletion(ResourceEvent resourceEvent) {
