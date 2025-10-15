@@ -458,7 +458,7 @@ public class PrimaryUpdateAndCacheUtils {
     }
     var v2Length = v2.length();
     if (v2Length == 0) {
-      throw new NonComparableResourceVersionException("Resource version (1) is empty");
+      throw new NonComparableResourceVersionException("Resource version (2) is empty");
     }
     var maxLength = Math.max(v1Length, v2Length);
     boolean v1LeadingZero = true;
