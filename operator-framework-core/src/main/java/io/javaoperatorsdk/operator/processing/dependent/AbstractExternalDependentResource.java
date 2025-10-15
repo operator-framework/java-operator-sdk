@@ -126,19 +126,34 @@ public abstract class AbstractExternalDependentResource<
     return externalStateEventSource;
   }
 
+  /**
+   * Override this method to optimize and not compute the desired when selecting the target
+   * secondary resource. Return the target id.
+   *
+   * @see ExternalDependentIDProvider
+   * @param primary resource
+   * @param context of current reconciliation
+   * @return id of the target managed resource
+   */
+  protected Optional<Object> targetSecondaryResourceID(P primary, Context<P> context) {
+    R desired = desired(primary, context);
+    if (desired instanceof ExternalDependentIDProvider<?> desiredWithId) {
+      return Optional.of(desiredWithId.externalResourceId());
+    } else {
+      return Optional.empty();
+    }
+  }
+
   @Override
   protected Optional<R> selectTargetSecondaryResource(
       Set<R> secondaryResources, P primary, Context<P> context) {
-    R desired = desired(primary, context);
+    var optionalId = targetSecondaryResourceID(primary, context);
     List<R> targetResources;
-    if (desired instanceof ExternalDependentIDProvider<?> desiredWithId) {
+    if (optionalId.isPresent()) {
+      var id = optionalId.get();
       targetResources =
           secondaryResources.stream()
-              .filter(
-                  r ->
-                      ((ExternalDependentIDProvider<?>) r)
-                          .externalResourceId()
-                          .equals(desiredWithId.externalResourceId()))
+              .filter(r -> ((ExternalDependentIDProvider<?>) r).externalResourceId().equals(id))
               .toList();
     } else {
       throw new IllegalStateException(
