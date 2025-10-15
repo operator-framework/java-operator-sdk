@@ -303,14 +303,15 @@ they should be reconciled.
 There might be cases, though, where it might be problematic to call the `desired` method several times (for example, because it is costly to do so),
 it is always possible to override this automated discrimination using several means (consider in this priority order):
 
-- Override the `targetSecondaryResourceID` method, if your `DependentResource` extends `KubernetesDependentResource`,
+- Override the [`targetSecondaryResourceID`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L282)
+  method, if your `DependentResource` extends `KubernetesDependentResource`,
   where it's very often possible to easily determine the `ResourceID` of the secondary resource. This would probably be
-  the easiest solution if you're working with Kubernetes resources.
-- Override the `selectTargetSecondaryResource` method, if your `DependentResource` extends `AbstractDependentResource`.
-  This should be relatively simple to override this method to optimize the matching to your needs. You can see an
-  example of such an implementation in
-  the [`ExternalWithStateDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/externalstate/ExternalWithStateDependentResource.java)
-  class. 
+  the easiest solution if you're working with Kubernetes resources. Similarly, for you can override the 
+  [`targetSecondaryResourceID`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java#L138)
+  for external resources. See below the related ID handling
+- If the approach from above doesn't fit your needs, you can override the target resource selection mechanism by overriding
+  `selectTargetSecondaryResource` for both [`KubernetesDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L282)
+  and [`AbstractExternalDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java#L148). 
 - As last resort, you can implement your own `getSecondaryResource` method on your `DependentResource` implementation from scratch.
 
 ### Sharing an Event Source Between Dependent Resources
