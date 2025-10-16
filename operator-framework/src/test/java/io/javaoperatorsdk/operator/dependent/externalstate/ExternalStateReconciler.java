@@ -56,7 +56,7 @@ public class ExternalStateReconciler
   private final ExternalIDGenServiceMock externalService = ExternalIDGenServiceMock.getInstance();
 
   InformerEventSource<ConfigMap, ExternalStateCustomResource> configMapEventSource;
-  PerResourcePollingEventSource<ExternalResource, ExternalStateCustomResource>
+  PerResourcePollingEventSource<ExternalResource, ExternalStateCustomResource, String>
       externalResourceEventSource;
 
   @Override
@@ -161,7 +161,10 @@ public class ExternalStateReconciler
         new PerResourcePollingEventSource<>(
             ExternalResource.class,
             context,
-            new PerResourcePollingConfigurationBuilder<>(fetcher, Duration.ofMillis(300L)).build());
+            new PerResourcePollingConfigurationBuilder<
+                    ExternalResource, ExternalStateCustomResource, String>(
+                    fetcher, Duration.ofMillis(300L))
+                .build());
 
     return Arrays.asList(configMapEventSource, externalResourceEventSource);
   }

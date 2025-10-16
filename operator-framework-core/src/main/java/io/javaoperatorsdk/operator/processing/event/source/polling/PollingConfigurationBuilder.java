@@ -17,12 +17,12 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 
 import java.time.Duration;
 
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceKeyMapper;
 
-public final class PollingConfigurationBuilder<R> {
+public final class PollingConfigurationBuilder<R, ID> {
   private final Duration period;
   private final PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher;
-  private CacheKeyMapper<R> cacheKeyMapper;
+  private ResourceKeyMapper<R, ID> resourceKeyMapper;
   private String name;
 
   public PollingConfigurationBuilder(
@@ -31,17 +31,18 @@ public final class PollingConfigurationBuilder<R> {
     this.period = period;
   }
 
-  public PollingConfigurationBuilder<R> withCacheKeyMapper(CacheKeyMapper<R> cacheKeyMapper) {
-    this.cacheKeyMapper = cacheKeyMapper;
+  public PollingConfigurationBuilder<R, ID> withResourceKeyMapper(
+      ResourceKeyMapper<R, ID> resourceKeyMapper) {
+    this.resourceKeyMapper = resourceKeyMapper;
     return this;
   }
 
-  public PollingConfigurationBuilder<R> withName(String name) {
+  public PollingConfigurationBuilder<R, ID> withName(String name) {
     this.name = name;
     return this;
   }
 
-  public PollingConfiguration<R> build() {
-    return new PollingConfiguration<>(name, genericResourceFetcher, period, cacheKeyMapper);
+  public PollingConfiguration<R, ID> build() {
+    return new PollingConfiguration<>(name, genericResourceFetcher, period, resourceKeyMapper);
   }
 }

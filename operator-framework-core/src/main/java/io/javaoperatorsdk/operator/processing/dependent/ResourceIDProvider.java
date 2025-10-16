@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.dependent;
 
-public interface CacheKeyMapper<R> {
+/**
+ * Provides the identifier for an object that represents an external resource. This ID is used to
+ * select target resource for a dependent resource from the resources returned by `{@link
+ * io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResources(Class)}`.
+ *
+ * @param <T>
+ */
+public interface ResourceIDProvider<T> {
 
-  String keyFor(R resource);
-
-  /**
-   * Used if a polling event source handles only single secondary resource. See also docs for:
-   * {@link ExternalResourceCachingEventSource}
-   *
-   * @return static id mapper, all resources are mapped for same id.
-   * @param <T> secondary resource type
-   */
-  static <T> CacheKeyMapper<T> singleResourceCacheKeyMapper() {
-    return r -> "id";
-  }
+  T id();
 }

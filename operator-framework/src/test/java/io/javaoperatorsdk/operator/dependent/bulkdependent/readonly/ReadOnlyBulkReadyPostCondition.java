@@ -19,7 +19,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCustomResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.KubernetesBulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 public class ReadOnlyBulkReadyPostCondition
@@ -32,7 +32,8 @@ public class ReadOnlyBulkReadyPostCondition
     var minResourceNumber = primary.getSpec().getNumberOfResources();
     @SuppressWarnings("unchecked")
     var secondaryResources =
-        ((BulkDependentResource<ConfigMap, BulkDependentTestCustomResource>) dependentResource)
+        ((KubernetesBulkDependentResource<ConfigMap, BulkDependentTestCustomResource>)
+                dependentResource)
             .getSecondaryResources(primary, context);
     return minResourceNumber <= secondaryResources.size();
   }

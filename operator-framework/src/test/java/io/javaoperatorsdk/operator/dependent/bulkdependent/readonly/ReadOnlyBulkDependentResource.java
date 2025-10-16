@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCustomResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.KubernetesBulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -33,21 +33,18 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 @KubernetesDependent
 public class ReadOnlyBulkDependentResource
     extends KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
-    implements BulkDependentResource<ConfigMap, BulkDependentTestCustomResource>,
+    implements KubernetesBulkDependentResource<ConfigMap, BulkDependentTestCustomResource>,
         SecondaryToPrimaryMapper<ConfigMap> {
 
   public static final String INDEX_DELIMITER = "-";
 
   @Override
-  public Map<String, ConfigMap> getSecondaryResources(
+  public Map<ResourceID, ConfigMap> getSecondaryResources(
       BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
     return context
         .getSecondaryResourcesAsStream(ConfigMap.class)
         .filter(cm -> getName(cm).startsWith(primary.getMetadata().getName()))
-        .collect(
-            Collectors.toMap(
-                cm -> getName(cm).substring(getName(cm).lastIndexOf(INDEX_DELIMITER) + 1),
-                Function.identity()));
+        .collect(Collectors.toMap(ResourceID::fromResource, Function.identity()));
   }
 
   private static String getName(ConfigMap cm) {

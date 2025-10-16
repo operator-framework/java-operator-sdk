@@ -31,8 +31,8 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependen
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class ExternalBulkDependentResource
-    extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource>
-    implements BulkDependentResource<ExternalResource, BulkDependentTestCustomResource>,
+    extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource, String>
+    implements BulkDependentResource<ExternalResource, BulkDependentTestCustomResource, String>,
         Creator<ExternalResource, BulkDependentTestCustomResource>,
         Deleter<BulkDependentTestCustomResource>,
         BulkUpdater<ExternalResource, BulkDependentTestCustomResource> {

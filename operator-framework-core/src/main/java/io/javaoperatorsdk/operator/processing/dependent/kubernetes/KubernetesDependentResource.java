@@ -205,7 +205,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @SuppressWarnings("unused")
-  public void deleteTargetResource(P primary, R resource, String key, Context<P> context) {
+  public void deleteTargetResource(P primary, R resource, ResourceID key, Context<P> context) {
     context.getClient().resource(resource).delete();
   }
 

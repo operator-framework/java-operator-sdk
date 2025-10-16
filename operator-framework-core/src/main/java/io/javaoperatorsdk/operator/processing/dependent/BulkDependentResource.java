@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
  * @param <R> the dependent resource type
  * @param <P> the primary resource type
  */
-public interface BulkDependentResource<R, P extends HasMetadata> {
+public interface BulkDependentResource<R, P extends HasMetadata, ID> {
 
   /**
    * Retrieves a map of desired secondary resources associated with the specified primary resource,
@@ -42,7 +42,7 @@ public interface BulkDependentResource<R, P extends HasMetadata> {
    * @return a Map associating desired secondary resources with the specified primary via arbitrary
    *     identifiers
    */
-  default Map<String, R> desiredResources(P primary, Context<P> context) {
+  default Map<ID, R> desiredResources(P primary, Context<P> context) {
     throw new IllegalStateException(
         "Implement desiredResources in case a non read-only bulk dependent resource");
   }
@@ -57,7 +57,7 @@ public interface BulkDependentResource<R, P extends HasMetadata> {
    * @return a Map associating actual secondary resources with the specified primary via arbitrary
    *     identifiers
    */
-  Map<String, R> getSecondaryResources(P primary, Context<P> context);
+  Map<ID, R> getSecondaryResources(P primary, Context<P> context);
 
   /**
    * Deletes the actual resource identified by the specified key if it's not in the set of desired
@@ -69,7 +69,7 @@ public interface BulkDependentResource<R, P extends HasMetadata> {
    * @param key key of the resource
    * @param context actual context
    */
-  void deleteTargetResource(P primary, R resource, String key, Context<P> context);
+  void deleteTargetResource(P primary, R resource, ID key, Context<P> context);
 
   /**
    * Determines whether the specified secondary resource matches the desired state with target index

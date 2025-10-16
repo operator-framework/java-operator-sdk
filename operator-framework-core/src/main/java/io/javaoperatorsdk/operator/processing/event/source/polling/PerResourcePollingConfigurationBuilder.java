@@ -20,9 +20,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceKeyMapper;
 
-public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetadata> {
+public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetadata, ID> {
 
   private final Duration defaultPollingPeriod;
   private final PerResourcePollingEventSource.ResourceFetcher<R, P> resourceFetcher;
@@ -30,7 +30,7 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
   private String name;
   private Predicate<P> registerPredicate;
   private ScheduledExecutorService executorService;
-  private CacheKeyMapper<R> cacheKeyMapper;
+  private ResourceKeyMapper<R, ID> resourceKeyMapper;
 
   public PerResourcePollingConfigurationBuilder(
       PerResourcePollingEventSource.ResourceFetcher<R, P> resourceFetcher,
@@ -40,34 +40,34 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
   }
 
   @SuppressWarnings("unused")
-  public PerResourcePollingConfigurationBuilder<R, P> withExecutorService(
+  public PerResourcePollingConfigurationBuilder<R, P, ID> withExecutorService(
       ScheduledExecutorService executorService) {
     this.executorService = executorService;
     return this;
   }
 
-  public PerResourcePollingConfigurationBuilder<R, P> withRegisterPredicate(
+  public PerResourcePollingConfigurationBuilder<R, P, ID> withRegisterPredicate(
       Predicate<P> registerPredicate) {
     this.registerPredicate = registerPredicate;
     return this;
   }
 
-  public PerResourcePollingConfigurationBuilder<R, P> withCacheKeyMapper(
-      CacheKeyMapper<R> cacheKeyMapper) {
-    this.cacheKeyMapper = cacheKeyMapper;
+  public PerResourcePollingConfigurationBuilder<R, P, ID> withResourceIDProvider(
+      ResourceKeyMapper<R, ID> resourceKeyMapper) {
+    this.resourceKeyMapper = resourceKeyMapper;
     return this;
   }
 
-  public PerResourcePollingConfigurationBuilder<R, P> withName(String name) {
+  public PerResourcePollingConfigurationBuilder<R, P, ID> withName(String name) {
     this.name = name;
     return this;
   }
 
-  public PerResourcePollingConfiguration<R, P> build() {
+  public PerResourcePollingConfiguration<R, P, ID> build() {
     return new PerResourcePollingConfiguration<>(
         name,
         executorService,
-        cacheKeyMapper,
+        resourceKeyMapper,
         resourceFetcher,
         registerPredicate,
         defaultPollingPeriod);

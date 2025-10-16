@@ -131,14 +131,10 @@ public abstract class AbstractExternalDependentResource<
       Set<R> secondaryResources, P primary, Context<P> context) {
     R desired = desired(primary, context);
     List<R> targetResources;
-    if (desired instanceof ExternalDependentIDProvider<?> desiredWithId) {
+    if (desired instanceof ResourceIDProvider<?> desiredWithId) {
       targetResources =
           secondaryResources.stream()
-              .filter(
-                  r ->
-                      ((ExternalDependentIDProvider<?>) r)
-                          .externalResourceId()
-                          .equals(desiredWithId.externalResourceId()))
+              .filter(r -> ((ResourceIDProvider<?>) r).id().equals(desiredWithId.id()))
               .toList();
     } else {
       throw new IllegalStateException(

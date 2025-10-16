@@ -20,34 +20,35 @@ import java.time.Duration;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
 @Ignore
-public abstract class PollingDependentResource<R, P extends HasMetadata>
-    extends AbstractPollingDependentResource<R, P>
+public abstract class PollingDependentResource<R, P extends HasMetadata, ID>
+    extends AbstractPollingDependentResource<R, P, ID>
     implements PollingEventSource.GenericResourceFetcher<R> {
 
-  private final CacheKeyMapper<R> cacheKeyMapper;
+  private final ResourceKeyMapper<R, ID> resourceKeyMapper;
 
-  public PollingDependentResource(Class<R> resourceType, CacheKeyMapper<R> cacheKeyMapper) {
+  public PollingDependentResource(
+      Class<R> resourceType, ResourceKeyMapper<R, ID> resourceKeyMapper) {
     super(resourceType);
-    this.cacheKeyMapper = cacheKeyMapper;
+    this.resourceKeyMapper = resourceKeyMapper;
   }
 
   public PollingDependentResource(
-      Class<R> resourceType, Duration pollingPeriod, CacheKeyMapper<R> cacheKeyMapper) {
+      Class<R> resourceType, Duration pollingPeriod, ResourceKeyMapper<R, ID> resourceKeyMapper) {
     super(resourceType, pollingPeriod);
-    this.cacheKeyMapper = cacheKeyMapper;
+    this.resourceKeyMapper = resourceKeyMapper;
   }
 
   @Override
-  protected ExternalResourceCachingEventSource<R, P> createEventSource(
+  protected ExternalResourceCachingEventSource<R, P, ID> createEventSource(
       EventSourceContext<P> context) {
     return new PollingEventSource<>(
         resourceType(),
-        new PollingConfiguration<>(name(), this, getPollingPeriod(), cacheKeyMapper));
+        new PollingConfiguration<>(name(), this, getPollingPeriod(), resourceKeyMapper));
   }
 }

@@ -25,11 +25,12 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.*;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 /** Not using CRUDKubernetesDependentResource so the delete functionality can be tested. */
 public class ConfigMapDeleterBulkDependentResource
     extends KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
-    implements CRUDBulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
+    implements KubernetesBulkDependentResource<ConfigMap, BulkDependentTestCustomResource> {
 
   public static final String LABEL_KEY = "bulk";
   public static final String LABEL_VALUE = "true";
@@ -37,18 +38,18 @@ public class ConfigMapDeleterBulkDependentResource
   public static final String INDEX_DELIMITER = "-";
 
   @Override
-  public Map<String, ConfigMap> desiredResources(
+  public Map<ResourceID, ConfigMap> desiredResources(
       BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
     var number = primary.getSpec().getNumberOfResources();
-    Map<String, ConfigMap> res = new HashMap<>();
+    Map<ResourceID, ConfigMap> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
-      var key = Integer.toString(i);
-      res.put(key, desired(primary, key));
+      var desired = desired(primary, i);
+      res.put(ResourceID.fromResource(desired), desired);
     }
     return res;
   }
 
-  public ConfigMap desired(BulkDependentTestCustomResource primary, String key) {
+  public ConfigMap desired(BulkDependentTestCustomResource primary, Integer key) {
     ConfigMap configMap = new ConfigMap();
     configMap.setMetadata(
         new ObjectMetaBuilder()
@@ -57,20 +58,17 @@ public class ConfigMapDeleterBulkDependentResource
             .withLabels(Map.of(LABEL_KEY, LABEL_VALUE))
             .build());
     configMap.setData(
-        Map.of("number", key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
+        Map.of("number", "" + key, ADDITIONAL_DATA_KEY, primary.getSpec().getAdditionalData()));
     return configMap;
   }
 
   @Override
-  public Map<String, ConfigMap> getSecondaryResources(
+  public Map<ResourceID, ConfigMap> getSecondaryResources(
       BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
     return context
         .getSecondaryResourcesAsStream(ConfigMap.class)
         .filter(cm -> getName(cm).startsWith(primary.getMetadata().getName()))
-        .collect(
-            Collectors.toMap(
-                cm -> getName(cm).substring(getName(cm).lastIndexOf(INDEX_DELIMITER) + 1),
-                Function.identity()));
+        .collect(Collectors.toMap(ResourceID::fromResource, Function.identity()));
   }
 
   private static String getName(ConfigMap cm) {

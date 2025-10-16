@@ -18,23 +18,25 @@ package io.javaoperatorsdk.operator.processing.event.source.polling;
 import java.time.Duration;
 import java.util.Objects;
 
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceKeyMapper;
 
-public record PollingConfiguration<R>(
+public record PollingConfiguration<R, ID>(
     String name,
     PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
     Duration period,
-    CacheKeyMapper<R> cacheKeyMapper) {
+    ResourceKeyMapper<R, ID> resourceKeyMapper) {
 
   public PollingConfiguration(
       String name,
       PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
       Duration period,
-      CacheKeyMapper<R> cacheKeyMapper) {
+      ResourceKeyMapper<R, ID> resourceKeyMapper) {
     this.name = name;
     this.genericResourceFetcher = Objects.requireNonNull(genericResourceFetcher);
     this.period = period;
-    this.cacheKeyMapper =
-        cacheKeyMapper == null ? CacheKeyMapper.singleResourceCacheKeyMapper() : cacheKeyMapper;
+    this.resourceKeyMapper =
+        resourceKeyMapper == null
+            ? ResourceKeyMapper.resourceIdProviderBasedMapper()
+            : resourceKeyMapper;
   }
 }

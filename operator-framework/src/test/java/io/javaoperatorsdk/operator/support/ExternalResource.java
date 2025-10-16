@@ -18,10 +18,10 @@ package io.javaoperatorsdk.operator.support;
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
+import io.javaoperatorsdk.operator.processing.dependent.ResourceIDProvider;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class ExternalResource implements ExternalDependentIDProvider<String> {
+public class ExternalResource implements ResourceIDProvider<String> {
 
   public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
 
@@ -83,7 +83,7 @@ public class ExternalResource implements ExternalDependentIDProvider<String> {
   }
 
   @Override
-  public String externalResourceId() {
+  public String id() {
     return id;
   }
 }

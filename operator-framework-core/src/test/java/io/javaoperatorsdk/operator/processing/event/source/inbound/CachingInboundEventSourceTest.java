@@ -24,7 +24,7 @@ import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
@@ -39,7 +39,8 @@ import static org.mockito.Mockito.when;
 
 class CachingInboundEventSourceTest
     extends AbstractEventSourceTestBase<
-        CachingInboundEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
+        CachingInboundEventSource<SampleExternalResource, TestCustomResource, String>,
+        EventHandler> {
 
   @SuppressWarnings("unchecked")
   private final CachingInboundEventSource.ResourceFetcher<
@@ -47,7 +48,7 @@ class CachingInboundEventSourceTest
       supplier = mock(CachingInboundEventSource.ResourceFetcher.class);
 
   private final TestCustomResource testCustomResource = TestUtils.testCustomResource();
-  private final CacheKeyMapper<SampleExternalResource> cacheKeyMapper =
+  private final ResourceKeyMapper<SampleExternalResource, String> resourceKeyMapper =
       r -> r.getName() + "#" + r.getValue();
 
   @BeforeEach
@@ -55,7 +56,7 @@ class CachingInboundEventSourceTest
     when(supplier.fetchResources(any())).thenReturn(Set.of(SampleExternalResource.testResource1()));
 
     setUpSource(
-        new CachingInboundEventSource<>(supplier, SampleExternalResource.class, cacheKeyMapper));
+        new CachingInboundEventSource<>(supplier, SampleExternalResource.class, resourceKeyMapper));
   }
 
   @Test
@@ -89,10 +90,10 @@ class CachingInboundEventSourceTest
         ResourceID.fromResource(testCustomResource), SampleExternalResource.testResource1());
     source.handleResourceDeleteEvent(
         ResourceID.fromResource(testCustomResource),
-        cacheKeyMapper.keyFor(SampleExternalResource.testResource1()));
+        resourceKeyMapper.keyFor(SampleExternalResource.testResource1()));
     source.handleResourceDeleteEvent(
         ResourceID.fromResource(testCustomResource),
-        cacheKeyMapper.keyFor(SampleExternalResource.testResource2()));
+        resourceKeyMapper.keyFor(SampleExternalResource.testResource2()));
 
     verify(eventHandler, times(2)).handleEvent(any());
   }

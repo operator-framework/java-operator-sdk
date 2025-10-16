@@ -20,13 +20,13 @@ import java.time.Duration;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceKeyMapper;
 
 @Ignore
-public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
-    extends AbstractExternalDependentResource<R, P, ExternalResourceCachingEventSource<R, P>>
-    implements CacheKeyMapper<R> {
+public abstract class AbstractPollingDependentResource<R, P extends HasMetadata, ID>
+    extends AbstractExternalDependentResource<R, P, ExternalResourceCachingEventSource<R, P, ID>>
+    implements ResourceKeyMapper<R, ID> {
 
   public static final Duration DEFAULT_POLLING_PERIOD = Duration.ofMillis(5000);
   private Duration pollingPeriod;
@@ -51,8 +51,9 @@ public abstract class AbstractPollingDependentResource<R, P extends HasMetadata>
   }
 
   // for now dependent resources support event sources only with one owned resource.
+  @SuppressWarnings("unchecked")
   @Override
-  public String keyFor(R resource) {
-    return CacheKeyMapper.singleResourceCacheKeyMapper().keyFor(resource);
+  public ID keyFor(R resource) {
+    return (ID) ResourceKeyMapper.resourceIdProviderBasedMapper().keyFor(resource);
   }
 }

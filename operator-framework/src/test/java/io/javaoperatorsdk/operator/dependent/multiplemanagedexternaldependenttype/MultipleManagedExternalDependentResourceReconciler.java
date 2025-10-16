@@ -32,6 +32,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 import io.javaoperatorsdk.operator.support.ExternalResource;
@@ -91,13 +92,15 @@ public class MultipleManagedExternalDependentResourceReconciler
           return res;
         };
 
-    PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>
+    PollingEventSource<
+            ExternalResource, MultipleManagedExternalDependentResourceCustomResource, String>
         pollingEventSource =
             new PollingEventSource<>(
                 ExternalResource.class,
-                new PollingConfigurationBuilder<>(fetcher, Duration.ofMillis(1000L))
+                new PollingConfigurationBuilder<ExternalResource, String>(
+                        fetcher, Duration.ofMillis(1000L))
                     .withName(EVENT_SOURCE_NAME)
-                    .withCacheKeyMapper(ExternalResource::getId)
+                    .withResourceKeyMapper(ResourceKeyMapper.resourceIdProviderBasedMapper())
                     .build());
 
     return List.of(pollingEventSource);
