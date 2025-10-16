@@ -21,7 +21,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 
-@Experimental("based on feedback the API might change")
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
+
+@Experimental(API_MIGHT_CHANGE)
 public interface Expectation<P extends HasMetadata> {
 
   String UNNAMED = "unnamed";

@@ -30,9 +30,9 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.PACKAGE})
 public @interface Experimental {
   /**
-   * Message for experimental features that we intend to keep and maintain, but
-   * the API might change usually, based on user feedback.
-   * */
+   * Message for experimental features that we intend to keep and maintain, but the API might change
+   * usually, based on user feedback.
+   */
   String API_MIGHT_CHANGE = "API might change, usually based on feedback";
 
   /**
