@@ -1,16 +1,42 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.expectation;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 import io.javaoperatorsdk.operator.api.reconciler.IndexedResourceCache;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
+
+/**
+ * Expectation manager implementation that works without enabling {@link
+ * ControllerConfiguration#triggerReconcilerOnAllEvent()}. Periodically checks and cleanups'
+ * expectations for primary resources which are no longer present in the cache.
+ */
+@Experimental(API_MIGHT_CHANGE)
 public class PeriodicCleanerExpectationManager<P extends HasMetadata>
     extends ExpectationManager<P> {
+
+  public static final Duration DEFAULT_CHECK_PERIOD = Duration.ofMinutes(1);
 
   private final ScheduledExecutorService scheduler =
       Executors.newScheduledThreadPool(
@@ -21,41 +47,20 @@ public class PeriodicCleanerExpectationManager<P extends HasMetadata>
             return thread;
           });
 
-  private final Duration cleanupDelayAfterExpiration;
   private final IndexedResourceCache<P> primaryCache;
 
-  public PeriodicCleanerExpectationManager(Duration period, Duration cleanupDelayAfterExpiration) {
-    this(period, cleanupDelayAfterExpiration, null);
+  public PeriodicCleanerExpectationManager(IndexedResourceCache<P> primaryCache) {
+    this(DEFAULT_CHECK_PERIOD, primaryCache);
   }
 
   public PeriodicCleanerExpectationManager(Duration period, IndexedResourceCache<P> primaryCache) {
-    this(period, null, primaryCache);
-  }
-
-  private PeriodicCleanerExpectationManager(
-      Duration period, Duration cleanupDelayAfterExpiration, IndexedResourceCache<P> primaryCache) {
-    this.cleanupDelayAfterExpiration = cleanupDelayAfterExpiration;
     this.primaryCache = primaryCache;
     scheduler.scheduleWithFixedDelay(
         this::clean, period.toMillis(), period.toMillis(), TimeUnit.MICROSECONDS);
   }
 
   public void clean() {
-    registeredExpectations
-        .entrySet()
-        .removeIf(
-            e -> {
-              if (cleanupDelayAfterExpiration != null) {
-                return LocalDateTime.now()
-                    .isAfter(
-                        e.getValue()
-                            .registeredAt()
-                            .plus(e.getValue().timeout())
-                            .plus(cleanupDelayAfterExpiration));
-              } else {
-                return primaryCache.get(e.getKey()).isEmpty();
-              }
-            });
+    registeredExpectations.entrySet().removeIf(e -> primaryCache.get(e.getKey()).isEmpty());
   }
 
   void stop() {
