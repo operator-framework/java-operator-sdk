@@ -72,17 +72,24 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
           primary, Duration.ofSeconds(timeout), deploymentReadyExpectation(context));
       return UpdateControl.noUpdate();
     } else {
-      var res = expectationManager.checkExpectation(primary, context);
+      // checks the expectation if it is fulfilled also removes it,
+      // in your logic you might add a next expectation based on your workflow
+      // Expectations have a name, so you can easily distinguish them if there is more of them.
+      var res =
+          expectationManager.checkExpectation(DEPLOYMENT_READY_EXPECTATION_NAME, primary, context);
+      // Note that this happens only once, since if the expectation is fulfilled, it is also removed
+      // from the manager.
       if (res.isFulfilled()) {
-        return pathStatusWithMessage(primary, DEPLOYMENT_READY);
+        return pathchStatusWithMessage(primary, DEPLOYMENT_READY);
       } else if (res.isTimedOut()) {
-        return pathStatusWithMessage(primary, DEPLOYMENT_TIMEOUT);
+        // you might add some other timeout handling here
+        return pathchStatusWithMessage(primary, DEPLOYMENT_TIMEOUT);
       }
     }
     return UpdateControl.noUpdate();
   }
 
-  private static UpdateControl<ExpectationCustomResource> pathStatusWithMessage(
+  private static UpdateControl<ExpectationCustomResource> pathchStatusWithMessage(
       ExpectationCustomResource primary, String message) {
     primary.setStatus(new ExpectationCustomResourceStatus());
     primary.getStatus().setMessage(message);
