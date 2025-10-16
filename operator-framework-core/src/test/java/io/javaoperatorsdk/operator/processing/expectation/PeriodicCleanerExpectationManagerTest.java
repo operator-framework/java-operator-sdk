@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.expectation;
 
 import java.time.Duration;
@@ -43,23 +58,6 @@ class PeriodicCleanerExpectationManagerTest {
   }
 
   @Test
-  void shouldCleanExpiredExpectationsWithCleanupDelay() {
-    Duration period = Duration.ofMillis(50);
-    Duration cleanupDelay = Duration.ofMillis(10);
-    expectationManager = new PeriodicCleanerExpectationManager<>(period, cleanupDelay);
-
-    Expectation<ConfigMap> expectation = (primary, context) -> false;
-    expectationManager.setExpectation(configMap, expectation, Duration.ofMillis(1));
-
-    assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
-
-    await()
-        .atMost(200, TimeUnit.MILLISECONDS)
-        .untilAsserted(
-            () -> assertThat(expectationManager.isExpectationPresent(configMap)).isFalse());
-  }
-
-  @Test
   void shouldCleanExpectationsWhenResourceNotInCache() {
     Duration period = Duration.ofMillis(50);
     expectationManager = new PeriodicCleanerExpectationManager<>(period, primaryCache);
@@ -68,7 +66,7 @@ class PeriodicCleanerExpectationManagerTest {
     when(primaryCache.get(resourceId)).thenReturn(java.util.Optional.empty());
 
     Expectation<ConfigMap> expectation = (primary, context) -> false;
-    expectationManager.setExpectation(configMap, expectation, Duration.ofMinutes(10));
+    expectationManager.setExpectation(configMap, Duration.ofMinutes(10), expectation);
 
     assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
 
@@ -87,63 +85,12 @@ class PeriodicCleanerExpectationManagerTest {
     when(primaryCache.get(resourceId)).thenReturn(java.util.Optional.of(configMap));
 
     Expectation<ConfigMap> expectation = (primary, context) -> false;
-    expectationManager.setExpectation(configMap, expectation, Duration.ofMinutes(10));
+    expectationManager.setExpectation(configMap, Duration.ofMinutes(10), expectation);
 
     assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
 
     Thread.sleep(150);
 
     assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
-  }
-
-  @Test
-  void shouldNotCleanNonExpiredExpectationsWithCleanupDelay() throws InterruptedException {
-    Duration period = Duration.ofMillis(50);
-    Duration cleanupDelay = Duration.ofMinutes(1);
-    expectationManager = new PeriodicCleanerExpectationManager<>(period, cleanupDelay);
-
-    Expectation<ConfigMap> expectation = (primary, context) -> false;
-    expectationManager.setExpectation(configMap, expectation, Duration.ofMillis(1));
-
-    assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
-
-    Thread.sleep(150);
-
-    assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
-  }
-
-  @Test
-  void stopShouldShutdownScheduler() {
-    Duration period = Duration.ofMillis(50);
-    expectationManager = new PeriodicCleanerExpectationManager<>(period, Duration.ofMillis(10));
-
-    expectationManager.stop();
-
-    Expectation<ConfigMap> expectation = (primary, context) -> false;
-    expectationManager.setExpectation(configMap, expectation, Duration.ofMillis(1));
-
-    assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
-  }
-
-  @Test
-  void cleanShouldWorkDirectly() {
-    Duration period = Duration.ofMinutes(10);
-    Duration cleanupDelay = Duration.ofMillis(1);
-    expectationManager = new PeriodicCleanerExpectationManager<>(period, cleanupDelay);
-
-    Expectation<ConfigMap> expectation = (primary, context) -> false;
-    expectationManager.setExpectation(configMap, expectation, Duration.ofMillis(1));
-
-    try {
-      Thread.sleep(10);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-
-    assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
-
-    expectationManager.clean();
-
-    assertThat(expectationManager.isExpectationPresent(configMap)).isFalse();
   }
 }
