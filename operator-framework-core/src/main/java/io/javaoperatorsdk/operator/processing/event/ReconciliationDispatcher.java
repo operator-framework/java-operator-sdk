@@ -229,7 +229,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             failedMessage = " due to conflict";
             log.info(
                 "ErrorStatusUpdateControl.patchStatus of {} failed due to a conflict, but the next"
-                    + " reconiliation is imminent.",
+                    + " reconciliation is imminent.",
                 ResourceID.fromResource(originalResource));
           } else {
             exceptionLevel = Level.WARN;
@@ -503,7 +503,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-    @SuppressWarnings("unchecked")
     private R editStatus(R resource, R originalResource) {
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // the cached resource should not be changed in any circumstances
