@@ -1,10 +1,12 @@
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.HttpURLConnection;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -216,12 +218,35 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             customResourceFacade.patchStatus(
                 errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
       } catch (Exception ex) {
-        log.error(
-            "updateErrorStatus failed for resource: {} with version: {} for error {}",
-            getUID(resource),
-            getVersion(resource),
-            e.getMessage(),
-            ex);
+        int code = ex instanceof KubernetesClientException kcex ? kcex.getCode() : -1;
+        Level exceptionLevel = Level.ERROR;
+        String failedMessage = "";
+        if (context.isNextReconciliationImminent()
+            || !(errorStatusUpdateControl.isNoRetry() || retryInfo.isLastAttempt())) {
+          if (code == HttpURLConnection.HTTP_CONFLICT
+              || (originalResource.getMetadata().getResourceVersion() != null && code == 422)) {
+            exceptionLevel = Level.DEBUG;
+            failedMessage = " due to conflict";
+            log.info(
+                "ErrorStatusUpdateControl.patchStatus of {} failed due to a conflict, but the next"
+                    + " reconiliation is imminent.",
+                ResourceID.fromResource(originalResource));
+          } else {
+            exceptionLevel = Level.WARN;
+            failedMessage = ", but will be retried soon,";
+          }
+        }
+
+        log.atLevel(exceptionLevel)
+            .log(
+                "ErrorStatusUpdateControl.patchStatus failed{} for {} with UID: {} and version: {}"
+                    + " for error {}",
+                failedMessage,
+                ResourceID.fromResource(originalResource),
+                getUID(resource),
+                getVersion(resource),
+                e.getMessage(),
+                ex);
       }
     }
     if (errorStatusUpdateControl.isNoRetry()) {
