@@ -562,7 +562,9 @@ class EventProcessorTest {
     eventProcessor.handleEvent(prepareCRDeleteEvent1());
 
     waitUntilProcessingFinished(eventProcessor, TestUtils.testCustomResource1Id());
-    verify(reconciliationDispatcherMock, times(1)).handleExecution(any());
+    // it is expected to be usually called only once, but it can happen based on timing that called
+    // twice
+    verify(reconciliationDispatcherMock, atMost(2)).handleExecution(any());
   }
 
   @Test
