@@ -10,7 +10,7 @@ jobs:
   integration_tests:
     strategy:
       matrix:
-        java: [ 17, 21, 24 ]
+        java: [ 17, 21, 25 ]
         # Use the latest versions supported by minikube, otherwise GitHub it will
         # end up in a throttling requests from minikube and workflow will fail.
         # Minikube does such requests only if a version is not officially supported.
@@ -26,7 +26,7 @@ jobs:
         httpclient: [ 'vertx', 'jdk', 'jetty' ]
     uses: ./.github/workflows/integration-tests.yml
     with:
-      java-version: 24
+      java-version: 25
       kube-version: '1.32.0'
       http-client: ${{ matrix.httpclient }}
       experimental: true
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 17, 21, 24 ]
+        java: [ 17, 21, 25 ]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Java and Maven
