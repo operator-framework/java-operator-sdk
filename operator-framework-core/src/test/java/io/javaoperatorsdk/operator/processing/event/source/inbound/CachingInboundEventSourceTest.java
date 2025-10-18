@@ -39,7 +39,8 @@ import static org.mockito.Mockito.when;
 
 class CachingInboundEventSourceTest
     extends AbstractEventSourceTestBase<
-        CachingInboundEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
+        CachingInboundEventSource<SampleExternalResource, TestCustomResource, String>,
+        EventHandler> {
 
   @SuppressWarnings("unchecked")
   private final CachingInboundEventSource.ResourceFetcher<
@@ -47,7 +48,7 @@ class CachingInboundEventSourceTest
       supplier = mock(CachingInboundEventSource.ResourceFetcher.class);
 
   private final TestCustomResource testCustomResource = TestUtils.testCustomResource();
-  private final CacheKeyMapper<SampleExternalResource> cacheKeyMapper =
+  private final CacheKeyMapper<SampleExternalResource, String> cacheKeyMapper =
       r -> r.getName() + "#" + r.getValue();
 
   @BeforeEach

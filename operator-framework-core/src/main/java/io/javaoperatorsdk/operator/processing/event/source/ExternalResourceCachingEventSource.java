@@ -54,23 +54,23 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * @param <R> type of polled external secondary resource
  * @param <P> primary resource
  */
-public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata>
+public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadata, ID>
     extends AbstractEventSource<R, P> implements RecentOperationCacheFiller<R> {
 
   private static final Logger log =
       LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
 
-  protected final CacheKeyMapper<R> cacheKeyMapper;
+  protected final CacheKeyMapper<R, ID> cacheKeyMapper;
 
-  protected Map<ResourceID, Map<String, R>> cache = new ConcurrentHashMap<>();
+  protected Map<ResourceID, Map<ID, R>> cache = new ConcurrentHashMap<>();
 
   protected ExternalResourceCachingEventSource(
-      Class<R> resourceClass, CacheKeyMapper<R> cacheKeyMapper) {
+      Class<R> resourceClass, CacheKeyMapper<R, ID> cacheKeyMapper) {
     this(null, resourceClass, cacheKeyMapper);
   }
 
   protected ExternalResourceCachingEventSource(
-      String name, Class<R> resourceClass, CacheKeyMapper<R> cacheKeyMapper) {
+      String name, Class<R> resourceClass, CacheKeyMapper<R, ID> cacheKeyMapper) {
     super(resourceClass, name);
     this.cacheKeyMapper = cacheKeyMapper;
   }
@@ -91,7 +91,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     handleDelete(primaryID, Set.of(cacheKeyMapper.keyFor(resource)));
   }
 
-  protected synchronized void handleDelete(ResourceID primaryID, Set<String> resourceIDs) {
+  protected synchronized void handleDelete(ResourceID primaryID, Set<ID> resourceIDs) {
     if (!isRunning()) {
       return;
     }
@@ -146,8 +146,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
   }
 
-  private boolean acceptedByFiler(
-      Map<String, R> cachedResourceMap, Map<String, R> newResourcesMap) {
+  private boolean acceptedByFiler(Map<ID, R> cachedResourceMap, Map<ID, R> newResourcesMap) {
 
     var addedResources = new HashMap<>(newResourcesMap);
     addedResources.keySet().removeAll(cachedResourceMap.keySet());
@@ -175,7 +174,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       return true;
     }
 
-    Map<String, R> possibleUpdatedResources = new HashMap<>(cachedResourceMap);
+    Map<ID, R> possibleUpdatedResources = new HashMap<>(cachedResourceMap);
     possibleUpdatedResources.keySet().retainAll(newResourcesMap.keySet());
     possibleUpdatedResources =
         possibleUpdatedResources.entrySet().stream()
@@ -248,7 +247,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     }
   }
 
-  public Map<ResourceID, Map<String, R>> getCache() {
+  public Map<ResourceID, Map<ID, R>> getCache() {
     return Collections.unmodifiableMap(cache);
   }
 

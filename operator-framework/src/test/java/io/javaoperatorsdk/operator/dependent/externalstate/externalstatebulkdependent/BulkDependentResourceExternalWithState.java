@@ -34,7 +34,7 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 
 public class BulkDependentResourceExternalWithState
     extends PerResourcePollingDependentResource<
-        ExternalResource, ExternalStateBulkDependentCustomResource>
+        ExternalResource, ExternalStateBulkDependentCustomResource, String>
     implements BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
         CRUDBulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
         DependentResourceWithExplicitState<
