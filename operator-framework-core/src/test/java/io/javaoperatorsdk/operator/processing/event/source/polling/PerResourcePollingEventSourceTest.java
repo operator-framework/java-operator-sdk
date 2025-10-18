@@ -40,7 +40,8 @@ import static org.mockito.Mockito.*;
 
 class PerResourcePollingEventSourceTest
     extends AbstractEventSourceTestBase<
-        PerResourcePollingEventSource<SampleExternalResource, TestCustomResource>, EventHandler> {
+        PerResourcePollingEventSource<SampleExternalResource, TestCustomResource, String>,
+        EventHandler> {
 
   public static final int PERIOD = 150;
 
@@ -66,7 +67,9 @@ class PerResourcePollingEventSourceTest
         new PerResourcePollingEventSource<>(
             SampleExternalResource.class,
             context,
-            new PerResourcePollingConfigurationBuilder<>(supplier, Duration.ofMillis(PERIOD))
+            new PerResourcePollingConfigurationBuilder<
+                    SampleExternalResource, TestCustomResource, String>(
+                    supplier, Duration.ofMillis(PERIOD))
                 .withCacheKeyMapper(r -> r.getName() + "#" + r.getValue())
                 .build()));
   }
@@ -91,10 +94,12 @@ class PerResourcePollingEventSourceTest
         new PerResourcePollingEventSource<>(
             SampleExternalResource.class,
             context,
-            new PerResourcePollingConfigurationBuilder<>(supplier, Duration.ofMillis(PERIOD))
+            new PerResourcePollingConfigurationBuilder<
+                    SampleExternalResource, TestCustomResource, String>(
+                    supplier, Duration.ofMillis(PERIOD))
                 .withRegisterPredicate(
                     testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1)
-                .withCacheKeyMapper(CacheKeyMapper.singleResourceCacheKeyMapper())
+                .withCacheKeyMapper(CacheKeyMapper.externalIdProviderMapper())
                 .build()));
 
     source.onResourceCreated(testCustomResource);

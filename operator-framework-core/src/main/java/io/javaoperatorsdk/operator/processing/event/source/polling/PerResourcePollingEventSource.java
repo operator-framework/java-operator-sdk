@@ -48,8 +48,8 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
  * @param <R> the resource polled by the event source
  * @param <P> related custom resource
  */
-public class PerResourcePollingEventSource<R, P extends HasMetadata>
-    extends ExternalResourceCachingEventSource<R, P> implements ResourceEventAware<P> {
+public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
+    extends ExternalResourceCachingEventSource<R, P, ID> implements ResourceEventAware<P> {
 
   private static final Logger log = LoggerFactory.getLogger(PerResourcePollingEventSource.class);
 
@@ -65,7 +65,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata>
   public PerResourcePollingEventSource(
       Class<R> resourceClass,
       EventSourceContext<P> context,
-      PerResourcePollingConfiguration<R, P> config) {
+      PerResourcePollingConfiguration<R, P, ID> config) {
     super(config.name(), resourceClass, config.cacheKeyMapper());
     this.primaryResourceCache = context.getPrimaryCache();
     this.resourceFetcher = config.resourceFetcher();

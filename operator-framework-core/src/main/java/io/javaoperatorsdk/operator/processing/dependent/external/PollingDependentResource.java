@@ -26,25 +26,25 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfig
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
 
 @Ignore
-public abstract class PollingDependentResource<R, P extends HasMetadata>
-    extends AbstractPollingDependentResource<R, P>
+public abstract class PollingDependentResource<R, P extends HasMetadata, ID>
+    extends AbstractPollingDependentResource<R, P, ID>
     implements PollingEventSource.GenericResourceFetcher<R> {
 
-  private final CacheKeyMapper<R> cacheKeyMapper;
+  private final CacheKeyMapper<R, ID> cacheKeyMapper;
 
-  public PollingDependentResource(Class<R> resourceType, CacheKeyMapper<R> cacheKeyMapper) {
+  public PollingDependentResource(Class<R> resourceType, CacheKeyMapper<R, ID> cacheKeyMapper) {
     super(resourceType);
     this.cacheKeyMapper = cacheKeyMapper;
   }
 
   public PollingDependentResource(
-      Class<R> resourceType, Duration pollingPeriod, CacheKeyMapper<R> cacheKeyMapper) {
+      Class<R> resourceType, Duration pollingPeriod, CacheKeyMapper<R, ID> cacheKeyMapper) {
     super(resourceType, pollingPeriod);
     this.cacheKeyMapper = cacheKeyMapper;
   }
 
   @Override
-  protected ExternalResourceCachingEventSource<R, P> createEventSource(
+  protected ExternalResourceCachingEventSource<R, P, ID> createEventSource(
       EventSourceContext<P> context) {
     return new PollingEventSource<>(
         resourceType(),

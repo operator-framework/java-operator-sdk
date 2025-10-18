@@ -17,7 +17,9 @@ package io.javaoperatorsdk.operator.dependent.bulkdependent.external;
 
 import java.util.Objects;
 
-public class ExternalResource {
+import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
+
+public class ExternalResource implements ExternalDependentIDProvider<String> {
 
   private final String id;
   private final String data;
@@ -46,5 +48,10 @@ public class ExternalResource {
   @Override
   public int hashCode() {
     return Objects.hash(id, data);
+  }
+
+  @Override
+  public String externalResourceId() {
+    return id;
   }
 }
