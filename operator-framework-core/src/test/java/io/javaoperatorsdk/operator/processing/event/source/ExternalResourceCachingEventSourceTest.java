@@ -30,7 +30,8 @@ import static org.mockito.Mockito.*;
 
 class ExternalResourceCachingEventSourceTest
     extends AbstractEventSourceTestBase<
-        ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
+        ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata, String>,
+        EventHandler> {
 
   @BeforeEach
   public void setup() {
@@ -211,7 +212,7 @@ class ExternalResourceCachingEventSourceTest
   }
 
   public static class TestExternalCachingEventSource
-      extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata> {
+      extends ExternalResourceCachingEventSource<SampleExternalResource, HasMetadata, String> {
     public TestExternalCachingEventSource() {
       super(SampleExternalResource.class, SampleExternalResource::getName);
     }

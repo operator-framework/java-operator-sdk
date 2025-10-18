@@ -58,7 +58,7 @@ import static java.lang.String.format;
     with = ResourcePollerConfig.class,
     converter = ResourcePollerConfigConverter.class)
 public class SchemaDependentResource
-    extends PerResourcePollingDependentResource<Schema, MySQLSchema>
+    extends PerResourcePollingDependentResource<Schema, MySQLSchema, String>
     implements ConfiguredDependentResource<ResourcePollerConfig>,
         Creator<Schema, MySQLSchema>,
         Deleter<MySQLSchema> {

@@ -57,8 +57,8 @@ import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachi
  * @param <R> type of the polled resource
  * @param <P> primary resource type
  */
-public class PollingEventSource<R, P extends HasMetadata>
-    extends ExternalResourceCachingEventSource<R, P> {
+public class PollingEventSource<R, P extends HasMetadata, ID>
+    extends ExternalResourceCachingEventSource<R, P, ID> {
 
   private static final Logger log = LoggerFactory.getLogger(PollingEventSource.class);
 
@@ -67,7 +67,7 @@ public class PollingEventSource<R, P extends HasMetadata>
   private final Duration period;
   private final AtomicBoolean healthy = new AtomicBoolean(true);
 
-  public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R> config) {
+  public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R, ID> config) {
     super(config.name(), resourceClass, config.cacheKeyMapper());
     this.genericResourceFetcher = config.genericResourceFetcher();
     this.period = config.period();

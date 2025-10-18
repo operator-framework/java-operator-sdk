@@ -20,21 +20,21 @@ import java.util.Objects;
 
 import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 
-public record PollingConfiguration<R>(
+public record PollingConfiguration<R, ID>(
     String name,
     PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
     Duration period,
-    CacheKeyMapper<R> cacheKeyMapper) {
+    CacheKeyMapper<R, ID> cacheKeyMapper) {
 
   public PollingConfiguration(
       String name,
       PollingEventSource.GenericResourceFetcher<R> genericResourceFetcher,
       Duration period,
-      CacheKeyMapper<R> cacheKeyMapper) {
+      CacheKeyMapper<R, ID> cacheKeyMapper) {
     this.name = name;
     this.genericResourceFetcher = Objects.requireNonNull(genericResourceFetcher);
     this.period = period;
     this.cacheKeyMapper =
-        cacheKeyMapper == null ? CacheKeyMapper.singleResourceCacheKeyMapper() : cacheKeyMapper;
+        cacheKeyMapper == null ? CacheKeyMapper.externalIdProviderMapper() : cacheKeyMapper;
   }
 }

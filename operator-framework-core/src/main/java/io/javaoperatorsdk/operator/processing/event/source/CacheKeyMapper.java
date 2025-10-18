@@ -15,9 +15,11 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source;
 
-public interface CacheKeyMapper<R> {
+import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
 
-  String keyFor(R resource);
+public interface CacheKeyMapper<R, ID> {
+
+  ID keyFor(R resource);
 
   /**
    * Used if a polling event source handles only single secondary resource. See also docs for:
@@ -26,7 +28,19 @@ public interface CacheKeyMapper<R> {
    * @return static id mapper, all resources are mapped for same id.
    * @param <T> secondary resource type
    */
-  static <T> CacheKeyMapper<T> singleResourceCacheKeyMapper() {
+  static <T> CacheKeyMapper<T, String> singleResourceCacheKeyMapper() {
     return r -> "id";
+  }
+
+  static <T, ID> CacheKeyMapper<T, ID> externalIdProviderMapper() {
+
+    return r -> {
+      if (r instanceof ExternalDependentIDProvider externalDependentIDProvider) {
+        return (ID) externalDependentIDProvider.externalResourceId();
+      } else {
+        throw new IllegalStateException(
+            "Resource does not implement ExternalDependentIDProvider: " + r.getClass());
+      }
+    };
   }
 }
