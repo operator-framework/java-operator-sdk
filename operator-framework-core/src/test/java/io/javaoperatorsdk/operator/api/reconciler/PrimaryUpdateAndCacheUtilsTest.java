@@ -213,7 +213,7 @@ class PrimaryUpdateAndCacheUtilsTest {
   // naive performance test that compares the work case scenario for the parsing and non-parsing
   // variants
   @Test
-  @Disabled
+  @Disabled("test sometimes fails, we plan to iterate over it and related features for 5.3")
   public void compareResourcePerformanceTest() {
     var execNum = 30000000;
     var startTime = System.currentTimeMillis();
