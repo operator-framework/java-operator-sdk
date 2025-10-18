@@ -25,8 +25,8 @@ import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePo
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
 
 @Ignore
-public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata>
-    extends AbstractPollingDependentResource<R, P>
+public abstract class PerResourcePollingDependentResource<R, P extends HasMetadata, ID>
+    extends AbstractPollingDependentResource<R, P, ID>
     implements PerResourcePollingEventSource.ResourceFetcher<R, P> {
 
   public PerResourcePollingDependentResource() {}
@@ -40,13 +40,13 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
   }
 
   @Override
-  protected ExternalResourceCachingEventSource<R, P> createEventSource(
+  protected ExternalResourceCachingEventSource<R, P, ID> createEventSource(
       EventSourceContext<P> context) {
 
     return new PerResourcePollingEventSource<>(
         resourceType(),
         context,
-        new PerResourcePollingConfigurationBuilder<>(this, getPollingPeriod())
+        new PerResourcePollingConfigurationBuilder<R, P, ID>(this, getPollingPeriod())
             .withCacheKeyMapper(this)
             .withName(name())
             .build());
