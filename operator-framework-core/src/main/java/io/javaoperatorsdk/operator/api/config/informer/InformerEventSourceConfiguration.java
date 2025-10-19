@@ -96,18 +96,21 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private final GroupVersionKind groupVersionKind;
     private final InformerConfiguration<R> informerConfig;
     private final KubernetesClient kubernetesClient;
+    private final boolean comparableResourceVersions;
 
     protected DefaultInformerEventSourceConfiguration(
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         InformerConfiguration<R> informerConfig,
-        KubernetesClient kubernetesClient) {
+        KubernetesClient kubernetesClient,
+        boolean comparableResourceVersions) {
       this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       this.kubernetesClient = kubernetesClient;
+      this.comparableResourceVersions = comparableResourceVersions;
     }
 
     @Override
@@ -135,6 +138,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     public Optional<KubernetesClient> getKubernetesClient() {
       return Optional.ofNullable(kubernetesClient);
     }
+
+    @Override
+    public boolean parseResourceVersionsForEventFilteringAndCaching() {
+      return this.comparableResourceVersions;
+    }
   }
 
   @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -148,6 +156,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private KubernetesClient kubernetesClient;
+    private boolean comparableResourceVersions = true;
 
     private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
@@ -285,6 +294,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> parseResourceVersionsForEventFilteringAndCaching(boolean parse) {
+      this.comparableResourceVersions = parse;
+      return this;
+    }
+
     public void updateFrom(InformerConfiguration<R> informerConfig) {
       if (informerConfig != null) {
         final var informerConfigName = informerConfig.getName();
@@ -324,7 +338,10 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
                   HasMetadata.getKind(primaryResourceClass),
                   false)),
           config.build(),
-          kubernetesClient);
+          kubernetesClient,
+          comparableResourceVersions);
     }
   }
+
+  boolean parseResourceVersionsForEventFilteringAndCaching();
 }
