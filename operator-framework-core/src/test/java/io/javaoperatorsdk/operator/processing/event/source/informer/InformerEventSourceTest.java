@@ -94,9 +94,11 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void skipsEventPropagationIfResourceWithSameVersionInResourceCache() {
+  void skipsEventPropagation() {
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(testDeployment()));
+
+    when(temporaryResourceCacheMock.canSkipEvent(any(), any())).thenReturn(true);
 
     informerEventSource.onAdd(testDeployment());
     informerEventSource.onUpdate(testDeployment(), testDeployment());

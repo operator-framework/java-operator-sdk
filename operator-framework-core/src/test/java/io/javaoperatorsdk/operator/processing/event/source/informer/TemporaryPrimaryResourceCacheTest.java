@@ -17,9 +17,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +25,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.ExpirationCache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,30 +43,28 @@ class TemporaryPrimaryResourceCacheTest {
   @BeforeEach
   void setup() {
     informerEventSource = mock(InformerEventSource.class);
-    temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, false);
+    temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, true);
   }
 
   @Test
   void updateAddsTheResourceIntoCacheIfTheInformerHasThePreviousResourceVersion() {
     var testResource = testResource();
     var prevTestResource = testResource();
-    prevTestResource.getMetadata().setResourceVersion("0");
+    prevTestResource.getMetadata().setResourceVersion("1");
     when(informerEventSource.get(any())).thenReturn(Optional.of(prevTestResource));
 
-    temporaryResourceCache.putResource(testResource, "0");
+    temporaryResourceCache.putResource(testResource);
 
     var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isPresent();
   }
 
   @Test
-  void updateNotAddsTheResourceIntoCacheIfTheInformerHasOtherVersion() {
+  void updateNotAddsTheResourceIntoCacheIfTheInformerHasLaterVersion() {
     var testResource = testResource();
-    var informerCachedResource = testResource();
-    informerCachedResource.getMetadata().setResourceVersion("x");
-    when(informerEventSource.get(any())).thenReturn(Optional.of(informerCachedResource));
+    when(informerEventSource.getLastSyncResourceVersion(any())).thenReturn(Optional.of("3"));
 
-    temporaryResourceCache.putResource(testResource, "0");
+    temporaryResourceCache.putResource(testResource);
 
     var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isNotPresent();
@@ -80,7 +75,7 @@ class TemporaryPrimaryResourceCacheTest {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.empty());
 
-    temporaryResourceCache.putAddedResource(testResource);
+    temporaryResourceCache.putResource(testResource);
 
     var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isPresent();
@@ -91,7 +86,12 @@ class TemporaryPrimaryResourceCacheTest {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.of(testResource()));
 
-    temporaryResourceCache.putAddedResource(testResource);
+    temporaryResourceCache.putResource(
+        new ConfigMapBuilder(testResource)
+            .editMetadata()
+            .withResourceVersion("1")
+            .endMetadata()
+            .build());
 
     var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
     assertThat(cached).isNotPresent();
@@ -101,34 +101,25 @@ class TemporaryPrimaryResourceCacheTest {
   void removesResourceFromCache() {
     ConfigMap testResource = propagateTestResourceToCache();
 
-    temporaryResourceCache.onAddOrUpdateEvent(testResource());
+    temporaryResourceCache.onAddOrUpdateEvent(
+        new ConfigMapBuilder(testResource)
+            .editMetadata()
+            .withResourceVersion("3")
+            .endMetadata()
+            .build());
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isNotPresent();
   }
 
   @Test
-  void resourceVersionParsing() {
-    this.temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, true);
+  void resourceNoVersionParsing() {
+    this.temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, false);
 
-    ConfigMap testResource = propagateTestResourceToCache();
+    this.temporaryResourceCache.putResource(testResource());
 
-    // an event with a newer version will not remove
-    temporaryResourceCache.onAddOrUpdateEvent(
-        new ConfigMapBuilder(testResource)
-            .editMetadata()
-            .withResourceVersion("1")
-            .endMetadata()
-            .build());
-
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isPresent();
-
-    // anything else will remove
-    temporaryResourceCache.onAddOrUpdateEvent(testResource());
-
-    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
-        .isNotPresent();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource())))
+        .isEmpty();
   }
 
   @Test
@@ -143,45 +134,19 @@ class TemporaryPrimaryResourceCacheTest {
             .endMetadata()
             .build(),
         false);
-    temporaryResourceCache.putAddedResource(testResource);
+    when(informerEventSource.getLastSyncResourceVersion(
+            Optional.of(testResource.getMetadata().getNamespace())))
+        .thenReturn(Optional.of("3"));
+    temporaryResourceCache.putResource(testResource);
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isEmpty();
   }
 
-  @Test
-  void expirationCacheMax() {
-    ExpirationCache<Integer> cache = new ExpirationCache<>(2, Integer.MAX_VALUE);
-
-    cache.add(1);
-    cache.add(2);
-    cache.add(3);
-
-    assertThat(cache.contains(1)).isFalse();
-    assertThat(cache.contains(2)).isTrue();
-    assertThat(cache.contains(3)).isTrue();
-  }
-
-  @Test
-  void expirationCacheTtl() {
-    ExpirationCache<Integer> cache = new ExpirationCache<>(2, 1);
-
-    cache.add(1);
-    cache.add(2);
-
-    Awaitility.await()
-        .atMost(1, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> {
-              assertThat(cache.contains(1)).isFalse();
-              assertThat(cache.contains(2)).isFalse();
-            });
-  }
-
   private ConfigMap propagateTestResourceToCache() {
     var testResource = testResource();
     when(informerEventSource.get(any())).thenReturn(Optional.empty());
-    temporaryResourceCache.putAddedResource(testResource);
+    temporaryResourceCache.putResource(testResource);
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isPresent();
     return testResource;

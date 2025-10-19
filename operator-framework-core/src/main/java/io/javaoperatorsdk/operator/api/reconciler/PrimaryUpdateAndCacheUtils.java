@@ -451,6 +451,11 @@ public class PrimaryUpdateAndCacheUtils {
     }
   }
 
+  public static int compareResourceVersions(HasMetadata h1, HasMetadata h2) {
+    return compareResourceVersions(
+        h1.getMetadata().getResourceVersion(), h2.getMetadata().getResourceVersion());
+  }
+
   public static int compareResourceVersions(String v1, String v2) {
     var v1Length = v1.length();
     if (v1Length == 0) {

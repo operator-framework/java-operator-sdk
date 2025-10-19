@@ -221,6 +221,11 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
                     : r);
   }
 
+  public Optional<String> getLastSyncResourceVersion(Optional<String> namespace) {
+    return getSource(namespace.orElse(WATCH_ALL_NAMESPACES))
+        .map(source -> source.getLastSyncResourceVersion());
+  }
+
   @Override
   public Stream<ResourceID> keys() {
     return sources.values().stream().flatMap(Cache::keys);

@@ -92,7 +92,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
-    this(configuration, client, false);
+    this(configuration, client, true);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -207,21 +207,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
-    var res = temporaryResourceCache.getResourceFromCache(resourceID);
-    if (res.isEmpty()) {
-      return isEventKnownFromAnnotation(newObject, oldObject);
-    }
-    boolean resVersionsEqual =
-        newObject
-            .getMetadata()
-            .getResourceVersion()
-            .equals(res.get().getMetadata().getResourceVersion());
-    log.debug(
-        "Resource found in temporal cache for id: {} resource versions equal: {}",
-        resourceID,
-        resVersionsEqual);
-    return resVersionsEqual
-        || temporaryResourceCache.isLaterResourceVersion(resourceID, res.get(), newObject);
+    return temporaryResourceCache.canSkipEvent(resourceID, newObject)
+        || isEventKnownFromAnnotation(newObject, oldObject);
   }
 
   private boolean isEventKnownFromAnnotation(R newObject, R oldObject) {
@@ -301,11 +288,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    temporaryResourceCache.putResource(
-        newResource,
-        Optional.ofNullable(oldResource)
-            .map(r -> r.getMetadata().getResourceVersion())
-            .orElse(null));
+    temporaryResourceCache.putResource(newResource);
   }
 
   private boolean useSecondaryToPrimaryIndex() {

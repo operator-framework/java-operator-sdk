@@ -104,7 +104,7 @@ public class ExternalStateReconciler
             .withData(Map.of(ID_KEY, createdResource.getId()))
             .build();
     configMap.addOwnerReference(resource);
-    context.getClient().configMaps().resource(configMap).create();
+    configMap = context.getClient().configMaps().resource(configMap).create();
 
     var primaryID = ResourceID.fromResource(resource);
     // Making sure that the created resources are in the cache for the next reconciliation.
@@ -128,6 +128,7 @@ public class ExternalStateReconciler
     return DeleteControl.defaultDelete();
   }
 
+  @Override
   public int getNumberOfExecutions() {
     return numberOfExecutions.get();
   }
