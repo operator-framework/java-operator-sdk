@@ -175,7 +175,7 @@ public class GenericKubernetesResourceMatcher<R extends HasMetadata, P extends H
     final var kubernetesSerialization = context.getClient().getKubernetesSerialization();
     var desiredNode = kubernetesSerialization.convertValue(desired, JsonNode.class);
     var actualNode = kubernetesSerialization.convertValue(actualResource, JsonNode.class);
-    var wholeDiffJsonPatch = JsonDiff.asJson(desiredNode, actualNode);
+    var wholeDiffJsonPatch = JsonDiff.asJson(actualNode, desiredNode);
 
     boolean matched = true;
     for (int i = 0; i < wholeDiffJsonPatch.size() && matched; i++) {

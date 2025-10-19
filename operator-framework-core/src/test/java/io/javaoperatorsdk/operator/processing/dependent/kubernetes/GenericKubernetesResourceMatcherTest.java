@@ -60,7 +60,7 @@ class GenericKubernetesResourceMatcherTest {
 
   @Test
   void matchesAdditiveOnlyChanges() {
-    actual.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
+    desired.getSpec().getTemplate().getMetadata().getLabels().put("new-key", "val");
     assertThat(GenericKubernetesResourceMatcher.match(desired, actual, context).matched())
         .withFailMessage("Additive changes should not cause a mismatch by default")
         .isTrue();
@@ -76,11 +76,10 @@ class GenericKubernetesResourceMatcherTest {
 
   @Test
   void doesNotMatchRemovedValues() {
-    actual = createDeployment();
-    assertThat(
-            GenericKubernetesResourceMatcher.match(
-                    dependentResource.desired(createPrimary("removed"), null), actual, context)
-                .matched())
+    desired = createDeployment();
+    actual = dependentResource.desired(createPrimary("removed"), null);
+
+    assertThat(GenericKubernetesResourceMatcher.match(desired, actual, context).matched())
         .withFailMessage("Removing values in metadata should lead to a mismatch")
         .isFalse();
   }
@@ -133,7 +132,7 @@ class GenericKubernetesResourceMatcherTest {
 
   @Test
   void matchesMetadata() {
-    actual =
+    desired =
         new DeploymentBuilder(createDeployment())
             .editOrNewMetadata()
             .addToAnnotations("test", "value")
@@ -158,9 +157,10 @@ class GenericKubernetesResourceMatcherTest {
   void checkServiceAccount() {
     final var serviceAccountDR = new ServiceAccountDR();
 
-    final var desired = serviceAccountDR.desired(null, context);
-    var actual =
-        new ServiceAccountBuilder(desired).addNewImagePullSecret("imagePullSecret3").build();
+    var actual = serviceAccountDR.desired(null, context);
+
+    final var desired =
+        new ServiceAccountBuilder(actual).addNewImagePullSecret("imagePullSecret3").build();
 
     assertThat(
             GenericKubernetesResourceMatcher.match(desired, actual, false, false, context)
@@ -170,9 +170,9 @@ class GenericKubernetesResourceMatcherTest {
 
   @Test
   void matchConfigMap() {
-    var desired = createConfigMap();
     var actual = createConfigMap();
-    actual.getData().put("key2", "val2");
+    var desired = createConfigMap();
+    desired.getData().put("key2", "val2");
 
     var match = GenericKubernetesResourceMatcher.match(desired, actual, true, false, context);
     assertThat(match.matched()).isTrue();
