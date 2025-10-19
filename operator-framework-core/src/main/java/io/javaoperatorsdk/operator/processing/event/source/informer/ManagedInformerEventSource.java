@@ -34,6 +34,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
+import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
@@ -122,30 +123,38 @@ public abstract class ManagedInformerEventSource<
   @Override
   public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    temporaryResourceCache.putResource(
-        resource, previousVersionOfResource.getMetadata().getResourceVersion());
+    temporaryResourceCache.putResource(resource);
   }
 
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    temporaryResourceCache.putAddedResource(resource);
+    temporaryResourceCache.putResource(resource);
   }
 
   @Override
   public Optional<R> get(ResourceID resourceID) {
+    var res = cache.get(resourceID);
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
-    if (resource.isPresent()) {
-      log.debug("Resource found in temporary cache for Resource ID: {}", resourceID);
+    if (parseResourceVersions
+        && resource.isPresent()
+        && res.filter(
+                r ->
+                    PrimaryUpdateAndCacheUtils.compareResourceVersions(r, resource.orElseThrow())
+                        > 0)
+            .isEmpty()) {
+      log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
-    } else {
-      log.debug(
-          "Resource not found in temporary cache reading it from informer cache,"
-              + " for Resource ID: {}",
-          resourceID);
-      var res = cache.get(resourceID);
-      log.debug("Resource found in cache: {} for id: {}", res.isPresent(), resourceID);
-      return res;
     }
+    log.debug(
+        "Resource not found, or older, in temporary cache. Found in informer cache {}, for"
+            + " Resource ID: {}",
+        res.isPresent(),
+        resourceID);
+    return res;
+  }
+
+  public Optional<String> getLastSyncResourceVersion(Optional<String> namespace) {
+    return cache.getLastSyncResourceVersion(namespace);
   }
 
   @SuppressWarnings("unused")

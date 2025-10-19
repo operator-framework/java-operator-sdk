@@ -491,18 +491,16 @@ public interface ConfigurationService {
 
   /**
    * If the event logic should parse the resourceVersion to determine the ordering of dependent
-   * resource events. This is typically not needed.
+   * resource events.
    *
-   * <p>Disabled by default as Kubernetes does not support, and discourages, this interpretation of
-   * resourceVersions. Enable only if your api server event processing seems to lag the operator
-   * logic, and you want to further minimize the amount of work done / updates issued by the
-   * operator.
+   * <p>Enabled by default as Kubernetes does support this interpretation of resourceVersions.
+   * Disable only if your api server provides non comparable resource versions..
    *
    * @return if resource version should be parsed (as integer)
    * @since 4.5.0
    */
   default boolean parseResourceVersionsForEventFilteringAndCaching() {
-    return false;
+    return true;
   }
 
   /**
