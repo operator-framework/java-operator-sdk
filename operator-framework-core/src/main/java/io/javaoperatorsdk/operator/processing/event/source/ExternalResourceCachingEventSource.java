@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -72,6 +73,11 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   protected ExternalResourceCachingEventSource(
       String name, Class<R> resourceClass, CacheKeyMapper<R, ID> cacheKeyMapper) {
     super(resourceClass, name);
+    if (cacheKeyMapper == CacheKeyMapper.resourceIdProviderMapper()
+        && !ResourceIDProvider.class.isAssignableFrom(resourceClass)) {
+      throw new IllegalArgumentException(
+          "resource class is not a " + ResourceIDProvider.class.getSimpleName());
+    }
     this.cacheKeyMapper = cacheKeyMapper;
   }
 

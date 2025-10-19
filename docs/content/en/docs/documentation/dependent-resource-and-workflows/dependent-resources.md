@@ -370,13 +370,13 @@ or we can use a matcher based SSA in most of the cases if the resource is manage
 
 Unfortunately this is not true for external resources. So to make sure we are selecting
 the target resources from an event source, we provide a [mechanism](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java#L114-L138) that helps with that logic.
-Your POJO representing an external resource can implement [`ExternalResourceIDProvider`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/ExternalDependentIDProvider.java) : 
+Your POJO representing an external resource can implement [`ResourceIDProvider`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/ResourceIDProvider.java) : 
 
 ```java
 
-public interface ExternalDependentIDProvider<T> {
+public interface ResourceIDProvider<T> {
 
-  T externalResourceId();
+  T resourceId();
 }
 ```
 

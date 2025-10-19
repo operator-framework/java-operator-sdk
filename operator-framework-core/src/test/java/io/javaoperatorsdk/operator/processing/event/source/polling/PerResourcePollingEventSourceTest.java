@@ -99,7 +99,7 @@ class PerResourcePollingEventSourceTest
                     supplier, Duration.ofMillis(PERIOD))
                 .withRegisterPredicate(
                     testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1)
-                .withCacheKeyMapper(CacheKeyMapper.externalIdProviderMapper())
+                .withCacheKeyMapper(CacheKeyMapper.resourceIdProviderMapper())
                 .build()));
 
     source.onResourceCreated(testCustomResource);

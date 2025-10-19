@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
@@ -66,6 +67,7 @@ public class PerResourcePollingEventSourceTestReconciler
                           return Set.of(UUID.randomUUID().toString());
                         },
                         Duration.ofMillis(POLL_PERIOD))
+                    .withCacheKeyMapper(CacheKeyMapper.singleResourceCacheKeyMapper())
                     .build());
     return List.of(eventSource);
   }

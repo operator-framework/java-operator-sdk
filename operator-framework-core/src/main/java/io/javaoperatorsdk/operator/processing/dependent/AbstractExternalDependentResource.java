@@ -22,6 +22,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -131,14 +132,11 @@ public abstract class AbstractExternalDependentResource<
       Set<R> secondaryResources, P primary, Context<P> context) {
     R desired = desired(primary, context);
     List<R> targetResources;
-    if (desired instanceof ExternalDependentIDProvider<?> desiredWithId) {
+    if (desired instanceof ResourceIDProvider<?> desiredWithId) {
       targetResources =
           secondaryResources.stream()
               .filter(
-                  r ->
-                      ((ExternalDependentIDProvider<?>) r)
-                          .externalResourceId()
-                          .equals(desiredWithId.externalResourceId()))
+                  r -> ((ResourceIDProvider<?>) r).resourceId().equals(desiredWithId.resourceId()))
               .toList();
     } else {
       throw new IllegalStateException(

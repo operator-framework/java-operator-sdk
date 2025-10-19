@@ -18,9 +18,9 @@ package io.javaoperatorsdk.operator.sample.schema;
 import java.io.Serializable;
 import java.util.Objects;
 
-import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 
-public class Schema implements Serializable, ExternalDependentIDProvider<String> {
+public class Schema implements Serializable, ResourceIDProvider<String> {
 
   private final String name;
   private final String characterSet;
@@ -57,7 +57,7 @@ public class Schema implements Serializable, ExternalDependentIDProvider<String>
   }
 
   @Override
-  public String externalResourceId() {
+  public String resourceId() {
     return name;
   }
 }

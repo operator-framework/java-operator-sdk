@@ -47,7 +47,7 @@ public record PerResourcePollingConfiguration<R, P extends HasMetadata, ID>(
             ? new ScheduledThreadPoolExecutor(DEFAULT_EXECUTOR_THREAD_NUMBER)
             : executorService;
     this.cacheKeyMapper =
-        cacheKeyMapper == null ? CacheKeyMapper.externalIdProviderMapper() : cacheKeyMapper;
+        cacheKeyMapper == null ? CacheKeyMapper.resourceIdProviderMapper() : cacheKeyMapper;
     this.resourceFetcher = Objects.requireNonNull(resourceFetcher);
     this.registerPredicate = registerPredicate;
     this.defaultPollingPeriod = defaultPollingPeriod;

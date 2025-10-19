@@ -35,6 +35,6 @@ public record PollingConfiguration<R, ID>(
     this.genericResourceFetcher = Objects.requireNonNull(genericResourceFetcher);
     this.period = period;
     this.cacheKeyMapper =
-        cacheKeyMapper == null ? CacheKeyMapper.externalIdProviderMapper() : cacheKeyMapper;
+        cacheKeyMapper == null ? CacheKeyMapper.resourceIdProviderMapper() : cacheKeyMapper;
   }
 }

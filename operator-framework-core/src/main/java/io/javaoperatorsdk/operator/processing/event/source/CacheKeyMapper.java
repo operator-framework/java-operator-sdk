@@ -15,15 +15,15 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source;
 
-import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 
 public interface CacheKeyMapper<R, ID> {
 
   ID keyFor(R resource);
 
   /**
-   * Used if a polling event source handles only single secondary resource. See also docs for:
-   * {@link ExternalResourceCachingEventSource}
+   * Used if a polling event source handles only single secondary resource and the id is String. See
+   * also docs for: {@link ExternalResourceCachingEventSource}
    *
    * @return static id mapper, all resources are mapped for same id.
    * @param <T> secondary resource type
@@ -32,11 +32,10 @@ public interface CacheKeyMapper<R, ID> {
     return r -> "id";
   }
 
-  static <T, ID> CacheKeyMapper<T, ID> externalIdProviderMapper() {
-
+  static <T, ID> CacheKeyMapper<T, ID> resourceIdProviderMapper() {
     return r -> {
-      if (r instanceof ExternalDependentIDProvider externalDependentIDProvider) {
-        return (ID) externalDependentIDProvider.externalResourceId();
+      if (r instanceof ResourceIDProvider resourceIDProvider) {
+        return (ID) resourceIDProvider.resourceId();
       } else {
         throw new IllegalStateException(
             "Resource does not implement ExternalDependentIDProvider: " + r.getClass());
