@@ -33,6 +33,31 @@ public class ExpectationManager<P extends HasMetadata> {
   protected final ConcurrentHashMap<ResourceID, RegisteredExpectation<P>> registeredExpectations =
       new ConcurrentHashMap<>();
 
+  /**
+   * Checks if the expectation holds, if not sets the expectation with the given timeout.
+   *
+   * @return false, if the expectation is already fulfilled, therefore, not registered. Returns true
+   *     if expectation is not met and set with a timeout.
+   */
+  public boolean checkAndSetExpectation(
+      P primary, Context<P> context, Duration timeout, Expectation<P> expectation) {
+    var fulfilled = expectation.isFulfilled(primary, context);
+    if (fulfilled) {
+      return false;
+    } else {
+      setExpectation(primary, timeout, expectation);
+      return true;
+    }
+  }
+
+  /**
+   * Sets a target expectation with given timeout.
+   *
+   * @param primary resource
+   * @param timeout of expectation
+   * @param expectation to check
+   */
+  // we might consider in the future to throw an exception if an expectation is already set
   public void setExpectation(P primary, Duration timeout, Expectation<P> expectation) {
     registeredExpectations.put(
         ResourceID.fromResource(primary),

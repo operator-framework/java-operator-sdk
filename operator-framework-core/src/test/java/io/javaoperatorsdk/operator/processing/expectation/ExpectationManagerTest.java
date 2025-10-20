@@ -181,4 +181,28 @@ class ExpectationManagerTest {
 
     assertThat(expectationManager.getExpectation(configMap)).contains(expectation2);
   }
+
+  @Test
+  void checkAndSetExpectationAlreadyMet() {
+    Expectation<ConfigMap> expectation = mock(Expectation.class);
+    when(expectation.isFulfilled(any(), any())).thenReturn(true);
+
+    var res =
+        expectationManager.checkAndSetExpectation(
+            configMap, mock(Context.class), Duration.ofMinutes(5), expectation);
+    assertThat(res).isFalse();
+    assertThat(expectationManager.getExpectation(configMap)).isEmpty();
+  }
+
+  @Test
+  void checkAndSetExpectationNotMet() {
+    Expectation<ConfigMap> expectation = mock(Expectation.class);
+    when(expectation.isFulfilled(any(), any())).thenReturn(false);
+
+    var res =
+        expectationManager.checkAndSetExpectation(
+            configMap, mock(Context.class), Duration.ofMinutes(5), expectation);
+    assertThat(res).isTrue();
+    assertThat(expectationManager.getExpectation(configMap)).isPresent();
+  }
 }

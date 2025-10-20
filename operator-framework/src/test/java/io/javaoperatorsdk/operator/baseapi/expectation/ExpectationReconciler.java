@@ -68,9 +68,12 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
     var deployment = context.getSecondaryResource(Deployment.class);
     if (deployment.isEmpty()) {
       createDeployment(primary, context);
-      expectationManager.setExpectation(
-          primary, Duration.ofSeconds(timeout), deploymentReadyExpectation(context));
-      return UpdateControl.noUpdate();
+      var set =
+          expectationManager.checkAndSetExpectation(
+              primary, context, Duration.ofSeconds(timeout), deploymentReadyExpectation(context));
+      if (set) {
+        return UpdateControl.noUpdate();
+      }
     } else {
       // checks the expectation if it is fulfilled also removes it,
       // in your logic you might add a next expectation based on your workflow
