@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 class SSABasedGenericKubernetesResourceMatcherTest {
 
-  private final Context<?> mockedContext = mock();
+  private final Context<HasMetadata> mockedContext = mock();
 
   private final SSABasedGenericKubernetesResourceMatcher<HasMetadata> matcher =
       SSABasedGenericKubernetesResourceMatcher.getInstance();
@@ -325,8 +325,8 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   void testCustomMatcher_returnsExpectedMatchBasedOnReadOnlyLabel(boolean readOnly) {
     var dr = new ConfigMapDR();
     dr.configureWith(
-        new KubernetesDependentResourceConfigBuilder()
-            .withSSAMatcher(new ReadOnlyAwareMatcher())
+        new KubernetesDependentResourceConfigBuilder<ConfigMap>()
+            .withSSAMatcher(new ReadOnlyAwareMatcher<>())
             .build());
     var desiredConfigMap =
         loadResource("configmap.empty-owner-reference-desired.yaml", ConfigMap.class);
@@ -334,14 +334,8 @@ class SSABasedGenericKubernetesResourceMatcherTest {
     var actualConfigMap = loadResource("configmap.empty-owner-reference.yaml", ConfigMap.class);
     actualConfigMap.getMetadata().getLabels().put("readonly", Boolean.toString(readOnly));
 
-    ConfigMap ignoredPrimary = null;
-    assertThat(
-            dr.match(
-                    actualConfigMap,
-                    desiredConfigMap,
-                    ignoredPrimary,
-                    (Context<ConfigMap>) mockedContext)
-                .matched())
+    HasMetadata primary = mock();
+    assertThat(dr.match(actualConfigMap, desiredConfigMap, primary, mockedContext).matched())
         .isEqualTo(readOnly);
   }
 
@@ -391,7 +385,7 @@ class SSABasedGenericKubernetesResourceMatcherTest {
         clazz, SSABasedGenericKubernetesResourceMatcherTest.class, fileName);
   }
 
-  private static class ConfigMapDR extends KubernetesDependentResource<ConfigMap, ConfigMap> {
+  private static class ConfigMapDR extends KubernetesDependentResource<ConfigMap, HasMetadata> {
     public ConfigMapDR() {
       super(ConfigMap.class);
     }

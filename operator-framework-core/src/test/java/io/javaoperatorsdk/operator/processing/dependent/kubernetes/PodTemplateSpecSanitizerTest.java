@@ -133,19 +133,6 @@ class PodTemplateSpecSanitizerTest {
   }
 
   @Test
-  void testSanitizeResourceRequirements_whenResourceSizeMismatch_doNothing() {
-    final var actualMap =
-        sanitizeRequestsAndLimits(
-            ContainerType.CONTAINER,
-            Map.of("cpu", new Quantity("2")),
-            Map.of(),
-            Map.of("cpu", new Quantity("4")),
-            Map.of("cpu", new Quantity("4"), "memory", new Quantity("4Gi")));
-    assertContainerResources(actualMap, "requests").hasSize(1).containsEntry("cpu", "2");
-    assertContainerResources(actualMap, "limits").hasSize(1).containsEntry("cpu", "4");
-  }
-
-  @Test
   void testSanitizeResourceRequirements_whenResourceKeyMismatch_doNothing() {
     final var actualMap =
         sanitizeRequestsAndLimits(
@@ -189,6 +176,34 @@ class PodTemplateSpecSanitizerTest {
 
   @Test
   void
+      testSanitizePodTemplateSpec_whenResourcesHaveNumericalAmountMismatch_withEphemeralStorageAddedByOtherOperator_doNothing() {
+    // mimics an environment like GKE Autopilot that enforces ephemeral-storage requests and limits
+    final var actualMap =
+        sanitizeRequestsAndLimits(
+            ContainerType.INIT_CONTAINER,
+            Map.of(
+                "cpu",
+                new Quantity("2"),
+                "memory",
+                new Quantity("4Gi"),
+                "ephemeral-storage",
+                new Quantity("1Gi")),
+            Map.of("cpu", new Quantity("4"), "memory", new Quantity("4Ti")),
+            Map.of("cpu", new Quantity("2"), "ephemeral-storage", new Quantity("1Gi")),
+            Map.of("cpu", new Quantity("4000m")));
+    assertInitContainerResources(actualMap, "requests")
+        .hasSize(3)
+        .containsEntry("cpu", "2")
+        .containsEntry("memory", "4Gi")
+        .containsEntry("ephemeral-storage", "1Gi");
+    assertInitContainerResources(actualMap, "limits")
+        .hasSize(2)
+        .containsEntry("cpu", "2")
+        .containsEntry("ephemeral-storage", "1Gi");
+  }
+
+  @Test
+  void
       testSanitizeResourceRequirements_whenResourcesHaveAmountAndFormatMismatchWithSameNumericalAmount_thenSanitizeActualMap() {
     final var actualMap =
         sanitizeRequestsAndLimits(
@@ -202,6 +217,34 @@ class PodTemplateSpecSanitizerTest {
         .containsEntry("cpu", "2000m")
         .containsEntry("memory", "4096Mi");
     assertContainerResources(actualMap, "limits").hasSize(1).containsEntry("cpu", "4000m");
+  }
+
+  @Test
+  void
+      testSanitizeResourceRequirements_whenResourcesHaveAmountAndFormatMismatchWithSameNumericalAmount_withEphemeralStorageAddedByOtherOperator_thenSanitizeActualMap() {
+    // mimics an environment like GKE Autopilot that enforces ephemeral-storage requests and limits
+    final var actualMap =
+        sanitizeRequestsAndLimits(
+            ContainerType.CONTAINER,
+            Map.of(
+                "cpu",
+                new Quantity("2"),
+                "memory",
+                new Quantity("4Gi"),
+                "ephemeral-storage",
+                new Quantity("1Gi")),
+            Map.of("cpu", new Quantity("2000m"), "memory", new Quantity("4096Mi")),
+            Map.of("cpu", new Quantity("4"), "ephemeral-storage", new Quantity("1Gi")),
+            Map.of("cpu", new Quantity("4000m")));
+    assertContainerResources(actualMap, "requests")
+        .hasSize(3)
+        .containsEntry("cpu", "2000m")
+        .containsEntry("memory", "4096Mi")
+        .containsEntry("ephemeral-storage", "1Gi");
+    assertContainerResources(actualMap, "limits")
+        .hasSize(2)
+        .containsEntry("cpu", "4000m")
+        .containsEntry("ephemeral-storage", "1Gi");
   }
 
   @Test
