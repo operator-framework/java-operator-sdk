@@ -124,7 +124,6 @@ class PodTemplateSpecSanitizer {
                 "resources",
                 quantityPath))
         .map(Map.class::cast)
-        .filter(m -> m.size() == desiredResource.size())
         .ifPresent(
             m ->
                 actualResource.forEach(
