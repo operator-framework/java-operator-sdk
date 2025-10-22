@@ -33,6 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSIONS;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
@@ -140,7 +141,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     }
 
     @Override
-    public boolean parseResourceVersionsForEventFilteringAndCaching() {
+    public boolean comparableResourceVersions() {
       return this.comparableResourceVersions;
     }
   }
@@ -156,7 +157,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private KubernetesClient kubernetesClient;
-    private boolean comparableResourceVersions = true;
+    private boolean comparableResourceVersions = DEFAULT_COMPARABLE_RESOURCE_VERSIONS;
 
     private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
@@ -294,8 +295,8 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
-    public Builder<R> parseResourceVersionsForEventFilteringAndCaching(boolean parse) {
-      this.comparableResourceVersions = parse;
+    public Builder<R> withComparableResourceVersions(boolean comparableResourceVersions) {
+      this.comparableResourceVersions = comparableResourceVersions;
       return this;
     }
 
@@ -343,5 +344,5 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     }
   }
 
-  boolean parseResourceVersionsForEventFilteringAndCaching();
+  boolean comparableResourceVersions();
 }

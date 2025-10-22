@@ -332,13 +332,6 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean previousAnnotationForDependentResourcesEventFiltering() {
-        return overriddenValueOrDefault(
-            previousAnnotationForDependentResources,
-            ConfigurationService::previousAnnotationForDependentResourcesEventFiltering);
-      }
-
-      @Override
       public boolean parseResourceVersionsForEventFilteringAndCaching() {
         return overriddenValueOrDefault(
             parseResourceVersions,

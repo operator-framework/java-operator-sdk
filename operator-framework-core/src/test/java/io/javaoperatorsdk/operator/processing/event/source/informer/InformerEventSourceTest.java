@@ -98,25 +98,10 @@ class InformerEventSourceTest {
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(testDeployment()));
 
-    when(temporaryResourceCacheMock.canSkipEvent(any(), any())).thenReturn(true);
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(true);
 
     informerEventSource.onAdd(testDeployment());
     informerEventSource.onUpdate(testDeployment(), testDeployment());
-
-    verify(eventHandlerMock, never()).handleEvent(any());
-  }
-
-  @Test
-  void skipsAddEventPropagationViaAnnotation() {
-    informerEventSource.onAdd(informerEventSource.addPreviousAnnotation(null, testDeployment()));
-
-    verify(eventHandlerMock, never()).handleEvent(any());
-  }
-
-  @Test
-  void skipsUpdateEventPropagationViaAnnotation() {
-    informerEventSource.onUpdate(
-        testDeployment(), informerEventSource.addPreviousAnnotation("1", testDeployment()));
 
     verify(eventHandlerMock, never()).handleEvent(any());
   }

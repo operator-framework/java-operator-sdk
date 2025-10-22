@@ -104,13 +104,15 @@ public class ExternalStateReconciler
             .withData(Map.of(ID_KEY, createdResource.getId()))
             .build();
     configMap.addOwnerReference(resource);
-    configMap = context.getClient().configMaps().resource(configMap).create();
 
     var primaryID = ResourceID.fromResource(resource);
     // Making sure that the created resources are in the cache for the next reconciliation.
     // This is critical in this case, since on next reconciliation if it would not be in the cache
     // it would be created again.
-    configMapEventSource.handleRecentResourceCreate(primaryID, configMap);
+    configMapEventSource.updateAndCacheResource(
+        configMap,
+        context,
+        toCreate -> context.getClient().configMaps().resource(toCreate).create());
     externalResourceEventSource.handleRecentResourceCreate(primaryID, createdResource);
   }
 

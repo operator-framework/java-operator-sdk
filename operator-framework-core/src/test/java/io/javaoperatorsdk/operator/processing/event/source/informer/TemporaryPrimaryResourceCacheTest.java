@@ -16,7 +16,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
-import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,23 +28,16 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class TemporaryPrimaryResourceCacheTest {
 
   public static final String RESOURCE_VERSION = "2";
 
-  @SuppressWarnings("unchecked")
-  private InformerEventSource<ConfigMap, ?> informerEventSource;
-
   private TemporaryResourceCache<ConfigMap> temporaryResourceCache;
 
   @BeforeEach
   void setup() {
-    informerEventSource = mock(InformerEventSource.class);
-    temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, true);
+    temporaryResourceCache = new TemporaryResourceCache<>(true);
   }
 
   @Test
@@ -51,7 +45,6 @@ class TemporaryPrimaryResourceCacheTest {
     var testResource = testResource();
     var prevTestResource = testResource();
     prevTestResource.getMetadata().setResourceVersion("1");
-    when(informerEventSource.get(any())).thenReturn(Optional.of(prevTestResource));
 
     temporaryResourceCache.putResource(testResource);
 
@@ -60,9 +53,11 @@ class TemporaryPrimaryResourceCacheTest {
   }
 
   @Test
-  void updateNotAddsTheResourceIntoCacheIfTheInformerHasLaterVersion() {
+  void updateNotAddsTheResourceIntoCacheIfLaterVersionKnown() {
     var testResource = testResource();
-    when(informerEventSource.getLastSyncResourceVersion(any())).thenReturn(Optional.of("3"));
+
+    temporaryResourceCache.onAddOrUpdateEvent(
+        testResource.toBuilder().editMetadata().withResourceVersion("3").endMetadata().build());
 
     temporaryResourceCache.putResource(testResource);
 
@@ -73,7 +68,6 @@ class TemporaryPrimaryResourceCacheTest {
   @Test
   void addOperationAddsTheResourceIfInformerCacheStillEmpty() {
     var testResource = testResource();
-    when(informerEventSource.get(any())).thenReturn(Optional.empty());
 
     temporaryResourceCache.putResource(testResource);
 
@@ -84,7 +78,8 @@ class TemporaryPrimaryResourceCacheTest {
   @Test
   void addOperationNotAddsTheResourceIfInformerCacheNotEmpty() {
     var testResource = testResource();
-    when(informerEventSource.get(any())).thenReturn(Optional.of(testResource()));
+
+    temporaryResourceCache.putResource(testResource);
 
     temporaryResourceCache.putResource(
         new ConfigMapBuilder(testResource)
@@ -94,7 +89,7 @@ class TemporaryPrimaryResourceCacheTest {
             .build());
 
     var cached = temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource));
-    assertThat(cached).isNotPresent();
+    assertThat(cached.orElseThrow().getMetadata().getResourceVersion()).isEqualTo(RESOURCE_VERSION);
   }
 
   @Test
@@ -114,12 +109,45 @@ class TemporaryPrimaryResourceCacheTest {
 
   @Test
   void resourceNoVersionParsing() {
-    this.temporaryResourceCache = new TemporaryResourceCache<>(informerEventSource, false);
+    this.temporaryResourceCache = new TemporaryResourceCache<>(false);
 
     this.temporaryResourceCache.putResource(testResource());
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource())))
         .isEmpty();
+  }
+
+  @Test
+  void lockedEventBeforePut() throws Exception {
+    var testResource = testResource();
+
+    temporaryResourceCache.startModifying(ResourceID.fromResource(testResource));
+
+    try (ExecutorService ex = Executors.newSingleThreadExecutor()) {
+      var result = ex.submit(() -> temporaryResourceCache.onAddOrUpdateEvent(testResource));
+
+      temporaryResourceCache.putResource(testResource);
+      assertThat(result.isDone()).isFalse();
+      temporaryResourceCache.doneModifying(ResourceID.fromResource(testResource));
+      assertThat(result.get()).isTrue();
+    }
+  }
+
+  @Test
+  void putBeforeEvent() {
+    var testResource = testResource();
+
+    // first ensure an event is not known
+    var result = temporaryResourceCache.onAddOrUpdateEvent(testResource);
+    assertThat(result).isFalse();
+
+    var nextResource = testResource();
+    nextResource.getMetadata().setResourceVersion("3");
+    temporaryResourceCache.putResource(nextResource);
+
+    // now expect an event with the matching resourceVersion to be known after the put
+    result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
+    assertThat(result).isTrue();
   }
 
   @Test
@@ -134,9 +162,6 @@ class TemporaryPrimaryResourceCacheTest {
             .endMetadata()
             .build(),
         false);
-    when(informerEventSource.getLastSyncResourceVersion(
-            Optional.of(testResource.getMetadata().getNamespace())))
-        .thenReturn(Optional.of("3"));
     temporaryResourceCache.putResource(testResource);
 
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
@@ -145,7 +170,6 @@ class TemporaryPrimaryResourceCacheTest {
 
   private ConfigMap propagateTestResourceToCache() {
     var testResource = testResource();
-    when(informerEventSource.get(any())).thenReturn(Optional.empty());
     temporaryResourceCache.putResource(testResource);
     assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
         .isPresent();

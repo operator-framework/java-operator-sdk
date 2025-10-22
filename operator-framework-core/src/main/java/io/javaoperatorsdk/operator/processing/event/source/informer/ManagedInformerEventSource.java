@@ -103,7 +103,7 @@ public abstract class ManagedInformerEventSource<
     if (isRunning()) {
       return;
     }
-    temporaryResourceCache = new TemporaryResourceCache<>(this, parseResourceVersions);
+    temporaryResourceCache = new TemporaryResourceCache<>(parseResourceVersions);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
@@ -151,10 +151,6 @@ public abstract class ManagedInformerEventSource<
         res.isPresent(),
         resourceID);
     return res;
-  }
-
-  public Optional<String> getLastSyncResourceVersion(Optional<String> namespace) {
-    return cache.getLastSyncResourceVersion(namespace);
   }
 
   @SuppressWarnings("unused")
