@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
   private final boolean parseResourceVersions;
 
+  private Map<ResourceID, ReentrantLock> activelyModifying = new ConcurrentHashMap<>();
+
   public TemporaryResourceCache(
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
       boolean parseResourceVersions) {
@@ -59,12 +62,42 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     this.parseResourceVersions = parseResourceVersions;
   }
 
+  public void startModifying(ResourceID id) {
+    activelyModifying
+        .compute(
+            id,
+            (ignored, lock) -> {
+              if (lock != null) {
+                throw new IllegalStateException();
+              }
+              return new ReentrantLock();
+            })
+        .lock();
+  }
+
+  public void doneModifying(ResourceID id) {
+    activelyModifying.computeIfPresent(
+        id,
+        (ignored, lock) -> {
+          lock.unlock();
+          return null;
+        });
+  }
+
   public synchronized void onDeleteEvent(T resource, boolean unknownState) {
     onEvent(resource, unknownState);
   }
 
-  public synchronized void onAddOrUpdateEvent(T resource) {
-    onEvent(resource, false);
+  public void onAddOrUpdateEvent(T resource) {
+    ReentrantLock lock = activelyModifying.get(ResourceID.fromResource(resource));
+    if (lock != null) {
+      lock.lock();
+    }
+    try {
+      onEvent(resource, false);
+    } finally {
+      lock.unlock();
+    }
   }
 
   synchronized void onEvent(T resource, boolean unknownState) {

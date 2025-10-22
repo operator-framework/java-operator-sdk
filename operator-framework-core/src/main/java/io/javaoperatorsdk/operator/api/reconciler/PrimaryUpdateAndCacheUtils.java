@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -47,6 +48,16 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * again and retries the update.
  */
 public class PrimaryUpdateAndCacheUtils {
+
+  private static final RecentOperationCacheFiller<?> DUMMY_CACHE_FILLER =
+      new RecentOperationCacheFiller<>() {
+        @Override
+        public void handleRecentResourceCreate(ResourceID resourceID, Object resource) {}
+
+        @Override
+        public void handleRecentResourceUpdate(
+            ResourceID resourceID, Object resource, Object previousVersionOfResource) {}
+      };
 
   public static final int DEFAULT_MAX_RETRY = 10;
   public static final int DEFAULT_RESOURCE_CACHE_TIMEOUT_MILLIS = 10000;
@@ -143,6 +154,24 @@ public class PrimaryUpdateAndCacheUtils {
         DEFAULT_RESOURCE_CACHE_POLL_PERIOD_MILLIS);
   }
 
+  // TODO: where does this belong
+  public static <P extends HasMetadata> P updateAndCacheSecondaryResource(
+      P resourceToUpdate,
+      Context<?> context,
+      RecentOperationCacheFiller<P> cacheFiller,
+      UnaryOperator<P> updateMethod) {
+    return updateAndCacheResource(
+        resourceToUpdate,
+        context,
+        cacheFiller == null ? (RecentOperationCacheFiller<P>) DUMMY_CACHE_FILLER : cacheFiller,
+        null,
+        o -> o,
+        updateMethod,
+        0,
+        DEFAULT_RESOURCE_CACHE_TIMEOUT_MILLIS,
+        DEFAULT_RESOURCE_CACHE_POLL_PERIOD_MILLIS);
+  }
+
   /**
    * Modifies the primary using the specified modification function, then uses the modified resource
    * for the request to update with provided update method. As the {@code resourceVersion} field of
@@ -156,7 +185,6 @@ public class PrimaryUpdateAndCacheUtils {
    * @param resourceToUpdate original resource to update
    * @param context of reconciliation
    * @param modificationFunction modifications to make on primary
-   * @param updateMethod the update method implementation
    * @param maxRetry maximum number of retries before giving up
    * @param cachePollTimeoutMillis maximum amount of milliseconds to wait for the updated resource
    *     to appear in cache
@@ -172,24 +200,45 @@ public class PrimaryUpdateAndCacheUtils {
       int maxRetry,
       long cachePollTimeoutMillis,
       long cachePollPeriodMillis) {
+    return updateAndCacheResource(
+        resourceToUpdate,
+        context,
+        context.eventSourceRetriever().getControllerEventSource(),
+        context.getPrimaryCache(),
+        modificationFunction,
+        updateMethod,
+        maxRetry,
+        cachePollPeriodMillis,
+        cachePollTimeoutMillis);
+  }
 
+  private static <P extends HasMetadata> P updateAndCacheResource(
+      P resourceToUpdate,
+      Context<?> context,
+      RecentOperationCacheFiller<P> cacheFiller,
+      IndexedResourceCache<P> cache,
+      UnaryOperator<P> modificationFunction,
+      UnaryOperator<P> updateMethod,
+      int maxRetry,
+      long cachePollTimeoutMillis,
+      long cachePollPeriodMillis) {
+
+    ResourceID id = ResourceID.fromResource(resourceToUpdate);
     if (log.isDebugEnabled()) {
-      log.debug("Update and cache: {}", ResourceID.fromResource(resourceToUpdate));
+      log.debug("Update and cache: {}", id);
     }
     P modified = null;
     int retryIndex = 0;
     while (true) {
       try {
+        cacheFiller.startModifying(id);
         modified = modificationFunction.apply(resourceToUpdate);
         modified
             .getMetadata()
             .setResourceVersion(resourceToUpdate.getMetadata().getResourceVersion());
         var updated = updateMethod.apply(modified);
-        context
-            .eventSourceRetriever()
-            .getControllerEventSource()
-            .handleRecentResourceUpdate(
-                ResourceID.fromResource(resourceToUpdate), updated, resourceToUpdate);
+        cacheFiller.handleRecentResourceUpdate(
+            ResourceID.fromResource(resourceToUpdate), updated, resourceToUpdate);
         return updated;
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resourceToUpdate);
@@ -219,20 +268,26 @@ public class PrimaryUpdateAndCacheUtils {
             e.getCode());
         resourceToUpdate =
             pollLocalCache(
-                context, resourceToUpdate, cachePollTimeoutMillis, cachePollPeriodMillis);
+                context, resourceToUpdate, cachePollTimeoutMillis, cachePollPeriodMillis, cache);
+      } finally {
+        cacheFiller.doneModifying(id);
       }
     }
   }
 
   private static <P extends HasMetadata> P pollLocalCache(
-      Context<P> context, P staleResource, long timeoutMillis, long pollDelayMillis) {
+      Context<?> context,
+      P staleResource,
+      long timeoutMillis,
+      long pollDelayMillis,
+      IndexedResourceCache<P> cache) {
     try {
       var resourceId = ResourceID.fromResource(staleResource);
       var startTime = LocalTime.now();
       final var timeoutTime = startTime.plus(timeoutMillis, ChronoUnit.MILLIS);
       while (timeoutTime.isAfter(LocalTime.now())) {
         log.debug("Polling cache for resource: {}", resourceId);
-        var cachedResource = context.getPrimaryCache().get(resourceId).orElseThrow();
+        var cachedResource = cache.get(resourceId).orElseThrow();
         if (!cachedResource
             .getMetadata()
             .getResourceVersion()

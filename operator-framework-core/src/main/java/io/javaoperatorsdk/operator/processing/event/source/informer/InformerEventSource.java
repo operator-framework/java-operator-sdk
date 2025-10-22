@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -78,7 +77,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
-  private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
@@ -132,8 +130,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           newResource.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    onAddOrUpdate(
-        Operation.ADD, newResource, null, () -> InformerEventSource.super.onAdd(newResource));
+    super.onAdd(newResource);
+    onAddOrUpdate(Operation.ADD, newResource, null);
   }
 
   @Override
@@ -147,11 +145,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           oldObject.getMetadata().getResourceVersion());
     }
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
-    onAddOrUpdate(
-        Operation.UPDATE,
-        newObject,
-        oldObject,
-        () -> InformerEventSource.super.onUpdate(oldObject, newObject));
+    super.onUpdate(oldObject, newObject);
+    onAddOrUpdate(Operation.UPDATE, newObject, oldObject);
   }
 
   @Override
@@ -177,8 +172,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     manager().list().forEach(primaryToSecondaryIndex::onAddOrUpdate);
   }
 
-  private synchronized void onAddOrUpdate(
-      Operation operation, R newObject, R oldObject, Runnable superOnOp) {
+  private synchronized void onAddOrUpdate(Operation operation, R newObject, R oldObject) {
     var resourceID = ResourceID.fromResource(newObject);
 
     if (canSkipEvent(newObject, oldObject, resourceID)) {
@@ -187,43 +181,20 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
               + " ID: {}",
           operation,
           ResourceID.fromResource(newObject));
-      superOnOp.run();
+    } else if (eventAcceptedByFilter(operation, newObject, oldObject)) {
+      log.debug(
+          "Propagating event for {}, resource with same version not result of a reconciliation."
+              + " Resource ID: {}",
+          operation,
+          resourceID);
+      propagateEvent(newObject);
     } else {
-      superOnOp.run();
-      if (eventAcceptedByFilter(operation, newObject, oldObject)) {
-        log.debug(
-            "Propagating event for {}, resource with same version not result of a reconciliation."
-                + " Resource ID: {}",
-            operation,
-            resourceID);
-        propagateEvent(newObject);
-      } else {
-        log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
-      }
+      log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
     }
   }
 
   private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
-    return temporaryResourceCache.canSkipEvent(resourceID, newObject)
-        || isEventKnownFromAnnotation(newObject, oldObject);
-  }
-
-  private boolean isEventKnownFromAnnotation(R newObject, R oldObject) {
-    String previous = newObject.getMetadata().getAnnotations().get(PREVIOUS_ANNOTATION_KEY);
-    boolean known = false;
-    if (previous != null) {
-      String[] parts = previous.split(",");
-      if (id.equals(parts[0])) {
-        if (oldObject == null && parts.length == 1) {
-          known = true;
-        } else if (oldObject != null
-            && parts.length == 2
-            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
-          known = true;
-        }
-      }
-    }
-    return known;
+    return temporaryResourceCache.canSkipEvent(resourceID, newObject);
   }
 
   private void propagateEvent(R object) {
@@ -311,22 +282,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
     return (onDeleteFilter == null || onDeleteFilter.accept(resource, b))
         && (genericFilter == null || genericFilter.accept(resource));
-  }
-
-  /**
-   * Add an annotation to the resource so that the subsequent will be omitted
-   *
-   * @param resourceVersion null if there is no prior version
-   * @param target mutable resource that will be returned
-   */
-  public R addPreviousAnnotation(String resourceVersion, R target) {
-    target
-        .getMetadata()
-        .getAnnotations()
-        .put(
-            PREVIOUS_ANNOTATION_KEY,
-            id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
-    return target;
   }
 
   private enum Operation {

@@ -72,6 +72,16 @@ public abstract class ManagedInformerEventSource<
   }
 
   @Override
+  public void startModifying(ResourceID id) {
+    this.temporaryResourceCache.startModifying(id);
+  }
+
+  @Override
+  public void doneModifying(ResourceID id) {
+    this.temporaryResourceCache.doneModifying(id);
+  }
+
+  @Override
   public void onAdd(R resource) {
     temporaryResourceCache.onAddOrUpdateEvent(resource);
   }

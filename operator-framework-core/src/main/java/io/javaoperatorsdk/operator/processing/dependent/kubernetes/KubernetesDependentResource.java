@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfig
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.GroupVersionKind;
@@ -55,7 +56,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
-  private volatile Boolean usePreviousAnnotationForEventFiltering;
 
   public KubernetesDependentResource() {}
 
@@ -70,6 +70,25 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
+  }
+
+  @Override
+  protected R handleCreate(R desired, P primary, Context<P> context) {
+    return PrimaryUpdateAndCacheUtils.updateAndCacheSecondaryResource(
+        desired,
+        context,
+        recentOperationCacheFiller(),
+        toCreate -> KubernetesDependentResource.super.handleCreate(toCreate, primary, context));
+  }
+
+  @Override
+  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
+    return PrimaryUpdateAndCacheUtils.updateAndCacheSecondaryResource(
+        desired,
+        context,
+        recentOperationCacheFiller(),
+        toUpdate ->
+            KubernetesDependentResource.super.handleUpdate(actual, toUpdate, primary, context));
   }
 
   @SuppressWarnings("unused")
@@ -158,14 +177,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       } else {
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
-    } else if (usePreviousAnnotation(context)) { // set a new one
-      eventSource()
-          .orElseThrow()
-          .addPreviousAnnotation(
-              Optional.ofNullable(actualResource)
-                  .map(r -> r.getMetadata().getResourceVersion())
-                  .orElse(null),
-              target);
     }
     addReferenceHandlingMetadata(target, primary);
   }
@@ -179,22 +190,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
               .shouldUseSSA(getClass(), resourceType(), configuration().orElse(null));
     }
     return useSSA;
-  }
-
-  private boolean usePreviousAnnotation(Context<P> context) {
-    if (usePreviousAnnotationForEventFiltering == null) {
-      usePreviousAnnotationForEventFiltering =
-          context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .previousAnnotationForDependentResourcesEventFiltering()
-              && !context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .withPreviousAnnotationForDependentResourcesBlocklist()
-                  .contains(this.resourceType());
-    }
-    return usePreviousAnnotationForEventFiltering;
   }
 
   @Override

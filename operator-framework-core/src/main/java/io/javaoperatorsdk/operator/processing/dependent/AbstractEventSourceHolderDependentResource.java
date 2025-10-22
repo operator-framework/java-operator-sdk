@@ -65,6 +65,7 @@ public abstract class AbstractEventSourceHolderDependentResource<
    * that multiple event sources would be created and only one started and registered. Note that
    * this method does not start the event source, so no blocking IO is involved.
    */
+  @Override
   public synchronized Optional<T> eventSource(EventSourceContext<P> context) {
     // some sub-classes (e.g. KubernetesDependentResource) can have their event source created
     // before this method is called in the managed case, so only create the event source if it
@@ -123,6 +124,7 @@ public abstract class AbstractEventSourceHolderDependentResource<
     return Optional.ofNullable(eventSource);
   }
 
+  @Override
   protected void onCreated(P primary, R created, Context<P> context) {
     if (isCacheFillerEventSource) {
       recentOperationCacheFiller()
@@ -130,6 +132,7 @@ public abstract class AbstractEventSourceHolderDependentResource<
     }
   }
 
+  @Override
   protected void onUpdated(P primary, R updated, R actual, Context<P> context) {
     if (isCacheFillerEventSource) {
       recentOperationCacheFiller()
@@ -138,7 +141,7 @@ public abstract class AbstractEventSourceHolderDependentResource<
   }
 
   @SuppressWarnings("unchecked")
-  private RecentOperationCacheFiller<R> recentOperationCacheFiller() {
+  protected RecentOperationCacheFiller<R> recentOperationCacheFiller() {
     return (RecentOperationCacheFiller<R>) eventSource;
   }
 }

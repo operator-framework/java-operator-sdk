@@ -19,6 +19,10 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public interface RecentOperationCacheFiller<R> {
 
+  default void startModifying(ResourceID id) {}
+
+  default void doneModifying(ResourceID id) {}
+
   void handleRecentResourceCreate(ResourceID resourceID, R resource);
 
   void handleRecentResourceUpdate(ResourceID resourceID, R resource, R previousVersionOfResource);

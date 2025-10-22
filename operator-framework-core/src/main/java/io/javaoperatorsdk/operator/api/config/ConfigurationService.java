@@ -448,19 +448,6 @@ public interface ConfigurationService {
   }
 
   /**
-   * If a javaoperatorsdk.io/previous annotation should be used so that the operator sdk can detect
-   * events from its own updates of dependent resources and then filter them.
-   *
-   * <p>Disable this if you want to react to your own dependent resource updates
-   *
-   * @return if special annotation should be used for dependent resource to filter events
-   * @since 4.5.0
-   */
-  default boolean previousAnnotationForDependentResourcesEventFiltering() {
-    return true;
-  }
-
-  /**
    * For dependent resources, the framework can add an annotation to filter out events resulting
    * directly from the framework's operation. There are, however, some resources that do not follow
    * the Kubernetes API conventions that changes in metadata should not increase the generation of

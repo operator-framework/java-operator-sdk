@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -93,7 +94,12 @@ public abstract class AbstractExternalDependentResource<
   @SuppressWarnings({"rawtypes", "unchecked", "unused"})
   protected void handleExplicitStateCreation(P primary, R created, Context<P> context) {
     var resource = dependentResourceWithExplicitState.stateResource(primary, created);
-    var stateResource = context.getClient().resource(resource).create();
+    var stateResource =
+        PrimaryUpdateAndCacheUtils.updateAndCacheSecondaryResource(
+            resource,
+            context,
+            (RecentOperationCacheFiller) externalStateEventSource,
+            toCreate -> context.getClient().resource(toCreate).create());
     if (externalStateEventSource != null) {
       ((RecentOperationCacheFiller) externalStateEventSource)
           .handleRecentResourceCreate(ResourceID.fromResource(primary), stateResource);
