@@ -467,7 +467,7 @@ public class PrimaryUpdateAndCacheUtils {
     return 0;
   }
 
-  private static final int validateResourceVersion(String v1) {
+  private static int validateResourceVersion(String v1) {
     int v1Length = v1.length();
     if (v1Length == 0) {
       throw new NonComparableResourceVersionException("Resource version is empty");
