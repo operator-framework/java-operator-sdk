@@ -22,8 +22,8 @@ public interface ResourceIDMapper<R, ID> {
   ID idFor(R resource);
 
   /**
-   * Used if a polling event source handles only single secondary resource and the id is String. See
-   * also docs for: {@link ExternalResourceCachingEventSource}
+   * Can be used if a polling event source handles only single secondary resource and the id is
+   * String. See also docs for: {@link ExternalResourceCachingEventSource}
    *
    * @return static id mapper, all resources are mapped for same id.
    * @param <T> secondary resource type
