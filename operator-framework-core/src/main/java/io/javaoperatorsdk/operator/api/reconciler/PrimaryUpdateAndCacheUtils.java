@@ -452,56 +452,38 @@ public class PrimaryUpdateAndCacheUtils {
   }
 
   public static int compareResourceVersions(String v1, String v2) {
-    var v1Length = v1.length();
+    int v1Length = validateResourceVersion(v1);
+    int v2Length = validateResourceVersion(v2);
+    int comparison = v1Length - v2Length;
+    if (comparison != 0) {
+      return comparison;
+    }
+    for (int i = 0; i < v2Length; i++) {
+      int comp = v1.charAt(i) - v2.charAt(i);
+      if (comp != 0) {
+        return comp;
+      }
+    }
+    return 0;
+  }
+
+  private static final int validateResourceVersion(String v1) {
+    int v1Length = v1.length();
     if (v1Length == 0) {
-      throw new NonComparableResourceVersionException("Resource version (1) is empty");
+      throw new NonComparableResourceVersionException("Resource version is empty");
     }
-    var v2Length = v2.length();
-    if (v2Length == 0) {
-      throw new NonComparableResourceVersionException("Resource version (2) is empty");
-    }
-    var maxLength = Math.max(v1Length, v2Length);
-    boolean v1LeadingZero = true;
-    boolean v2LeadingZero = true;
-    int comparison = 0;
-    for (int i = 0; i < maxLength; i++) {
-      char char1 = 0;
-      if (i < v1Length) {
-        char1 = v1.charAt(i);
-        if (v1LeadingZero) {
-          if (char1 == '0') {
-            throw new NonComparableResourceVersionException(
-                "Resource version (1) cannot begin with 0");
-          }
-          v1LeadingZero = false;
-        }
-        if (!Character.isDigit(char1)) {
+    for (int i = 0; i < v1Length; i++) {
+      char char1 = v1.charAt(i);
+      if (char1 == '0') {
+        if (i == 0) {
           throw new NonComparableResourceVersionException(
-              "Non numeric characters in resource version (1): " + char1);
+              "Resource version cannot begin with 0: " + v1);
         }
-      }
-      if (i < v2Length) {
-        var char2 = v2.charAt(i);
-        if (v2LeadingZero) {
-          if (char2 == '0') {
-            throw new NonComparableResourceVersionException(
-                "Resource version (2) cannot begin with 0");
-          }
-          v2LeadingZero = false;
-        }
-        if (!Character.isDigit(char2)) {
-          throw new NonComparableResourceVersionException(
-              "Non numeric characters in resource version (2): " + char2);
-        }
-        if (char1 == 0) {
-          comparison = -1;
-        } else if (comparison == 0) {
-          comparison = Character.compare(char1, char2);
-        }
-      } else {
-        comparison = 1;
+      } else if (char1 < '0' || char1 > '9') {
+        throw new NonComparableResourceVersionException(
+            "Non numeric characters in resource version: " + v1);
       }
     }
-    return comparison;
+    return v1Length;
   }
 }
