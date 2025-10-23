@@ -66,7 +66,7 @@ public class PerResourcePollingEventSource<R, P extends HasMetadata, ID>
       Class<R> resourceClass,
       EventSourceContext<P> context,
       PerResourcePollingConfiguration<R, P, ID> config) {
-    super(config.name(), resourceClass, config.cacheKeyMapper());
+    super(config.name(), resourceClass, config.resourceIDMapper());
     this.primaryResourceCache = context.getPrimaryCache();
     this.resourceFetcher = config.resourceFetcher();
     this.registerPredicate = config.registerPredicate();

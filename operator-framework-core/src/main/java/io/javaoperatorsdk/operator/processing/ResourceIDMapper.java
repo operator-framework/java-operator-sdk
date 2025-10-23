@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing;
 
-import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
+import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
-public interface CacheKeyMapper<R, ID> {
+public interface ResourceIDMapper<R, ID> {
 
-  ID keyFor(R resource);
+  ID idFor(R resource);
 
   /**
    * Used if a polling event source handles only single secondary resource and the id is String. See
@@ -28,11 +28,11 @@ public interface CacheKeyMapper<R, ID> {
    * @return static id mapper, all resources are mapped for same id.
    * @param <T> secondary resource type
    */
-  static <T> CacheKeyMapper<T, String> singleResourceCacheKeyMapper() {
+  static <T> ResourceIDMapper<T, String> singleResourceCacheKeyMapper() {
     return r -> "id";
   }
 
-  static <T, ID> CacheKeyMapper<T, ID> resourceIdProviderMapper() {
+  static <T, ID> ResourceIDMapper<T, ID> resourceIdProviderMapper() {
     return r -> {
       if (r instanceof ResourceIDProvider resourceIDProvider) {
         return (ID) resourceIDProvider.resourceId();
