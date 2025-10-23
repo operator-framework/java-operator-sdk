@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.IndexerResourceCache;
 import io.javaoperatorsdk.operator.processing.event.source.SampleExternalResource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
@@ -70,7 +70,7 @@ class PerResourcePollingEventSourceTest
             new PerResourcePollingConfigurationBuilder<
                     SampleExternalResource, TestCustomResource, String>(
                     supplier, Duration.ofMillis(PERIOD))
-                .withCacheKeyMapper(r -> r.getName() + "#" + r.getValue())
+                .withResourceIDMapper(r -> r.getName() + "#" + r.getValue())
                 .build()));
   }
 
@@ -99,7 +99,7 @@ class PerResourcePollingEventSourceTest
                     supplier, Duration.ofMillis(PERIOD))
                 .withRegisterPredicate(
                     testCustomResource -> testCustomResource.getMetadata().getGeneration() > 1)
-                .withCacheKeyMapper(CacheKeyMapper.resourceIdProviderMapper())
+                .withResourceIDMapper(ResourceIDMapper.resourceIdProviderMapper())
                 .build()));
 
     source.onResourceCreated(testCustomResource);

@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -61,24 +62,24 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   private static final Logger log =
       LoggerFactory.getLogger(ExternalResourceCachingEventSource.class);
 
-  protected final CacheKeyMapper<R, ID> cacheKeyMapper;
+  protected final ResourceIDMapper<R, ID> resourceIDMapper;
 
   protected Map<ResourceID, Map<ID, R>> cache = new ConcurrentHashMap<>();
 
   protected ExternalResourceCachingEventSource(
-      Class<R> resourceClass, CacheKeyMapper<R, ID> cacheKeyMapper) {
-    this(null, resourceClass, cacheKeyMapper);
+      Class<R> resourceClass, ResourceIDMapper<R, ID> resourceIDMapper) {
+    this(null, resourceClass, resourceIDMapper);
   }
 
   protected ExternalResourceCachingEventSource(
-      String name, Class<R> resourceClass, CacheKeyMapper<R, ID> cacheKeyMapper) {
+      String name, Class<R> resourceClass, ResourceIDMapper<R, ID> resourceIDMapper) {
     super(resourceClass, name);
-    if (cacheKeyMapper == CacheKeyMapper.resourceIdProviderMapper()
+    if (resourceIDMapper == ResourceIDMapper.resourceIdProviderMapper()
         && !ResourceIDProvider.class.isAssignableFrom(resourceClass)) {
       throw new IllegalArgumentException(
           "resource class is not a " + ResourceIDProvider.class.getSimpleName());
     }
-    this.cacheKeyMapper = cacheKeyMapper;
+    this.resourceIDMapper = resourceIDMapper;
   }
 
   protected synchronized void handleDelete(ResourceID primaryID) {
@@ -90,11 +91,11 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
 
   protected synchronized void handleDeletes(ResourceID primaryID, Set<R> resource) {
     handleDelete(
-        primaryID, resource.stream().map(cacheKeyMapper::keyFor).collect(Collectors.toSet()));
+        primaryID, resource.stream().map(resourceIDMapper::idFor).collect(Collectors.toSet()));
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, R resource) {
-    handleDelete(primaryID, Set.of(cacheKeyMapper.keyFor(resource)));
+    handleDelete(primaryID, Set.of(resourceIDMapper.idFor(resource)));
   }
 
   protected synchronized void handleDelete(ResourceID primaryID, Set<ID> resourceIDs) {
@@ -143,7 +144,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       cachedResources = Collections.emptyMap();
     }
     var newResourcesMap =
-        newResources.stream().collect(Collectors.toMap(cacheKeyMapper::keyFor, r -> r));
+        newResources.stream().collect(Collectors.toMap(resourceIDMapper::idFor, r -> r));
     cache.put(primaryID, newResourcesMap);
     if (propagateEvent
         && !newResourcesMap.equals(cachedResources)
@@ -205,7 +206,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
   @Override
   public synchronized void handleRecentResourceCreate(ResourceID primaryID, R resource) {
     var actualValues = cache.get(primaryID);
-    var resourceId = cacheKeyMapper.keyFor(resource);
+    var resourceId = resourceIDMapper.idFor(resource);
     if (actualValues == null) {
       actualValues = new HashMap<>();
       cache.put(primaryID, actualValues);
@@ -220,7 +221,7 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
       ResourceID primaryID, R resource, R previousVersionOfResource) {
     var actualValues = cache.get(primaryID);
     if (actualValues != null) {
-      var resourceId = cacheKeyMapper.keyFor(resource);
+      var resourceId = resourceIDMapper.idFor(resource);
       R actualResource = actualValues.get(resourceId);
       if (actualResource.equals(previousVersionOfResource)) {
         actualValues.put(resourceId, resource);

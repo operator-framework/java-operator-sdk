@@ -68,7 +68,7 @@ public class PollingEventSource<R, P extends HasMetadata, ID>
   private final AtomicBoolean healthy = new AtomicBoolean(true);
 
   public PollingEventSource(Class<R> resourceClass, PollingConfiguration<R, ID> config) {
-    super(config.name(), resourceClass, config.cacheKeyMapper());
+    super(config.name(), resourceClass, config.resourceIDMapper());
     this.genericResourceFetcher = config.genericResourceFetcher();
     this.period = config.period();
   }

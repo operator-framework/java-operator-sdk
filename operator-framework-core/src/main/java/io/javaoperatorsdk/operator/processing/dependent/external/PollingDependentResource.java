@@ -20,7 +20,7 @@ import java.time.Duration;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PollingEventSource;
@@ -30,17 +30,17 @@ public abstract class PollingDependentResource<R, P extends HasMetadata, ID>
     extends AbstractPollingDependentResource<R, P, ID>
     implements PollingEventSource.GenericResourceFetcher<R> {
 
-  private final CacheKeyMapper<R, ID> cacheKeyMapper;
+  private final ResourceIDMapper<R, ID> resourceIDMapper;
 
-  public PollingDependentResource(Class<R> resourceType, CacheKeyMapper<R, ID> cacheKeyMapper) {
+  public PollingDependentResource(Class<R> resourceType, ResourceIDMapper<R, ID> resourceIDMapper) {
     super(resourceType);
-    this.cacheKeyMapper = cacheKeyMapper;
+    this.resourceIDMapper = resourceIDMapper;
   }
 
   public PollingDependentResource(
-      Class<R> resourceType, Duration pollingPeriod, CacheKeyMapper<R, ID> cacheKeyMapper) {
+      Class<R> resourceType, Duration pollingPeriod, ResourceIDMapper<R, ID> resourceIDMapper) {
     super(resourceType, pollingPeriod);
-    this.cacheKeyMapper = cacheKeyMapper;
+    this.resourceIDMapper = resourceIDMapper;
   }
 
   @Override
@@ -48,6 +48,6 @@ public abstract class PollingDependentResource<R, P extends HasMetadata, ID>
       EventSourceContext<P> context) {
     return new PollingEventSource<>(
         resourceType(),
-        new PollingConfiguration<>(name(), this, getPollingPeriod(), cacheKeyMapper));
+        new PollingConfiguration<>(name(), this, getPollingPeriod(), resourceIDMapper));
   }
 }

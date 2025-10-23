@@ -20,7 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 
 public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetadata, ID> {
 
@@ -30,7 +30,7 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
   private String name;
   private Predicate<P> registerPredicate;
   private ScheduledExecutorService executorService;
-  private CacheKeyMapper<R, ID> cacheKeyMapper;
+  private ResourceIDMapper<R, ID> resourceIDMapper;
 
   public PerResourcePollingConfigurationBuilder(
       PerResourcePollingEventSource.ResourceFetcher<R, P> resourceFetcher,
@@ -52,9 +52,9 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
     return this;
   }
 
-  public PerResourcePollingConfigurationBuilder<R, P, ID> withCacheKeyMapper(
-      CacheKeyMapper<R, ID> cacheKeyMapper) {
-    this.cacheKeyMapper = cacheKeyMapper;
+  public PerResourcePollingConfigurationBuilder<R, P, ID> withResourceIDMapper(
+      ResourceIDMapper<R, ID> resourceIDMapper) {
+    this.resourceIDMapper = resourceIDMapper;
     return this;
   }
 
@@ -67,7 +67,7 @@ public final class PerResourcePollingConfigurationBuilder<R, P extends HasMetada
     return new PerResourcePollingConfiguration<>(
         name,
         executorService,
-        cacheKeyMapper,
+        resourceIDMapper,
         resourceFetcher,
         registerPredicate,
         defaultPollingPeriod);

@@ -21,8 +21,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
@@ -35,8 +35,8 @@ public class CachingInboundEventSource<R, P extends HasMetadata, ID>
   public CachingInboundEventSource(
       ResourceFetcher<R, P> resourceFetcher,
       Class<R> resourceClass,
-      CacheKeyMapper<R, ID> cacheKeyMapper) {
-    super(resourceClass, cacheKeyMapper);
+      ResourceIDMapper<R, ID> resourceIDMapper) {
+    super(resourceClass, resourceIDMapper);
     this.resourceFetcher = resourceFetcher;
   }
 
