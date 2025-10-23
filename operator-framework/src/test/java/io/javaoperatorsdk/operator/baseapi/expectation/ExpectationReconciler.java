@@ -103,12 +103,15 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
       Context<ExpectationCustomResource> context) {
     return Expectation.createExpectation(
         DEPLOYMENT_READY_EXPECTATION_NAME,
-        (p, c) -> {
-          var actualDeployment = context.getSecondaryResource(Deployment.class).orElseThrow();
-          return actualDeployment.getStatus() != null
-              && actualDeployment.getStatus().getReadyReplicas() != null
-              && actualDeployment.getStatus().getReadyReplicas() == 3;
-        });
+        (p, c) ->
+            context
+                .getSecondaryResource(Deployment.class)
+                .map(
+                    ad ->
+                        ad.getStatus() != null
+                            && ad.getStatus().getReadyReplicas() != null
+                            && ad.getStatus().getReadyReplicas() == 3)
+                .orElse(false));
   }
 
   private Deployment createDeployment(
