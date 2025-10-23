@@ -306,10 +306,10 @@ it is always possible to override this automated discrimination using several me
 - Override the [`targetSecondaryResourceID`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L282)
   method, if your `DependentResource` extends `KubernetesDependentResource`,
   where it's very often possible to easily determine the `ResourceID` of the secondary resource. This would probably be
-  the easiest solution if you're working with Kubernetes resources. Similarly, for you can override the 
+  the easiest solution if you're working with Kubernetes resources. Similarly, you can override the 
   [`targetSecondaryResourceID`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java#L138)
   for external resources. See below the related ID handling
-- If the approach from above doesn't fit your needs, you can override the target resource selection mechanism by overriding
+- If the approach above doesn't fit your needs, you can override the target resource selection mechanism by overriding
   `selectTargetSecondaryResource` for both [`KubernetesDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/kubernetes/KubernetesDependentResource.java#L282)
   and [`AbstractExternalDependentResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java#L148). 
 - As last resort, you can implement your own `getSecondaryResource` method on your `DependentResource` implementation from scratch.

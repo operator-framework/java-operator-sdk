@@ -127,7 +127,7 @@ public abstract class AbstractExternalDependentResource<
   }
 
   /**
-   * Override this method to optimize and not compute the desired when selecting the target
+   * Override this method to optimize and avoid computing the desired when selecting the target
    * secondary resource. Return the target id.
    *
    * @see ExternalDependentIDProvider
