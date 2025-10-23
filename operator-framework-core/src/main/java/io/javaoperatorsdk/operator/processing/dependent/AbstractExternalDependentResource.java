@@ -22,19 +22,21 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
-import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 public abstract class AbstractExternalDependentResource<
-        R, P extends HasMetadata, T extends EventSource<R, P>>
+        R, P extends HasMetadata, T extends EventSource<R, P>, ID>
     extends AbstractEventSourceHolderDependentResource<R, P, T> {
 
   private final boolean isDependentResourceWithExplicitState =
       this instanceof DependentResourceWithExplicitState;
   private final boolean isBulkDependentResource = this instanceof BulkDependentResource;
+
+  protected ResourceIDMapper<R, ID> resourceIDMapper = ResourceIDMapper.resourceIdProviderMapper();
 
   @SuppressWarnings("rawtypes")
   private DependentResourceWithExplicitState dependentResourceWithExplicitState;
@@ -132,21 +134,23 @@ public abstract class AbstractExternalDependentResource<
       Set<R> secondaryResources, P primary, Context<P> context) {
     R desired = desired(primary, context);
     List<R> targetResources;
-    if (desired instanceof ResourceIDProvider<?> desiredWithId) {
-      targetResources =
-          secondaryResources.stream()
-              .filter(
-                  r -> ((ResourceIDProvider<?>) r).resourceId().equals(desiredWithId.resourceId()))
-              .toList();
-    } else {
-      throw new IllegalStateException(
-          "Either implement ExternalDependentIDProvider or override this "
-              + " (selectTargetSecondaryResource) method.");
-    }
+    var desiredID = resourceIDMapper.idFor(desired);
+    targetResources =
+        secondaryResources.stream()
+            .filter(r -> resourceIDMapper.idFor(r).equals(desiredID))
+            .toList();
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
           "More than one secondary resource related to primary: " + targetResources);
     }
     return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
+  }
+
+  public ResourceIDMapper<R, ID> getResourceIDMapper() {
+    return resourceIDMapper;
+  }
+
+  public void setResourceIDMapper(ResourceIDMapper<R, ID> resourceIDMapper) {
+    this.resourceIDMapper = resourceIDMapper;
   }
 }
