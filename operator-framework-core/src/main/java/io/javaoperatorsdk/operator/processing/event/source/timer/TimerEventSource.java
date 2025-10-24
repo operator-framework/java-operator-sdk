@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSource;
@@ -75,6 +76,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
       timer.cancel();
       super.stop();
     }
+  }
+
+  @Override
+  public Status getStatus() {
+    return isRunning() ? Status.HEALTHY : Status.UNHEALTHY;
   }
 
   @Override
