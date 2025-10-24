@@ -15,43 +15,19 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 
+/**
+ * Specialized interface for bulk dependent resources where resource implement {@link
+ * ResourceIDProvider}.
+ */
 public interface ExternalBulkDependentResource<
         R extends ResourceIDProvider<ID>, P extends HasMetadata, ID>
-    extends BulkDependentResource<R, P, ID>, DependentResource<R, P> {
+    extends ResourceIDMapperBulkDependentResource<R, P, ID> {
 
-  /**
-   * Since we can list all the related resources and by assuming the resource extends {{@link
-   * ResourceIDProvider}} it is trivial to create the target map. The only issue is if there are
-   * other secondary resources of the target type which are not managed by this bulk dependent
-   * resources, for those it is enough to override secondaryResourceFilter method.
-   */
-  @Override
-  default Map<ID, R> getSecondaryResources(P primary, Context<P> context) {
-    return context
-        .getSecondaryResourcesAsStream(resourceType())
-        .filter(secondaryResourceFilter(primary, context))
-        .collect(
-            Collectors.toMap(
-                cm -> ResourceIDMapper.<R, ID>resourceIdProviderMapper().idFor(cm),
-                Function.identity()));
-  }
-
-  /**
-   * Override if not all the secondary resources of target type are managed by the bulk dependent
-   * resource.
-   */
-  default Predicate<R> secondaryResourceFilter(P primary, Context<P> context) {
-    return r -> true;
+  default ResourceIDMapper<R, ID> resourceIDMapper() {
+    return ResourceIDMapper.resourceIdProviderMapper();
   }
 }

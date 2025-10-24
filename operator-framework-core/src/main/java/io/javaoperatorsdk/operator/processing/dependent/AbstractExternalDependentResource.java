@@ -146,7 +146,7 @@ public abstract class AbstractExternalDependentResource<
     return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
   }
 
-  public ResourceIDMapper<R, ID> getResourceIDMapper() {
+  public ResourceIDMapper<R, ID> resourceIDMapper() {
     return resourceIDMapper;
   }
 

@@ -47,7 +47,7 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
         resourceType(),
         context,
         new PerResourcePollingConfigurationBuilder<R, P, ID>(this, getPollingPeriod())
-            .withResourceIDMapper(getResourceIDMapper())
+            .withResourceIDMapper(resourceIDMapper())
             .withName(name())
             .build());
   }
