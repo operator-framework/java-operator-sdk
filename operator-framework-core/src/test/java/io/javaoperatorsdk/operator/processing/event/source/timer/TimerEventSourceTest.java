@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source.timer;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -75,7 +74,7 @@ class TimerEventSourceTest
   }
 
   @Test
-  public void eventNotRegisteredIfStopped() throws IOException {
+  public void eventNotRegisteredIfStopped() {
     var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
 
     source.stop();
@@ -84,7 +83,7 @@ class TimerEventSourceTest
   }
 
   @Test
-  public void eventNotFiredIfStopped() throws IOException {
+  public void eventNotFiredIfStopped() {
     source.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
     source.stop();
 

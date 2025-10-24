@@ -87,7 +87,7 @@ class PollingEventSourceTest
   }
 
   @Test
-  void updatesHealthIndicatorBasedOnExceptionsInFetcher() throws InterruptedException {
+  void updatesHealthIndicatorBasedOnExceptionsInFetcher() {
     when(resourceFetcher.fetchResources()).thenReturn(testResponseWithOneValue());
     pollingEventSource.start();
     assertThat(pollingEventSource.getStatus()).isEqualTo(Status.HEALTHY);
