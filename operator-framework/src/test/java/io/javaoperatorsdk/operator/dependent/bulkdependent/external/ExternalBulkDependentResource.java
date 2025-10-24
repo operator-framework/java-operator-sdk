@@ -95,10 +95,10 @@ public class ExternalBulkDependentResource
     Map<String, ExternalResource> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
       var key = Integer.toString(i);
-      res.put(
-          key,
+      var resource =
           new ExternalResource(
-              toExternalResourceId(primary, key), primary.getSpec().getAdditionalData()));
+              toExternalResourceId(primary, key), primary.getSpec().getAdditionalData());
+      res.put(getResourceIDMapper().idFor(resource), resource);
     }
     return res;
   }
@@ -116,12 +116,7 @@ public class ExternalBulkDependentResource
                             + EXTERNAL_RESOURCE_NAME_DELIMITER
                             + primary.getMetadata().getNamespace()
                             + EXTERNAL_RESOURCE_NAME_DELIMITER))
-        .collect(
-            Collectors.toMap(
-                r ->
-                    r.getId()
-                        .substring(r.getId().lastIndexOf(EXTERNAL_RESOURCE_NAME_DELIMITER) + 1),
-                r -> r));
+        .collect(Collectors.toMap(r -> getResourceIDMapper().idFor(r), r -> r));
   }
 
   @Override
