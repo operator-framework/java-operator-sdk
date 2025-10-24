@@ -37,7 +37,7 @@ public interface ResourceIDMapper<R, ID> {
    * @return static id mapper, all resources are mapped for same id.
    * @param <R> secondary resource type
    */
-  static <R> ResourceIDMapper<R, String> singleResourceCacheKeyMapper() {
+  static <R> ResourceIDMapper<R, String> singleResourceResourceIDMapper() {
     return r -> "id";
   }
 
