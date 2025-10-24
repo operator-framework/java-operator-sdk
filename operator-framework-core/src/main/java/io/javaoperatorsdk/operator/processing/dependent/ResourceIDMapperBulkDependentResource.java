@@ -38,6 +38,14 @@ public interface ResourceIDMapperBulkDependentResource<R, P extends HasMetadata,
         .collect(Collectors.toMap(cm -> resourceIDMapper().idFor(cm), Function.identity()));
   }
 
+  /**
+   * Override of not all the secondary resources of a certain type are related to the target
+   * secondary resource.
+   *
+   * @param primary resource
+   * @param context of reconciliation
+   * @return predicate to filter secondary resources which are related to the bulk dependent.
+   */
   default Predicate<R> secondaryResourceFilter(P primary, Context<P> context) {
     return r -> true;
   }
