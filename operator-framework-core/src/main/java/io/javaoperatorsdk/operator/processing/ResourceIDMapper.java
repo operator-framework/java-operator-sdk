@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.processing;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
 /** Provides id for the target resource. */
@@ -29,11 +31,11 @@ public interface ResourceIDMapper<R, ID> {
    * @return static id mapper, all resources are mapped for same id.
    * @param <T> secondary resource type
    */
-  static <T> ResourceIDMapper<T, String> singleResourceCacheKeyMapper() {
+  static <R> ResourceIDMapper<R, String> singleResourceCacheKeyMapper() {
     return r -> "id";
   }
 
-  static <T, ID> ResourceIDMapper<T, ID> resourceIdProviderMapper() {
+  static <R, ID> ResourceIDMapper<R, ID> resourceIdProviderMapper() {
     return r -> {
       if (r instanceof ResourceIDProvider resourceIDProvider) {
         return (ID) resourceIDProvider.resourceId();
@@ -42,5 +44,9 @@ public interface ResourceIDMapper<R, ID> {
             "Resource does not implement ExternalDependentIDProvider: " + r.getClass());
       }
     };
+  }
+
+  static <R extends HasMetadata> ResourceIDMapper<R, ResourceID> kubernetesResourceIdMapper() {
+    return ResourceID::fromResource;
   }
 }
