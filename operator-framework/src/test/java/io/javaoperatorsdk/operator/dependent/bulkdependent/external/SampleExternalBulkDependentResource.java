@@ -93,7 +93,7 @@ public class SampleExternalBulkDependentResource
       var resource =
           new ExternalResource(
               toExternalResourceId(primary, key), primary.getSpec().getAdditionalData());
-      res.put(getResourceIDMapper().idFor(resource), resource);
+      res.put(resourceIDMapper().idFor(resource), resource);
     }
     return res;
   }

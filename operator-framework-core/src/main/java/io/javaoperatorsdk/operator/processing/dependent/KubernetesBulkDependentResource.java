@@ -15,14 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent;
 
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -33,30 +26,10 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * BulkDependentResource}.
  */
 public interface KubernetesBulkDependentResource<R extends HasMetadata, P extends HasMetadata>
-    extends BulkDependentResource<R, P, ResourceID>, DependentResource<R, P> {
+    extends ResourceIDMapperBulkDependentResource<R, P, ResourceID> {
 
-  /**
-   * Since we can list all the related resources and by assuming the ID is type of {@link
-   * ResourceID} it is trivial to create the target map. The only issue is if there are other
-   * secondary resources of the target type which are not managed by this bulk dependent resources,
-   * for those it is enough to override secondaryResourceFilter method.
-   */
   @Override
-  default Map<ResourceID, R> getSecondaryResources(P primary, Context<P> context) {
-    return context
-        .getSecondaryResourcesAsStream(resourceType())
-        .filter(secondaryResourceFilter(primary, context))
-        .collect(
-            Collectors.toMap(
-                cm -> ResourceIDMapper.kubernetesResourceIdMapper().idFor(cm),
-                Function.identity()));
-  }
-
-  /**
-   * Override if not all the secondary resources of target type are managed by the bulk dependent
-   * resource.
-   */
-  default Predicate<R> secondaryResourceFilter(P primary, Context<P> context) {
-    return r -> true;
+  default ResourceIDMapper<R, ResourceID> resourceIDMapper() {
+    return ResourceIDMapper.kubernetesResourceIdMapper();
   }
 }
