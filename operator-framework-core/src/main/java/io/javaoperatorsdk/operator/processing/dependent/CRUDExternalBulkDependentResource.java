@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing;
+package io.javaoperatorsdk.operator.processing.dependent;
 
-/**
- * Provides the identifier for an object that represents resource. This ID is used to select target
- * external resource for a dependent resource from the resources returned by `{@link
- * io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResources(Class)}`. But also for
- * {@link ResourceIDMapper} for event sources in external resources.
- *
- * @param <ID>
- */
-public interface ResourceIDProvider<ID> {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 
-  ID resourceId();
-}
+public interface CRUDExternalBulkDependentResource<
+        R extends ResourceIDProvider<ID>, P extends HasMetadata, ID>
+    extends ExternalBulkDependentResource<R, P, ID>, Creator<R, P>, BulkUpdater<R, P>, Deleter<P> {}
