@@ -31,7 +31,7 @@ public final class PollingConfigurationBuilder<R, ID> {
     this.period = period;
   }
 
-  public PollingConfigurationBuilder<R, ID> withCacheKeyMapper(
+  public PollingConfigurationBuilder<R, ID> withResourceIDMapper(
       ResourceIDMapper<R, ID> resourceIDMapper) {
     this.resourceIDMapper = resourceIDMapper;
     return this;
