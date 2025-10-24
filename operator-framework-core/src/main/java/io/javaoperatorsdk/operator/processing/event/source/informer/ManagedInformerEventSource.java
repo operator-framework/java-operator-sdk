@@ -56,7 +56,7 @@ public abstract class ManagedInformerEventSource<
 
   private static final Logger log = LoggerFactory.getLogger(ManagedInformerEventSource.class);
   private InformerManager<R, C> cache;
-  private final boolean parseResourceVersions;
+  private final boolean comparableResourceVersions;
   private ControllerConfiguration<R> controllerConfiguration;
   private final C configuration;
   private final Map<String, Function<R, List<String>>> indexers = new HashMap<>();
@@ -64,9 +64,9 @@ public abstract class ManagedInformerEventSource<
   protected MixedOperation client;
 
   protected ManagedInformerEventSource(
-      String name, MixedOperation client, C configuration, boolean parseResourceVersions) {
+      String name, MixedOperation client, C configuration, boolean comparableResourceVersions) {
     super(configuration.getResourceClass(), name);
-    this.parseResourceVersions = parseResourceVersions;
+    this.comparableResourceVersions = comparableResourceVersions;
     this.client = client;
     this.configuration = configuration;
   }
@@ -103,7 +103,7 @@ public abstract class ManagedInformerEventSource<
     if (isRunning()) {
       return;
     }
-    temporaryResourceCache = new TemporaryResourceCache<>(parseResourceVersions);
+    temporaryResourceCache = new TemporaryResourceCache<>(comparableResourceVersions);
     this.cache = new InformerManager<>(client, configuration, this);
     cache.setControllerConfiguration(controllerConfiguration);
     cache.addIndexers(indexers);
@@ -135,7 +135,7 @@ public abstract class ManagedInformerEventSource<
   public Optional<R> get(ResourceID resourceID) {
     var res = cache.get(resourceID);
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
-    if (parseResourceVersions
+    if (comparableResourceVersions
         && resource.isPresent()
         && res.filter(
                 r ->

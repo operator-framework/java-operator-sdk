@@ -97,7 +97,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private InformerEventSource(
       InformerEventSourceConfiguration<R> configuration,
       KubernetesClient client,
-      boolean parseResourceVersions) {
+      boolean comparableResourceVersions) {
     super(
         configuration.name(),
         configuration
@@ -105,7 +105,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
         configuration,
-        parseResourceVersions);
+        comparableResourceVersions);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (useSecondaryToPrimaryIndex()) {

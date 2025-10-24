@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,7 +109,7 @@ class TemporaryPrimaryResourceCacheTest {
   }
 
   @Test
-  void resourceNoVersionParsing() {
+  void nonComparableResourceVersionsDisables() {
     this.temporaryResourceCache = new TemporaryResourceCache<>(false);
 
     this.temporaryResourceCache.putResource(testResource());
@@ -123,13 +124,16 @@ class TemporaryPrimaryResourceCacheTest {
 
     temporaryResourceCache.startModifying(ResourceID.fromResource(testResource));
 
-    try (ExecutorService ex = Executors.newSingleThreadExecutor()) {
+    ExecutorService ex = Executors.newSingleThreadExecutor();
+    try {
       var result = ex.submit(() -> temporaryResourceCache.onAddOrUpdateEvent(testResource));
 
       temporaryResourceCache.putResource(testResource);
       assertThat(result.isDone()).isFalse();
       temporaryResourceCache.doneModifying(ResourceID.fromResource(testResource));
-      assertThat(result.get()).isTrue();
+      assertThat(result.get(10, TimeUnit.SECONDS)).isTrue();
+    } finally {
+      ex.shutdownNow();
     }
   }
 

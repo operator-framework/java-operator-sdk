@@ -33,15 +33,17 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * a create or update is executed the subsequent getResource operation might not return the
  * up-to-date resource from informer cache, since it is not received yet.
  *
- * <p>Since an update (for create is simpler) was done successfully we can temporarily track 
- * that resource if its version is later than the events we've processed. We then know that we can skip
- * all events that have the same resource version or earlier than the tracked resource. Once we process 
- * an event that has the same resource version or later, then we know the tracked resource can be removed.
- * 
- * <p>In some cases it is possible for the informer to deliver events prior to the attempt to put the
- * resource in the temporal cache. The startModifying/doneModifying methods are used to pause event
- * delivery to ensure that temporal cache recognizes the put entry as an event that can be skipped.
- * 
+ * <p>Since an update (for create is simpler) was done successfully we can temporarily track that
+ * resource if its version is later than the events we've processed. We then know that we can skip
+ * all events that have the same resource version or earlier than the tracked resource. Once we
+ * process an event that has the same resource version or later, then we know the tracked resource
+ * can be removed.
+ *
+ * <p>In some cases it is possible for the informer to deliver events prior to the attempt to put
+ * the resource in the temporal cache. The startModifying/doneModifying methods are used to pause
+ * event delivery to ensure that temporal cache recognizes the put entry as an event that can be
+ * skipped.
+ *
  * <p>If comparable resource versions are disabled, then this cache is effectively disabled.
  *
  * @param <T> resource to cache.
@@ -51,16 +53,16 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
-  private final boolean parseResourceVersions;
+  private final boolean comparableResourceVersions;
   private final Map<ResourceID, ReentrantLock> activelyModifying = new ConcurrentHashMap<>();
   private String latestResourceVersion;
 
-  public TemporaryResourceCache(boolean parseResourceVersions) {
-    this.parseResourceVersions = parseResourceVersions;
+  public TemporaryResourceCache(boolean comparableResourceVersions) {
+    this.comparableResourceVersions = comparableResourceVersions;
   }
 
   public void startModifying(ResourceID id) {
-    if (!parseResourceVersions) {
+    if (!comparableResourceVersions) {
       return;
     }
     activelyModifying
@@ -77,7 +79,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public void doneModifying(ResourceID id) {
-    if (!parseResourceVersions) {
+    if (!comparableResourceVersions) {
       return;
     }
     activelyModifying.computeIfPresent(
@@ -134,7 +136,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   /** put the item into the cache if it's for a later state than what has already been observed. */
   public synchronized void putResource(T newResource) {
-    if (!parseResourceVersions) {
+    if (!comparableResourceVersions) {
       return;
     }
 
