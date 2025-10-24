@@ -19,7 +19,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
-/** Provides id for the target resource. */
+/**
+ * Provides id for the target resource. This mapper is used across multiple component of the
+ * framework, like the {@link
+ * io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource}, in {@link
+ * ExternalResourceCachingEventSource}, and {@link
+ * io.javaoperatorsdk.operator.processing.dependent.KubernetesBulkDependentResource}.
+ */
 public interface ResourceIDMapper<R, ID> {
 
   ID idFor(R resource);
@@ -29,7 +35,7 @@ public interface ResourceIDMapper<R, ID> {
    * String. See also docs for: {@link ExternalResourceCachingEventSource}
    *
    * @return static id mapper, all resources are mapped for same id.
-   * @param <T> secondary resource type
+   * @param <R> secondary resource type
    */
   static <R> ResourceIDMapper<R, String> singleResourceCacheKeyMapper() {
     return r -> "id";
