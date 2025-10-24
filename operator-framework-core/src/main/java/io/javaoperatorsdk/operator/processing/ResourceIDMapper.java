@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.processing;
 
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
+/** Provides id for the target resource. */
 public interface ResourceIDMapper<R, ID> {
 
   ID idFor(R resource);
