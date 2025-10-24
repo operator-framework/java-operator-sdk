@@ -99,7 +99,7 @@ public class MultipleManagedExternalDependentResourceReconciler
                 new PollingConfigurationBuilder<ExternalResource, String>(
                         fetcher, Duration.ofMillis(1000L))
                     .withName(EVENT_SOURCE_NAME)
-                    .withCacheKeyMapper(ExternalResource::getId)
+                    .withResourceIDMapper(ExternalResource::getId)
                     .build());
 
     return List.of(pollingEventSource);

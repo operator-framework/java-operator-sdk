@@ -67,7 +67,7 @@ public class PerResourcePollingEventSourceTestReconciler
                           return Set.of(UUID.randomUUID().toString());
                         },
                         Duration.ofMillis(POLL_PERIOD))
-                    .withResourceIDMapper(ResourceIDMapper.singleResourceCacheKeyMapper())
+                    .withResourceIDMapper(ResourceIDMapper.singleResourceResourceIDMapper())
                     .build());
     return List.of(eventSource);
   }
