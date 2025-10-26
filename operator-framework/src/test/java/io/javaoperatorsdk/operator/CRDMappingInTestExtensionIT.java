@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -21,6 +22,12 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Shows how to use the test extension to load CRDs from files.",
+    description =
+        "Shows how to use the test extension to load CRDs from files. This is useful when you want"
+            + " to test your operator with real CRDs, for example when you want to test validation"
+            + " or defaulting.")
 public class CRDMappingInTestExtensionIT {
   private final KubernetesClient client = new KubernetesClientBuilder().build();
 

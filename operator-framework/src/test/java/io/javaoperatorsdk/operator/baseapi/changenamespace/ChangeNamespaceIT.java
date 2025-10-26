@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.RegisteredController;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
@@ -21,6 +22,12 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Changing the namespaces being watched at runtime",
+    description =
+        "Demonstrates how to change the namespaces being watched by a controller at runtime,"
+            + " including adding and removing namespaces as well as switching to watch all"
+            + " namespaces.")
 class ChangeNamespaceIT {
 
   public static final String TEST_RESOURCE_NAME_1 = "test1";
