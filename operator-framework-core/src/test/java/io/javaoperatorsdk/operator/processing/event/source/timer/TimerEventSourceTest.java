@@ -1,6 +1,5 @@
 package io.javaoperatorsdk.operator.processing.event.source.timer;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -42,6 +42,7 @@ class TimerEventSourceTest
 
     untilAsserted(() -> assertThat(eventHandler.events).hasSize(1));
     untilAsserted(PERIOD * 2, 0, () -> assertThat(eventHandler.events).hasSize(1));
+    assertThat(source.getStatus()).isEqualTo(Status.HEALTHY);
   }
 
   @Test
@@ -52,6 +53,7 @@ class TimerEventSourceTest
     source.cancelOnceSchedule(resourceID);
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
+    assertThat(source.getStatus()).isEqualTo(Status.HEALTHY);
   }
 
   @Test
@@ -62,6 +64,7 @@ class TimerEventSourceTest
     source.scheduleOnce(resourceID, 2 * PERIOD);
 
     untilAsserted(PERIOD * 2, PERIOD, () -> assertThat(eventHandler.events).hasSize(1));
+    assertThat(source.getStatus()).isEqualTo(Status.HEALTHY);
   }
 
   @Test
@@ -72,23 +75,29 @@ class TimerEventSourceTest
     source.onResourceDeleted(customResource);
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
+    assertThat(source.getStatus()).isEqualTo(Status.HEALTHY);
   }
 
   @Test
-  public void eventNotRegisteredIfStopped() throws IOException {
+  public void eventNotRegisteredIfStopped() {
     var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
+    assertThat(source.getStatus()).isEqualTo(Status.HEALTHY);
 
     source.stop();
     assertThatExceptionOfType(IllegalStateException.class)
         .isThrownBy(() -> source.scheduleOnce(resourceID, PERIOD));
+    assertThat(source.getStatus()).isEqualTo(Status.UNHEALTHY);
   }
 
   @Test
-  public void eventNotFiredIfStopped() throws IOException {
+  public void eventNotFiredIfStopped() {
     source.scheduleOnce(ResourceID.fromResource(TestUtils.testCustomResource()), PERIOD);
+    assertThat(source.getStatus()).isEqualTo(Status.HEALTHY);
+
     source.stop();
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
+    assertThat(source.getStatus()).isEqualTo(Status.UNHEALTHY);
   }
 
   private void untilAsserted(ThrowingRunnable assertion) {
