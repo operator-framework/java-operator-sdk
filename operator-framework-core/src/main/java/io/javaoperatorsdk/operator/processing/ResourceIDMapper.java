@@ -20,7 +20,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 
 /**
- * Provides id for the target resource. This mapper is used across multiple component of the
+ * Provides id for the target resource. This mapper is used across multiple components of the
  * framework, like the {@link
  * io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource}, in {@link
  * ExternalResourceCachingEventSource}, and {@link
