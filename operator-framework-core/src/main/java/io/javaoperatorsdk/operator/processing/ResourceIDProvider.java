@@ -16,11 +16,11 @@
 package io.javaoperatorsdk.operator.processing;
 
 /**
- * Provides the identifier for an object that represents a resource. This ID is used to select the target
- * external resource for a dependent resource from the resources returned by `{@link
- * io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResources(Class)}`. It is also used in
- * {@link ResourceIDMapper} for event sources in external resources. But also for bulk dependent
- * resource see {@link
+ * Provides the identifier for an object that represents a resource. This ID is used to select the
+ * target external resource for a dependent resource from the resources returned by `{@link
+ * io.javaoperatorsdk.operator.api.reconciler.Context#getSecondaryResources(Class)}`. It is also
+ * used in {@link ResourceIDMapper} for event sources in external resources. But also for bulk
+ * dependent resource see {@link
  * io.javaoperatorsdk.operator.processing.dependent.ExternalBulkDependentResource} and external
  * event sources, see {@link
  * io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource}
