@@ -396,10 +396,20 @@
                 <exclude>.mvn/**/*</exclude>
                 <exclude>mvnw</exclude>
                 <exclude>mvnw.cmd</exclude>
+                <exclude>/**/*.txt</exclude>
+                <exclude>/**/*.gitignore</exclude>
+                <exclude>/**/*.crd</exclude>
                 <exclude>docs/public/**</exclude>
                 <exclude>docs/resources/**</exclude>
                 <exclude>docs/layouts/**</exclude>
-                <exclude>/**/*txt</exclude>
+                <exclude>docs/**/*.webp</exclude>
+                <exclude>docs/**/*.sum</exclude>
+                <exclude>docs/**/*.lock</exclude>
+                <exclude>docs/**/*.nvmrc</exclude>
+                <exclude>docs/**/*.toml</exclude>
+                <exclude>docs/**/*.toml</exclude>
+                <exclude>docs/**/*.work</exclude>
+                <exclude>docs/**/*.mod</exclude>
               </excludes>
             </licenseSet>
           </licenseSets>
