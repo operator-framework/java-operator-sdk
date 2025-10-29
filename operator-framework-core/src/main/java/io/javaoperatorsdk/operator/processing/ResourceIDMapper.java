@@ -21,13 +21,21 @@ import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachi
 
 /**
  * Provides id for the target resource. This mapper is used across multiple components of the
- * framework, like the {@link
- * io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource}, {@link
- * ExternalResourceCachingEventSource}, and {@link
- * io.javaoperatorsdk.operator.processing.dependent.KubernetesBulkDependentResource}.
+ * framework, like:
+ *
+ * <ul>
+ *   <li>{@link io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource}
+ *   <li>{@link ExternalResourceCachingEventSource}
+ *   <li>{@link io.javaoperatorsdk.operator.processing.dependent.KubernetesBulkDependentResource}
+ * </ul>
+ *
+ * @see ResourceIDProvider<ID>
  */
 public interface ResourceIDMapper<R, ID> {
 
+  /**
+   * @return id for the target resource.
+   */
   ID idFor(R resource);
 
   /**
