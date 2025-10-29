@@ -20,6 +20,7 @@ import java.time.Duration;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
@@ -29,14 +30,26 @@ public abstract class PerResourcePollingDependentResource<R, P extends HasMetada
     extends AbstractPollingDependentResource<R, P, ID>
     implements PerResourcePollingEventSource.ResourceFetcher<R, P> {
 
-  public PerResourcePollingDependentResource() {}
+  protected PerResourcePollingDependentResource() {}
 
-  public PerResourcePollingDependentResource(Class<R> resourceType) {
+  protected PerResourcePollingDependentResource(
+      Class<R> resourceType, ResourceIDMapper<R, ID> resourceIDMapper) {
+    super(resourceType);
+    setResourceIDMapper(resourceIDMapper);
+  }
+
+  protected PerResourcePollingDependentResource(Class<R> resourceType) {
     super(resourceType);
   }
 
-  public PerResourcePollingDependentResource(Class<R> resourceType, Duration pollingPeriod) {
+  protected PerResourcePollingDependentResource(Class<R> resourceType, Duration pollingPeriod) {
     super(resourceType, pollingPeriod);
+  }
+
+  protected PerResourcePollingDependentResource(
+      Class<R> resourceType, Duration pollingPeriod, ResourceIDMapper<R, ID> resourceIDMapper) {
+    super(resourceType, pollingPeriod);
+    setResourceIDMapper(resourceIDMapper);
   }
 
   @Override

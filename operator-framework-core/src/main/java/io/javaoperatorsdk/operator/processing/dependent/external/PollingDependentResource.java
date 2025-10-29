@@ -30,17 +30,24 @@ public abstract class PollingDependentResource<R, P extends HasMetadata, ID>
     extends AbstractPollingDependentResource<R, P, ID>
     implements PollingEventSource.GenericResourceFetcher<R> {
 
-  private final ResourceIDMapper<R, ID> resourceIDMapper;
-
-  public PollingDependentResource(Class<R> resourceType, ResourceIDMapper<R, ID> resourceIDMapper) {
+  protected PollingDependentResource(Class<R> resourceType) {
     super(resourceType);
-    this.resourceIDMapper = resourceIDMapper;
   }
 
-  public PollingDependentResource(
+  protected PollingDependentResource(
+      Class<R> resourceType, ResourceIDMapper<R, ID> resourceIDMapper) {
+    super(resourceType);
+    setResourceIDMapper(resourceIDMapper);
+  }
+
+  protected PollingDependentResource(Class<R> resourceType, Duration pollingPeriod) {
+    super(resourceType, pollingPeriod);
+  }
+
+  protected PollingDependentResource(
       Class<R> resourceType, Duration pollingPeriod, ResourceIDMapper<R, ID> resourceIDMapper) {
     super(resourceType, pollingPeriod);
-    this.resourceIDMapper = resourceIDMapper;
+    setResourceIDMapper(resourceIDMapper);
   }
 
   @Override
