@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.event;
 
 import org.junit.jupiter.api.Assertions;
@@ -34,7 +49,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void marksEvent() {
-    state.markEventReceived();
+    state.markEventReceived(false);
 
     assertThat(state.eventPresent()).isTrue();
     assertThat(state.deleteEventPresent()).isFalse();
@@ -42,7 +57,7 @@ class ResourceStateManagerTest {
 
   @Test
   public void marksDeleteEvent() {
-    state.markDeleteEventReceived();
+    state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     assertThat(state.deleteEventPresent()).isTrue();
     assertThat(state.eventPresent()).isFalse();
@@ -50,9 +65,9 @@ class ResourceStateManagerTest {
 
   @Test
   public void afterDeleteEventMarkEventIsNotRelevant() {
-    state.markEventReceived();
+    state.markEventReceived(false);
 
-    state.markDeleteEventReceived();
+    state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     assertThat(state.deleteEventPresent()).isTrue();
     assertThat(state.eventPresent()).isFalse();
@@ -60,8 +75,8 @@ class ResourceStateManagerTest {
 
   @Test
   public void cleansUp() {
-    state.markEventReceived();
-    state.markDeleteEventReceived();
+    state.markEventReceived(false);
+    state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
 
     manager.remove(sampleResourceID);
 
@@ -75,16 +90,16 @@ class ResourceStateManagerTest {
     Assertions.assertThrows(
         IllegalStateException.class,
         () -> {
-          state.markDeleteEventReceived();
-          state.markEventReceived();
+          state.markDeleteEventReceived(TestUtils.testCustomResource(), true);
+          state.markEventReceived(false);
         });
   }
 
   @Test
   public void listsResourceIDSWithEventsPresent() {
-    state.markEventReceived();
-    state2.markEventReceived();
-    state.unMarkEventReceived();
+    state.markEventReceived(false);
+    state2.markEventReceived(false);
+    state.unMarkEventReceived(false);
 
     var res = manager.resourcesWithEventPresent();
 

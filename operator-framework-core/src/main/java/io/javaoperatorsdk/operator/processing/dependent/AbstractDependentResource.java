@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.Optional;
@@ -134,16 +149,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    * @throws IllegalStateException if more than one candidate is found, in which case some other
    *     mechanism might be necessary to distinguish between candidate secondary resources
    */
-  protected Optional<R> selectTargetSecondaryResource(
-      Set<R> secondaryResources, P primary, Context<P> context) {
-    R desired = desired(primary, context);
-    var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
-    if (targetResources.size() > 1) {
-      throw new IllegalStateException(
-          "More than one secondary resource related to primary: " + targetResources);
-    }
-    return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
-  }
+  protected abstract Optional<R> selectTargetSecondaryResource(
+      Set<R> secondaryResources, P primary, Context<P> context);
 
   private void throwIfNull(R desired, P primary, String descriptor) {
     if (desired == null) {

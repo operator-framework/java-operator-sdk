@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.junit;
 
 import java.io.ByteArrayInputStream;
@@ -66,6 +81,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
+      KubernetesClient infrastructureKubernetesClient,
       Consumer<ConfigurationServiceOverrider> configurationServiceOverrider,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier,
@@ -78,6 +94,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
         kubernetesClient,
+        infrastructureKubernetesClient,
         namespaceNameSupplier,
         perClassNamespaceNameSupplier);
     this.reconcilers = reconcilers;
@@ -240,7 +257,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   protected void before(ExtensionContext context) {
     super.before(context);
 
-    final var kubernetesClient = getKubernetesClient();
+    final var kubernetesClient = getInfrastructureKubernetesClient();
 
     for (var ref : portForwards) {
       String podName =
@@ -313,7 +330,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   protected void after(ExtensionContext context) {
     super.after(context);
 
-    var kubernetesClient = getKubernetesClient();
+    var kubernetesClient = getInfrastructureKubernetesClient();
 
     var iterator = appliedCRDs.iterator();
     while (iterator.hasNext()) {
@@ -365,6 +382,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     private final List<String> additionalCRDs = new ArrayList<>();
     private Consumer<LocallyRunOperatorExtension> beforeStartHook;
     private KubernetesClient kubernetesClient;
+    private KubernetesClient infrastructureKubernetesClient;
 
     protected Builder() {
       super();
@@ -419,6 +437,12 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    public Builder withInfrastructureKubernetesClient(
+        KubernetesClient infrastructureKubernetesClient) {
+      this.infrastructureKubernetesClient = infrastructureKubernetesClient;
+      return this;
+    }
+
     public Builder withAdditionalCustomResourceDefinition(
         Class<? extends CustomResource> customResource) {
       additionalCustomResourceDefinitions.add(customResource);
@@ -452,6 +476,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           waitForNamespaceDeletion,
           oneNamespacePerClass,
           kubernetesClient,
+          infrastructureKubernetesClient,
           configurationServiceOverrider,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier,

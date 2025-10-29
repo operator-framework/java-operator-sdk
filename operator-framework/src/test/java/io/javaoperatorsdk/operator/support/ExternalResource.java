@@ -1,11 +1,27 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.support;
 
 import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.dependent.ExternalDependentIDProvider;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class ExternalResource {
+public class ExternalResource implements ExternalDependentIDProvider<String> {
 
   public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
 
@@ -64,5 +80,10 @@ public class ExternalResource {
     return primary.getMetadata().getName()
         + EXTERNAL_RESOURCE_NAME_DELIMITER
         + primary.getMetadata().getNamespace();
+  }
+
+  @Override
+  public String externalResourceId() {
+    return id;
   }
 }

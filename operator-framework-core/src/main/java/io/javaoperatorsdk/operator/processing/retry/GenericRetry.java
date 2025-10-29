@@ -1,4 +1,21 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.retry;
+
+import java.time.Duration;
 
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 
@@ -8,10 +25,15 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
   private double intervalMultiplier = GradualRetry.DEFAULT_MULTIPLIER;
   private long maxInterval = GradualRetry.DEFAULT_MAX_INTERVAL;
 
+  /**
+   * @deprecated use {@link GenericRetry#defaultLimitedExponentialRetry()} instead this instance.
+   *     Since GenericRetry is mutable, singleton is problematic.
+   */
+  @Deprecated(forRemoval = true)
   public static final Retry DEFAULT = new GenericRetry();
 
   public static GenericRetry defaultLimitedExponentialRetry() {
-    return (GenericRetry) DEFAULT;
+    return new GenericRetry();
   }
 
   public static GenericRetry noRetry() {
@@ -38,6 +60,11 @@ public class GenericRetry implements Retry, AnnotationConfigurable<GradualRetry>
 
   public long getInitialInterval() {
     return initialInterval;
+  }
+
+  public GenericRetry setInitialInterval(Duration initialInterval) {
+    setInitialInterval(initialInterval.toMillis());
+    return this;
   }
 
   public GenericRetry setInitialInterval(long initialInterval) {

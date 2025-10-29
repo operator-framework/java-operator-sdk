@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.junit;
 
 import java.io.File;
@@ -39,6 +54,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       boolean waitForNamespaceDeletion,
       boolean oneNamespacePerClass,
       KubernetesClient kubernetesClient,
+      KubernetesClient infrastructureKubernetesClient,
       Function<ExtensionContext, String> namespaceNameSupplier,
       Function<ExtensionContext, String> perClassNamespaceNameSupplier) {
     super(
@@ -48,6 +64,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
         preserveNamespaceOnError,
         waitForNamespaceDeletion,
         kubernetesClient,
+        infrastructureKubernetesClient,
         namespaceNameSupplier,
         perClassNamespaceNameSupplier);
     this.operatorDeployment = operatorDeployment;
@@ -69,7 +86,7 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
     final var crdPath = "./target/classes/META-INF/fabric8/";
     final var crdSuffix = "-v1.yml";
 
-    final var kubernetesClient = getKubernetesClient();
+    final var kubernetesClient = getInfrastructureKubernetesClient();
     for (var crdFile :
         Objects.requireNonNull(
             new File(crdPath).listFiles((ignored, name) -> name.endsWith(crdSuffix)))) {
@@ -107,13 +124,17 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
 
   @Override
   protected void deleteOperator() {
-    getKubernetesClient().resourceList(operatorDeployment).inNamespace(namespace).delete();
+    getInfrastructureKubernetesClient()
+        .resourceList(operatorDeployment)
+        .inNamespace(namespace)
+        .delete();
   }
 
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<HasMetadata> operatorDeployment;
     private Duration deploymentTimeout;
     private KubernetesClient kubernetesClient;
+    private KubernetesClient infrastructureKubernetesClient;
 
     protected Builder() {
       super();
@@ -150,7 +171,18 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
       return this;
     }
 
+    public Builder withInfrastructureKubernetesClient(KubernetesClient kubernetesClient) {
+      this.infrastructureKubernetesClient = kubernetesClient;
+      return this;
+    }
+
     public ClusterDeployedOperatorExtension build() {
+      infrastructureKubernetesClient =
+          infrastructureKubernetesClient != null
+              ? infrastructureKubernetesClient
+              : new KubernetesClientBuilder().build();
+      kubernetesClient =
+          kubernetesClient != null ? kubernetesClient : infrastructureKubernetesClient;
       return new ClusterDeployedOperatorExtension(
           operatorDeployment,
           deploymentTimeout,
@@ -159,7 +191,8 @@ public class ClusterDeployedOperatorExtension extends AbstractOperatorExtension 
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
           oneNamespacePerClass,
-          kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build(),
+          kubernetesClient,
+          infrastructureKubernetesClient,
           namespaceNameSupplier,
           perClassNamespaceNameSupplier);
     }

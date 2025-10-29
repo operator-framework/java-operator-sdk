@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.util.Optional;
@@ -72,4 +87,23 @@ public interface Context<P extends HasMetadata> {
    * @return {@code true} is another reconciliation is already scheduled, {@code false} otherwise
    */
   boolean isNextReconciliationImminent();
+
+  /**
+   * To check if the primary resource is already deleted. This value can be true only if you turn on
+   * {@link
+   * io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration#triggerReconcilerOnAllEvent()}
+   *
+   * @return true Delete event received for primary resource
+   * @since 5.2.0
+   */
+  boolean isPrimaryResourceDeleted();
+
+  /**
+   * Check this only if {@link #isPrimaryResourceDeleted()} is true.
+   *
+   * @return true if the primary resource is deleted, but the last known state is only available
+   *     from the caches of the underlying Informer, not from Delete event.
+   * @since 5.2.0
+   */
+  boolean isPrimaryResourceFinalStateUnknown();
 }

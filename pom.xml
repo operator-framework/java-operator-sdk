@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright Java Operator SDK Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.javaoperatorsdk</groupId>
   <artifactId>java-operator-sdk</artifactId>
-  <version>5.1.5-SNAPSHOT</version>
+  <version>5.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Operator SDK for Java</name>
   <description>Java SDK for implementing Kubernetes operators</description>
@@ -53,7 +70,7 @@
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
     <junit.version>5.13.4</junit.version>
-    <fabric8-client.version>7.3.1</fabric8-client.version>
+    <fabric8-client.version>7.4.0</fabric8-client.version>
     <slf4j.version>2.0.17</slf4j.version>
     <log4j.version>2.25.2</log4j.version>
     <mokito.version>5.20.0</mokito.version>
@@ -362,7 +379,56 @@
           </execution>
         </executions>
       </plugin>
-
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>5.0.0</version>
+        <configuration>
+          <aggregate>true</aggregate>
+          <licenseSets>
+            <licenseSet>
+              <header>license-header.txt</header>
+              <excludes>
+                <exclude>**/.idea</exclude>
+                <exclude>.idea</exclude>
+                <exclude>license-header.txt</exclude>
+                <exclude>OWNERS</exclude>
+                <exclude>.mvn/**/*</exclude>
+                <exclude>mvnw</exclude>
+                <exclude>mvnw.cmd</exclude>
+                <exclude>/**/*.txt</exclude>
+                <exclude>/**/*.gitignore</exclude>
+                <exclude>/**/*.crd</exclude>
+                <exclude>docs/public/**</exclude>
+                <exclude>docs/resources/**</exclude>
+                <exclude>docs/layouts/**</exclude>
+                <exclude>docs/**/*.webp</exclude>
+                <exclude>docs/**/*.sum</exclude>
+                <exclude>docs/**/*.lock</exclude>
+                <exclude>docs/**/*.nvmrc</exclude>
+                <exclude>docs/**/*.toml</exclude>
+                <exclude>docs/**/*.toml</exclude>
+                <exclude>docs/**/*.work</exclude>
+                <exclude>docs/**/*.mod</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
+          <mapping>
+            <go>JAVADOC_STYLE</go>
+            <svg>XML_STYLE</svg>
+            <Makefile>SCRIPT_STYLE</Makefile>
+          </mapping>
+        </configuration>
+        <executions>
+          <execution>
+            <id>add-license</id>
+            <goals>
+              <goal>format</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <profiles>

@@ -1,9 +1,25 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.dependent;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -103,6 +119,13 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
     @Override
     public Result<R> match(R resource, P primary, Context<P> context) {
       return bulkDependentResource.match(resource, desired, primary, context);
+    }
+
+    @Override
+    protected Optional<R> selectTargetSecondaryResource(
+        Set<R> secondaryResources, P primary, Context<P> context) {
+      throw new IllegalStateException(
+          "BulkDependentResource should not call selectTargetSecondaryResource.");
     }
 
     @Override

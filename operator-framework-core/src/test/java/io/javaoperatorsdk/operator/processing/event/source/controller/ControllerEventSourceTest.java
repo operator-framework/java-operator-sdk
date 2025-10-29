@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
@@ -53,10 +68,10 @@ class ControllerEventSourceTest
     TestCustomResource oldCustomResource = TestUtils.testCustomResource();
     oldCustomResource.getMetadata().setFinalizers(List.of(FINALIZER));
 
-    source.eventReceived(ResourceAction.UPDATED, customResource, oldCustomResource);
+    source.eventReceived(ResourceAction.UPDATED, customResource, oldCustomResource, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.eventReceived(ResourceAction.UPDATED, customResource, customResource);
+    source.eventReceived(ResourceAction.UPDATED, customResource, customResource, null);
     verify(eventHandler, times(1)).handleEvent(any());
   }
 
@@ -64,12 +79,12 @@ class ControllerEventSourceTest
   void dontSkipEventHandlingIfMarkedForDeletion() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     // mark for deletion
     customResource1.getMetadata().setDeletionTimestamp(LocalDateTime.now().toString());
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -77,11 +92,11 @@ class ControllerEventSourceTest
   void normalExecutionIfGenerationChanges() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
     customResource1.getMetadata().setGeneration(2L);
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -92,10 +107,10 @@ class ControllerEventSourceTest
 
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(1)).handleEvent(any());
 
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
     verify(eventHandler, times(2)).handleEvent(any());
   }
 
@@ -103,7 +118,7 @@ class ControllerEventSourceTest
   void eventWithNoGenerationProcessedIfNoFinalizer() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
 
     verify(eventHandler, times(1)).handleEvent(any());
   }
@@ -112,7 +127,7 @@ class ControllerEventSourceTest
   void callsBroadcastsOnResourceEvents() {
     TestCustomResource customResource1 = TestUtils.testCustomResource();
 
-    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1);
+    source.eventReceived(ResourceAction.UPDATED, customResource1, customResource1, null);
 
     verify(testController.getEventSourceManager(), times(1))
         .broadcastOnResourceEvent(
@@ -128,8 +143,8 @@ class ControllerEventSourceTest
     source = new ControllerEventSource<>(new TestController(onAddFilter, onUpdatePredicate, null));
     setUpSource(source, true, controllerConfig);
 
-    source.eventReceived(ResourceAction.ADDED, cr, null);
-    source.eventReceived(ResourceAction.UPDATED, cr, cr);
+    source.eventReceived(ResourceAction.ADDED, cr, null, null);
+    source.eventReceived(ResourceAction.UPDATED, cr, cr, null);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -141,9 +156,9 @@ class ControllerEventSourceTest
     source = new ControllerEventSource<>(new TestController(null, null, res -> false));
     setUpSource(source, true, controllerConfig);
 
-    source.eventReceived(ResourceAction.ADDED, cr, null);
-    source.eventReceived(ResourceAction.UPDATED, cr, cr);
-    source.eventReceived(ResourceAction.DELETED, cr, cr);
+    source.eventReceived(ResourceAction.ADDED, cr, null, null);
+    source.eventReceived(ResourceAction.UPDATED, cr, cr, null);
+    source.eventReceived(ResourceAction.DELETED, cr, cr, true);
 
     verify(eventHandler, never()).handleEvent(any());
   }
@@ -208,7 +223,8 @@ class ControllerEventSourceTest
               .withOnAddFilter(onAddFilter)
               .withOnUpdateFilter(onUpdateFilter)
               .withGenericFilter(genericFilter)
-              .buildForController());
+              .buildForController(),
+          false);
     }
   }
 }

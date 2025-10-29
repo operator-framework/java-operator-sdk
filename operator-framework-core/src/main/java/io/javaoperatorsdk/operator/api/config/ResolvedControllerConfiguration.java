@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
@@ -29,6 +44,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   private final Map<DependentResourceSpec, Object> configurations;
   private final ConfigurationService configurationService;
   private final String fieldManager;
+  private final boolean triggerReconcilerOnAllEvent;
   private WorkflowSpec workflowSpec;
 
   public ResolvedControllerConfiguration(ControllerConfiguration<P> other) {
@@ -44,6 +60,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         other.fieldManager(),
         other.getConfigurationService(),
         other.getInformerConfig(),
+        other.triggerReconcilerOnAllEvent(),
         other.getWorkflowSpec().orElse(null));
   }
 
@@ -59,6 +76,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       String fieldManager,
       ConfigurationService configurationService,
       InformerConfiguration<P> informerConfig,
+      boolean triggerReconcilerOnAllEvent,
       WorkflowSpec workflowSpec) {
     this(
         name,
@@ -71,7 +89,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         configurations,
         fieldManager,
         configurationService,
-        informerConfig);
+        informerConfig,
+        triggerReconcilerOnAllEvent);
     setWorkflowSpec(workflowSpec);
   }
 
@@ -86,7 +105,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
       Map<DependentResourceSpec, Object> configurations,
       String fieldManager,
       ConfigurationService configurationService,
-      InformerConfiguration<P> informerConfig) {
+      InformerConfiguration<P> informerConfig,
+      boolean triggerReconcilerOnAllEvent) {
     this.informerConfig = informerConfig;
     this.configurationService = configurationService;
     this.name = ControllerConfiguration.ensureValidName(name, associatedReconcilerClassName);
@@ -99,6 +119,7 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
     this.finalizer =
         ControllerConfiguration.ensureValidFinalizerName(finalizer, getResourceTypeName());
     this.fieldManager = fieldManager;
+    this.triggerReconcilerOnAllEvent = triggerReconcilerOnAllEvent;
   }
 
   protected ResolvedControllerConfiguration(
@@ -117,7 +138,8 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
         null,
         null,
         configurationService,
-        InformerConfiguration.builder(resourceClass).buildForController());
+        InformerConfiguration.builder(resourceClass).buildForController(),
+        false);
   }
 
   @Override
@@ -206,5 +228,10 @@ public class ResolvedControllerConfiguration<P extends HasMetadata>
   @Override
   public String fieldManager() {
     return fieldManager;
+  }
+
+  @Override
+  public boolean triggerReconcilerOnAllEvent() {
+    return triggerReconcilerOnAllEvent;
   }
 }

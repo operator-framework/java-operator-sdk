@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.event;
 
 import java.time.Duration;
@@ -394,6 +409,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(
+                null,
                 new RetryInfo() {
                   @Override
                   public int getAttemptCount() {
@@ -404,7 +420,9 @@ class ReconciliationDispatcherTest {
                   public boolean isLastAttempt() {
                     return true;
                   }
-                })
+                },
+                false,
+                false)
             .setResource(testCustomResource));
 
     ArgumentCaptor<Context> contextArgumentCaptor = ArgumentCaptor.forClass(Context.class);
@@ -495,6 +513,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(
         new ExecutionScope(
+                null,
                 new RetryInfo() {
                   @Override
                   public int getAttemptCount() {
@@ -505,7 +524,9 @@ class ReconciliationDispatcherTest {
                   public boolean isLastAttempt() {
                     return true;
                   }
-                })
+                },
+                false,
+                false)
             .setResource(testCustomResource));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
@@ -528,7 +549,7 @@ class ReconciliationDispatcherTest {
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, null, false, false).setResource(testCustomResource));
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
     assertThat(postExecControl.exceptionDuringExecution()).isTrue();
@@ -549,7 +570,7 @@ class ReconciliationDispatcherTest {
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, null, false, false).setResource(testCustomResource));
 
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
@@ -571,7 +592,7 @@ class ReconciliationDispatcherTest {
 
     var postExecControl =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, null, false, false).setResource(testCustomResource));
 
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
     verify(customResourceFacade, times(0)).patchStatus(eq(testCustomResource), any());
@@ -588,7 +609,7 @@ class ReconciliationDispatcherTest {
     reconciler.errorHandler = () -> ErrorStatusUpdateControl.patchStatus(testCustomResource);
 
     reconciliationDispatcher.handleExecution(
-        new ExecutionScope(null).setResource(testCustomResource));
+        new ExecutionScope(null, null, false, false).setResource(testCustomResource));
 
     verify(customResourceFacade, times(1)).patchStatus(eq(testCustomResource), any());
     verify(reconciler, times(1)).updateErrorStatus(eq(testCustomResource), any(), any());
@@ -611,7 +632,7 @@ class ReconciliationDispatcherTest {
     reconciler.errorHandler = () -> ErrorStatusUpdateControl.noStatusUpdate();
 
     reconciliationDispatcher.handleExecution(
-        new ExecutionScope(null).setResource(testCustomResource));
+        new ExecutionScope(null, null, false, false).setResource(testCustomResource));
 
     verify(reconciler, times(1))
         .updateErrorStatus(
@@ -675,10 +696,28 @@ class ReconciliationDispatcherTest {
 
     var res =
         reconciliationDispatcher.handleExecution(
-            new ExecutionScope(null).setResource(testCustomResource));
+            new ExecutionScope(null, null, false, false).setResource(testCustomResource));
 
     assertThat(res.getReScheduleDelay()).contains(delay);
     assertThat(res.getRuntimeException()).isEmpty();
+  }
+
+  @Test
+  void isDeleteEventCannotBeTrueIfNotTriggerOnAllEvent() {
+    assertThrows(
+        OperatorException.class,
+        () ->
+            reconciliationDispatcher.handleExecution(
+                new ExecutionScope(null, null, true, false).setResource(testCustomResource)));
+  }
+
+  @Test
+  void isDeleteFinalStateUnknownEventCannotBeTrueIfNotTriggerOnAllEvent() {
+    assertThrows(
+        OperatorException.class,
+        () ->
+            reconciliationDispatcher.handleExecution(
+                new ExecutionScope(null, null, false, true).setResource(testCustomResource)));
   }
 
   @Test
@@ -723,7 +762,7 @@ class ReconciliationDispatcherTest {
   }
 
   public <T extends HasMetadata> ExecutionScope<T> executionScopeWithCREvent(T resource) {
-    return (ExecutionScope<T>) new ExecutionScope<>(null).setResource(resource);
+    return (ExecutionScope<T>) new ExecutionScope<>(null, null, false, false).setResource(resource);
   }
 
   private class TestReconciler

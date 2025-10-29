@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator;
 
 import java.io.IOException;
@@ -6,14 +21,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import io.fabric8.kubernetes.api.builder.Builder;
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -73,36 +85,6 @@ public class ReconcilerUtils {
     }
     // otherwise, use the lower-cased full class name
     return getDefaultNameFor(reconcilerClass);
-  }
-
-  public static void checkIfCanAddOwnerReference(HasMetadata owner, HasMetadata resource) {
-    if (owner instanceof GenericKubernetesResource
-        || resource instanceof GenericKubernetesResource) {
-      return;
-    }
-    if (owner instanceof Namespaced) {
-      if (!(resource instanceof Namespaced)) {
-        throw new OperatorException(
-            "Cannot add owner reference from a cluster scoped to a namespace scoped resource."
-                + resourcesIdentifierDescription(owner, resource));
-      } else if (!Objects.equals(
-          owner.getMetadata().getNamespace(), resource.getMetadata().getNamespace())) {
-        throw new OperatorException(
-            "Cannot add owner reference between two resource in different namespaces."
-                + resourcesIdentifierDescription(owner, resource));
-      }
-    }
-  }
-
-  private static String resourcesIdentifierDescription(HasMetadata owner, HasMetadata resource) {
-    return " Owner name: "
-        + owner.getMetadata().getName()
-        + " Kind: "
-        + owner.getKind()
-        + ", Resource name: "
-        + resource.getMetadata().getName()
-        + " Kind: "
-        + resource.getKind();
   }
 
   public static String getNameFor(Reconciler reconciler) {

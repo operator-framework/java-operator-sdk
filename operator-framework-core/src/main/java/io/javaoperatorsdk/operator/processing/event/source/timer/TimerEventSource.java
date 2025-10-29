@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.event.source.timer;
 
 import java.util.Map;
@@ -22,13 +37,15 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   private Timer timer;
   private final Map<ResourceID, EventProducerTimeTask> onceTasks = new ConcurrentHashMap<>();
+  private boolean triggerReconcilerOnAllEvent;
 
   public TimerEventSource() {
     super(Void.class);
   }
 
-  public TimerEventSource(String name) {
+  public TimerEventSource(String name, boolean triggerReconcilerOnAllEvent) {
     super(Void.class, name);
+    this.triggerReconcilerOnAllEvent = triggerReconcilerOnAllEvent;
   }
 
   @SuppressWarnings("unused")
@@ -51,7 +68,11 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
 
   @Override
   public void onResourceDeleted(R resource) {
-    cancelOnceSchedule(ResourceID.fromResource(resource));
+    // for triggerReconcilerOnAllEvent the cancelOnceSchedule will be called on
+    // successful delete event processing
+    if (!triggerReconcilerOnAllEvent) {
+      cancelOnceSchedule(ResourceID.fromResource(resource));
+    }
   }
 
   public void cancelOnceSchedule(ResourceID customResourceUid) {

@@ -1,4 +1,23 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.dependent;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -105,5 +124,31 @@ public abstract class AbstractExternalDependentResource<
   @SuppressWarnings("rawtypes")
   protected InformerEventSource getExternalStateEventSource() {
     return externalStateEventSource;
+  }
+
+  @Override
+  protected Optional<R> selectTargetSecondaryResource(
+      Set<R> secondaryResources, P primary, Context<P> context) {
+    R desired = desired(primary, context);
+    List<R> targetResources;
+    if (desired instanceof ExternalDependentIDProvider<?> desiredWithId) {
+      targetResources =
+          secondaryResources.stream()
+              .filter(
+                  r ->
+                      ((ExternalDependentIDProvider<?>) r)
+                          .externalResourceId()
+                          .equals(desiredWithId.externalResourceId()))
+              .toList();
+    } else {
+      throw new IllegalStateException(
+          "Either implement ExternalDependentIDProvider or override this "
+              + " (selectTargetSecondaryResource) method.");
+    }
+    if (targetResources.size() > 1) {
+      throw new IllegalStateException(
+          "More than one secondary resource related to primary: " + targetResources);
+    }
+    return targetResources.isEmpty() ? Optional.empty() : Optional.of(targetResources.get(0));
   }
 }

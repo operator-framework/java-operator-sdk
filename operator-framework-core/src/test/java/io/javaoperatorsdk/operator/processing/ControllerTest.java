@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.Optional;
@@ -8,6 +23,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
+import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.MockControllerConfiguration;
@@ -23,7 +39,10 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowCleanup
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.monitoring.Metrics.NOOP;
+import static io.javaoperatorsdk.operator.processing.Controller.CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE;
+import static io.javaoperatorsdk.operator.processing.Controller.MANAGED_WORKFLOWS_NOT_SUPPORTED_TRIGGER_RECONCILER_ON_ALL_EVENT_ERROR_MESSAGE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -76,6 +95,54 @@ class ControllerTest {
     assertThat(controller.useFinalizer()).isTrue();
   }
 
+  @Test
+  void cleanerNotAllowedWithTriggerOnAllEventEnabled() {
+    Reconciler reconciler = mock(Reconciler.class, withSettings().extraInterfaces(Cleaner.class));
+    final var configuration = MockControllerConfiguration.forResource(Secret.class);
+    when(configuration.getConfigurationService()).thenReturn(new BaseConfigurationService());
+    when(configuration.triggerReconcilerOnAllEvent()).thenReturn(true);
+
+    var exception =
+        assertThrows(
+            OperatorException.class,
+            () ->
+                new Controller<Secret>(
+                    reconciler, configuration, MockKubernetesClient.client(Secret.class)));
+
+    assertThat(exception.getMessage()).isEqualTo(CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE);
+  }
+
+  @Test
+  void managedWorkflowNotAllowedWithOnAllEventEnabled() {
+    Reconciler reconciler = mock(Reconciler.class);
+    final var configuration = MockControllerConfiguration.forResource(Secret.class);
+
+    var configurationService = mock(ConfigurationService.class);
+    var mockWorkflowFactory = mock(ManagedWorkflowFactory.class);
+    var mockManagedWorkflow = mock(ManagedWorkflow.class);
+
+    when(configuration.getConfigurationService()).thenReturn(configurationService);
+    var workflowSpec = mock(WorkflowSpec.class);
+    when(configuration.getWorkflowSpec()).thenReturn(Optional.of(workflowSpec));
+    when(configurationService.getMetrics()).thenReturn(NOOP);
+    when(configurationService.getWorkflowFactory()).thenReturn(mockWorkflowFactory);
+    when(mockWorkflowFactory.workflowFor(any())).thenReturn(mockManagedWorkflow);
+    var managedWorkflowMock = workflow(true);
+    when(mockManagedWorkflow.resolve(any(), any())).thenReturn(managedWorkflowMock);
+
+    when(configuration.triggerReconcilerOnAllEvent()).thenReturn(true);
+
+    var exception =
+        assertThrows(
+            OperatorException.class,
+            () ->
+                new Controller<Secret>(
+                    reconciler, configuration, MockKubernetesClient.client(Secret.class)));
+
+    assertThat(exception.getMessage())
+        .isEqualTo(MANAGED_WORKFLOWS_NOT_SUPPORTED_TRIGGER_RECONCILER_ON_ALL_EVENT_ERROR_MESSAGE);
+  }
+
   @ParameterizedTest
   @CsvSource({
     "true, true, true, false",
@@ -122,7 +189,8 @@ class ControllerTest {
         new Controller<Secret>(
             reconciler, configuration, MockKubernetesClient.client(Secret.class));
 
-    controller.cleanup(new Secret(), new DefaultContext<>(null, controller, new Secret()));
+    controller.cleanup(
+        new Secret(), new DefaultContext<>(null, controller, new Secret(), false, false));
 
     verify(managedWorkflowMock, times(workflowCleanerExecuted ? 1 : 0)).cleanup(any(), any());
   }
@@ -131,6 +199,7 @@ class ControllerTest {
     var workflow = mock(Workflow.class);
     when(workflow.cleanup(any(), any())).thenReturn(mock(WorkflowCleanupResult.class));
     when(workflow.hasCleaner()).thenReturn(hasCleaner);
+    when(workflow.isEmpty()).thenReturn(false);
     return workflow;
   }
 }

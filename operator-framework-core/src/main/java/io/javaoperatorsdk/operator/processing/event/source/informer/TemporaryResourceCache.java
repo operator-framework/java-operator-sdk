@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.LinkedHashMap;
@@ -80,19 +95,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final ExpirationCache<String> tombstones = new ExpirationCache<>(1000000, 1200000);
   private final ManagedInformerEventSource<T, ?, ?> managedInformerEventSource;
   private final boolean parseResourceVersions;
-  private final ExpirationCache<String> knownResourceVersions;
 
   public TemporaryResourceCache(
       ManagedInformerEventSource<T, ?, ?> managedInformerEventSource,
       boolean parseResourceVersions) {
     this.managedInformerEventSource = managedInformerEventSource;
     this.parseResourceVersions = parseResourceVersions;
-    if (parseResourceVersions) {
-      // keep up to the 50000 add/updates for up to 5 minutes
-      knownResourceVersions = new ExpirationCache<>(50000, 600000);
-    } else {
-      knownResourceVersions = null;
-    }
   }
 
   public synchronized void onDeleteEvent(T resource, boolean unknownState) {
@@ -122,9 +130,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
    * @param previousResourceVersion null indicates an add
    */
   public synchronized void putResource(T newResource, String previousResourceVersion) {
-    if (knownResourceVersions != null) {
-      knownResourceVersions.add(newResource.getMetadata().getResourceVersion());
-    }
     var resourceId = ResourceID.fromResource(newResource);
     var cachedResource = managedInformerEventSource.get(resourceId).orElse(null);
 
@@ -159,17 +164,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
   }
 
-  public synchronized boolean isKnownResourceVersion(T resource) {
-    return knownResourceVersions != null
-        && knownResourceVersions.contains(resource.getMetadata().getResourceVersion());
-  }
-
   /**
    * @return true if {@link ConfigurationService#parseResourceVersionsForEventFilteringAndCaching()}
    *     is enabled and the resourceVersion of newResource is numerically greater than
    *     cachedResource, otherwise false
    */
-  private boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
+  public boolean isLaterResourceVersion(ResourceID resourceId, T newResource, T cachedResource) {
     try {
       if (parseResourceVersions
           && Long.parseLong(newResource.getMetadata().getResourceVersion())

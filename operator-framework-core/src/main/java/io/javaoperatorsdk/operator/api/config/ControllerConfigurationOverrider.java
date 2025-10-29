@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.api.config;
 
 import java.time.Duration;
@@ -30,6 +45,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Duration reconciliationMaxInterval;
   private Map<DependentResourceSpec, Object> configurations;
   private final InformerConfiguration<R>.Builder config;
+  private boolean triggerReconcilerOnAllEvent;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -42,6 +58,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
+    this.triggerReconcilerOnAllEvent = original.triggerReconcilerOnAllEvent();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -154,6 +171,12 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  public ControllerConfigurationOverrider<R> withTriggerReconcilerOnAllEvent(
+      boolean triggerReconcilerOnAllEvent) {
+    this.triggerReconcilerOnAllEvent = triggerReconcilerOnAllEvent;
+    return this;
+  }
+
   /**
    * Sets a max page size limit when starting the informer. This will result in pagination while
    * populating the cache. This means that longer lists will take multiple requests to fetch. See
@@ -198,6 +221,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         fieldManager,
         original.getConfigurationService(),
         config.buildForController(),
+        triggerReconcilerOnAllEvent,
         original.getWorkflowSpec().orElse(null));
   }
 

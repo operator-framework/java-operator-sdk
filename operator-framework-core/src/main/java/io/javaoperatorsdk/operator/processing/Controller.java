@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.processing;
 
 import java.util.ArrayList;
@@ -61,6 +76,11 @@ public class Controller<P extends HasMetadata>
   private static final String RESOURCE = "resource";
   private static final String STATUS = "status";
   private static final String BOTH = "both";
+  public static final String CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE =
+      "Cleaner is not supported when triggerReconcilerOnAllEvent enabled.";
+  public static final String
+      MANAGED_WORKFLOWS_NOT_SUPPORTED_TRIGGER_RECONCILER_ON_ALL_EVENT_ERROR_MESSAGE =
+          "Managed workflows are not supported when triggerReconcilerOnAllEvent enabled.";
 
   private final Reconciler<P> reconciler;
   private final ControllerConfiguration<P> configuration;
@@ -96,6 +116,16 @@ public class Controller<P extends HasMetadata>
     managedWorkflow = managed.resolve(kubernetesClient, configuration);
     explicitWorkflowInvocation =
         configuration.getWorkflowSpec().map(WorkflowSpec::isExplicitInvocation).orElse(false);
+
+    if (configuration.triggerReconcilerOnAllEvent()) {
+      if (isCleaner) {
+        throw new OperatorException(CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE);
+      }
+      if (managedWorkflow != null && !managedWorkflow.isEmpty()) {
+        throw new OperatorException(
+            MANAGED_WORKFLOWS_NOT_SUPPORTED_TRIGGER_RECONCILER_ON_ALL_EVENT_ERROR_MESSAGE);
+      }
+    }
 
     eventSourceManager = new EventSourceManager<>(this);
     eventProcessor = new EventProcessor<>(eventSourceManager, configurationService);
@@ -485,5 +515,9 @@ public class Controller<P extends HasMetadata>
   public boolean workflowContainsDependentForType(Class<?> clazz) {
     return managedWorkflow.getDependentResourcesByName().values().stream()
         .anyMatch(d -> d.resourceType().equals(clazz));
+  }
+
+  public boolean isCleaner() {
+    return isCleaner;
   }
 }

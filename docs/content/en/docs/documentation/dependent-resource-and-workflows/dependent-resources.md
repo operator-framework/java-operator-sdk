@@ -355,6 +355,42 @@ as [integration tests](https://github.com/operator-framework/java-operator-sdk/t
 To see how bulk dependent resources interact with workflow conditions, please refer to this
 [integration test](https://github.com/operator-framework/java-operator-sdk/tree/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/dependent/bulkdependent/conidition).
 
+## Dependent Resources with External Resource
+
+Dependent resources are designed to manage also non-Kubernetes or external resources.
+To implement such dependent you can extend `AbstractExternalDependentResource` or one of its 
+[subclasses](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/external).
+
+For Kubernetes resources we can have nice assumptions, like
+if there are multiple resources of the same type, we can select the target resource
+that dependent resource manages based on the name and namespace of the desired resource;
+or we can use a matcher based SSA in most of the cases if the resource is managed using SSA.
+
+### Selecting the target resource
+
+Unfortunately this is not true for external resources. So to make sure we are selecting
+the target resources from an event source, we provide a [mechanism](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java#L114-L138) that helps with that logic.
+Your POJO representing an external resource can implement [`ExternalResourceIDProvider`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/ExternalDependentIDProvider.java) : 
+
+```java
+
+public interface ExternalDependentIDProvider<T> {
+
+  T externalResourceId();
+}
+```
+
+That will provide an ID, what is used to check for equality for desired state and resources from event source caches.
+Not that if some reason this mechanism does not suit for you, you can simply 
+override [`selectTargetSecondaryResource`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java)
+method.
+
+### Matching external resources
+
+By default, external resources are matched using [equality](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/dependent/AbstractExternalDependentResource.java#L88-L92).
+So you can override equals of you POJO representing an external resource. 
+As an alternative you can always override the whole `match` method to completely customize matching.
+
 ## External State Tracking Dependent Resources
 
 It is sometimes necessary for a controller to track external (i.e. non-Kubernetes) state to
