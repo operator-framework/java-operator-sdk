@@ -44,7 +44,8 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
  * <p>There are two related concepts to understand:
  *
  * <ul>
- *   <li>CacheKeyMapper - maps/extracts a key used to reference the associated resource in the cache
+ *   <li>ResourceIDMapper - maps/extracts a key used to reference the associated resource in the
+ *       cache
  *   <li>Object equals usage - compares if the two resources are the same or same version.
  * </ul>
  *
