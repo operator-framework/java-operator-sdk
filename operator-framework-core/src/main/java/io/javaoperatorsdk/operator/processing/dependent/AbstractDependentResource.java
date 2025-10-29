@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -70,7 +71,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     if (creatable() || updatable()) {
       if (actualResource == null) {
         if (creatable) {
-          var desired = desired(primary, context);
+          var desired = getOrComputeDesired(context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -80,7 +81,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable()) {
           final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
-            final var desired = match.computedDesired().orElseGet(() -> desired(primary, context));
+            final var desired =
+                match.computedDesired().orElseGet(() -> getOrComputeDesired(context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
@@ -112,7 +114,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-
     var secondaryResources = context.getSecondaryResources(resourceType());
     if (secondaryResources.isEmpty()) {
       return Optional.empty();
@@ -136,7 +137,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
    */
   protected Optional<R> selectTargetSecondaryResource(
       Set<R> secondaryResources, P primary, Context<P> context) {
-    R desired = desired(primary, context);
+    R desired = getOrComputeDesired(context);
     var targetResources = secondaryResources.stream().filter(r -> r.equals(desired)).toList();
     if (targetResources.size() > 1) {
       throw new IllegalStateException(
@@ -203,6 +204,12 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     throw new IllegalStateException(
         "desired method must be implemented if this DependentResource can be created and/or"
             + " updated");
+  }
+
+  protected R getOrComputeDesired(Context<P> context) {
+    assert context instanceof DefaultContext<P>;
+    DefaultContext<P> defaultContext = (DefaultContext<P>) context;
+    return defaultContext.getOrComputeDesiredStateFor(this, p -> desired(p, defaultContext));
   }
 
   public void delete(P primary, Context<P> context) {
