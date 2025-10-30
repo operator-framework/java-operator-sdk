@@ -374,7 +374,7 @@ the target resources from an event source, we provide a [mechanism](https://gith
 maps the resource to and ID and the ID of desired and actual resource is checked for equality.
 
 Your POJO representing an external resource can implement [`ResourceIDProvider`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/ResourceIDProvider.java). 
-The default `ResourceIDMapper` implementation works on top of resource which implement `ResourceIDProvider`:
+The default `ResourceIDMapper` implementation works on top of resource which implements the `ResourceIDProvider`:
 
 ```java
 
