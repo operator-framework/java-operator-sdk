@@ -46,7 +46,7 @@ public interface ResourceIDMapper<R, ID> {
    * @param <R> secondary resource type
    */
   static <R> ResourceIDMapper<R, String> singleResourceResourceIDMapper() {
-    return r -> "josdk:mapper:id";
+    return r -> "id";
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
