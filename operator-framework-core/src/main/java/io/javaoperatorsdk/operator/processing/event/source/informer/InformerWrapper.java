@@ -156,6 +156,10 @@ class InformerWrapper<T extends HasMetadata>
     return Optional.ofNullable(cache.getByKey(getKey(resourceID)));
   }
 
+  public String getLastSyncResourceVersion() {
+    return this.informer.lastSyncResourceVersion();
+  }
+
   private String getKey(ResourceID resourceID) {
     return Cache.namespaceKeyFunc(resourceID.getNamespace().orElse(null), resourceID.getName());
   }
