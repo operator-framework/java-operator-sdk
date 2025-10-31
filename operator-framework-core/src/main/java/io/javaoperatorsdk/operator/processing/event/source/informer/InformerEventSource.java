@@ -35,7 +35,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSIONS;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 
 /**
  * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
@@ -86,11 +86,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     this(
         configuration,
         configuration.getKubernetesClient().orElse(context.getClient()),
-        configuration.comparableResourceVersions());
+        configuration.comparableResourceVersion());
   }
 
   InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
-    this(configuration, client, DEFAULT_COMPARABLE_RESOURCE_VERSIONS);
+    this(configuration, client, DEFAULT_COMPARABLE_RESOURCE_VERSION);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

@@ -53,6 +53,7 @@ public class InformerConfiguration<R extends HasMetadata> {
   private ItemStore<R> itemStore;
   private Long informerListLimit;
   private FieldSelector fieldSelector;
+  private boolean comparableResourceVersions;
 
   protected InformerConfiguration(
       Class<R> resourceClass,
@@ -66,7 +67,8 @@ public class InformerConfiguration<R extends HasMetadata> {
       GenericFilter<? super R> genericFilter,
       ItemStore<R> itemStore,
       Long informerListLimit,
-      FieldSelector fieldSelector) {
+      FieldSelector fieldSelector,
+      boolean comparableResourceVersions) {
     this(resourceClass);
     this.name = name;
     this.namespaces = namespaces;
@@ -79,6 +81,7 @@ public class InformerConfiguration<R extends HasMetadata> {
     this.itemStore = itemStore;
     this.informerListLimit = informerListLimit;
     this.fieldSelector = fieldSelector;
+    this.comparableResourceVersions = comparableResourceVersions;
   }
 
   private InformerConfiguration(Class<R> resourceClass) {
@@ -113,7 +116,8 @@ public class InformerConfiguration<R extends HasMetadata> {
             original.genericFilter,
             original.itemStore,
             original.informerListLimit,
-            original.fieldSelector)
+            original.fieldSelector,
+            original.comparableResourceVersions)
         .builder;
   }
 
@@ -288,6 +292,10 @@ public class InformerConfiguration<R extends HasMetadata> {
     return fieldSelector;
   }
 
+  public boolean isComparableResourceVersions() {
+    return comparableResourceVersions;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   public class Builder {
 
@@ -359,6 +367,7 @@ public class InformerConfiguration<R extends HasMetadata> {
                 Arrays.stream(informerConfig.fieldSelector())
                     .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
                     .toList()));
+        withComparableResourceVersions(informerConfig.comparableResourceVersion());
       }
       return this;
     }
@@ -457,6 +466,11 @@ public class InformerConfiguration<R extends HasMetadata> {
 
     public Builder withFieldSelector(FieldSelector fieldSelector) {
       InformerConfiguration.this.fieldSelector = fieldSelector;
+      return this;
+    }
+
+    public Builder withComparableResourceVersions(boolean comparableResourceVersions) {
+      InformerConfiguration.this.comparableResourceVersions = comparableResourceVersions;
       return this;
     }
   }

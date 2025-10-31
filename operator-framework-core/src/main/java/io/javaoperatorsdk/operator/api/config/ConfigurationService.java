@@ -44,7 +44,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSIONS;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
@@ -457,7 +457,7 @@ public interface ConfigurationService {
    * @since 5.3.0
    */
   default boolean comparableResourceVersions() {
-    return DEFAULT_COMPARABLE_RESOURCE_VERSIONS;
+    return DEFAULT_COMPARABLE_RESOURCE_VERSION;
   }
 
   /**
