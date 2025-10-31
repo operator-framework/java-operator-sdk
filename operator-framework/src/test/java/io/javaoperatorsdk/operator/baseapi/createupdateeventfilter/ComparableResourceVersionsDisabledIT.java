@@ -25,8 +25,7 @@ class ComparableResourceVersionsDisabledIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(new CreateUpdateEventFilterTestReconciler())
-          .withConfigurationService(overrider -> overrider.withComparableResourceVersions(false))
+          .withReconciler(new CreateUpdateEventFilterTestReconciler(false))
           .build();
 
   @Test
