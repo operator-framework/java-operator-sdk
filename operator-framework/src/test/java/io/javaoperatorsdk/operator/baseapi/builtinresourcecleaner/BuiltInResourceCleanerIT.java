@@ -85,7 +85,7 @@ class BuiltInResourceCleanerIT {
 
   Service testService() {
     Service service =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             Service.class,
             StandaloneDependentResourceIT.class,
             "/io/javaoperatorsdk/operator/service-template.yaml");

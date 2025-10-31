@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
@@ -42,16 +42,18 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
   }
 
   default String getFinalizerName() {
-    return ReconcilerUtils.getDefaultFinalizerName(getResourceClass());
+    return ReconcilerUtilsInternal.getDefaultFinalizerName(getResourceClass());
   }
 
   static String ensureValidName(String name, String reconcilerClassName) {
-    return name != null ? name : ReconcilerUtils.getDefaultReconcilerName(reconcilerClassName);
+    return name != null
+        ? name
+        : ReconcilerUtilsInternal.getDefaultReconcilerName(reconcilerClassName);
   }
 
   static String ensureValidFinalizerName(String finalizer, String resourceTypeName) {
     if (finalizer != null && !finalizer.isBlank()) {
-      if (ReconcilerUtils.isFinalizerValid(finalizer)) {
+      if (ReconcilerUtilsInternal.isFinalizerValid(finalizer)) {
         return finalizer;
       } else {
         throw new IllegalArgumentException(
@@ -61,7 +63,7 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
                 + " for details");
       }
     } else {
-      return ReconcilerUtils.getDefaultFinalizerName(resourceTypeName);
+      return ReconcilerUtilsInternal.getDefaultFinalizerName(resourceTypeName);
     }
   }
 

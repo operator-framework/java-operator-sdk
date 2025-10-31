@@ -34,7 +34,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 @SuppressWarnings("rawtypes")
-public class ReconcilerUtils {
+public class ReconcilerUtilsInternal {
 
   private static final String FINALIZER_NAME_SUFFIX = "/finalizer";
   protected static final String MISSING_GROUP_SUFFIX = ".javaoperatorsdk.io";
@@ -46,7 +46,7 @@ public class ReconcilerUtils {
       Pattern.compile(".*http(s?)://[^/]*/api(s?)/(\\S*).*"); // NOSONAR: input is controlled
 
   // prevent instantiation of util class
-  private ReconcilerUtils() {}
+  private ReconcilerUtilsInternal() {}
 
   public static boolean isFinalizerValid(String finalizer) {
     return HasMetadata.validateFinalizer(finalizer);

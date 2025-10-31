@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -96,22 +95,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     onUpdateFilter = informerConfig.getOnUpdateFilter();
     onDeleteFilter = informerConfig.getOnDeleteFilter();
     genericFilter = informerConfig.getGenericFilter();
-  }
-
-  public R updateAndCacheResource(
-      R resourceToUpdate, Context<?> context, UnaryOperator<R> updateMethod) {
-    ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    if (log.isDebugEnabled()) {
-      log.debug("Update and cache: {}", id);
-    }
-    try {
-      temporaryResourceCache.startModifying(id);
-      var updated = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, updated, resourceToUpdate);
-      return updated;
-    } finally {
-      temporaryResourceCache.doneModifying(id);
-    }
   }
 
   @Override
@@ -233,15 +216,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource);
+    handleRecentCreateOrUpdate(resource);
   }
 
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(Operation.ADD, resource, null);
+    handleRecentCreateOrUpdate(resource);
   }
 
-  private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
+  private void handleRecentCreateOrUpdate(R newResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     temporaryResourceCache.putResource(newResource);
   }

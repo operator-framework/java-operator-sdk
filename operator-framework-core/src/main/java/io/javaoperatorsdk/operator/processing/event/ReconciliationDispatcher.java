@@ -33,13 +33,14 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -203,7 +204,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     if (updateControl.isPatchStatus()) {
-      customResourceFacade.patchStatus(toUpdate, originalResource);
+      customResourceFacade.patchStatus(context, toUpdate, originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl, executionScope);
   }
@@ -241,7 +242,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       try {
         updatedResource =
             customResourceFacade.patchStatus(
-                errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
+                context, errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
       } catch (Exception ex) {
         int code = ex instanceof KubernetesClientException kcex ? kcex.getCode() : -1;
         Level exceptionLevel = Level.ERROR;
@@ -529,20 +530,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-    public R patchStatus(R resource, R originalResource) {
+    public R patchStatus(Context<R> context, R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
       if (useSSA) {
         var managedFields = resource.getMetadata().getManagedFields();
         try {
           resource.getMetadata().setManagedFields(null);
           var res = resource(resource);
-          return res.subresource("status")
-              .patch(
-                  new PatchContext.Builder()
-                      .withFieldManager(fieldManager)
-                      .withForce(true)
-                      .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                      .build());
+          return ReconcilerUtils.ssaStatusPrimary(context, resource);
         } finally {
           resource.getMetadata().setManagedFields(managedFields);
         }
@@ -562,7 +557,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         var res = resource(clonedOriginal);
         return res.editStatus(
             r -> {
-              ReconcilerUtils.setStatus(r, ReconcilerUtils.getStatus(resource));
+              ReconcilerUtilsInternal.setStatus(r, ReconcilerUtilsInternal.getStatus(resource));
               return r;
             });
       } finally {

@@ -77,7 +77,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .orElseThrow()
         .updateAndCacheResource(
             desired,
-            context,
             toCreate -> KubernetesDependentResource.super.handleCreate(toCreate, primary, context));
   }
 
@@ -87,7 +86,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
         .orElseThrow()
         .updateAndCacheResource(
             desired,
-            context,
             toUpdate ->
                 KubernetesDependentResource.super.handleUpdate(actual, toUpdate, primary, context));
   }
