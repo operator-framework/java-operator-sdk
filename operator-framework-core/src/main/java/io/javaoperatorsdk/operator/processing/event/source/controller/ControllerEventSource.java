@@ -32,7 +32,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 

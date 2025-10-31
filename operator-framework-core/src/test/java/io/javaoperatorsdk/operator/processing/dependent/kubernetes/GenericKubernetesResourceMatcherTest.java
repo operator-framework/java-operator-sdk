@@ -26,7 +26,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatusBuilder;
 import io.javaoperatorsdk.operator.MockKubernetesClient;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 
 import static io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher.match;
@@ -186,7 +186,7 @@ class GenericKubernetesResourceMatcherTest {
   }
 
   Deployment createDeployment() {
-    return ReconcilerUtils.loadYaml(
+    return ReconcilerUtilsInternal.loadYaml(
         Deployment.class, GenericKubernetesResourceMatcherTest.class, "nginx-deployment.yaml");
   }
 

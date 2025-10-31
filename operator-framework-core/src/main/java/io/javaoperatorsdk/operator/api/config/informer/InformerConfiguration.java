@@ -25,7 +25,7 @@ import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -92,7 +92,7 @@ public class InformerConfiguration<R extends HasMetadata> {
             // controller
             // where GenericKubernetesResource now does not apply
             ? GenericKubernetesResource.class.getSimpleName()
-            : ReconcilerUtils.getResourceTypeName(resourceClass);
+            : ReconcilerUtilsInternal.getResourceTypeName(resourceClass);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

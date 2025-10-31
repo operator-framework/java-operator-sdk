@@ -44,7 +44,7 @@ class OperatorTest {
   void shouldBePossibleToRetrieveRegisteredControllerByName() {
     final var operator = new Operator();
     final var reconciler = new FooReconciler();
-    final var name = ReconcilerUtils.getNameFor(reconciler);
+    final var name = ReconcilerUtilsInternal.getNameFor(reconciler);
 
     var registeredControllers = operator.getRegisteredControllers();
     assertTrue(operator.getRegisteredController(name).isEmpty());

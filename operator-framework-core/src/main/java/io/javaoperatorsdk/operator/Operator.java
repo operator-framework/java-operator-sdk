@@ -258,7 +258,7 @@ public class Operator implements LifecycleAware {
           "Cannot register reconciler with name "
               + reconciler.getClass().getCanonicalName()
               + " reconciler named "
-              + ReconcilerUtils.getNameFor(reconciler)
+              + ReconcilerUtilsInternal.getNameFor(reconciler)
               + " because its configuration cannot be found.\n"
               + " Known reconcilers are: "
               + configurationService.getKnownReconcilerNames());
