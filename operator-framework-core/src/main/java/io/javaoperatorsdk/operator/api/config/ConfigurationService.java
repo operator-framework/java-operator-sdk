@@ -44,8 +44,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
-
 /** An interface from which to retrieve configuration information. */
 public interface ConfigurationService {
 
@@ -445,19 +443,6 @@ public interface ConfigurationService {
   @Deprecated(forRemoval = true)
   default Set<Class<? extends HasMetadata>> defaultNonSSAResource() {
     return defaultNonSSAResources();
-  }
-
-  /**
-   * If the event logic can compare resourceVersions.
-   *
-   * <p>Enabled by default as Kubernetes does support this interpretation of resourceVersions.
-   * Disable only if your api server provides non comparable resource versions.
-   *
-   * @return if resource versions are comparable
-   * @since 5.3.0
-   */
-  default boolean comparableResourceVersions() {
-    return DEFAULT_COMPARABLE_RESOURCE_VERSION;
   }
 
   /**
