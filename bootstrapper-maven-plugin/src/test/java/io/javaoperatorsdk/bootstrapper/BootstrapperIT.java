@@ -13,9 +13,9 @@ import io.javaoperatorsdk.boostrapper.Bootstrapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BootstrapperTest {
+class BootstrapperIT {
 
-  private static final Logger log = LoggerFactory.getLogger(BootstrapperTest.class);
+  private static final Logger log = LoggerFactory.getLogger(BootstrapperIT.class);
 
   Bootstrapper bootstrapper = new Bootstrapper();
 
