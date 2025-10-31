@@ -35,7 +35,7 @@ import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -420,7 +420,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         var managedFields = resource.getMetadata().getManagedFields();
         try {
           resource.getMetadata().setManagedFields(null);
-          return ReconcileUtils.serverSideApplyPrimaryStatus(context, resource);
+          var res = resource(resource);
+          return ReconcilerUtils.ssaStatusPrimary(context, resource);
         } finally {
           resource.getMetadata().setManagedFields(managedFields);
         }
