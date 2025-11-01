@@ -272,7 +272,7 @@ to support it, later also might be integrated to Dependent Resources and/or Work
 The idea is the nutshell, is that you can track your expectations in the expectation manager in the reconciler
 which has an API that covers the common use cases. 
 
-The following sample is the simplified version of the integration tests that implements a logic that creates a 
+The following sample is the simplified version of the integration test that implements the logic that creates a 
 deployment and sets status message if there are the target three replicas ready:
 
 ```java
