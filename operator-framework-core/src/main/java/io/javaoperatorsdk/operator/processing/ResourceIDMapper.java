@@ -40,7 +40,10 @@ public interface ResourceIDMapper<R, ID> {
 
   /**
    * Can be used if a polling event source handles only single secondary resource and the id is
-   * String. See also docs for: {@link ExternalResourceCachingEventSource}
+   * String. See also docs for: {@link ExternalResourceCachingEventSource}; or in {@link
+   * io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource} when there
+   * is always only one secondary resource for that dependent resource. By definition cannot be used
+   * for a BulkDependent resources.
    *
    * @return static id mapper, all resources are mapped for same id.
    * @param <R> secondary resource type
