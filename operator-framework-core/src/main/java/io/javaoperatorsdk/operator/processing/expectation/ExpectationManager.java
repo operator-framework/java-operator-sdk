@@ -140,8 +140,4 @@ public class ExpectationManager<P extends HasMetadata> {
   public void removeExpectation(P primary) {
     registeredExpectations.remove(ResourceID.fromResource(primary));
   }
-
-  public void cleanup(P primary) {
-    registeredExpectations.remove(ResourceID.fromResource(primary));
-  }
 }

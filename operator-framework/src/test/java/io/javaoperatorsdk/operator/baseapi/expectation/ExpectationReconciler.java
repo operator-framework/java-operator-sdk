@@ -57,7 +57,7 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
     // cleans up expectation manager for the resource on delete event
     // in case of cleaner interface used, this can done also there.
     if (context.isPrimaryResourceDeleted()) {
-      expectationManager.cleanup(primary);
+      expectationManager.removeExpectation(primary);
     }
 
     // exiting asap if there is an expectation that is not timed out neither fulfilled

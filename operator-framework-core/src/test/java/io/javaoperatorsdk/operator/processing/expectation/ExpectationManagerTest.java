@@ -125,13 +125,13 @@ class ExpectationManagerTest {
   }
 
   @Test
-  void cleanupShouldRemoveExpectation() {
+  void removeExpectationShouldRemoveExpectation() {
     Expectation<ConfigMap> expectation = mock(Expectation.class);
 
     expectationManager.setExpectation(configMap, Duration.ofMinutes(5), expectation);
     assertThat(expectationManager.isExpectationPresent(configMap)).isTrue();
 
-    expectationManager.cleanup(configMap);
+    expectationManager.removeExpectation(configMap);
     assertThat(expectationManager.isExpectationPresent(configMap)).isFalse();
   }
 
