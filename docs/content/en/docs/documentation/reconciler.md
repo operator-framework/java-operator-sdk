@@ -270,7 +270,7 @@ Note that this feature is marked as `@Experimental`, since based on feedback the
 to support it, later also might be integrated to Dependent Resources and/or Workflows.
 
 The idea is the nutshell, is that you can track your expectations in the expectation manager in the reconciler.
-Which has an api that covers the common use cases. 
+which has an API that covers the common use cases. 
 
 The following sample is the simplified version of the integration tests that implements a logic that creates a 
 deployment and sets status message if there are the target three replicas ready:
