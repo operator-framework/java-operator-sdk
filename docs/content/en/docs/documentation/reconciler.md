@@ -299,7 +299,7 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
                     primary, Duration.ofSeconds(timeout), deploymentReadyExpectation(context));
             return UpdateControl.noUpdate();
         } else {
-            // checks the expectation if it is fulfilled also removes it,
+            // checks if the expectation if it is fulfilled, and also removes it.
             // in your logic you might add a next expectation based on your workflow.
             // Expectations have a name, so you can easily distinguish them if there is more of them.
             var res = expectationManager.checkExpectation("deploymentReadyExpectation",primary, context);
