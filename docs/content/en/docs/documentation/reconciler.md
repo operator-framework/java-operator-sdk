@@ -262,7 +262,7 @@ See also [sample](https://github.com/operator-framework/java-operator-sdk/blob/m
 
 ### Expectations
 
-Expectations are a pattern to make sure to check in the reconciliation that your secondary resources are in a certain state.
+Expectations are a pattern to ensure that, during reconciliation, your secondary resources are in a certain state.
 For a more detailed explanation see [this blogpost](https://ahmet.im/blog/controller-pitfalls/#expectations-pattern).
 You can find framework support for this pattern in [`io.javaoperatorsdk.operator.processing.expectation`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/expectation/) 
 package. See also related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/expectation/ExpectationReconciler.java).
