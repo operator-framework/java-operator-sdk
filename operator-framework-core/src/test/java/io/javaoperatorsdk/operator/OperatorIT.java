@@ -15,7 +15,8 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("rawtypes")
-class OperatorTest {
+class OperatorIT {
+
   @Test
   void shouldBePossibleToRetrieveNumberOfRegisteredControllers() {
     final var operator = new Operator();

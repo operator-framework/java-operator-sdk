@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LocallyRunOperatorExtensionTest {
+class LocallyRunOperatorExtensionIT {
 
   @Test
   void getAdditionalCRDsFromFiles() {
