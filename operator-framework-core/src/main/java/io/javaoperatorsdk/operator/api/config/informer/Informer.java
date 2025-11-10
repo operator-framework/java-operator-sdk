@@ -135,6 +135,8 @@ public @interface Informer {
 
   /**
    * true if we can consider resource versions as integers, therefore it is valid to compare them
+   *
+   * @since 5.3.0
    */
-  boolean comparableResourceVersion() default DEFAULT_COMPARABLE_RESOURCE_VERSION;
+  boolean comparableResourceVersions() default DEFAULT_COMPARABLE_RESOURCE_VERSION;
 }

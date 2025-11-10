@@ -367,7 +367,7 @@ public class InformerConfiguration<R extends HasMetadata> {
                 Arrays.stream(informerConfig.fieldSelector())
                     .map(f -> new FieldSelector.Field(f.path(), f.value(), f.negated()))
                     .toList()));
-        withComparableResourceVersions(informerConfig.comparableResourceVersion());
+        withComparableResourceVersions(informerConfig.comparableResourceVersions());
       }
       return this;
     }
