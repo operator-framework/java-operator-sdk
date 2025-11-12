@@ -320,6 +320,10 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
     result.put(keyInActual, valueList);
     var actualValueList = (List<Map<String, Object>>) actualMap.get(keyInActual);
 
+    if (actualValueList == null) {
+      return;
+    }
+
     var targetValuesByIndex = new TreeMap<Integer, Map<String, Object>>();
     var managedEntryByIndex = new HashMap<Integer, Map<String, Object>>();
 
@@ -396,6 +400,11 @@ public class SSABasedGenericKubernetesResourceMatcher<R extends HasMetadata> {
         continue;
       }
       var values = (List<?>) actualMap.get(keyInActual);
+
+      if (values == null || values.isEmpty()) {
+        continue;
+      }
+
       var targetClass = (values.get(0) instanceof Map) ? null : values.get(0).getClass();
       var value = parseKeyValue(keyWithoutPrefix(valueEntry.getKey()), targetClass, objectMapper);
       valueList.add(value);
