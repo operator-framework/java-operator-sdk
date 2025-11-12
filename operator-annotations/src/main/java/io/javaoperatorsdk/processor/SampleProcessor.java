@@ -53,7 +53,11 @@ public class SampleProcessor extends AbstractProcessor {
     }
 
     /**
+     * Writes a markdown file named {@code samples.md} listing all provided samples.
+     * Each sample is written as a section with its TLDR and description.
      *
+     * @param samples the list of samples to include in the markdown file
+     * @throws RuntimeException if an I/O error occurs during file writing
      */
     private void writeSampleMDFile(List<SampleInfo> samples) {
         try {
