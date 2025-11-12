@@ -50,6 +50,29 @@ class SSABasedGenericKubernetesResourceMatcherTest {
   }
 
   @Test
+  void statefulSetWithMissingManagedField() {
+    var actual = loadResource("statefulset-with-managed-fields-missing.yaml", StatefulSet.class);
+    var desired =
+        actual
+            .edit()
+            .editMetadata()
+            .withManagedFields(List.of())
+            .endMetadata()
+            .editSpec()
+            .editTemplate()
+            .editSpec()
+            .editFirstContainer()
+            .withImage("new")
+            .endContainer()
+            .endSpec()
+            .endTemplate()
+            .endSpec()
+            .build();
+
+    assertThat(matcher.matches(actual, desired, mockedContext)).isFalse();
+  }
+
+  @Test
   void noMatchWhenNoMatchingController() {
     var desired = loadResource("nginx-deployment.yaml", Deployment.class);
     var actual =

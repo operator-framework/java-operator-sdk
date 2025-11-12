@@ -1,0 +1,435 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    operator.keycloak.org/migrating: "false"
+    operator.keycloak.org/missing-secrets: "false"
+    operator.keycloak.org/watching-secrets: companyname-keycloak-the-keycloak-name-initial-admin;companyname-keycloak-the-keycloak-name-postgres-app;ldap-ca-certificates
+  creationTimestamp: "2025-10-17T16:13:16Z"
+  generation: 1
+  labels:
+    app: keycloak
+    app.kubernetes.io/instance: companyname-keycloak-the-keycloak-name
+    app.kubernetes.io/managed-by: keycloak-operator
+  name: companyname-keycloak-the-keycloak-name
+  namespace: ns
+  ownerReferences:
+  - apiVersion: k8s.keycloak.org/v2alpha1
+    kind: Keycloak
+    name: companyname-keycloak-the-keycloak-name
+    uid: 7b72f87b-c6d4-46a0-a7ca-7e10e0b47c0e
+  resourceVersion: "1722442060"
+  uid: 03f0d845-92d2-4c4a-8a68-bb495f5e55c0
+  managedFields:
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:operator.keycloak.org/migrating: {}
+            f:operator.keycloak.org/missing-secrets: {}
+            f:operator.keycloak.org/watching-secrets: {}
+          f:labels:
+            f:app: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+          f:ownerReferences:
+            k:{"uid":"7b72f87b-c6d4-46a0-a7ca-7e10e0b47c0e"}: {}
+        f:spec:
+          f:replicas: {}
+          f:selector: {}
+          f:serviceName: {}
+          f:template:
+            f:metadata:
+              f:annotations:
+                f:operator.keycloak.org/watched-secret-hash: {}
+              f:labels:
+                f:app: {}
+                f:app.kubernetes.io/component: {}
+                f:app.kubernetes.io/instance: {}
+                f:app.kubernetes.io/managed-by: {}
+            f:spec:
+              f:containers:
+                k:{"name":"keycloak"}:
+                  .: {}
+                  f:args: {}
+                  f:env:
+                    k:{"name":"KC_BOOTSTRAP_ADMIN_PASSWORD"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        f:secretKeyRef: {}
+                    k:{"name":"KC_BOOTSTRAP_ADMIN_USERNAME"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        f:secretKeyRef: {}
+                    k:{"name":"KC_CACHE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_DB"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_DB_PASSWORD"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        f:secretKeyRef: {}
+                    k:{"name":"KC_DB_SCHEMA"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_DB_URL_DATABASE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_DB_URL_HOST"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_DB_USERNAME"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        f:secretKeyRef: {}
+                    k:{"name":"KC_HEALTH_ENABLED"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_HOSTNAME"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_HTTP_ENABLED"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_HTTP_PORT"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_HTTPS_PORT"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_METRICS_ENABLED"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_PROXY_HEADERS"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_SPI_CACHE_EMBEDDED_DEFAULT_MACHINE_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        f:fieldRef: {}
+                    k:{"name":"KC_TRACING_RESOURCE_ATTRIBUTES"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_TRACING_SERVICE_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KC_TRUSTSTORE_PATHS"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"KCKEY_METRICS_ENABLED"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"POD_IP"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        f:fieldRef: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:livenessProbe:
+                    f:failureThreshold: {}
+                    f:httpGet:
+                      f:path: {}
+                      f:port: {}
+                      f:scheme: {}
+                    f:periodSeconds: {}
+                  f:name: {}
+                  f:ports:
+                    k:{"containerPort":8080,"protocol":"TCP"}:
+                      .: {}
+                      f:containerPort: {}
+                      f:name: {}
+                      f:protocol: {}
+                    k:{"containerPort":8443,"protocol":"TCP"}:
+                      .: {}
+                      f:containerPort: {}
+                      f:name: {}
+                      f:protocol: {}
+                    k:{"containerPort":9000,"protocol":"TCP"}:
+                      .: {}
+                      f:containerPort: {}
+                      f:name: {}
+                      f:protocol: {}
+                  f:readinessProbe:
+                    f:failureThreshold: {}
+                    f:httpGet:
+                      f:path: {}
+                      f:port: {}
+                      f:scheme: {}
+                    f:periodSeconds: {}
+                  f:resources:
+                    f:claims:
+                      k:{"name":"keycloak"}:
+                        .: {}
+                        f:name: {}
+                        f:request: {}
+                    f:limits:
+                      f:memory: {}
+                    f:requests:
+                      f:cpu: {}
+                      f:memory: {}
+                  f:startupProbe:
+                    f:failureThreshold: {}
+                    f:httpGet:
+                      f:path: {}
+                      f:port: {}
+                      f:scheme: {}
+                    f:periodSeconds: {}
+                  f:volumeMounts:
+                    k:{"mountPath":"/opt/keycloak/conf/truststores/secret-ldap-ca-certificates"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+              f:dnsPolicy: {}
+              f:restartPolicy: {}
+              f:terminationGracePeriodSeconds: {}
+              f:topologySpreadConstraints:
+                k:{"topologyKey":"kubernetes.io/hostname","whenUnsatisfiable":"ScheduleAnyway"}:
+                  .: {}
+                  f:labelSelector: {}
+                  f:maxSkew: {}
+                  f:topologyKey: {}
+                  f:whenUnsatisfiable: {}
+                k:{"topologyKey":"topology.kubernetes.io/zone","whenUnsatisfiable":"ScheduleAnyway"}:
+                  .: {}
+                  f:labelSelector: {}
+                  f:maxSkew: {}
+                  f:topologyKey: {}
+                  f:whenUnsatisfiable: {}
+              f:volumes:
+                k:{"name":"truststore-secret-ldap-ca-certificates"}:
+                  .: {}
+                  f:name: {}
+                  f:secret:
+                    f:secretName: {}
+      manager: controller
+      operation: Apply
+      time: "2025-10-17T16:13:16Z"
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:availableReplicas: {}
+          f:collisionCount: {}
+          f:currentReplicas: {}
+          f:currentRevision: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:updateRevision: {}
+          f:updatedReplicas: {}
+      manager: kube-controller-manager
+      operation: Update
+      subresource: status
+      time: "2025-11-01T22:35:47Z"
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: keycloak
+      app.kubernetes.io/instance: companyname-keycloak-the-keycloak-name
+      app.kubernetes.io/managed-by: keycloak-operator
+  serviceName: companyname-keycloak-the-keycloak-name-discovery
+  template:
+    metadata:
+      annotations:
+        operator.keycloak.org/watched-secret-hash: 57e61d6eea030b446d392972aca00088408828a69aecfb201c57d5e1a9dd01bc
+      creationTimestamp: null
+      labels:
+        app: keycloak
+        app.kubernetes.io/component: server
+        app.kubernetes.io/instance: companyname-keycloak-the-keycloak-name
+        app.kubernetes.io/managed-by: keycloak-operator
+    spec:
+      containers:
+      - args:
+        - -Djgroups.bind.address=$(POD_IP)
+        - --verbose
+        - start
+        - --optimized
+        env:
+        - name: KC_HOSTNAME
+          value: host
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_HTTP_PORT
+          value: "8080"
+        - name: KC_HTTPS_PORT
+          value: "8443"
+        - name: KC_DB
+          value: postgres
+        - name: KC_DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: companyname-keycloak-the-keycloak-name-postgres-app
+        - name: KC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: companyname-keycloak-the-keycloak-name-postgres-app
+        - name: KC_DB_URL_DATABASE
+          value: keycloak
+        - name: KC_DB_URL_HOST
+          value: companyname-keycloak-the-keycloak-name-postgres-rw
+        - name: KC_DB_SCHEMA
+          value: public
+        - name: KC_PROXY_HEADERS
+          value: forwarded
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: companyname-keycloak-the-keycloak-name-initial-admin
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: companyname-keycloak-the-keycloak-name-initial-admin
+        - name: KC_CACHE
+          value: ispn
+        - name: KC_HEALTH_ENABLED
+          value: "true"
+        - name: KC_METRICS_ENABLED
+          value: "true"
+        - name: KCKEY_METRICS_ENABLED
+          value: metrics-enabled
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: KC_SPI_CACHE_EMBEDDED_DEFAULT_MACHINE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: KC_TRUSTSTORE_PATHS
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+        - name: KC_TRACING_SERVICE_NAME
+          value: companyname-keycloak-the-keycloak-name
+        - name: KC_TRACING_RESOURCE_ATTRIBUTES
+          value: k8s.namespace.name=prj-sso-operators
+        image: companyname-docker.*********/release/keycloak:26.4.1-0
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /health/live
+            port: 9000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: keycloak
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9000
+          name: management
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /health/ready
+            port: 9000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            memory: 3Gi
+          requests:
+            cpu: 10m
+            memory: 256Mi
+        startupProbe:
+          failureThreshold: 600
+          httpGet:
+            path: /health/started
+            port: 9000
+            scheme: HTTP
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/keycloak/conf/truststores/secret-ldap-ca-certificates
+          name: truststore-secret-ldap-ca-certificates
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app: keycloak
+            app.kubernetes.io/component: server
+            app.kubernetes.io/instance: companyname-keycloak-the-keycloak-name
+            app.kubernetes.io/managed-by: keycloak-operator
+        maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+      - labelSelector:
+          matchLabels:
+            app: keycloak
+            app.kubernetes.io/component: server
+            app.kubernetes.io/instance: companyname-keycloak-the-keycloak-name
+            app.kubernetes.io/managed-by: keycloak-operator
+        maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+      volumes:
+      - name: truststore-secret-ldap-ca-certificates
+        secret:
+          defaultMode: 420
+          secretName: ldap-ca-certificates
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+status:
+  availableReplicas: 1
+  collisionCount: 0
+  currentReplicas: 1
+  currentRevision: companyname-keycloak-the-keycloak-name-75d6c885bb
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updateRevision: companyname-keycloak-the-keycloak-name-75d6c885bb
+  updatedReplicas: 1
