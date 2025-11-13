@@ -55,7 +55,7 @@ public class ExpectationManager<P extends HasMetadata> {
    *
    * @param primary resource
    * @param timeout of expectation
-   * @param expectation to check
+   * @param expectation to set
    */
   // we might consider in the future to throw an exception if an expectation is already set
   public void setExpectation(P primary, Duration timeout, Expectation<P> expectation) {
@@ -108,7 +108,7 @@ public class ExpectationManager<P extends HasMetadata> {
   /*
    * Returns true if there is an expectation for the primary resource, but it is not yet fulfilled
    * neither timed out.
-   * The intention behind is that you can exit reconciliation early with a simple check
+   * The intention behind this is that you can exit reconciliation early with a simple check
    * if true.
    * */
   public boolean ongoingExpectationPresent(P primary, Context<P> context) {
