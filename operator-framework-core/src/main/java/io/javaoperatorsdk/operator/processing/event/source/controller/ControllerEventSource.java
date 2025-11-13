@@ -51,7 +51,7 @@ public class ControllerEventSource<T extends HasMetadata>
         NAME,
         controller.getCRClient(),
         controller.getConfiguration(),
-        controller.getConfiguration().getConfigurationService().comparableResourceVersions());
+        controller.getConfiguration().getInformerConfig().isComparableResourceVersions());
     this.controller = controller;
 
     final var config = controller.getConfiguration();

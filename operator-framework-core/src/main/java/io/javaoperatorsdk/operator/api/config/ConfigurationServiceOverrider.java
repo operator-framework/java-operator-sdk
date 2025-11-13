@@ -51,7 +51,6 @@ public class ConfigurationServiceOverrider {
   private Duration reconciliationTerminationTimeout;
   private Boolean ssaBasedCreateUpdateMatchForDependentResources;
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
-  private Boolean comparableResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
 
@@ -163,26 +162,6 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withDefaultNonSSAResource(
       Set<Class<? extends HasMetadata>> defaultNonSSAResource) {
     this.defaultNonSSAResource = defaultNonSSAResource;
-    return this;
-  }
-
-  /**
-   * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
-   * @return this
-   */
-  public ConfigurationServiceOverrider withComparableResourceVersions(boolean value) {
-    this.comparableResourceVersions = value;
-    return this;
-  }
-
-  /**
-   * @deprecated use withComparableResourceVersions
-   * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
-   * @return this
-   */
-  @Deprecated(forRemoval = true)
-  public ConfigurationServiceOverrider withParseResourceVersions(boolean value) {
-    this.comparableResourceVersions = value;
     return this;
   }
 
@@ -329,12 +308,6 @@ public class ConfigurationServiceOverrider {
         return overriddenValueOrDefault(
             cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
-      }
-
-      @Override
-      public boolean comparableResourceVersions() {
-        return overriddenValueOrDefault(
-            comparableResourceVersions, ConfigurationService::comparableResourceVersions);
       }
     };
   }
