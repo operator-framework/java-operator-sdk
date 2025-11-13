@@ -28,6 +28,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_FOLLOW_CONTROLLER_NAMESPACE_CHANGES;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_LONG_VALUE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_VALUE_SET;
@@ -131,4 +132,11 @@ public @interface Informer {
 
   /** Kubernetes field selector for additional resource filtering */
   Field[] fieldSelector() default {};
+
+  /**
+   * true if we can consider resource versions as integers, therefore it is valid to compare them
+   *
+   * @since 5.3.0
+   */
+  boolean comparableResourceVersions() default DEFAULT_COMPARABLE_RESOURCE_VERSION;
 }
