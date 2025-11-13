@@ -34,9 +34,7 @@ class PreviousAnnotationDisabledIT {
   @RegisterExtension
   LocallyRunOperatorExtension operator =
       LocallyRunOperatorExtension.builder()
-          .withReconciler(new CreateUpdateEventFilterTestReconciler())
-          .withConfigurationService(
-              overrider -> overrider.withPreviousAnnotationForDependentResources(false))
+          .withReconciler(new CreateUpdateEventFilterTestReconciler(false))
           .build();
 
   @Test
