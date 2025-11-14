@@ -50,7 +50,7 @@ public interface ResourceIDMapper<R, ID> {
    */
   static <R> ResourceIDMapper<R, String> singleResourceResourceIDMapper() {
     // the result could be any string, by definition would work with any value
-    return r -> "id";
+    return r -> "irrelevant";
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
