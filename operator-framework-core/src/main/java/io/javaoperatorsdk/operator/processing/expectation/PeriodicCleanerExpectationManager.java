@@ -59,11 +59,12 @@ public class PeriodicCleanerExpectationManager<P extends HasMetadata>
         this::clean, period.toMillis(), period.toMillis(), TimeUnit.MICROSECONDS);
   }
 
-  public void clean() {
+  protected void clean() {
     registeredExpectations.entrySet().removeIf(e -> primaryCache.get(e.getKey()).isEmpty());
   }
 
-  void stop() {
+  /** Allows to stop manager. Note that you usually don't have to stop the manager explicitly. */
+  public void stop() {
     scheduler.shutdownNow();
   }
 }
