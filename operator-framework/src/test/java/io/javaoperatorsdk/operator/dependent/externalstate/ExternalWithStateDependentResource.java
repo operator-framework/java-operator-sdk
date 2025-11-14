@@ -33,7 +33,8 @@ import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 import io.javaoperatorsdk.operator.support.ExternalResource;
 
 public class ExternalWithStateDependentResource
-    extends PerResourcePollingDependentResource<ExternalResource, ExternalStateCustomResource>
+    extends PerResourcePollingDependentResource<
+        ExternalResource, ExternalStateCustomResource, String>
     implements DependentResourceWithExplicitState<
             ExternalResource, ExternalStateCustomResource, ConfigMap>,
         Updater<ExternalResource, ExternalStateCustomResource> {

@@ -30,7 +30,7 @@ import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 
 public abstract class AbstractExternalDependentResource
     extends PollingDependentResource<
-        ExternalResource, MultipleManagedExternalDependentResourceCustomResource>
+        ExternalResource, MultipleManagedExternalDependentResourceCustomResource, String>
     implements Creator<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>,
         Updater<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>,
         Deleter<MultipleManagedExternalDependentResourceCustomResource> {

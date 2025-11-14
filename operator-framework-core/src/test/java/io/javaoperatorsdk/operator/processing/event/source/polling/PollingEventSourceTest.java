@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
 
 class PollingEventSourceTest
     extends AbstractEventSourceTestBase<
-        PollingEventSource<SampleExternalResource, HasMetadata>, EventHandler> {
+        PollingEventSource<SampleExternalResource, HasMetadata, String>, EventHandler> {
 
   public static final int DEFAULT_WAIT_PERIOD = 100;
   public static final Duration POLL_PERIOD = Duration.ofMillis(30L);
@@ -46,7 +46,7 @@ class PollingEventSourceTest
   private final PollingEventSource.GenericResourceFetcher<SampleExternalResource> resourceFetcher =
       mock(PollingEventSource.GenericResourceFetcher.class);
 
-  private final PollingEventSource<SampleExternalResource, HasMetadata> pollingEventSource =
+  private final PollingEventSource<SampleExternalResource, HasMetadata, String> pollingEventSource =
       new PollingEventSource<>(
           SampleExternalResource.class,
           new PollingConfiguration<>(

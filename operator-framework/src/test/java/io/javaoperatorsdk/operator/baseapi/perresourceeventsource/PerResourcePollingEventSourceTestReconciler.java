@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingConfigurationBuilder;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
@@ -52,19 +53,22 @@ public class PerResourcePollingEventSourceTestReconciler
   @Override
   public List<EventSource<?, PerResourceEventSourceCustomResource>> prepareEventSources(
       EventSourceContext<PerResourceEventSourceCustomResource> context) {
-    PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource> eventSource =
-        new PerResourcePollingEventSource<>(
-            String.class,
-            context,
-            new PerResourcePollingConfigurationBuilder<>(
-                    (PerResourceEventSourceCustomResource resource) -> {
-                      numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
-                      numberOfFetchExecutions.compute(
-                          resource.getMetadata().getName(), (s, v) -> v + 1);
-                      return Set.of(UUID.randomUUID().toString());
-                    },
-                    Duration.ofMillis(POLL_PERIOD))
-                .build());
+    PerResourcePollingEventSource<String, PerResourceEventSourceCustomResource, String>
+        eventSource =
+            new PerResourcePollingEventSource<>(
+                String.class,
+                context,
+                new PerResourcePollingConfigurationBuilder<
+                        String, PerResourceEventSourceCustomResource, String>(
+                        (PerResourceEventSourceCustomResource resource) -> {
+                          numberOfFetchExecutions.putIfAbsent(resource.getMetadata().getName(), 0);
+                          numberOfFetchExecutions.compute(
+                              resource.getMetadata().getName(), (s, v) -> v + 1);
+                          return Set.of(UUID.randomUUID().toString());
+                        },
+                        Duration.ofMillis(POLL_PERIOD))
+                    .withResourceIDMapper(ResourceIDMapper.singleResourceResourceIDMapper())
+                    .build());
     return List.of(eventSource);
   }
 

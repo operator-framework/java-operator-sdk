@@ -34,9 +34,11 @@ import io.javaoperatorsdk.operator.support.ExternalResource;
 
 public class BulkDependentResourceExternalWithState
     extends PerResourcePollingDependentResource<
-        ExternalResource, ExternalStateBulkDependentCustomResource>
-    implements BulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
-        CRUDBulkDependentResource<ExternalResource, ExternalStateBulkDependentCustomResource>,
+        ExternalResource, ExternalStateBulkDependentCustomResource, String>
+    implements BulkDependentResource<
+            ExternalResource, ExternalStateBulkDependentCustomResource, String>,
+        CRUDBulkDependentResource<
+            ExternalResource, ExternalStateBulkDependentCustomResource, String>,
         DependentResourceWithExplicitState<
             ExternalResource, ExternalStateBulkDependentCustomResource, ConfigMap> {
 
@@ -45,6 +47,7 @@ public class BulkDependentResourceExternalWithState
 
   public BulkDependentResourceExternalWithState() {
     super(ExternalResource.class, Duration.ofMillis(300));
+    setResourceIDMapper(this::externalResourceIndex);
   }
 
   @Override
@@ -158,10 +161,5 @@ public class BulkDependentResourceExternalWithState
   private String configMapName(
       ExternalStateBulkDependentCustomResource primary, ExternalResource resource) {
     return primary.getMetadata().getName() + DELIMITER + externalResourceIndex(resource);
-  }
-
-  @Override
-  public String keyFor(ExternalResource resource) {
-    return externalResourceIndex(resource);
   }
 }

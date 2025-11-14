@@ -21,13 +21,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.CacheKeyMapper;
 import io.javaoperatorsdk.operator.processing.event.source.ExternalResourceCachingEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventAware;
 
-public class CachingInboundEventSource<R, P extends HasMetadata>
-    extends ExternalResourceCachingEventSource<R, P> implements ResourceEventAware<P> {
+public class CachingInboundEventSource<R, P extends HasMetadata, ID>
+    extends ExternalResourceCachingEventSource<R, P, ID> implements ResourceEventAware<P> {
 
   private final ResourceFetcher<R, P> resourceFetcher;
   private final Set<ResourceID> fetchedForPrimaries = ConcurrentHashMap.newKeySet();
@@ -35,8 +35,8 @@ public class CachingInboundEventSource<R, P extends HasMetadata>
   public CachingInboundEventSource(
       ResourceFetcher<R, P> resourceFetcher,
       Class<R> resourceClass,
-      CacheKeyMapper<R> cacheKeyMapper) {
-    super(resourceClass, cacheKeyMapper);
+      ResourceIDMapper<R, ID> resourceIDMapper) {
+    super(resourceClass, resourceIDMapper);
     this.resourceFetcher = resourceFetcher;
   }
 
@@ -48,7 +48,7 @@ public class CachingInboundEventSource<R, P extends HasMetadata>
     super.handleResources(primaryID, resource);
   }
 
-  public void handleResourceDeleteEvent(ResourceID primaryID, String resourceID) {
+  public void handleResourceDeleteEvent(ResourceID primaryID, ID resourceID) {
     super.handleDelete(primaryID, Set.of(resourceID));
   }
 
