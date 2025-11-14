@@ -29,7 +29,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_
 
 /**
  * Expectation manager implementation that works without enabling {@link
- * ControllerConfiguration#triggerReconcilerOnAllEvent()}. Periodically checks and cleanups'
+ * ControllerConfiguration#triggerReconcilerOnAllEvent()}. Periodically checks and cleans
  * expectations for primary resources which are no longer present in the cache.
  */
 @Experimental(API_MIGHT_CHANGE)
