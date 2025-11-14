@@ -23,6 +23,11 @@ import io.javaoperatorsdk.operator.api.reconciler.Experimental;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Experimental.API_MIGHT_CHANGE;
 
+/**
+ * Expectation is basically a named predicate, that has access to the reconciliation context.
+ * Therefore, access to all caches, so can check current state of all the relevant resources. Name
+ * is used to distinguish in reconciliation what is the actual expectation for which we wait for.
+ */
 @Experimental(API_MIGHT_CHANGE)
 public interface Expectation<P extends HasMetadata> {
 
