@@ -40,7 +40,7 @@ import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -195,7 +195,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     if (updateControl.isPatchResource()) {
-      updatedCustomResource = patchResource(toUpdate, originalResource);
+      updatedCustomResource = patchResource(context, toUpdate, originalResource);
       if (!useSSA) {
         toUpdate
             .getMetadata()
@@ -381,7 +381,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
       resource.setMetadata(objectMeta);
       resource.addFinalizer(configuration().getFinalizerName());
-      return customResourceFacade.patchResourceWithSSA(resource);
+      return customResourceFacade.simpleServerSideApply(resource);
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException
@@ -406,7 +406,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         false);
   }
 
-  private P patchResource(P resource, P originalResource) {
+  private P patchResource(Context<P> context, P resource, P originalResource) {
     log.debug(
         "Updating resource: {} with version: {}; SSA: {}",
         getUID(resource),
@@ -419,7 +419,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // addFinalizer already prevents adding an already present finalizer so no need to check
       resource.addFinalizer(finalizerName);
     }
-    return customResourceFacade.patchResource(resource, originalResource);
+    return customResourceFacade.patchResource(context, resource, originalResource);
   }
 
   ControllerConfiguration<P> configuration() {
@@ -444,7 +444,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         if (forceNotUseSSA) {
           return customResourceFacade.patchResourceWithoutSSA(resource, originalResource);
         } else {
-          return customResourceFacade.patchResource(resource, originalResource);
+          return customResourceFacade.simpleServerSideApply(resource);
         }
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
@@ -516,7 +516,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       return resource(originalResource).edit(r -> resource);
     }
 
-    public R patchResource(R resource, R originalResource) {
+    public R patchResource(Context<R> context, R resource, R originalResource) {
       if (log.isDebugEnabled()) {
         log.debug(
             "Trying to replace resource {}, version: {}",
@@ -524,9 +524,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             resource.getMetadata().getResourceVersion());
       }
       if (useSSA) {
-        return patchResourceWithSSA(resource);
+        return ReconcileUtils.serverSideApplyPrimary(context, resource);
       } else {
-        return resource(originalResource).edit(r -> resource);
+        return ReconcileUtils.jsonPatchPrimary(context, originalResource, r -> resource);
       }
     }
 
@@ -537,7 +537,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         try {
           resource.getMetadata().setManagedFields(null);
           var res = resource(resource);
-          return ReconcilerUtils.ssaStatusPrimary(context, resource);
+          return ReconcileUtils.serverSideApplyPrimaryStatus(context, resource);
         } finally {
           resource.getMetadata().setManagedFields(managedFields);
         }
@@ -567,7 +567,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
 
-    public R patchResourceWithSSA(R resource) {
+    public R simpleServerSideApply(R resource) {
       return resource(resource)
           .patch(
               new PatchContext.Builder()
