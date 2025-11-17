@@ -403,7 +403,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         resourceForExecution,
         originalResource,
         r -> r.addFinalizer(configuration().getFinalizerName()),
-        false);
+        true);
   }
 
   private P patchResource(Context<P> context, P resource, P originalResource) {
