@@ -164,7 +164,7 @@ class ReconciliationDispatcherTest {
 
   @Test
   void addFinalizerOnNewResourceWithoutSSA() {
-    initConfigService(false);
+    initConfigService(false, false);
     final ReconciliationDispatcher<TestCustomResource> dispatcher =
         init(testCustomResource, reconciler, null, customResourceFacade, true);
 
@@ -172,11 +172,9 @@ class ReconciliationDispatcherTest {
     dispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
     verify(reconciler, never()).reconcile(ArgumentMatchers.eq(testCustomResource), any());
     verify(customResourceFacade, times(1))
-        .patchResource(
-            any(),
-            argThat(testCustomResource -> testCustomResource.hasFinalizer(DEFAULT_FINALIZER)),
-            any());
-    assertThat(testCustomResource.hasFinalizer(DEFAULT_FINALIZER)).isTrue();
+        .patchResourceWithoutSSA(
+            argThat(cr -> cr.hasFinalizer(DEFAULT_FINALIZER)),
+            argThat(cr -> !cr.hasFinalizer(DEFAULT_FINALIZER)));
   }
 
   @Test
@@ -668,7 +666,7 @@ class ReconciliationDispatcherTest {
 
     removeFinalizers(testCustomResource);
     reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-    when(customResourceFacade.patchResource(any(), any(), any()))
+    when(customResourceFacade.patchResourceWithoutSSA(any(), any()))
         .thenThrow(new KubernetesClientException(null, 409, null))
         .thenReturn(testCustomResource);
     when(customResourceFacade.getResource(any(), any()))
@@ -681,7 +679,7 @@ class ReconciliationDispatcherTest {
 
     reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
 
-    verify(customResourceFacade, times(2)).patchResource(any(), any(), any());
+    verify(customResourceFacade, times(2)).patchResourceWithoutSSA(any(), any());
   }
 
   @Test
