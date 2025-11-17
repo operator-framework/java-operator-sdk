@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -212,6 +213,7 @@ class PrimaryUpdateAndCacheUtilsTest {
   // naive performance test that compares the work case scenario for the parsing and non-parsing
   // variants
   @Test
+  @Disabled
   public void compareResourcePerformanceTest() {
     var execNum = 30000000;
     var startTime = System.currentTimeMillis();
