@@ -29,6 +29,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.PACKAGE})
 public @interface Experimental {
+  /**
+   * Message for experimental features that we intend to keep and maintain, but the API might change
+   * usually, based on user feedback.
+   */
+  String API_MIGHT_CHANGE = "API might change, usually based on feedback";
 
   /**
    * Describes why the annotated element is experimental.

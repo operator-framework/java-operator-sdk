@@ -259,3 +259,62 @@ In this mode:
   execution mode.
 
 See also [sample](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/triggerallevent/finalizerhandling) for selectively adding finalizers for resources;
+
+### Expectations
+
+Expectations are a pattern to ensure that, during reconciliation, your secondary resources are in a certain state.
+For a more detailed explanation see [this blogpost](https://ahmet.im/blog/controller-pitfalls/#expectations-pattern).
+You can find framework support for this pattern in [`io.javaoperatorsdk.operator.processing.expectation`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/processing/expectation/) 
+package. See also related [integration test](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/expectation/ExpectationReconciler.java).
+Note that this feature is marked as `@Experimental`, since based on feedback the API might be improved / changed, but we intend 
+to support it, later also might be integrated to Dependent Resources and/or Workflows.
+
+The idea is the nutshell, is that you can track your expectations in the expectation manager in the reconciler
+which has an API that covers the common use cases. 
+
+The following sample is the simplified version of the integration test that implements the logic that creates a 
+deployment and sets status message if there are the target three replicas ready:
+
+```java
+public class ExpectationReconciler implements Reconciler<ExpectationCustomResource> {
+
+    // some code is omitted
+    
+    private final ExpectationManager<ExpectationCustomResource> expectationManager =
+            new ExpectationManager<>();
+
+    @Override
+    public UpdateControl<ExpectationCustomResource> reconcile(
+            ExpectationCustomResource primary, Context<ExpectationCustomResource> context) {
+
+        // exiting asap if there is an expectation that is not timed out neither fulfilled yet
+        if (expectationManager.ongoingExpectationPresent(primary, context)) {
+            return UpdateControl.noUpdate();
+        }
+
+        var deployment = context.getSecondaryResource(Deployment.class);
+        if (deployment.isEmpty()) {
+            createDeployment(primary, context);
+            expectationManager.setExpectation(
+                    primary, Duration.ofSeconds(timeout), deploymentReadyExpectation(context));
+            return UpdateControl.noUpdate();
+        } else {
+            // checks if the expectation if it is fulfilled, and also removes it.
+            //In your logic, you might add a next expectation based on your workflow.
+            // Expectations have a name, so you can easily distinguish them if there is more of them.
+            var res = expectationManager.checkExpectation("deploymentReadyExpectation",primary, context);
+            if (res.isFulfilled()) {
+                return pathchStatusWithMessage(primary, DEPLOYMENT_READY);
+            } else if (res.isTimedOut()) {
+                // you might add some other timeout handling here
+                return pathchStatusWithMessage(primary, DEPLOYMENT_TIMEOUT);
+            }
+        }
+        return UpdateControl.noUpdate();
+        
+    }
+}
+```
+
+
+
