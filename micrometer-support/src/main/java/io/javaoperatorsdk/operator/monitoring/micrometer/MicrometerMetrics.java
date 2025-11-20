@@ -54,6 +54,7 @@ public class MicrometerMetrics implements Metrics {
   private static final String EVENTS_DELETE = "events.delete";
   private static final String CLUSTER = "cluster";
   private static final String SIZE_SUFFIX = ".size";
+  private static final String UNKNOWN_ACTION = "UNKNOWN";
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
@@ -179,7 +180,8 @@ public class MicrometerMetrics implements Metrics {
           event.getRelatedCustomResourceID(),
           EVENTS_RECEIVED,
           metadata,
-          Tag.of(EVENT, event.getClass().getSimpleName()));
+          Tag.of(EVENT, event.getClass().getSimpleName()),
+          Tag.of(ACTION, UNKNOWN_ACTION));
     }
   }
 
