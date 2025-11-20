@@ -450,40 +450,4 @@ public class PrimaryUpdateAndCacheUtils {
           e);
     }
   }
-
-  public static int compareResourceVersions(String v1, String v2) {
-    int v1Length = validateResourceVersion(v1);
-    int v2Length = validateResourceVersion(v2);
-    int comparison = v1Length - v2Length;
-    if (comparison != 0) {
-      return comparison;
-    }
-    for (int i = 0; i < v2Length; i++) {
-      int comp = v1.charAt(i) - v2.charAt(i);
-      if (comp != 0) {
-        return comp;
-      }
-    }
-    return 0;
-  }
-
-  private static int validateResourceVersion(String v1) {
-    int v1Length = v1.length();
-    if (v1Length == 0) {
-      throw new NonComparableResourceVersionException("Resource version is empty");
-    }
-    for (int i = 0; i < v1Length; i++) {
-      char char1 = v1.charAt(i);
-      if (char1 == '0') {
-        if (i == 0) {
-          throw new NonComparableResourceVersionException(
-              "Resource version cannot begin with 0: " + v1);
-        }
-      } else if (char1 < '0' || char1 > '9') {
-        throw new NonComparableResourceVersionException(
-            "Non numeric characters in resource version: " + v1);
-      }
-    }
-    return v1Length;
-  }
 }
