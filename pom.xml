@@ -36,7 +36,7 @@
     <module>sample-operators</module>
     <module>caffeine-bounded-cache-support</module>
     <module>bootstrapper-maven-plugin</module>
-    <module>sample-index-processor</module>
+    <module>test-index-processor</module>
   </modules>
 
   <scm>

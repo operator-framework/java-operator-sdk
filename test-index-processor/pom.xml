@@ -8,9 +8,9 @@
     <version>5.1.6-SNAPSHOT</version>
   </parent>
 
-  <artifactId>sample-index-processor</artifactId>
-  <name>Sample Index Annotation Processor</name>
-  <description>Annotation processor for generating integration test sample documentation</description>
+  <artifactId>test-index-processor</artifactId>
+  <name>Test Index Annotation Processor</name>
+  <description>Annotation processor for generating integration test index documentation</description>
 
   <dependencies>
     <!-- No dependencies needed for a simple annotation processor -->

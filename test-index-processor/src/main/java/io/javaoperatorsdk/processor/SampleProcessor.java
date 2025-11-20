@@ -72,11 +72,13 @@ public class SampleProcessor extends AbstractProcessor {
 
       try (BufferedWriter writer = new BufferedWriter(file.openWriter())) {
         writer.write("---\n");
-        writer.write("title: Test Index\n");
+        writer.write("title: Integration Test Index\n");
         writer.write("weight: 105\n");
         writer.write("---\n\n");
         writer.write(
-            "This document provides an index of all integration tests annotated with @Sample.\n\n");
+            "This document provides an index of all integration tests annotated with @Sample.\n\n"
+                + "These server also as sample for various use cases. "
+                + "Your are encouraged to both the tests and descriptions.\n\n");
 
         // Generate table of contents
         writer.write("## Contents\n\n");
