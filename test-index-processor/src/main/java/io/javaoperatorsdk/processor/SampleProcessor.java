@@ -78,7 +78,7 @@ public class SampleProcessor extends AbstractProcessor {
         writer.write(
             "This document provides an index of all integration tests annotated with @Sample.\n\n"
                 + "These server also as sample for various use cases. "
-                + "Your are encouraged to both the tests and descriptions.\n\n");
+                + "Your are encouraged to improve both the tests and/or descriptions.\n\n");
 
         // Generate table of contents
         writer.write("## Contents\n\n");
