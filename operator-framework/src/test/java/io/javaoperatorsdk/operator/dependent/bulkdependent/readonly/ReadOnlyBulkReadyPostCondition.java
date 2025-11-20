@@ -32,7 +32,7 @@ public class ReadOnlyBulkReadyPostCondition
     var minResourceNumber = primary.getSpec().getNumberOfResources();
     @SuppressWarnings("unchecked")
     var secondaryResources =
-        ((BulkDependentResource<ConfigMap, BulkDependentTestCustomResource>) dependentResource)
+        ((BulkDependentResource<ConfigMap, BulkDependentTestCustomResource, ?>) dependentResource)
             .getSecondaryResources(primary, context);
     return minResourceNumber <= secondaryResources.size();
   }

@@ -91,13 +91,15 @@ public class MultipleManagedExternalDependentResourceReconciler
           return res;
         };
 
-    PollingEventSource<ExternalResource, MultipleManagedExternalDependentResourceCustomResource>
+    PollingEventSource<
+            ExternalResource, MultipleManagedExternalDependentResourceCustomResource, String>
         pollingEventSource =
             new PollingEventSource<>(
                 ExternalResource.class,
-                new PollingConfigurationBuilder<>(fetcher, Duration.ofMillis(1000L))
+                new PollingConfigurationBuilder<ExternalResource, String>(
+                        fetcher, Duration.ofMillis(1000L))
                     .withName(EVENT_SOURCE_NAME)
-                    .withCacheKeyMapper(ExternalResource::getId)
+                    .withResourceIDMapper(ExternalResource::getId)
                     .build());
 
     return List.of(pollingEventSource);

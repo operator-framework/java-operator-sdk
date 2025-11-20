@@ -63,7 +63,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
     dependentResourceReconciler =
         this instanceof BulkDependentResource
-            ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P>) this)
+            ? new BulkDependentResourceReconciler<>((BulkDependentResource<R, P, ?>) this)
             : new SingleDependentResourceReconciler<>(this);
     this.name = name == null ? DependentResource.defaultNameFor(this.getClass()) : name;
   }

@@ -15,15 +15,13 @@
  */
 package io.javaoperatorsdk.operator.dependent.bulkdependent.readonly;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCustomResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.KubernetesBulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -33,21 +31,15 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 @KubernetesDependent
 public class ReadOnlyBulkDependentResource
     extends KubernetesDependentResource<ConfigMap, BulkDependentTestCustomResource>
-    implements BulkDependentResource<ConfigMap, BulkDependentTestCustomResource>,
+    implements KubernetesBulkDependentResource<ConfigMap, BulkDependentTestCustomResource>,
         SecondaryToPrimaryMapper<ConfigMap> {
 
   public static final String INDEX_DELIMITER = "-";
 
   @Override
-  public Map<String, ConfigMap> getSecondaryResources(
+  public Predicate<ConfigMap> secondaryResourceFilter(
       BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
-    return context
-        .getSecondaryResourcesAsStream(ConfigMap.class)
-        .filter(cm -> getName(cm).startsWith(primary.getMetadata().getName()))
-        .collect(
-            Collectors.toMap(
-                cm -> getName(cm).substring(getName(cm).lastIndexOf(INDEX_DELIMITER) + 1),
-                Function.identity()));
+    return cm -> getName(cm).startsWith(primary.getMetadata().getName());
   }
 
   private static String getName(ConfigMap cm) {
