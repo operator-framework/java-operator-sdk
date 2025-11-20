@@ -6,11 +6,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Strict matching for Service resources",
+    description =
+        "Shows how to use a strict matcher for Service dependent resources that correctly handles"
+            + " Service-specific fields. This prevents unnecessary updates when Kubernetes adds"
+            + " default values or modifies certain fields, avoiding reconciliation loops.")
 public class ServiceStrictMatcherIT {
 
   @RegisterExtension

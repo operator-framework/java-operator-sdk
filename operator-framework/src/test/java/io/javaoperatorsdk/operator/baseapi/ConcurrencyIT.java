@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.baseapi.simple.TestCustomResource;
 import io.javaoperatorsdk.operator.baseapi.simple.TestReconciler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
@@ -18,6 +19,13 @@ import io.javaoperatorsdk.operator.support.TestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Concurrent Reconciliation of Multiple Resources",
+    description =
+        "Demonstrates the operator's ability to handle concurrent reconciliation of multiple"
+            + " resources. The test creates, updates, and deletes many resources simultaneously to"
+            + " verify proper handling of concurrent operations, ensuring thread safety and correct"
+            + " resource state management under load.")
 class ConcurrencyIT {
   public static final int NUMBER_OF_RESOURCES_CREATED = 50;
   public static final int NUMBER_OF_RESOURCES_DELETED = 30;

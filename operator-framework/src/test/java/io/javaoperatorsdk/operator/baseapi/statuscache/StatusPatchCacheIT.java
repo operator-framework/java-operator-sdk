@@ -6,11 +6,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Status patch caching for consistency",
+    description =
+        "Demonstrates how the framework caches status patches to ensure consistency when status is"
+            + " updated frequently. The cache guarantees that status values are monotonically"
+            + " increasing and always reflect the most recent state, even with rapid successive"
+            + " updates.")
 public class StatusPatchCacheIT {
 
   public static final String TEST_1 = "test1";

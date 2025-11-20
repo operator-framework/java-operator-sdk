@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
@@ -14,6 +15,13 @@ import static io.javaoperatorsdk.operator.baseapi.subresource.SubResourceTestCus
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Status Subresource Updates",
+    description =
+        "Demonstrates how to properly update the status subresource of custom resources. The test"
+            + " verifies that status updates are handled correctly without triggering unnecessary"
+            + " reconciliations, and that concurrent spec and status updates are managed properly"
+            + " with optimistic locking and retry mechanisms.")
 class SubResourceUpdateIT {
 
   public static final int WAIT_AFTER_EXECUTION = 500;

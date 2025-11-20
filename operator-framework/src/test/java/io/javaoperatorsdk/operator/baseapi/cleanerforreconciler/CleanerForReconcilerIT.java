@@ -4,11 +4,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Implementing Cleanup Logic with Cleaner Interface",
+    description =
+        "Demonstrates how to implement cleanup logic for custom resources using the Cleaner"
+            + " interface. When a reconciler implements Cleaner, the framework automatically adds a"
+            + " finalizer to resources and calls the cleanup method when the resource is deleted."
+            + " This pattern is useful for cleaning up external resources or performing custom"
+            + " deletion logic. The test verifies finalizer handling, cleanup execution, and the"
+            + " ability to reschedule cleanup operations.")
 class CleanerForReconcilerIT {
 
   public static final String TEST_RESOURCE_NAME = "cleaner-for-reconciler-test1";

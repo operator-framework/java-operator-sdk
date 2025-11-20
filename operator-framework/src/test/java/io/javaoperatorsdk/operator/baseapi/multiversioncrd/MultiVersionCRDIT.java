@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
@@ -21,6 +22,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Handling Multiple CRD Versions",
+    description =
+        "Demonstrates how to work with Custom Resource Definitions that have multiple API versions."
+            + " The test shows how to configure multiple reconcilers for different versions of the"
+            + " same CRD, handle version-specific schemas, and deal with incompatible version"
+            + " conversions. It also demonstrates error handling through InformerStoppedHandler"
+            + " when deserialization fails due to schema incompatibilities between versions.")
 class MultiVersionCRDIT {
 
   private static final Logger log = LoggerFactory.getLogger(MultiVersionCRDIT.class);

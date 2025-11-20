@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.workflow.complexdependent.dependent.FirstService;
 import io.javaoperatorsdk.operator.workflow.complexdependent.dependent.FirstStatefulSet;
@@ -18,6 +19,12 @@ import io.javaoperatorsdk.operator.workflow.complexdependent.dependent.SecondSta
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Complex Workflow with Multiple Dependents",
+    description =
+        "Demonstrates a complex workflow with multiple dependent resources (StatefulSets and"
+            + " Services) that have dependencies on each other. This test shows how to orchestrate"
+            + " the reconciliation of interconnected dependent resources in a specific order.")
 class ComplexWorkflowIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

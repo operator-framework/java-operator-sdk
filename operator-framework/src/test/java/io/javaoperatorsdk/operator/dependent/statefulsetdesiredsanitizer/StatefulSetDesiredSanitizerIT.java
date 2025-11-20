@@ -7,11 +7,18 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Sanitizing StatefulSet desired state for SSA",
+    description =
+        "Shows how to properly sanitize StatefulSet resources before using Server-Side Apply."
+            + " StatefulSets have immutable fields and server-managed fields that need to be"
+            + " removed from the desired state to prevent conflicts and unnecessary updates.")
 public class StatefulSetDesiredSanitizerIT {
 
   public static final String TEST_1 = "test1";

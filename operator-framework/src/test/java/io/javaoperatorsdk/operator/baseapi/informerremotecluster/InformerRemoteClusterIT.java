@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
@@ -17,6 +18,12 @@ import static io.javaoperatorsdk.operator.baseapi.informerremotecluster.Informer
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Watching resources in a remote Kubernetes cluster",
+    description =
+        "Demonstrates how to configure an informer event source to watch resources in a different"
+            + " Kubernetes cluster from where the operator is running. This enables multi-cluster"
+            + " scenarios where an operator in one cluster manages resources in another cluster.")
 @EnableKubeAPIServer
 class InformerRemoteClusterIT {
 

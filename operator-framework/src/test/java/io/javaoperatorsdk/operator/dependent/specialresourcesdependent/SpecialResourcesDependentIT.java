@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.dependent.specialresourcesdependent.SpecialResourceSpec.CHANGED_VALUE;
@@ -16,6 +17,13 @@ import static org.awaitility.Awaitility.await;
  * Test for resources that are somehow special, currently mostly to cover the approach to handle
  * resources without spec. Not all the resources added here.
  */
+@Sample(
+    tldr = "Handling special Kubernetes resources without spec",
+    description =
+        "Demonstrates how to handle special built-in Kubernetes resources like ServiceAccount that"
+            + " don't have a spec field. These resources require different handling approaches"
+            + " since their configuration is stored directly in the resource body rather than in a"
+            + " spec section.")
 public class SpecialResourcesDependentIT {
 
   public static final String RESOURCE_NAME = "test1";

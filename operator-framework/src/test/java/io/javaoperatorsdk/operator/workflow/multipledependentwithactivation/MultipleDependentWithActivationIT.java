@@ -6,11 +6,19 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Multiple Dependents with Activation Conditions",
+    description =
+        "Demonstrates how to use activation conditions with multiple dependent resources. This test"
+            + " shows how different dependent resources can be dynamically enabled or disabled"
+            + " based on runtime conditions, allowing flexible workflow behavior that adapts to"
+            + " changing requirements.")
 public class MultipleDependentWithActivationIT {
 
   public static final String INITIAL_VALUE = "initial_value";

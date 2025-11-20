@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.informereventsource.InformerEventSourceTestCustomReconciler.MISSING_CONFIG_MAP;
@@ -17,6 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Using Informer Event Source to Watch Secondary Resources",
+    description =
+        "Demonstrates how to use InformerEventSource to watch changes in secondary resources"
+            + " (ConfigMaps) and trigger reconciliation when those resources are created, updated,"
+            + " or deleted. The test verifies that the reconciler responds to ConfigMap changes and"
+            + " updates the primary resource status accordingly.")
 class InformerEventSourceIT {
 
   public static final String RESOURCE_NAME = "informertestcr";

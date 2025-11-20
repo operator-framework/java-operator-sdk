@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.dependent.primarytosecondaydependent.ConfigMapDependent.TEST_CONFIG_MAP_NAME;
@@ -17,6 +18,14 @@ import static io.javaoperatorsdk.operator.dependent.primarytosecondaydependent.P
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Primary to Secondary Dependent Resource",
+    description =
+        "Demonstrates how to configure dependencies between dependent resources where one"
+            + " dependent resource (secondary) depends on another dependent resource (primary)."
+            + " This test shows how a Secret's creation can be conditioned on the state of a"
+            + " ConfigMap, illustrating the use of reconcile preconditions and dependent resource"
+            + " chaining.")
 class PrimaryToSecondaryDependentIT {
 
   public static final String TEST_CR_NAME = "test1";

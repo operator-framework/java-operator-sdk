@@ -7,10 +7,18 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Managing Multiple Secondary Event Sources",
+    description =
+        "Demonstrates how to configure and use multiple secondary event sources for a single"
+            + " reconciler. The test verifies that the reconciler is triggered by changes to"
+            + " different secondary resources and handles events from multiple sources correctly,"
+            + " including periodic event sources.")
 class MultipleSecondaryEventSourceIT {
 
   public static final String TEST_RESOURCE_NAME = "testresource";

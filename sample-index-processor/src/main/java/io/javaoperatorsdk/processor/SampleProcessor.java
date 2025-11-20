@@ -77,8 +77,16 @@ public class SampleProcessor extends AbstractProcessor {
         writer.write("---\n\n");
         writer.write(
             "This document provides an index of all integration tests annotated with @Sample.\n\n");
-        writer.write("---\n\n");
 
+        // Generate table of contents
+        writer.write("## Contents\n\n");
+        for (SampleInfo sample : samples) {
+          String anchor = sample.simpleName.toLowerCase();
+          writer.write("- [" + sample.tldr + "](#" + anchor + ")\n");
+        }
+        writer.write("\n---\n\n");
+
+        // Generate individual test sections
         for (SampleInfo sample : samples) {
           writer.write("## " + sample.simpleName + "\n\n");
           writer.write("**" + sample.tldr + "**\n\n");

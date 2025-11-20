@@ -5,12 +5,20 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.workflow.workflowactivationcondition.ConfigMapDependentResource.DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Workflow Activation Condition",
+    description =
+        "Demonstrates how to use activation conditions to conditionally enable or disable parts of"
+            + " a workflow. This test shows how the workflow can adapt to different environments"
+            + " (e.g., vanilla Kubernetes vs. OpenShift) by activating only the relevant dependent"
+            + " resources based on runtime conditions.")
 public class WorkflowActivationConditionIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

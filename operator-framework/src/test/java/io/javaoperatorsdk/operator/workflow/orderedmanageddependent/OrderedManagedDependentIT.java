@@ -6,11 +6,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Ordered Managed Dependent Resources",
+    description =
+        "Demonstrates how to control the order of reconciliation for managed dependent resources."
+            + " This test verifies that dependent resources are reconciled in a specific sequence,"
+            + " ensuring proper orchestration when dependencies have ordering requirements.")
 class OrderedManagedDependentIT {
 
   @RegisterExtension

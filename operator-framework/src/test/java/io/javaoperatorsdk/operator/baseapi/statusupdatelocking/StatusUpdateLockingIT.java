@@ -7,12 +7,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.statusupdatelocking.StatusUpdateLockingReconciler.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Status Update Locking and Concurrency Control",
+    description =
+        "Demonstrates how the framework handles concurrent status updates and ensures no optimistic"
+            + " locking conflicts occur when updating status subresources. The test verifies that"
+            + " status updates can proceed independently of spec updates without causing version"
+            + " conflicts or requiring retries.")
 class StatusUpdateLockingIT {
 
   public static final String TEST_RESOURCE_NAME = "test";
