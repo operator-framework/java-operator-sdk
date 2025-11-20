@@ -51,11 +51,8 @@ public class ConfigurationServiceOverrider {
   private Duration reconciliationTerminationTimeout;
   private Boolean ssaBasedCreateUpdateMatchForDependentResources;
   private Set<Class<? extends HasMetadata>> defaultNonSSAResource;
-  private Boolean previousAnnotationForDependentResources;
-  private Boolean parseResourceVersions;
   private Boolean useSSAToPatchPrimaryResource;
   private Boolean cloneSecondaryResourcesWhenGettingFromCache;
-  private Set<Class<? extends HasMetadata>> previousAnnotationUsageBlocklist;
 
   @SuppressWarnings("rawtypes")
   private DependentResourceFactory dependentResourceFactory;
@@ -168,31 +165,6 @@ public class ConfigurationServiceOverrider {
     return this;
   }
 
-  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResources(boolean value) {
-    this.previousAnnotationForDependentResources = value;
-    return this;
-  }
-
-  /**
-   * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
-   * @return this
-   */
-  public ConfigurationServiceOverrider withParseResourceVersions(boolean value) {
-    this.parseResourceVersions = value;
-    return this;
-  }
-
-  /**
-   * @deprecated use withParseResourceVersions
-   * @param value true if internal algorithms can use metadata.resourceVersion as a numeric value.
-   * @return this
-   */
-  @Deprecated(forRemoval = true)
-  public ConfigurationServiceOverrider wihtParseResourceVersions(boolean value) {
-    this.parseResourceVersions = value;
-    return this;
-  }
-
   public ConfigurationServiceOverrider withUseSSAToPatchPrimaryResource(boolean value) {
     this.useSSAToPatchPrimaryResource = value;
     return this;
@@ -201,12 +173,6 @@ public class ConfigurationServiceOverrider {
   public ConfigurationServiceOverrider withCloneSecondaryResourcesWhenGettingFromCache(
       boolean value) {
     this.cloneSecondaryResourcesWhenGettingFromCache = value;
-    return this;
-  }
-
-  public ConfigurationServiceOverrider withPreviousAnnotationForDependentResourcesBlocklist(
-      Set<Class<? extends HasMetadata>> blocklist) {
-    this.previousAnnotationUsageBlocklist = blocklist;
     return this;
   }
 
@@ -332,20 +298,6 @@ public class ConfigurationServiceOverrider {
       }
 
       @Override
-      public boolean previousAnnotationForDependentResourcesEventFiltering() {
-        return overriddenValueOrDefault(
-            previousAnnotationForDependentResources,
-            ConfigurationService::previousAnnotationForDependentResourcesEventFiltering);
-      }
-
-      @Override
-      public boolean parseResourceVersionsForEventFilteringAndCaching() {
-        return overriddenValueOrDefault(
-            parseResourceVersions,
-            ConfigurationService::parseResourceVersionsForEventFilteringAndCaching);
-      }
-
-      @Override
       public boolean useSSAToPatchPrimaryResource() {
         return overriddenValueOrDefault(
             useSSAToPatchPrimaryResource, ConfigurationService::useSSAToPatchPrimaryResource);
@@ -356,14 +308,6 @@ public class ConfigurationServiceOverrider {
         return overriddenValueOrDefault(
             cloneSecondaryResourcesWhenGettingFromCache,
             ConfigurationService::cloneSecondaryResourcesWhenGettingFromCache);
-      }
-
-      @Override
-      public Set<Class<? extends HasMetadata>>
-          withPreviousAnnotationForDependentResourcesBlocklist() {
-        return overriddenValueOrDefault(
-            previousAnnotationUsageBlocklist,
-            ConfigurationService::withPreviousAnnotationForDependentResourcesBlocklist);
       }
     };
   }
