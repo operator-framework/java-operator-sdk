@@ -19,29 +19,24 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCustomResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.BulkUpdater;
-import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.CRUDExternalBulkDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.external.PollingDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class ExternalBulkDependentResource
-    extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource>
-    implements BulkDependentResource<ExternalResource, BulkDependentTestCustomResource>,
-        Creator<ExternalResource, BulkDependentTestCustomResource>,
-        Deleter<BulkDependentTestCustomResource>,
-        BulkUpdater<ExternalResource, BulkDependentTestCustomResource> {
+public class SampleExternalBulkDependentResource
+    extends PollingDependentResource<ExternalResource, BulkDependentTestCustomResource, String>
+    implements CRUDExternalBulkDependentResource<
+        ExternalResource, BulkDependentTestCustomResource, String> {
 
   public static final String EXTERNAL_RESOURCE_NAME_DELIMITER = "#";
 
   private final ExternalServiceMock externalServiceMock = ExternalServiceMock.getInstance();
 
-  public ExternalBulkDependentResource() {
+  public SampleExternalBulkDependentResource() {
     super(ExternalResource.class, ExternalResource::getId);
   }
 
@@ -95,33 +90,24 @@ public class ExternalBulkDependentResource
     Map<String, ExternalResource> res = new HashMap<>();
     for (int i = 0; i < number; i++) {
       var key = Integer.toString(i);
-      res.put(
-          key,
+      var resource =
           new ExternalResource(
-              toExternalResourceId(primary, key), primary.getSpec().getAdditionalData()));
+              toExternalResourceId(primary, key), primary.getSpec().getAdditionalData());
+      res.put(resourceIDMapper().idFor(resource), resource);
     }
     return res;
   }
 
   @Override
-  public Map<String, ExternalResource> getSecondaryResources(
+  public Predicate<ExternalResource> secondaryResourceFilter(
       BulkDependentTestCustomResource primary, Context<BulkDependentTestCustomResource> context) {
-    return context
-        .getSecondaryResourcesAsStream(resourceType())
-        .filter(
-            r ->
-                r.getId()
-                    .startsWith(
-                        primary.getMetadata().getName()
-                            + EXTERNAL_RESOURCE_NAME_DELIMITER
-                            + primary.getMetadata().getNamespace()
-                            + EXTERNAL_RESOURCE_NAME_DELIMITER))
-        .collect(
-            Collectors.toMap(
-                r ->
-                    r.getId()
-                        .substring(r.getId().lastIndexOf(EXTERNAL_RESOURCE_NAME_DELIMITER) + 1),
-                r -> r));
+    return r ->
+        r.getId()
+            .startsWith(
+                primary.getMetadata().getName()
+                    + EXTERNAL_RESOURCE_NAME_DELIMITER
+                    + primary.getMetadata().getNamespace()
+                    + EXTERNAL_RESOURCE_NAME_DELIMITER);
   }
 
   @Override

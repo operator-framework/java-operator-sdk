@@ -13,20 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source;
+package io.javaoperatorsdk.operator.processing.dependent;
 
-public interface CacheKeyMapper<R> {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-  String keyFor(R resource);
-
-  /**
-   * Used if a polling event source handles only single secondary resource. See also docs for:
-   * {@link ExternalResourceCachingEventSource}
-   *
-   * @return static id mapper, all resources are mapped for same id.
-   * @param <T> secondary resource type
-   */
-  static <T> CacheKeyMapper<T> singleResourceCacheKeyMapper() {
-    return r -> "id";
-  }
-}
+public interface CRUDKubernetesBulkDependentResource<R, P extends HasMetadata>
+    extends BulkDependentResource<R, P, ResourceID>, Creator<R, P>, BulkUpdater<R, P>, Deleter<P> {}

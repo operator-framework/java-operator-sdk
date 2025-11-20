@@ -18,9 +18,10 @@ package io.javaoperatorsdk.operator.processing.event.source;
 import java.io.Serializable;
 import java.util.Objects;
 
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class SampleExternalResource implements Serializable {
+public class SampleExternalResource implements Serializable, ResourceIDProvider<String> {
 
   public static final String DEFAULT_VALUE_1 = "value1";
   public static final String DEFAULT_VALUE_2 = "value2";
@@ -80,5 +81,10 @@ public class SampleExternalResource implements Serializable {
   @Override
   public int hashCode() {
     return Objects.hash(name, value);
+  }
+
+  @Override
+  public String resourceId() {
+    return name;
   }
 }

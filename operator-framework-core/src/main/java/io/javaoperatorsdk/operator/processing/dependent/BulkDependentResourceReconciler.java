@@ -29,19 +29,19 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 
-class BulkDependentResourceReconciler<R, P extends HasMetadata>
+class BulkDependentResourceReconciler<R, P extends HasMetadata, ID>
     implements DependentResourceReconciler<R, P> {
 
-  private final BulkDependentResource<R, P> bulkDependentResource;
+  private final BulkDependentResource<R, P, ID> bulkDependentResource;
 
-  BulkDependentResourceReconciler(BulkDependentResource<R, P> bulkDependentResource) {
+  BulkDependentResourceReconciler(BulkDependentResource<R, P, ID> bulkDependentResource) {
     this.bulkDependentResource = bulkDependentResource;
   }
 
   @Override
   public ReconcileResult<R> reconcile(P primary, Context<P> context) {
 
-    Map<String, R> actualResources = bulkDependentResource.getSecondaryResources(primary, context);
+    Map<ID, R> actualResources = bulkDependentResource.getSecondaryResources(primary, context);
     if (!(bulkDependentResource instanceof Creator<?, ?>)
         && !(bulkDependentResource instanceof Deleter<?>)
         && !(bulkDependentResource instanceof Updater<?, ?>)) {
@@ -73,7 +73,7 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
   }
 
   private void deleteExtraResources(
-      Set<String> expectedKeys, Map<String, R> actualResources, P primary, Context<P> context) {
+      Set<ID> expectedKeys, Map<ID, R> actualResources, P primary, Context<P> context) {
     actualResources.forEach(
         (key, value) -> {
           if (!expectedKeys.contains(key)) {
@@ -90,13 +90,13 @@ class BulkDependentResourceReconciler<R, P extends HasMetadata>
    * @param <P>
    */
   @Ignore
-  private static class BulkDependentResourceInstance<R, P extends HasMetadata>
+  private static class BulkDependentResourceInstance<R, P extends HasMetadata, ID>
       extends AbstractDependentResource<R, P> implements Creator<R, P>, Deleter<P>, Updater<R, P> {
-    private final BulkDependentResource<R, P> bulkDependentResource;
+    private final BulkDependentResource<R, P, ID> bulkDependentResource;
     private final R desired;
 
     private BulkDependentResourceInstance(
-        BulkDependentResource<R, P> bulkDependentResource, R desired) {
+        BulkDependentResource<R, P, ID> bulkDependentResource, R desired) {
       this.bulkDependentResource = bulkDependentResource;
       this.desired = desired;
     }
