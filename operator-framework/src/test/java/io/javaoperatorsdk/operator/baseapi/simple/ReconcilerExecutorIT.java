@@ -7,12 +7,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Basic reconciler execution",
+    description =
+        "Demonstrates the basic reconciler execution flow including resource creation, status"
+            + " updates, and cleanup. This test verifies that a reconciler can create dependent"
+            + " resources (ConfigMap), update status, and properly handle cleanup when resources"
+            + " are deleted.")
 class ReconcilerExecutorIT {
 
   @RegisterExtension
