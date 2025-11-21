@@ -4,9 +4,19 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+@Sample(
+    tldr = "Reusing Dependent Resource Instances Across Tests",
+    description =
+        """
+        Demonstrates that dependent resource instances can be safely reused across multiple \
+        operator start/stop cycles. This is particularly useful in CDI-managed environments \
+        like Quarkus, where dependent resources are managed as beans and should be reusable \
+        across test executions.
+        """)
 class DependentReInitializationIT {
 
   /**

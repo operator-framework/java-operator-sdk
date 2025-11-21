@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.processing.event.source.informer.Mappers.DEFAULT_ANNOTATION_FOR_NAME;
@@ -14,6 +15,15 @@ import static io.javaoperatorsdk.operator.processing.event.source.informer.Mappe
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Annotation-Based Secondary Resource Mapping for Dependents",
+    description =
+        """
+        Demonstrates using annotations instead of owner references to map secondary resources \
+        to primary resources in dependent resources. This approach is useful when owner references \
+        cannot be used (e.g., cross-namespace or cluster-scoped relationships), using special \
+        annotations to establish the relationship.
+        """)
 class DependentAnnotationSecondaryMapperIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

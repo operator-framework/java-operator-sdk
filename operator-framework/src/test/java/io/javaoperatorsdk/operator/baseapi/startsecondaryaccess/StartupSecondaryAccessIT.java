@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.startsecondaryaccess.StartupSecondaryAccessReconciler.LABEL_KEY;
@@ -14,6 +15,15 @@ import static io.javaoperatorsdk.operator.baseapi.startsecondaryaccess.StartupSe
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Accessing Secondary Resources During Operator Startup",
+    description =
+        """
+        Verifies that reconcilers can properly access all secondary resources during operator \
+        startup, even when a large number of secondary resources exist. The test ensures that \
+        the informer cache is fully synchronized before reconciliation begins, allowing access \
+        to all related resources.
+        """)
 class StartupSecondaryAccessIT {
 
   public static final int SECONDARY_NUMBER = 200;

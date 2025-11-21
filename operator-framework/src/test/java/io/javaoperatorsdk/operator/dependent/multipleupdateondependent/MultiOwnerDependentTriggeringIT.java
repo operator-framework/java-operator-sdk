@@ -7,11 +7,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Dependent Resource Shared by Multiple Owners",
+    description =
+        """
+        Demonstrates a dependent resource (ConfigMap) that is managed by multiple primary \
+        resources simultaneously. Tests verify that updates from any owner trigger proper \
+        reconciliation, owner references are correctly maintained, and the shared resource \
+        properly aggregates data from all owners.
+        """)
 class MultiOwnerDependentTriggeringIT {
 
   public static final String VALUE_1 = "value1";

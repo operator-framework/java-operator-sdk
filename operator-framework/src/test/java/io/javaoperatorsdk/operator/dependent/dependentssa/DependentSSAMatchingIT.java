@@ -11,11 +11,23 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Server-Side Apply (SSA) with Dependent Resources",
+    description =
+        """
+        Demonstrates how to use Server-Side Apply (SSA) with dependent resources and field manager \
+        matching. This test shows how SSA allows multiple controllers to manage different \
+        fields of the same resource without conflicts. The test verifies that changes made \
+        by different field managers are properly isolated, and that the operator only \
+        updates its own fields when changes occur, preserving fields managed by other \
+        controllers.
+        """)
 public class DependentSSAMatchingIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

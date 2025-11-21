@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
@@ -15,6 +16,14 @@ import static io.javaoperatorsdk.operator.baseapi.patchresourceandstatusnossa.Pa
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Patching resource and status without Server-Side Apply",
+    description =
+        """
+        Demonstrates how to patch both the primary resource metadata/spec and status subresource \
+        using traditional JSON merge patch instead of Server-Side Apply. This shows the \
+        legacy approach for updating resources when SSA is disabled.
+        """)
 class PatchResourceAndStatusNoSSAIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =

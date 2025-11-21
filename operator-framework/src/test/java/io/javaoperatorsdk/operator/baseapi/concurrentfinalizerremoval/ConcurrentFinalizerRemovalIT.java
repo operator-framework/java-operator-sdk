@@ -6,12 +6,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Concurrent Finalizer Removal by Multiple Reconcilers",
+    description =
+        """
+        Demonstrates safe concurrent finalizer removal when multiple reconcilers manage the \
+        same resource with different finalizers. Tests that finalizers can be removed \
+        concurrently without conflicts or race conditions, ensuring proper cleanup even when \
+        multiple controllers are involved.
+        """)
 class ConcurrentFinalizerRemovalIT {
 
   private static final Logger log = LoggerFactory.getLogger(ConcurrentFinalizerRemovalIT.class);

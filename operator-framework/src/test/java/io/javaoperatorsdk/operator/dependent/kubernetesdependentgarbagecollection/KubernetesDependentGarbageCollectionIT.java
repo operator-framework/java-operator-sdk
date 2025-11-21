@@ -7,12 +7,24 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.IntegrationTestConstants;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Kubernetes Native Garbage Collection for Dependent Resources",
+    description =
+        """
+        Demonstrates how to leverage Kubernetes native garbage collection for dependent resources \
+        using owner references. This test shows how dependent resources are automatically \
+        cleaned up by Kubernetes when the owner resource is deleted, and how to \
+        conditionally create or delete dependent resources based on the primary resource \
+        state. Owner references ensure that dependent resources don't outlive their \
+        owners.
+        """)
 class KubernetesDependentGarbageCollectionIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

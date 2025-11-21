@@ -14,12 +14,22 @@ import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.api.model.coordination.v1.LeaseSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Leader election with namespace change handling",
+    description =
+        """
+        Tests that when an operator is not elected as leader, changing the watched namespaces does \
+        not start processing. This ensures that only the leader operator actively \
+        reconciles resources, preventing conflicts in multi-instance deployments with \
+        leader election.
+        """)
 public class LeaderElectionChangeNamespaceIT {
 
   public static final String LEASE_NAME = "nschangelease";

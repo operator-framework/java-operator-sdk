@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.unmodifiabledependentpart.UnmodifiablePartConfigMapDependent.ACTUAL_DATA_KEY;
@@ -12,6 +13,15 @@ import static io.javaoperatorsdk.operator.baseapi.unmodifiabledependentpart.Unmo
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Unmodifiable Parts in Dependent Resources",
+    description =
+        """
+        Demonstrates how to preserve certain parts of a dependent resource from being modified \
+        during updates while allowing other parts to change. This test shows that initial data \
+        can be marked as unmodifiable and will remain unchanged even when the primary resource \
+        spec is updated, enabling partial update control.
+        """)
 public class UnmodifiableDependentPartIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

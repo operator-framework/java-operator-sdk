@@ -8,11 +8,20 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Multiple Dependents of Same Type Without Discriminator",
+    description =
+        """
+        Demonstrates managing multiple dependent resources of the same type (ConfigMaps) without \
+        using discriminators. The framework uses resource names to differentiate between them, \
+        simplifying configuration when distinct names are sufficient for identification.
+        """)
 class MultipleDependentResourceWithNoDiscriminatorIT {
 
   public static final String TEST_RESOURCE_NAME = "multipledependentresource-testresource";

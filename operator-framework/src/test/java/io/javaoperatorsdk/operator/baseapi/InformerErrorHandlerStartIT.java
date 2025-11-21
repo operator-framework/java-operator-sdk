@@ -9,12 +9,22 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
+@Sample(
+    tldr = "Operator Startup with Informer Errors",
+    description =
+        """
+        Demonstrates that the operator can start successfully even when informers encounter \
+        errors during startup, such as insufficient access rights. By setting \
+        stopOnInformerErrorDuringStartup to false, the operator gracefully handles permission \
+        errors and continues initialization, allowing it to operate with partial access.
+        """)
 class InformerErrorHandlerStartIT {
   /** Test showcases that the operator starts even if there is no access right for some resource. */
   @Test

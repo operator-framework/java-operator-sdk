@@ -9,12 +9,22 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.workflow.workflowallfeature.ConfigMapDependentResource.READY_TO_DELETE_ANNOTATION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Comprehensive workflow with reconcile and delete conditions",
+    description =
+        """
+        Demonstrates a complete workflow implementation including reconcile conditions, delete \
+        conditions, and ready conditions. Shows how to control when dependent resources are \
+        created or deleted based on conditions, and how to coordinate dependencies that \
+        must wait for others to be ready.
+        """)
 public class WorkflowAllFeatureIT {
 
   public static final String RESOURCE_NAME = "test";

@@ -9,11 +9,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Managed Dependent Delete Condition",
+    description =
+        """
+        Demonstrates how to use delete conditions to control when dependent resources can be \
+        deleted. This test shows how the primary resource deletion can be blocked until \
+        dependent resources are properly cleaned up, ensuring graceful shutdown and \
+        preventing orphaned resources.
+        """)
 public class ManagedDependentDeleteConditionIT {
 
   public static final String RESOURCE_NAME = "test1";

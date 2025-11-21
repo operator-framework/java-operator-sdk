@@ -3,12 +3,22 @@ package io.javaoperatorsdk.operator.dependent.bulkdependent.external;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestBase.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Managing External Bulk Resources",
+    description =
+        """
+        Demonstrates managing multiple external resources (non-Kubernetes) using bulk dependent \
+        resources. This pattern allows operators to manage a variable number of external resources \
+        based on primary resource specifications, handling creation, updates, and deletion of \
+        external resources at scale.
+        """)
 class BulkExternalDependentIT {
 
   @RegisterExtension

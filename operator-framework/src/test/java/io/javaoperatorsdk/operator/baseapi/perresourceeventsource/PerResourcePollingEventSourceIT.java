@@ -4,11 +4,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Per-resource polling event source implementation",
+    description =
+        """
+        Shows how to implement a per-resource polling event source where each primary resource has \
+        its own polling schedule to fetch external state. This is useful for integrating \
+        with external systems that don't support event-driven notifications.
+        """)
 class PerResourcePollingEventSourceIT {
 
   public static final String NAME_1 = "name1";

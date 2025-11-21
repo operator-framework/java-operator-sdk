@@ -7,12 +7,22 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.createupdateeventfilter.CreateUpdateEventFilterTestReconciler.CONFIG_MAP_TEST_DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Event filtering for create and update operations",
+    description =
+        """
+        Shows how to configure event filters on informer event sources to control which create and \
+        update events trigger reconciliation. This is useful for preventing unnecessary \
+        reconciliation loops when dependent resources are modified by the controller \
+        itself.
+        """)
 class CreateUpdateInformerEventSourceEventFilterIT {
 
   @RegisterExtension

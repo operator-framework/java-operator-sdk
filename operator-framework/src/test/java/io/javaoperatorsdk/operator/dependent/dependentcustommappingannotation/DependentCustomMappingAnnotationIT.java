@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.dependent.dependentcustommappingannotation.CustomMappingConfigMapDependentResource.CUSTOM_NAMESPACE_KEY;
@@ -12,6 +13,15 @@ import static io.javaoperatorsdk.operator.dependent.dependentcustommappingannota
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Custom Annotation Keys for Resource Mapping",
+    description =
+        """
+        Tests custom annotation-based mapping for dependent resources using configurable \
+        annotation keys instead of the default ones. This allows developers to customize which \
+        annotations are used to establish relationships between primary and secondary resources, \
+        providing flexibility for different naming conventions or avoiding conflicts.
+        """)
 class DependentCustomMappingAnnotationIT {
 
   public static final String INITIAL_VALUE = "initial value";

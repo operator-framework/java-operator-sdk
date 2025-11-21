@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -21,6 +22,15 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Custom CRD Mapping in Test Extension",
+    description =
+        """
+        Demonstrates how to manually specify and apply Custom Resource Definitions (CRDs) in \
+        integration tests using the LocallyRunOperatorExtension. This test verifies that CRDs \
+        can be loaded from specified file paths and properly registered with the Kubernetes API \
+        server during test execution.
+        """)
 public class CRDMappingInTestExtensionIT {
   private final KubernetesClient client = new KubernetesClientBuilder().build();
 

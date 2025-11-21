@@ -5,12 +5,23 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.dependent.dependentdifferentnamespace.ConfigMapDependentResource.KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Dependent Resources in Different Namespaces",
+    description =
+        """
+        Demonstrates how to manage dependent resources in a namespace different from the primary \
+        resource. This test shows how to configure dependent resources to be created in a \
+        specific namespace rather than inheriting the namespace from the primary resource. \
+        The test verifies full CRUD operations for a ConfigMap that lives in a different \
+        namespace than the custom resource that manages it.
+        """)
 class DependentDifferentNamespaceIT {
 
   public static final String TEST_1 = "different-ns-test1";

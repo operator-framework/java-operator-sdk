@@ -6,12 +6,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.TestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Custom Event Source for Periodic Reconciliation",
+    description =
+        """
+        Demonstrates how to implement custom event sources that trigger reconciliation on a \
+        periodic basis. The test verifies that reconciliations are triggered at regular intervals \
+        by a timer-based event source. This enables operators to perform periodic checks or \
+        updates independent of resource changes.
+        """)
 class EventSourceIT {
 
   @RegisterExtension

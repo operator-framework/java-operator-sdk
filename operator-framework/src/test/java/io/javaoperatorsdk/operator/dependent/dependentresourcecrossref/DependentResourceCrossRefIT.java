@@ -8,11 +8,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Dependent Resources with Cross-References",
+    description =
+        """
+        Tests dependent resources that reference each other, creating interdependencies between \
+        multiple secondary resources. The test verifies that resources with circular or \
+        cross-references can be safely created, managed, and deleted without causing issues, \
+        even under concurrent operations with multiple primary resources.
+        """)
 class DependentResourceCrossRefIT {
 
   public static final String TEST_RESOURCE_NAME = "test";

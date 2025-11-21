@@ -6,12 +6,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Error Status Handler for Failed Reconciliations",
+    description =
+        """
+        Demonstrates how to implement error status handlers that update resource status when \
+        reconciliations fail. The test verifies that error messages are properly recorded in the \
+        resource status after each failed retry attempt. This provides visibility into \
+        reconciliation failures and helps with debugging operator issues.
+        """)
 class ErrorStatusHandlerIT {
 
   public static final int MAX_RETRY_ATTEMPTS = 3;

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.labelselector.LabelSelectorTestReconciler.LABEL_KEY;
@@ -15,6 +16,15 @@ import static io.javaoperatorsdk.operator.baseapi.labelselector.LabelSelectorTes
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Label Selector for Custom Resource Filtering",
+    description =
+        """
+        Demonstrates how to configure label selectors to filter which custom resources an \
+        operator watches. The test verifies that only resources with matching labels trigger \
+        reconciliation. This allows operators to selectively manage a subset of custom resources \
+        based on their labels.
+        """)
 class LabelSelectorIT {
 
   @RegisterExtension

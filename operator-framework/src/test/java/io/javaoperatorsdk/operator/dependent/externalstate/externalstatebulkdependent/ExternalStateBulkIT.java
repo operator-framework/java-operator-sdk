@@ -6,12 +6,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.ExternalIDGenServiceMock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Bulk External State Management with Persistent State",
+    description =
+        """
+        Demonstrates managing multiple external resources with persistent state tracking using \
+        bulk dependent resources. This combines external state management with bulk operations, \
+        allowing operators to track and reconcile a variable number of external resources with \
+        persistent state that survives operator restarts.
+        """)
 class ExternalStateBulkIT {
 
   private static final String TEST_RESOURCE_NAME = "test1";

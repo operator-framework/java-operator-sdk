@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT_SECONDS;
@@ -14,6 +15,15 @@ import static io.javaoperatorsdk.operator.dependent.multiplemanageddependentsame
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Managing Multiple Dependent Resources of the Same Type",
+    description =
+        """
+        Demonstrates how to manage multiple dependent resources of the same type from a single \
+        reconciler. This test shows how multiple ConfigMaps with the same type can be \
+        created, updated, and deleted as dependent resources of a custom resource, \
+        verifying proper CRUD operations and garbage collection.
+        """)
 class MultipleManagedDependentSameTypeIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

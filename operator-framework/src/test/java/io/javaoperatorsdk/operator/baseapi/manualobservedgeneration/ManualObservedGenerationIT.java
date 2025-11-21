@@ -4,11 +4,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Manually managing observedGeneration in status",
+    description =
+        """
+        Shows how to manually track and update the observedGeneration field in status to indicate \
+        which generation of the resource spec has been successfully processed. This is useful for \
+        providing clear feedback to users about reconciliation progress.
+        """)
 public class ManualObservedGenerationIT {
 
   public static final String RESOURCE_NAME = "test1";

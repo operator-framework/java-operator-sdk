@@ -8,12 +8,22 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.workflow.workflowactivationcondition.ConfigMapDependentResource.DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Dynamic Workflow Activation and Deactivation",
+    description =
+        """
+        Tests dynamic activation and deactivation of workflow dependents based on changing \
+        conditions. Demonstrates that dependents can be conditionally activated or deactivated \
+        during the resource lifecycle, with proper cleanup and recreation, and verifies that \
+        inactive dependents don't trigger reconciliation or maintain informers.
+        """)
 public class WorkflowMultipleActivationIT {
 
   public static final String INITIAL_DATA = "initial data";

@@ -6,12 +6,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.filter.FilterTestReconciler.CONFIG_MAP_FILTER_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Filtering Events for Primary and Secondary Resources",
+    description =
+        """
+        Demonstrates how to implement event filters for both primary custom resources and \
+        secondary dependent resources. The test verifies that resource updates matching specific \
+        filter criteria are ignored and don't trigger reconciliation. This helps reduce \
+        unnecessary reconciliation executions and improve operator efficiency.
+        """)
 class FilterIT {
 
   public static final String RESOURCE_NAME = "test1";

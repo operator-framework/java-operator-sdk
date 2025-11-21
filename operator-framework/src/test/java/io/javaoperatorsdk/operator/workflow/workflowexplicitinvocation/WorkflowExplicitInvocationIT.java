@@ -7,11 +7,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Workflow Explicit Invocation",
+    description =
+        """
+        Demonstrates how to explicitly control when a workflow is invoked rather than having it \
+        run automatically on every reconciliation. This test shows how to programmatically \
+        trigger workflow execution and how cleanup is still performed even with explicit \
+        invocation.
+        """)
 public class WorkflowExplicitInvocationIT {
 
   public static final String RESOURCE_NAME = "test1";

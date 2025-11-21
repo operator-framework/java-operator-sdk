@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT_SECONDS;
@@ -14,6 +15,15 @@ import static io.javaoperatorsdk.operator.dependent.multipledependentsametypemul
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Multiple Managed Dependents of Same Type with Multi-Informer",
+    description =
+        """
+        Tests managing multiple dependent resources of the same type using separate informers \
+        for each. This approach allows for independent event handling and caching for resources \
+        of the same type, useful when different caching strategies or event filtering is needed \
+        for different instances.
+        """)
 class MultipleDependentSameTypeMultiInformerIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

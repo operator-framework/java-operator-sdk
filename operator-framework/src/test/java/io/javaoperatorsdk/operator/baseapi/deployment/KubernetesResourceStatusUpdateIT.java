@@ -17,12 +17,23 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.deployment.DeploymentReconciler.STATUS_MESSAGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Reconciling Non-Custom Kubernetes Resources with Status Updates",
+    description =
+        """
+        Demonstrates how to reconcile standard Kubernetes resources (like Deployments) instead of \
+        custom resources, and how to update their status subresource. This pattern is useful when \
+        building operators that manage native Kubernetes resources rather than custom resource \
+        definitions. The test verifies that the operator can watch, reconcile, and update the \
+        status of a Deployment resource.
+        """)
 class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension

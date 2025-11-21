@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.baseapi.primarytosecondary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.primarytosecondary.PrimaryToSecondaryIT.cluster;
@@ -14,6 +15,15 @@ import static org.awaitility.Awaitility.await;
  * The intention with this IT is to show the use cases why the PrimaryToSecondary Mapper is needed,
  * and the situation when it is not working.
  */
+@Sample(
+    tldr = "Issues When Primary-to-Secondary Mapper Is Missing",
+    description =
+        """
+        Demonstrates the problems that occur when accessing secondary resources without a \
+        proper PrimaryToSecondaryMapper configured. The test shows that accessing secondary \
+        resources through the context fails without the mapper, while direct cache access works \
+        as a workaround, highlighting the importance of proper mapper configuration.
+        """)
 class PrimaryToSecondaryMissingIT {
 
   @RegisterExtension

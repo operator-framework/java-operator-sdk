@@ -10,11 +10,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Create-Only Dependent Resources with Server-Side Apply",
+    description =
+        """
+        Demonstrates how to configure a dependent resource that is only created if it doesn't \
+        exist, using Server-Side Apply (SSA). This test shows that when a resource already \
+        exists, the dependent resource implementation will not modify it, preserving any \
+        external changes.
+        """)
 class CreateOnlyIfNotExistingDependentWithSSAIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

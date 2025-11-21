@@ -8,11 +8,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Dynamic Generic Event Source Registration",
+    description =
+        """
+        Demonstrates dynamic registration of generic event sources during runtime. The test \
+        verifies that event sources can be dynamically added to a reconciler and properly \
+        trigger reconciliation when the associated resources change, enabling flexible event \
+        source management.
+        """)
 class DynamicGenericEventSourceRegistrationIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

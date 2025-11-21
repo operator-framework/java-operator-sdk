@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCustomResource;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestSpec;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
@@ -14,6 +15,15 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Read-Only Bulk Dependent Resources",
+    description =
+        """
+        Demonstrates how to use read-only bulk dependent resources to observe and react to \
+        multiple existing resources without managing them. This test shows how an operator \
+        can monitor a collection of resources created externally and update the custom \
+        resource status based on their state, without creating or modifying them.
+        """)
 public class ReadOnlyBulkDependentIT {
 
   public static final int EXPECTED_NUMBER_OF_RESOURCES = 2;
