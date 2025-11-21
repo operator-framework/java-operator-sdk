@@ -53,8 +53,7 @@ jobs:
           cache: maven
       - name: Build test-index-processor and generate test documentation
         run: |
-          ./mvnw clean install -DskipTests -pl test-index-processor
-          ./mvnw process-test-classes -DskipTests -pl operator-framework
+          ./mvnw clean install -DskipTests
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
