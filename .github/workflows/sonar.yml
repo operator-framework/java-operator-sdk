@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ ( github.event_name == 'push' ) || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login == 'java-operator-sdk' ) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up Java and Maven
         uses: actions/setup-java@v5
         with:
