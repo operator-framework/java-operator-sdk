@@ -18,10 +18,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Managed Dependent Delete Condition",
     description =
-        "Demonstrates how to use delete conditions to control when dependent resources can be"
-            + " deleted. This test shows how the primary resource deletion can be blocked until"
-            + " dependent resources are properly cleaned up, ensuring graceful shutdown and"
-            + " preventing orphaned resources.")
+        """
+        Demonstrates how to use delete conditions to control when dependent resources can be \
+        deleted. This test shows how the primary resource deletion can be blocked until \
+        dependent resources are properly cleaned up, ensuring graceful shutdown and \
+        preventing orphaned resources.
+        """)
 public class ManagedDependentDeleteConditionIT {
 
   public static final String RESOURCE_NAME = "test1";

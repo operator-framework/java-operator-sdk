@@ -13,10 +13,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Sample(
     tldr = "Maximum Retry Attempts Configuration",
     description =
-        "Demonstrates how to configure a maximum number of retry attempts for failed"
-            + " reconciliations. The test verifies that the operator stops retrying after reaching"
-            + " the configured maximum attempts. This prevents infinite retry loops when"
-            + " reconciliations consistently fail.")
+        """
+        Demonstrates how to configure a maximum number of retry attempts for failed \
+        reconciliations. The test verifies that the operator stops retrying after reaching the \
+        configured maximum attempts. This prevents infinite retry loops when reconciliations \
+        consistently fail.
+        """)
 class RetryMaxAttemptIT {
 
   public static final int MAX_RETRY_ATTEMPTS = 3;

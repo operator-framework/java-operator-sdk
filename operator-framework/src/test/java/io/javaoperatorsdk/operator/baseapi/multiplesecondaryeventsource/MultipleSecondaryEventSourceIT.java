@@ -15,10 +15,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Managing Multiple Secondary Event Sources",
     description =
-        "Demonstrates how to configure and use multiple secondary event sources for a single"
-            + " reconciler. The test verifies that the reconciler is triggered by changes to"
-            + " different secondary resources and handles events from multiple sources correctly,"
-            + " including periodic event sources.")
+        """
+        Demonstrates how to configure and use multiple secondary event sources for a single \
+        reconciler. The test verifies that the reconciler is triggered by changes to different \
+        secondary resources and handles events from multiple sources correctly, including periodic \
+        event sources.
+        """)
 class MultipleSecondaryEventSourceIT {
 
   public static final String TEST_RESOURCE_NAME = "testresource";

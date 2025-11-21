@@ -22,10 +22,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Concurrent Reconciliation of Multiple Resources",
     description =
-        "Demonstrates the operator's ability to handle concurrent reconciliation of multiple"
-            + " resources. The test creates, updates, and deletes many resources simultaneously to"
-            + " verify proper handling of concurrent operations, ensuring thread safety and correct"
-            + " resource state management under load.")
+        """
+        Demonstrates the operator's ability to handle concurrent reconciliation of multiple \
+        resources. The test creates, updates, and deletes many resources simultaneously to \
+        verify proper handling of concurrent operations, ensuring thread safety and correct \
+        resource state management under load.
+        """)
 class ConcurrencyIT {
   public static final int NUMBER_OF_RESOURCES_CREATED = 50;
   public static final int NUMBER_OF_RESOURCES_DELETED = 30;

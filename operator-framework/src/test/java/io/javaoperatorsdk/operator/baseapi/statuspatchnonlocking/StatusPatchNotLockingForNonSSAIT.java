@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.statuspatchnonlocking.StatusPatchLockingReconciler.MESSAGE;
@@ -14,6 +15,15 @@ import static io.javaoperatorsdk.operator.baseapi.statusupdatelocking.StatusUpda
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Status Patching Without Optimistic Locking for Non-SSA",
+    description =
+        """
+        Tests status update behavior when not using Server-Side Apply (SSA), verifying that \
+        optimistic locking is not enforced on status patches. The test also demonstrates proper \
+        field deletion when values are set to null, ensuring correct status management without \
+        SSA optimistic locking.
+        """)
 class StatusPatchNotLockingForNonSSAIT {
 
   public static final String TEST_RESOURCE_NAME = "test";

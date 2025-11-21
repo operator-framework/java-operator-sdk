@@ -21,9 +21,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Watching resources in a remote Kubernetes cluster",
     description =
-        "Demonstrates how to configure an informer event source to watch resources in a different"
-            + " Kubernetes cluster from where the operator is running. This enables multi-cluster"
-            + " scenarios where an operator in one cluster manages resources in another cluster.")
+        """
+        Demonstrates how to configure an informer event source to watch resources in a different \
+        Kubernetes cluster from where the operator is running. This enables multi-cluster \
+        scenarios where an operator in one cluster manages resources in another cluster.
+        """)
 @EnableKubeAPIServer
 class InformerRemoteClusterIT {
 

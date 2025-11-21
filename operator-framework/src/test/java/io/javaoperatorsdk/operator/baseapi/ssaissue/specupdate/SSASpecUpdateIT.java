@@ -4,11 +4,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Server-Side Apply Finalizer Removal on Spec Update",
+    description =
+        """
+        Demonstrates an issue with Server-Side Apply (SSA) where updating the resource spec \
+        without explicitly including the finalizer causes the finalizer to be removed. This \
+        highlights the importance of including all desired fields when using SSA to avoid \
+        unintended field removal.
+        """)
 class SSASpecUpdateIT {
 
   public static final String TEST_RESOURCE_NAME = "test";

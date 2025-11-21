@@ -16,12 +16,14 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Managing External Resources with Persistent State",
     description =
-        "Demonstrates how to manage external resources (outside of Kubernetes) while maintaining"
-            + " their state in Kubernetes resources. This test shows a pattern for reconciling"
-            + " external systems by storing external resource identifiers in a ConfigMap. The test"
-            + " verifies that external resources can be created, updated, and deleted in"
-            + " coordination with Kubernetes resources, with the ConfigMap serving as a state store"
-            + " for external resource IDs.")
+        """
+        Demonstrates how to manage external resources (outside of Kubernetes) while maintaining \
+        their state in Kubernetes resources. This test shows a pattern for reconciling \
+        external systems by storing external resource identifiers in a ConfigMap. The test \
+        verifies that external resources can be created, updated, and deleted in \
+        coordination with Kubernetes resources, with the ConfigMap serving as a state store \
+        for external resource IDs.
+        """)
 class ExternalStateIT {
 
   private static final String TEST_RESOURCE_NAME = "test1";

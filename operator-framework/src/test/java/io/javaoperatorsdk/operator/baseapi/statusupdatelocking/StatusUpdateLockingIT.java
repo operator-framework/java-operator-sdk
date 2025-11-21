@@ -17,10 +17,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Status Update Locking and Concurrency Control",
     description =
-        "Demonstrates how the framework handles concurrent status updates and ensures no optimistic"
-            + " locking conflicts occur when updating status subresources. The test verifies that"
-            + " status updates can proceed independently of spec updates without causing version"
-            + " conflicts or requiring retries.")
+        """
+        Demonstrates how the framework handles concurrent status updates and ensures no \
+        optimistic locking conflicts occur when updating status subresources. The test verifies \
+        that status updates can proceed independently of spec updates without causing version \
+        conflicts or requiring retries.
+        """)
 class StatusUpdateLockingIT {
 
   public static final String TEST_RESOURCE_NAME = "test";

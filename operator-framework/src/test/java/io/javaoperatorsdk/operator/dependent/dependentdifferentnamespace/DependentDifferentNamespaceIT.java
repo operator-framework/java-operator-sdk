@@ -15,11 +15,13 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Dependent Resources in Different Namespaces",
     description =
-        "Demonstrates how to manage dependent resources in a namespace different from the primary"
-            + " resource. This test shows how to configure dependent resources to be created in a"
-            + " specific namespace rather than inheriting the namespace from the primary resource."
-            + " The test verifies full CRUD operations for a ConfigMap that lives in a different"
-            + " namespace than the custom resource that manages it.")
+        """
+        Demonstrates how to manage dependent resources in a namespace different from the primary \
+        resource. This test shows how to configure dependent resources to be created in a \
+        specific namespace rather than inheriting the namespace from the primary resource. \
+        The test verifies full CRUD operations for a ConfigMap that lives in a different \
+        namespace than the custom resource that manages it.
+        """)
 class DependentDifferentNamespaceIT {
 
   public static final String TEST_1 = "different-ns-test1";

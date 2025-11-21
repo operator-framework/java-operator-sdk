@@ -19,10 +19,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Label Selector for Custom Resource Filtering",
     description =
-        "Demonstrates how to configure label selectors to filter which custom resources an operator"
-            + " watches. The test verifies that only resources with matching labels trigger"
-            + " reconciliation. This allows operators to selectively manage a subset of custom"
-            + " resources based on their labels.")
+        """
+        Demonstrates how to configure label selectors to filter which custom resources an \
+        operator watches. The test verifies that only resources with matching labels trigger \
+        reconciliation. This allows operators to selectively manage a subset of custom resources \
+        based on their labels.
+        """)
 class LabelSelectorIT {
 
   @RegisterExtension

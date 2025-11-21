@@ -15,10 +15,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Primary to Secondary Resource Mapping",
     description =
-        "Demonstrates many-to-one mapping between primary and secondary resources where multiple"
-            + " primary resources can reference the same secondary resource. The test verifies that"
-            + " changes in the secondary resource trigger reconciliation of all related primary"
-            + " resources, enabling shared resource patterns.")
+        """
+        Demonstrates many-to-one mapping between primary and secondary resources where multiple \
+        primary resources can reference the same secondary resource. The test verifies that \
+        changes in the secondary resource trigger reconciliation of all related primary resources, \
+        enabling shared resource patterns.
+        """)
 class PrimaryToSecondaryIT {
 
   public static final String CLUSTER_NAME = "cluster1";

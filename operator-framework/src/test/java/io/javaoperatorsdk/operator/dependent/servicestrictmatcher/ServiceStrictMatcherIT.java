@@ -15,9 +15,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Strict matching for Service resources",
     description =
-        "Shows how to use a strict matcher for Service dependent resources that correctly handles"
-            + " Service-specific fields. This prevents unnecessary updates when Kubernetes adds"
-            + " default values or modifies certain fields, avoiding reconciliation loops.")
+        """
+        Shows how to use a strict matcher for Service dependent resources that correctly handles \
+        Service-specific fields. This prevents unnecessary updates when Kubernetes adds \
+        default values or modifies certain fields, avoiding reconciliation loops.
+        """)
 public class ServiceStrictMatcherIT {
 
   @RegisterExtension

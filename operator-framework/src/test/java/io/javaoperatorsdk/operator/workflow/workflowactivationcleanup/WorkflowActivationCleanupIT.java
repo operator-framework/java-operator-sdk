@@ -18,9 +18,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Workflow Activation Cleanup",
     description =
-        "Demonstrates how workflow cleanup is handled when activation conditions are involved. This"
-            + " test verifies that resources are properly cleaned up on operator startup even when"
-            + " marked for deletion, ensuring no orphaned resources remain after restarts.")
+        """
+        Demonstrates how workflow cleanup is handled when activation conditions are involved. This \
+        test verifies that resources are properly cleaned up on operator startup even when \
+        marked for deletion, ensuring no orphaned resources remain after restarts.
+        """)
 public class WorkflowActivationCleanupIT {
 
   private final KubernetesClient client = new KubernetesClientBuilder().build();

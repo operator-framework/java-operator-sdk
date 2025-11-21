@@ -13,9 +13,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Per-resource polling event source implementation",
     description =
-        "Shows how to implement a per-resource polling event source where each primary resource has"
-            + " its own polling schedule to fetch external state. This is useful for integrating"
-            + " with external systems that don't support event-driven notifications.")
+        """
+        Shows how to implement a per-resource polling event source where each primary resource has \
+        its own polling schedule to fetch external state. This is useful for integrating \
+        with external systems that don't support event-driven notifications.
+        """)
 class PerResourcePollingEventSourceIT {
 
   public static final String NAME_1 = "name1";

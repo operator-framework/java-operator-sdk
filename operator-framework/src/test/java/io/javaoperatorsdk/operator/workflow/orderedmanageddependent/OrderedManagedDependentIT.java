@@ -15,9 +15,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Ordered Managed Dependent Resources",
     description =
-        "Demonstrates how to control the order of reconciliation for managed dependent resources."
-            + " This test verifies that dependent resources are reconciled in a specific sequence,"
-            + " ensuring proper orchestration when dependencies have ordering requirements.")
+        """
+        Demonstrates how to control the order of reconciliation for managed dependent resources. \
+        This test verifies that dependent resources are reconciled in a specific sequence, \
+        ensuring proper orchestration when dependencies have ordering requirements.
+        """)
 class OrderedManagedDependentIT {
 
   @RegisterExtension

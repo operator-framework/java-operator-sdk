@@ -19,9 +19,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Patching resource and status without Server-Side Apply",
     description =
-        "Demonstrates how to patch both the primary resource metadata/spec and status subresource"
-            + " using traditional JSON merge patch instead of Server-Side Apply. This shows the"
-            + " legacy approach for updating resources when SSA is disabled.")
+        """
+        Demonstrates how to patch both the primary resource metadata/spec and status subresource \
+        using traditional JSON merge patch instead of Server-Side Apply. This shows the \
+        legacy approach for updating resources when SSA is disabled.
+        """)
 class PatchResourceAndStatusNoSSAIT {
   @RegisterExtension
   LocallyRunOperatorExtension extension =

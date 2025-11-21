@@ -15,10 +15,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Workflow Activation Condition",
     description =
-        "Demonstrates how to use activation conditions to conditionally enable or disable parts of"
-            + " a workflow. This test shows how the workflow can adapt to different environments"
-            + " (e.g., vanilla Kubernetes vs. OpenShift) by activating only the relevant dependent"
-            + " resources based on runtime conditions.")
+        """
+        Demonstrates how to use activation conditions to conditionally enable or disable parts of \
+        a workflow. This test shows how the workflow can adapt to different environments \
+        (e.g., vanilla Kubernetes vs. OpenShift) by activating only the relevant dependent \
+        resources based on runtime conditions.
+        """)
 public class WorkflowActivationConditionIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

@@ -8,11 +8,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Server-Side Apply Finalizer Field Manager Issue",
+    description =
+        """
+        Demonstrates a potential issue with Server-Side Apply (SSA) when adding finalizers. \
+        When a resource is created with the same field manager used by the controller, adding \
+        a finalizer can unexpectedly remove other spec fields, showcasing field manager \
+        ownership conflicts in SSA.
+        """)
 class SSAFinalizerIssueIT {
 
   public static final String TEST_1 = "test1";

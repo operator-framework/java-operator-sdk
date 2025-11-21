@@ -24,10 +24,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Leader election with namespace change handling",
     description =
-        "Tests that when an operator is not elected as leader, changing the watched namespaces does"
-            + " not start processing. This ensures that only the leader operator actively"
-            + " reconciles resources, preventing conflicts in multi-instance deployments with"
-            + " leader election.")
+        """
+        Tests that when an operator is not elected as leader, changing the watched namespaces does \
+        not start processing. This ensures that only the leader operator actively \
+        reconciles resources, preventing conflicts in multi-instance deployments with \
+        leader election.
+        """)
 public class LeaderElectionChangeNamespaceIT {
 
   public static final String LEASE_NAME = "nschangelease";

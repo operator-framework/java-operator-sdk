@@ -19,10 +19,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Cleanup handler for built-in Kubernetes resources",
     description =
-        "Demonstrates how to implement cleanup handlers (finalizers) for built-in Kubernetes"
-            + " resources like Service and Pod. These resources don't use generation the same way"
-            + " as custom resources, so this sample shows the proper approach to handle their"
-            + " lifecycle and cleanup logic.")
+        """
+        Demonstrates how to implement cleanup handlers (finalizers) for built-in Kubernetes \
+        resources like Service and Pod. These resources don't use generation the same way \
+        as custom resources, so this sample shows the proper approach to handle their \
+        lifecycle and cleanup logic.
+        """)
 class BuiltInResourceCleanerIT {
 
   private static final Logger log = LoggerFactory.getLogger(BuiltInResourceCleanerIT.class);

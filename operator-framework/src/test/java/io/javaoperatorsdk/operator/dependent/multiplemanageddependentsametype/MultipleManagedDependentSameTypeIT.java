@@ -18,10 +18,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Managing Multiple Dependent Resources of the Same Type",
     description =
-        "Demonstrates how to manage multiple dependent resources of the same type from a single"
-            + " reconciler. This test shows how multiple ConfigMaps with the same type can be"
-            + " created, updated, and deleted as dependent resources of a custom resource,"
-            + " verifying proper CRUD operations and garbage collection.")
+        """
+        Demonstrates how to manage multiple dependent resources of the same type from a single \
+        reconciler. This test shows how multiple ConfigMaps with the same type can be \
+        created, updated, and deleted as dependent resources of a custom resource, \
+        verifying proper CRUD operations and garbage collection.
+        """)
 class MultipleManagedDependentSameTypeIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

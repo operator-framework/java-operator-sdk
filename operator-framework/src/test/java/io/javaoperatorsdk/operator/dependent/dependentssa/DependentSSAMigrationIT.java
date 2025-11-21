@@ -11,12 +11,22 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Migrating Dependent Resources from Legacy to SSA",
+    description =
+        """
+        Demonstrates migrating dependent resource management from legacy update methods to \
+        Server-Side Apply (SSA). Tests show bidirectional migration scenarios and field manager \
+        handling, including using the default fabric8 field manager to avoid creating duplicate \
+        managed field entries during migration.
+        """)
 class DependentSSAMigrationIT {
 
   public static final String FABRIC8_CLIENT_DEFAULT_FIELD_MANAGER = "fabric8-kubernetes-client";

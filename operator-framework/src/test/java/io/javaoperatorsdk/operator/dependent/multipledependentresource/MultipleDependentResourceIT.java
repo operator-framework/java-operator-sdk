@@ -20,11 +20,13 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Managing Multiple Dependent Resources",
     description =
-        "Demonstrates how to manage multiple dependent resources from a single reconciler. This"
-            + " test shows how a single custom resource can create, update, and delete multiple"
-            + " ConfigMaps (or other Kubernetes resources) as dependents. The test verifies that"
-            + " all dependent resources are created together, updated together when the primary"
-            + " resource changes, and properly cleaned up when the primary resource is deleted.")
+        """
+        Demonstrates how to manage multiple dependent resources from a single reconciler. This \
+        test shows how a single custom resource can create, update, and delete multiple \
+        ConfigMaps (or other Kubernetes resources) as dependents. The test verifies that \
+        all dependent resources are created together, updated together when the primary \
+        resource changes, and properly cleaned up when the primary resource is deleted.
+        """)
 public class MultipleDependentResourceIT {
 
   public static final String CHANGED_VALUE = "changed value";

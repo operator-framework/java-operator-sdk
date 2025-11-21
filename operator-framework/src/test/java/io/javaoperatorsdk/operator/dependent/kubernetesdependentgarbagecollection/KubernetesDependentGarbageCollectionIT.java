@@ -17,12 +17,14 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Kubernetes Native Garbage Collection for Dependent Resources",
     description =
-        "Demonstrates how to leverage Kubernetes native garbage collection for dependent resources"
-            + " using owner references. This test shows how dependent resources are automatically"
-            + " cleaned up by Kubernetes when the owner resource is deleted, and how to"
-            + " conditionally create or delete dependent resources based on the primary resource"
-            + " state. Owner references ensure that dependent resources don't outlive their"
-            + " owners.")
+        """
+        Demonstrates how to leverage Kubernetes native garbage collection for dependent resources \
+        using owner references. This test shows how dependent resources are automatically \
+        cleaned up by Kubernetes when the owner resource is deleted, and how to \
+        conditionally create or delete dependent resources based on the primary resource \
+        state. Owner references ensure that dependent resources don't outlive their \
+        owners.
+        """)
 class KubernetesDependentGarbageCollectionIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

@@ -3,10 +3,20 @@ package io.javaoperatorsdk.operator.dependent.generickubernetesresource.generick
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.dependent.generickubernetesresource.GenericKubernetesDependentSpec;
 import io.javaoperatorsdk.operator.dependent.generickubernetesresource.GenericKubernetesDependentTestBase;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+@Sample(
+    tldr = "Generic Kubernetes Resource as Standalone Dependent",
+    description =
+        """
+        Tests using GenericKubernetesResource as a standalone dependent resource. This approach \
+        allows operators to manage arbitrary Kubernetes resources without requiring specific Java \
+        classes for each resource type, providing flexibility for managing various resource types \
+        dynamically.
+        """)
 public class GenericKubernetesDependentStandaloneIT
     extends GenericKubernetesDependentTestBase<GenericKubernetesDependentStandaloneCustomResource> {
 

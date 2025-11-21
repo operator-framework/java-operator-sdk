@@ -13,9 +13,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Operator restart and state recovery",
     description =
-        "Tests that an operator can be stopped and restarted while maintaining correct behavior."
-            + " After restart, the operator should resume processing existing resources without"
-            + " losing track of their state, demonstrating proper state recovery and persistence.")
+        """
+        Tests that an operator can be stopped and restarted while maintaining correct behavior. \
+        After restart, the operator should resume processing existing resources without \
+        losing track of their state, demonstrating proper state recovery and persistence.
+        """)
 class OperatorRestartIT {
 
   private static final Operator operator = new Operator(o -> o.withCloseClientOnStop(false));

@@ -3,6 +3,7 @@ package io.javaoperatorsdk.operator.dependent.bulkdependent.condition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.dependent.bulkdependent.BulkDependentTestCustomResource;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
@@ -13,6 +14,15 @@ import static io.javaoperatorsdk.operator.dependent.bulkdependent.ConfigMapDelet
 import static org.assertj.core.api.Assertions.*;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Bulk Dependent Resources with Ready Conditions",
+    description =
+        """
+        Tests bulk dependent resources with preconditions that control when reconciliation \
+        occurs. This demonstrates using ready conditions to ensure bulk operations only execute \
+        when the primary resource is in the appropriate state, coordinating complex multi-resource \
+        management.
+        """)
 class BulkDependentWithConditionIT {
 
   @RegisterExtension

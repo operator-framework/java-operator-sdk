@@ -16,10 +16,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Event filtering for dependent resource operations",
     description =
-        "Demonstrates how to configure event filters on dependent resources to prevent"
-            + " reconciliation loops. When a dependent resource is created or updated by the"
-            + " controller, the filter prevents those events from triggering unnecessary"
-            + " reconciliations.")
+        """
+        Demonstrates how to configure event filters on dependent resources to prevent \
+        reconciliation loops. When a dependent resource is created or updated by the \
+        controller, the filter prevents those events from triggering unnecessary \
+        reconciliations.
+        """)
 class DependentOperationEventFilterIT {
 
   public static final String TEST = "test";

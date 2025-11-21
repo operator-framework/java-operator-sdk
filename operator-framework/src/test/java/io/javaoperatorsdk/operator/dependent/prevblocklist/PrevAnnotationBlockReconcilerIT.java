@@ -7,11 +7,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Blocking Previous Annotation for Specific Resource Types",
+    description =
+        """
+        Tests the previous annotation blocklist feature, which prevents storing previous resource \
+        state annotations for specific resource types like Deployments. This optimization avoids \
+        unnecessary reconciliation loops for resources that have server-side mutations, improving \
+        performance and stability.
+        """)
 class PrevAnnotationBlockReconcilerIT {
 
   public static final String TEST_1 = "test1";

@@ -6,12 +6,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.cleanupconflict.CleanupConflictReconciler.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Cleanup Finalizer Removal Without Conflicts",
+    description =
+        """
+        Tests that finalizers are removed correctly during cleanup without causing conflicts, \
+        even when multiple finalizers are present and removed concurrently. This verifies the \
+        operator's ability to handle finalizer updates safely during resource deletion.
+        """)
 class CleanupConflictIT {
 
   private static final String ADDITIONAL_FINALIZER = "javaoperatorsdk.io/additionalfinalizer";

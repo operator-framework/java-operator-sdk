@@ -11,10 +11,12 @@ import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 @Sample(
     tldr = "Generic Kubernetes Dependent Resource (Managed)",
     description =
-        "Demonstrates how to use GenericKubernetesResource as a managed dependent resource. This"
-            + " test shows how to work with generic Kubernetes resources that don't have a specific"
-            + " Java model class, allowing the operator to manage any Kubernetes resource type"
-            + " dynamically.")
+        """
+        Demonstrates how to use GenericKubernetesResource as a managed dependent resource. This \
+        test shows how to work with generic Kubernetes resources that don't have a specific \
+        Java model class, allowing the operator to manage any Kubernetes resource type \
+        dynamically.
+        """)
 public class GenericKubernetesDependentManagedIT
     extends GenericKubernetesDependentTestBase<GenericKubernetesDependentManagedCustomResource> {
 

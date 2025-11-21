@@ -17,10 +17,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Automatic Retry for Failed Reconciliations",
     description =
-        "Demonstrates how to configure automatic retry logic for reconciliations that fail"
-            + " temporarily. The test shows that failed executions are automatically retried with"
-            + " configurable intervals and max attempts. After a specified number of retries, the"
-            + " reconciliation succeeds and updates the resource status accordingly.")
+        """
+        Demonstrates how to configure automatic retry logic for reconciliations that fail \
+        temporarily. The test shows that failed executions are automatically retried with \
+        configurable intervals and max attempts. After a specified number of retries, the \
+        reconciliation succeeds and updates the resource status accordingly.
+        """)
 class RetryIT {
   public static final int RETRY_INTERVAL = 150;
   public static final int MAX_RETRY_ATTEMPTS = 5;

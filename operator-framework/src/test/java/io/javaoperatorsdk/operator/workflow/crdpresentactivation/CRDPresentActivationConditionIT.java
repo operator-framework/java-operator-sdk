@@ -8,11 +8,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Workflow Activation Based on CRD Presence",
+    description =
+        """
+        Tests workflow activation conditions that depend on the presence of specific Custom \
+        Resource Definitions (CRDs). Dependent resources are only created when their corresponding \
+        CRDs exist in the cluster, allowing operators to gracefully handle optional dependencies \
+        and multi-cluster scenarios.
+        """)
 public class CRDPresentActivationConditionIT {
 
   public static final String TEST_1 = "test1";

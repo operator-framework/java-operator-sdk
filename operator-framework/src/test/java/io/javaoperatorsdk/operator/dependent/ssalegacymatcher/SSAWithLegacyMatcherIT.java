@@ -5,11 +5,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Using Legacy Resource Matcher with SSA",
+    description =
+        """
+        Demonstrates using the legacy resource matcher with Server-Side Apply (SSA). The legacy \
+        matcher provides backward compatibility for matching logic while using SSA for updates, \
+        ensuring that resource comparisons work correctly even when migrating from traditional \
+        update methods to SSA.
+        """)
 public class SSAWithLegacyMatcherIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";

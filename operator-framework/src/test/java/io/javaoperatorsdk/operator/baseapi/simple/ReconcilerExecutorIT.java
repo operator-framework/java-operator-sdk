@@ -17,10 +17,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Basic reconciler execution",
     description =
-        "Demonstrates the basic reconciler execution flow including resource creation, status"
-            + " updates, and cleanup. This test verifies that a reconciler can create dependent"
-            + " resources (ConfigMap), update status, and properly handle cleanup when resources"
-            + " are deleted.")
+        """
+        Demonstrates the basic reconciler execution flow including resource creation, status \
+        updates, and cleanup. This test verifies that a reconciler can create dependent resources \
+        (ConfigMap), update status, and properly handle cleanup when resources are deleted.
+        """)
 class ReconcilerExecutorIT {
 
   @RegisterExtension

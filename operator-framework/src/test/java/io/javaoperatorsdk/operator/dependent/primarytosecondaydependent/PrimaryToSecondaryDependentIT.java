@@ -21,11 +21,13 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Primary to Secondary Dependent Resource",
     description =
-        "Demonstrates how to configure dependencies between dependent resources where one"
-            + " dependent resource (secondary) depends on another dependent resource (primary)."
-            + " This test shows how a Secret's creation can be conditioned on the state of a"
-            + " ConfigMap, illustrating the use of reconcile preconditions and dependent resource"
-            + " chaining.")
+        """
+        Demonstrates how to configure dependencies between dependent resources where one \
+        dependent resource (secondary) depends on another dependent resource (primary). \
+        This test shows how a Secret's creation can be conditioned on the state of a \
+        ConfigMap, illustrating the use of reconcile preconditions and dependent resource \
+        chaining.
+        """)
 class PrimaryToSecondaryDependentIT {
 
   public static final String TEST_CR_NAME = "test1";

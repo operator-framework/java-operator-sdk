@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.dependent.multiplemanageddependentsametype.MultipleManagedDependentResourceSpec;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.support.ExternalServiceMock;
@@ -11,6 +12,14 @@ import io.javaoperatorsdk.operator.support.ExternalServiceMock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Multiple Managed External Dependents of Same Type",
+    description =
+        """
+        Tests managing multiple external (non-Kubernetes) dependent resources of the same type. \
+        This demonstrates that operators can manage multiple instances of external resources \
+        simultaneously, handling their lifecycle including creation, updates, and deletion.
+        """)
 class MultipleManagedExternalDependentSameTypeIT {
 
   @RegisterExtension

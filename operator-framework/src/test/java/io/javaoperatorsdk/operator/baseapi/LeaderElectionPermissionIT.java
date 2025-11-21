@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -21,6 +22,15 @@ import static io.javaoperatorsdk.operator.LeaderElectionManager.NO_PERMISSION_TO
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Sample(
+    tldr = "Leader Election with Insufficient Permissions",
+    description =
+        """
+        Verifies that the operator fails gracefully when leader election is configured but \
+        the service account lacks permissions to access lease resources. This test ensures \
+        proper error handling and messaging when RBAC permissions are insufficient for \
+        leader election functionality.
+        """)
 class LeaderElectionPermissionIT {
 
   KubernetesClient adminClient = new KubernetesClientBuilder().build();

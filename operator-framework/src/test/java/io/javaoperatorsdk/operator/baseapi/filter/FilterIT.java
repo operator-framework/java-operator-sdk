@@ -16,10 +16,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Filtering Events for Primary and Secondary Resources",
     description =
-        "Demonstrates how to implement event filters for both primary custom resources and"
-            + " secondary dependent resources. The test verifies that resource updates matching"
-            + " specific filter criteria are ignored and don't trigger reconciliation. This helps"
-            + " reduce unnecessary reconciliation executions and improve operator efficiency.")
+        """
+        Demonstrates how to implement event filters for both primary custom resources and \
+        secondary dependent resources. The test verifies that resource updates matching specific \
+        filter criteria are ignored and don't trigger reconciliation. This helps reduce \
+        unnecessary reconciliation executions and improve operator efficiency.
+        """)
 class FilterIT {
 
   public static final String RESOURCE_NAME = "test1";

@@ -11,12 +11,22 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Migrating Status Patching from Non-SSA to SSA",
+    description =
+        """
+        Demonstrates the process and challenges of migrating status patching from traditional \
+        update methods to Server-Side Apply (SSA). Tests show a known Kubernetes issue where \
+        field deletion doesn't work correctly during migration, and provides a workaround by \
+        removing managed field entries from the previous update method.
+        """)
 public class StatusPatchSSAMigrationIT {
 
   public static final String TEST_RESOURCE_NAME = "test";

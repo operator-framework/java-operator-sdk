@@ -7,12 +7,22 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.dependent.multipledrsametypenodiscriminator.MultipleManagedDependentSameTypeNoDiscriminatorReconciler.DATA_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Multiple Managed Dependents of Same Type Without Discriminator",
+    description =
+        """
+        Demonstrates managing multiple managed dependent resources of the same type without \
+        explicit discriminators. The test verifies complete CRUD operations on multiple ConfigMaps, \
+        showing that resource names alone can differentiate between dependents when a \
+        discriminator is not needed.
+        """)
 public class MultipleManagedDependentNoDiscriminatorIT {
 
   public static final String RESOURCE_NAME = "test1";

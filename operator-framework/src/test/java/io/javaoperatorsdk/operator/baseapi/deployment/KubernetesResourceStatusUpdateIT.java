@@ -27,11 +27,13 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Reconciling Non-Custom Kubernetes Resources with Status Updates",
     description =
-        "Demonstrates how to reconcile standard Kubernetes resources (like Deployments) instead of"
-            + " custom resources, and how to update their status subresource. This pattern is"
-            + " useful when building operators that manage native Kubernetes resources rather than"
-            + " custom resource definitions. The test verifies that the operator can watch,"
-            + " reconcile, and update the status of a Deployment resource.")
+        """
+        Demonstrates how to reconcile standard Kubernetes resources (like Deployments) instead of \
+        custom resources, and how to update their status subresource. This pattern is useful when \
+        building operators that manage native Kubernetes resources rather than custom resource \
+        definitions. The test verifies that the operator can watch, reconcile, and update the \
+        status of a Deployment resource.
+        """)
 class KubernetesResourceStatusUpdateIT {
 
   @RegisterExtension

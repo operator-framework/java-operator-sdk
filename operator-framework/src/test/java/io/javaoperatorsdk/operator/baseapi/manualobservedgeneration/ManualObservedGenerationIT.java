@@ -13,9 +13,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Manually managing observedGeneration in status",
     description =
-        "Shows how to manually track and update the observedGeneration field in status to indicate"
-            + " which generation of the resource spec has been successfully processed. This is"
-            + " useful for providing clear feedback to users about reconciliation progress.")
+        """
+        Shows how to manually track and update the observedGeneration field in status to indicate \
+        which generation of the resource spec has been successfully processed. This is useful for \
+        providing clear feedback to users about reconciliation progress.
+        """)
 public class ManualObservedGenerationIT {
 
   public static final String RESOURCE_NAME = "test1";

@@ -5,11 +5,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Explicit Workflow Cleanup Invocation",
+    description =
+        """
+        Tests explicit workflow cleanup invocation, demonstrating that workflow cleanup is called \
+        even when using explicit workflow invocation mode. This ensures that dependent resources \
+        are properly cleaned up during deletion regardless of how the workflow is invoked, \
+        maintaining consistent cleanup behavior.
+        """)
 public class WorkflowExplicitCleanupIT {
 
   public static final String RESOURCE_NAME = "test1";

@@ -20,10 +20,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Handling special Kubernetes resources without spec",
     description =
-        "Demonstrates how to handle special built-in Kubernetes resources like ServiceAccount that"
-            + " don't have a spec field. These resources require different handling approaches"
-            + " since their configuration is stored directly in the resource body rather than in a"
-            + " spec section.")
+        """
+        Demonstrates how to handle special built-in Kubernetes resources like ServiceAccount that \
+        don't have a spec field. These resources require different handling approaches \
+        since their configuration is stored directly in the resource body rather than in a \
+        spec section.
+        """)
 public class SpecialResourcesDependentIT {
 
   public static final String RESOURCE_NAME = "test1";

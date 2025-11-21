@@ -21,10 +21,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Using Informer Event Source to Watch Secondary Resources",
     description =
-        "Demonstrates how to use InformerEventSource to watch changes in secondary resources"
-            + " (ConfigMaps) and trigger reconciliation when those resources are created, updated,"
-            + " or deleted. The test verifies that the reconciler responds to ConfigMap changes and"
-            + " updates the primary resource status accordingly.")
+        """
+        Demonstrates how to use InformerEventSource to watch changes in secondary resources \
+        (ConfigMaps) and trigger reconciliation when those resources are created, updated, or \
+        deleted. The test verifies that the reconciler responds to ConfigMap changes and updates \
+        the primary resource status accordingly.
+        """)
 class InformerEventSourceIT {
 
   public static final String RESOURCE_NAME = "informertestcr";

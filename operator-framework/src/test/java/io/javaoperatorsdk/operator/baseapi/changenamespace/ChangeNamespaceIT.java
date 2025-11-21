@@ -25,11 +25,13 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Dynamically Changing Watched Namespaces",
     description =
-        "Demonstrates how to dynamically change the set of namespaces that an operator watches at"
-            + " runtime. This feature allows operators to add or remove namespaces from their watch"
-            + " list, including switching between specific namespaces and watching all namespaces."
-            + " The test verifies that resources in newly added namespaces are reconciled and"
-            + " resources in removed namespaces are no longer watched.")
+        """
+        Demonstrates how to dynamically change the set of namespaces that an operator watches at \
+        runtime. This feature allows operators to add or remove namespaces from their watch \
+        list, including switching between specific namespaces and watching all namespaces. \
+        The test verifies that resources in newly added namespaces are reconciled and \
+        resources in removed namespaces are no longer watched.
+        """)
 class ChangeNamespaceIT {
 
   public static final String TEST_RESOURCE_NAME_1 = "test1";

@@ -17,9 +17,11 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Skipping status updates when next reconciliation is imminent",
     description =
-        "Shows how to use the nextReconciliationImminent flag to skip status updates when another"
-            + " reconciliation event is already pending. This optimization prevents unnecessary"
-            + " status patch operations when rapid consecutive reconciliations occur.")
+        """
+        Shows how to use the nextReconciliationImminent flag to skip status updates when another \
+        reconciliation event is already pending. This optimization prevents unnecessary \
+        status patch operations when rapid consecutive reconciliations occur.
+        """)
 public class NextReconciliationImminentIT {
 
   private static final Logger log = LoggerFactory.getLogger(NextReconciliationImminentIT.class);

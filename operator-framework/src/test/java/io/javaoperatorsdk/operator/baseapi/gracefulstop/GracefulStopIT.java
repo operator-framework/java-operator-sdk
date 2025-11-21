@@ -16,10 +16,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Graceful Operator Shutdown with Reconciliation Timeout",
     description =
-        "Demonstrates how to configure graceful shutdown behavior with reconciliation termination"
-            + " timeouts. The test verifies that in-progress reconciliations are allowed to"
-            + " complete when the operator stops. This ensures clean shutdown without interrupting"
-            + " ongoing reconciliation work.")
+        """
+        Demonstrates how to configure graceful shutdown behavior with reconciliation termination \
+        timeouts. The test verifies that in-progress reconciliations are allowed to complete when \
+        the operator stops. This ensures clean shutdown without interrupting ongoing \
+        reconciliation work.
+        """)
 public class GracefulStopIT {
 
   public static final String TEST_1 = "test1";

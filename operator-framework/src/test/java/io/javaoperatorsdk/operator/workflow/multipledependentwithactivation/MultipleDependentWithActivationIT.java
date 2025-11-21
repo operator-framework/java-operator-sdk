@@ -15,10 +15,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Multiple Dependents with Activation Conditions",
     description =
-        "Demonstrates how to use activation conditions with multiple dependent resources. This test"
-            + " shows how different dependent resources can be dynamically enabled or disabled"
-            + " based on runtime conditions, allowing flexible workflow behavior that adapts to"
-            + " changing requirements.")
+        """
+        Demonstrates how to use activation conditions with multiple dependent resources. This test \
+        shows how different dependent resources can be dynamically enabled or disabled \
+        based on runtime conditions, allowing flexible workflow behavior that adapts to \
+        changing requirements.
+        """)
 public class MultipleDependentWithActivationIT {
 
   public static final String INITIAL_VALUE = "initial_value";

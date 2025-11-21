@@ -16,10 +16,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Custom Event Source for Periodic Reconciliation",
     description =
-        "Demonstrates how to implement custom event sources that trigger reconciliation on a"
-            + " periodic basis. The test verifies that reconciliations are triggered at regular"
-            + " intervals by a timer-based event source. This enables operators to perform periodic"
-            + " checks or updates independent of resource changes.")
+        """
+        Demonstrates how to implement custom event sources that trigger reconciliation on a \
+        periodic basis. The test verifies that reconciliations are triggered at regular intervals \
+        by a timer-based event source. This enables operators to perform periodic checks or \
+        updates independent of resource changes.
+        """)
 class EventSourceIT {
 
   @RegisterExtension

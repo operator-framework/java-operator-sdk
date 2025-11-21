@@ -17,10 +17,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Cluster-scoped resource reconciliation",
     description =
-        "Demonstrates how to reconcile cluster-scoped custom resources (non-namespaced). This"
-            + " test shows CRUD operations on cluster-scoped resources and verifies that"
-            + " dependent resources are created, updated, and properly cleaned up when the"
-            + " primary resource is deleted.")
+        """
+        Demonstrates how to reconcile cluster-scoped custom resources (non-namespaced). This \
+        test shows CRUD operations on cluster-scoped resources and verifies that \
+        dependent resources are created, updated, and properly cleaned up when the \
+        primary resource is deleted.
+        """)
 class ClusterScopedResourceIT {
 
   public static final String TEST_NAME = "test1";

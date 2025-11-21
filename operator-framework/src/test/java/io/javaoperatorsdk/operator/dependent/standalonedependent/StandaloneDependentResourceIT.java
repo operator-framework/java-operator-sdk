@@ -20,12 +20,14 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Standalone Dependent Resources",
     description =
-        "Demonstrates how to use standalone dependent resources that are managed independently"
-            + " without explicit workflow configuration. This test shows how dependent resources"
-            + " can be created and managed programmatically, with the dependent resource handling"
-            + " CRUD operations on a Kubernetes Deployment. The test verifies both creation and"
-            + " update scenarios, including cache updates when the dependent resource state"
-            + " changes.")
+        """
+        Demonstrates how to use standalone dependent resources that are managed independently \
+        without explicit workflow configuration. This test shows how dependent resources \
+        can be created and managed programmatically, with the dependent resource handling \
+        CRUD operations on a Kubernetes Deployment. The test verifies both creation and \
+        update scenarios, including cache updates when the dependent resource state \
+        changes.
+        """)
 public class StandaloneDependentResourceIT {
 
   public static final String DEPENDENT_TEST_NAME = "dependent-test1";

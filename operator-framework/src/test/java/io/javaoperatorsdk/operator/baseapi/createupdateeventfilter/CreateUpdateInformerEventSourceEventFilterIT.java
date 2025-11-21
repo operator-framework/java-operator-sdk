@@ -17,10 +17,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Event filtering for create and update operations",
     description =
-        "Shows how to configure event filters on informer event sources to control which create and"
-            + " update events trigger reconciliation. This is useful for preventing unnecessary"
-            + " reconciliation loops when dependent resources are modified by the controller"
-            + " itself.")
+        """
+        Shows how to configure event filters on informer event sources to control which create and \
+        update events trigger reconciliation. This is useful for preventing unnecessary \
+        reconciliation loops when dependent resources are modified by the controller \
+        itself.
+        """)
 class CreateUpdateInformerEventSourceEventFilterIT {
 
   @RegisterExtension

@@ -19,10 +19,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Comprehensive workflow with reconcile and delete conditions",
     description =
-        "Demonstrates a complete workflow implementation including reconcile conditions, delete"
-            + " conditions, and ready conditions. Shows how to control when dependent resources are"
-            + " created or deleted based on conditions, and how to coordinate dependencies that"
-            + " must wait for others to be ready.")
+        """
+        Demonstrates a complete workflow implementation including reconcile conditions, delete \
+        conditions, and ready conditions. Shows how to control when dependent resources are \
+        created or deleted based on conditions, and how to coordinate dependencies that \
+        must wait for others to be ready.
+        """)
 public class WorkflowAllFeatureIT {
 
   public static final String RESOURCE_NAME = "test";

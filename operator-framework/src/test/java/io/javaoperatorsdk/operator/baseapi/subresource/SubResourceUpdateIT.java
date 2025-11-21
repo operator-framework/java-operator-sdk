@@ -18,10 +18,12 @@ import static org.awaitility.Awaitility.await;
 @Sample(
     tldr = "Status Subresource Updates",
     description =
-        "Demonstrates how to properly update the status subresource of custom resources. The test"
-            + " verifies that status updates are handled correctly without triggering unnecessary"
-            + " reconciliations, and that concurrent spec and status updates are managed properly"
-            + " with optimistic locking and retry mechanisms.")
+        """
+        Demonstrates how to properly update the status subresource of custom resources. The test \
+        verifies that status updates are handled correctly without triggering unnecessary \
+        reconciliations, and that concurrent spec and status updates are managed properly with \
+        optimistic locking and retry mechanisms.
+        """)
 class SubResourceUpdateIT {
 
   public static final int WAIT_AFTER_EXECUTION = 500;
