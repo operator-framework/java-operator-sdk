@@ -63,8 +63,25 @@ public class SampleProcessor extends AbstractProcessor {
 
   private void generateMarkdownFile() {
     try {
-      // Sort samples by class name for consistent ordering
-      samples.sort(Comparator.comparing(s -> s.className));
+      // Categorize samples by package
+      List<SampleInfo> baseApiSamples = new ArrayList<>();
+      List<SampleInfo> dependentSamples = new ArrayList<>();
+      List<SampleInfo> workflowSamples = new ArrayList<>();
+
+      for (SampleInfo sample : samples) {
+        if (sample.className.contains(".baseapi.")) {
+          baseApiSamples.add(sample);
+        } else if (sample.className.contains(".dependent.")) {
+          dependentSamples.add(sample);
+        } else if (sample.className.contains(".workflow.")) {
+          workflowSamples.add(sample);
+        }
+      }
+
+      // Sort each category by class name
+      baseApiSamples.sort(Comparator.comparing(s -> s.className));
+      dependentSamples.sort(Comparator.comparing(s -> s.className));
+      workflowSamples.sort(Comparator.comparing(s -> s.className));
 
       // Create the samples.md file in the source output location
       FileObject file =
@@ -73,28 +90,67 @@ public class SampleProcessor extends AbstractProcessor {
       try (BufferedWriter writer = new BufferedWriter(file.openWriter())) {
         writer.write("---\n");
         writer.write("title: Integration Test Index\n");
-        writer.write("weight: 105\n");
+        writer.write("weight: 85\n");
         writer.write("---\n\n");
         writer.write(
             "This document provides an index of all integration tests annotated with @Sample.\n\n"
-                + "These server also as sample for various use cases. "
-                + "Your are encouraged to improve both the tests and/or descriptions.\n\n");
+                + "These serve also as samples for various use cases. "
+                + "You are encouraged to improve both the tests and/or descriptions.\n\n");
 
         // Generate table of contents
         writer.write("## Contents\n\n");
-        for (SampleInfo sample : samples) {
-          String anchor = sample.simpleName.toLowerCase();
-          writer.write("- [" + sample.tldr + "](#" + anchor + ")\n");
-        }
-        writer.write("\n---\n\n");
 
-        // Generate individual test sections
-        for (SampleInfo sample : samples) {
-          writer.write("## " + sample.simpleName + "\n\n");
-          writer.write("**" + sample.tldr + "**\n\n");
-          writer.write(sample.description + "\n\n");
-          writer.write("**Package:** " + getGitHubPackageLink(sample.className) + "\n\n");
-          writer.write("---\n\n");
+        if (!baseApiSamples.isEmpty()) {
+          writer.write("### Base API\n\n");
+          for (SampleInfo sample : baseApiSamples) {
+            String anchor = sample.simpleName.toLowerCase();
+            writer.write("- [" + sample.tldr + "](#" + anchor + ")\n");
+          }
+          writer.write("\n");
+        }
+
+        if (!dependentSamples.isEmpty()) {
+          writer.write("### Dependent Resources\n\n");
+          for (SampleInfo sample : dependentSamples) {
+            String anchor = sample.simpleName.toLowerCase();
+            writer.write("- [" + sample.tldr + "](#" + anchor + ")\n");
+          }
+          writer.write("\n");
+        }
+
+        if (!workflowSamples.isEmpty()) {
+          writer.write("### Workflows\n\n");
+          for (SampleInfo sample : workflowSamples) {
+            String anchor = sample.simpleName.toLowerCase();
+            writer.write("- [" + sample.tldr + "](#" + anchor + ")\n");
+          }
+          writer.write("\n");
+        }
+
+        writer.write("---\n\n");
+
+        // Generate Base API section
+        if (!baseApiSamples.isEmpty()) {
+          writer.write("# Base API\n\n");
+          for (SampleInfo sample : baseApiSamples) {
+            writeSampleSection(writer, sample);
+          }
+        }
+
+        // Generate Dependent Resources section
+        if (!dependentSamples.isEmpty()) {
+          writer.write("# Dependent Resources\n\n");
+          for (SampleInfo sample : dependentSamples) {
+            writeSampleSection(writer, sample);
+          }
+        }
+
+        // Generate Workflows section
+        if (!workflowSamples.isEmpty()) {
+          writer.write("# Workflows\n\n");
+          for (SampleInfo sample : workflowSamples) {
+            writeSampleSection(writer, sample);
+          }
         }
       }
 
@@ -107,6 +163,14 @@ public class SampleProcessor extends AbstractProcessor {
           .getMessager()
           .printMessage(Diagnostic.Kind.ERROR, "Failed to generate samples.md: " + e.getMessage());
     }
+  }
+
+  private void writeSampleSection(BufferedWriter writer, SampleInfo sample) throws IOException {
+    writer.write("## " + sample.simpleName + "\n\n");
+    writer.write("**" + sample.tldr + "**\n\n");
+    writer.write(sample.description + "\n\n");
+    writer.write("**Package:** " + getGitHubPackageLink(sample.className) + "\n\n");
+    writer.write("---\n\n");
   }
 
   private String getGitHubPackageLink(String className) {
