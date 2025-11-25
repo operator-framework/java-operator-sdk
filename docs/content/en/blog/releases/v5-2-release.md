@@ -1,6 +1,8 @@
 ---
 title: Version 5.2 Released!
 date: 2025-11-25
+author: >-
+  [Attila Mészáros](https://github.com/csviri)
 ---
 
 We're pleased to announce the release of Java Operator SDK v5.2! This minor version brings several powerful new features
