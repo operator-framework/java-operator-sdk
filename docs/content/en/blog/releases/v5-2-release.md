@@ -220,7 +220,7 @@ Update your dependency to version 5.2.0:
 
 ## All Changes
 
-You can see all changes in the [comparison view](https://github.com/operator-framework/java-operator-sdk/compare/v5.1.0...v5.2.0).
+You can see all changes in the [comparison view](https://github.com/operator-framework/java-operator-sdk/compare/v5.1.5...v5.2.0).
 
 ## Feedback
 
