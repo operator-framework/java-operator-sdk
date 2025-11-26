@@ -78,7 +78,9 @@ public abstract class ExternalResourceCachingEventSource<R, P extends HasMetadat
     if (resourceIDMapper == ResourceIDMapper.resourceIdProviderMapper()
         && !ResourceIDProvider.class.isAssignableFrom(resourceClass)) {
       throw new IllegalArgumentException(
-          "resource class is not a " + ResourceIDProvider.class.getSimpleName());
+          resourceClass.getName()
+              + " is not a subclass of "
+              + ResourceIDProvider.class.getSimpleName());
     }
     this.resourceIDMapper = resourceIDMapper;
   }
