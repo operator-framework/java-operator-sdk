@@ -100,6 +100,13 @@ public abstract class ManagedInformerEventSource<
 
   public R updateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
+    var updated = updateMethod.apply(resourceToUpdate);
+    handleRecentResourceUpdate(id, updated, resourceToUpdate);
+    return updated;
+  }
+
+  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
+    ResourceID id = ResourceID.fromResource(resourceToUpdate);
     if (log.isDebugEnabled()) {
       log.debug("Update and cache: {}", id);
     }

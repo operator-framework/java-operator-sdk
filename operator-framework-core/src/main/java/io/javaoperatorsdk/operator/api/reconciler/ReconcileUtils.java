@@ -26,14 +26,18 @@ public class ReconcileUtils {
 
   private ReconcileUtils() {}
 
-  // todo javadoc
   // todo move finalizers mtehods & deprecate
   // todo namespace handling
   // todo compare resource version if multiple event sources provide the same resource
-  // for json patch make sense to retry for ?
+  // todo for json patch make sense to retry for ?
 
   public static <R extends HasMetadata> R serverSideApply(
       Context<? extends HasMetadata> context, R resource) {
+    return serverSideApply(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R serverSideApply(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
     return resourcePatch(
         context,
         resource,
@@ -46,11 +50,17 @@ public class ReconcileUtils {
                         .withForce(true)
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                        .build()));
+                        .build()),
+        filterEvent);
   }
 
   public static <R extends HasMetadata> R serverSideApplyStatus(
       Context<? extends HasMetadata> context, R resource) {
+    return serverSideApplyStatus(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R serverSideApplyStatus(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
     return resourcePatch(
         context,
         resource,
@@ -64,10 +74,16 @@ public class ReconcileUtils {
                         .withForce(true)
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                        .build()));
+                        .build()),
+        filterEvent);
   }
 
   public static <P extends HasMetadata> P serverSideApplyPrimary(Context<P> context, P resource) {
+    return serverSideApplyPrimary(context, resource, true);
+  }
+
+  public static <P extends HasMetadata> P serverSideApplyPrimary(
+      Context<P> context, P resource, boolean filterEvent) {
     return resourcePatch(
         resource,
         r ->
@@ -80,11 +96,17 @@ public class ReconcileUtils {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
   }
 
   public static <P extends HasMetadata> P serverSideApplyPrimaryStatus(
       Context<P> context, P resource) {
+    return serverSideApplyPrimaryStatus(context, resource, true);
+  }
+
+  public static <P extends HasMetadata> P serverSideApplyPrimaryStatus(
+      Context<P> context, P resource, boolean filterEvent) {
     return resourcePatch(
         resource,
         r ->
@@ -98,59 +120,178 @@ public class ReconcileUtils {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
   }
 
   public static <R extends HasMetadata> R update(
       Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).update());
+    return update(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R update(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        context, resource, r -> context.getClient().resource(r).update(), filterEvent);
   }
 
   public static <R extends HasMetadata> R updateStatus(
       Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).updateStatus());
+    return updateStatus(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R updateStatus(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        context, resource, r -> context.getClient().resource(r).updateStatus(), filterEvent);
+  }
+
+  public static <R extends HasMetadata> R updatePrimary(
+      Context<? extends HasMetadata> context, R resource) {
+    return updatePrimary(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R updatePrimary(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).update(),
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
+  }
+
+  public static <R extends HasMetadata> R updatePrimaryStatus(
+      Context<? extends HasMetadata> context, R resource) {
+    return updatePrimaryStatus(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R updatePrimaryStatus(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).updateStatus(),
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
   }
 
   public static <R extends HasMetadata> R jsonPatch(
       Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
+    return jsonPatch(context, resource, unaryOperator, true);
+  }
+
+  public static <R extends HasMetadata> R jsonPatch(
+      Context<? extends HasMetadata> context,
+      R resource,
+      UnaryOperator<R> unaryOperator,
+      boolean filterEvent) {
     return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).edit(unaryOperator));
+        context, resource, r -> context.getClient().resource(r).edit(unaryOperator), filterEvent);
   }
 
   public static <R extends HasMetadata> R jsonPatchStatus(
       Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
+    return jsonPatchStatus(context, resource, unaryOperator, true);
+  }
+
+  public static <R extends HasMetadata> R jsonPatchStatus(
+      Context<? extends HasMetadata> context,
+      R resource,
+      UnaryOperator<R> unaryOperator,
+      boolean filterEvent) {
     return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).editStatus(unaryOperator));
+        context,
+        resource,
+        r -> context.getClient().resource(r).editStatus(unaryOperator),
+        filterEvent);
   }
 
   public static <R extends HasMetadata> R jsonPatchPrimary(
       Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
+    return jsonPatchPrimary(context, resource, unaryOperator, true);
+  }
+
+  public static <R extends HasMetadata> R jsonPatchPrimary(
+      Context<? extends HasMetadata> context,
+      R resource,
+      UnaryOperator<R> unaryOperator,
+      boolean filterEvent) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).edit(unaryOperator),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
   }
 
   public static <R extends HasMetadata> R jsonPatchPrimaryStatus(
       Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
+    return jsonPatchPrimaryStatus(context, resource, unaryOperator, true);
+  }
+
+  public static <R extends HasMetadata> R jsonPatchPrimaryStatus(
+      Context<? extends HasMetadata> context,
+      R resource,
+      UnaryOperator<R> unaryOperator,
+      boolean filterEvent) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).editStatus(unaryOperator),
-        context.eventSourceRetriever().getControllerEventSource());
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
   }
 
   public static <R extends HasMetadata> R jsonMergePatch(
       Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).patch());
+    return jsonMergePatch(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R jsonMergePatch(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        context, resource, r -> context.getClient().resource(r).patch(), filterEvent);
   }
 
   public static <R extends HasMetadata> R jsonMergePatchStatus(
       Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).patchStatus());
+    return jsonMergePatchStatus(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R jsonMergePatchStatus(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        context, resource, r -> context.getClient().resource(r).patchStatus(), filterEvent);
+  }
+
+  public static <R extends HasMetadata> R jsonMergePatchPrimary(
+      Context<? extends HasMetadata> context, R resource) {
+    return jsonMergePatchPrimary(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R jsonMergePatchPrimary(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).patch(),
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
+  }
+
+  public static <R extends HasMetadata> R jsonMergePatchPrimaryStatus(
+      Context<? extends HasMetadata> context, R resource) {
+    return jsonMergePatchPrimaryStatus(context, resource, true);
+  }
+
+  public static <R extends HasMetadata> R jsonMergePatchPrimaryStatus(
+      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).patch(),
+        context.eventSourceRetriever().getControllerEventSource(),
+        filterEvent);
   }
 
   public static <R extends HasMetadata> R resourcePatch(
-      Context<?> context, R resource, UnaryOperator<R> updateOperation) {
+      Context<?> context, R resource, UnaryOperator<R> updateOperation, boolean filterEvent) {
+
     var esList = context.eventSourceRetriever().getEventSourcesFor(resource.getClass());
     if (esList.isEmpty()) {
       throw new IllegalStateException("No event source found for type: " + resource.getClass());
@@ -163,7 +304,7 @@ public class ReconcileUtils {
     }
     var es = esList.get(0);
     if (es instanceof ManagedInformerEventSource mes) {
-      return resourcePatch(resource, updateOperation, mes);
+      return resourcePatch(resource, updateOperation, mes, filterEvent);
     } else {
       throw new IllegalStateException(
           "Target event source must be a subclass off "
@@ -173,7 +314,12 @@ public class ReconcileUtils {
 
   @SuppressWarnings("unchecked")
   public static <R extends HasMetadata> R resourcePatch(
-      R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource ies) {
-    return (R) ies.updateAndCacheResource(resource, updateOperation);
+      R resource,
+      UnaryOperator<R> updateOperation,
+      ManagedInformerEventSource ies,
+      boolean filterEvent) {
+    return filterEvent
+        ? (R) ies.eventFilteringUpdateAndCacheResource(resource, updateOperation)
+        : (R) ies.updateAndCacheResource(resource, updateOperation);
   }
 }
