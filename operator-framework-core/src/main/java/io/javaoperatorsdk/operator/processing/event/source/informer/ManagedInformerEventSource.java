@@ -35,7 +35,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
-import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
@@ -160,10 +160,7 @@ public abstract class ManagedInformerEventSource<
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
-        && res.filter(
-                r ->
-                    PrimaryUpdateAndCacheUtils.compareResourceVersions(r, resource.orElseThrow())
-                        > 0)
+        && res.filter(r -> ReconcileUtils.compareResourceVersions(r, resource.orElseThrow()) > 0)
             .isEmpty()) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;

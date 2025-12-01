@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -117,7 +117,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           (id, cached) -> {
             boolean remove = unknownState;
             if (!unknownState) {
-              int comp = PrimaryUpdateAndCacheUtils.compareResourceVersions(resource, cached);
+              int comp = ReconcileUtils.compareResourceVersions(resource, cached);
               if (comp >= 0) {
                 remove = true;
               }
@@ -157,7 +157,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
     if (latestResourceVersion != null
-        && PrimaryUpdateAndCacheUtils.compareResourceVersions(
+        && ReconcileUtils.compareResourceVersions(
                 latestResourceVersion, newResource.getMetadata().getResourceVersion())
             > 0) {
       log.debug(
@@ -172,7 +172,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
 
     if (cachedResource == null
-        || PrimaryUpdateAndCacheUtils.compareResourceVersions(newResource, cachedResource) > 0) {
+        || ReconcileUtils.compareResourceVersions(newResource, cachedResource) > 0) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
