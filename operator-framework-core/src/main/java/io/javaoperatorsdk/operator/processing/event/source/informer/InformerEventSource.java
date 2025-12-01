@@ -40,33 +40,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPA
 /**
  * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
  * this is built on top of Fabric8 client Informers, it also supports caching resources using
- * caching from informer caches as well as additional caches described below.
- *
- * <p>InformerEventSource also supports two features to better handle events and caching of
- * resources on top of Informers from the Fabric8 Kubernetes client. These two features are related
- * to each other as follows:
- *
- * <ol>
- *   <li>Ensuring the cache contains the fresh resource after an update. This is important for
- *       {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and mainly
- *       for {@link
- *       io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource} so
- *       that {@link
- *       io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource#getSecondaryResource(HasMetadata,
- *       Context)} always returns the latest version of the resource after a reconciliation. To
- *       achieve this {@link #handleRecentResourceUpdate(ResourceID, HasMetadata, HasMetadata)} and
- *       {@link #handleRecentResourceCreate(ResourceID, HasMetadata)} need to be called explicitly
- *       after a resource is created or updated using the kubernetes client. These calls are done
- *       automatically by the KubernetesDependentResource implementation. In the background this
- *       will store the new resource in a temporary cache {@link TemporaryResourceCache} which does
- *       additional checks. After a new event is received the cached object is removed from this
- *       cache, since it is then usually already in the informer cache.
- *   <li>Avoiding unneeded reconciliations after resources are created or updated. This filters out
- *       events that are the results of updates and creates made by the controller itself because we
- *       typically don't want the associated informer to trigger an event causing a useless
- *       reconciliation (as the change originates from the reconciler itself). For the details see
- *       {@link #canSkipEvent(HasMetadata, HasMetadata, ResourceID)} and related usage.
- * </ol>
+ * caching from informer caches as well as filtering events which are result of the controller's
+ * update.
  *
  * @param <R> resource type being watched
  * @param <P> type of the associated primary resource
