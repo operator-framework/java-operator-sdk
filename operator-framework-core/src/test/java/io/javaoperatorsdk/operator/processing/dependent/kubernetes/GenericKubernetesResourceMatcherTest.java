@@ -178,6 +178,25 @@ class GenericKubernetesResourceMatcherTest {
     assertThat(match.matched()).isTrue();
   }
 
+  @Test
+  void doNotMatchEnvVarAddition() {
+    var env1 = new EnvVar("key1", "value1", null);
+    var env2 = new EnvVar("key2", "value2", null);
+    actual.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(env1);
+    actual.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(env2);
+
+    desired.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(env1);
+
+    assertThat(
+            GenericKubernetesResourceMatcher.match(desired, actual, false, false, context)
+                .matched())
+        .isTrue();
+
+    assertThat(
+            GenericKubernetesResourceMatcher.match(desired, actual, false, true, context).matched())
+        .isFalse();
+  }
+
   ConfigMap createConfigMap() {
     return new ConfigMapBuilder()
         .withMetadata(new ObjectMetaBuilder().withName("tes1").withNamespace("default").build())
