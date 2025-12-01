@@ -377,7 +377,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     private final MixedOperation<R, KubernetesResourceList<R>, Resource<R>> resourceOperation;
     private final boolean useSSA;
-    private final String fieldManager;
     private final Cloner cloner;
 
     public CustomResourceFacade(
@@ -386,7 +385,6 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         Cloner cloner) {
       this.resourceOperation = resourceOperation;
       this.useSSA = configuration.getConfigurationService().useSSAToPatchPrimaryResource();
-      this.fieldManager = configuration.fieldManager();
       this.cloner = cloner;
     }
 
@@ -441,7 +439,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         resource.getMetadata().setResourceVersion(null);
         return ReconcileUtils.jsonPatchPrimaryStatus(
             context,
-            originalResource,
+            clonedOriginal,
             r -> {
               ReconcilerUtilsInternal.setStatus(r, ReconcilerUtilsInternal.getStatus(resource));
               return r;
