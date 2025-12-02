@@ -39,7 +39,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.expectation.Expectation;
 import io.javaoperatorsdk.operator.processing.expectation.ExpectationManager;
 
-@ControllerConfiguration(triggerReconcilerOnAllEvent = true)
+@ControllerConfiguration(triggerReconcilerOnAllEvents = true)
 public class ExpectationReconciler implements Reconciler<ExpectationCustomResource> {
 
   public static final String DEPLOYMENT_READY = "Deployment ready";

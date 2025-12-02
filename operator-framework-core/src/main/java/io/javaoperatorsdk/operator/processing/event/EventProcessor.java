@@ -146,7 +146,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private void handleMarkedEventForResource(ResourceState state) {
-    if (state.deleteEventPresent() && !triggerOnAllEvent()) {
+    if (state.deleteEventPresent() && !triggerOnAllEvents()) {
       cleanupForDeletedEvent(state.getId());
     } else if (!state.processedMarkForDeletionPresent()) {
       submitReconciliationExecution(state);
@@ -181,7 +181,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
                 state.getRetry(),
                 state.deleteEventPresent(),
                 state.isDeleteFinalStateUnknown());
-        state.unMarkEventReceived(triggerOnAllEvent());
+        state.unMarkEventReceived(triggerOnAllEvents());
         metrics.reconcileCustomResource(latest, state.getRetry(), metricsMetadata);
         log.debug("Executing events for custom resource. Scope: {}", executionScope);
         executor.execute(new ReconcilerExecutor(resourceID, executionScope));
@@ -208,7 +208,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   @SuppressWarnings("unchecked")
   private P getResourceFromState(ResourceState state) {
-    if (triggerOnAllEvent()) {
+    if (triggerOnAllEvents()) {
       log.debug("Getting resource from state for {}", state.getId());
       return (P) state.getLastKnownResource();
     } else {
@@ -239,10 +239,10 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // removed, but also the informers websocket is disconnected and later reconnected. So
         // meanwhile the resource could be deleted and recreated. In this case we just mark a new
         // event as below.
-        state.markEventReceived(triggerOnAllEvent());
+        state.markEventReceived(triggerOnAllEvents());
       }
     } else if (!state.deleteEventPresent() && !state.processedMarkForDeletionPresent()) {
-      state.markEventReceived(triggerOnAllEvent());
+      state.markEventReceived(triggerOnAllEvents());
     } else if (isTriggerOnAllEventAndDeleteEventPresent(state)) {
       state.markAdditionalEventAfterDeleteEvent();
     } else if (log.isDebugEnabled()) {
@@ -286,15 +286,15 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     // Either way we don't want to retry.
     if (isRetryConfigured()
         && postExecutionControl.exceptionDuringExecution()
-        && (!state.deleteEventPresent() || triggerOnAllEvent())) {
+        && (!state.deleteEventPresent() || triggerOnAllEvents())) {
       handleRetryOnException(
           executionScope, postExecutionControl.getRuntimeException().orElseThrow());
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
     metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
-    if ((triggerOnAllEvent() && executionScope.isDeleteEvent())
-        || (!triggerOnAllEvent() && state.deleteEventPresent())) {
+    if ((triggerOnAllEvents() && executionScope.isDeleteEvent())
+        || (!triggerOnAllEvents() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
     } else if (postExecutionControl.isFinalizerRemoved()) {
       state.markProcessedMarkForDeletion();
@@ -310,7 +310,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private boolean isTriggerOnAllEventAndDeleteEventPresent(ResourceState state) {
-    return triggerOnAllEvent() && state.deleteEventPresent();
+    return triggerOnAllEvents() && state.deleteEventPresent();
   }
 
   /**
@@ -370,8 +370,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
     var resourceID = state.getId();
     boolean eventPresent =
         state.eventPresent()
-            || (triggerOnAllEvent() && state.isAdditionalEventPresentAfterDeleteEvent());
-    state.markEventReceived(triggerOnAllEvent());
+            || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
+    state.markEventReceived(triggerOnAllEvents());
 
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
     if (eventPresent) {
@@ -517,7 +517,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
         // we try to get the most up-to-date resource from cache
         var actualResource = cache.get(resourceID);
         if (actualResource.isEmpty()) {
-          if (triggerOnAllEvent()) {
+          if (triggerOnAllEvents()) {
             log.debug(
                 "Resource not found in the cache, checking for delete event resource: {}",
                 resourceID);
@@ -578,7 +578,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   // shortening
-  private boolean triggerOnAllEvent() {
-    return controllerConfiguration.triggerReconcilerOnAllEvent();
+  private boolean triggerOnAllEvents() {
+    return controllerConfiguration.triggerReconcilerOnAllEvents();
   }
 }

@@ -96,11 +96,11 @@ class ControllerTest {
   }
 
   @Test
-  void cleanerNotAllowedWithTriggerOnAllEventEnabled() {
+  void cleanerNotAllowedWithTriggerOnAllEventsEnabled() {
     Reconciler reconciler = mock(Reconciler.class, withSettings().extraInterfaces(Cleaner.class));
     final var configuration = MockControllerConfiguration.forResource(Secret.class);
     when(configuration.getConfigurationService()).thenReturn(new BaseConfigurationService());
-    when(configuration.triggerReconcilerOnAllEvent()).thenReturn(true);
+    when(configuration.triggerReconcilerOnAllEvents()).thenReturn(true);
 
     var exception =
         assertThrows(
@@ -113,7 +113,7 @@ class ControllerTest {
   }
 
   @Test
-  void managedWorkflowNotAllowedWithOnAllEventEnabled() {
+  void managedWorkflowNotAllowedWithOnAllEventsEnabled() {
     Reconciler reconciler = mock(Reconciler.class);
     final var configuration = MockControllerConfiguration.forResource(Secret.class);
 
@@ -130,7 +130,7 @@ class ControllerTest {
     var managedWorkflowMock = workflow(true);
     when(mockManagedWorkflow.resolve(any(), any())).thenReturn(managedWorkflowMock);
 
-    when(configuration.triggerReconcilerOnAllEvent()).thenReturn(true);
+    when(configuration.triggerReconcilerOnAllEvents()).thenReturn(true);
 
     var exception =
         assertThrows(

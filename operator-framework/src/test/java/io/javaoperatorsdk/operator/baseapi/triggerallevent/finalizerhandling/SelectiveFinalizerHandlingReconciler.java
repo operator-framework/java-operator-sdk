@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration(triggerReconcilerOnAllEvent = true)
+@ControllerConfiguration(triggerReconcilerOnAllEvents = true)
 public class SelectiveFinalizerHandlingReconciler
     implements Reconciler<SelectiveFinalizerHandlingReconcilerCustomResource> {
 

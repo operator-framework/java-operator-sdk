@@ -520,7 +520,7 @@ class EventProcessorTest {
   }
 
   @Test
-  void triggerOnAllEventProcessesDeleteEvent() {
+  void triggerOnAllEventProcessesDeleteEvents() {
     eventProcessor =
         spy(
             new EventProcessor(
@@ -544,7 +544,7 @@ class EventProcessorTest {
 
   // this is a special corner case that needs special care
   @Test
-  void triggerOnAllEventDeleteEventInstantlyAfterEvent() {
+  void triggerOnAllEventDeleteEventInstantlyAfterEvents() {
     var reconciliationDispatcherMock = mock(ReconciliationDispatcher.class);
     when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch());
@@ -568,7 +568,7 @@ class EventProcessorTest {
   }
 
   @Test
-  void triggerOnAllEventDeleteEventAfterEventProcessed() {
+  void triggerOnAllEventDeleteEventAfterEventsProcessed() {
     var reconciliationDispatcherMock = mock(ReconciliationDispatcher.class);
     when(reconciliationDispatcherMock.handleExecution(any()))
         .thenReturn(PostExecutionControl.defaultDispatch());
@@ -591,7 +591,7 @@ class EventProcessorTest {
   }
 
   @Test
-  void triggerOnAllEventRetriesDeleteEventError() {
+  void triggerOnAllEventRetriesDeleteEventsError() {
     when(eventSourceManagerMock.retryEventSource()).thenReturn(mock(TimerEventSource.class));
     eventProcessor =
         spy(
@@ -812,14 +812,14 @@ class EventProcessorTest {
       Retry retry,
       RateLimiter rateLimiter,
       ConfigurationService configurationService,
-      boolean triggerOnAllEvent) {
+      boolean triggerOnAllEvents) {
     ControllerConfiguration res = mock(ControllerConfiguration.class);
     when(res.getName()).thenReturn("Test");
     when(res.getRetry()).thenReturn(retry);
     when(res.getRateLimiter()).thenReturn(rateLimiter);
     when(res.maxReconciliationInterval()).thenReturn(Optional.of(Duration.ofMillis(1000)));
     when(res.getConfigurationService()).thenReturn(configurationService);
-    when(res.triggerReconcilerOnAllEvent()).thenReturn(triggerOnAllEvent);
+    when(res.triggerReconcilerOnAllEvents()).thenReturn(triggerOnAllEvents);
     return res;
   }
 }

@@ -44,7 +44,7 @@ See the [migration guide](/docs/migration/v5-2-migration) for detailed migration
 ### Trigger Reconciliation on All Events
 
 Version 5.2 introduces a new execution mode that provides finer control over when reconciliation occurs. By setting
-[`triggerReconcilerOnAllEvent`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
+[`triggerReconcilerOnAllEvents`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java)
 to `true`, your `reconcile` method will be called for **every** event, including `Delete` events.
 
 This is particularly useful when:
@@ -61,7 +61,7 @@ When enabled:
 Example:
 
 ```java
-@ControllerConfiguration(triggerReconcilerOnAllEvent = true)
+@ControllerConfiguration(triggerReconcilerOnAllEvents = true)
 public class MyReconciler implements Reconciler<MyResource> {
 
     @Override

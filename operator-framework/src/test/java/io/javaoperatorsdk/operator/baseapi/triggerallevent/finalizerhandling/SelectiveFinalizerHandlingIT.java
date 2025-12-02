@@ -28,7 +28,7 @@ import static org.awaitility.Awaitility.await;
 
 /**
  * The test showcases how manage finalizers only on some of the custom resources using
- * `triggerReconcilerOnAllEvent` mode.
+ * `triggerReconcilerOnAllEvents` mode.
  */
 public class SelectiveFinalizerHandlingIT {
 
