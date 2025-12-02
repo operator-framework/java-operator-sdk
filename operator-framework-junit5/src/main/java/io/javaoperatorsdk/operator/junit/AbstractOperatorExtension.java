@@ -78,7 +78,7 @@ public abstract class AbstractOperatorExtension
     this.infrastructureKubernetesClient =
         infrastructureKubernetesClient != null
             ? infrastructureKubernetesClient
-            : new KubernetesClientBuilder().build();
+            : kubernetesClient != null ? kubernetesClient : new KubernetesClientBuilder().build();
     this.kubernetesClient =
         kubernetesClient != null ? kubernetesClient : this.infrastructureKubernetesClient;
     this.infrastructure = infrastructure;
