@@ -91,7 +91,7 @@ public interface Context<P extends HasMetadata> {
   /**
    * To check if the primary resource is already deleted. This value can be true only if you turn on
    * {@link
-   * io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration#triggerReconcilerOnAllEvent()}
+   * io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration#triggerReconcilerOnAllEvents()}
    *
    * @return true Delete event received for primary resource
    * @since 5.2.0

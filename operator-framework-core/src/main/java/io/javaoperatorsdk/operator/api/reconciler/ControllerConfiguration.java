@@ -94,9 +94,15 @@ public @interface ControllerConfiguration {
   String fieldManager() default CONTROLLER_NAME_AS_FIELD_MANAGER;
 
   /**
+   * @deprecated use {@link #triggerReconcilerOnAllEvents()} instead
+   */
+  @Deprecated(forRemoval = true)
+  boolean triggerReconcilerOnAllEvent() default false;
+
+  /**
    * By settings to true, reconcile method will be triggered on every event, thus even for Delete
    * event. You cannot use {@link Cleaner} or managed dependent resources in that case. See
    * documentation for further details.
    */
-  boolean triggerReconcilerOnAllEvent() default false;
+  boolean triggerReconcilerOnAllEvents() default false;
 }

@@ -239,7 +239,7 @@ However, there are cases when controllers do not strictly follow those patterns,
   and you don't want to use finalizers. For those cases, you typically want to clean up your caches when the primary
   resource is deleted.
 
-For such use cases you can set [`triggerReconcilerOnAllEvent`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L81)
+For such use cases you can set [`triggerReconcilerOnAllEvents`](https://github.com/operator-framework/java-operator-sdk/blob/main/operator-framework-core/src/main/java/io/javaoperatorsdk/operator/api/reconciler/ControllerConfiguration.java#L107)
 to `true`, as a result, the `reconcile` method will be triggered on ALL events (so also `Delete` events), making it
 possible to support the above use cases.
 

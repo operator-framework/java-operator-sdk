@@ -100,7 +100,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         originalResource.getMetadata().getNamespace());
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
-    if (!triggerOnAllEvent()
+    if (!triggerOnAllEvents()
         && markedForDeletion
         && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
       log.debug(
@@ -118,7 +118,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             executionScope.isDeleteFinalStateUnknown());
 
     // checking the cleaner for all-event-mode
-    if (!triggerOnAllEvent() && markedForDeletion) {
+    if (!triggerOnAllEvents() && markedForDeletion) {
       return handleCleanup(resourceForExecution, originalResource, context, executionScope);
     } else {
       return handleReconcile(executionScope, resourceForExecution, originalResource, context);
@@ -137,7 +137,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       P originalResource,
       Context<P> context)
       throws Exception {
-    if (!triggerOnAllEvent()
+    if (!triggerOnAllEvents()
         && controller.useFinalizer()
         && !originalResource.hasFinalizer(configuration().getFinalizerName())) {
       /*
@@ -329,7 +329,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
     DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
-    if (useFinalizer && !triggerOnAllEvent()) {
+    if (useFinalizer && !triggerOnAllEvents()) {
       // note that we don't reschedule here even if instructed. Removing finalizer means that
       // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
@@ -477,7 +477,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   }
 
   private void validateExecutionScope(ExecutionScope<P> executionScope) {
-    if (!triggerOnAllEvent()
+    if (!triggerOnAllEvents()
         && (executionScope.isDeleteEvent() || executionScope.isDeleteFinalStateUnknown())) {
       throw new OperatorException(
           "isDeleteEvent or isDeleteFinalStateUnknown cannot be true if not triggerOnAllEvent."
@@ -589,7 +589,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
   }
 
-  private boolean triggerOnAllEvent() {
-    return configuration().triggerReconcilerOnAllEvent();
+  private boolean triggerOnAllEvents() {
+    return configuration().triggerReconcilerOnAllEvents();
   }
 }

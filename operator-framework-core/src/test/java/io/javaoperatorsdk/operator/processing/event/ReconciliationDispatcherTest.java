@@ -703,7 +703,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void isDeleteEventCannotBeTrueIfNotTriggerOnAllEvent() {
+  void isDeleteEventCannotBeTrueIfNotTriggerOnAllEvents() {
     assertThrows(
         OperatorException.class,
         () ->
@@ -712,7 +712,7 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void isDeleteFinalStateUnknownEventCannotBeTrueIfNotTriggerOnAllEvent() {
+  void isDeleteFinalStateUnknownEventCannotBeTrueIfNotTriggerOnAllEvents() {
     assertThrows(
         OperatorException.class,
         () ->

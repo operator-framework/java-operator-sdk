@@ -26,7 +26,9 @@ import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration(triggerReconcilerOnAllEvent = true, generationAwareEventProcessing = false)
+@ControllerConfiguration(
+    triggerReconcilerOnAllEvents = true,
+    generationAwareEventProcessing = false)
 public class TriggerReconcilerOnAllEventReconciler
     implements Reconciler<TriggerReconcilerOnAllEventCustomResource> {
 

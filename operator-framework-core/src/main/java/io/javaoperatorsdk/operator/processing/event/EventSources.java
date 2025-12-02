@@ -40,9 +40,9 @@ class EventSources<P extends HasMetadata> {
   private final TimerEventSource<P> retryAndRescheduleTimerEventSource;
   private ControllerEventSource<P> controllerEventSource;
 
-  public EventSources(boolean triggerReconcilerOnAllEvent) {
+  public EventSources(boolean triggerReconcilerOnAllEvents) {
     retryAndRescheduleTimerEventSource =
-        new TimerEventSource<>("RetryAndRescheduleTimerEventSource", triggerReconcilerOnAllEvent);
+        new TimerEventSource<>("RetryAndRescheduleTimerEventSource", triggerReconcilerOnAllEvents);
   }
 
   EventSources() {

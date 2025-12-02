@@ -108,7 +108,15 @@ public interface ControllerConfiguration<P extends HasMetadata> extends Informab
 
   <C> C getConfigurationFor(DependentResourceSpec<?, P, C> spec);
 
+  /**
+   * @deprecated use {@link #triggerReconcilerOnAllEvents()} instead
+   */
+  @Deprecated(forRemoval = true)
   default boolean triggerReconcilerOnAllEvent() {
+    return triggerReconcilerOnAllEvents();
+  }
+
+  default boolean triggerReconcilerOnAllEvents() {
     return false;
   }
 }

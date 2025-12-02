@@ -45,7 +45,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
   private Duration reconciliationMaxInterval;
   private Map<DependentResourceSpec, Object> configurations;
   private final InformerConfiguration<R>.Builder config;
-  private boolean triggerReconcilerOnAllEvent;
+  private boolean triggerReconcilerOnAllEvents;
 
   private ControllerConfigurationOverrider(ControllerConfiguration<R> original) {
     this.finalizer = original.getFinalizerName();
@@ -58,7 +58,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     this.rateLimiter = original.getRateLimiter();
     this.name = original.getName();
     this.fieldManager = original.fieldManager();
-    this.triggerReconcilerOnAllEvent = original.triggerReconcilerOnAllEvent();
+    this.triggerReconcilerOnAllEvents = original.triggerReconcilerOnAllEvents();
   }
 
   public ControllerConfigurationOverrider<R> withFinalizer(String finalizer) {
@@ -171,9 +171,18 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
     return this;
   }
 
+  /**
+   * @deprecated use {@link #withTriggerReconcilerOnAllEvents(boolean)} instead
+   */
+  @Deprecated(forRemoval = true)
   public ControllerConfigurationOverrider<R> withTriggerReconcilerOnAllEvent(
-      boolean triggerReconcilerOnAllEvent) {
-    this.triggerReconcilerOnAllEvent = triggerReconcilerOnAllEvent;
+      boolean triggerReconcilerOnAllEvents) {
+    return withTriggerReconcilerOnAllEvents(triggerReconcilerOnAllEvents);
+  }
+
+  public ControllerConfigurationOverrider<R> withTriggerReconcilerOnAllEvents(
+      boolean triggerReconcilerOnAllEvents) {
+    this.triggerReconcilerOnAllEvents = triggerReconcilerOnAllEvents;
     return this;
   }
 
@@ -221,7 +230,7 @@ public class ControllerConfigurationOverrider<R extends HasMetadata> {
         fieldManager,
         original.getConfigurationService(),
         config.buildForController(),
-        triggerReconcilerOnAllEvent,
+        triggerReconcilerOnAllEvents,
         original.getWorkflowSpec().orElse(null));
   }
 

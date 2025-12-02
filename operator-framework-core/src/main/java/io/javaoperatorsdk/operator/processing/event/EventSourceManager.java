@@ -55,7 +55,7 @@ public class EventSourceManager<P extends HasMetadata>
   public EventSourceManager(Controller<P> controller) {
     this(
         controller,
-        new EventSources<>(controller.getConfiguration().triggerReconcilerOnAllEvent()));
+        new EventSources<>(controller.getConfiguration().triggerReconcilerOnAllEvents()));
   }
 
   EventSourceManager(Controller<P> controller, EventSources<P> eventSources) {
