@@ -11,7 +11,7 @@ If you use JUnit extension in your test just rename it from:
 ```
 <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-junit5</artifactId>
+      <artifactId>operator-framework-junit-5</artifactId>
       <version>5.2.x<version>
       <scope>test</scope>
 </dependency>
