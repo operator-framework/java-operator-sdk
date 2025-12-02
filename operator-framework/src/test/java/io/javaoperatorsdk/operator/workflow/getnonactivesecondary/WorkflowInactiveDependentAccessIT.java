@@ -34,7 +34,7 @@ import static org.awaitility.Awaitility.await;
         successfully reconciles by skipping inactive dependents based on activation conditions, \
         demonstrating platform-agnostic operator design.
         """)
-public class WorkflowActivationConditionIT {
+public class WorkflowInactiveDependentAccessIT {
 
   public static final String TEST_RESOURCE_NAME = "test1";
 
