@@ -17,7 +17,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -35,36 +35,13 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
+
 /**
  * Wraps informer(s) so they are connected to the eventing system of the framework. Note that since
  * this is built on top of Fabric8 client Informers, it also supports caching resources using
- * caching from informer caches as well as additional caches described below.
- *
- * <p>InformerEventSource also supports two features to better handle events and caching of
- * resources on top of Informers from the Fabric8 Kubernetes client. These two features are related
- * to each other as follows:
- *
- * <ol>
- *   <li>Ensuring the cache contains the fresh resource after an update. This is important for
- *       {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} and mainly
- *       for {@link
- *       io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource} so
- *       that {@link
- *       io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource#getSecondaryResource(HasMetadata,
- *       Context)} always returns the latest version of the resource after a reconciliation. To
- *       achieve this {@link #handleRecentResourceUpdate(ResourceID, HasMetadata, HasMetadata)} and
- *       {@link #handleRecentResourceCreate(ResourceID, HasMetadata)} need to be called explicitly
- *       after a resource is created or updated using the kubernetes client. These calls are done
- *       automatically by the KubernetesDependentResource implementation. In the background this
- *       will store the new resource in a temporary cache {@link TemporaryResourceCache} which does
- *       additional checks. After a new event is received the cached object is removed from this
- *       cache, since it is then usually already in the informer cache.
- *   <li>Avoiding unneeded reconciliations after resources are created or updated. This filters out
- *       events that are the results of updates and creates made by the controller itself because we
- *       typically don't want the associated informer to trigger an event causing a useless
- *       reconciliation (as the change originates from the reconciler itself). For the details see
- *       {@link #canSkipEvent(HasMetadata, HasMetadata, ResourceID)} and related usage.
- * </ol>
+ * caching from informer caches as well as filtering events which are result of the controller's
+ * update.
  *
  * @param <R> resource type being watched
  * @param <P> type of the associated primary resource
@@ -78,28 +55,24 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   // we need direct control for the indexer to propagate the just update resource also to the index
   private final PrimaryToSecondaryIndex<R> primaryToSecondaryIndex;
   private final PrimaryToSecondaryMapper<P> primaryToSecondaryMapper;
-  private final String id = UUID.randomUUID().toString();
 
   public InformerEventSource(
       InformerEventSourceConfiguration<R> configuration, EventSourceContext<P> context) {
     this(
         configuration,
         configuration.getKubernetesClient().orElse(context.getClient()),
-        context
-            .getControllerConfiguration()
-            .getConfigurationService()
-            .parseResourceVersionsForEventFilteringAndCaching());
+        configuration.comparableResourceVersion());
   }
 
   InformerEventSource(InformerEventSourceConfiguration<R> configuration, KubernetesClient client) {
-    this(configuration, client, false);
+    this(configuration, client, DEFAULT_COMPARABLE_RESOURCE_VERSION);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private InformerEventSource(
       InformerEventSourceConfiguration<R> configuration,
       KubernetesClient client,
-      boolean parseResourceVersions) {
+      boolean comparableResourceVersions) {
     super(
         configuration.name(),
         configuration
@@ -107,7 +80,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
             .map(gvk -> client.genericKubernetesResources(gvk.apiVersion(), gvk.getKind()))
             .orElseGet(() -> (MixedOperation) client.resources(configuration.getResourceClass())),
         configuration,
-        parseResourceVersions);
+        comparableResourceVersions);
     // If there is a primary to secondary mapper there is no need for primary to secondary index.
     primaryToSecondaryMapper = configuration.getPrimaryToSecondaryMapper();
     if (useSecondaryToPrimaryIndex()) {
@@ -125,6 +98,22 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     genericFilter = informerConfig.getGenericFilter();
   }
 
+  public R updateAndCacheResource(
+      R resourceToUpdate, Context<?> context, UnaryOperator<R> updateMethod) {
+    ResourceID id = ResourceID.fromResource(resourceToUpdate);
+    if (log.isDebugEnabled()) {
+      log.debug("Update and cache: {}", id);
+    }
+    try {
+      temporaryResourceCache.startModifying(id);
+      var updated = updateMethod.apply(resourceToUpdate);
+      handleRecentResourceUpdate(id, updated, resourceToUpdate);
+      return updated;
+    } finally {
+      temporaryResourceCache.doneModifying(id);
+    }
+  }
+
   @Override
   public void onAdd(R newResource) {
     if (log.isDebugEnabled()) {
@@ -134,9 +123,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceType().getSimpleName(),
           newResource.getMetadata().getResourceVersion());
     }
-    primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    onAddOrUpdate(
-        Operation.ADD, newResource, null, () -> InformerEventSource.super.onAdd(newResource));
+    onAddOrUpdate(Operation.ADD, newResource, null);
   }
 
   @Override
@@ -149,16 +136,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           newObject.getMetadata().getResourceVersion(),
           oldObject.getMetadata().getResourceVersion());
     }
-    primaryToSecondaryIndex.onAddOrUpdate(newObject);
-    onAddOrUpdate(
-        Operation.UPDATE,
-        newObject,
-        oldObject,
-        () -> InformerEventSource.super.onUpdate(oldObject, newObject));
+    onAddOrUpdate(Operation.UPDATE, newObject, oldObject);
   }
 
   @Override
-  public void onDelete(R resource, boolean b) {
+  public synchronized void onDelete(R resource, boolean b) {
     if (log.isDebugEnabled()) {
       log.debug(
           "On delete event received for resource id: {} type: {}",
@@ -180,66 +162,26 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     manager().list().forEach(primaryToSecondaryIndex::onAddOrUpdate);
   }
 
-  private synchronized void onAddOrUpdate(
-      Operation operation, R newObject, R oldObject, Runnable superOnOp) {
+  private synchronized void onAddOrUpdate(Operation operation, R newObject, R oldObject) {
+    primaryToSecondaryIndex.onAddOrUpdate(newObject);
     var resourceID = ResourceID.fromResource(newObject);
 
-    if (canSkipEvent(newObject, oldObject, resourceID)) {
+    if (temporaryResourceCache.onAddOrUpdateEvent(newObject)) {
       log.debug(
           "Skipping event propagation for {}, since was a result of a reconcile action. Resource"
               + " ID: {}",
           operation,
           ResourceID.fromResource(newObject));
-      superOnOp.run();
+    } else if (eventAcceptedByFilter(operation, newObject, oldObject)) {
+      log.debug(
+          "Propagating event for {}, resource with same version not result of a reconciliation."
+              + " Resource ID: {}",
+          operation,
+          resourceID);
+      propagateEvent(newObject);
     } else {
-      superOnOp.run();
-      if (eventAcceptedByFilter(operation, newObject, oldObject)) {
-        log.debug(
-            "Propagating event for {}, resource with same version not result of a reconciliation."
-                + " Resource ID: {}",
-            operation,
-            resourceID);
-        propagateEvent(newObject);
-      } else {
-        log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
-      }
+      log.debug("Event filtered out for operation: {}, resourceID: {}", operation, resourceID);
     }
-  }
-
-  private boolean canSkipEvent(R newObject, R oldObject, ResourceID resourceID) {
-    var res = temporaryResourceCache.getResourceFromCache(resourceID);
-    if (res.isEmpty()) {
-      return isEventKnownFromAnnotation(newObject, oldObject);
-    }
-    boolean resVersionsEqual =
-        newObject
-            .getMetadata()
-            .getResourceVersion()
-            .equals(res.get().getMetadata().getResourceVersion());
-    log.debug(
-        "Resource found in temporal cache for id: {} resource versions equal: {}",
-        resourceID,
-        resVersionsEqual);
-    return resVersionsEqual
-        || temporaryResourceCache.isLaterResourceVersion(resourceID, res.get(), newObject);
-  }
-
-  private boolean isEventKnownFromAnnotation(R newObject, R oldObject) {
-    String previous = newObject.getMetadata().getAnnotations().get(PREVIOUS_ANNOTATION_KEY);
-    boolean known = false;
-    if (previous != null) {
-      String[] parts = previous.split(",");
-      if (id.equals(parts[0])) {
-        if (oldObject == null && parts.length == 1) {
-          known = true;
-        } else if (oldObject != null
-            && parts.length == 2
-            && oldObject.getMetadata().getResourceVersion().equals(parts[1])) {
-          known = true;
-        }
-      }
-    }
-    return known;
   }
 
   private void propagateEvent(R object) {
@@ -289,23 +231,19 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void handleRecentResourceUpdate(
+  public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
     handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource);
   }
 
   @Override
-  public synchronized void handleRecentResourceCreate(ResourceID resourceID, R resource) {
+  public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
     handleRecentCreateOrUpdate(Operation.ADD, resource, null);
   }
 
   private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
-    temporaryResourceCache.putResource(
-        newResource,
-        Optional.ofNullable(oldResource)
-            .map(r -> r.getMetadata().getResourceVersion())
-            .orElse(null));
+    temporaryResourceCache.putResource(newResource);
   }
 
   private boolean useSecondaryToPrimaryIndex() {
@@ -331,22 +269,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   private boolean acceptedByDeleteFilters(R resource, boolean b) {
     return (onDeleteFilter == null || onDeleteFilter.accept(resource, b))
         && (genericFilter == null || genericFilter.accept(resource));
-  }
-
-  /**
-   * Add an annotation to the resource so that the subsequent will be omitted
-   *
-   * @param resourceVersion null if there is no prior version
-   * @param target mutable resource that will be returned
-   */
-  public R addPreviousAnnotation(String resourceVersion, R target) {
-    target
-        .getMetadata()
-        .getAnnotations()
-        .put(
-            PREVIOUS_ANNOTATION_KEY,
-            id + Optional.ofNullable(resourceVersion).map(rv -> "," + rv).orElse(""));
-    return target;
   }
 
   private enum Operation {
