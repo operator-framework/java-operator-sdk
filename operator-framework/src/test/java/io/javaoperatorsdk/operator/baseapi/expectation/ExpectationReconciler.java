@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.baseapi.expectation;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
@@ -48,11 +49,11 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
 
   private final ExpectationManager<ExpectationCustomResource> expectationManager =
       new ExpectationManager<>();
+  private final AtomicReference<Duration> timeoutRef =
+      new AtomicReference<>(Duration.ofSeconds(30));
 
-  private volatile Long timeout = 30000L;
-
-  public void setTimeout(Long timeout) {
-    this.timeout = timeout;
+  public void setTimeout(Duration timeout) {
+    timeoutRef.set(timeout);
   }
 
   @Override
@@ -74,7 +75,7 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
       createDeployment(primary, context);
       var set =
           expectationManager.checkAndSetExpectation(
-              primary, context, Duration.ofSeconds(timeout), deploymentReadyExpectation());
+              primary, context, timeoutRef.get(), deploymentReadyExpectation());
       if (set) {
         return UpdateControl.noUpdate();
       }
