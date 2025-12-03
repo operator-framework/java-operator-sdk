@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -85,7 +86,7 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     if (creatable() || updatable()) {
       if (actualResource == null) {
         if (creatable) {
-          var desired = desired(primary, context);
+          var desired = getOrComputeDesired(context);
           throwIfNull(desired, primary, "Desired");
           logForOperation("Creating", primary, desired);
           var createdResource = handleCreate(desired, primary, context);
@@ -95,7 +96,8 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
         if (updatable()) {
           final Matcher.Result<R> match = match(actualResource, primary, context);
           if (!match.matched()) {
-            final var desired = match.computedDesired().orElseGet(() -> desired(primary, context));
+            final var desired =
+                match.computedDesired().orElseGet(() -> getOrComputeDesired(context));
             throwIfNull(desired, primary, "Desired");
             logForOperation("Updating", primary, desired);
             var updatedResource = handleUpdate(actualResource, desired, primary, context);
@@ -127,7 +129,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-
     var secondaryResources = context.getSecondaryResources(resourceType());
     if (secondaryResources.isEmpty()) {
       return Optional.empty();
@@ -210,6 +211,27 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
     throw new IllegalStateException(
         "desired method must be implemented if this DependentResource can be created and/or"
             + " updated");
+  }
+
+  /**
+   * Retrieves the desired state from the {@link Context} if it has already been computed or calls
+   * {@link #desired(HasMetadata, Context)} and stores its result in the context for further use.
+   * This ensures that {@code desired} is only called once per reconciliation to avoid unneeded
+   * processing and supports scenarios where idempotent computation of the desired state is not
+   * feasible.
+   *
+   * <p>Note that this method should normally only be called by the SDK itself and exclusively (i.e.
+   * {@link #desired(HasMetadata, Context)} should not be called directly by the SDK) whenever the
+   * desired state is needed to ensure it is properly cached for the current reconciliation.
+   *
+   * @param context the {@link Context} in scope for the current reconciliation
+   * @return the desired state associated with this dependent resource based on the currently
+   *     in-scope primary resource as found in the context
+   */
+  protected R getOrComputeDesired(Context<P> context) {
+    assert context instanceof DefaultContext<P>;
+    DefaultContext<P> defaultContext = (DefaultContext<P>) context;
+    return defaultContext.getOrComputeDesiredStateFor(this, p -> desired(p, defaultContext));
   }
 
   public void delete(P primary, Context<P> context) {
