@@ -286,7 +286,6 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
     @Override
     public UpdateControl<ExpectationCustomResource> reconcile(
             ExpectationCustomResource primary, Context<ExpectationCustomResource> context) {
-
         // exiting asap if there is an expectation that is not timed out neither fulfilled yet
         if (expectationManager.ongoingExpectationPresent(primary, context)) {
             return UpdateControl.noUpdate();
@@ -296,13 +295,13 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
         if (deployment.isEmpty()) {
             createDeployment(primary, context);
             expectationManager.setExpectation(
-                    primary, Duration.ofSeconds(timeout), deploymentReadyExpectation(context));
+                    primary, Duration.ofSeconds(timeout), deploymentReadyExpectation());
             return UpdateControl.noUpdate();
         } else {
-            // checks if the expectation if it is fulfilled, and also removes it.
-            //In your logic, you might add a next expectation based on your workflow.
-            // Expectations have a name, so you can easily distinguish them if there is more of them.
-            var res = expectationManager.checkExpectation("deploymentReadyExpectation",primary, context);
+            // Checks the expectation and removes it once it is fulfilled.
+            // In your logic you might add a next expectation based on your workflow.
+            // Expectations have a name, so you can easily distinguish multiple expectations.
+            var res = expectationManager.checkExpectation("deploymentReadyExpectation", primary, context);
             if (res.isFulfilled()) {
                 return pathchStatusWithMessage(primary, DEPLOYMENT_READY);
             } else if (res.isTimedOut()) {
@@ -311,10 +310,6 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
             }
         }
         return UpdateControl.noUpdate();
-        
     }
 }
 ```
-
-
-

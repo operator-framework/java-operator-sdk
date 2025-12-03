@@ -99,7 +99,6 @@ public class MyReconciler implements Reconciler<MyResource> {
 
     @Override
     public UpdateControl<MyResource> reconcile(MyResource primary, Context<MyResource> context) {
-
         // Exit early if expectation is not yet fulfilled or timed out
         if (expectationManager.ongoingExpectationPresent(primary, context)) {
             return UpdateControl.noUpdate();
@@ -109,7 +108,7 @@ public class MyReconciler implements Reconciler<MyResource> {
         if (deployment.isEmpty()) {
             createDeployment(primary, context);
             expectationManager.setExpectation(
-                primary, Duration.ofSeconds(30), deploymentReadyExpectation(context));
+                primary, Duration.ofSeconds(30), deploymentReadyExpectation());
             return UpdateControl.noUpdate();
         }
 

@@ -74,7 +74,7 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
       createDeployment(primary, context);
       var set =
           expectationManager.checkAndSetExpectation(
-              primary, context, Duration.ofSeconds(timeout), deploymentReadyExpectation(context));
+              primary, context, Duration.ofSeconds(timeout), deploymentReadyExpectation());
       if (set) {
         return UpdateControl.noUpdate();
       }
@@ -143,11 +143,10 @@ public class ExpectationReconciler implements Reconciler<ExpectationCustomResour
     context.getClient().resource(deployment).serverSideApply();
   }
 
-  private static Expectation<ExpectationCustomResource> deploymentReadyExpectation(
-      Context<ExpectationCustomResource> context) {
+  private static Expectation<ExpectationCustomResource> deploymentReadyExpectation() {
     return Expectation.createExpectation(
         DEPLOYMENT_READY_EXPECTATION_NAME,
-        (p, c) ->
+        (primary, context) ->
             context
                 .getSecondaryResource(Deployment.class)
                 .map(
