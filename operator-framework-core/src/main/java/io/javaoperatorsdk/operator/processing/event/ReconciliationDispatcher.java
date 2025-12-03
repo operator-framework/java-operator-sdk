@@ -44,9 +44,7 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.*;
 
 /** Handles calls and results of a Reconciler and finalizer related logic */
 class ReconciliationDispatcher<P extends HasMetadata> {
-
-  public static final int MAX_UPDATE_RETRY = 10;
-
+    
   private static final Logger log = LoggerFactory.getLogger(ReconciliationDispatcher.class);
 
   private final Controller<P> controller;
