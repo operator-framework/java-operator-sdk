@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.MockKubernetesClient;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -46,7 +46,7 @@ class ControllerEventSourceTest
     extends AbstractEventSourceTestBase<ControllerEventSource<TestCustomResource>, EventHandler> {
 
   public static final String FINALIZER =
-      ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
+      ReconcilerUtilsInternal.getDefaultFinalizerName(TestCustomResource.class);
 
   private final TestController testController = new TestController(true);
   private final ControllerConfiguration controllerConfig = mock(ControllerConfiguration.class);
