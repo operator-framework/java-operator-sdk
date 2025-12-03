@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.baseapi.expectation;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -35,7 +37,7 @@ class ExpectationIT {
 
   @Test
   void testExpectation() {
-    extension.getReconcilerOfType(ExpectationReconciler.class).setTimeout(30000L);
+    extension.getReconcilerOfType(ExpectationReconciler.class).setTimeout(Duration.ofSeconds(30));
     var res = testResource();
     extension.create(res);
 
@@ -50,7 +52,7 @@ class ExpectationIT {
 
   @Test
   void expectationTimeouts() {
-    extension.getReconcilerOfType(ExpectationReconciler.class).setTimeout(300L);
+    extension.getReconcilerOfType(ExpectationReconciler.class).setTimeout(Duration.ofMillis(300));
     var res = testResource();
     extension.create(res);
 
