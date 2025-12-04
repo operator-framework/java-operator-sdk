@@ -87,7 +87,7 @@
     </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-junit-5</artifactId>
+      <artifactId>operator-framework-junit</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
