@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.expectation;
+package io.javaoperatorsdk.operator.baseapi.expectation.onallevent;
 
 import java.time.Duration;
 import java.util.List;
@@ -38,49 +38,32 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.expectation.Expectation;
-import io.javaoperatorsdk.operator.processing.expectation.PeriodicCleanerExpectationManager;
+import io.javaoperatorsdk.operator.processing.expectation.ExpectationManager;
 
-/**
- * Integration test reconciler showcasing PeriodicCleanerExpectationManager usage.
- *
- * <p>Key differences from ExpectationReconciler: - Uses PeriodicCleanerExpectationManager instead
- * of ExpectationManager - Does NOT use @ControllerConfiguration(triggerReconcilerOnAllEvents =
- * true) - Demonstrates periodic cleanup functionality without requiring reconciler triggers on all
- * events
- */
-@ControllerConfiguration
-public class PeriodicCleanerExpectationReconciler
-    implements Reconciler<PeriodicCleanerExpectationCustomResource> {
+@ControllerConfiguration(triggerReconcilerOnAllEvents = true)
+public class ExpectationReconciler implements Reconciler<ExpectationCustomResource> {
 
   public static final String DEPLOYMENT_READY = "Deployment ready";
   public static final String DEPLOYMENT_TIMEOUT = "Deployment timeout";
   public static final String DEPLOYMENT_READY_EXPECTATION_NAME = "deploymentReadyExpectation";
 
-  private PeriodicCleanerExpectationManager<PeriodicCleanerExpectationCustomResource>
-      expectationManager;
+  private final ExpectationManager<ExpectationCustomResource> expectationManager =
+      new ExpectationManager<>();
   private final AtomicReference<Duration> timeoutRef =
       new AtomicReference<>(Duration.ofSeconds(30));
-
-  public PeriodicCleanerExpectationReconciler() {
-    // expectationManager will be initialized in prepareEventSources when cache is available
-  }
 
   public void setTimeout(Duration timeout) {
     timeoutRef.set(timeout);
   }
 
-  public PeriodicCleanerExpectationManager<PeriodicCleanerExpectationCustomResource>
-      getExpectationManager() {
-    return expectationManager;
-  }
-
   @Override
-  public UpdateControl<PeriodicCleanerExpectationCustomResource> reconcile(
-      PeriodicCleanerExpectationCustomResource primary,
-      Context<PeriodicCleanerExpectationCustomResource> context) {
-
-    // Note: Unlike regular ExpectationManager, we don't need to manually clean up on delete
-    // because PeriodicCleanerExpectationManager handles this automatically via periodic cleanup
+  public UpdateControl<ExpectationCustomResource> reconcile(
+      ExpectationCustomResource primary, Context<ExpectationCustomResource> context) {
+    // cleans up expectation manager for the resource on delete event
+    // in case of cleaner interface used, this can be done also there
+    if (context.isPrimaryResourceDeleted()) {
+      expectationManager.removeExpectation(primary);
+    }
 
     // exiting asap if there is an expectation that is not timed out neither fulfilled
     if (expectationManager.ongoingExpectationPresent(primary, context)) {
@@ -115,26 +98,17 @@ public class PeriodicCleanerExpectationReconciler
   }
 
   @Override
-  public List<EventSource<?, PeriodicCleanerExpectationCustomResource>> prepareEventSources(
-      EventSourceContext<PeriodicCleanerExpectationCustomResource> context) {
-
-    // Initialize expectationManager with primary cache from the context
-    // Use a short period (1 second) for faster testing
-    var primaryCache = context.getPrimaryCache();
-    this.expectationManager =
-        new PeriodicCleanerExpectationManager<>(Duration.ofSeconds(1), primaryCache);
-
+  public List<EventSource<?, ExpectationCustomResource>> prepareEventSources(
+      EventSourceContext<ExpectationCustomResource> context) {
     return List.of(
         new InformerEventSource<>(
-            InformerEventSourceConfiguration.from(
-                    Deployment.class, PeriodicCleanerExpectationCustomResource.class)
+            InformerEventSourceConfiguration.from(Deployment.class, ExpectationCustomResource.class)
                 .build(),
             context));
   }
 
   private static void createDeployment(
-      PeriodicCleanerExpectationCustomResource primary,
-      Context<PeriodicCleanerExpectationCustomResource> context) {
+      ExpectationCustomResource primary, Context<ExpectationCustomResource> context) {
     var deployment =
         new DeploymentBuilder()
             .withMetadata(
@@ -170,8 +144,7 @@ public class PeriodicCleanerExpectationReconciler
     context.getClient().resource(deployment).serverSideApply();
   }
 
-  private static Expectation<PeriodicCleanerExpectationCustomResource>
-      deploymentReadyExpectation() {
+  private static Expectation<ExpectationCustomResource> deploymentReadyExpectation() {
     return Expectation.createExpectation(
         DEPLOYMENT_READY_EXPECTATION_NAME,
         (primary, context) ->
@@ -185,9 +158,9 @@ public class PeriodicCleanerExpectationReconciler
                 .orElse(false));
   }
 
-  private static UpdateControl<PeriodicCleanerExpectationCustomResource> patchStatusWithMessage(
-      PeriodicCleanerExpectationCustomResource primary, String message) {
-    primary.setStatus(new PeriodicCleanerExpectationCustomResourceStatus());
+  private static UpdateControl<ExpectationCustomResource> patchStatusWithMessage(
+      ExpectationCustomResource primary, String message) {
+    primary.setStatus(new ExpectationCustomResourceStatus());
     primary.getStatus().setMessage(message);
     return UpdateControl.patchStatus(primary);
   }

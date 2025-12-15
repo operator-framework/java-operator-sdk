@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.expectation;
+package io.javaoperatorsdk.operator.baseapi.expectation.periodicclean;
 
-import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.model.annotation.Group;
-import io.fabric8.kubernetes.model.annotation.ShortNames;
-import io.fabric8.kubernetes.model.annotation.Version;
+public class PeriodicCleanerExpectationCustomResourceStatus {
 
-@Group("sample.javaoperatorsdk")
-@Version("v1")
-@ShortNames("pcecr")
-public class PeriodicCleanerExpectationCustomResource
-    extends CustomResource<Void, PeriodicCleanerExpectationCustomResourceStatus>
-    implements Namespaced {}
+  private String message;
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+}
