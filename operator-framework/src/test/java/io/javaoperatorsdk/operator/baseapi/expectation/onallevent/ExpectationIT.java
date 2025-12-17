@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.expectation;
+package io.javaoperatorsdk.operator.baseapi.expectation.onallevent;
 
 import java.time.Duration;
 
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
-import static io.javaoperatorsdk.operator.baseapi.expectation.ExpectationReconciler.DEPLOYMENT_READY;
+import static io.javaoperatorsdk.operator.baseapi.expectation.onallevent.ExpectationReconciler.DEPLOYMENT_READY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
