@@ -56,7 +56,7 @@ public class PeriodicCleanerExpectationManager<P extends HasMetadata>
   public PeriodicCleanerExpectationManager(Duration period, IndexedResourceCache<P> primaryCache) {
     this.primaryCache = primaryCache;
     scheduler.scheduleWithFixedDelay(
-        this::clean, period.toMillis(), period.toMillis(), TimeUnit.MICROSECONDS);
+        this::clean, period.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   protected void clean() {

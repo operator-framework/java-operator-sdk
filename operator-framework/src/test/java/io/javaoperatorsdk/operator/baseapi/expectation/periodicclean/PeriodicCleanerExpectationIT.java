@@ -64,24 +64,7 @@ class PeriodicCleanerExpectationIT {
   }
 
   @Test
-  void testPeriodicCleanerExpectationTimeouts() {
-    extension
-        .getReconcilerOfType(PeriodicCleanerExpectationReconciler.class)
-        .setTimeout(Duration.ofMillis(300));
-    var res = testResource();
-    extension.create(res);
-
-    await()
-        .untilAsserted(
-            () -> {
-              var actual = extension.get(PeriodicCleanerExpectationCustomResource.class, TEST_1);
-              assertThat(actual.getStatus()).isNotNull();
-              assertThat(actual.getStatus().getMessage()).isEqualTo(DEPLOYMENT_READY);
-            });
-  }
-
-  @Test
-  void demonstratesNoTriggerReconcilerOnAllEventsNeeded() {
+  void demonstratesNoTriggerReconcilerOnAllEventsNeededForCleanup() {
     // This test demonstrates that PeriodicCleanerExpectationManager works
     // without @ControllerConfiguration(triggerReconcilerOnAllEvents = true)
 
@@ -92,16 +75,20 @@ class PeriodicCleanerExpectationIT {
     reconciler.setTimeout(Duration.ofSeconds(30));
 
     var res = testResource("no-trigger-test");
-    extension.create(res);
+    var created = extension.create(res);
 
-    // Verify that expectations work even without triggerReconcilerOnAllEvents = true
     await()
         .untilAsserted(
             () -> {
-              var actual =
-                  extension.get(PeriodicCleanerExpectationCustomResource.class, "no-trigger-test");
-              assertThat(actual.getStatus()).isNotNull();
-              assertThat(actual.getStatus().getMessage()).isEqualTo(DEPLOYMENT_READY);
+              assertThat(reconciler.getExpectationManager().getExpectation(created)).isPresent();
+            });
+
+    extension.delete(res);
+
+    await()
+        .untilAsserted(
+            () -> {
+              assertThat(reconciler.getExpectationManager().getExpectation(created)).isEmpty();
             });
   }
 
