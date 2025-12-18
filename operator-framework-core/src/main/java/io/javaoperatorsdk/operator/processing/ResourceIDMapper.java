@@ -60,7 +60,10 @@ public interface ResourceIDMapper<R, ID> {
         return (ID) resourceIDProvider.resourceId();
       } else {
         throw new IllegalStateException(
-            "Resource does not implement ExternalDependentIDProvider: " + r.getClass());
+            "Resource does not implement "
+                + ResourceIDProvider.class.getSimpleName()
+                + ": "
+                + r.getClass());
       }
     };
   }
