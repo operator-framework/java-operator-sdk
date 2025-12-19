@@ -21,20 +21,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.expectation.periodicclean.PeriodicCleanerExpectationReconciler.DEPLOYMENT_READY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-/**
- * Integration test showcasing PeriodicCleanerExpectationManager usage.
- *
- * <p>This test demonstrates the key benefits of PeriodicCleanerExpectationManager: 1. Works without
- * requiring @ControllerConfiguration(triggerReconcilerOnAllEvents = true) 2. Automatically cleans
- * up stale expectations periodically 3. Maintains the same expectation API and functionality as the
- * regular ExpectationManager
- */
+@Sample(
+    tldr = "Expectation Pattern with Periodic Cleanup",
+    description = """
+        Demonstrates the PeriodicCleanerExpectationManager pattern which provides automatic cleanup of stale expectations.
+        This pattern works without requiring @ControllerConfiguration(triggerReconcilerOnAllEvents = true) and automatically
+        cleans up stale expectations periodically (default: 1 minute). This is ideal for 'set and forget' scenarios where
+        you want the same expectation API and functionality as the regular ExpectationManager but with automatic lifecycle management.""")
 class PeriodicCleanerExpectationIT {
 
   public static final String TEST_1 = "test1";

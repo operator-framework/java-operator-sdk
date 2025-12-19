@@ -21,12 +21,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.expectation.onallevent.ExpectationReconciler.DEPLOYMENT_READY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@Sample(
+    tldr = "Basic Expectation Pattern with AllEvents Trigger",
+    description = """
+        Demonstrates the basic expectation pattern using ExpectationManager with triggerReconcilerOnAllEvents = true.
+        This pattern allows reconcilers to wait for specific conditions to be met (like a Deployment having 3 ready replicas)
+        before proceeding with status updates. The test shows both successful expectation fulfillment and timeout handling.
+        Requires @ControllerConfiguration(triggerReconcilerOnAllEvents = true) for proper operation.""")
 class ExpectationIT {
 
   public static final String TEST_1 = "test1";
