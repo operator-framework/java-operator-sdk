@@ -34,7 +34,7 @@
         <josdk.version>{{josdkVersion}}</josdk.version>
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.9.2</junit.version>
-        <log4j.version>2.20.0</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         <fabric8-client.version>{{fabric8Version}}</fabric8-client.version>
     </properties>
 
