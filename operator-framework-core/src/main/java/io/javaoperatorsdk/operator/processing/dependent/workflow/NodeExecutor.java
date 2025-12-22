@@ -15,9 +15,14 @@
  */
 package io.javaoperatorsdk.operator.processing.dependent.workflow;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
+
+  private static final Logger log = LoggerFactory.getLogger(NodeExecutor.class);
 
   private final DependentResourceNode<R, P> dependentResourceNode;
   private final AbstractWorkflowExecutor<P> workflowExecutor;
@@ -37,6 +42,9 @@ abstract class NodeExecutor<R, P extends HasMetadata> implements Runnable {
     } catch (Exception e) {
       // Exception is required because of Kotlin
       workflowExecutor.handleExceptionInExecutor(dependentResourceNode, e);
+    } catch (Error e) {
+      log.error("java.lang.Error during execution", e);
+      throw e;
     } finally {
       workflowExecutor.handleNodeExecutionFinish(dependentResourceNode);
     }
