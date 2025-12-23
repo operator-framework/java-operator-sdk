@@ -21,8 +21,10 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,6 +33,13 @@ import static org.mockito.Mockito.when;
 
 class AbstractDependentResourceTest {
 
+  private static final TestCustomResource PRIMARY = new TestCustomResource();
+  private static final DefaultContext<TestCustomResource> CONTEXT = createContext(PRIMARY);
+
+  private static DefaultContext<TestCustomResource> createContext(TestCustomResource primary) {
+    return new DefaultContext<>(mock(), mock(), primary, false, false);
+  }
+
   @Test
   void throwsExceptionIfDesiredIsNullOnCreate() {
     TestDependentResource testDependentResource = new TestDependentResource();
@@ -38,8 +47,7 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(null);
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
   }
 
   @Test
@@ -49,8 +57,7 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(null);
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
   }
 
   @Test
@@ -60,8 +67,7 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(configMap());
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
   }
 
   @Test
@@ -71,8 +77,28 @@ class AbstractDependentResourceTest {
     testDependentResource.setDesired(configMap());
 
     assertThrows(
-        DependentResourceException.class,
-        () -> testDependentResource.reconcile(new TestCustomResource(), null));
+        DependentResourceException.class, () -> testDependentResource.reconcile(PRIMARY, CONTEXT));
+  }
+
+  @Test
+  void checkThatDesiredIsOnlyCalledOnce() {
+    final var testDependentResource = new DesiredCallCountCheckingDR();
+    final var primary = new TestCustomResource();
+    final var spec = primary.getSpec();
+    spec.setConfigMapName("foo");
+    spec.setKey("key");
+    spec.setValue("value");
+    final var context = createContext(primary);
+    testDependentResource.reconcile(primary, context);
+
+    spec.setValue("value2");
+    testDependentResource.reconcile(primary, context);
+
+    assertEquals(1, testDependentResource.desiredCallCount);
+
+    context.getOrComputeDesiredStateFor(
+        testDependentResource, p -> testDependentResource.desired(p, context));
+    assertEquals(1, testDependentResource.desiredCallCount);
   }
 
   private ConfigMap configMap() {
@@ -130,22 +156,12 @@ class AbstractDependentResourceTest {
       return desired;
     }
 
-    public ConfigMap getSecondary() {
-      return secondary;
-    }
-
-    public TestDependentResource setSecondary(ConfigMap secondary) {
+    public void setSecondary(ConfigMap secondary) {
       this.secondary = secondary;
-      return this;
     }
 
-    public ConfigMap getDesired() {
-      return desired;
-    }
-
-    public TestDependentResource setDesired(ConfigMap desired) {
+    public void setDesired(ConfigMap desired) {
       this.desired = desired;
-      return this;
     }
 
     @Override
@@ -170,6 +186,37 @@ class AbstractDependentResourceTest {
       var result = mock(Matcher.Result.class);
       when(result.matched()).thenReturn(false);
       return result;
+    }
+  }
+
+  private static class DesiredCallCountCheckingDR extends TestDependentResource {
+    private short desiredCallCount;
+
+    @Override
+    public ConfigMap update(
+        ConfigMap actual,
+        ConfigMap desired,
+        TestCustomResource primary,
+        Context<TestCustomResource> context) {
+      return desired;
+    }
+
+    @Override
+    public ConfigMap create(
+        ConfigMap desired, TestCustomResource primary, Context<TestCustomResource> context) {
+      return desired;
+    }
+
+    @Override
+    protected ConfigMap desired(TestCustomResource primary, Context<TestCustomResource> context) {
+      final var spec = primary.getSpec();
+      desiredCallCount++;
+      return new ConfigMapBuilder()
+          .editOrNewMetadata()
+          .withName(spec.getConfigMapName())
+          .endMetadata()
+          .addToData(spec.getKey(), spec.getValue())
+          .build();
     }
   }
 }

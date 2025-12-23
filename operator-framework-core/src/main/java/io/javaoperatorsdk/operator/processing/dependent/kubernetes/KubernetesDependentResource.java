@@ -55,7 +55,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
-  private volatile Boolean usePreviousAnnotationForEventFiltering;
 
   public KubernetesDependentResource() {}
 
@@ -70,6 +69,27 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @Override
   public void configureWith(KubernetesDependentResourceConfig<R> config) {
     this.kubernetesDependentResourceConfig = config;
+  }
+
+  @Override
+  protected R handleCreate(R desired, P primary, Context<P> context) {
+    return eventSource()
+        .orElseThrow()
+        .updateAndCacheResource(
+            desired,
+            context,
+            toCreate -> KubernetesDependentResource.super.handleCreate(toCreate, primary, context));
+  }
+
+  @Override
+  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
+    return eventSource()
+        .orElseThrow()
+        .updateAndCacheResource(
+            desired,
+            context,
+            toUpdate ->
+                KubernetesDependentResource.super.handleUpdate(actual, toUpdate, primary, context));
   }
 
   @SuppressWarnings("unused")
@@ -123,7 +143,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    final var desired = desired(primary, context);
+    final var desired = getOrComputeDesired(context);
     return match(actualResource, desired, primary, context);
   }
 
@@ -158,14 +178,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       } else {
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
-    } else if (usePreviousAnnotation(context)) { // set a new one
-      eventSource()
-          .orElseThrow()
-          .addPreviousAnnotation(
-              Optional.ofNullable(actualResource)
-                  .map(r -> r.getMetadata().getResourceVersion())
-                  .orElse(null),
-              target);
     }
     addReferenceHandlingMetadata(target, primary);
   }
@@ -179,22 +191,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
               .shouldUseSSA(getClass(), resourceType(), configuration().orElse(null));
     }
     return useSSA;
-  }
-
-  private boolean usePreviousAnnotation(Context<P> context) {
-    if (usePreviousAnnotationForEventFiltering == null) {
-      usePreviousAnnotationForEventFiltering =
-          context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .previousAnnotationForDependentResourcesEventFiltering()
-              && !context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .withPreviousAnnotationForDependentResourcesBlocklist()
-                  .contains(this.resourceType());
-    }
-    return usePreviousAnnotationForEventFiltering;
   }
 
   @Override
@@ -301,7 +297,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    * @return id of the target managed resource
    */
   protected ResourceID targetSecondaryResourceID(P primary, Context<P> context) {
-    return ResourceID.fromResource(desired(primary, context));
+    return ResourceID.fromResource(getOrComputeDesired(context));
   }
 
   protected boolean addOwnerReference() {
@@ -309,8 +305,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected R desired(P primary, Context<P> context) {
-    return super.desired(primary, context);
+  protected R getOrComputeDesired(Context<P> context) {
+    return super.getOrComputeDesired(context);
   }
 
   @Override
