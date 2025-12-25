@@ -128,7 +128,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       latestResourceVersion = resource.getMetadata().getResourceVersion();
     }
     var cached = cache.get(resourceId);
-    boolean filterEvent = true;
+    boolean filterEvent = false;
     int comp = 0;
     if (cached != null) {
       comp = ReconcileUtils.compareResourceVersions(resource, cached);
@@ -138,6 +138,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // will receive
         // additional event
         filterEvent = false;
+      } else {
+        filterEvent = true;
       }
     }
     var ed = activeUpdates.get(resourceId);
