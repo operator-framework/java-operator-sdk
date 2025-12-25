@@ -42,6 +42,8 @@ import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndic
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<
@@ -104,15 +106,35 @@ public abstract class ManagedInformerEventSource<
     if (log.isDebugEnabled()) {
       log.debug("Update and cache: {}", id);
     }
+    R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
-      var updated = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, updated, resourceToUpdate);
-      return updated;
+      updatedResource = updateMethod.apply(resourceToUpdate);
+      handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      return updatedResource;
     } finally {
-      temporaryResourceCache.doneEventFilterModify(id);
+      var res =
+          temporaryResourceCache.doneEventFilterModify(
+              id,
+              updatedResource == null ? null : updatedResource.getMetadata().getResourceVersion());
+      res.ifPresent(
+          r ->
+              handleEvent(
+                  r.getAction(),
+                  (R) r.getResource().orElseThrow(),
+                  null,
+                  !(r instanceof ResourceDeleteEvent)
+                      || ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown(),
+                  false));
     }
   }
+
+  public abstract void handleEvent(
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      boolean filterEvent);
 
   @SuppressWarnings("unchecked")
   @Override
