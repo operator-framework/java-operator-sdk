@@ -75,9 +75,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected R handleCreate(R desired, P primary, Context<P> context) {
     return eventSource()
         .orElseThrow()
-        .updateAndCacheResource(
+        .eventFilteringUpdateAndCacheResource(
             desired,
-            context,
             toCreate -> KubernetesDependentResource.super.handleCreate(toCreate, primary, context));
   }
 
@@ -85,9 +84,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
     return eventSource()
         .orElseThrow()
-        .updateAndCacheResource(
+        .eventFilteringUpdateAndCacheResource(
             desired,
-            context,
             toUpdate ->
                 KubernetesDependentResource.super.handleUpdate(actual, toUpdate, primary, context));
   }

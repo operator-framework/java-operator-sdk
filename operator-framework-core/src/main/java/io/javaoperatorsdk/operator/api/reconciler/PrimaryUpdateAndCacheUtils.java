@@ -45,7 +45,11 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * caches the updated resource from the response in an overlay cache on top of the Informer cache.
  * If the update fails, it reads the primary resource from the cluster, applies the modifications
  * again and retries the update.
+ *
+ * @deprecated Use {@link ReconcileUtils} that contains the more efficient up-to-date versions of
+ *     the target utils.
  */
+@Deprecated(forRemoval = true)
 public class PrimaryUpdateAndCacheUtils {
 
   public static final int DEFAULT_MAX_RETRY = 10;

@@ -122,7 +122,7 @@ class TemporaryPrimaryResourceCacheTest {
   void lockedEventBeforePut() throws Exception {
     var testResource = testResource();
 
-    temporaryResourceCache.startModifying(ResourceID.fromResource(testResource));
+    temporaryResourceCache.startEventFilteringModify(ResourceID.fromResource(testResource));
 
     ExecutorService ex = Executors.newSingleThreadExecutor();
     try {
@@ -130,7 +130,7 @@ class TemporaryPrimaryResourceCacheTest {
 
       temporaryResourceCache.putResource(testResource);
       assertThat(result.isDone()).isFalse();
-      temporaryResourceCache.doneModifying(ResourceID.fromResource(testResource));
+      temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource));
       assertThat(result.get(10, TimeUnit.SECONDS)).isTrue();
     } finally {
       ex.shutdownNow();
@@ -149,7 +149,28 @@ class TemporaryPrimaryResourceCacheTest {
     nextResource.getMetadata().setResourceVersion("3");
     temporaryResourceCache.putResource(nextResource);
 
-    // now expect an event with the matching resourceVersion to be known after the put
+    // the result is false since the put was not part of event filtering update
+    result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  void putBeforeEventWithEventFiltering() {
+    var testResource = testResource();
+
+    // first ensure an event is not known
+    var result = temporaryResourceCache.onAddOrUpdateEvent(testResource);
+    assertThat(result).isFalse();
+
+    var nextResource = testResource();
+    nextResource.getMetadata().setResourceVersion("3");
+    var resourceId = ResourceID.fromResource(testResource);
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+    temporaryResourceCache.putResource(nextResource);
+    temporaryResourceCache.doneEventFilterModify(resourceId);
+
+    // the result is false since the put was not part of event filtering update
     result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
     assertThat(result).isTrue();
   }

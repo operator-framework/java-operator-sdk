@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -34,7 +35,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
-import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
@@ -71,21 +72,6 @@ public abstract class ManagedInformerEventSource<
     this.configuration = configuration;
   }
 
-  @Override
-  public void onAdd(R resource) {
-    temporaryResourceCache.onAddOrUpdateEvent(resource);
-  }
-
-  @Override
-  public void onUpdate(R oldObj, R newObj) {
-    temporaryResourceCache.onAddOrUpdateEvent(newObj);
-  }
-
-  @Override
-  public void onDelete(R obj, boolean deletedFinalStateUnknown) {
-    temporaryResourceCache.onDeleteEvent(obj, deletedFinalStateUnknown);
-  }
-
   protected InformerManager<R, C> manager() {
     return cache;
   }
@@ -94,6 +80,37 @@ public abstract class ManagedInformerEventSource<
   public void changeNamespaces(Set<String> namespaces) {
     if (allowsNamespaceChanges()) {
       manager().changeNamespaces(namespaces);
+    }
+  }
+
+  /**
+   * Updates the resource and makes sure that the response is available for the next reconciliation.
+   * It does not filter the event produced by this update.
+   */
+  public R updateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
+    ResourceID id = ResourceID.fromResource(resourceToUpdate);
+    var updated = updateMethod.apply(resourceToUpdate);
+    handleRecentResourceUpdate(id, updated, resourceToUpdate);
+    return updated;
+  }
+
+  /**
+   * Updates the resource and makes sure that the response is available for the next reconciliation.
+   * Also makes sure that the even produced by this update is filtered, thus does not trigger the
+   * reconciliation.
+   */
+  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
+    ResourceID id = ResourceID.fromResource(resourceToUpdate);
+    if (log.isDebugEnabled()) {
+      log.debug("Update and cache: {}", id);
+    }
+    try {
+      temporaryResourceCache.startEventFilteringModify(id);
+      var updated = updateMethod.apply(resourceToUpdate);
+      handleRecentResourceUpdate(id, updated, resourceToUpdate);
+      return updated;
+    } finally {
+      temporaryResourceCache.doneEventFilterModify(id);
     }
   }
 
@@ -137,10 +154,7 @@ public abstract class ManagedInformerEventSource<
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
-        && res.filter(
-                r ->
-                    PrimaryUpdateAndCacheUtils.compareResourceVersions(r, resource.orElseThrow())
-                        > 0)
+        && res.filter(r -> ReconcileUtils.compareResourceVersions(r, resource.orElseThrow()) > 0)
             .isEmpty()) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
