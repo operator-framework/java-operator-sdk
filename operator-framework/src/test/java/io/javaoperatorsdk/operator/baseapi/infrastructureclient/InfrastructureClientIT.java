@@ -28,7 +28,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,23 +127,25 @@ class InfrastructureClientIT {
 
   private void applyClusterRoleBinding(String filename) {
     var clusterRoleBinding =
-        ReconcilerUtils.loadYaml(ClusterRoleBinding.class, this.getClass(), filename);
+        ReconcilerUtilsInternal.loadYaml(ClusterRoleBinding.class, this.getClass(), filename);
     operator.getInfrastructureKubernetesClient().resource(clusterRoleBinding).serverSideApply();
   }
 
   private void applyClusterRole(String filename) {
-    var clusterRole = ReconcilerUtils.loadYaml(ClusterRole.class, this.getClass(), filename);
+    var clusterRole =
+        ReconcilerUtilsInternal.loadYaml(ClusterRole.class, this.getClass(), filename);
     operator.getInfrastructureKubernetesClient().resource(clusterRole).serverSideApply();
   }
 
   private void removeClusterRoleBinding(String filename) {
     var clusterRoleBinding =
-        ReconcilerUtils.loadYaml(ClusterRoleBinding.class, this.getClass(), filename);
+        ReconcilerUtilsInternal.loadYaml(ClusterRoleBinding.class, this.getClass(), filename);
     operator.getInfrastructureKubernetesClient().resource(clusterRoleBinding).delete();
   }
 
   private void removeClusterRole(String filename) {
-    var clusterRole = ReconcilerUtils.loadYaml(ClusterRole.class, this.getClass(), filename);
+    var clusterRole =
+        ReconcilerUtilsInternal.loadYaml(ClusterRole.class, this.getClass(), filename);
     operator.getInfrastructureKubernetesClient().resource(clusterRole).delete();
   }
 }

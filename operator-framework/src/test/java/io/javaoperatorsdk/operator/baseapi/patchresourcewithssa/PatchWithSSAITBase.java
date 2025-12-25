@@ -49,6 +49,7 @@ public abstract class PatchWithSSAITBase {
                   .isEqualTo(PatchResourceWithSSAReconciler.ADDED_VALUE);
               // finalizer is added to the SSA patch in the background by the framework
               assertThat(actualResource.getMetadata().getFinalizers()).isNotEmpty();
+              assertThat(actualResource.getStatus()).isNotNull();
               assertThat(actualResource.getStatus().isSuccessfullyReconciled()).isTrue();
               // one for resource, one for subresource
               assertThat(

@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -219,7 +219,8 @@ public class WebPageReconciler implements Reconciler<WebPage> {
   }
 
   private Service makeDesiredService(WebPage webPage, String ns, Deployment desiredDeployment) {
-    Service desiredService = ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml");
+    Service desiredService =
+        ReconcilerUtilsInternal.loadYaml(Service.class, getClass(), "service.yaml");
     desiredService.getMetadata().setName(serviceName(webPage));
     desiredService.getMetadata().setNamespace(ns);
     desiredService.getMetadata().setLabels(lowLevelLabel());
@@ -233,7 +234,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
   private Deployment makeDesiredDeployment(
       WebPage webPage, String deploymentName, String ns, String configMapName) {
     Deployment desiredDeployment =
-        ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
+        ReconcilerUtilsInternal.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     desiredDeployment.getMetadata().setName(deploymentName);
     desiredDeployment.getMetadata().setNamespace(ns);
     desiredDeployment.getMetadata().setLabels(lowLevelLabel());
