@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -24,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
@@ -55,13 +56,14 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final boolean comparableResourceVersions;
   private final Map<ResourceID, ReentrantLock> activelyModifying = new ConcurrentHashMap<>();
+  private final Set<ResourceID> skipFiltering = ConcurrentHashMap.newKeySet();
   private String latestResourceVersion;
 
   public TemporaryResourceCache(boolean comparableResourceVersions) {
     this.comparableResourceVersions = comparableResourceVersions;
   }
 
-  public void startModifying(ResourceID id) {
+  public void startEventFilteringModify(ResourceID id) {
     if (!comparableResourceVersions) {
       return;
     }
@@ -78,7 +80,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         .lock();
   }
 
-  public void doneModifying(ResourceID id) {
+  public void doneEventFilterModify(ResourceID id) {
     if (!comparableResourceVersions) {
       return;
     }
@@ -95,42 +97,62 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   /**
-   * @return true if the resourceVersion was already known
+   * @return true if the resourceVersion was already known and not skipped for event filtering
    */
   public boolean onAddOrUpdateEvent(T resource) {
     return onEvent(resource, false);
   }
 
   private boolean onEvent(T resource, boolean unknownState) {
-    ReentrantLock lock = activelyModifying.get(ResourceID.fromResource(resource));
+    var resourceId = ResourceID.fromResource(resource);
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Processing event for resource id: {} version: {} ",
+          resourceId,
+          resource.getMetadata().getResourceVersion());
+    }
+    ReentrantLock lock = activelyModifying.get(resourceId);
     if (lock != null) {
+      log.trace("Lock for event filtering resource id: {}", resourceId);
+      // note that this is a special case of lock striping; event handling happens
+      // always on the same thread of the informer we lock only if the update is happening
+      // for the same resource (not any resource), and if the event comes from the current update
+      // this should be locked for a very short time, since that update request already send at this
+      // point.
       lock.lock(); // wait for the modification to finish
       lock.unlock(); // simply unlock as the event is guaranteed after the modification
+      log.trace("Unlock for event resource id: {}", resourceId);
     }
-    boolean[] known = new boolean[1];
+    boolean[] filter = new boolean[1];
     synchronized (this) {
       if (!unknownState) {
         latestResourceVersion = resource.getMetadata().getResourceVersion();
       }
       cache.computeIfPresent(
-          ResourceID.fromResource(resource),
+          resourceId,
           (id, cached) -> {
             boolean remove = unknownState;
             if (!unknownState) {
-              int comp = PrimaryUpdateAndCacheUtils.compareResourceVersions(resource, cached);
+              int comp = ReconcileUtils.compareResourceVersions(resource, cached);
               if (comp >= 0) {
                 remove = true;
               }
-              if (comp <= 0) {
-                known[0] = true;
+              if (comp < 0) {
+                filter[0] = true;
+              } else if (comp == 0) {
+                filter[0] = !skipFiltering.remove(resourceId);
+              } else {
+                skipFiltering.remove(resourceId);
               }
+            } else {
+              skipFiltering.remove(resourceId);
             }
             if (remove) {
               return null;
             }
             return cached;
           });
-      return known[0];
+      return filter[0];
     }
   }
 
@@ -141,6 +163,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
 
     var resourceId = ResourceID.fromResource(newResource);
+    skipFiltering.remove(resourceId);
 
     if (newResource.getMetadata().getResourceVersion() == null) {
       log.warn(
@@ -157,7 +180,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
     if (latestResourceVersion != null
-        && PrimaryUpdateAndCacheUtils.compareResourceVersions(
+        && ReconcileUtils.compareResourceVersions(
                 latestResourceVersion, newResource.getMetadata().getResourceVersion())
             > 0) {
       log.debug(
@@ -172,16 +195,24 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
 
     if (cachedResource == null
-        || PrimaryUpdateAndCacheUtils.compareResourceVersions(newResource, cachedResource) > 0) {
+        || ReconcileUtils.compareResourceVersions(newResource, cachedResource) > 0) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
           resourceId);
       cache.put(resourceId, newResource);
+      if (!isFilteringModification(resourceId)) {
+        log.debug("Add resource id to skipFiltering: {}", resourceId);
+        skipFiltering.add(resourceId);
+      }
     }
   }
 
   public synchronized Optional<T> getResourceFromCache(ResourceID resourceID) {
     return Optional.ofNullable(cache.get(resourceID));
+  }
+
+  private boolean isFilteringModification(ResourceID resourceId) {
+    return activelyModifying.containsKey(resourceId);
   }
 }

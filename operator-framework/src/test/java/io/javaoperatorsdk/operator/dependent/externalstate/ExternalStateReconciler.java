@@ -109,10 +109,8 @@ public class ExternalStateReconciler
     // Making sure that the created resources are in the cache for the next reconciliation.
     // This is critical in this case, since on next reconciliation if it would not be in the cache
     // it would be created again.
-    configMapEventSource.updateAndCacheResource(
-        configMap,
-        context,
-        toCreate -> context.getClient().configMaps().resource(toCreate).create());
+    configMapEventSource.eventFilteringUpdateAndCacheResource(
+        configMap, toCreate -> context.getClient().configMaps().resource(toCreate).create());
     externalResourceEventSource.handleRecentResourceCreate(primaryID, createdResource);
   }
 

@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
@@ -90,7 +90,7 @@ public class StandaloneDependentTestReconciler
         StandaloneDependentTestCustomResource primary,
         Context<StandaloneDependentTestCustomResource> context) {
       Deployment deployment =
-          ReconcilerUtils.loadYaml(
+          ReconcilerUtilsInternal.loadYaml(
               Deployment.class,
               StandaloneDependentResourceIT.class,
               "/io/javaoperatorsdk/operator/nginx-deployment.yaml");

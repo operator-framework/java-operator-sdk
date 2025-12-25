@@ -32,7 +32,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
@@ -81,21 +81,26 @@ public class ControllerEventSource<T extends HasMetadata>
     }
   }
 
-  public void eventReceived(
-      ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
+  public synchronized void eventReceived(
+      ResourceAction action,
+      T resource,
+      T oldResource,
+      Boolean deletedFinalStateUnknown,
+      boolean filterEvent) {
     try {
       if (log.isDebugEnabled()) {
         log.debug(
-            "Event received for resource: {} version: {} uuid: {} action: {}",
+            "Event received for resource: {} version: {} uuid: {} action: {} filter event: {}",
             ResourceID.fromResource(resource),
             getVersion(resource),
             resource.getMetadata().getUid(),
-            action);
+            action,
+            filterEvent);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (isAcceptedByFilters(action, resource, oldResource)) {
+      if (isAcceptedByFilters(action, resource, oldResource) && !filterEvent) {
         if (deletedFinalStateUnknown != null) {
           getEventHandler()
               .handleEvent(
@@ -132,20 +137,23 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public void onAdd(T resource) {
-    super.onAdd(resource);
-    eventReceived(ResourceAction.ADDED, resource, null, null);
+    var knownResourceVersion = temporaryResourceCache.onAddOrUpdateEvent(resource);
+    eventReceived(ResourceAction.ADDED, resource, null, null, knownResourceVersion);
   }
 
   @Override
   public void onUpdate(T oldCustomResource, T newCustomResource) {
-    super.onUpdate(oldCustomResource, newCustomResource);
-    eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource, null);
+    var knownResourceVersion = temporaryResourceCache.onAddOrUpdateEvent(newCustomResource);
+    eventReceived(
+        ResourceAction.UPDATED, newCustomResource, oldCustomResource, null, knownResourceVersion);
   }
 
   @Override
   public void onDelete(T resource, boolean deletedFinalStateUnknown) {
-    super.onDelete(resource, deletedFinalStateUnknown);
-    eventReceived(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
+    temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
+    // delete event is quite special here, that requires special care, since we clean up caches on
+    // delete event.
+    eventReceived(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown, false);
   }
 
   @Override

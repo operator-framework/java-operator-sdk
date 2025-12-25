@@ -17,7 +17,7 @@ package io.javaoperatorsdk.operator.dependent.statefulsetdesiredsanitizer;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
@@ -32,7 +32,7 @@ public class StatefulSetDesiredSanitizerDependentResource
       StatefulSetDesiredSanitizerCustomResource primary,
       Context<StatefulSetDesiredSanitizerCustomResource> context) {
     var template =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             StatefulSet.class, getClass(), "/io/javaoperatorsdk/operator/statefulset.yaml");
     template.setMetadata(
         new ObjectMetaBuilder()
