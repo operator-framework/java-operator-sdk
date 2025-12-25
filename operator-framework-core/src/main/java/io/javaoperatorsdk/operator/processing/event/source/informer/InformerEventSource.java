@@ -32,6 +32,7 @@ import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 
@@ -134,6 +135,16 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
     }
+  }
+
+  @Override
+  public void handleEvent(
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      boolean filterEvent) {
+    propagateEvent(resource);
   }
 
   @Override
