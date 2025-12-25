@@ -35,7 +35,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
@@ -131,7 +131,7 @@ class InformerWrapper<T extends HasMetadata>
       }
 
     } catch (Exception e) {
-      ReconcilerUtils.handleKubernetesClientException(
+      ReconcilerUtilsInternal.handleKubernetesClientException(
           e, HasMetadata.getFullResourceName(informer.getApiTypeClass()));
       throw new OperatorException(
           "Couldn't start informer for " + versionedFullResourceName() + " resources", e);
@@ -143,7 +143,7 @@ class InformerWrapper<T extends HasMetadata>
     if (apiTypeClass.isAssignableFrom(GenericKubernetesResource.class)) {
       return GenericKubernetesResource.class.getSimpleName();
     }
-    return ReconcilerUtils.getResourceTypeNameWithVersion(apiTypeClass);
+    return ReconcilerUtilsInternal.getResourceTypeNameWithVersion(apiTypeClass);
   }
 
   @Override
