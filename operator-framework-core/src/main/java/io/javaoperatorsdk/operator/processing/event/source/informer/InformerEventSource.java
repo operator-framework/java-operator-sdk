@@ -96,22 +96,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     genericFilter = informerConfig.getGenericFilter();
   }
 
-  public R updateAndCacheResource(
-      R resourceToUpdate, Context<?> context, UnaryOperator<R> updateMethod) {
-    ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    if (log.isDebugEnabled()) {
-      log.debug("Update and cache: {}", id);
-    }
-    try {
-      temporaryResourceCache.startModifying(id);
-      var updated = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, updated, resourceToUpdate);
-      return updated;
-    } finally {
-      temporaryResourceCache.doneModifying(id);
-    }
-  }
-
   @Override
   public void onAdd(R newResource) {
     if (log.isDebugEnabled()) {
