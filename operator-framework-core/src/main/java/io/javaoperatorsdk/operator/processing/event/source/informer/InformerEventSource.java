@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -28,7 +27,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -148,7 +146,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceType().getSimpleName());
     }
     primaryToSecondaryIndex.onDelete(resource);
-    super.onDelete(resource, b);
+    temporaryResourceCache.onDeleteEvent(resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
     }
@@ -233,15 +231,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource);
+    handleRecentCreateOrUpdate(resource);
   }
 
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(Operation.ADD, resource, null);
+    handleRecentCreateOrUpdate(resource);
   }
 
-  private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
+  private void handleRecentCreateOrUpdate(R newResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     temporaryResourceCache.putResource(newResource);
   }

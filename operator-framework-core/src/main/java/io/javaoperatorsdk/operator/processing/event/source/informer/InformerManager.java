@@ -32,7 +32,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -253,7 +253,7 @@ class InformerManager<R extends HasMetadata, C extends Informable<R>>
     final var informerConfig = configuration.getInformerConfig();
     final var selector = informerConfig.getLabelSelector();
     return "InformerManager ["
-        + ReconcilerUtils.getResourceTypeNameWithVersion(configuration.getResourceClass())
+        + ReconcilerUtilsInternal.getResourceTypeNameWithVersion(configuration.getResourceClass())
         + "] watching: "
         + informerConfig.getEffectiveNamespaces(controllerConfiguration)
         + (selector != null ? " selector: " + selector : "");

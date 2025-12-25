@@ -18,7 +18,7 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -36,7 +36,7 @@ public class DeploymentDependentResource
   @Override
   protected Deployment desired(Tomcat tomcat, Context<Tomcat> context) {
     Deployment deployment =
-        ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
+        ReconcilerUtilsInternal.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
     final String tomcatName = tomcatMetadata.getName();
     deployment =
