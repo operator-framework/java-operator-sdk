@@ -145,7 +145,7 @@ class TemporaryPrimaryResourceCacheTest {
 
     // first ensure an event is not known
     var result = temporaryResourceCache.onAddOrUpdateEvent(testResource);
-    assertThat(result).isTrue();
+    assertThat(result).isFalse();
 
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("3");
@@ -162,7 +162,7 @@ class TemporaryPrimaryResourceCacheTest {
 
     // first ensure an event is not known
     var result = temporaryResourceCache.onAddOrUpdateEvent(testResource);
-    assertThat(result).isTrue();
+    assertThat(result).isFalse();
 
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("3");
