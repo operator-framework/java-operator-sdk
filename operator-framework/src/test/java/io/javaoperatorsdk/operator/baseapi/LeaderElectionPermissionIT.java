@@ -26,7 +26,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -87,14 +87,14 @@ class LeaderElectionPermissionIT {
 
   private void applyRoleBinding() {
     var clusterRoleBinding =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             RoleBinding.class, this.getClass(), "leader-elector-stop-noaccess-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).createOrReplace();
   }
 
   private void applyRole() {
     var role =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             Role.class, this.getClass(), "leader-elector-stop-role-noaccess.yaml");
     adminClient.resource(role).createOrReplace();
   }

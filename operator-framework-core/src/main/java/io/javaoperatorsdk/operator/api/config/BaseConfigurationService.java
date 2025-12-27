@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.Utils.Configurator;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -265,7 +265,7 @@ public class BaseConfigurationService extends AbstractConfigurationService {
       io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration annotation) {
     final var resourceClass = getResourceClassResolver().getPrimaryResourceClass(reconcilerClass);
 
-    final var name = ReconcilerUtils.getNameFor(reconcilerClass);
+    final var name = ReconcilerUtilsInternal.getNameFor(reconcilerClass);
     final var generationAware =
         valueOrDefaultFromAnnotation(
             annotation,
