@@ -144,7 +144,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
     var ed = activeUpdates.get(resourceId);
     if (ed != null) {
-      ed.recordEvent(
+      ed.setLastEvent(
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
               : new ResourceEvent(
