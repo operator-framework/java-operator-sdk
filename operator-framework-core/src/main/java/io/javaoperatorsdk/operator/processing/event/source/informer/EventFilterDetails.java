@@ -15,19 +15,14 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 class EventFilterDetails {
 
-  // initially should be created during event filtering update
-
   private int activeUpdates = 0;
-  // todo might be just one
-  private final List<ResourceEvent> events = new ArrayList<>();
+  private ResourceEvent lastEvent;
   private int lastUpdatedResourceVersion = -1;
 
   public int getActiveUpdates() {
@@ -42,8 +37,8 @@ class EventFilterDetails {
     activeUpdates = activeUpdates - 1;
   }
 
-  public void recordEvent(ResourceEvent event) {
-    events.add(event);
+  public void setLastEvent(ResourceEvent event) {
+    lastEvent = event;
   }
 
   public void setLastUpdatedResourceVersion(String version) {
@@ -54,11 +49,10 @@ class EventFilterDetails {
   }
 
   public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent() {
-    if (events.isEmpty()) return Optional.empty();
-    var latest = events.get(events.size() - 1);
-    if (Integer.parseInt(latest.getResource().orElseThrow().getMetadata().getResourceVersion())
+    if (lastEvent == null) return Optional.empty();
+    if (Integer.parseInt(lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion())
         > lastUpdatedResourceVersion) {
-      return Optional.of(latest);
+      return Optional.of(lastEvent);
     } else {
       return Optional.empty();
     }
