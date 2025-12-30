@@ -203,6 +203,11 @@ public class Operator implements LifecycleAware {
   public void stop() throws OperatorException {
     Duration reconciliationTerminationTimeout =
         configurationService.reconciliationTerminationTimeout();
+
+    // Always stop the executor service manager to prevent dangling threads,
+    // even if the operator didn't fully start
+    configurationService.getExecutorServiceManager().stop(reconciliationTerminationTimeout);
+
     if (!started) {
       return;
     }
@@ -210,7 +215,6 @@ public class Operator implements LifecycleAware {
         "Operator SDK {} is shutting down...", configurationService.getVersion().getSdkVersion());
     controllerManager.stop();
 
-    configurationService.getExecutorServiceManager().stop(reconciliationTerminationTimeout);
     leaderElectionManager.stop();
     if (configurationService.closeClientOnStop()) {
       getKubernetesClient().close();
