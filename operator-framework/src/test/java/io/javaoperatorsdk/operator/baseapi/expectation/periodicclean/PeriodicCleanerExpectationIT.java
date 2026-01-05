@@ -35,7 +35,7 @@ import static org.awaitility.Awaitility.await;
         Demonstrates the PeriodicCleanerExpectationManager pattern which provides automatic cleanup of stale expectations.
         This pattern works without requiring @ControllerConfiguration(triggerReconcilerOnAllEvents = true) and automatically
         cleans up stale expectations periodically (default: 1 minute). This is ideal for 'set and forget' scenarios where
-        you want the same expectation API and functionality as the regular ExpectationManager but with automatic lifecycle management.\
+        you want the same expectation API and functionality as the regular ExpectationManager but with automatic lifecycle management.
         """)
 class PeriodicCleanerExpectationIT {
 

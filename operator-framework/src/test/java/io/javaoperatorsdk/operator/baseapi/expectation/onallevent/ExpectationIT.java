@@ -35,7 +35,7 @@ import static org.awaitility.Awaitility.await;
         Demonstrates the basic expectation pattern using ExpectationManager with triggerReconcilerOnAllEvents = true.
         This pattern allows reconcilers to wait for specific conditions to be met (like a Deployment having 3 ready replicas)
         before proceeding with status updates. The test shows both successful expectation fulfillment and timeout handling.
-        Requires @ControllerConfiguration(triggerReconcilerOnAllEvents = true) for proper operation.\
+        Requires @ControllerConfiguration(triggerReconcilerOnAllEvents = true) for proper operation.
         """)
 class ExpectationIT {
 
