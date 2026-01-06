@@ -53,13 +53,6 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
  */
 public class TemporaryResourceCache<T extends HasMetadata> {
 
-  // TODO
-  // requirements:
-  // - concurrent updates
-  // - no blocking i/o related updates
-  // - support non-event filtering
-  // - handle delete event
-
   private static final Logger log = LoggerFactory.getLogger(TemporaryResourceCache.class);
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
@@ -131,7 +124,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     boolean filterEvent = false;
     int comp = 0;
     if (cached != null) {
-      comp = ReconcileUtils.compareResourceVersions(resource, cached);
+      comp = ReconcileUtils.validateAndCompareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
         cache.remove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we
@@ -198,7 +191,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
 
     if (cachedResource == null
-        || ReconcileUtils.compareResourceVersions(newResource, cachedResource) > 0) {
+        || ReconcileUtils.validateAndCompareResourceVersions(newResource, cachedResource) > 0) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),

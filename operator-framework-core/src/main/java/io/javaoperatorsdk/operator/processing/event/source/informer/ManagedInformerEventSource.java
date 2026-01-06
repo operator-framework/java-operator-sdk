@@ -176,7 +176,10 @@ public abstract class ManagedInformerEventSource<
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
-        && res.filter(r -> ReconcileUtils.compareResourceVersions(r, resource.orElseThrow()) > 0)
+        && res.filter(
+                r ->
+                    ReconcileUtils.validateAndCompareResourceVersions(r, resource.orElseThrow())
+                        > 0)
             .isEmpty()) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;
