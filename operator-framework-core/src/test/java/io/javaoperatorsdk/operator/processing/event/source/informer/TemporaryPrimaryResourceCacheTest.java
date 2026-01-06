@@ -151,9 +151,9 @@ class TemporaryPrimaryResourceCacheTest {
     nextResource.getMetadata().setResourceVersion("3");
     temporaryResourceCache.putResource(nextResource);
 
-    // the result is false since the put was not part of event filtering update
+    // now expect an event with the matching resourceVersion to be known after the put
     result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
-    assertThat(result).isFalse();
+    assertThat(result).isTrue();
   }
 
   @Test

@@ -17,48 +17,36 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 class EventFilterDetails {
 
   private int activeUpdates = 0;
   private ResourceEvent lastEvent;
-  private int lastUpdatedResourceVersion = -1;
-
-  public int getActiveUpdates() {
-    return activeUpdates;
-  }
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
   }
 
-  public void decreaseActiveUpdates() {
+  public boolean decreaseActiveUpdates() {
     activeUpdates = activeUpdates - 1;
+    return activeUpdates == 0;
   }
 
   public void setLastEvent(ResourceEvent event) {
     lastEvent = event;
   }
 
-  public void setLastUpdatedResourceVersion(String version) {
-    var parsed = Integer.parseInt(version);
-    if (parsed > lastUpdatedResourceVersion) {
-      lastUpdatedResourceVersion = parsed;
-    }
-  }
-
-  public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent() {
-    if (lastEvent == null) return Optional.empty();
-    if (Integer.parseInt(lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion())
-        > lastUpdatedResourceVersion) {
+  public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent(String updatedResourceVersion) {
+    if (lastEvent != null
+        && (updatedResourceVersion == null
+            || ReconcileUtils.validateAndCompareResourceVersions(
+                    lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion(),
+                    updatedResourceVersion)
+                > 0)) {
       return Optional.of(lastEvent);
-    } else {
-      return Optional.empty();
     }
-  }
-
-  public boolean isFilteringDone() {
-    return activeUpdates == 0;
+    return Optional.empty();
   }
 }
