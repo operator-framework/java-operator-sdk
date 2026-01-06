@@ -32,7 +32,7 @@ class ReconcileUtilsTest {
   private static final Logger log = LoggerFactory.getLogger(ReconcileUtilsTest.class);
 
   @Test
-  public void validateAndCompareResourceVersionsTest() {
+  void validateAndCompareResourceVersionsTest() {
     assertThat(ReconcileUtils.validateAndCompareResourceVersions("11", "22")).isNegative();
     assertThat(ReconcileUtils.validateAndCompareResourceVersions("22", "11")).isPositive();
     assertThat(ReconcileUtils.validateAndCompareResourceVersions("1", "1")).isZero();
@@ -102,7 +102,7 @@ class ReconcileUtilsTest {
   }
 
   @Test
-  public void compareResourceVersionsWithHasMetadata() {
+  void compareResourceVersionsWithHasMetadata() {
     // Test equal versions
     HasMetadata resource1 = createResourceWithVersion("123");
     HasMetadata resource2 = createResourceWithVersion("123");
@@ -146,13 +146,13 @@ class ReconcileUtilsTest {
     var execNum = 30000000;
     var startTime = System.currentTimeMillis();
     for (int i = 0; i < execNum; i++) {
-      var res = ReconcileUtils.compareResourceVersions("123456788", "123456789");
+      var res = ReconcileUtils.compareResourceVersions("123456788" + i, "123456789" + i);
     }
     var dur1 = System.currentTimeMillis() - startTime;
     log.info("Duration without parsing: {}", dur1);
     startTime = System.currentTimeMillis();
     for (int i = 0; i < execNum; i++) {
-      var res = Long.parseLong("123456788") > Long.parseLong("123456789");
+      var res = Long.parseLong("123456788" + i) > Long.parseLong("123456789" + i);
     }
     var dur2 = System.currentTimeMillis() - startTime;
     log.info("Duration with parsing:   {}", dur2);
