@@ -203,7 +203,12 @@ public class Operator implements LifecycleAware {
   public void stop() throws OperatorException {
     Duration reconciliationTerminationTimeout =
         configurationService.reconciliationTerminationTimeout();
+
     if (!started) {
+      // Always stop the executor service manager to prevent dangling threads,
+      // even if the operator didn't fully start
+      configurationService.getExecutorServiceManager().stop(reconciliationTerminationTimeout);
+
       return;
     }
     log.info(
