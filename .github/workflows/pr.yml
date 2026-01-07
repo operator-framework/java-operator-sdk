@@ -11,7 +11,6 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'adr/**'
-    branches: [ main, v1, v2, v3, next ]
   workflow_dispatch:
 jobs:
   check_format_and_unit_tests:
