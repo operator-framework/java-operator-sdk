@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
@@ -138,15 +139,15 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public void onAdd(T resource) {
-    var obsoleteResourceVersion = temporaryResourceCache.onAddOrUpdateEvent(resource);
-    handleEvent(ResourceAction.ADDED, resource, null, null, obsoleteResourceVersion);
+    var handling = temporaryResourceCache.onAddOrUpdateEvent(resource);
+    handleEvent(ResourceAction.ADDED, resource, null, null, handling != EventHandling.NEW);
   }
 
   @Override
   public void onUpdate(T oldCustomResource, T newCustomResource) {
-    var knownResourceVersion = temporaryResourceCache.onAddOrUpdateEvent(newCustomResource);
+    var handling = temporaryResourceCache.onAddOrUpdateEvent(newCustomResource);
     handleEvent(
-        ResourceAction.UPDATED, newCustomResource, oldCustomResource, null, knownResourceVersion);
+        ResourceAction.UPDATED, newCustomResource, oldCustomResource, null, handling != EventHandling.NEW);
   }
 
   @Override

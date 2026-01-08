@@ -60,6 +60,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   private String latestResourceVersion;
 
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
+  
+  public enum EventHandling {
+    DEFER,
+    OBSOLETE,
+    NEW
+  }
 
   public TemporaryResourceCache(boolean comparableResourceVersions) {
     this.comparableResourceVersions = comparableResourceVersions;
@@ -95,13 +101,13 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   /**
    * @return true if the resourceVersion was obsolete
    */
-  public boolean onAddOrUpdateEvent(T resource) {
+  public EventHandling onAddOrUpdateEvent(T resource) {
     return onEvent(resource, false, false);
   }
 
-  private synchronized boolean onEvent(T resource, boolean unknownState, boolean delete) {
+  private synchronized EventHandling onEvent(T resource, boolean unknownState, boolean delete) {
     if (!comparableResourceVersions) {
-      return false;
+      return EventHandling.NEW;
     }
 
     var resourceId = ResourceID.fromResource(resource);
@@ -115,30 +121,30 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       latestResourceVersion = resource.getMetadata().getResourceVersion();
     }
     var cached = cache.get(resourceId);
-    boolean obsoleteEvent = false;
+    EventHandling result = EventHandling.NEW;
     int comp = 0;
     if (cached != null) {
       comp = ReconcileUtils.validateAndCompareResourceVersions(resource, cached);
-      if (comp > 0 || unknownState) {
+      if (comp >= 0 || unknownState) {
         cache.remove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
-        obsoleteEvent = false;
+        result = comp == 0 ? EventHandling.OBSOLETE : EventHandling.NEW;
       } else {
-        obsoleteEvent = true;
+        result = EventHandling.OBSOLETE;
       }
     }
     var ed = activeUpdates.get(resourceId);
-    if (ed != null) {
+    if (ed != null && result != EventHandling.OBSOLETE) {
       ed.setLastEvent(
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
               : new ResourceEvent(
                   ResourceAction.UPDATED, resourceId, resource)); // todo true action
-      return true;
+      return EventHandling.DEFER;
     } else {
-      return obsoleteEvent;
+      return result;
     }
   }
 
