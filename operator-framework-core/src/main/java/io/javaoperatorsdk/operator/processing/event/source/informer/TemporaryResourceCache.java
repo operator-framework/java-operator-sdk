@@ -130,7 +130,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
-        obsoleteEvent = comp == 0;
+        obsoleteEvent = false;
       } else {
         obsoleteEvent = true;
       }
