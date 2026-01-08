@@ -99,7 +99,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   /**
-   * @return true if the resourceVersion was already known and not skipped for event filtering
+   * @return true if the resourceVersion was obsolete
    */
   public boolean onAddOrUpdateEvent(T resource) {
     return onEvent(resource, false, false);
@@ -121,7 +121,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       latestResourceVersion = resource.getMetadata().getResourceVersion();
     }
     var cached = cache.get(resourceId);
-    boolean filterEvent = false;
+    boolean obsoleteEvent = false;
     int comp = 0;
     if (cached != null) {
       comp = ReconcileUtils.validateAndCompareResourceVersions(resource, cached);
@@ -130,9 +130,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
-        filterEvent = false;
+        obsoleteEvent = comp == 0;
       } else {
-        filterEvent = true;
+        obsoleteEvent = true;
       }
     }
     var ed = activeUpdates.get(resourceId);
@@ -149,7 +149,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         return true;
       }
     } else {
-      return filterEvent;
+      return obsoleteEvent;
     }
   }
 
