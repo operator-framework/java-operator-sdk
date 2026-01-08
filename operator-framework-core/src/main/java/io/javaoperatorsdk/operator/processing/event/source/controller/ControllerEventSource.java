@@ -81,6 +81,7 @@ public class ControllerEventSource<T extends HasMetadata>
     }
   }
 
+  @Override
   public synchronized void handleEvent(
       ResourceAction action,
       T resource,
@@ -137,8 +138,8 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public void onAdd(T resource) {
-    var knownResourceVersion = temporaryResourceCache.onAddOrUpdateEvent(resource);
-    handleEvent(ResourceAction.ADDED, resource, null, null, knownResourceVersion);
+    var obsoleteResourceVersion = temporaryResourceCache.onAddOrUpdateEvent(resource);
+    handleEvent(ResourceAction.ADDED, resource, null, null, obsoleteResourceVersion);
   }
 
   @Override
