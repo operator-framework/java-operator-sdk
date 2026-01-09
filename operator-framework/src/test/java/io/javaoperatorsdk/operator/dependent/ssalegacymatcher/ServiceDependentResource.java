@@ -25,7 +25,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.loadYaml;
 
 @KubernetesDependent
 public class ServiceDependentResource
