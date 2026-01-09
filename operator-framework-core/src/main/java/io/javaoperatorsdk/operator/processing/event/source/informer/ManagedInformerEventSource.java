@@ -87,17 +87,6 @@ public abstract class ManagedInformerEventSource<
 
   /**
    * Updates the resource and makes sure that the response is available for the next reconciliation.
-   * It does not filter the event produced by this update.
-   */
-  public R updateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
-    ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    var updated = updateMethod.apply(resourceToUpdate);
-    handleRecentResourceUpdate(id, updated, resourceToUpdate);
-    return updated;
-  }
-
-  /**
-   * Updates the resource and makes sure that the response is available for the next reconciliation.
    * Also makes sure that the even produced by this update is filtered, thus does not trigger the
    * reconciliation.
    */
@@ -106,23 +95,26 @@ public abstract class ManagedInformerEventSource<
     if (log.isDebugEnabled()) {
       log.debug("Update and cache: {}", id);
     }
-    R updatedResource = null;
+    HasMetadata[] updatedResource = new HasMetadata[1];
     try {
       temporaryResourceCache.startEventFilteringModify(id);
-      updatedResource = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
-      return updatedResource;
+      updatedResource[0] = updateMethod.apply(resourceToUpdate);
+      handleRecentResourceUpdate(id, (R) updatedResource[0], resourceToUpdate);
+      return (R) updatedResource[0];
     } finally {
       var res =
           temporaryResourceCache.doneEventFilterModify(
               id,
-              updatedResource == null ? null : updatedResource.getMetadata().getResourceVersion());
+              updatedResource[0] == null
+                  ? null
+                  : updatedResource[0].getMetadata().getResourceVersion());
+
       res.ifPresent(
           r ->
               handleEvent(
                   r.getAction(),
                   (R) r.getResource().orElseThrow(),
-                  resourceToUpdate,
+                  (R) r.getResource().orElseThrow(), // todo handle this nicer for updates?
                   !(r instanceof ResourceDeleteEvent)
                       || ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown(),
                   false));
