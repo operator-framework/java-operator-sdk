@@ -122,7 +122,7 @@ public abstract class ManagedInformerEventSource<
               handleEvent(
                   r.getAction(),
                   (R) r.getResource().orElseThrow(),
-                  null,
+                  resourceToUpdate,
                   !(r instanceof ResourceDeleteEvent)
                       || ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown(),
                   false));
