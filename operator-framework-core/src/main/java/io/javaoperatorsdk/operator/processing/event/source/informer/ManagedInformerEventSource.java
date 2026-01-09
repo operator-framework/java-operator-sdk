@@ -95,29 +95,35 @@ public abstract class ManagedInformerEventSource<
     if (log.isDebugEnabled()) {
       log.debug("Update and cache: {}", id);
     }
-    HasMetadata[] updatedResource = new HasMetadata[1];
+    R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
-      updatedResource[0] = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, (R) updatedResource[0], resourceToUpdate);
-      return (R) updatedResource[0];
+      updatedResource = updateMethod.apply(resourceToUpdate);
+      handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      return updatedResource;
     } finally {
       var res =
           temporaryResourceCache.doneEventFilterModify(
               id,
-              updatedResource[0] == null
-                  ? null
-                  : updatedResource[0].getMetadata().getResourceVersion());
-
+              updatedResource == null ? null : updatedResource.getMetadata().getResourceVersion());
+      var updatedForLambda = updatedResource;
       res.ifPresent(
-          r ->
-              handleEvent(
-                  r.getAction(),
-                  (R) r.getResource().orElseThrow(),
-                  (R) r.getResource().orElseThrow(), // todo handle this nicer for updates?
-                  !(r instanceof ResourceDeleteEvent)
-                      || ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown(),
-                  false));
+          r -> {
+            R latestResource = (R) r.getResource().orElseThrow();
+            // for update we need to have a historic resource, this might be improved to mimic more
+            // realistic scenario
+            R prevVersionOfResource =
+                updatedForLambda != null
+                    ? updatedForLambda
+                    : (r.getAction() == ResourceAction.UPDATED ? latestResource : null);
+            handleEvent(
+                r.getAction(),
+                latestResource,
+                prevVersionOfResource,
+                !(r instanceof ResourceDeleteEvent)
+                    || ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown(),
+                false);
+          });
     }
   }
 
