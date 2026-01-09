@@ -127,7 +127,6 @@ public abstract class AbstractDependentResource<R, P extends HasMetadata>
 
   @Override
   public Optional<R> getSecondaryResource(P primary, Context<P> context) {
-
     var secondaryResources = context.getSecondaryResources(resourceType());
     if (secondaryResources.isEmpty()) {
       return Optional.empty();
