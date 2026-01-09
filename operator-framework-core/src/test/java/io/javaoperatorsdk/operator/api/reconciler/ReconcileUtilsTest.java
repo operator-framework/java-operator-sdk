@@ -184,6 +184,88 @@ class ReconcileUtilsTest {
   }
 
   @Test
+  void addsFinalizer() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+
+    when(context.getPrimaryResource()).thenReturn(resource);
+
+    // Mock successful finalizer addition
+    when(controllerEventSource.eventFilteringUpdateAndCacheResource(
+            any(), any(UnaryOperator.class)))
+        .thenAnswer(
+            invocation -> {
+              var res = TestUtils.testCustomResource1();
+              res.getMetadata().setResourceVersion("2");
+              res.addFinalizer(FINALIZER_NAME);
+              return res;
+            });
+
+    var result = ReconcileUtils.addFinalizer(context, FINALIZER_NAME);
+
+    assertThat(result).isNotNull();
+    assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
+    assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
+    verify(controllerEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void addsFinalizerWithSSA() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+
+    when(context.getPrimaryResource()).thenReturn(resource);
+
+    // Mock successful SSA finalizer addition
+    when(controllerEventSource.eventFilteringUpdateAndCacheResource(
+            any(), any(UnaryOperator.class)))
+        .thenAnswer(
+            invocation -> {
+              var res = TestUtils.testCustomResource1();
+              res.getMetadata().setResourceVersion("2");
+              res.addFinalizer(FINALIZER_NAME);
+              return res;
+            });
+
+    var result = ReconcileUtils.addFinalizerWithSSA(context, FINALIZER_NAME);
+
+    assertThat(result).isNotNull();
+    assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
+    assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
+    verify(controllerEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void removesFinalizer() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+    resource.addFinalizer(FINALIZER_NAME);
+
+    when(context.getPrimaryResource()).thenReturn(resource);
+
+    // Mock successful finalizer removal
+    when(controllerEventSource.eventFilteringUpdateAndCacheResource(
+            any(), any(UnaryOperator.class)))
+        .thenAnswer(
+            invocation -> {
+              var res = TestUtils.testCustomResource1();
+              res.getMetadata().setResourceVersion("2");
+              // finalizer is removed, so don't add it
+              return res;
+            });
+
+    var result = ReconcileUtils.removeFinalizer(context, FINALIZER_NAME);
+
+    assertThat(result).isNotNull();
+    assertThat(result.hasFinalizer(FINALIZER_NAME)).isFalse();
+    assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
+    verify(controllerEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
   void retriesAddingFinalizerWithoutSSA() {
     var resource = TestUtils.testCustomResource1();
     resource.getMetadata().setResourceVersion("1");

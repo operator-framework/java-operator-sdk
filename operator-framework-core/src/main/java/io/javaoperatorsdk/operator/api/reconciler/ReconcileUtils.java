@@ -467,7 +467,13 @@ public class ReconcileUtils {
           r.removeFinalizer(finalizerName);
           return r;
         },
-        r -> r != null && r.hasFinalizer(finalizerName));
+        r -> {
+          if (r == null) {
+            log.warn("Cannot remove finalizer since resource not exists.");
+            return false;
+          }
+          return r.hasFinalizer(finalizerName);
+        });
   }
 
   /**
