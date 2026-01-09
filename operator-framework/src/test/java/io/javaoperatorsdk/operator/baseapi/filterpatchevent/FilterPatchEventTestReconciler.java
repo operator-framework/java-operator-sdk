@@ -42,7 +42,7 @@ public class FilterPatchEventTestReconciler
     resource.setStatus(new FilterPatchEventTestCustomResourceStatus());
     resource.getStatus().setValue(UPDATED);
 
-    return UpdateControl.patchStatus(resource).filterPatchEvent(filterPatchEvent.get());
+    return UpdateControl.patchStatus(resource).reschedule();
   }
 
   public int getNumberOfExecutions() {

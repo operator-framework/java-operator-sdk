@@ -44,22 +44,6 @@ public class ReconcileUtils {
   private ReconcileUtils() {}
 
   /**
-   * Server-Side Apply the resource and filters out the resulting event. This is a convenience
-   * method that calls {@link #serverSideApply(Context, HasMetadata, boolean)} with filterEvent set
-   * to true.
-   *
-   * @param context of reconciler
-   * @param resource fresh resource for server side apply
-   * @return updated resource
-   * @param <R> resource type
-   * @see #serverSideApply(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R serverSideApply(
-      Context<? extends HasMetadata> context, R resource) {
-    return serverSideApply(context, resource, true);
-  }
-
-  /**
    * Updates the resource and caches the response if needed, thus making sure that next
    * reconciliation will contain to updated resource. Or more recent one if someone did an update
    * after our update.
@@ -71,13 +55,11 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource fresh resource for server side apply
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R serverSideApply(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+      Context<? extends HasMetadata> context, R resource) {
     return resourcePatch(
         context,
         resource,
@@ -90,24 +72,7 @@ public class ReconcileUtils {
                         .withForce(true)
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                        .build()),
-        filterEvent);
-  }
-
-  /**
-   * Server-Side Apply the resource status subresource and filters out the resulting event. This is
-   * a convenience method that calls {@link #serverSideApplyStatus(Context, HasMetadata, boolean)}
-   * with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource fresh resource for server side apply
-   * @return updated resource
-   * @param <R> resource type
-   * @see #serverSideApplyStatus(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R serverSideApplyStatus(
-      Context<? extends HasMetadata> context, R resource) {
-    return serverSideApplyStatus(context, resource, true);
+                        .build()));
   }
 
   /**
@@ -116,13 +81,11 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource fresh resource for server side apply
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R serverSideApplyStatus(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+      Context<? extends HasMetadata> context, R resource) {
     return resourcePatch(
         context,
         resource,
@@ -136,23 +99,7 @@ public class ReconcileUtils {
                         .withForce(true)
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
-                        .build()),
-        filterEvent);
-  }
-
-  /**
-   * Server-Side Apply the primary resource and filters out the resulting event. This is a
-   * convenience method that calls {@link #serverSideApplyPrimary(Context, HasMetadata, boolean)}
-   * with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource primary resource for server side apply
-   * @return updated resource
-   * @param <P> primary resource type
-   * @see #serverSideApplyPrimary(Context, HasMetadata, boolean)
-   */
-  public static <P extends HasMetadata> P serverSideApplyPrimary(Context<P> context, P resource) {
-    return serverSideApplyPrimary(context, resource, true);
+                        .build()));
   }
 
   /**
@@ -162,13 +109,10 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource primary resource for server side apply
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P serverSideApplyPrimary(
-      Context<P> context, P resource, boolean filterEvent) {
+  public static <P extends HasMetadata> P serverSideApplyPrimary(Context<P> context, P resource) {
     return resourcePatch(
         resource,
         r ->
@@ -181,24 +125,7 @@ public class ReconcileUtils {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
-  }
-
-  /**
-   * Server-Side Apply the primary resource status subresource and filters out the resulting event.
-   * This is a convenience method that calls {@link #serverSideApplyPrimaryStatus(Context,
-   * HasMetadata, boolean)} with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource primary resource for server side apply
-   * @return updated resource
-   * @param <P> primary resource type
-   * @see #serverSideApplyPrimaryStatus(Context, HasMetadata, boolean)
-   */
-  public static <P extends HasMetadata> P serverSideApplyPrimaryStatus(
-      Context<P> context, P resource) {
-    return serverSideApplyPrimaryStatus(context, resource, true);
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
@@ -207,13 +134,11 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource primary resource for server side apply
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <P> primary resource type
    */
   public static <P extends HasMetadata> P serverSideApplyPrimaryStatus(
-      Context<P> context, P resource, boolean filterEvent) {
+      Context<P> context, P resource) {
     return resourcePatch(
         resource,
         r ->
@@ -227,24 +152,7 @@ public class ReconcileUtils {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
-  }
-
-  /**
-   * Updates the resource and filters out the resulting event. This is a convenience method that
-   * calls {@link #update(Context, HasMetadata, boolean)} with filterEvent set to true. Uses
-   * optimistic locking based on the resource version.
-   *
-   * @param context of reconciler
-   * @param resource resource to update
-   * @return updated resource
-   * @param <R> resource type
-   * @see #update(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R update(
-      Context<? extends HasMetadata> context, R resource) {
-    return update(context, resource, true);
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
@@ -253,31 +161,12 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource resource to update
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R update(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).update(), filterEvent);
-  }
-
-  /**
-   * Updates the resource status subresource and filters out the resulting event. This is a
-   * convenience method that calls {@link #updateStatus(Context, HasMetadata, boolean)} with
-   * filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource resource to update
-   * @return updated resource
-   * @param <R> resource type
-   * @see #updateStatus(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R updateStatus(
       Context<? extends HasMetadata> context, R resource) {
-    return updateStatus(context, resource, true);
+    return resourcePatch(context, resource, r -> context.getClient().resource(r).update());
   }
 
   /**
@@ -285,30 +174,12 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource resource to update
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R updateStatus(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).updateStatus(), filterEvent);
-  }
-
-  /**
-   * Updates the primary resource and filters out the resulting event. This is a convenience method
-   * that calls {@link #updatePrimary(Context, HasMetadata, boolean)} with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource primary resource to update
-   * @return updated resource
-   * @param <R> resource type
-   * @see #updatePrimary(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R updatePrimary(
       Context<? extends HasMetadata> context, R resource) {
-    return updatePrimary(context, resource, true);
+    return resourcePatch(context, resource, r -> context.getClient().resource(r).updateStatus());
   }
 
   /**
@@ -317,34 +188,15 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource primary resource to update
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R updatePrimary(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+      Context<? extends HasMetadata> context, R resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).update(),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
-  }
-
-  /**
-   * Updates the primary resource status subresource and filters out the resulting event. This is a
-   * convenience method that calls {@link #updatePrimaryStatus(Context, HasMetadata, boolean)} with
-   * filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource primary resource to update
-   * @return updated resource
-   * @param <R> resource type
-   * @see #updatePrimaryStatus(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R updatePrimaryStatus(
-      Context<? extends HasMetadata> context, R resource) {
-    return updatePrimaryStatus(context, resource, true);
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
@@ -353,35 +205,15 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource primary resource to update
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R updatePrimaryStatus(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+      Context<? extends HasMetadata> context, R resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).updateStatus(),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
-  }
-
-  /**
-   * Applies a JSON Patch to the resource and filters out the resulting event. This is a convenience
-   * method that calls {@link #jsonPatch(Context, HasMetadata, UnaryOperator, boolean)} with
-   * filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource resource to patch
-   * @param unaryOperator function to modify the resource
-   * @return updated resource
-   * @param <R> resource type
-   * @see #jsonPatch(Context, HasMetadata, UnaryOperator, boolean)
-   */
-  public static <R extends HasMetadata> R jsonPatch(
-      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
-    return jsonPatch(context, resource, unaryOperator, true);
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
@@ -391,35 +223,13 @@ public class ReconcileUtils {
    * @param context of reconciler
    * @param resource resource to patch
    * @param unaryOperator function to modify the resource
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R jsonPatch(
-      Context<? extends HasMetadata> context,
-      R resource,
-      UnaryOperator<R> unaryOperator,
-      boolean filterEvent) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).edit(unaryOperator), filterEvent);
-  }
-
-  /**
-   * Applies a JSON Patch to the resource status subresource and filters out the resulting event.
-   * This is a convenience method that calls {@link #jsonPatchStatus(Context, HasMetadata,
-   * UnaryOperator, boolean)} with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource resource to patch
-   * @param unaryOperator function to modify the resource
-   * @return updated resource
-   * @param <R> resource type
-   * @see #jsonPatchStatus(Context, HasMetadata, UnaryOperator, boolean)
-   */
-  public static <R extends HasMetadata> R jsonPatchStatus(
       Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
-    return jsonPatchStatus(context, resource, unaryOperator, true);
+    return resourcePatch(
+        context, resource, r -> context.getClient().resource(r).edit(unaryOperator));
   }
 
   /**
@@ -429,38 +239,13 @@ public class ReconcileUtils {
    * @param context of reconciler
    * @param resource resource to patch
    * @param unaryOperator function to modify the resource
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R jsonPatchStatus(
-      Context<? extends HasMetadata> context,
-      R resource,
-      UnaryOperator<R> unaryOperator,
-      boolean filterEvent) {
-    return resourcePatch(
-        context,
-        resource,
-        r -> context.getClient().resource(r).editStatus(unaryOperator),
-        filterEvent);
-  }
-
-  /**
-   * Applies a JSON Patch to the primary resource and filters out the resulting event. This is a
-   * convenience method that calls {@link #jsonPatchPrimary(Context, HasMetadata, UnaryOperator,
-   * boolean)} with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource primary resource to patch
-   * @param unaryOperator function to modify the resource
-   * @return updated resource
-   * @param <R> resource type
-   * @see #jsonPatchPrimary(Context, HasMetadata, UnaryOperator, boolean)
-   */
-  public static <R extends HasMetadata> R jsonPatchPrimary(
       Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
-    return jsonPatchPrimary(context, resource, unaryOperator, true);
+    return resourcePatch(
+        context, resource, r -> context.getClient().resource(r).editStatus(unaryOperator));
   }
 
   /**
@@ -470,38 +255,15 @@ public class ReconcileUtils {
    * @param context of reconciler
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R jsonPatchPrimary(
-      Context<? extends HasMetadata> context,
-      R resource,
-      UnaryOperator<R> unaryOperator,
-      boolean filterEvent) {
+      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).edit(unaryOperator),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
-  }
-
-  /**
-   * Applies a JSON Patch to the primary resource status subresource and filters out the resulting
-   * event. This is a convenience method that calls {@link #jsonPatchPrimaryStatus(Context,
-   * HasMetadata, UnaryOperator, boolean)} with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource primary resource to patch
-   * @param unaryOperator function to modify the resource
-   * @return updated resource
-   * @param <R> resource type
-   * @see #jsonPatchPrimaryStatus(Context, HasMetadata, UnaryOperator, boolean)
-   */
-  public static <R extends HasMetadata> R jsonPatchPrimaryStatus(
-      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
-    return jsonPatchPrimaryStatus(context, resource, unaryOperator, true);
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
@@ -511,38 +273,15 @@ public class ReconcileUtils {
    * @param context of reconciler
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R jsonPatchPrimaryStatus(
-      Context<? extends HasMetadata> context,
-      R resource,
-      UnaryOperator<R> unaryOperator,
-      boolean filterEvent) {
+      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).editStatus(unaryOperator),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
-  }
-
-  /**
-   * Applies a JSON Merge Patch to the resource and filters out the resulting event. This is a
-   * convenience method that calls {@link #jsonMergePatch(Context, HasMetadata, boolean)} with
-   * filterEvent set to true. JSON Merge Patch (RFC 7386) is a simpler patching strategy compared to
-   * JSON Patch.
-   *
-   * @param context of reconciler
-   * @param resource resource to patch
-   * @return updated resource
-   * @param <R> resource type
-   * @see #jsonMergePatch(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R jsonMergePatch(
-      Context<? extends HasMetadata> context, R resource) {
-    return jsonMergePatch(context, resource, true);
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
@@ -551,31 +290,12 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource resource to patch
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R jsonMergePatch(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).patch(), filterEvent);
-  }
-
-  /**
-   * Applies a JSON Merge Patch to the resource status subresource and filters out the resulting
-   * event. This is a convenience method that calls {@link #jsonMergePatchStatus(Context,
-   * HasMetadata, boolean)} with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource resource to patch
-   * @return updated resource
-   * @param <R> resource type
-   * @see #jsonMergePatchStatus(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R jsonMergePatchStatus(
       Context<? extends HasMetadata> context, R resource) {
-    return jsonMergePatchStatus(context, resource, true);
+    return resourcePatch(context, resource, r -> context.getClient().resource(r).patch());
   }
 
   /**
@@ -584,31 +304,12 @@ public class ReconcileUtils {
    *
    * @param context of reconciler
    * @param resource resource to patch
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R jsonMergePatchStatus(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).patchStatus(), filterEvent);
-  }
-
-  /**
-   * Applies a JSON Merge Patch to the primary resource and filters out the resulting event. This is
-   * a convenience method that calls {@link #jsonMergePatchPrimary(Context, HasMetadata, boolean)}
-   * with filterEvent set to true.
-   *
-   * @param context of reconciler
-   * @param resource primary resource to patch
-   * @return updated resource
-   * @param <R> resource type
-   * @see #jsonMergePatchPrimary(Context, HasMetadata, boolean)
-   */
-  public static <R extends HasMetadata> R jsonMergePatchPrimary(
       Context<? extends HasMetadata> context, R resource) {
-    return jsonMergePatchPrimary(context, resource, true);
+    return resourcePatch(context, resource, r -> context.getClient().resource(r).patchStatus());
   }
 
   /**
@@ -616,72 +317,48 @@ public class ReconcileUtils {
    * event source.
    *
    * @param context of reconciler
-   * @param resource primary resource to patch
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
+   * @param resource primary resource to patch reconciliation
    * @return updated resource
    * @param <R> resource type
    */
   public static <R extends HasMetadata> R jsonMergePatchPrimary(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
+      Context<? extends HasMetadata> context, R resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).patch(),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
    * Applies a JSON Merge Patch to the primary resource status subresource and filters out the
    * resulting event. This is a convenience method that calls {@link
-   * #jsonMergePatchPrimaryStatus(Context, HasMetadata, boolean)} with filterEvent set to true.
+   * #jsonMergePatchPrimaryStatus(Context, HasMetadata)} with filterEvent set to true.
    *
    * @param context of reconciler
    * @param resource primary resource to patch
    * @return updated resource
    * @param <R> resource type
-   * @see #jsonMergePatchPrimaryStatus(Context, HasMetadata, boolean)
+   * @see #jsonMergePatchPrimaryStatus(Context, HasMetadata)
    */
   public static <R extends HasMetadata> R jsonMergePatchPrimaryStatus(
       Context<? extends HasMetadata> context, R resource) {
-    return jsonMergePatchPrimaryStatus(context, resource, true);
-  }
-
-  /**
-   * Applies a JSON Merge Patch to the primary resource status subresource. Caches the response
-   * using the controller's event source.
-   *
-   * @param context of reconciler
-   * @param resource primary resource to patch
-   * @param filterEvent if true the event from this update will be filtered out so won't trigger the
-   *     reconciliation
-   * @return updated resource
-   * @param <R> resource type
-   */
-  public static <R extends HasMetadata> R jsonMergePatchPrimaryStatus(
-      Context<? extends HasMetadata> context, R resource, boolean filterEvent) {
-    return resourcePatch(
-        resource,
-        r -> context.getClient().resource(r).patch(),
-        context.eventSourceRetriever().getControllerEventSource(),
-        filterEvent);
+    return jsonMergePatchPrimaryStatus(context, resource);
   }
 
   /**
    * Internal utility method to patch a resource and cache the result. Automatically discovers the
    * event source for the resource type and delegates to {@link #resourcePatch(HasMetadata,
-   * UnaryOperator, ManagedInformerEventSource, boolean)}.
+   * UnaryOperator, ManagedInformerEventSource)}.
    *
    * @param context of reconciler
    * @param resource resource to patch
    * @param updateOperation operation to perform (update, patch, edit, etc.)
-   * @param filterEvent if true the event from this update will be filtered out
    * @return updated resource
    * @param <R> resource type
    * @throws IllegalStateException if no event source or multiple event sources are found
    */
   public static <R extends HasMetadata> R resourcePatch(
-      Context<?> context, R resource, UnaryOperator<R> updateOperation, boolean filterEvent) {
+      Context<?> context, R resource, UnaryOperator<R> updateOperation) {
 
     var esList = context.eventSourceRetriever().getEventSourcesFor(resource.getClass());
     if (esList.isEmpty()) {
@@ -695,7 +372,7 @@ public class ReconcileUtils {
     }
     var es = esList.get(0);
     if (es instanceof ManagedInformerEventSource mes) {
-      return resourcePatch(resource, updateOperation, mes, filterEvent);
+      return resourcePatch(resource, updateOperation, mes);
     } else {
       throw new IllegalStateException(
           "Target event source must be a subclass off "
@@ -711,19 +388,13 @@ public class ReconcileUtils {
    * @param resource resource to patch
    * @param updateOperation operation to perform (update, patch, edit, etc.)
    * @param ies the managed informer event source to use for caching
-   * @param filterEvent if true the event from this update will be filtered out
    * @return updated resource
    * @param <R> resource type
    */
   @SuppressWarnings("unchecked")
   public static <R extends HasMetadata> R resourcePatch(
-      R resource,
-      UnaryOperator<R> updateOperation,
-      ManagedInformerEventSource ies,
-      boolean filterEvent) {
-    return filterEvent
-        ? (R) ies.eventFilteringUpdateAndCacheResource(resource, updateOperation)
-        : (R) ies.updateAndCacheResource(resource, updateOperation);
+      R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource ies) {
+    return (R) ies.eventFilteringUpdateAndCacheResource(resource, updateOperation);
   }
 
   /**
@@ -825,7 +496,7 @@ public class ReconcileUtils {
         if (!preCondition.test(resource)) {
           return resource;
         }
-        return jsonPatchPrimary(context, resource, resourceChangesOperator, false);
+        return jsonPatchPrimary(context, resource, resourceChangesOperator);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -906,7 +577,7 @@ public class ReconcileUtils {
       resource.setMetadata(objectMeta);
       resource.addFinalizer(finalizerName);
 
-      return serverSideApplyPrimary(context, resource, false);
+      return serverSideApplyPrimary(context, resource);
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException

@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class BaseControl<T extends BaseControl<T>> {
 
+  public static final Long INSTANT_RESCHEDULE = 0L;
+
   private Long scheduleDelay = null;
 
   public T rescheduleAfter(long delay) {
@@ -35,6 +37,11 @@ public abstract class BaseControl<T extends BaseControl<T>> {
 
   public T rescheduleAfter(long delay, TimeUnit timeUnit) {
     return rescheduleAfter(timeUnit.toMillis(delay));
+  }
+
+  public T reschedule() {
+    this.scheduleDelay = INSTANT_RESCHEDULE;
+    return (T) this;
   }
 
   public Optional<Long> getScheduleDelay() {

@@ -183,8 +183,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     if (updateControl.isPatchResource()) {
-      updatedCustomResource =
-          patchResource(context, toUpdate, originalResource, updateControl.isFilterPatchEvent());
+      updatedCustomResource = patchResource(context, toUpdate, originalResource);
       if (!useSSA) {
         toUpdate
             .getMetadata()
@@ -193,8 +192,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     }
 
     if (updateControl.isPatchStatus()) {
-      customResourceFacade.patchStatus(
-          context, toUpdate, originalResource, updateControl.isFilterPatchEvent());
+      customResourceFacade.patchStatus(context, toUpdate, originalResource);
     }
     return createPostExecutionControl(updatedCustomResource, updateControl, executionScope);
   }
@@ -232,10 +230,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       try {
         updatedResource =
             customResourceFacade.patchStatus(
-                context,
-                errorStatusUpdateControl.getResource().orElseThrow(),
-                originalResource,
-                errorStatusUpdateControl.isFilterPatchEvent());
+                context, errorStatusUpdateControl.getResource().orElseThrow(), originalResource);
       } catch (Exception ex) {
         int code = ex instanceof KubernetesClientException kcex ? kcex.getCode() : -1;
         Level exceptionLevel = Level.ERROR;
@@ -341,7 +336,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
     return postExecutionControl;
   }
 
-  private P patchResource(Context<P> context, P resource, P originalResource, boolean filterEvent) {
+  private P patchResource(Context<P> context, P resource, P originalResource) {
     if (log.isDebugEnabled()) {
       log.debug(
           "Updating resource: {} with version: {}; SSA: {}",
@@ -356,7 +351,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // addFinalizer already prevents adding an already present finalizer so no need to check
       resource.addFinalizer(finalizerName);
     }
-    return customResourceFacade.patchResource(context, resource, originalResource, filterEvent);
+    return customResourceFacade.patchResource(context, resource, originalResource);
   }
 
   ControllerConfiguration<P> configuration() {
@@ -383,8 +378,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       this.cloner = cloner;
     }
 
-    public R patchResource(
-        Context<R> context, R resource, R originalResource, boolean filterEvent) {
+    public R patchResource(Context<R> context, R resource, R originalResource) {
       if (log.isDebugEnabled()) {
         log.debug(
             "Trying to replace resource {}, version: {}",
@@ -392,29 +386,28 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             resource.getMetadata().getResourceVersion());
       }
       if (useSSA) {
-        return ReconcileUtils.serverSideApplyPrimary(context, resource, filterEvent);
+        return ReconcileUtils.serverSideApplyPrimary(context, resource);
       } else {
-        return ReconcileUtils.jsonPatchPrimary(
-            context, originalResource, r -> resource, filterEvent);
+        return ReconcileUtils.jsonPatchPrimary(context, originalResource, r -> resource);
       }
     }
 
-    public R patchStatus(Context<R> context, R resource, R originalResource, boolean filterEvent) {
+    public R patchStatus(Context<R> context, R resource, R originalResource) {
       log.trace("Patching status for resource: {} with ssa: {}", resource, useSSA);
       if (useSSA) {
         var managedFields = resource.getMetadata().getManagedFields();
         try {
           resource.getMetadata().setManagedFields(null);
-          return ReconcileUtils.serverSideApplyPrimaryStatus(context, resource, filterEvent);
+          return ReconcileUtils.serverSideApplyPrimaryStatus(context, resource);
         } finally {
           resource.getMetadata().setManagedFields(managedFields);
         }
       } else {
-        return editStatus(context, resource, originalResource, filterEvent);
+        return editStatus(context, resource, originalResource);
       }
     }
 
-    private R editStatus(Context<R> context, R resource, R originalResource, boolean filterEvent) {
+    private R editStatus(Context<R> context, R resource, R originalResource) {
       String resourceVersion = resource.getMetadata().getResourceVersion();
       // the cached resource should not be changed in any circumstances
       // that can lead to all kinds of race conditions.
@@ -428,8 +421,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             r -> {
               ReconcilerUtilsInternal.setStatus(r, ReconcilerUtilsInternal.getStatus(resource));
               return r;
-            },
-            filterEvent);
+            });
       } finally {
         // restore initial resource version
         clonedOriginal.getMetadata().setResourceVersion(resourceVersion);

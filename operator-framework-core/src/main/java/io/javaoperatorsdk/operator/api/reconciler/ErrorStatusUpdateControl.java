@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class ErrorStatusUpdateControl<P extends HasMetadata>
-    extends AbstractUpdateControl<ErrorStatusUpdateControl<P>> {
+    extends BaseControl<ErrorStatusUpdateControl<P>> {
 
   private final P resource;
   private boolean noRetry = false;
