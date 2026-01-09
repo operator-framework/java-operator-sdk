@@ -15,6 +15,8 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.function.UnaryOperator;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +35,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.TestUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -112,7 +116,7 @@ class ReconcileUtilsTest {
   }
 
   @Test
-  public void compareResourceVersionsWithStrings() {
+  void compareResourceVersionsWithStrings() {
     // Test equal versions
     assertThat(ReconcileUtils.compareResourceVersions("1", "1")).isZero();
     assertThat(ReconcileUtils.compareResourceVersions("123", "123")).isZero();
@@ -353,6 +357,87 @@ class ReconcileUtilsTest {
     verify(controllerEventSource, times(2))
         .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
     verify(resourceOp, times(1)).get();
+  }
+
+  @Test
+  void resourcePatchWithSingleEventSource() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+
+    var updatedResource = TestUtils.testCustomResource1();
+    updatedResource.getMetadata().setResourceVersion("2");
+
+    var eventSourceRetriever = mock(EventSourceRetriever.class);
+    var managedEventSource = mock(ManagedInformerEventSource.class);
+
+    when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
+    when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
+        .thenReturn(List.of(managedEventSource));
+    when(managedEventSource.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
+        .thenReturn(updatedResource);
+
+    var result = ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity());
+
+    assertThat(result).isNotNull();
+    assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
+    verify(managedEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+  }
+
+  @Test
+  void resourcePatchThrowsWhenNoEventSourceFound() {
+    var resource = TestUtils.testCustomResource1();
+    var eventSourceRetriever = mock(EventSourceRetriever.class);
+
+    when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
+    when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
+        .thenReturn(Collections.emptyList());
+
+    var exception =
+        assertThrows(
+            IllegalStateException.class,
+            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+
+    assertThat(exception.getMessage()).contains("No event source found for type");
+  }
+
+  @Test
+  void resourcePatchThrowsWhenMultipleEventSourcesFound() {
+    var resource = TestUtils.testCustomResource1();
+    var eventSourceRetriever = mock(EventSourceRetriever.class);
+    var eventSource1 = mock(ManagedInformerEventSource.class);
+    var eventSource2 = mock(ManagedInformerEventSource.class);
+
+    when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
+    when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
+        .thenReturn(List.of(eventSource1, eventSource2));
+
+    var exception =
+        assertThrows(
+            IllegalStateException.class,
+            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+
+    assertThat(exception.getMessage()).contains("Multiple event sources found for");
+    assertThat(exception.getMessage()).contains("please provide the target event source");
+  }
+
+  @Test
+  void resourcePatchThrowsWhenEventSourceIsNotManagedInformer() {
+    var resource = TestUtils.testCustomResource1();
+    var eventSourceRetriever = mock(EventSourceRetriever.class);
+    var nonManagedEventSource = mock(EventSource.class);
+
+    when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
+    when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
+        .thenReturn(List.of(nonManagedEventSource));
+
+    var exception =
+        assertThrows(
+            IllegalStateException.class,
+            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+
+    assertThat(exception.getMessage()).contains("Target event source must be a subclass off");
+    assertThat(exception.getMessage()).contains("ManagedInformerEventSource");
   }
 
   // naive performance test that compares the work case scenario for the parsing and non-parsing
