@@ -42,9 +42,9 @@ public class FilterPatchEventTestReconciler
     resource.setStatus(new FilterPatchEventTestCustomResourceStatus());
     resource.getStatus().setValue(UPDATED);
 
-    var uc =  UpdateControl.patchStatus(resource);
+    var uc = UpdateControl.patchStatus(resource);
     if (!filterPatchEvent.get()) {
-       uc = uc.reschedule();
+      uc = uc.reschedule();
     }
     return uc;
   }

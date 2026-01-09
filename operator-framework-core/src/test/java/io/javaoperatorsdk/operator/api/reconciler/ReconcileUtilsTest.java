@@ -15,6 +15,9 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.function.UnaryOperator;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -23,13 +26,55 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.processing.event.EventSourceRetriever;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
+import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class ReconcileUtilsTest {
 
   private static final Logger log = LoggerFactory.getLogger(ReconcileUtilsTest.class);
+  private static final String FINALIZER_NAME = "test.javaoperatorsdk.io/finalizer";
+
+  private Context<TestCustomResource> context;
+  private KubernetesClient client;
+  private MixedOperation mixedOperation;
+  private Resource resourceOp;
+  private ControllerEventSource<TestCustomResource> controllerEventSource;
+  private ControllerConfiguration<TestCustomResource> controllerConfiguration;
+
+  @BeforeEach
+  @SuppressWarnings("unchecked")
+  void setupMocks() {
+    context = mock(Context.class);
+    client = mock(KubernetesClient.class);
+    mixedOperation = mock(MixedOperation.class);
+    resourceOp = mock(Resource.class);
+    controllerEventSource = mock(ControllerEventSource.class);
+    controllerConfiguration = mock(ControllerConfiguration.class);
+
+    var eventSourceRetriever = mock(EventSourceRetriever.class);
+
+    when(context.getClient()).thenReturn(client);
+    when(context.eventSourceRetriever()).thenReturn(eventSourceRetriever);
+    when(context.getControllerConfiguration()).thenReturn(controllerConfiguration);
+    when(controllerConfiguration.getFinalizerName()).thenReturn(FINALIZER_NAME);
+    when(eventSourceRetriever.getControllerEventSource()).thenReturn(controllerEventSource);
+
+    when(client.resources(TestCustomResource.class)).thenReturn(mixedOperation);
+    when(mixedOperation.inNamespace(any())).thenReturn(mixedOperation);
+    when(mixedOperation.withName(any())).thenReturn(resourceOp);
+  }
 
   @Test
   void validateAndCompareResourceVersionsTest() {
@@ -162,17 +207,94 @@ class ReconcileUtilsTest {
 
   @Test
   void retriesAddingFinalizerWithoutSSA() {
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
 
-    // todo
+    when(context.getPrimaryResource()).thenReturn(resource);
+
+    // First call throws conflict, second succeeds
+    when(controllerEventSource.eventFilteringUpdateAndCacheResource(
+            any(), any(UnaryOperator.class)))
+        .thenThrow(new KubernetesClientException("Conflict", 409, null))
+        .thenAnswer(
+            invocation -> {
+              var res = TestUtils.testCustomResource1();
+              res.getMetadata().setResourceVersion("2");
+              res.addFinalizer(FINALIZER_NAME);
+              return res;
+            });
+
+    // Return fresh resource on retry
+    when(resourceOp.get()).thenReturn(resource);
+
+    var result = ReconcileUtils.addFinalizer(context, FINALIZER_NAME);
+
+    assertThat(result).isNotNull();
+    assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
+    verify(controllerEventSource, times(2))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(resourceOp, times(1)).get();
   }
 
+  // todo double check
   @Test
   void nullResourceIsGracefullyHandledOnFinalizerRemovalRetry() {
-    // todo
+    var resource = TestUtils.testCustomResource1();
+    resource.getMetadata().setResourceVersion("1");
+    resource.addFinalizer(FINALIZER_NAME);
+
+    when(context.getPrimaryResource()).thenReturn(resource);
+
+    // First call throws conflict
+    when(controllerEventSource.eventFilteringUpdateAndCacheResource(
+            any(), any(UnaryOperator.class)))
+        .thenThrow(new KubernetesClientException("Conflict", 409, null));
+
+    // Return null on retry (resource was deleted)
+    when(resourceOp.get()).thenReturn(null);
+
+    // Should throw NullPointerException when resource is null after retry
+    assertThrows(
+        NullPointerException.class, () -> ReconcileUtils.removeFinalizer(context, FINALIZER_NAME));
+
+    verify(controllerEventSource, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(resourceOp, times(1)).get();
   }
 
   @Test
   void retriesFinalizerRemovalWithFreshResource() {
-    // todo
+    var originalResource = TestUtils.testCustomResource1();
+    originalResource.getMetadata().setResourceVersion("1");
+    originalResource.addFinalizer(FINALIZER_NAME);
+
+    when(context.getPrimaryResource()).thenReturn(originalResource);
+
+    // First call throws unprocessable (422), second succeeds
+    when(controllerEventSource.eventFilteringUpdateAndCacheResource(
+            any(), any(UnaryOperator.class)))
+        .thenThrow(new KubernetesClientException("Unprocessable", 422, null))
+        .thenAnswer(
+            invocation -> {
+              var res = TestUtils.testCustomResource1();
+              res.getMetadata().setResourceVersion("3");
+              // finalizer should be removed
+              return res;
+            });
+
+    // Return fresh resource with newer version on retry
+    var freshResource = TestUtils.testCustomResource1();
+    freshResource.getMetadata().setResourceVersion("2");
+    freshResource.addFinalizer(FINALIZER_NAME);
+    when(resourceOp.get()).thenReturn(freshResource);
+
+    var result = ReconcileUtils.removeFinalizer(context, FINALIZER_NAME);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getMetadata().getResourceVersion()).isEqualTo("3");
+    assertThat(result.hasFinalizer(FINALIZER_NAME)).isFalse();
+    verify(controllerEventSource, times(2))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
+    verify(resourceOp, times(1)).get();
   }
 }
