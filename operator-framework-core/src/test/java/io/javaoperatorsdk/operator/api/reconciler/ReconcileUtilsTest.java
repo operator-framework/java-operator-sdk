@@ -183,28 +183,6 @@ class ReconcileUtilsTest {
         .build();
   }
 
-  // naive performance test that compares the work case scenario for the parsing and non-parsing
-  // variants
-  @Test
-  @Disabled
-  public void compareResourcePerformanceTest() {
-    var execNum = 30000000;
-    var startTime = System.currentTimeMillis();
-    for (int i = 0; i < execNum; i++) {
-      var res = ReconcileUtils.compareResourceVersions("123456788" + i, "123456789" + i);
-    }
-    var dur1 = System.currentTimeMillis() - startTime;
-    log.info("Duration without parsing: {}", dur1);
-    startTime = System.currentTimeMillis();
-    for (int i = 0; i < execNum; i++) {
-      var res = Long.parseLong("123456788" + i) > Long.parseLong("123456789" + i);
-    }
-    var dur2 = System.currentTimeMillis() - startTime;
-    log.info("Duration with parsing:   {}", dur2);
-
-    assertThat(dur1).isLessThan(dur2);
-  }
-
   @Test
   void retriesAddingFinalizerWithoutSSA() {
     var resource = TestUtils.testCustomResource1();
@@ -236,7 +214,6 @@ class ReconcileUtilsTest {
     verify(resourceOp, times(1)).get();
   }
 
-  // todo double check
   @Test
   void nullResourceIsGracefullyHandledOnFinalizerRemovalRetry() {
     var resource = TestUtils.testCustomResource1();
@@ -253,9 +230,7 @@ class ReconcileUtilsTest {
     // Return null on retry (resource was deleted)
     when(resourceOp.get()).thenReturn(null);
 
-    // Should throw NullPointerException when resource is null after retry
-    assertThrows(
-        NullPointerException.class, () -> ReconcileUtils.removeFinalizer(context, FINALIZER_NAME));
+    ReconcileUtils.removeFinalizer(context, FINALIZER_NAME);
 
     verify(controllerEventSource, times(1))
         .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
@@ -296,5 +271,27 @@ class ReconcileUtilsTest {
     verify(controllerEventSource, times(2))
         .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
     verify(resourceOp, times(1)).get();
+  }
+
+  // naive performance test that compares the work case scenario for the parsing and non-parsing
+  // variants
+  @Test
+  @Disabled
+  public void compareResourcePerformanceTest() {
+    var execNum = 30000000;
+    var startTime = System.currentTimeMillis();
+    for (int i = 0; i < execNum; i++) {
+      var res = ReconcileUtils.compareResourceVersions("123456788" + i, "123456789" + i);
+    }
+    var dur1 = System.currentTimeMillis() - startTime;
+    log.info("Duration without parsing: {}", dur1);
+    startTime = System.currentTimeMillis();
+    for (int i = 0; i < execNum; i++) {
+      var res = Long.parseLong("123456788" + i) > Long.parseLong("123456789" + i);
+    }
+    var dur2 = System.currentTimeMillis() - startTime;
+    log.info("Duration with parsing:   {}", dur2);
+
+    assertThat(dur1).isLessThan(dur2);
   }
 }

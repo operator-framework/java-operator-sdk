@@ -467,7 +467,7 @@ public class ReconcileUtils {
           r.removeFinalizer(finalizerName);
           return r;
         },
-        r -> r.hasFinalizer(finalizerName));
+        r -> r != null && r.hasFinalizer(finalizerName));
   }
 
   /**
