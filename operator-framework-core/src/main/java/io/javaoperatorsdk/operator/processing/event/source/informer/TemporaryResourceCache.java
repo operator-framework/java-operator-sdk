@@ -61,6 +61,12 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
 
+  public enum EventHandling {
+    DEFER,
+    OBSOLETE,
+    NEW
+  }
+
   public TemporaryResourceCache(boolean comparableResourceVersions) {
     this.comparableResourceVersions = comparableResourceVersions;
   }
@@ -79,16 +85,9 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return Optional.empty();
     }
     var ed = activeUpdates.get(resourceID);
-    ed.decreaseActiveUpdates();
-    if (updatedResourceVersion != null) {
-      ed.setLastUpdatedResourceVersion(updatedResourceVersion);
-    }
-    if (ed.getActiveUpdates() == 0) {
-      var latestEventAfterUpdate = ed.getLatestEventAfterLastUpdateEvent();
-      if (latestEventAfterUpdate.isPresent()) {
-        activeUpdates.remove(resourceID);
-      }
-      return latestEventAfterUpdate;
+    if (ed.decreaseActiveUpdates()) {
+      activeUpdates.remove(resourceID);
+      return ed.getLatestEventAfterLastUpdateEvent(updatedResourceVersion);
     } else {
       return Optional.empty();
     }
@@ -101,13 +100,13 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   /**
    * @return true if the resourceVersion was obsolete
    */
-  public boolean onAddOrUpdateEvent(T resource) {
+  public EventHandling onAddOrUpdateEvent(T resource) {
     return onEvent(resource, false, false);
   }
 
-  private synchronized boolean onEvent(T resource, boolean unknownState, boolean delete) {
+  private synchronized EventHandling onEvent(T resource, boolean unknownState, boolean delete) {
     if (!comparableResourceVersions) {
-      return false;
+      return EventHandling.NEW;
     }
 
     var resourceId = ResourceID.fromResource(resource);
@@ -121,7 +120,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       latestResourceVersion = resource.getMetadata().getResourceVersion();
     }
     var cached = cache.get(resourceId);
-    boolean obsoleteEvent = false;
+    EventHandling result = EventHandling.NEW;
     int comp = 0;
     if (cached != null) {
       comp = ReconcileUtils.validateAndCompareResourceVersions(resource, cached);
@@ -130,26 +129,21 @@ public class TemporaryResourceCache<T extends HasMetadata> {
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
         // additional event
-        obsoleteEvent = false;
+        result = comp == 0 ? EventHandling.OBSOLETE : EventHandling.NEW;
       } else {
-        obsoleteEvent = true;
+        result = EventHandling.OBSOLETE;
       }
     }
     var ed = activeUpdates.get(resourceId);
-    if (ed != null) {
+    if (ed != null && result != EventHandling.OBSOLETE) {
       ed.setLastEvent(
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
               : new ResourceEvent(
                   ResourceAction.UPDATED, resourceId, resource)); // todo true action
-      if (ed.isFilteringDone() && ed.getLatestEventAfterLastUpdateEvent().isPresent()) {
-        activeUpdates.remove(resourceId);
-        return false;
-      } else {
-        return true;
-      }
+      return EventHandling.DEFER;
     } else {
-      return obsoleteEvent;
+      return result;
     }
   }
 

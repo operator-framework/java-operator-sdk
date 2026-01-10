@@ -33,6 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 
@@ -159,10 +160,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     var resourceID = ResourceID.fromResource(newObject);
 
-    if (temporaryResourceCache.onAddOrUpdateEvent(newObject)) {
+    var eventHandling = temporaryResourceCache.onAddOrUpdateEvent(newObject);
+
+    if (eventHandling != EventHandling.NEW) {
       log.debug(
-          "Skipping event propagation for {}, since was a result of a reconcile action. Resource"
-              + " ID: {}",
+          "{} event propagation for {}. Resource ID: {}",
+          eventHandling == EventHandling.DEFER ? "Deferring" : "Skipping",
           operation,
           ResourceID.fromResource(newObject));
     } else if (eventAcceptedByFilter(operation, newObject, oldObject)) {
