@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -133,7 +134,7 @@ class TemporaryPrimaryResourceCacheTest {
       temporaryResourceCache.putResource(testResource);
       assertThat(result.isDone()).isFalse();
       temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "3");
-      assertThat(result.get(10, TimeUnit.SECONDS)).isTrue();
+      assertThat(result.get(10, TimeUnit.SECONDS)).isEqualTo(EventHandling.NEW);
     } finally {
       ex.shutdownNow();
     }
@@ -145,15 +146,15 @@ class TemporaryPrimaryResourceCacheTest {
 
     // first ensure an event is not known
     var result = temporaryResourceCache.onAddOrUpdateEvent(testResource);
-    assertThat(result).isFalse();
+    assertThat(result).isEqualTo(EventHandling.NEW);
 
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("3");
     temporaryResourceCache.putResource(nextResource);
 
-    // the result is false since the put was not part of event filtering update
+    // the result is obsolete
     result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
-    assertThat(result).isFalse();
+    assertThat(result).isEqualTo(EventHandling.OBSOLETE);
   }
 
   @Test
@@ -162,7 +163,7 @@ class TemporaryPrimaryResourceCacheTest {
 
     // first ensure an event is not known
     var result = temporaryResourceCache.onAddOrUpdateEvent(testResource);
-    assertThat(result).isFalse();
+    assertThat(result).isEqualTo(EventHandling.NEW);
 
     var nextResource = testResource();
     nextResource.getMetadata().setResourceVersion("3");
@@ -172,9 +173,29 @@ class TemporaryPrimaryResourceCacheTest {
     temporaryResourceCache.putResource(nextResource);
     temporaryResourceCache.doneEventFilterModify(resourceId, "3");
 
-    // the result is false since the put was not part of event filtering update
+    // the result is obsolete
     result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
-    assertThat(result).isTrue();
+    assertThat(result).isEqualTo(EventHandling.OBSOLETE);
+  }
+
+  @Test
+  void putAfterEventWithEventFiltering() {
+    var testResource = testResource();
+
+    // first ensure an event is not known
+    var result = temporaryResourceCache.onAddOrUpdateEvent(testResource);
+    assertThat(result).isEqualTo(EventHandling.NEW);
+
+    var nextResource = testResource();
+    nextResource.getMetadata().setResourceVersion("3");
+    var resourceId = ResourceID.fromResource(testResource);
+
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+    result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
+    // the result is deferred
+    assertThat(result).isEqualTo(EventHandling.DEFER);
+    temporaryResourceCache.putResource(nextResource);
+    temporaryResourceCache.doneEventFilterModify(resourceId, "3");
   }
 
   @Test
