@@ -31,6 +31,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TemporaryPrimaryResourceCacheTest {
 
@@ -179,7 +180,7 @@ class TemporaryPrimaryResourceCacheTest {
   }
 
   @Test
-  void putAfterEventWithEventFiltering() {
+  void putAfterEventWithEventFilteringNoPost() {
     var testResource = testResource();
 
     // first ensure an event is not known
@@ -195,7 +196,29 @@ class TemporaryPrimaryResourceCacheTest {
     // the result is deferred
     assertThat(result).isEqualTo(EventHandling.DEFER);
     temporaryResourceCache.putResource(nextResource);
-    temporaryResourceCache.doneEventFilterModify(resourceId, "3");
+    var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId, "3");
+
+    // there is no post event because the done call claimed responsibility for rv 3
+    assertTrue(postEvent.isEmpty());
+  }
+
+  @Test
+  void putAfterEventWithEventFilteringWithPost() {
+    var testResource = testResource();
+    var resourceId = ResourceID.fromResource(testResource);
+    temporaryResourceCache.startEventFilteringModify(resourceId);
+
+    // this should be a corner case - watch had a hard reset since the start of the
+    // of the update operation, such that 4 rv event is seen prior to the update
+    // completing with the 3 rv.
+    var nextResource = testResource();
+    nextResource.getMetadata().setResourceVersion("4");
+    var result = temporaryResourceCache.onAddOrUpdateEvent(nextResource);
+    assertThat(result).isEqualTo(EventHandling.DEFER);
+
+    var postEvent = temporaryResourceCache.doneEventFilterModify(resourceId, "3");
+
+    assertTrue(postEvent.isPresent());
   }
 
   @Test
