@@ -18,7 +18,7 @@ This section contains detailed documentation for all Java Operator SDK features 
 ## Advanced Features
 
 - **[Eventing](eventing/)** - Understanding the event-driven model
-- **[Accessing Resources in Caches](working-with-es-caches/) - How to access resources in caches
+- **[Accessing Resources in Caches](working-with-es-caches/)** - How to access resources in caches
 - **[Observability](observability/)** - Monitoring and debugging your operators
 - **[Other Features](features/)** - Additional capabilities and integrations
 
