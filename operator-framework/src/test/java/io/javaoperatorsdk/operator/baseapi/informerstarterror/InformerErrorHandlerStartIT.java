@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi;
+package io.javaoperatorsdk.operator.baseapi.informerstarterror;
 
 import java.time.Duration;
 

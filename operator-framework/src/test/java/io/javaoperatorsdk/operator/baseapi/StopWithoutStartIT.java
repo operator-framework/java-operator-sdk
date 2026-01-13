@@ -19,22 +19,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@Sample(
-    tldr = "Stop Operator Without Starting",
-    description =
-        """
-        Demonstrates that an operator can be stopped without being started. This is important \
-        for cleanup scenarios where an operator is created and registered with reconcilers but \
-        never started due to initialization failures or other conditions. The stop() method \
-        properly cleans up thread pools even when the operator was never started.
-        """)
 class StopWithoutStartIT {
 
   @Test
