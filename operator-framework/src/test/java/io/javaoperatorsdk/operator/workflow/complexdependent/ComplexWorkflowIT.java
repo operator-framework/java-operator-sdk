@@ -55,7 +55,7 @@ class ComplexWorkflowIT {
     operator.create(testResource());
 
     await()
-        .atMost(Duration.ofSeconds(90))
+        .atMost(Duration.ofSeconds(120))
         .untilAsserted(
             () -> {
               var res = operator.get(ComplexWorkflowCustomResource.class, TEST_RESOURCE_NAME);

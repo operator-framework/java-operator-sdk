@@ -15,7 +15,11 @@
  */
 package io.javaoperatorsdk.operator;
 
+import java.time.Duration;
+
 public class IntegrationTestConstants {
 
   public static final int GARBAGE_COLLECTION_TIMEOUT_SECONDS = 60;
+
+  public static final Duration GARBAGE_COLLECTION_TIMEOUT = Duration.ofSeconds(60);
 }
