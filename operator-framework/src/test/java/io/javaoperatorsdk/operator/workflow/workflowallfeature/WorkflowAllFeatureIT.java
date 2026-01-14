@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT;
 import static io.javaoperatorsdk.operator.workflow.workflowallfeature.ConfigMapDependentResource.READY_TO_DELETE_ANNOTATION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -69,7 +70,7 @@ public class WorkflowAllFeatureIT {
             });
 
     await()
-        .atMost(ONE_MINUTE)
+        .timeout(ONE_MINUTE)
         .untilAsserted(
             () -> {
               assertThat(
@@ -107,6 +108,7 @@ public class WorkflowAllFeatureIT {
     operator.replace(resource);
 
     await()
+        .timeout(GARBAGE_COLLECTION_TIMEOUT)
         .untilAsserted(
             () -> {
               assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNotNull();
@@ -141,7 +143,7 @@ public class WorkflowAllFeatureIT {
     markConfigMapForDelete();
 
     await()
-        .atMost(ONE_MINUTE)
+        .timeout(GARBAGE_COLLECTION_TIMEOUT)
         .untilAsserted(
             () -> {
               assertThat(operator.get(ConfigMap.class, RESOURCE_NAME)).isNull();

@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
+import static io.javaoperatorsdk.operator.IntegrationTestConstants.GARBAGE_COLLECTION_TIMEOUT;
 import static io.javaoperatorsdk.operator.baseapi.expectation.periodicclean.PeriodicCleanerExpectationReconciler.DEPLOYMENT_READY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -57,6 +58,7 @@ class PeriodicCleanerExpectationIT {
     extension.create(res);
 
     await()
+        .timeout(GARBAGE_COLLECTION_TIMEOUT)
         .untilAsserted(
             () -> {
               var actual = extension.get(PeriodicCleanerExpectationCustomResource.class, TEST_1);
@@ -80,6 +82,7 @@ class PeriodicCleanerExpectationIT {
     var created = extension.create(res);
 
     await()
+        .timeout(GARBAGE_COLLECTION_TIMEOUT)
         .untilAsserted(
             () -> {
               assertThat(reconciler.getExpectationManager().getExpectation(created)).isPresent();

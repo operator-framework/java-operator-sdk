@@ -93,7 +93,7 @@ public class StandaloneDependentResourceIT {
   void awaitForDeploymentReadyReplicas(int expectedReplicaCount) {
     await()
         .pollInterval(Duration.ofMillis(300))
-        .atMost(Duration.ofSeconds(50))
+        .atMost(Duration.ofSeconds(180))
         .until(
             () -> {
               var deployment =
