@@ -19,7 +19,7 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.workflow.complexdependent.ComplexWorkflowCustomResource;
 
@@ -32,7 +32,7 @@ public abstract class BaseStatefulSet extends BaseDependentResource<StatefulSet>
   protected StatefulSet desired(
       ComplexWorkflowCustomResource primary, Context<ComplexWorkflowCustomResource> context) {
     var template =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             StatefulSet.class,
             getClass(),
             "/io/javaoperatorsdk/operator/workflow/complexdependent/statefulset.yaml");

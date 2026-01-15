@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 import io.javaoperatorsdk.operator.sample.customresource.WebPageStatus;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.loadYaml;
 
 public class Utils {
 

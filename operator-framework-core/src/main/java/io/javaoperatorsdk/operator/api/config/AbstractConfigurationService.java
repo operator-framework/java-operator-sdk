@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 /**
@@ -145,7 +145,7 @@ public class AbstractConfigurationService implements ConfigurationService {
   }
 
   protected <R extends HasMetadata> String keyFor(Reconciler<R> reconciler) {
-    return ReconcilerUtils.getNameFor(reconciler);
+    return ReconcilerUtilsInternal.getNameFor(reconciler);
   }
 
   @SuppressWarnings("unused")

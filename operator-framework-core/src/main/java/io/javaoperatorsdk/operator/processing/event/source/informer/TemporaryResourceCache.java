@@ -15,18 +15,21 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 /**
  * Temporal cache is used to solve the problem for {@link KubernetesDependentResource} that is, when
@@ -54,83 +57,93 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
   private final Map<ResourceID, T> cache = new ConcurrentHashMap<>();
   private final boolean comparableResourceVersions;
-  private final Map<ResourceID, ReentrantLock> activelyModifying = new ConcurrentHashMap<>();
   private String latestResourceVersion;
+
+  private final Map<ResourceID, EventFilterDetails> activeUpdates = new HashMap<>();
+
+  public enum EventHandling {
+    DEFER,
+    OBSOLETE,
+    NEW
+  }
 
   public TemporaryResourceCache(boolean comparableResourceVersions) {
     this.comparableResourceVersions = comparableResourceVersions;
   }
 
-  public void startModifying(ResourceID id) {
+  public synchronized void startEventFilteringModify(ResourceID resourceID) {
     if (!comparableResourceVersions) {
       return;
     }
-    activelyModifying
-        .compute(
-            id,
-            (ignored, lock) -> {
-              if (lock != null) {
-                throw new IllegalStateException(); // concurrent modifications to the same resource
-                // not allowed - this could be relaxed if needed
-              }
-              return new ReentrantLock();
-            })
-        .lock();
+    var ed = activeUpdates.computeIfAbsent(resourceID, id -> new EventFilterDetails());
+    ed.increaseActiveUpdates();
   }
 
-  public void doneModifying(ResourceID id) {
+  public synchronized Optional<ResourceEvent> doneEventFilterModify(
+      ResourceID resourceID, String updatedResourceVersion) {
     if (!comparableResourceVersions) {
-      return;
+      return Optional.empty();
     }
-    activelyModifying.computeIfPresent(
-        id,
-        (ignored, lock) -> {
-          lock.unlock();
-          return null;
-        });
+    var ed = activeUpdates.get(resourceID);
+    if (ed.decreaseActiveUpdates()) {
+      activeUpdates.remove(resourceID);
+      return ed.getLatestEventAfterLastUpdateEvent(updatedResourceVersion);
+    } else {
+      return Optional.empty();
+    }
   }
 
   public void onDeleteEvent(T resource, boolean unknownState) {
-    onEvent(resource, unknownState);
+    onEvent(resource, unknownState, true);
   }
 
   /**
-   * @return true if the resourceVersion was already known
+   * @return true if the resourceVersion was obsolete
    */
-  public boolean onAddOrUpdateEvent(T resource) {
-    return onEvent(resource, false);
+  public EventHandling onAddOrUpdateEvent(T resource) {
+    return onEvent(resource, false, false);
   }
 
-  private boolean onEvent(T resource, boolean unknownState) {
-    ReentrantLock lock = activelyModifying.get(ResourceID.fromResource(resource));
-    if (lock != null) {
-      lock.lock(); // wait for the modification to finish
-      lock.unlock(); // simply unlock as the event is guaranteed after the modification
+  private synchronized EventHandling onEvent(T resource, boolean unknownState, boolean delete) {
+    if (!comparableResourceVersions) {
+      return EventHandling.NEW;
     }
-    boolean[] known = new boolean[1];
-    synchronized (this) {
-      if (!unknownState) {
-        latestResourceVersion = resource.getMetadata().getResourceVersion();
+
+    var resourceId = ResourceID.fromResource(resource);
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Processing event for resource id: {} version: {} ",
+          resourceId,
+          resource.getMetadata().getResourceVersion());
+    }
+    if (!unknownState) {
+      latestResourceVersion = resource.getMetadata().getResourceVersion();
+    }
+    var cached = cache.get(resourceId);
+    EventHandling result = EventHandling.NEW;
+    int comp = 0;
+    if (cached != null) {
+      comp = ReconcileUtils.compareResourceVersions(resource, cached);
+      if (comp >= 0 || unknownState) {
+        cache.remove(resourceId);
+        // we propagate event only for our update or newer other can be discarded since we know we
+        // will receive
+        // additional event
+        result = comp == 0 ? EventHandling.OBSOLETE : EventHandling.NEW;
+      } else {
+        result = EventHandling.OBSOLETE;
       }
-      cache.computeIfPresent(
-          ResourceID.fromResource(resource),
-          (id, cached) -> {
-            boolean remove = unknownState;
-            if (!unknownState) {
-              int comp = PrimaryUpdateAndCacheUtils.compareResourceVersions(resource, cached);
-              if (comp >= 0) {
-                remove = true;
-              }
-              if (comp <= 0) {
-                known[0] = true;
-              }
-            }
-            if (remove) {
-              return null;
-            }
-            return cached;
-          });
-      return known[0];
+    }
+    var ed = activeUpdates.get(resourceId);
+    if (ed != null && result != EventHandling.OBSOLETE) {
+      ed.setLastEvent(
+          delete
+              ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
+              : new ResourceEvent(
+                  ResourceAction.UPDATED, resourceId, resource)); // todo true action
+      return EventHandling.DEFER;
+    } else {
+      return result;
     }
   }
 
@@ -157,7 +170,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
     if (latestResourceVersion != null
-        && PrimaryUpdateAndCacheUtils.compareResourceVersions(
+        && ReconcileUtils.compareResourceVersions(
                 latestResourceVersion, newResource.getMetadata().getResourceVersion())
             > 0) {
       log.debug(
@@ -172,7 +185,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
 
     if (cachedResource == null
-        || PrimaryUpdateAndCacheUtils.compareResourceVersions(newResource, cachedResource) > 0) {
+        || ReconcileUtils.compareResourceVersions(newResource, cachedResource) > 0) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
