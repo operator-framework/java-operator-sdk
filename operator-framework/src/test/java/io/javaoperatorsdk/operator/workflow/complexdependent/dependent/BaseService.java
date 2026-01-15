@@ -19,7 +19,7 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.workflow.complexdependent.ComplexWorkflowCustomResource;
 
@@ -33,7 +33,7 @@ public abstract class BaseService extends BaseDependentResource<Service> {
   protected Service desired(
       ComplexWorkflowCustomResource primary, Context<ComplexWorkflowCustomResource> context) {
     var template =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             Service.class,
             getClass(),
             "/io/javaoperatorsdk/operator/workflow/complexdependent/service.yaml");

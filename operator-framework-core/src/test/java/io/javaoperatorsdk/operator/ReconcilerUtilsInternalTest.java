@@ -32,17 +32,17 @@ import io.fabric8.kubernetes.model.annotation.Version;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomReconciler;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultFinalizerName;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultNameFor;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.getDefaultReconcilerName;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
-import static io.javaoperatorsdk.operator.ReconcilerUtils.isFinalizerValid;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getDefaultFinalizerName;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getDefaultNameFor;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.getDefaultReconcilerName;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.isFinalizerValid;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class ReconcilerUtilsTest {
+class ReconcilerUtilsInternalTest {
 
   public static final String RESOURCE_URI =
       "https://kubernetes.docker.internal:6443/apis/tomcatoperator.io/v1/tomcats";
@@ -71,7 +71,7 @@ class ReconcilerUtilsTest {
     var d1 = createTestDeployment();
     var d2 = createTestDeployment();
 
-    assertThat(ReconcilerUtils.specsEqual(d1, d2)).isTrue();
+    assertThat(ReconcilerUtilsInternal.specsEqual(d1, d2)).isTrue();
   }
 
   @Test
@@ -80,7 +80,7 @@ class ReconcilerUtilsTest {
     var d2 = createTestDeployment();
     d2.getSpec().getTemplate().getSpec().setHostname("otherhost");
 
-    assertThat(ReconcilerUtils.specsEqual(d1, d2)).isFalse();
+    assertThat(ReconcilerUtilsInternal.specsEqual(d1, d2)).isFalse();
   }
 
   @Test
@@ -89,7 +89,7 @@ class ReconcilerUtilsTest {
     deployment.setSpec(new DeploymentSpec());
     deployment.getSpec().setReplicas(5);
 
-    DeploymentSpec spec = (DeploymentSpec) ReconcilerUtils.getSpec(deployment);
+    DeploymentSpec spec = (DeploymentSpec) ReconcilerUtilsInternal.getSpec(deployment);
     assertThat(spec.getReplicas()).isEqualTo(5);
   }
 
@@ -97,10 +97,10 @@ class ReconcilerUtilsTest {
   void properlyHandlesNullSpec() {
     Namespace ns = new Namespace();
 
-    final var spec = ReconcilerUtils.getSpec(ns);
+    final var spec = ReconcilerUtilsInternal.getSpec(ns);
     assertThat(spec).isNull();
 
-    ReconcilerUtils.setSpec(ns, null);
+    ReconcilerUtilsInternal.setSpec(ns, null);
   }
 
   @Test
@@ -111,7 +111,7 @@ class ReconcilerUtilsTest {
     DeploymentSpec newSpec = new DeploymentSpec();
     newSpec.setReplicas(1);
 
-    ReconcilerUtils.setSpec(deployment, newSpec);
+    ReconcilerUtilsInternal.setSpec(deployment, newSpec);
 
     assertThat(deployment.getSpec().getReplicas()).isEqualTo(1);
   }
@@ -124,7 +124,7 @@ class ReconcilerUtilsTest {
     TomcatSpec newSpec = new TomcatSpec();
     newSpec.setReplicas(1);
 
-    ReconcilerUtils.setSpec(tomcat, newSpec);
+    ReconcilerUtilsInternal.setSpec(tomcat, newSpec);
 
     assertThat(tomcat.getSpec().getReplicas()).isEqualTo(1);
   }
@@ -132,7 +132,7 @@ class ReconcilerUtilsTest {
   @Test
   void loadYamlAsBuilder() {
     DeploymentBuilder builder =
-        ReconcilerUtils.loadYaml(DeploymentBuilder.class, getClass(), "deployment.yaml");
+        ReconcilerUtilsInternal.loadYaml(DeploymentBuilder.class, getClass(), "deployment.yaml");
     builder.accept(ContainerBuilder.class, c -> c.withImage("my-image"));
 
     Deployment deployment = builder.editMetadata().withName("my-deployment").and().build();

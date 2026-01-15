@@ -45,7 +45,7 @@ public class PatchResourceAndStatusNoSSAReconciler
       Context<PatchResourceAndStatusNoSSACustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
-    log.info("Value: " + resource.getSpec().getValue());
+    log.info("Value: {}", resource.getSpec().getValue());
 
     if (removeAnnotation) {
       resource.getMetadata().getAnnotations().remove(TEST_ANNOTATION);
