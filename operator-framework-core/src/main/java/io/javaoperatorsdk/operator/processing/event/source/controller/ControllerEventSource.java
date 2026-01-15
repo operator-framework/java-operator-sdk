@@ -89,16 +89,17 @@ public class ControllerEventSource<T extends HasMetadata>
     try {
       if (log.isDebugEnabled()) {
         log.debug(
-            "Event received for resource: {} version: {} uuid: {} action: {}",
+            "Event received for resource: {} version: {} uuid: {} action: {} filter event: {}",
             ResourceID.fromResource(resource),
             getVersion(resource),
             resource.getMetadata().getUid(),
-            action);
+            action,
+            filterEvent);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (isAcceptedByFilters(action, resource, oldResource)) {
+      if (isAcceptedByFilters(action, resource, oldResource) && !filterEvent) {
         if (deletedFinalStateUnknown != null) {
           getEventHandler()
               .handleEvent(
