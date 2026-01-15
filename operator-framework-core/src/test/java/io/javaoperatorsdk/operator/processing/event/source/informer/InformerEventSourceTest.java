@@ -36,6 +36,7 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfig
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
@@ -98,7 +99,7 @@ class InformerEventSourceTest {
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(testDeployment()));
 
-    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(true);
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.OBSOLETE);
 
     informerEventSource.onAdd(testDeployment());
     informerEventSource.onUpdate(testDeployment(), testDeployment());
@@ -108,6 +109,7 @@ class InformerEventSourceTest {
 
   @Test
   void processEventPropagationWithoutAnnotation() {
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.NEW);
     informerEventSource.onUpdate(testDeployment(), testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
@@ -115,6 +117,7 @@ class InformerEventSourceTest {
 
   @Test
   void processEventPropagationWithIncorrectAnnotation() {
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.NEW);
     informerEventSource.onAdd(
         new DeploymentBuilder(testDeployment())
             .editMetadata()
@@ -131,6 +134,7 @@ class InformerEventSourceTest {
     cachedDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(cachedDeployment));
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.NEW);
 
     informerEventSource.onUpdate(cachedDeployment, testDeployment());
 
