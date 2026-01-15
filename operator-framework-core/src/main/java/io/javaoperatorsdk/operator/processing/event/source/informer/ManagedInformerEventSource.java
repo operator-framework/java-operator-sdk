@@ -42,7 +42,7 @@ import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndic
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 
 @SuppressWarnings("rawtypes")
@@ -90,6 +90,7 @@ public abstract class ManagedInformerEventSource<
    * Also makes sure that the even produced by this update is filtered, thus does not trigger the
    * reconciliation.
    */
+  @SuppressWarnings("unchecked")
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
     if (log.isDebugEnabled()) {
@@ -110,12 +111,21 @@ public abstract class ManagedInformerEventSource<
       res.ifPresent(
           r -> {
             R latestResource = (R) r.getResource().orElseThrow();
-            // for update we need to have a historic resource, this might be improved to mimic more
-            // realistic scenario
+
+            // as previous resource version we use the one from successful update, since
+            // we process new event here only if that is more recent then the event from our update.
+            // Note that this is equivalent with the scenario when an informer watch connection
+            // would
+            // reconnect and loose some events in between.
+            // If that update was not successful we still record the previous version from the
+            // actual
+            // event in the ExtendedResourceEvent.
+            R extendedResourcePrevVersion =
+                (r instanceof ExtendedResourceEvent)
+                    ? (R) ((ExtendedResourceEvent) r).getPreviousResource().orElse(null)
+                    : null;
             R prevVersionOfResource =
-                updatedForLambda != null
-                    ? updatedForLambda
-                    : (r.getAction() == ResourceAction.UPDATED ? latestResource : null);
+                updatedForLambda != null ? updatedForLambda : extendedResourcePrevVersion;
             handleEvent(
                 r.getAction(),
                 latestResource,

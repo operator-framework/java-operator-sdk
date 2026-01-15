@@ -28,6 +28,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
@@ -139,13 +140,15 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public void onAdd(T resource) {
-    var handling = temporaryResourceCache.onAddOrUpdateEvent(resource);
+    var handling = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, resource, null);
     handleEvent(ResourceAction.ADDED, resource, null, null, handling != EventHandling.NEW);
   }
 
   @Override
   public void onUpdate(T oldCustomResource, T newCustomResource) {
-    var handling = temporaryResourceCache.onAddOrUpdateEvent(newCustomResource);
+    var handling =
+        temporaryResourceCache.onAddOrUpdateEvent(
+            ResourceAction.UPDATED, newCustomResource, oldCustomResource);
     handleEvent(
         ResourceAction.UPDATED,
         newCustomResource,

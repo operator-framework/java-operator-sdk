@@ -99,7 +99,8 @@ class InformerEventSourceTest {
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(testDeployment()));
 
-    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.OBSOLETE);
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(EventHandling.OBSOLETE);
 
     informerEventSource.onAdd(testDeployment());
     informerEventSource.onUpdate(testDeployment(), testDeployment());
@@ -109,7 +110,8 @@ class InformerEventSourceTest {
 
   @Test
   void processEventPropagationWithoutAnnotation() {
-    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.NEW);
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(EventHandling.NEW);
     informerEventSource.onUpdate(testDeployment(), testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
@@ -117,7 +119,8 @@ class InformerEventSourceTest {
 
   @Test
   void processEventPropagationWithIncorrectAnnotation() {
-    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.NEW);
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(EventHandling.NEW);
     informerEventSource.onAdd(
         new DeploymentBuilder(testDeployment())
             .editMetadata()
@@ -134,12 +137,14 @@ class InformerEventSourceTest {
     cachedDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
     when(temporaryResourceCacheMock.getResourceFromCache(any()))
         .thenReturn(Optional.of(cachedDeployment));
-    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any())).thenReturn(EventHandling.NEW);
+    when(temporaryResourceCacheMock.onAddOrUpdateEvent(any(), any(), any()))
+        .thenReturn(EventHandling.NEW);
 
     informerEventSource.onUpdate(cachedDeployment, testDeployment());
 
     verify(eventHandlerMock, times(1)).handleEvent(any());
-    verify(temporaryResourceCacheMock, times(1)).onAddOrUpdateEvent(testDeployment());
+    verify(temporaryResourceCacheMock, times(1))
+        .onAddOrUpdateEvent(any(), eq(testDeployment()), any());
   }
 
   @Test
