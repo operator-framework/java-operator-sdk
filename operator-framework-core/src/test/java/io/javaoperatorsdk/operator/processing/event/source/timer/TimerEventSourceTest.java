@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.TestUtils;
+import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
@@ -113,6 +114,15 @@ class TimerEventSourceTest
 
     untilAsserted(() -> assertThat(eventHandler.events).isEmpty());
     assertThat(source.getStatus()).isEqualTo(Status.UNHEALTHY);
+  }
+
+  @Test
+  public void handlesInstanceReschedule() {
+    var resourceID = ResourceID.fromResource(TestUtils.testCustomResource());
+
+    source.scheduleOnce(resourceID, BaseControl.INSTANT_RESCHEDULE);
+
+    assertThat(eventHandler.events).hasSize(1);
   }
 
   private void untilAsserted(ThrowingRunnable assertion) {

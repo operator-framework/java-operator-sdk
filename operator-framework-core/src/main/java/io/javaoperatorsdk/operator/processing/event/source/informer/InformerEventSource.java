@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -28,12 +27,13 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 
@@ -98,22 +98,6 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     genericFilter = informerConfig.getGenericFilter();
   }
 
-  public R updateAndCacheResource(
-      R resourceToUpdate, Context<?> context, UnaryOperator<R> updateMethod) {
-    ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    if (log.isDebugEnabled()) {
-      log.debug("Update and cache: {}", id);
-    }
-    try {
-      temporaryResourceCache.startModifying(id);
-      var updated = updateMethod.apply(resourceToUpdate);
-      handleRecentResourceUpdate(id, updated, resourceToUpdate);
-      return updated;
-    } finally {
-      temporaryResourceCache.doneModifying(id);
-    }
-  }
-
   @Override
   public void onAdd(R newResource) {
     if (log.isDebugEnabled()) {
@@ -148,10 +132,20 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
           resourceType().getSimpleName());
     }
     primaryToSecondaryIndex.onDelete(resource);
-    super.onDelete(resource, b);
+    temporaryResourceCache.onDeleteEvent(resource, b);
     if (acceptedByDeleteFilters(resource, b)) {
       propagateEvent(resource);
     }
+  }
+
+  @Override
+  public void handleEvent(
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      boolean filterEvent) {
+    propagateEvent(resource);
   }
 
   @Override
@@ -166,10 +160,12 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     primaryToSecondaryIndex.onAddOrUpdate(newObject);
     var resourceID = ResourceID.fromResource(newObject);
 
-    if (temporaryResourceCache.onAddOrUpdateEvent(newObject)) {
+    var eventHandling = temporaryResourceCache.onAddOrUpdateEvent(newObject);
+
+    if (eventHandling != EventHandling.NEW) {
       log.debug(
-          "Skipping event propagation for {}, since was a result of a reconcile action. Resource"
-              + " ID: {}",
+          "{} event propagation for {}. Resource ID: {}",
+          eventHandling == EventHandling.DEFER ? "Deferring" : "Skipping",
           operation,
           ResourceID.fromResource(newObject));
     } else if (eventAcceptedByFilter(operation, newObject, oldObject)) {
@@ -233,15 +229,15 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   @Override
   public void handleRecentResourceUpdate(
       ResourceID resourceID, R resource, R previousVersionOfResource) {
-    handleRecentCreateOrUpdate(Operation.UPDATE, resource, previousVersionOfResource);
+    handleRecentCreateOrUpdate(resource);
   }
 
   @Override
   public void handleRecentResourceCreate(ResourceID resourceID, R resource) {
-    handleRecentCreateOrUpdate(Operation.ADD, resource, null);
+    handleRecentCreateOrUpdate(resource);
   }
 
-  private void handleRecentCreateOrUpdate(Operation operation, R newResource, R oldResource) {
+  private void handleRecentCreateOrUpdate(R newResource) {
     primaryToSecondaryIndex.onAddOrUpdate(newResource);
     temporaryResourceCache.putResource(newResource);
   }

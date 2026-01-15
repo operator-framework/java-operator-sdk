@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -62,8 +63,12 @@ public class TimerEventSource<R extends HasMetadata> extends AbstractEventSource
       cancelOnceSchedule(resourceID);
     }
     EventProducerTimeTask task = new EventProducerTimeTask(resourceID);
-    onceTasks.put(resourceID, task);
-    timer.schedule(task, delay);
+    if (delay == BaseControl.INSTANT_RESCHEDULE) {
+      task.run();
+    } else {
+      onceTasks.put(resourceID, task);
+      timer.schedule(task, delay);
+    }
   }
 
   @Override
