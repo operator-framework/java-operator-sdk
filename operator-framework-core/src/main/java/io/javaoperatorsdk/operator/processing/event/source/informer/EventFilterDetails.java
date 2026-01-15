@@ -41,7 +41,7 @@ class EventFilterDetails {
   public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent(String updatedResourceVersion) {
     if (lastEvent != null
         && (updatedResourceVersion == null
-            || ReconcileUtils.validateAndCompareResourceVersions(
+            || ReconcileUtils.compareResourceVersions(
                     lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion(),
                     updatedResourceVersion)
                 > 0)) {

@@ -123,7 +123,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     EventHandling result = EventHandling.NEW;
     int comp = 0;
     if (cached != null) {
-      comp = ReconcileUtils.validateAndCompareResourceVersions(resource, cached);
+      comp = ReconcileUtils.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
         cache.remove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we
@@ -185,7 +185,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
 
     if (cachedResource == null
-        || ReconcileUtils.validateAndCompareResourceVersions(newResource, cachedResource) > 0) {
+        || ReconcileUtils.compareResourceVersions(newResource, cachedResource) > 0) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
