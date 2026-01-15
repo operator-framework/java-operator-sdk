@@ -41,7 +41,8 @@ public class PatchResourceWithSSAReconciler
     if (resource.getSpec().getControllerManagedValue() == null) {
       res.setSpec(new PatchResourceWithSSASpec());
       res.getSpec().setControllerManagedValue(ADDED_VALUE);
-      return UpdateControl.patchResource(res);
+      // test assumes we will run this in the next reconciliation
+      return UpdateControl.patchResource(res).reschedule();
     } else {
       res.setStatus(new PatchResourceWithSSAStatus());
       res.getStatus().setSuccessfullyReconciled(true);

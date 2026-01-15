@@ -16,7 +16,7 @@
 package io.javaoperatorsdk.operator.workflow.workflowallfeature;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 
@@ -27,7 +27,7 @@ public class DeploymentDependentResource
   protected Deployment desired(
       WorkflowAllFeatureCustomResource primary, Context<WorkflowAllFeatureCustomResource> context) {
     Deployment deployment =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             Deployment.class,
             WorkflowAllFeatureIT.class,
             "/io/javaoperatorsdk/operator/nginx-deployment.yaml");

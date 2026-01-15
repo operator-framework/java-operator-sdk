@@ -18,7 +18,7 @@ package io.javaoperatorsdk.operator.sample;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -31,7 +31,8 @@ public class ServiceDependentResource extends CRUDKubernetesDependentResource<Se
   @Override
   protected Service desired(Tomcat tomcat, Context<Tomcat> context) {
     final ObjectMeta tomcatMetadata = tomcat.getMetadata();
-    return new ServiceBuilder(ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml"))
+    return new ServiceBuilder(
+            ReconcilerUtilsInternal.loadYaml(Service.class, getClass(), "service.yaml"))
         .editMetadata()
         .withName(tomcatMetadata.getName())
         .withNamespace(tomcatMetadata.getNamespace())
