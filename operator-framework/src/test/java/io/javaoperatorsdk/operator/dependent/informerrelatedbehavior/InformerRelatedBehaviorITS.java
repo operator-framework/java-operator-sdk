@@ -34,7 +34,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ControllerEventSource;
@@ -399,23 +399,25 @@ class InformerRelatedBehaviorITS {
 
   private void addRoleBindingsToTestNamespaces() {
     var role =
-        ReconcilerUtils.loadYaml(Role.class, this.getClass(), "rbac-test-only-main-ns-access.yaml");
+        ReconcilerUtilsInternal.loadYaml(
+            Role.class, this.getClass(), "rbac-test-only-main-ns-access.yaml");
     adminClient.resource(role).inNamespace(actualNamespace).createOrReplace();
     var roleBinding =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             RoleBinding.class, this.getClass(), "rbac-test-only-main-ns-access-binding.yaml");
     adminClient.resource(roleBinding).inNamespace(actualNamespace).createOrReplace();
   }
 
   private void applyClusterRoleBinding() {
     var clusterRoleBinding =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             ClusterRoleBinding.class, this.getClass(), "rbac-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).createOrReplace();
   }
 
   private void applyClusterRole(String filename) {
-    var clusterRole = ReconcilerUtils.loadYaml(ClusterRole.class, this.getClass(), filename);
+    var clusterRole =
+        ReconcilerUtilsInternal.loadYaml(ClusterRole.class, this.getClass(), filename);
     adminClient.resource(clusterRole).createOrReplace();
   }
 
@@ -431,7 +433,7 @@ class InformerRelatedBehaviorITS {
 
   private void removeClusterRoleBinding() {
     var clusterRoleBinding =
-        ReconcilerUtils.loadYaml(
+        ReconcilerUtilsInternal.loadYaml(
             ClusterRoleBinding.class, this.getClass(), "rbac-test-role-binding.yaml");
     adminClient.resource(clusterRoleBinding).delete();
   }

@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -34,13 +35,15 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Informable;
 import io.javaoperatorsdk.operator.api.config.NamespaceChangeable;
-import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
+import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCacheFiller;
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 
 @SuppressWarnings("rawtypes")
 public abstract class ManagedInformerEventSource<
@@ -71,21 +74,6 @@ public abstract class ManagedInformerEventSource<
     this.configuration = configuration;
   }
 
-  @Override
-  public void onAdd(R resource) {
-    temporaryResourceCache.onAddOrUpdateEvent(resource);
-  }
-
-  @Override
-  public void onUpdate(R oldObj, R newObj) {
-    temporaryResourceCache.onAddOrUpdateEvent(newObj);
-  }
-
-  @Override
-  public void onDelete(R obj, boolean deletedFinalStateUnknown) {
-    temporaryResourceCache.onDeleteEvent(obj, deletedFinalStateUnknown);
-  }
-
   protected InformerManager<R, C> manager() {
     return cache;
   }
@@ -96,6 +84,55 @@ public abstract class ManagedInformerEventSource<
       manager().changeNamespaces(namespaces);
     }
   }
+
+  /**
+   * Updates the resource and makes sure that the response is available for the next reconciliation.
+   * Also makes sure that the even produced by this update is filtered, thus does not trigger the
+   * reconciliation.
+   */
+  public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
+    ResourceID id = ResourceID.fromResource(resourceToUpdate);
+    if (log.isDebugEnabled()) {
+      log.debug("Update and cache: {}", id);
+    }
+    R updatedResource = null;
+    try {
+      temporaryResourceCache.startEventFilteringModify(id);
+      updatedResource = updateMethod.apply(resourceToUpdate);
+      handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
+      return updatedResource;
+    } finally {
+      var res =
+          temporaryResourceCache.doneEventFilterModify(
+              id,
+              updatedResource == null ? null : updatedResource.getMetadata().getResourceVersion());
+      var updatedForLambda = updatedResource;
+      res.ifPresent(
+          r -> {
+            R latestResource = (R) r.getResource().orElseThrow();
+            // for update we need to have a historic resource, this might be improved to mimic more
+            // realistic scenario
+            R prevVersionOfResource =
+                updatedForLambda != null
+                    ? updatedForLambda
+                    : (r.getAction() == ResourceAction.UPDATED ? latestResource : null);
+            handleEvent(
+                r.getAction(),
+                latestResource,
+                prevVersionOfResource,
+                !(r instanceof ResourceDeleteEvent)
+                    || ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown(),
+                false);
+          });
+    }
+  }
+
+  public abstract void handleEvent(
+      ResourceAction action,
+      R resource,
+      R oldResource,
+      Boolean deletedFinalStateUnknown,
+      boolean filterEvent);
 
   @SuppressWarnings("unchecked")
   @Override
@@ -137,10 +174,7 @@ public abstract class ManagedInformerEventSource<
     Optional<R> resource = temporaryResourceCache.getResourceFromCache(resourceID);
     if (comparableResourceVersions
         && resource.isPresent()
-        && res.filter(
-                r ->
-                    PrimaryUpdateAndCacheUtils.compareResourceVersions(r, resource.orElseThrow())
-                        > 0)
+        && res.filter(r -> ReconcileUtils.compareResourceVersions(r, resource.orElseThrow()) > 0)
             .isEmpty()) {
       log.debug("Latest resource found in temporary cache for Resource ID: {}", resourceID);
       return resource;

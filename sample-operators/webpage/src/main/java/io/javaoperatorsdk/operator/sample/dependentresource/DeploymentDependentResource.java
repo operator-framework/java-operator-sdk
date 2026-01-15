@@ -27,7 +27,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.sample.Utils;
 import io.javaoperatorsdk.operator.sample.customresource.WebPage;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.loadYaml;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.loadYaml;
 import static io.javaoperatorsdk.operator.sample.Utils.configMapName;
 import static io.javaoperatorsdk.operator.sample.Utils.deploymentName;
 import static io.javaoperatorsdk.operator.sample.WebPageManagedDependentsReconciler.SELECTOR;
