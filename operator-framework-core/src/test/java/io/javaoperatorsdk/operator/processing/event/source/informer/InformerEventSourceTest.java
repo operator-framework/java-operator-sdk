@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -64,12 +65,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
+@TestInstance(value = TestInstance.Lifecycle.PER_METHOD)
 class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
   private static final String DEFAULT_RESOURCE_VERSION = "1";
 
-  ExecutorService executorService = Executors.newSingleThreadExecutor();
+  ExecutorService executorService = Executors.newCachedThreadPool();
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -205,7 +207,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handlesPrevResourceVersionForUpdate() {
+  void handlesPrevResourceVersionForUpdate() throws InterruptedException {
     withRealTemporaryResourceCache();
     var deployment = testDeployment();
     CountDownLatch latch = new CountDownLatch(1);
@@ -224,7 +226,10 @@ class InformerEventSourceTest {
                   }
                   return resp;
                 }));
-    informerEventSource.onUpdate(deployment, incResourceVersion(testDeployment(), 2));
+    Thread.sleep(50);
+    informerEventSource.onUpdate(
+        incResourceVersion(deployment, 1), incResourceVersion(testDeployment(), 2));
+
     latch.countDown();
 
     await()
@@ -251,7 +256,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handlesPrevResourceVersionForUpdateInCaseOfException() {
+  void handlesPrevResourceVersionForUpdateInCaseOfException() throws InterruptedException {
     withRealTemporaryResourceCache();
 
     withRealTemporaryResourceCache();
@@ -270,6 +275,7 @@ class InformerEventSourceTest {
                     throw new RuntimeException(e);
                   }
                 }));
+    Thread.sleep(50);
     informerEventSource.onUpdate(deployment, incResourceVersion(testDeployment(), 1));
     latch.countDown();
 
@@ -297,7 +303,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() {
+  void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() throws InterruptedException {
     withRealTemporaryResourceCache();
 
     withRealTemporaryResourceCache();
@@ -318,7 +324,7 @@ class InformerEventSourceTest {
                   }
                   return resp;
                 }));
-
+    Thread.sleep(50);
     informerEventSource.onUpdate(
         incResourceVersion(testDeployment(), 1), incResourceVersion(testDeployment(), 2));
     informerEventSource.onUpdate(
@@ -349,7 +355,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void doesNotPropagateEventIfReceivedBeforeUpdate() {
+  void doesNotPropagateEventIfReceivedBeforeUpdate() throws InterruptedException {
     withRealTemporaryResourceCache();
     var deployment = testDeployment();
     CountDownLatch latch = new CountDownLatch(1);
@@ -368,6 +374,7 @@ class InformerEventSourceTest {
                   }
                   return resp;
                 }));
+    Thread.sleep(50);
     informerEventSource.onUpdate(deployment, incResourceVersion(testDeployment(), 1));
     latch.countDown();
 

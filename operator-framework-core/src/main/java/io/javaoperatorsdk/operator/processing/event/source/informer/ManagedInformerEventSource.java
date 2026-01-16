@@ -108,7 +108,7 @@ public abstract class ManagedInformerEventSource<
               id,
               updatedResource == null ? null : updatedResource.getMetadata().getResourceVersion());
       var updatedForLambda = updatedResource;
-      res.ifPresent(
+      res.ifPresentOrElse(
           r -> {
             R latestResource = (R) r.getResource().orElseThrow();
 
@@ -134,7 +134,8 @@ public abstract class ManagedInformerEventSource<
                     ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
                     : null,
                 false);
-          });
+          },
+          () -> log.debug("No new event present after the filtering update; id: {}", id));
     }
   }
 
