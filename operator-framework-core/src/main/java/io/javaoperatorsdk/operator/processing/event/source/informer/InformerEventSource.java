@@ -139,7 +139,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public void handleEvent(
+  protected void handleEvent(
       ResourceAction action,
       R resource,
       R oldResource,

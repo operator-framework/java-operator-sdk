@@ -130,14 +130,15 @@ public abstract class ManagedInformerEventSource<
                 r.getAction(),
                 latestResource,
                 prevVersionOfResource,
-                !(r instanceof ResourceDeleteEvent)
-                    || ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown(),
+                (r instanceof ResourceDeleteEvent)
+                    ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
+                    : null,
                 false);
           });
     }
   }
 
-  public abstract void handleEvent(
+  protected abstract void handleEvent(
       ResourceAction action,
       R resource,
       R oldResource,

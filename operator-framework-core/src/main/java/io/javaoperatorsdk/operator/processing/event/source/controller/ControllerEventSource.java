@@ -84,7 +84,7 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  public synchronized void handleEvent(
+  protected synchronized void handleEvent(
       ResourceAction action,
       T resource,
       T oldResource,
