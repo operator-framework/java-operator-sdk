@@ -251,11 +251,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     return configuration().followControllerNamespaceChanges();
   }
 
-  private boolean eventAcceptedByFilter(ResourceAction operation, R newObject, R oldObject) {
+  private boolean eventAcceptedByFilter(ResourceAction action, R newObject, R oldObject) {
     if (genericFilter != null && !genericFilter.accept(newObject)) {
       return false;
     }
-    if (operation == ResourceAction.ADDED) {
+    if (action == ResourceAction.ADDED) {
       return onAddFilter == null || onAddFilter.accept(newObject);
     } else {
       return onUpdateFilter == null || onUpdateFilter.accept(newObject, oldObject);
