@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.UnaryOperator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -207,29 +208,12 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handlesPrevResourceVersionForUpdate() throws InterruptedException {
+  void handlesPrevResourceVersionForUpdate() {
     withRealTemporaryResourceCache();
-    var deployment = testDeployment();
-    CountDownLatch latch = new CountDownLatch(1);
 
-    executorService.submit(
-        () ->
-            informerEventSource.eventFilteringUpdateAndCacheResource(
-                deployment,
-                r -> {
-                  var resp = testDeployment();
-                  incResourceVersion(resp, 1);
-                  try {
-                    latch.await();
-                  } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                  }
-                  return resp;
-                }));
-    Thread.sleep(50);
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
     informerEventSource.onUpdate(
-        incResourceVersion(deployment, 1), incResourceVersion(testDeployment(), 2));
-
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
     latch.countDown();
 
     await()
@@ -276,7 +260,7 @@ class InformerEventSourceTest {
                   }
                 }));
     Thread.sleep(50);
-    informerEventSource.onUpdate(deployment, incResourceVersion(testDeployment(), 1));
+    informerEventSource.onUpdate(deployment, withResourceVersion(testDeployment(), 2));
     latch.countDown();
 
     await()
@@ -303,32 +287,16 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() throws InterruptedException {
+  void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() {
     withRealTemporaryResourceCache();
 
     withRealTemporaryResourceCache();
     var deployment = testDeployment();
-    CountDownLatch latch = new CountDownLatch(1);
-
-    executorService.submit(
-        () ->
-            informerEventSource.eventFilteringUpdateAndCacheResource(
-                deployment,
-                r -> {
-                  var resp = testDeployment();
-                  incResourceVersion(resp, 1);
-                  try {
-                    latch.await();
-                  } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                  }
-                  return resp;
-                }));
-    Thread.sleep(50);
+    CountDownLatch latch = sendForEventFilteringUpdate(deployment, 2);
     informerEventSource.onUpdate(
-        incResourceVersion(testDeployment(), 1), incResourceVersion(testDeployment(), 2));
+        withResourceVersion(testDeployment(), 2), withResourceVersion(testDeployment(), 3));
     informerEventSource.onUpdate(
-        incResourceVersion(testDeployment(), 2), incResourceVersion(testDeployment(), 3));
+        withResourceVersion(testDeployment(), 3), withResourceVersion(testDeployment(), 4));
     latch.countDown();
 
     await()
@@ -355,27 +323,12 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void doesNotPropagateEventIfReceivedBeforeUpdate() throws InterruptedException {
+  void doesNotPropagateEventIfReceivedBeforeUpdate() {
     withRealTemporaryResourceCache();
     var deployment = testDeployment();
-    CountDownLatch latch = new CountDownLatch(1);
+    CountDownLatch latch = sendForEventFilteringUpdate(deployment, 2);
 
-    executorService.submit(
-        () ->
-            informerEventSource.eventFilteringUpdateAndCacheResource(
-                deployment,
-                r -> {
-                  var resp = testDeployment();
-                  incResourceVersion(resp, 2);
-                  try {
-                    latch.await();
-                  } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                  }
-                  return resp;
-                }));
-    Thread.sleep(50);
-    informerEventSource.onUpdate(deployment, incResourceVersion(testDeployment(), 1));
+    informerEventSource.onUpdate(deployment, deploymentWithResourceVersion(2));
     latch.countDown();
 
     await()
@@ -387,22 +340,57 @@ class InformerEventSourceTest {
             });
   }
 
+  private CountDownLatch sendForEventFilteringUpdate(int resourceVersion) {
+    return sendForEventFilteringUpdate(testDeployment(), resourceVersion);
+  }
+
+  private CountDownLatch sendForEventFilteringUpdate(Deployment deployment, int resourceVersion) {
+    return sendForEventFilteringUpdate(
+        deployment, r -> withResourceVersion(deployment, resourceVersion));
+  }
+
+  private CountDownLatch sendForEventFilteringUpdate(
+      Deployment resource, UnaryOperator<Deployment> updateMethod) {
+    try {
+      CountDownLatch latch = new CountDownLatch(1);
+      CountDownLatch sendOnGoingLatch = new CountDownLatch(1);
+      executorService.submit(
+          () ->
+              informerEventSource.eventFilteringUpdateAndCacheResource(
+                  resource,
+                  r -> {
+                    try {
+                      sendOnGoingLatch.countDown();
+                      latch.await();
+                      var resp = updateMethod.apply(r);
+                      return resp;
+                    } catch (InterruptedException e) {
+                      throw new RuntimeException(e);
+                    }
+                  }));
+      sendOnGoingLatch.await();
+      return latch;
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private void withRealTemporaryResourceCache() {
     temporaryResourceCache = new TemporaryResourceCache<>(true);
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 
-  <R extends HasMetadata> R incResourceVersion(R resource, int increment) {
+  Deployment deploymentWithResourceVersion(int resourceVersion) {
+    return withResourceVersion(testDeployment(), resourceVersion);
+  }
+
+  <R extends HasMetadata> R withResourceVersion(R resource, int resourceVersion) {
     var v = resource.getMetadata().getResourceVersion();
     if (v == null) {
       throw new IllegalArgumentException("Resource version is null");
     }
-    resource.getMetadata().setResourceVersion(versionPlus(v, increment));
+    resource.getMetadata().setResourceVersion("" + resourceVersion);
     return resource;
-  }
-
-  String versionPlus(String resourceVersion, int increment) {
-    return "" + (Integer.parseInt(resourceVersion) + increment);
   }
 
   @Test
