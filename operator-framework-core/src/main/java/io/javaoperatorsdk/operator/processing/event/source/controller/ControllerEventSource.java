@@ -140,21 +140,26 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public synchronized void onAdd(T resource) {
-    var handling = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, resource, null);
-    handleEvent(ResourceAction.ADDED, resource, null, null, handling != EventHandling.NEW);
+    handleOnAddOrUpdate(ResourceAction.ADDED, null, resource);
   }
 
   @Override
   public synchronized void onUpdate(T oldCustomResource, T newCustomResource) {
+    handleOnAddOrUpdate(ResourceAction.UPDATED, oldCustomResource, newCustomResource);
+  }
+
+  private void handleOnAddOrUpdate(
+      ResourceAction action, T oldCustomResource, T newCustomResource) {
     var handling =
-        temporaryResourceCache.onAddOrUpdateEvent(
-            ResourceAction.UPDATED, newCustomResource, oldCustomResource);
-    handleEvent(
-        ResourceAction.UPDATED,
-        newCustomResource,
-        oldCustomResource,
-        null,
-        handling != EventHandling.NEW);
+        temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
+    if (handling != EventHandling.NEW) {
+      handleEvent(
+          ResourceAction.UPDATED,
+          newCustomResource,
+          oldCustomResource,
+          null,
+          handling != EventHandling.NEW);
+    }
   }
 
   @Override
