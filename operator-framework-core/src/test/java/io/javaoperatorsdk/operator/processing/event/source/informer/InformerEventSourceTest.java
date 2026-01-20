@@ -216,74 +216,23 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
     latch.countDown();
 
-    await()
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.UPDATED),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("3");
-                            return true;
-                          }),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("2");
-                            return true;
-                          }),
-                      isNull(),
-                      eq(false));
-            });
+    expectHandleEvent(3, 2);
   }
 
   @Test
-  void handlesPrevResourceVersionForUpdateInCaseOfException() throws InterruptedException {
+  void handlesPrevResourceVersionForUpdateInCaseOfException() {
     withRealTemporaryResourceCache();
 
-    withRealTemporaryResourceCache();
-    var deployment = testDeployment();
-    CountDownLatch latch = new CountDownLatch(1);
-
-    executorService.submit(
-        () ->
-            informerEventSource.eventFilteringUpdateAndCacheResource(
-                deployment,
-                r -> {
-                  try {
-                    latch.await();
-                    throw new KubernetesClientException("fake");
-                  } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                  }
-                }));
-    Thread.sleep(50);
-    informerEventSource.onUpdate(deployment, withResourceVersion(testDeployment(), 2));
+    CountDownLatch latch =
+        sendForEventFilteringUpdate(
+            testDeployment(),
+            r -> {
+              throw new KubernetesClientException("fake");
+            });
+    informerEventSource.onUpdate(testDeployment(), withResourceVersion(testDeployment(), 2));
     latch.countDown();
 
-    await()
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.UPDATED),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("2");
-                            return true;
-                          }),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("1");
-                            return true;
-                          }),
-                      isNull(),
-                      eq(false));
-            });
+    expectHandleEvent(2, 1);
   }
 
   @Test
@@ -299,27 +248,7 @@ class InformerEventSourceTest {
         withResourceVersion(testDeployment(), 3), withResourceVersion(testDeployment(), 4));
     latch.countDown();
 
-    await()
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, times(1))
-                  .handleEvent(
-                      eq(ResourceAction.UPDATED),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("4");
-                            return true;
-                          }),
-                      argThat(
-                          newResource -> {
-                            assertThat(newResource.getMetadata().getResourceVersion())
-                                .isEqualTo("2");
-                            return true;
-                          }),
-                      isNull(),
-                      eq(false));
-            });
+    expectHandleEvent(4, 2);
   }
 
   @Test
@@ -327,7 +256,6 @@ class InformerEventSourceTest {
     withRealTemporaryResourceCache();
     var deployment = testDeployment();
     CountDownLatch latch = sendForEventFilteringUpdate(deployment, 2);
-
     informerEventSource.onUpdate(deployment, deploymentWithResourceVersion(2));
     latch.countDown();
 
@@ -337,6 +265,30 @@ class InformerEventSourceTest {
             () -> {
               verify(informerEventSource, never())
                   .handleEvent(any(), any(), any(), any(), anyBoolean());
+            });
+  }
+
+  private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
+    await()
+        .untilAsserted(
+            () -> {
+              verify(informerEventSource, times(1))
+                  .handleEvent(
+                      eq(ResourceAction.UPDATED),
+                      argThat(
+                          newResource -> {
+                            assertThat(newResource.getMetadata().getResourceVersion())
+                                .isEqualTo("" + newResourceVersion);
+                            return true;
+                          }),
+                      argThat(
+                          newResource -> {
+                            assertThat(newResource.getMetadata().getResourceVersion())
+                                .isEqualTo("" + oldResourceVersion);
+                            return true;
+                          }),
+                      isNull(),
+                      eq(false));
             });
   }
 
