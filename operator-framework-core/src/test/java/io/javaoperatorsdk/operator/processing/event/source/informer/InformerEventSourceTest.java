@@ -15,19 +15,14 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
-import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.UnaryOperator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -43,12 +38,14 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils.withResourceVersion;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -71,8 +68,6 @@ class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
   private static final String DEFAULT_RESOURCE_VERSION = "1";
-
-  ExecutorService executorService = Executors.newCachedThreadPool();
 
   private InformerEventSource<Deployment, TestCustomResource> informerEventSource;
   private final KubernetesClient clientMock = MockKubernetesClient.client(Deployment.class);
@@ -224,12 +219,14 @@ class InformerEventSourceTest {
     withRealTemporaryResourceCache();
 
     CountDownLatch latch =
-        sendForEventFilteringUpdate(
+        EventFilterTestUtils.sendForEventFilteringUpdate(
+            informerEventSource,
             testDeployment(),
             r -> {
               throw new KubernetesClientException("fake");
             });
-    informerEventSource.onUpdate(testDeployment(), withResourceVersion(testDeployment(), 2));
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
     expectHandleEvent(2, 1);
@@ -239,7 +236,6 @@ class InformerEventSourceTest {
   void handlesPrevResourceVersionForUpdateInCaseOfMultipleUpdates() {
     withRealTemporaryResourceCache();
 
-    withRealTemporaryResourceCache();
     var deployment = testDeployment();
     CountDownLatch latch = sendForEventFilteringUpdate(deployment, 2);
     informerEventSource.onUpdate(
@@ -252,20 +248,16 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void doesNotPropagateEventIfReceivedBeforeUpdate() {
+  void doesNotPropagateEventIfReceivedBeforeUpdate() throws InterruptedException {
     withRealTemporaryResourceCache();
-    var deployment = testDeployment();
-    CountDownLatch latch = sendForEventFilteringUpdate(deployment, 2);
-    informerEventSource.onUpdate(deployment, deploymentWithResourceVersion(2));
+
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
-    await()
-        .pollDelay(Duration.ofMillis(100))
-        .untilAsserted(
-            () -> {
-              verify(informerEventSource, never())
-                  .handleEvent(any(), any(), any(), any(), anyBoolean());
-            });
+    Thread.sleep(100);
+    verify(informerEventSource, never()).handleEvent(any(), any(), any(), any(), anyBoolean());
   }
 
   private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
@@ -297,34 +289,8 @@ class InformerEventSourceTest {
   }
 
   private CountDownLatch sendForEventFilteringUpdate(Deployment deployment, int resourceVersion) {
-    return sendForEventFilteringUpdate(
-        deployment, r -> withResourceVersion(deployment, resourceVersion));
-  }
-
-  private CountDownLatch sendForEventFilteringUpdate(
-      Deployment resource, UnaryOperator<Deployment> updateMethod) {
-    try {
-      CountDownLatch latch = new CountDownLatch(1);
-      CountDownLatch sendOnGoingLatch = new CountDownLatch(1);
-      executorService.submit(
-          () ->
-              informerEventSource.eventFilteringUpdateAndCacheResource(
-                  resource,
-                  r -> {
-                    try {
-                      sendOnGoingLatch.countDown();
-                      latch.await();
-                      var resp = updateMethod.apply(r);
-                      return resp;
-                    } catch (InterruptedException e) {
-                      throw new RuntimeException(e);
-                    }
-                  }));
-      sendOnGoingLatch.await();
-      return latch;
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+    return EventFilterTestUtils.sendForEventFilteringUpdate(
+        informerEventSource, deployment, r -> withResourceVersion(deployment, resourceVersion));
   }
 
   private void withRealTemporaryResourceCache() {
@@ -334,15 +300,6 @@ class InformerEventSourceTest {
 
   Deployment deploymentWithResourceVersion(int resourceVersion) {
     return withResourceVersion(testDeployment(), resourceVersion);
-  }
-
-  <R extends HasMetadata> R withResourceVersion(R resource, int resourceVersion) {
-    var v = resource.getMetadata().getResourceVersion();
-    if (v == null) {
-      throw new IllegalArgumentException("Resource version is null");
-    }
-    resource.getMetadata().setResourceVersion("" + resourceVersion);
-    return resource;
   }
 
   @Test

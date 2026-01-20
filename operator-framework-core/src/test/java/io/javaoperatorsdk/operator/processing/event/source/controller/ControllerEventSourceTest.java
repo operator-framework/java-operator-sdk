@@ -17,8 +17,10 @@ package io.javaoperatorsdk.operator.processing.event.source.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.MockKubernetesClient;
@@ -34,12 +36,14 @@ import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.EventHandler;
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.AbstractEventSourceTestBase;
+import io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
+import static io.javaoperatorsdk.operator.processing.event.source.EventFilterTestUtils.withResourceVersion;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -164,6 +168,33 @@ class ControllerEventSourceTest
     verify(eventHandler, never()).handleEvent(any());
   }
 
+  @Disabled
+  @Test
+  void testEventFiltering() throws InterruptedException {
+    source = spy(new ControllerEventSource<>(new TestController(null, null, null)));
+    setUpSource(source, true, controllerConfig);
+
+    var latch = sendForEventFilteringUpdate(2);
+    source.onUpdate(testResourceWithVersion(1), testResourceWithVersion(2));
+    latch.countDown();
+    Thread.sleep(100);
+    verify(source, never()).handleEvent(any(), any(), any(), any(), anyBoolean());
+  }
+
+  private TestCustomResource testResourceWithVersion(int v) {
+    return withResourceVersion(TestUtils.testCustomResource1(), v);
+  }
+
+  private CountDownLatch sendForEventFilteringUpdate(int v) {
+    return sendForEventFilteringUpdate(TestUtils.testCustomResource1(), v);
+  }
+
+  private CountDownLatch sendForEventFilteringUpdate(
+      TestCustomResource testResource, int resourceVersion) {
+    return EventFilterTestUtils.sendForEventFilteringUpdate(
+        source, testResource, r -> withResourceVersion(testResource, resourceVersion));
+  }
+
   @SuppressWarnings("unchecked")
   private static class TestController extends Controller<TestCustomResource> {
 
@@ -224,6 +255,7 @@ class ControllerEventSourceTest
               .withOnAddFilter(onAddFilter)
               .withOnUpdateFilter(onUpdateFilter)
               .withGenericFilter(genericFilter)
+              .withComparableResourceVersions(true)
               .buildForController(),
           false);
     }

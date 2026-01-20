@@ -139,13 +139,13 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void onAdd(T resource) {
+  public synchronized void onAdd(T resource) {
     var handling = temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, resource, null);
     handleEvent(ResourceAction.ADDED, resource, null, null, handling != EventHandling.NEW);
   }
 
   @Override
-  public void onUpdate(T oldCustomResource, T newCustomResource) {
+  public synchronized void onUpdate(T oldCustomResource, T newCustomResource) {
     var handling =
         temporaryResourceCache.onAddOrUpdateEvent(
             ResourceAction.UPDATED, newCustomResource, oldCustomResource);
@@ -158,7 +158,7 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void onDelete(T resource, boolean deletedFinalStateUnknown) {
+  public synchronized void onDelete(T resource, boolean deletedFinalStateUnknown) {
     temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
     // delete event is quite special here, that requires special care, since we clean up caches on
     // delete event.

@@ -32,6 +32,10 @@ public class TestUtils {
     return testCustomResource(new ResourceID(UUID.randomUUID().toString(), "test"));
   }
 
+  public static TestCustomResource testCustomResource1() {
+    return testCustomResource(new ResourceID("test1", "default"));
+  }
+
   public static CustomResourceDefinition testCRD(String scope) {
     return new CustomResourceDefinitionBuilder()
         .editOrNewSpec()
@@ -41,10 +45,6 @@ public class TestUtils {
         .withName("test.operator.javaoperatorsdk.io")
         .and()
         .build();
-  }
-
-  public static TestCustomResource testCustomResource1() {
-    return testCustomResource(new ResourceID("test1", "default"));
   }
 
   public static ResourceID testCustomResource1Id() {
