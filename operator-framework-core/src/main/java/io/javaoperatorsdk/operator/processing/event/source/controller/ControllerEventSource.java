@@ -85,25 +85,20 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   protected synchronized void handleEvent(
-      ResourceAction action,
-      T resource,
-      T oldResource,
-      Boolean deletedFinalStateUnknown,
-      boolean filterEvent) {
+      ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
         log.debug(
-            "Event received for resource: {} version: {} uuid: {} action: {} filter event: {}",
+            "Event received for resource: {} version: {} uuid: {} action: {}",
             ResourceID.fromResource(resource),
             getVersion(resource),
             resource.getMetadata().getUid(),
-            action,
-            filterEvent);
+            action);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (isAcceptedByFilters(action, resource, oldResource) && !filterEvent) {
+      if (isAcceptedByFilters(action, resource, oldResource)) {
         if (deletedFinalStateUnknown != null) {
           getEventHandler()
               .handleEvent(
@@ -153,12 +148,7 @@ public class ControllerEventSource<T extends HasMetadata>
     var handling =
         temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
     if (handling != EventHandling.NEW) {
-      handleEvent(
-          ResourceAction.UPDATED,
-          newCustomResource,
-          oldCustomResource,
-          null,
-          handling != EventHandling.NEW);
+      handleEvent(ResourceAction.UPDATED, newCustomResource, oldCustomResource, null);
     }
   }
 
@@ -167,7 +157,7 @@ public class ControllerEventSource<T extends HasMetadata>
     temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
     // delete event is quite special here, that requires special care, since we clean up caches on
     // delete event.
-    handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown, false);
+    handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
   }
 
   @Override

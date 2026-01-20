@@ -50,7 +50,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -257,7 +256,7 @@ class InformerEventSourceTest {
     latch.countDown();
 
     Thread.sleep(100);
-    verify(informerEventSource, never()).handleEvent(any(), any(), any(), any(), anyBoolean());
+    verify(informerEventSource, never()).handleEvent(any(), any(), any(), any());
   }
 
   private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
@@ -279,8 +278,7 @@ class InformerEventSourceTest {
                                 .isEqualTo("" + oldResourceVersion);
                             return true;
                           }),
-                      isNull(),
-                      eq(false));
+                      isNull());
             });
   }
 

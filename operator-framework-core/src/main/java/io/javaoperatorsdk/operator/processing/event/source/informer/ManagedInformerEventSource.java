@@ -132,19 +132,14 @@ public abstract class ManagedInformerEventSource<
                 prevVersionOfResource,
                 (r instanceof ResourceDeleteEvent)
                     ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
-                    : null,
-                false);
+                    : null);
           },
           () -> log.debug("No new event present after the filtering update; id: {}", id));
     }
   }
 
   protected abstract void handleEvent(
-      ResourceAction action,
-      R resource,
-      R oldResource,
-      Boolean deletedFinalStateUnknown,
-      boolean filterEvent);
+      ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown);
 
   @SuppressWarnings("unchecked")
   @Override

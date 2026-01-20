@@ -140,11 +140,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   protected void handleEvent(
-      ResourceAction action,
-      R resource,
-      R oldResource,
-      Boolean deletedFinalStateUnknown,
-      boolean filterEvent) {
+      ResourceAction action, R resource, R oldResource, Boolean deletedFinalStateUnknown) {
     propagateEvent(resource);
   }
 
