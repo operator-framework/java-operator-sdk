@@ -147,8 +147,14 @@ public class ControllerEventSource<T extends HasMetadata>
       ResourceAction action, T oldCustomResource, T newCustomResource) {
     var handling =
         temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
-    if (handling != EventHandling.NEW) {
+    if (handling == EventHandling.NEW) {
       handleEvent(ResourceAction.UPDATED, newCustomResource, oldCustomResource, null);
+    } else if (log.isDebugEnabled()) {
+      log.debug(
+          "{} event propagation for action: {} resource id: {} ",
+          handling,
+          action,
+          ResourceID.fromResource(newCustomResource));
     }
   }
 
