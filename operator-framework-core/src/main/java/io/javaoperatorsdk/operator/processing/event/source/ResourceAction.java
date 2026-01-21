@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.processing.event.source.controller;
+package io.javaoperatorsdk.operator.processing.event.source;
 
 public enum ResourceAction {
   ADDED,
