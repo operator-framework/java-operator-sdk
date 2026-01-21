@@ -28,6 +28,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
@@ -83,26 +84,21 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  public synchronized void handleEvent(
-      ResourceAction action,
-      T resource,
-      T oldResource,
-      Boolean deletedFinalStateUnknown,
-      boolean filterEvent) {
+  protected synchronized void handleEvent(
+      ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
         log.debug(
-            "Event received for resource: {} version: {} uuid: {} action: {} filter event: {}",
+            "Event received for resource: {} version: {} uuid: {} action: {}",
             ResourceID.fromResource(resource),
             getVersion(resource),
             resource.getMetadata().getUid(),
-            action,
-            filterEvent);
+            action);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
       controller.getEventSourceManager().broadcastOnResourceEvent(action, resource, oldResource);
-      if (isAcceptedByFilters(action, resource, oldResource) && !filterEvent) {
+      if (isAcceptedByFilters(action, resource, oldResource)) {
         if (deletedFinalStateUnknown != null) {
           getEventHandler()
               .handleEvent(
@@ -138,28 +134,36 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void onAdd(T resource) {
-    var handling = temporaryResourceCache.onAddOrUpdateEvent(resource);
-    handleEvent(ResourceAction.ADDED, resource, null, null, handling != EventHandling.NEW);
+  public synchronized void onAdd(T resource) {
+    handleOnAddOrUpdate(ResourceAction.ADDED, null, resource);
   }
 
   @Override
-  public void onUpdate(T oldCustomResource, T newCustomResource) {
-    var handling = temporaryResourceCache.onAddOrUpdateEvent(newCustomResource);
-    handleEvent(
-        ResourceAction.UPDATED,
-        newCustomResource,
-        oldCustomResource,
-        null,
-        handling != EventHandling.NEW);
+  public synchronized void onUpdate(T oldCustomResource, T newCustomResource) {
+    handleOnAddOrUpdate(ResourceAction.UPDATED, oldCustomResource, newCustomResource);
+  }
+
+  private void handleOnAddOrUpdate(
+      ResourceAction action, T oldCustomResource, T newCustomResource) {
+    var handling =
+        temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
+    if (handling == EventHandling.NEW) {
+      handleEvent(action, newCustomResource, oldCustomResource, null);
+    } else if (log.isDebugEnabled()) {
+      log.debug(
+          "{} event propagation for action: {} resource id: {} ",
+          handling,
+          action,
+          ResourceID.fromResource(newCustomResource));
+    }
   }
 
   @Override
-  public void onDelete(T resource, boolean deletedFinalStateUnknown) {
+  public synchronized void onDelete(T resource, boolean deletedFinalStateUnknown) {
     temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
     // delete event is quite special here, that requires special care, since we clean up caches on
     // delete event.
-    handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown, false);
+    handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
   }
 
   @Override
