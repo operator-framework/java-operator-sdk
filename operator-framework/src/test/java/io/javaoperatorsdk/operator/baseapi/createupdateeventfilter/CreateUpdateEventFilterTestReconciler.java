@@ -41,6 +41,16 @@ public class CreateUpdateEventFilterTestReconciler
   private final DirectConfigMapDependentResource configMapDR =
       new DirectConfigMapDependentResource(ConfigMap.class);
 
+  private final boolean comparableResourceVersion;
+
+  public CreateUpdateEventFilterTestReconciler(boolean comparableResourceVersion) {
+    this.comparableResourceVersion = comparableResourceVersion;
+  }
+
+  public CreateUpdateEventFilterTestReconciler() {
+    this(true);
+  }
+
   @Override
   public UpdateControl<CreateUpdateEventFilterTestCustomResource> reconcile(
       CreateUpdateEventFilterTestCustomResource resource,
@@ -89,6 +99,7 @@ public class CreateUpdateEventFilterTestReconciler
         InformerEventSourceConfiguration.from(
                 ConfigMap.class, CreateUpdateEventFilterTestCustomResource.class)
             .withLabelSelector("integrationtest = " + this.getClass().getSimpleName())
+            .withComparableResourceVersion(comparableResourceVersion)
             .build();
 
     final var informerEventSource = new InformerEventSource<>(informerConfiguration, context);

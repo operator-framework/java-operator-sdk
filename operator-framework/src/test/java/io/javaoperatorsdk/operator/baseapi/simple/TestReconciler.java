@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.baseapi.simple;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,8 +26,11 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.support.TestExecutionInfoProvider;
 
 @ControllerConfiguration(generationAwareEventProcessing = false)
@@ -38,7 +42,7 @@ public class TestReconciler
   private static final Logger log = LoggerFactory.getLogger(TestReconciler.class);
 
   public static final String FINALIZER_NAME =
-      ReconcilerUtils.getDefaultFinalizerName(TestCustomResource.class);
+      ReconcilerUtilsInternal.getDefaultFinalizerName(TestCustomResource.class);
 
   private final AtomicInteger numberOfExecutions = new AtomicInteger(0);
   private final AtomicInteger numberOfCleanupExecutions = new AtomicInteger(0);
@@ -50,6 +54,51 @@ public class TestReconciler
 
   public void setUpdateStatus(boolean updateStatus) {
     this.updateStatus = updateStatus;
+  }
+
+  @Override
+  public UpdateControl<TestCustomResource> reconcile(
+      TestCustomResource resource, Context<TestCustomResource> context) {
+    numberOfExecutions.addAndGet(1);
+    if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
+      throw new IllegalStateException("Finalizer is not present.");
+    }
+
+    var existingConfigMap = context.getSecondaryResource(ConfigMap.class).orElse(null);
+
+    if (existingConfigMap != null) {
+      existingConfigMap.setData(configMapData(resource));
+      log.info("Updating config map");
+      ReconcileUtils.serverSideApply(context, existingConfigMap);
+    } else {
+      Map<String, String> labels = new HashMap<>();
+      labels.put("managedBy", TestReconciler.class.getSimpleName());
+      ConfigMap newConfigMap =
+          new ConfigMapBuilder()
+              .withMetadata(
+                  new ObjectMetaBuilder()
+                      .withName(resource.getSpec().getConfigMapName())
+                      .withNamespace(resource.getMetadata().getNamespace())
+                      .withLabels(labels)
+                      .build())
+              .withData(configMapData(resource))
+              .build();
+      log.info("Creating config map");
+      ReconcileUtils.serverSideApply(context, newConfigMap);
+    }
+    if (updateStatus) {
+      var statusUpdateResource = new TestCustomResource();
+      statusUpdateResource.setMetadata(
+          new ObjectMetaBuilder()
+              .withName(resource.getMetadata().getName())
+              .withNamespace(resource.getMetadata().getNamespace())
+              .build());
+      resource.setStatus(new TestCustomResourceStatus());
+      resource.getStatus().setConfigMapStatus("ConfigMap Ready");
+      log.info("Patching status");
+      return UpdateControl.patchStatus(resource);
+    }
+    return UpdateControl.noUpdate();
   }
 
   @Override
@@ -79,59 +128,14 @@ public class TestReconciler
   }
 
   @Override
-  public UpdateControl<TestCustomResource> reconcile(
-      TestCustomResource resource, Context<TestCustomResource> context) {
-    numberOfExecutions.addAndGet(1);
-    if (!resource.getMetadata().getFinalizers().contains(FINALIZER_NAME)) {
-      throw new IllegalStateException("Finalizer is not present.");
-    }
-    final var kubernetesClient = context.getClient();
-    ConfigMap existingConfigMap =
-        kubernetesClient
-            .configMaps()
-            .inNamespace(resource.getMetadata().getNamespace())
-            .withName(resource.getSpec().getConfigMapName())
-            .get();
-
-    if (existingConfigMap != null) {
-      existingConfigMap.setData(configMapData(resource));
-      // existingConfigMap.getMetadata().setResourceVersion(null);
-      kubernetesClient
-          .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace())
-          .resource(existingConfigMap)
-          .createOrReplace();
-    } else {
-      Map<String, String> labels = new HashMap<>();
-      labels.put("managedBy", TestReconciler.class.getSimpleName());
-      ConfigMap newConfigMap =
-          new ConfigMapBuilder()
-              .withMetadata(
-                  new ObjectMetaBuilder()
-                      .withName(resource.getSpec().getConfigMapName())
-                      .withNamespace(resource.getMetadata().getNamespace())
-                      .withLabels(labels)
-                      .build())
-              .withData(configMapData(resource))
-              .build();
-      kubernetesClient
-          .configMaps()
-          .inNamespace(resource.getMetadata().getNamespace())
-          .resource(newConfigMap)
-          .createOrReplace();
-    }
-    if (updateStatus) {
-      var statusUpdateResource = new TestCustomResource();
-      statusUpdateResource.setMetadata(
-          new ObjectMetaBuilder()
-              .withName(resource.getMetadata().getName())
-              .withNamespace(resource.getMetadata().getNamespace())
-              .build());
-      resource.setStatus(new TestCustomResourceStatus());
-      resource.getStatus().setConfigMapStatus("ConfigMap Ready");
-      return UpdateControl.patchStatus(resource);
-    }
-    return UpdateControl.noUpdate();
+  public List<EventSource<?, TestCustomResource>> prepareEventSources(
+      EventSourceContext<TestCustomResource> context) {
+    InformerEventSource<ConfigMap, TestCustomResource> es =
+        new InformerEventSource<>(
+            InformerEventSourceConfiguration.from(ConfigMap.class, TestCustomResource.class)
+                .build(),
+            context);
+    return List.of(es);
   }
 
   private Map<String, String> configMapData(TestCustomResource resource) {

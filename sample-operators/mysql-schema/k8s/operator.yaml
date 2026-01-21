@@ -39,7 +39,7 @@ spec:
       serviceAccountName: mysql-schema-operator # specify the ServiceAccount under which's RBAC persmissions the operator will be executed under
       containers:
       - name: operator
-        image: mysql-schema-operator # TODO Change this to point to your pushed mysql-schema-operator image
+        image: mysql-schema-operator # Change this to point to your pushed mysql-schema-operator image
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
