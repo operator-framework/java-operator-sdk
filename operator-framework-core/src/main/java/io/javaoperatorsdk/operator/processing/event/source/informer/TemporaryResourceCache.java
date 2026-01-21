@@ -27,7 +27,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceAction;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceDeleteEvent;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
@@ -94,17 +94,23 @@ public class TemporaryResourceCache<T extends HasMetadata> {
   }
 
   public void onDeleteEvent(T resource, boolean unknownState) {
-    onEvent(resource, unknownState, true);
+    onEvent(ResourceAction.DELETED, resource, null, unknownState, true);
   }
 
   /**
    * @return true if the resourceVersion was obsolete
    */
-  public EventHandling onAddOrUpdateEvent(T resource) {
-    return onEvent(resource, false, false);
+  public EventHandling onAddOrUpdateEvent(
+      ResourceAction action, T resource, T prevResourceVersion) {
+    return onEvent(action, resource, prevResourceVersion, false, false);
   }
 
-  private synchronized EventHandling onEvent(T resource, boolean unknownState, boolean delete) {
+  private synchronized EventHandling onEvent(
+      ResourceAction action,
+      T resource,
+      T prevResourceVersion,
+      boolean unknownState,
+      boolean delete) {
     if (!comparableResourceVersions) {
       return EventHandling.NEW;
     }
@@ -121,9 +127,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
     var cached = cache.get(resourceId);
     EventHandling result = EventHandling.NEW;
-    int comp = 0;
     if (cached != null) {
-      comp = ReconcileUtils.compareResourceVersions(resource, cached);
+      int comp = ReconcileUtils.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
         cache.remove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we
@@ -139,8 +144,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       ed.setLastEvent(
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
-              : new ResourceEvent(
-                  ResourceAction.UPDATED, resourceId, resource)); // todo true action
+              : new ExtendedResourceEvent(action, resourceId, resource, prevResourceVersion));
       return EventHandling.DEFER;
     } else {
       return result;
