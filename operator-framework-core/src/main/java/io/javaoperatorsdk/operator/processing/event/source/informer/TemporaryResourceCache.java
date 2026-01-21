@@ -127,9 +127,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
     var cached = cache.get(resourceId);
     EventHandling result = EventHandling.NEW;
-    int comp = 0;
     if (cached != null) {
-      comp = ReconcileUtils.compareResourceVersions(resource, cached);
+      int comp = ReconcileUtils.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
         cache.remove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we

@@ -16,12 +16,8 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -126,28 +122,72 @@ class TemporaryPrimaryResourceCacheTest {
         .isEmpty();
   }
 
-  @Disabled("todo")
   @Test
-  void lockedEventBeforePut() throws Exception {
+  void eventReceivedDuringFiltering() throws Exception {
     var testResource = testResource();
 
     temporaryResourceCache.startEventFilteringModify(ResourceID.fromResource(testResource));
 
-    ExecutorService ex = Executors.newSingleThreadExecutor();
-    try {
-      var result =
-          ex.submit(
-              () ->
-                  temporaryResourceCache.onAddOrUpdateEvent(
-                      ResourceAction.ADDED, testResource, null));
+    temporaryResourceCache.putResource(testResource);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isPresent();
 
-      temporaryResourceCache.putResource(testResource);
-      assertThat(result.isDone()).isFalse();
-      temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "3");
-      assertThat(result.get(10, TimeUnit.SECONDS)).isEqualTo(EventHandling.NEW);
-    } finally {
-      ex.shutdownNow();
-    }
+    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+
+    var doneRes =
+        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "2");
+
+    assertThat(doneRes).isEmpty();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+  }
+
+  @Test
+  void newerEventDuringFiltering() {
+    var testResource = testResource();
+
+    temporaryResourceCache.startEventFilteringModify(ResourceID.fromResource(testResource));
+
+    temporaryResourceCache.putResource(testResource);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isPresent();
+
+    var testResource2 = testResource();
+    testResource2.getMetadata().setResourceVersion("3");
+    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.UPDATED, testResource2, testResource);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+
+    var doneRes =
+        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "2");
+
+    assertThat(doneRes).isPresent();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
+  }
+
+  @Test
+  void eventAfterFiltering() {
+    var testResource = testResource();
+
+    temporaryResourceCache.startEventFilteringModify(ResourceID.fromResource(testResource));
+
+    temporaryResourceCache.putResource(testResource);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isPresent();
+
+    var doneRes =
+        temporaryResourceCache.doneEventFilterModify(ResourceID.fromResource(testResource), "2");
+
+    assertThat(doneRes).isEmpty();
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isPresent();
+
+    temporaryResourceCache.onAddOrUpdateEvent(ResourceAction.ADDED, testResource, null);
+    assertThat(temporaryResourceCache.getResourceFromCache(ResourceID.fromResource(testResource)))
+        .isEmpty();
   }
 
   @Test

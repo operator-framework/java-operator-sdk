@@ -15,13 +15,13 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -62,7 +62,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-@TestInstance(value = TestInstance.Lifecycle.PER_METHOD)
 class InformerEventSourceTest {
 
   private static final String PREV_RESOURCE_VERSION = "0";
@@ -146,12 +145,11 @@ class InformerEventSourceTest {
 
   @Test
   void propagateEventAndRemoveResourceFromTempCacheIfResourceVersionMismatch() {
+    withRealTemporaryResourceCache();
+
     Deployment cachedDeployment = testDeployment();
     cachedDeployment.getMetadata().setResourceVersion(PREV_RESOURCE_VERSION);
-    when(temporaryResourceCache.getResourceFromCache(any()))
-        .thenReturn(Optional.of(cachedDeployment));
-    when(temporaryResourceCache.onAddOrUpdateEvent(any(), any(), any()))
-        .thenReturn(EventHandling.NEW);
+    temporaryResourceCache.putResource(cachedDeployment);
 
     informerEventSource.onUpdate(cachedDeployment, testDeployment());
 
@@ -247,7 +245,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void doesNotPropagateEventIfReceivedBeforeUpdate() throws InterruptedException {
+  void doesNotPropagateEventIfReceivedBeforeUpdate() {
     withRealTemporaryResourceCache();
 
     CountDownLatch latch = sendForEventFilteringUpdate(2);
@@ -255,8 +253,28 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     latch.countDown();
 
-    Thread.sleep(100);
-    verify(informerEventSource, never()).handleEvent(any(), any(), any(), any());
+    assertNoEventProduced();
+  }
+
+  @Test
+  void filterAddEventBeforeUpdate() {
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    informerEventSource.onAdd(deploymentWithResourceVersion(1));
+    latch.countDown();
+
+    assertNoEventProduced();
+  }
+
+  private void assertNoEventProduced() {
+    await()
+        .pollDelay(Duration.ofMillis(50))
+        .timeout(Duration.ofMillis(51))
+        .untilAsserted(
+            () -> {
+              verify(informerEventSource, never()).handleEvent(any(), any(), any(), any());
+            });
   }
 
   private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
@@ -292,7 +310,7 @@ class InformerEventSourceTest {
   }
 
   private void withRealTemporaryResourceCache() {
-    temporaryResourceCache = new TemporaryResourceCache<>(true);
+    temporaryResourceCache = spy(new TemporaryResourceCache<>(true));
     informerEventSource.setTemporalResourceCache(temporaryResourceCache);
   }
 
