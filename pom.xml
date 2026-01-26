@@ -78,7 +78,7 @@
     <commons-lang3.version>3.20.0</commons-lang3.version>
     <compile-testing.version>0.23.0</compile-testing.version>
     <javapoet.version>1.13.0</javapoet.version>
-    <assertj.version>3.27.6</assertj.version>
+    <assertj.version>3.27.7</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
     <spring-boot.version>2.7.3</spring-boot.version>
     <micrometer-core.version>1.16.2</micrometer-core.version>
