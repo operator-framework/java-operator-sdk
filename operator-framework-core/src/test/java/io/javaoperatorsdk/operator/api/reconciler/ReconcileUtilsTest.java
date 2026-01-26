@@ -291,7 +291,7 @@ class ReconcileUtilsTest {
   }
 
   @Test
-  void resourcePatchThrowsWhenMultipleEventSourcesFound() {
+  void resourcePatchUsesFirstEventSourceIfMultipleEventSourcesPresent() {
     var resource = TestUtils.testCustomResource1();
     var eventSourceRetriever = mock(EventSourceRetriever.class);
     var eventSource1 = mock(ManagedInformerEventSource.class);
@@ -301,13 +301,10 @@ class ReconcileUtilsTest {
     when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
         .thenReturn(List.of(eventSource1, eventSource2));
 
-    var exception =
-        assertThrows(
-            IllegalStateException.class,
-            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+    ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity());
 
-    assertThat(exception.getMessage()).contains("Multiple event sources found for");
-    assertThat(exception.getMessage()).contains("please provide the target event source");
+    verify(eventSource1, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test

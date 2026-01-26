@@ -17,8 +17,6 @@ package io.javaoperatorsdk.operator.baseapi.latestdistinct;
 
 public class LatestDistinctTestResourceStatus {
   private int configMapCount;
-  private String dataFromConfigMaps;
-  private boolean reconcileUtilsCalled;
 
   public int getConfigMapCount() {
     return configMapCount;
@@ -26,21 +24,5 @@ public class LatestDistinctTestResourceStatus {
 
   public void setConfigMapCount(int configMapCount) {
     this.configMapCount = configMapCount;
-  }
-
-  public String getDataFromConfigMaps() {
-    return dataFromConfigMaps;
-  }
-
-  public void setDataFromConfigMaps(String dataFromConfigMaps) {
-    this.dataFromConfigMaps = dataFromConfigMaps;
-  }
-
-  public boolean isReconcileUtilsCalled() {
-    return reconcileUtilsCalled;
-  }
-
-  public void setReconcileUtilsCalled(boolean reconcileUtilsCalled) {
-    this.reconcileUtilsCalled = reconcileUtilsCalled;
   }
 }

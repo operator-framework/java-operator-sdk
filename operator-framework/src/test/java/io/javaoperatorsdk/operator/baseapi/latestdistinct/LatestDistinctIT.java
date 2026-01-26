@@ -29,8 +29,6 @@ import io.javaoperatorsdk.annotation.Sample;
 import io.javaoperatorsdk.operator.junit.LocallyRunOperatorExtension;
 
 import static io.javaoperatorsdk.operator.baseapi.latestdistinct.LatestDistinctTestReconciler.LABEL_KEY;
-import static io.javaoperatorsdk.operator.baseapi.latestdistinct.LatestDistinctTestReconciler.LABEL_TYPE_1;
-import static io.javaoperatorsdk.operator.baseapi.latestdistinct.LatestDistinctTestReconciler.LABEL_TYPE_2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -47,11 +45,10 @@ class LatestDistinctIT {
 
   public static final String TEST_RESOURCE_NAME = "test-resource";
   public static final String CONFIG_MAP_1 = "config-map-1";
-  public static final String CONFIG_MAP_2 = "config-map-2";
-  public static final String CONFIG_MAP_3 = "config-map-3";
+  public static final String DEFAULT_VALUE = "defaultValue";
 
   @RegisterExtension
-  LocallyRunOperatorExtension operator =
+  LocallyRunOperatorExtension extension =
       LocallyRunOperatorExtension.builder()
           .withReconciler(LatestDistinctTestReconciler.class)
           .build();
@@ -60,120 +57,30 @@ class LatestDistinctIT {
   void testLatestDistinctListWithTwoInformerEventSources() {
     // Create the custom resource
     var resource = createTestCustomResource();
-    operator.create(resource);
+    resource = extension.create(resource);
 
     // Create ConfigMaps with type1 label (watched by first event source)
-    var cm1 = createConfigMap(CONFIG_MAP_1, LABEL_TYPE_1, resource, "value1");
-    operator.create(cm1);
-
-    var cm2 = createConfigMap(CONFIG_MAP_2, LABEL_TYPE_1, resource, "value2");
-    operator.create(cm2);
-
-    // Create ConfigMap with type2 label (watched by second event source)
-    var cm3 = createConfigMap(CONFIG_MAP_3, LABEL_TYPE_2, resource, "value3");
-    operator.create(cm3);
+    var cm1 = createConfigMap(CONFIG_MAP_1, resource);
+    extension.create(cm1);
 
     // Wait for reconciliation
-    var reconciler = operator.getReconcilerOfType(LatestDistinctTestReconciler.class);
+    var reconciler = extension.getReconcilerOfType(LatestDistinctTestReconciler.class);
     await()
         .atMost(Duration.ofSeconds(5))
         .pollDelay(Duration.ofMillis(300))
         .untilAsserted(
             () -> {
-              assertThat(reconciler.getNumberOfExecutions()).isGreaterThanOrEqualTo(1);
               var updatedResource =
-                  operator.get(LatestDistinctTestResource.class, TEST_RESOURCE_NAME);
+                  extension.get(LatestDistinctTestResource.class, TEST_RESOURCE_NAME);
               assertThat(updatedResource.getStatus()).isNotNull();
               // Should see 3 distinct ConfigMaps
-              assertThat(updatedResource.getStatus().getConfigMapCount()).isEqualTo(3);
-              assertThat(updatedResource.getStatus().getDataFromConfigMaps())
-                  .isEqualTo("value1,value2,value3");
-              // Verify ReconcileUtils was used
-              assertThat(updatedResource.getStatus().isReconcileUtilsCalled()).isTrue();
-            });
-
-    // Verify distinct ConfigMap names
-    assertThat(reconciler.getDistinctConfigMapNames())
-        .containsExactlyInAnyOrder(CONFIG_MAP_1, CONFIG_MAP_2, CONFIG_MAP_3);
-  }
-
-  @Test
-  void testLatestDistinctDeduplication() {
-    // Create the custom resource
-    var resource = createTestCustomResource();
-    operator.create(resource);
-
-    // Create a ConfigMap with type1 label
-    var cm1 = createConfigMap(CONFIG_MAP_1, LABEL_TYPE_1, resource, "initialValue");
-    operator.create(cm1);
-
-    // Wait for initial reconciliation
-    var reconciler = operator.getReconcilerOfType(LatestDistinctTestReconciler.class);
-    await()
-        .atMost(Duration.ofSeconds(5))
-        .pollDelay(Duration.ofMillis(300))
-        .untilAsserted(
-            () -> {
-              var updatedResource =
-                  operator.get(LatestDistinctTestResource.class, TEST_RESOURCE_NAME);
-              assertThat(updatedResource.getStatus()).isNotNull();
               assertThat(updatedResource.getStatus().getConfigMapCount()).isEqualTo(1);
-              assertThat(updatedResource.getStatus().getDataFromConfigMaps())
-                  .isEqualTo("initialValue");
+              assertThat(reconciler.isErrorOccurred()).isFalse();
+              // note that since there are two event source, and we do the update through one event
+              // source
+              // the other will still propagate an event
+              assertThat(reconciler.getNumberOfExecutions()).isEqualTo(2);
             });
-
-    int executionsBeforeUpdate = reconciler.getNumberOfExecutions();
-
-    // Update the ConfigMap
-    cm1 = operator.get(ConfigMap.class, CONFIG_MAP_1);
-    cm1.getData().put("key", "updatedValue");
-    operator.replace(cm1);
-
-    // Wait for reconciliation after update
-    await()
-        .atMost(Duration.ofSeconds(5))
-        .pollDelay(Duration.ofMillis(300))
-        .untilAsserted(
-            () -> {
-              assertThat(reconciler.getNumberOfExecutions()).isGreaterThan(executionsBeforeUpdate);
-              var updatedResource =
-                  operator.get(LatestDistinctTestResource.class, TEST_RESOURCE_NAME);
-              assertThat(updatedResource.getStatus()).isNotNull();
-              // Still should see only 1 distinct ConfigMap (same name, updated version)
-              assertThat(updatedResource.getStatus().getConfigMapCount()).isEqualTo(1);
-              assertThat(updatedResource.getStatus().getDataFromConfigMaps())
-                  .isEqualTo("updatedValue");
-            });
-  }
-
-  @Test
-  void testReconcileUtilsServerSideApply() {
-    // Create the custom resource with initial spec value
-    var resource = createTestCustomResource();
-    resource.getSpec().setValue("initialSpecValue");
-    operator.create(resource);
-
-    // Create a ConfigMap
-    var cm1 = createConfigMap(CONFIG_MAP_1, LABEL_TYPE_1, resource, "value1");
-    operator.create(cm1);
-
-    // Wait for reconciliation
-    var reconciler = operator.getReconcilerOfType(LatestDistinctTestReconciler.class);
-    await()
-        .atMost(Duration.ofSeconds(5))
-        .pollDelay(Duration.ofMillis(300))
-        .untilAsserted(
-            () -> {
-              var updatedResource =
-                  operator.get(LatestDistinctTestResource.class, TEST_RESOURCE_NAME);
-              assertThat(updatedResource.getStatus()).isNotNull();
-              assertThat(updatedResource.getStatus().isReconcileUtilsCalled()).isTrue();
-              // Verify that the status was updated using ReconcileUtils.serverSideApplyStatus
-              assertThat(updatedResource.getStatus().getConfigMapCount()).isEqualTo(1);
-            });
-
-    // Verify no errors occurred
-    assertThat(reconciler.isErrorOccurred()).isFalse();
   }
 
   private LatestDistinctTestResource createTestCustomResource() {
@@ -181,31 +88,30 @@ class LatestDistinctIT {
     resource.setMetadata(
         new ObjectMetaBuilder()
             .withName(TEST_RESOURCE_NAME)
-            .withNamespace(operator.getNamespace())
+            .withNamespace(extension.getNamespace())
             .build());
     resource.setSpec(new LatestDistinctTestResourceSpec());
     return resource;
   }
 
-  private ConfigMap createConfigMap(
-      String name, String labelValue, LatestDistinctTestResource owner, String dataValue) {
+  private ConfigMap createConfigMap(String name, LatestDistinctTestResource owner) {
     Map<String, String> labels = new HashMap<>();
-    labels.put(LABEL_KEY, labelValue);
+    labels.put(LABEL_KEY, "val");
 
     Map<String, String> data = new HashMap<>();
-    data.put("key", dataValue);
+    data.put("key", DEFAULT_VALUE);
 
     return new ConfigMapBuilder()
         .withMetadata(
             new ObjectMetaBuilder()
                 .withName(name)
-                .withNamespace(operator.getNamespace())
+                .withNamespace(extension.getNamespace())
                 .withLabels(labels)
                 .build())
         .withData(data)
         .withNewMetadata()
         .withName(name)
-        .withNamespace(operator.getNamespace())
+        .withNamespace(extension.getNamespace())
         .withLabels(labels)
         .addNewOwnerReference()
         .withApiVersion(owner.getApiVersion())

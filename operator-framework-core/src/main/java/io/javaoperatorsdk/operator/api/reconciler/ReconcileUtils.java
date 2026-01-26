@@ -372,13 +372,13 @@ public class ReconcileUtils {
     if (esList.isEmpty()) {
       throw new IllegalStateException("No event source found for type: " + resource.getClass());
     }
-    if (esList.size() > 1) {
-      throw new IllegalStateException(
-          "Multiple event sources found for: "
-              + resource.getClass()
-              + " please provide the target event source");
-    }
     var es = esList.get(0);
+    if (esList.size() > 1) {
+      log.warn(
+          "Multiple event source found for type: {}, selecting first with name {}",
+          resource.getClass(),
+          log.isWarnEnabled() ? es.name() : null);
+    }
     if (es instanceof ManagedInformerEventSource mes) {
       return resourcePatch(resource, updateOperation, mes);
     } else {
