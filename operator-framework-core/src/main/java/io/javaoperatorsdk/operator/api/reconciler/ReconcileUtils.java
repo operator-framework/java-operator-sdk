@@ -377,7 +377,7 @@ public class ReconcileUtils {
       log.warn(
           "Multiple event sources found for type: {}, selecting first with name {}",
           resource.getClass(),
-          log.isWarnEnabled() ? es.name() : null);
+          es.name());
     }
     if (es instanceof ManagedInformerEventSource mes) {
       return resourcePatch(resource, updateOperation, mes);

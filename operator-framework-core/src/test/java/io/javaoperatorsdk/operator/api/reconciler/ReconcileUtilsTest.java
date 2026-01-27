@@ -579,7 +579,6 @@ class ReconcileUtilsTest {
         Stream.<HasMetadata>empty().collect(ReconcileUtils.latestDistinctList());
 
     assertThat(result).isEmpty();
-    assertThat(result).isInstanceOf(List.class);
   }
 
   @Test
@@ -588,7 +587,6 @@ class ReconcileUtilsTest {
         Stream.<HasMetadata>empty().collect(ReconcileUtils.latestDistinctSet());
 
     assertThat(result).isEmpty();
-    assertThat(result).isInstanceOf(Set.class);
   }
 
 }
