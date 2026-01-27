@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.baseapi.generickubernetesresourcehandling;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,34 +40,9 @@ public class GenericKubernetesResourceHandlingReconciler
       GenericKubernetesResourceHandlingCustomResource primary,
       Context<GenericKubernetesResourceHandlingCustomResource> context) {
 
-    var secondary = context.getSecondaryResource(GenericKubernetesResource.class);
-
-    secondary.ifPresentOrElse(
-        r -> {
-          var desired = desiredConfigMap(primary, context);
-          if (!matches(r, desired)) {
-            context
-                .getClient()
-                .genericKubernetesResources(VERSION, KIND)
-                .resource(desired)
-                .update();
-          }
-        },
-        () ->
-            context
-                .getClient()
-                .genericKubernetesResources(VERSION, KIND)
-                .resource(desiredConfigMap(primary, context))
-                .create());
+    ReconcileUtils.serverSideApply(context, desiredConfigMap(primary, context));
 
     return UpdateControl.noUpdate();
-  }
-
-  @SuppressWarnings("unchecked")
-  private boolean matches(GenericKubernetesResource actual, GenericKubernetesResource desired) {
-    var actualData = (HashMap<String, String>) actual.getAdditionalProperties().get("data");
-    var desiredData = (HashMap<String, String>) desired.getAdditionalProperties().get("data");
-    return actualData.equals(desiredData);
   }
 
   GenericKubernetesResource desiredConfigMap(
