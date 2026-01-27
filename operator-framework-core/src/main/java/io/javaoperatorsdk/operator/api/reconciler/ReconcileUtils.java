@@ -375,7 +375,7 @@ public class ReconcileUtils {
     var es = esList.get(0);
     if (esList.size() > 1) {
       log.warn(
-          "Multiple event source found for type: {}, selecting first with name {}",
+          "Multiple event sources found for type: {}, selecting first with name {}",
           resource.getClass(),
           log.isWarnEnabled() ? es.name() : null);
     }
