@@ -105,12 +105,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      context
-          .getClient()
-          .configMaps()
-          .inNamespace(ns)
-          .resource(desiredHtmlConfigMap)
-          .serverSideApply();
+      ReconcileUtils.serverSideApply(context, desiredHtmlConfigMap);
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
@@ -119,13 +114,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      context
-          .getClient()
-          .apps()
-          .deployments()
-          .inNamespace(ns)
-          .resource(desiredDeployment)
-          .serverSideApply();
+      ReconcileUtils.serverSideApply(context, desiredDeployment);
     }
 
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
@@ -134,14 +123,14 @@ public class WebPageReconciler implements Reconciler<WebPage> {
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      context.getClient().services().inNamespace(ns).resource(desiredService).serverSideApply();
+      ReconcileUtils.serverSideApply(context, desiredService);
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
-        context.getClient().resource(desiredIngress).inNamespace(ns).serverSideApply();
+        ReconcileUtils.serverSideApply(context, desiredIngress);
       }
     } else existingIngress.ifPresent(ingress -> context.getClient().resource(ingress).delete());
 
