@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.ssaissue.finalizer;
+package io.javaoperatorsdk.operator.baseapi.performance;
 
-public class SSAFinalizerIssueStatus {
+public class SimplePerformanceTestStatus {
 
-  private String configMapStatus;
+  private String value;
 
-  public String getConfigMapStatus() {
-    return configMapStatus;
+  public String getValue() {
+    return value;
   }
 
-  public void setConfigMapStatus(String configMapStatus) {
-    this.configMapStatus = configMapStatus;
+  public void setValue(String configMapStatus) {
+    this.value = configMapStatus;
   }
 
   @Override
   public String toString() {
-    return "SSAFinalizerIssueStatus{" + "configMapStatus='" + configMapStatus + '\'' + '}';
+    return "SimplePerformanceTestStatus{" + "configMapStatus='" + value + '\'' + '}';
   }
 }

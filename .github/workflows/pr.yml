@@ -32,3 +32,51 @@ jobs:
 
   build:
     uses: ./.github/workflows/build.yml
+
+  performance_report:
+    name: Post Performance Results
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all performance artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: performance-results-*
+          path: performance-results
+          merge-multiple: true
+
+      - name: Check for performance results
+        id: check_results
+        run: |
+          if [ -d "performance-results" ] && [ "$(ls -A performance-results/*.json 2>/dev/null)" ]; then
+            echo "has_results=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_results=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Convert performance results to markdown
+        if: steps.check_results.outputs.has_results == 'true'
+        id: convert
+        run: |
+          echo "# Performance Test Results" > comment.md
+          echo "" >> comment.md
+          for file in performance-results/*.json; do
+            if [ -f "$file" ]; then
+              echo "Processing $file"
+              python3 .github/scripts/performance-to-markdown.py "$file" >> comment.md
+              echo "" >> comment.md
+            fi
+          done
+
+      - name: Post PR comment
+        if: steps.check_results.outputs.has_results == 'true' && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: comment.md
+          recreate: true
+
