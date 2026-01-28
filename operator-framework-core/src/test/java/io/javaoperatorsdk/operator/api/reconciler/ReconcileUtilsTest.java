@@ -15,13 +15,20 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -288,7 +295,7 @@ class ReconcileUtilsTest {
   }
 
   @Test
-  void resourcePatchThrowsWhenMultipleEventSourcesFound() {
+  void resourcePatchUsesFirstEventSourceIfMultipleEventSourcesPresent() {
     var resource = TestUtils.testCustomResource1();
     var eventSourceRetriever = mock(EventSourceRetriever.class);
     var eventSource1 = mock(ManagedInformerEventSource.class);
@@ -298,13 +305,10 @@ class ReconcileUtilsTest {
     when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
         .thenReturn(List.of(eventSource1, eventSource2));
 
-    var exception =
-        assertThrows(
-            IllegalStateException.class,
-            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+    ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity());
 
-    assertThat(exception.getMessage()).contains("Multiple event sources found for");
-    assertThat(exception.getMessage()).contains("please provide the target event source");
+    verify(eventSource1, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
@@ -324,5 +328,268 @@ class ReconcileUtilsTest {
 
     assertThat(exception.getMessage()).contains("Target event source must be a subclass off");
     assertThat(exception.getMessage()).contains("ManagedInformerEventSource");
+  }
+
+  @Test
+  void latestDistinctKeepsOnlyLatestResourceVersion() {
+    // Create multiple resources with same name and namespace but different versions
+    HasMetadata pod1v1 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("100")
+                    .build())
+            .build();
+
+    HasMetadata pod1v2 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("200")
+                    .build())
+            .build();
+
+    HasMetadata pod1v3 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("150")
+                    .build())
+            .build();
+
+    // Create a resource with different name
+    HasMetadata pod2v1 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod2")
+                    .withNamespace("default")
+                    .withResourceVersion("100")
+                    .build())
+            .build();
+
+    // Create a resource with same name but different namespace
+    HasMetadata pod1OtherNsv1 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("other")
+                    .withResourceVersion("50")
+                    .build())
+            .build();
+
+    Collection<HasMetadata> result =
+        Stream.of(pod1v1, pod1v2, pod1v3, pod2v1, pod1OtherNsv1)
+            .collect(ReconcileUtils.latestDistinct());
+
+    // Should have 3 resources: pod1 in default (latest version 200), pod2 in default, and pod1 in
+    // other
+    assertThat(result).hasSize(3);
+
+    // Find pod1 in default namespace - should have version 200
+    HasMetadata pod1InDefault =
+        result.stream()
+            .filter(
+                r ->
+                    "pod1".equals(r.getMetadata().getName())
+                        && "default".equals(r.getMetadata().getNamespace()))
+            .findFirst()
+            .orElseThrow();
+    assertThat(pod1InDefault.getMetadata().getResourceVersion()).isEqualTo("200");
+
+    // Find pod2 in default namespace - should exist
+    HasMetadata pod2InDefault =
+        result.stream()
+            .filter(
+                r ->
+                    "pod2".equals(r.getMetadata().getName())
+                        && "default".equals(r.getMetadata().getNamespace()))
+            .findFirst()
+            .orElseThrow();
+    assertThat(pod2InDefault.getMetadata().getResourceVersion()).isEqualTo("100");
+
+    // Find pod1 in other namespace - should exist
+    HasMetadata pod1InOther =
+        result.stream()
+            .filter(
+                r ->
+                    "pod1".equals(r.getMetadata().getName())
+                        && "other".equals(r.getMetadata().getNamespace()))
+            .findFirst()
+            .orElseThrow();
+    assertThat(pod1InOther.getMetadata().getResourceVersion()).isEqualTo("50");
+  }
+
+  @Test
+  void latestDistinctHandlesEmptyStream() {
+    Collection<HasMetadata> result =
+        Stream.<HasMetadata>empty().collect(ReconcileUtils.latestDistinct());
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void latestDistinctHandlesSingleResource() {
+    HasMetadata pod =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("100")
+                    .build())
+            .build();
+
+    Collection<HasMetadata> result = Stream.of(pod).collect(ReconcileUtils.latestDistinct());
+
+    assertThat(result).hasSize(1);
+    assertThat(result).contains(pod);
+  }
+
+  @Test
+  void latestDistinctComparesNumericVersionsCorrectly() {
+    // Test that version 1000 is greater than version 999 (not lexicographic)
+    HasMetadata podV999 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("999")
+                    .build())
+            .build();
+
+    HasMetadata podV1000 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("1000")
+                    .build())
+            .build();
+
+    Collection<HasMetadata> result =
+        Stream.of(podV999, podV1000).collect(ReconcileUtils.latestDistinct());
+
+    assertThat(result).hasSize(1);
+    HasMetadata resultPod = result.iterator().next();
+    assertThat(resultPod.getMetadata().getResourceVersion()).isEqualTo("1000");
+  }
+
+  @Test
+  void latestDistinctListReturnsListType() {
+    Pod pod1v1 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("100")
+                    .build())
+            .build();
+
+    Pod pod1v2 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("200")
+                    .build())
+            .build();
+
+    Pod pod2v1 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod2")
+                    .withNamespace("default")
+                    .withResourceVersion("100")
+                    .build())
+            .build();
+
+    List<Pod> result =
+        Stream.of(pod1v1, pod1v2, pod2v1).collect(ReconcileUtils.latestDistinctList());
+
+    assertThat(result).isInstanceOf(List.class);
+    assertThat(result).hasSize(2);
+
+    // Verify the list contains the correct resources
+    Pod pod1 =
+        result.stream()
+            .filter(r -> "pod1".equals(r.getMetadata().getName()))
+            .findFirst()
+            .orElseThrow();
+    assertThat(pod1.getMetadata().getResourceVersion()).isEqualTo("200");
+  }
+
+  @Test
+  void latestDistinctSetReturnsSetType() {
+    Pod pod1v1 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("100")
+                    .build())
+            .build();
+
+    Pod pod1v2 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod1")
+                    .withNamespace("default")
+                    .withResourceVersion("200")
+                    .build())
+            .build();
+
+    Pod pod2v1 =
+        new PodBuilder()
+            .withMetadata(
+                new ObjectMetaBuilder()
+                    .withName("pod2")
+                    .withNamespace("default")
+                    .withResourceVersion("100")
+                    .build())
+            .build();
+
+    Set<Pod> result = Stream.of(pod1v1, pod1v2, pod2v1).collect(ReconcileUtils.latestDistinctSet());
+
+    assertThat(result).isInstanceOf(java.util.Set.class);
+    assertThat(result).hasSize(2);
+
+    // Verify the set contains the correct resources
+    Pod pod1 =
+        result.stream()
+            .filter(r -> "pod1".equals(r.getMetadata().getName()))
+            .findFirst()
+            .orElseThrow();
+    assertThat(pod1.getMetadata().getResourceVersion()).isEqualTo("200");
+  }
+
+  @Test
+  void latestDistinctListHandlesEmptyStream() {
+    List<HasMetadata> result =
+        Stream.<HasMetadata>empty().collect(ReconcileUtils.latestDistinctList());
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void latestDistinctSetHandlesEmptyStream() {
+    Set<HasMetadata> result =
+        Stream.<HasMetadata>empty().collect(ReconcileUtils.latestDistinctSet());
+
+    assertThat(result).isEmpty();
   }
 }

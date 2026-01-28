@@ -16,8 +16,16 @@
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +40,7 @@ import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.compareResourceVersions;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
@@ -364,13 +373,13 @@ public class ReconcileUtils {
     if (esList.isEmpty()) {
       throw new IllegalStateException("No event source found for type: " + resource.getClass());
     }
-    if (esList.size() > 1) {
-      throw new IllegalStateException(
-          "Multiple event sources found for: "
-              + resource.getClass()
-              + " please provide the target event source");
-    }
     var es = esList.get(0);
+    if (esList.size() > 1) {
+      log.warn(
+          "Multiple event sources found for type: {}, selecting first with name {}",
+          resource.getClass(),
+          es.name());
+    }
     if (es instanceof ManagedInformerEventSource mes) {
       return resourcePatch(resource, updateOperation, mes);
     } else {
@@ -594,5 +603,57 @@ public class ReconcileUtils {
               + originalResource.getClass().getName(),
           e);
     }
+  }
+
+  /**
+   * Returns a collector that deduplicates Kubernetes objects by keeping only the one with the
+   * latest metadata.resourceVersion for each unique name and namespace combination. The intended
+   * use case is for the rather rare setup when there are overlapping {@link
+   * io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}s for a
+   * resource type.
+   *
+   * @param <T> the type of HasMetadata objects
+   * @return a collector that produces a collection of deduplicated Kubernetes objects
+   */
+  public static <T extends HasMetadata> Collector<T, ?, Collection<T>> latestDistinct() {
+    return Collectors.collectingAndThen(latestDistinctToMap(), Map::values);
+  }
+
+  /**
+   * Returns a collector that deduplicates Kubernetes objects by keeping only the one with the
+   * latest metadata.resourceVersion for each unique name and namespace combination. The intended
+   * use case is for the rather rare setup when there are overlapping {@link
+   * io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}s for a
+   * resource type.
+   *
+   * @param <T> the type of HasMetadata objects
+   * @return a collector that produces a List of deduplicated Kubernetes objects
+   */
+  public static <T extends HasMetadata> Collector<T, ?, List<T>> latestDistinctList() {
+    return Collectors.collectingAndThen(
+        latestDistinctToMap(), map -> new ArrayList<>(map.values()));
+  }
+
+  /**
+   * Returns a collector that deduplicates Kubernetes objects by keeping only the one with the
+   * latest metadata.resourceVersion for each unique name and namespace combination. The intended
+   * use case is for the rather rare setup when there are overlapping {@link
+   * io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource}s for a
+   * resource type.
+   *
+   * @param <T> the type of HasMetadata objects
+   * @return a collector that produces a Set of deduplicated Kubernetes objects
+   */
+  public static <T extends HasMetadata> Collector<T, ?, Set<T>> latestDistinctSet() {
+    return Collectors.collectingAndThen(latestDistinctToMap(), map -> new HashSet<>(map.values()));
+  }
+
+  private static <T extends HasMetadata> Collector<T, ?, Map<ResourceID, T>> latestDistinctToMap() {
+    return Collectors.toMap(
+        resource ->
+            new ResourceID(resource.getMetadata().getName(), resource.getMetadata().getNamespace()),
+        resource -> resource,
+        (existing, replacement) ->
+            compareResourceVersions(existing, replacement) >= 0 ? existing : replacement);
   }
 }
