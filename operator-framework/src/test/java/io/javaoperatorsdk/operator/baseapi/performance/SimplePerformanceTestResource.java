@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.baseapi.ssaissue.finalizer;
+package io.javaoperatorsdk.operator.baseapi.performance;
 
-public class SSAFinalizerIssueStatus {
+import io.fabric8.kubernetes.api.model.Namespaced;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.ShortNames;
+import io.fabric8.kubernetes.model.annotation.Version;
 
-  private String configMapStatus;
-
-  public String getConfigMapStatus() {
-    return configMapStatus;
-  }
-
-  public void setConfigMapStatus(String configMapStatus) {
-    this.configMapStatus = configMapStatus;
-  }
-
-  @Override
-  public String toString() {
-    return "SimplePerformanceTestStatus{" + "configMapStatus='" + configMapStatus + '\'' + '}';
-  }
-}
+@Group("sample.javaoperatorsdk")
+@Version("v1")
+@ShortNames("spt")
+public class SimplePerformanceTestResource
+    extends CustomResource<SimplePerformanceTestSpec, SimplePerformanceTestStatus>
+    implements Namespaced {}
