@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
@@ -128,7 +128,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cached = cache.get(resourceId);
     EventHandling result = EventHandling.NEW;
     if (cached != null) {
-      int comp = ReconcileUtils.compareResourceVersions(resource, cached);
+      int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
         cache.remove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we
@@ -174,7 +174,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     // this also prevents resurrecting recently deleted entities for which the delete event
     // has already been processed
     if (latestResourceVersion != null
-        && ReconcileUtils.compareResourceVersions(
+        && ReconcilerUtilsInternal.compareResourceVersions(
                 latestResourceVersion, newResource.getMetadata().getResourceVersion())
             > 0) {
       log.debug(
@@ -189,7 +189,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var cachedResource = getResourceFromCache(resourceId).orElse(null);
 
     if (cachedResource == null
-        || ReconcileUtils.compareResourceVersions(newResource, cachedResource) > 0) {
+        || ReconcilerUtilsInternal.compareResourceVersions(newResource, cachedResource) > 0) {
       log.debug(
           "Temporarily moving ahead to target version {} for resource id: {}",
           newResource.getMetadata().getResourceVersion(),
