@@ -17,7 +17,7 @@ package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
 
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
 class EventFilterDetails {
@@ -41,7 +41,7 @@ class EventFilterDetails {
   public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent(String updatedResourceVersion) {
     if (lastEvent != null
         && (updatedResourceVersion == null
-            || ReconcileUtils.compareResourceVersions(
+            || ReconcilerUtilsInternal.compareResourceVersions(
                     lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion(),
                     updatedResourceVersion)
                 > 0)) {
