@@ -29,6 +29,6 @@ public class SSAFinalizerIssueStatus {
 
   @Override
   public String toString() {
-    return "SimplePerformanceTestStatus{" + "configMapStatus='" + configMapStatus + '\'' + '}';
+    return "SSAFinalizerIssueStatus{" + "configMapStatus='" + configMapStatus + '\'' + '}';
   }
 }
