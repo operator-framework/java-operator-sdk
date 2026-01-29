@@ -519,7 +519,6 @@ class ReconcileUtilsTest {
     List<Pod> result =
         Stream.of(pod1v1, pod1v2, pod2v1).collect(ReconcileUtils.latestDistinctList());
 
-    assertThat(result).isInstanceOf(List.class);
     assertThat(result).hasSize(2);
 
     // Verify the list contains the correct resources
@@ -565,7 +564,6 @@ class ReconcileUtilsTest {
 
     Set<Pod> result = Stream.of(pod1v1, pod1v2, pod2v1).collect(ReconcileUtils.latestDistinctSet());
 
-    assertThat(result).isInstanceOf(java.util.Set.class);
     assertThat(result).hasSize(2);
 
     // Verify the set contains the correct resources
