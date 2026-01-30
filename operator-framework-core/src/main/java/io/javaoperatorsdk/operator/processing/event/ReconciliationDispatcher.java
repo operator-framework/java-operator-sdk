@@ -72,13 +72,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
     validateExecutionScope(executionScope);
     try {
-      return handleDispatch(executionScope);
+      return handleDispatch(executionScope, null);
     } catch (Exception e) {
       return PostExecutionControl.exceptionDuringExecution(e);
     }
   }
 
-  private PostExecutionControl<P> handleDispatch(ExecutionScope<P> executionScope)
+  // visible for testing
+  PostExecutionControl<P> handleDispatch(ExecutionScope<P> executionScope, Context<P> context)
       throws Exception {
     P originalResource = executionScope.getResource();
     var resourceForExecution = cloneResource(originalResource);
@@ -97,13 +98,15 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           originalResource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
-    Context<P> context =
-        new DefaultContext<>(
-            executionScope.getRetryInfo(),
-            controller,
-            resourceForExecution,
-            executionScope.isDeleteEvent(),
-            executionScope.isDeleteFinalStateUnknown());
+    context =
+        context == null
+            ? new DefaultContext<>(
+                executionScope.getRetryInfo(),
+                controller,
+                resourceForExecution,
+                executionScope.isDeleteEvent(),
+                executionScope.isDeleteFinalStateUnknown())
+            : context;
 
     // checking the cleaner for all-event-mode
     if (!triggerOnAllEvents() && markedForDeletion) {
@@ -136,9 +139,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
        */
       P updatedResource;
       if (useSSA) {
-        updatedResource = context.getClientFacade().addFinalizerWithSSA();
+        updatedResource = context.resourceOperations().addFinalizerWithSSA();
       } else {
-        updatedResource = context.getClientFacade().addFinalizer();
+        updatedResource = context.resourceOperations().addFinalizer();
       }
       return PostExecutionControl.onlyFinalizerAdded(updatedResource)
           .withReSchedule(BaseControl.INSTANT_RESCHEDULE);
@@ -320,7 +323,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resourceForExecution.hasFinalizer(finalizerName)) {
-        P customResource = context.getClientFacade().removeFinalizer();
+        P customResource = context.resourceOperations().removeFinalizer();
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -386,9 +389,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             resource.getMetadata().getResourceVersion());
       }
       if (useSSA) {
-        return context.getClientFacade().serverSideApplyPrimary(resource);
+        return context.resourceOperations().serverSideApplyPrimary(resource);
       } else {
-        return context.getClientFacade().jsonPatchPrimary(originalResource, r -> resource);
+        return context.resourceOperations().jsonPatchPrimary(originalResource, r -> resource);
       }
     }
 
@@ -398,7 +401,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         var managedFields = resource.getMetadata().getManagedFields();
         try {
           resource.getMetadata().setManagedFields(null);
-          return context.getClientFacade().serverSideApplyPrimaryStatus(resource);
+          return context.resourceOperations().serverSideApplyPrimaryStatus(resource);
         } finally {
           resource.getMetadata().setManagedFields(managedFields);
         }
@@ -416,7 +419,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         clonedOriginal.getMetadata().setResourceVersion(null);
         resource.getMetadata().setResourceVersion(null);
         return context
-            .getClientFacade()
+            .resourceOperations()
             .jsonPatchPrimaryStatus(
                 clonedOriginal,
                 r -> {

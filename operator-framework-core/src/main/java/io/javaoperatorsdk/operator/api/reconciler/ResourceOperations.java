@@ -1,3 +1,18 @@
+/*
+ * Copyright Java Operator SDK Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.javaoperatorsdk.operator.api.reconciler;
 
 import java.lang.reflect.InvocationTargetException;
@@ -20,15 +35,15 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInfor
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-public class KubernetesClientFacade<P extends HasMetadata> {
+public class ResourceOperations<P extends HasMetadata> {
 
   public static final int DEFAULT_MAX_RETRY = 10;
 
-  private static final Logger log = LoggerFactory.getLogger(KubernetesClientFacade.class);
+  private static final Logger log = LoggerFactory.getLogger(ResourceOperations.class);
 
   private final Context<P> context;
 
-  public KubernetesClientFacade(Context<P> context) {
+  public ResourceOperations(Context<P> context) {
     this.context = context;
   }
 
@@ -301,7 +316,10 @@ public class KubernetesClientFacade<P extends HasMetadata> {
    * @see #jsonMergePatchPrimaryStatus(HasMetadata)
    */
   public <R extends HasMetadata> R jsonMergePatchPrimaryStatus(R resource) {
-    return jsonMergePatchPrimaryStatus(resource);
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).patchStatus(),
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
@@ -401,8 +419,8 @@ public class KubernetesClientFacade<P extends HasMetadata> {
   }
 
   /**
-   * Removes the target finalizer from target resource. Uses JSON Patch and handles retries, see
-   * {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata,
+   * Removes the target finalizer from the primary resource. Uses JSON Patch and handles retries,
+   * see {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata,
    * UnaryOperator, Predicate)} for details. It does not try to remove finalizer if finalizer is not
    * present on the resource.
    *
@@ -430,7 +448,7 @@ public class KubernetesClientFacade<P extends HasMetadata> {
   /**
    * Patches the resource using JSON Patch. In case the server responds with conflict (HTTP 409) or
    * unprocessable content (HTTP 422) it retries the operation up to the maximum number defined in
-   * {@link KubernetesClientFacade#DEFAULT_MAX_RETRY}.
+   * {@link ResourceOperations#DEFAULT_MAX_RETRY}.
    *
    * @param resourceChangesOperator changes to be done on the resource before update
    * @param preCondition condition to check if the patch operation still needs to be performed or

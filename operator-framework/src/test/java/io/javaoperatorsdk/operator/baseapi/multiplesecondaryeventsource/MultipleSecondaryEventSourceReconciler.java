@@ -26,7 +26,6 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfig
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -54,8 +53,8 @@ public class MultipleSecondaryEventSourceReconciler
       Context<MultipleSecondaryEventSourceCustomResource> context) {
     numberOfExecutions.addAndGet(1);
 
-    ReconcileUtils.serverSideApply(context, configMap(getName1(resource), resource));
-    ReconcileUtils.serverSideApply(context, configMap(getName2(resource), resource));
+    context.resourceOperations().serverSideApply(configMap(getName1(resource), resource));
+    context.resourceOperations().serverSideApply(configMap(getName2(resource), resource));
 
     if (numberOfExecutions.get() >= 3) {
       if (context.getSecondaryResources(ConfigMap.class).size() != 2) {
