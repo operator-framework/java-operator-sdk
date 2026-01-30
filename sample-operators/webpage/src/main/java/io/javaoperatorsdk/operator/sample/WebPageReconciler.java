@@ -120,10 +120,8 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
     if (!match(desiredService, existingService)) {
       log.info(
-          "Creating or updating Deployment {} in {}",
-          desiredDeployment.getMetadata().getName(),
-          ns);
-      context.resourceOperations().serverSideApply(desiredDeployment);
+          "Creating or updating Service {} in {}", desiredDeployment.getMetadata().getName(), ns);
+      context.resourceOperations().serverSideApply(desiredService);
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
