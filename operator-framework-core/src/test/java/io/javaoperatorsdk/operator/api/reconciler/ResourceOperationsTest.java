@@ -264,7 +264,7 @@ class ResourceOperationsTest {
     when(managedEventSource.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
         .thenReturn(updatedResource);
 
-    var result = resourceOperations.resourcePatch(context, resource, UnaryOperator.identity());
+    var result = resourceOperations.resourcePatch(resource, UnaryOperator.identity());
 
     assertThat(result).isNotNull();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
@@ -284,7 +284,7 @@ class ResourceOperationsTest {
     var exception =
         assertThrows(
             IllegalStateException.class,
-            () -> resourceOperations.resourcePatch(context, resource, UnaryOperator.identity()));
+            () -> resourceOperations.resourcePatch(resource, UnaryOperator.identity()));
 
     assertThat(exception.getMessage()).contains("No event source found for type");
   }
@@ -303,7 +303,7 @@ class ResourceOperationsTest {
     var exception =
         assertThrows(
             IllegalStateException.class,
-            () -> resourceOperations.resourcePatch(context, resource, UnaryOperator.identity()));
+            () -> resourceOperations.resourcePatch(resource, UnaryOperator.identity()));
 
     assertThat(exception.getMessage()).contains("Multiple event sources found for");
     assertThat(exception.getMessage()).contains("please provide the target event source");
@@ -322,7 +322,7 @@ class ResourceOperationsTest {
     var exception =
         assertThrows(
             IllegalStateException.class,
-            () -> resourceOperations.resourcePatch(context, resource, UnaryOperator.identity()));
+            () -> resourceOperations.resourcePatch(resource, UnaryOperator.identity()));
 
     assertThat(exception.getMessage()).contains("Target event source must be a subclass off");
     assertThat(exception.getMessage()).contains("ManagedInformerEventSource");

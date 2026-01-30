@@ -61,7 +61,6 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R serverSideApply(R resource) {
     return resourcePatch(
-        context,
         resource,
         r ->
             context
@@ -92,7 +91,6 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R serverSideApplyStatus(R resource) {
     return resourcePatch(
-        context,
         resource,
         r ->
             context
@@ -184,7 +182,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R update(R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).update());
+    return resourcePatch(resource, r -> context.getClient().resource(r).update());
   }
 
   /**
@@ -203,7 +201,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R updateStatus(R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).updateStatus());
+    return resourcePatch(resource, r -> context.getClient().resource(r).updateStatus());
   }
 
   /**
@@ -268,8 +266,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonPatch(R resource, UnaryOperator<R> unaryOperator) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).edit(unaryOperator));
+    return resourcePatch(resource, r -> context.getClient().resource(r).edit(unaryOperator));
   }
 
   /**
@@ -290,8 +287,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonPatchStatus(R resource, UnaryOperator<R> unaryOperator) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).editStatus(unaryOperator));
+    return resourcePatch(resource, r -> context.getClient().resource(r).editStatus(unaryOperator));
   }
 
   /**
@@ -358,7 +354,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonMergePatch(R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).patch());
+    return resourcePatch(resource, r -> context.getClient().resource(r).patch());
   }
 
   /**
@@ -377,7 +373,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    */
   public <R extends HasMetadata> R jsonMergePatchStatus(R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).patchStatus());
+    return resourcePatch(resource, r -> context.getClient().resource(r).patchStatus());
   }
 
   /**
@@ -431,15 +427,13 @@ public class ResourceOperations<P extends HasMetadata> {
    * source for the resource type and delegates to {@link #resourcePatch(HasMetadata, UnaryOperator,
    * ManagedInformerEventSource)}.
    *
-   * @param context of reconciler
    * @param resource resource to patch
    * @param updateOperation operation to perform (update, patch, edit, etc.)
    * @return updated resource
    * @param <R> resource type
    * @throws IllegalStateException if no event source or multiple event sources are found
    */
-  public <R extends HasMetadata> R resourcePatch(
-      Context<?> context, R resource, UnaryOperator<R> updateOperation) {
+  public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
 
     var esList = context.eventSourceRetriever().getEventSourcesFor(resource.getClass());
     if (esList.isEmpty()) {
