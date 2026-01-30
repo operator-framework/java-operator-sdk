@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
@@ -387,9 +386,8 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Adds finalizer to the resource using JSON Patch. Retries conflicts and unprocessable content
-   * (HTTP 422), see {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient,
-   * HasMetadata, UnaryOperator, Predicate)} for details on retry. It does not try to add finalizer
-   * if there is already a finalizer or resource is marked for deletion.
+   * (HTTP 422). It does not try to add finalizer if there is already a finalizer or resource is
+   * marked for deletion.
    *
    * @return updated resource from the server response
    */
@@ -419,10 +417,8 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Removes the target finalizer from the primary resource. Uses JSON Patch and handles retries,
-   * see {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata,
-   * UnaryOperator, Predicate)} for details. It does not try to remove finalizer if finalizer is not
-   * present on the resource.
+   * Removes the target finalizer from the primary resource. Uses JSON Patch and handles retries. It
+   * does not try to remove finalizer if finalizer is not present on the resource.
    *
    * @return updated resource from the server response
    */
@@ -516,10 +512,9 @@ public class ResourceOperations<P extends HasMetadata> {
    * String)} with the configured finalizer name.
    *
    * @return the patched resource from the server response
-   * @param <P> primary resource type
    * @see #addFinalizerWithSSA(String)
    */
-  public <P extends HasMetadata> P addFinalizerWithSSA() {
+  public P addFinalizerWithSSA() {
     return addFinalizerWithSSA(context.getControllerConfiguration().getFinalizerName());
   }
 
@@ -530,9 +525,8 @@ public class ResourceOperations<P extends HasMetadata> {
    *
    * @param finalizerName name of the finalizer to add
    * @return the patched resource from the server response
-   * @param <P> primary resource type
    */
-  public <P extends HasMetadata> P addFinalizerWithSSA(String finalizerName) {
+  public P addFinalizerWithSSA(String finalizerName) {
     var originalResource = context.getPrimaryResource();
     if (log.isDebugEnabled()) {
       log.debug(
