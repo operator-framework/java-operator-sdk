@@ -48,10 +48,9 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will contain to updated resource. Or more recent one if someone did an update
-   * after our update.
-   *
-   * <p>Optionally also can filter out the event, what is the result of this update.
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from the update, so
+   * reconciliation is not triggered by own update.
    *
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata. In case of SSA we advise not to do updates with optimistic locking.
@@ -77,8 +76,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Server-Side Apply the resource status subresource. Updates the resource status and caches the
-   * response if needed, ensuring the next reconciliation will contain the updated resource.
+   * Server-Side Apply the resource status subresource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata. In case of SSA we advise not to do updates with optimistic locking.
    *
    * @param resource fresh resource for server side apply
    * @return updated resource
@@ -102,9 +108,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Server-Side Apply the primary resource. Updates the primary resource and caches the response
-   * using the controller's event source, ensuring the next reconciliation will contain the updated
-   * resource.
+   * Server-Side Apply the primary resource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata. In case of SSA we advise not to do updates with optimistic locking.
    *
    * @param resource primary resource for server side apply
    * @return updated resource
@@ -127,8 +139,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Server-Side Apply the primary resource status subresource. Updates the primary resource status
-   * and caches the response using the controller's event source.
+   * Server-Side Apply the primary resource status subresource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata. In case of SSA we advise not to do updates with optimistic locking.
    *
    * @param resource primary resource for server side apply
    * @return updated resource
@@ -152,8 +171,13 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the resource with optimistic locking based on the resource version. Caches the response
-   * if needed, ensuring the next reconciliation will contain the updated resource.
+   * Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource resource to update
    * @return updated resource
@@ -164,7 +188,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the resource status subresource with optimistic locking. Caches the response if needed.
+   * Updates the resource status subresource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource resource to update
    * @return updated resource
@@ -175,8 +207,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the primary resource with optimistic locking. Caches the response using the
-   * controller's event source.
+   * Updates the primary resource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource primary resource to update
    * @return updated resource
@@ -190,8 +229,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Updates the primary resource status subresource with optimistic locking. Caches the response
-   * using the controller's event source.
+   * Updates the primary resource status subresource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource primary resource to update
    * @return updated resource
@@ -208,6 +254,14 @@ public class ResourceOperations<P extends HasMetadata> {
    * Applies a JSON Patch to the resource. The unaryOperator function is used to modify the
    * resource, and the differences are sent as a JSON Patch to the Kubernetes API server.
    *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
@@ -222,6 +276,14 @@ public class ResourceOperations<P extends HasMetadata> {
    * Applies a JSON Patch to the resource status subresource. The unaryOperator function is used to
    * modify the resource status, and the differences are sent as a JSON Patch.
    *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
@@ -233,8 +295,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Patch to the primary resource. Caches the response using the controller's event
-   * source.
+   * Applies a JSON Patch to the primary resource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
@@ -249,8 +318,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Patch to the primary resource status subresource. Caches the response using the
-   * controller's event source.
+   * Applies a JSON Patch to the primary resource status subresource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
@@ -269,6 +345,14 @@ public class ResourceOperations<P extends HasMetadata> {
    * Applies a JSON Merge Patch to the resource. JSON Merge Patch (RFC 7386) is a simpler patching
    * strategy that merges the provided resource with the existing resource on the server.
    *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to patch
    * @return updated resource
    * @param <R> resource type
@@ -278,8 +362,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Merge Patch to the resource status subresource. Merges the provided resource
-   * status with the existing resource status on the server.
+   * Applies a JSON Merge Patch to the resource status subresource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource resource to patch
    * @return updated resource
@@ -293,6 +384,14 @@ public class ResourceOperations<P extends HasMetadata> {
    * Applies a JSON Merge Patch to the primary resource. Caches the response using the controller's
    * event source.
    *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource primary resource to patch reconciliation
    * @return updated resource
    * @param <R> resource type
@@ -305,9 +404,15 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Applies a JSON Merge Patch to the primary resource status subresource and filters out the
-   * resulting event. This is a convenience method that calls {@link
-   * #jsonMergePatchPrimaryStatus(HasMetadata)} with filterEvent set to true.
+   * Applies a JSON Merge Patch to the primary resource.
+   *
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
    *
    * @param resource primary resource to patch
    * @return updated resource
@@ -322,9 +427,9 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Internal utility method to patch a resource and cache the result. Automatically discovers the
-   * event source for the resource type and delegates to {@link #resourcePatch(HasMetadata,
-   * UnaryOperator, ManagedInformerEventSource)}.
+   * Utility method to patch a resource and cache the result. Automatically discovers the event
+   * source for the resource type and delegates to {@link #resourcePatch(HasMetadata, UnaryOperator,
+   * ManagedInformerEventSource)}.
    *
    * @param context of reconciler
    * @param resource resource to patch
@@ -357,9 +462,9 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
-   * Internal utility method to patch a resource and cache the result using the specified event
-   * source. This method either filters out the resulting event or allows it to trigger
-   * reconciliation based on the filterEvent parameter.
+   * Utility method to patch a resource and cache the result using the specified event source. This
+   * method either filters out the resulting event or allows it to trigger reconciliation based on
+   * the filterEvent parameter.
    *
    * @param resource resource to patch
    * @param updateOperation operation to perform (update, patch, edit, etc.)
