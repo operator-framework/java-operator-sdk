@@ -98,6 +98,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           originalResource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
+    // context can be provided only for testing purposes
     context =
         context == null
             ? new DefaultContext<>(
