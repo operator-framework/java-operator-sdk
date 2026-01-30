@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
@@ -34,6 +33,13 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInfor
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
+/**
+ * Provides useful operations to manipulate resources (server-side apply, patch, etc.) in an
+ * idiomatic way, in particular to make sure that the latest version of the resource is present in
+ * the caches for the next reconciliation.
+ *
+ * @param <P> the resource type on which this object operates
+ */
 public class ResourceOperations<P extends HasMetadata> {
 
   public static final int DEFAULT_MAX_RETRY = 10;
@@ -118,9 +124,8 @@ public class ResourceOperations<P extends HasMetadata> {
    *
    * @param resource primary resource for server side apply
    * @return updated resource
-   * @param <P> primary resource type
    */
-  public <P extends HasMetadata> P serverSideApplyPrimary(P resource) {
+  public P serverSideApplyPrimary(P resource) {
     return resourcePatch(
         resource,
         r ->
@@ -149,9 +154,8 @@ public class ResourceOperations<P extends HasMetadata> {
    *
    * @param resource primary resource for server side apply
    * @return updated resource
-   * @param <P> primary resource type
    */
-  public <P extends HasMetadata> P serverSideApplyPrimaryStatus(P resource) {
+  public P serverSideApplyPrimaryStatus(P resource) {
     return resourcePatch(
         resource,
         r ->
@@ -217,9 +221,8 @@ public class ResourceOperations<P extends HasMetadata> {
    *
    * @param resource primary resource to update
    * @return updated resource
-   * @param <R> resource type
    */
-  public <R extends HasMetadata> R updatePrimary(R resource) {
+  public P updatePrimary(P resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).update(),
@@ -239,9 +242,8 @@ public class ResourceOperations<P extends HasMetadata> {
    *
    * @param resource primary resource to update
    * @return updated resource
-   * @param <R> resource type
    */
-  public <R extends HasMetadata> R updatePrimaryStatus(R resource) {
+  public P updatePrimaryStatus(P resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).updateStatus(),
@@ -304,9 +306,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
-   * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonPatchPrimary(R resource, UnaryOperator<R> unaryOperator) {
+  public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).edit(unaryOperator),
@@ -327,10 +328,8 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
-   * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonPatchPrimaryStatus(
-      R resource, UnaryOperator<R> unaryOperator) {
+  public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).editStatus(unaryOperator),
@@ -390,9 +389,8 @@ public class ResourceOperations<P extends HasMetadata> {
    *
    * @param resource primary resource to patch reconciliation
    * @return updated resource
-   * @param <R> resource type
    */
-  public <R extends HasMetadata> R jsonMergePatchPrimary(R resource) {
+  public P jsonMergePatchPrimary(P resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).patch(),
@@ -412,10 +410,9 @@ public class ResourceOperations<P extends HasMetadata> {
    *
    * @param resource primary resource to patch
    * @return updated resource
-   * @param <R> resource type
    * @see #jsonMergePatchPrimaryStatus(HasMetadata)
    */
-  public <R extends HasMetadata> R jsonMergePatchPrimaryStatus(R resource) {
+  public P jsonMergePatchPrimaryStatus(P resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).patchStatus(),
@@ -433,6 +430,7 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param <R> resource type
    * @throws IllegalStateException if no event source or multiple event sources are found
    */
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
 
     var esList = context.eventSourceRetriever().getEventSourcesFor(resource.getClass());
@@ -447,7 +445,7 @@ public class ResourceOperations<P extends HasMetadata> {
     }
     var es = esList.get(0);
     if (es instanceof ManagedInformerEventSource mes) {
-      return resourcePatch(resource, updateOperation, mes);
+      return resourcePatch(resource, updateOperation, (ManagedInformerEventSource<R, P, ?>) mes);
     } else {
       throw new IllegalStateException(
           "Target event source must be a subclass off "
@@ -466,10 +464,9 @@ public class ResourceOperations<P extends HasMetadata> {
    * @return updated resource
    * @param <R> resource type
    */
-  @SuppressWarnings("unchecked")
   public <R extends HasMetadata> R resourcePatch(
-      R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource ies) {
-    return (R) ies.eventFilteringUpdateAndCacheResource(resource, updateOperation);
+      R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
+    return ies.eventFilteringUpdateAndCacheResource(resource, updateOperation);
   }
 
   /**
@@ -498,7 +495,7 @@ public class ResourceOperations<P extends HasMetadata> {
     if (resource.isMarkedForDeletion() || resource.hasFinalizer(finalizerName)) {
       return resource;
     }
-    return conflictRetryingPatch(
+    return conflictRetryingPatchPrimary(
         r -> {
           r.addFinalizer(finalizerName);
           return r;
@@ -532,7 +529,7 @@ public class ResourceOperations<P extends HasMetadata> {
     if (!resource.hasFinalizer(finalizerName)) {
       return resource;
     }
-    return conflictRetryingPatch(
+    return conflictRetryingPatchPrimary(
         r -> {
           r.removeFinalizer(finalizerName);
           return r;
@@ -555,11 +552,10 @@ public class ResourceOperations<P extends HasMetadata> {
    * @param preCondition condition to check if the patch operation still needs to be performed or
    *     not.
    * @return updated resource from the server or unchanged if the precondition does not hold.
-   * @param <R> resource type
    */
   @SuppressWarnings("unchecked")
-  public <R extends HasMetadata> R conflictRetryingPatch(
-      UnaryOperator<R> resourceChangesOperator, Predicate<R> preCondition) {
+  public P conflictRetryingPatchPrimary(
+      UnaryOperator<P> resourceChangesOperator, Predicate<P> preCondition) {
     var resource = context.getPrimaryResource();
     var client = context.getClient();
     if (log.isDebugEnabled()) {
@@ -568,10 +564,10 @@ public class ResourceOperations<P extends HasMetadata> {
     int retryIndex = 0;
     while (true) {
       try {
-        if (!preCondition.test((R) resource)) {
-          return (R) resource;
+        if (!preCondition.test(resource)) {
+          return resource;
         }
-        return jsonPatchPrimary((R) resource, resourceChangesOperator);
+        return jsonPatchPrimary(resource, resourceChangesOperator);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -642,11 +638,9 @@ public class ResourceOperations<P extends HasMetadata> {
           getVersion(originalResource));
     }
     try {
+      @SuppressWarnings("unchecked")
       P resource = (P) originalResource.getClass().getConstructor().newInstance();
-      ObjectMeta objectMeta = new ObjectMeta();
-      objectMeta.setName(originalResource.getMetadata().getName());
-      objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
-      resource.setMetadata(objectMeta);
+      resource.initNameAndNamespaceFrom(originalResource);
       resource.addFinalizer(finalizerName);
 
       return serverSideApplyPrimary(resource);
