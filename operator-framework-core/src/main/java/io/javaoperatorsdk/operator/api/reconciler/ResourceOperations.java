@@ -481,6 +481,8 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * Adds the default finalizer (from controller configuration) to the primary resource. This is a
    * convenience method that calls {@link #addFinalizer(String)} with the configured finalizer name.
+   * Note that explicitly adding/removing finalizer is required only if "Trigger reconciliation on
+   * all event" mode is on.
    *
    * @return updated resource from the server response
    * @see #addFinalizer(String)
@@ -492,7 +494,8 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * Adds finalizer to the resource using JSON Patch. Retries conflicts and unprocessable content
    * (HTTP 422). It does not try to add finalizer if there is already a finalizer or resource is
-   * marked for deletion.
+   * marked for deletion. Note that explicitly adding/removing finalizer is required only if
+   * "Trigger reconciliation on all event" mode is on.
    *
    * @return updated resource from the server response
    */
@@ -512,7 +515,8 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * Removes the default finalizer (from controller configuration) from the primary resource. This
    * is a convenience method that calls {@link #removeFinalizer(String)} with the configured
-   * finalizer name.
+   * finalizer name. Note that explicitly adding/removing finalizer is required only if "Trigger
+   * reconciliation on all event" mode is on.
    *
    * @return updated resource from the server response
    * @see #removeFinalizer(String)
@@ -523,7 +527,9 @@ public class ResourceOperations<P extends HasMetadata> {
 
   /**
    * Removes the target finalizer from the primary resource. Uses JSON Patch and handles retries. It
-   * does not try to remove finalizer if finalizer is not present on the resource.
+   * does not try to remove finalizer if finalizer is not present on the resource. Note that
+   * explicitly adding/removing finalizer is required only if "Trigger reconciliation on all event"
+   * mode is on.
    *
    * @return updated resource from the server response
    */
@@ -614,7 +620,8 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * Adds the default finalizer (from controller configuration) to the primary resource using
    * Server-Side Apply. This is a convenience method that calls {@link #addFinalizerWithSSA(
-   * String)} with the configured finalizer name.
+   * String)} with the configured finalizer name. Note that explicitly adding finalizer is required
+   * only if "Trigger reconciliation on all event" mode is on.
    *
    * @return the patched resource from the server response
    * @see #addFinalizerWithSSA(String)
@@ -626,7 +633,8 @@ public class ResourceOperations<P extends HasMetadata> {
   /**
    * Adds finalizer using Server-Side Apply. In the background this method creates a fresh copy of
    * the target resource, setting only name, namespace and finalizer. Does not use optimistic
-   * locking for the patch.
+   * locking for the patch. Note that explicitly adding finalizer is required only if "Trigger
+   * reconciliation on all event" mode is on.
    *
    * @param finalizerName name of the finalizer to add
    * @return the patched resource from the server response
