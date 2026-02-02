@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
 
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
@@ -78,6 +79,40 @@ public class ResourceOperations<P extends HasMetadata> {
                         .withFieldManager(context.getControllerConfiguration().fieldManager())
                         .withPatchType(PatchType.SERVER_SIDE_APPLY)
                         .build()));
+  }
+
+  /**
+   * Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from the update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata. In case of SSA we advise not to do updates with optimistic locking.
+   *
+   * @param resource fresh resource for server side apply
+   * @return updated resource
+   * @param informerEventSource InformerEventSource to use for resource caching and filtering
+   * @param <R> resource type
+   */
+  public <R extends HasMetadata> R serverSideApply(
+      R resource, InformerEventSource<R, P> informerEventSource) {
+    if (informerEventSource == null) {
+      return serverSideApply(resource);
+    }
+    return resourcePatch(
+        resource,
+        r ->
+            context
+                .getClient()
+                .resource(r)
+                .patch(
+                    new PatchContext.Builder()
+                        .withForce(true)
+                        .withFieldManager(context.getControllerConfiguration().fieldManager())
+                        .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                        .build()),
+        informerEventSource);
   }
 
   /**
@@ -187,6 +222,69 @@ public class ResourceOperations<P extends HasMetadata> {
    */
   public <R extends HasMetadata> R update(R resource) {
     return resourcePatch(resource, r -> context.getClient().resource(r).update());
+  }
+
+  /**
+   * Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
+   * @param resource resource to update
+   * @return updated resource
+   * @param informerEventSource InformerEventSource to use for resource caching and filtering
+   * @param <R> resource type
+   */
+  public <R extends HasMetadata> R update(
+      R resource, InformerEventSource<R, P> informerEventSource) {
+    if (informerEventSource == null) {
+      return update(resource);
+    }
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).update(), informerEventSource);
+  }
+
+  /**
+   * Creates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
+   * @param resource resource to update
+   * @return updated resource
+   * @param <R> resource type
+   */
+  public <R extends HasMetadata> R create(R resource) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).create());
+  }
+
+  /**
+   * Creates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
+   * @param resource resource to update
+   * @return updated resource
+   * @param informerEventSource InformerEventSource to use for resource caching and filtering
+   * @param <R> resource type
+   */
+  public <R extends HasMetadata> R create(
+      R resource, InformerEventSource<R, P> informerEventSource) {
+    if (informerEventSource == null) {
+      return create(resource);
+    }
+    return resourcePatch(
+        resource, r -> context.getClient().resource(r).create(), informerEventSource);
   }
 
   /**
