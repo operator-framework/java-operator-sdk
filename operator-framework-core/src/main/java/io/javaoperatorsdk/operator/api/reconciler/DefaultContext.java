@@ -46,6 +46,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   private final boolean primaryResourceDeleted;
   private final boolean primaryResourceFinalStateUnknown;
   private final Map<DependentResource<?, P>, Object> desiredStates = new ConcurrentHashMap<>();
+  private final ResourceOperations<P> resourceOperations;
 
   public DefaultContext(
       RetryInfo retryInfo,
@@ -61,6 +62,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     this.primaryResourceFinalStateUnknown = primaryResourceFinalStateUnknown;
     this.defaultManagedDependentResourceContext =
         new DefaultManagedWorkflowAndDependentResourceContext<>(controller, primaryResource, this);
+    this.resourceOperations = new ResourceOperations<>(this);
   }
 
   @Override
@@ -122,6 +124,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   @Override
   public KubernetesClient getClient() {
     return controller.getClient();
+  }
+
+  @Override
+  public ResourceOperations<P> resourceOperations() {
+    return resourceOperations;
   }
 
   @Override

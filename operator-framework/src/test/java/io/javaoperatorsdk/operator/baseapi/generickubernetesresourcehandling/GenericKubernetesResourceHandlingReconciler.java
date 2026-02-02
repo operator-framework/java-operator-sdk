@@ -40,7 +40,7 @@ public class GenericKubernetesResourceHandlingReconciler
       GenericKubernetesResourceHandlingCustomResource primary,
       Context<GenericKubernetesResourceHandlingCustomResource> context) {
 
-    ReconcileUtils.serverSideApply(context, desiredConfigMap(primary, context));
+    context.resourceOperations().serverSideApply(desiredConfigMap(primary, context));
 
     return UpdateControl.noUpdate();
   }
