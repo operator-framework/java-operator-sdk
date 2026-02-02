@@ -46,8 +46,8 @@ import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.get
  * If the update fails, it reads the primary resource from the cluster, applies the modifications
  * again and retries the update.
  *
- * @deprecated Use {@link ReconcileUtils} that contains the more efficient up-to-date versions of
- *     the target utils.
+ * @deprecated Use {@link Context#resourceOperations()} that contains the more efficient up-to-date
+ *     versions of methods.
  */
 @Deprecated(forRemoval = true)
 public class PrimaryUpdateAndCacheUtils {
