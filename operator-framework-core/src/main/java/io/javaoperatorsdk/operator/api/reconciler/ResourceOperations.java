@@ -190,6 +190,23 @@ public class ResourceOperations<P extends HasMetadata> {
   }
 
   /**
+   * Creates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
+   * @param resource resource to update
+   * @return updated resource
+   * @param <R> resource type
+   */
+  public <R extends HasMetadata> R create(R resource) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).create());
+  }
+
+  /**
    * Updates the resource status subresource.
    *
    * <p>Updates the resource and caches the response if needed, thus making sure that next

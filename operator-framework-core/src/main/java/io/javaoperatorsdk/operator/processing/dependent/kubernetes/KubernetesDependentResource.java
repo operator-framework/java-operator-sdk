@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -71,28 +70,10 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     this.kubernetesDependentResourceConfig = config;
   }
 
-  @Override
-  protected R handleCreate(R desired, P primary, Context<P> context) {
-    return eventSource()
-        .orElseThrow()
-        .eventFilteringUpdateAndCacheResource(
-            desired,
-            toCreate -> KubernetesDependentResource.super.handleCreate(toCreate, primary, context));
-  }
-
-  @Override
-  protected R handleUpdate(R actual, R desired, P primary, Context<P> context) {
-    return eventSource()
-        .orElseThrow()
-        .eventFilteringUpdateAndCacheResource(
-            desired,
-            toUpdate ->
-                KubernetesDependentResource.super.handleUpdate(actual, toUpdate, primary, context));
-  }
-
   @SuppressWarnings("unused")
   public R create(R desired, P primary, Context<P> context) {
-    if (useSSA(context)) {
+    var ssa = useSSA(context);
+    if (ssa) {
       // setting resource version for SSA so only created if it doesn't exist already
       var createIfNotExisting =
           kubernetesDependentResourceConfig == null
@@ -104,35 +85,38 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       }
     }
     addMetadata(false, null, desired, primary, context);
-    final var resource = prepare(context, desired, primary, "Creating");
-    return useSSA(context)
-        ? resource
-            .fieldManager(context.getControllerConfiguration().fieldManager())
-            .forceConflicts()
-            .serverSideApply()
-        : resource.create();
+    log.debug(
+        "Creating target resource with type: {}, with id: {} use ssa: {}",
+        desired.getClass(),
+        ResourceID.fromResource(desired),
+        ssa);
+
+    return ssa
+        ? context.resourceOperations().serverSideApply(desired)
+        : context.resourceOperations().create(desired);
   }
 
   public R update(R actual, R desired, P primary, Context<P> context) {
-    boolean useSSA = useSSA(context);
+    boolean ssa = useSSA(context);
     if (log.isDebugEnabled()) {
       log.debug(
           "Updating actual resource: {} version: {}; SSA: {}",
           ResourceID.fromResource(actual),
           actual.getMetadata().getResourceVersion(),
-          useSSA);
+          ssa);
     }
     R updatedResource;
     addMetadata(false, actual, desired, primary, context);
-    if (useSSA) {
-      updatedResource =
-          prepare(context, desired, primary, "Updating")
-              .fieldManager(context.getControllerConfiguration().fieldManager())
-              .forceConflicts()
-              .serverSideApply();
+    log.debug(
+        "Updating target resource with type: {}, with id: {} use ssa: {}",
+        desired.getClass(),
+        ResourceID.fromResource(desired),
+        ssa);
+    if (ssa) {
+      updatedResource = context.resourceOperations().serverSideApply(desired);
     } else {
       var updatedActual = GenericResourceUpdater.updateResource(actual, desired, context);
-      updatedResource = prepare(context, updatedActual, primary, "Updating").update();
+      updatedResource = context.resourceOperations().update(updatedActual);
     }
     log.debug(
         "Resource version after update: {}", updatedResource.getMetadata().getResourceVersion());
@@ -201,17 +185,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unused")
   public void deleteTargetResource(P primary, R resource, ResourceID key, Context<P> context) {
     context.getClient().resource(resource).delete();
-  }
-
-  @SuppressWarnings("unused")
-  protected Resource<R> prepare(Context<P> context, R desired, P primary, String actionName) {
-    log.debug(
-        "{} target resource with type: {}, with id: {}",
-        actionName,
-        desired.getClass(),
-        ResourceID.fromResource(desired));
-
-    return context.getClient().resource(desired);
   }
 
   protected void addReferenceHandlingMetadata(R desired, P primary) {
