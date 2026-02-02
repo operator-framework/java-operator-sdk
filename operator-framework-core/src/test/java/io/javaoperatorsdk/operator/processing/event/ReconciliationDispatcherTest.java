@@ -26,7 +26,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
-import org.mockito.MockedStatic;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -45,8 +44,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceOperations;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -72,6 +71,7 @@ class ReconciliationDispatcherTest {
   private final CustomResourceFacade<TestCustomResource> customResourceFacade =
       mock(ReconciliationDispatcher.CustomResourceFacade.class);
   private static ConfigurationService configurationService;
+  private ResourceOperations mockResourceOperations;
 
   @BeforeEach
   void setup() {
@@ -151,27 +151,25 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void addFinalizerOnNewResource() {
-    try (MockedStatic<ReconcileUtils> mockedReconcileUtils = mockStatic(ReconcileUtils.class)) {
-      assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
-      reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-      verify(reconciler, never()).reconcile(ArgumentMatchers.eq(testCustomResource), any());
-      mockedReconcileUtils.verify(() -> ReconcileUtils.addFinalizerWithSSA(any()), times(1));
-    }
+  void addFinalizerOnNewResource() throws Exception {
+    assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
+    reconciliationDispatcher.handleDispatch(
+        executionScopeWithCREvent(testCustomResource), createTestContext());
+    verify(reconciler, never()).reconcile(ArgumentMatchers.eq(testCustomResource), any());
+    verify(mockResourceOperations, times(1)).addFinalizerWithSSA();
   }
 
   @Test
-  void addFinalizerOnNewResourceWithoutSSA() {
-    try (MockedStatic<ReconcileUtils> mockedReconcileUtils = mockStatic(ReconcileUtils.class)) {
-      initConfigService(false, false);
-      final ReconciliationDispatcher<TestCustomResource> dispatcher =
-          init(testCustomResource, reconciler, null, customResourceFacade, true);
+  void addFinalizerOnNewResourceWithoutSSA() throws Exception {
+    initConfigService(false, false);
+    final ReconciliationDispatcher<TestCustomResource> dispatcher =
+        init(testCustomResource, reconciler, null, customResourceFacade, true);
+    assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
 
-      assertFalse(testCustomResource.hasFinalizer(DEFAULT_FINALIZER));
-      dispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
-      verify(reconciler, never()).reconcile(ArgumentMatchers.eq(testCustomResource), any());
-      mockedReconcileUtils.verify(() -> ReconcileUtils.addFinalizer(any()), times(1));
-    }
+    dispatcher.handleDispatch(executionScopeWithCREvent(testCustomResource), createTestContext());
+
+    verify(reconciler, never()).reconcile(ArgumentMatchers.eq(testCustomResource), any());
+    verify(mockResourceOperations, times(1)).addFinalizer();
   }
 
   @Test
@@ -227,17 +225,16 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void removesDefaultFinalizerOnDeleteIfSet() {
-    try (MockedStatic<ReconcileUtils> mockedReconcileUtils = mockStatic(ReconcileUtils.class)) {
-      testCustomResource.addFinalizer(DEFAULT_FINALIZER);
-      markForDeletion(testCustomResource);
+  void removesDefaultFinalizerOnDeleteIfSet() throws Exception {
+    testCustomResource.addFinalizer(DEFAULT_FINALIZER);
+    markForDeletion(testCustomResource);
 
-      var postExecControl =
-          reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+    var postExecControl =
+        reconciliationDispatcher.handleDispatch(
+            executionScopeWithCREvent(testCustomResource), createTestContext());
 
-      assertThat(postExecControl.isFinalizerRemoved()).isTrue();
-      mockedReconcileUtils.verify(() -> ReconcileUtils.removeFinalizer(any()), times(1));
-    }
+    assertThat(postExecControl.isFinalizerRemoved()).isTrue();
+    verify(mockResourceOperations, times(1)).removeFinalizer();
   }
 
   @Test
@@ -295,20 +292,21 @@ class ReconciliationDispatcherTest {
   }
 
   @Test
-  void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() {
-    try (MockedStatic<ReconcileUtils> mockedReconcileUtils = mockStatic(ReconcileUtils.class)) {
-      removeFinalizers(testCustomResource);
-      reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
-      mockedReconcileUtils
-          .when(() -> ReconcileUtils.addFinalizerWithSSA(any()))
-          .thenReturn(testCustomResource);
-      var postExecControl =
-          reconciliationDispatcher.handleExecution(executionScopeWithCREvent(testCustomResource));
+  void addsFinalizerIfNotMarkedForDeletionAndEmptyCustomResourceReturned() throws Exception {
 
-      mockedReconcileUtils.verify(() -> ReconcileUtils.addFinalizerWithSSA(any()), times(1));
-      assertThat(postExecControl.updateIsStatusPatch()).isFalse();
-      assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
-    }
+    removeFinalizers(testCustomResource);
+    reconciler.reconcile = (r, c) -> UpdateControl.noUpdate();
+    var context = createTestContext();
+    when(mockResourceOperations.addFinalizerWithSSA()).thenReturn(testCustomResource);
+
+    var postExecControl =
+        reconciliationDispatcher.handleDispatch(
+            executionScopeWithCREvent(testCustomResource), context);
+
+    verify(mockResourceOperations, times(1)).addFinalizerWithSSA();
+
+    assertThat(postExecControl.updateIsStatusPatch()).isFalse();
+    assertThat(postExecControl.getUpdatedCustomResource()).isPresent();
   }
 
   @Test
@@ -644,6 +642,13 @@ class ReconciliationDispatcherTest {
     assertThat(contextArgumentCaptor.getValue().getPrimaryResource())
         .isSameAs(customResourceCaptor.getValue())
         .isNotSameAs(testCustomResource);
+  }
+
+  private Context<TestCustomResource> createTestContext() {
+    var mockContext = mock(Context.class);
+    mockResourceOperations = mock(ResourceOperations.class);
+    when(mockContext.resourceOperations()).thenReturn(mockResourceOperations);
+    return mockContext;
   }
 
   private ObservedGenCustomResource createObservedGenCustomResource() {

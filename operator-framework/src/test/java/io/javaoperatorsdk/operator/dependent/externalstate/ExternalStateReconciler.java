@@ -32,7 +32,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -111,7 +110,7 @@ public class ExternalStateReconciler
     // This is critical in this case, since on next reconciliation if it would not be in the cache
     // it would be created again.
     configMapEventSource.eventFilteringUpdateAndCacheResource(
-        configMap, toCreate -> ReconcileUtils.serverSideApply(context, toCreate));
+        configMap, toCreate -> context.resourceOperations().serverSideApply(toCreate));
     externalResourceEventSource.handleRecentResourceCreate(primaryID, createdResource);
   }
 
