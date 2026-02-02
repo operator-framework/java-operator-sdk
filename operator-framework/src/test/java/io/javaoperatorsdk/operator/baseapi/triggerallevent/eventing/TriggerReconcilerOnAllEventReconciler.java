@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
@@ -75,7 +74,7 @@ public class TriggerReconcilerOnAllEventReconciler
 
     if (!primary.isMarkedForDeletion() && getUseFinalizer() && !primary.hasFinalizer(FINALIZER)) {
       log.info("Adding finalizer");
-      ReconcileUtils.addFinalizer(context, FINALIZER);
+      context.resourceOperations().addFinalizer(FINALIZER);
       return UpdateControl.noUpdate();
     }
 
@@ -98,7 +97,7 @@ public class TriggerReconcilerOnAllEventReconciler
       setEventOnMarkedForDeletion(true);
       if (getUseFinalizer() && primary.hasFinalizer(FINALIZER)) {
         log.info("Removing finalizer");
-        ReconcileUtils.removeFinalizer(context, FINALIZER);
+        context.resourceOperations().removeFinalizer(FINALIZER);
       }
     }
 

@@ -69,7 +69,7 @@ public class TestReconciler
     if (existingConfigMap != null) {
       existingConfigMap.setData(configMapData(resource));
       log.info("Updating config map");
-      ReconcileUtils.serverSideApply(context, existingConfigMap);
+      context.resourceOperations().serverSideApply(existingConfigMap);
     } else {
       Map<String, String> labels = new HashMap<>();
       labels.put("managedBy", TestReconciler.class.getSimpleName());
@@ -84,7 +84,7 @@ public class TestReconciler
               .withData(configMapData(resource))
               .build();
       log.info("Creating config map");
-      ReconcileUtils.serverSideApply(context, newConfigMap);
+      context.resourceOperations().serverSideApply(newConfigMap);
     }
     if (updateStatus) {
       var statusUpdateResource = new TestCustomResource();
