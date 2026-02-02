@@ -53,7 +53,7 @@ public class ChangeNamespaceTestReconciler
       ChangeNamespaceTestCustomResource primary,
       Context<ChangeNamespaceTestCustomResource> context) {
 
-    ReconcileUtils.serverSideApply(context, configMap(primary));
+    context.resourceOperations().serverSideApply(configMap(primary));
 
     if (primary.getStatus() == null) {
       primary.setStatus(new ChangeNamespaceTestCustomResourceStatus());

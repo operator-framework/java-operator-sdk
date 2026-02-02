@@ -23,8 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
@@ -35,33 +33,40 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInfor
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getUID;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 
-public class ReconcileUtils {
-
-  private static final Logger log = LoggerFactory.getLogger(ReconcileUtils.class);
+/**
+ * Provides useful operations to manipulate resources (server-side apply, patch, etc.) in an
+ * idiomatic way, in particular to make sure that the latest version of the resource is present in
+ * the caches for the next reconciliation.
+ *
+ * @param <P> the resource type on which this object operates
+ */
+public class ResourceOperations<P extends HasMetadata> {
 
   public static final int DEFAULT_MAX_RETRY = 10;
 
-  private ReconcileUtils() {}
+  private static final Logger log = LoggerFactory.getLogger(ResourceOperations.class);
+
+  private final Context<P> context;
+
+  public ResourceOperations(Context<P> context) {
+    this.context = context;
+  }
 
   /**
    * Updates the resource and caches the response if needed, thus making sure that next
-   * reconciliation will contain to updated resource. Or more recent one if someone did an update
-   * after our update.
-   *
-   * <p>Optionally also can filter out the event, what is the result of this update.
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from the update, so
+   * reconciliation is not triggered by own update.
    *
    * <p>You are free to control the optimistic locking by setting the resource version in resource
    * metadata. In case of SSA we advise not to do updates with optimistic locking.
    *
-   * @param context of reconciler
    * @param resource fresh resource for server side apply
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R serverSideApply(
-      Context<? extends HasMetadata> context, R resource) {
+  public <R extends HasMetadata> R serverSideApply(R resource) {
     return resourcePatch(
-        context,
         resource,
         r ->
             context
@@ -76,18 +81,22 @@ public class ReconcileUtils {
   }
 
   /**
-   * Server-Side Apply the resource status subresource. Updates the resource status and caches the
-   * response if needed, ensuring the next reconciliation will contain the updated resource.
+   * Server-Side Apply the resource status subresource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata. In case of SSA we advise not to do updates with optimistic locking.
+   *
    * @param resource fresh resource for server side apply
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R serverSideApplyStatus(
-      Context<? extends HasMetadata> context, R resource) {
+  public <R extends HasMetadata> R serverSideApplyStatus(R resource) {
     return resourcePatch(
-        context,
         resource,
         r ->
             context
@@ -103,16 +112,20 @@ public class ReconcileUtils {
   }
 
   /**
-   * Server-Side Apply the primary resource. Updates the primary resource and caches the response
-   * using the controller's event source, ensuring the next reconciliation will contain the updated
-   * resource.
+   * Server-Side Apply the primary resource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata. In case of SSA we advise not to do updates with optimistic locking.
+   *
    * @param resource primary resource for server side apply
    * @return updated resource
-   * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P serverSideApplyPrimary(Context<P> context, P resource) {
+  public P serverSideApplyPrimary(P resource) {
     return resourcePatch(
         resource,
         r ->
@@ -129,16 +142,20 @@ public class ReconcileUtils {
   }
 
   /**
-   * Server-Side Apply the primary resource status subresource. Updates the primary resource status
-   * and caches the response using the controller's event source.
+   * Server-Side Apply the primary resource status subresource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata. In case of SSA we advise not to do updates with optimistic locking.
+   *
    * @param resource primary resource for server side apply
    * @return updated resource
-   * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P serverSideApplyPrimaryStatus(
-      Context<P> context, P resource) {
+  public P serverSideApplyPrimaryStatus(P resource) {
     return resourcePatch(
         resource,
         r ->
@@ -156,43 +173,56 @@ public class ReconcileUtils {
   }
 
   /**
-   * Updates the resource with optimistic locking based on the resource version. Caches the response
-   * if needed, ensuring the next reconciliation will contain the updated resource.
+   * Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
    *
-   * @param context of reconciler
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to update
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R update(
-      Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).update());
+  public <R extends HasMetadata> R update(R resource) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).update());
   }
 
   /**
-   * Updates the resource status subresource with optimistic locking. Caches the response if needed.
+   * Updates the resource status subresource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to update
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R updateStatus(
-      Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).updateStatus());
+  public <R extends HasMetadata> R updateStatus(R resource) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).updateStatus());
   }
 
   /**
-   * Updates the primary resource with optimistic locking. Caches the response using the
-   * controller's event source.
+   * Updates the primary resource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource primary resource to update
    * @return updated resource
-   * @param <R> resource type
    */
-  public static <R extends HasMetadata> R updatePrimary(
-      Context<? extends HasMetadata> context, R resource) {
+  public P updatePrimary(P resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).update(),
@@ -200,16 +230,20 @@ public class ReconcileUtils {
   }
 
   /**
-   * Updates the primary resource status subresource with optimistic locking. Caches the response
-   * using the controller's event source.
+   * Updates the primary resource status subresource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource primary resource to update
    * @return updated resource
-   * @param <R> resource type
    */
-  public static <R extends HasMetadata> R updatePrimaryStatus(
-      Context<? extends HasMetadata> context, R resource) {
+  public P updatePrimaryStatus(P resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).updateStatus(),
@@ -220,46 +254,60 @@ public class ReconcileUtils {
    * Applies a JSON Patch to the resource. The unaryOperator function is used to modify the
    * resource, and the differences are sent as a JSON Patch to the Kubernetes API server.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R jsonPatch(
-      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).edit(unaryOperator));
+  public <R extends HasMetadata> R jsonPatch(R resource, UnaryOperator<R> unaryOperator) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).edit(unaryOperator));
   }
 
   /**
    * Applies a JSON Patch to the resource status subresource. The unaryOperator function is used to
    * modify the resource status, and the differences are sent as a JSON Patch.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R jsonPatchStatus(
-      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
-    return resourcePatch(
-        context, resource, r -> context.getClient().resource(r).editStatus(unaryOperator));
+  public <R extends HasMetadata> R jsonPatchStatus(R resource, UnaryOperator<R> unaryOperator) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).editStatus(unaryOperator));
   }
 
   /**
-   * Applies a JSON Patch to the primary resource. Caches the response using the controller's event
-   * source.
+   * Applies a JSON Patch to the primary resource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
-   * @param <R> resource type
    */
-  public static <R extends HasMetadata> R jsonPatchPrimary(
-      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
+  public P jsonPatchPrimary(P resource, UnaryOperator<P> unaryOperator) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).edit(unaryOperator),
@@ -267,17 +315,21 @@ public class ReconcileUtils {
   }
 
   /**
-   * Applies a JSON Patch to the primary resource status subresource. Caches the response using the
-   * controller's event source.
+   * Applies a JSON Patch to the primary resource status subresource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource primary resource to patch
    * @param unaryOperator function to modify the resource
    * @return updated resource
-   * @param <R> resource type
    */
-  public static <R extends HasMetadata> R jsonPatchPrimaryStatus(
-      Context<? extends HasMetadata> context, R resource, UnaryOperator<R> unaryOperator) {
+  public P jsonPatchPrimaryStatus(P resource, UnaryOperator<P> unaryOperator) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).editStatus(unaryOperator),
@@ -288,41 +340,57 @@ public class ReconcileUtils {
    * Applies a JSON Merge Patch to the resource. JSON Merge Patch (RFC 7386) is a simpler patching
    * strategy that merges the provided resource with the existing resource on the server.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to patch
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R jsonMergePatch(
-      Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).patch());
+  public <R extends HasMetadata> R jsonMergePatch(R resource) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).patch());
   }
 
   /**
-   * Applies a JSON Merge Patch to the resource status subresource. Merges the provided resource
-   * status with the existing resource status on the server.
+   * Applies a JSON Merge Patch to the resource status subresource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource resource to patch
    * @return updated resource
    * @param <R> resource type
    */
-  public static <R extends HasMetadata> R jsonMergePatchStatus(
-      Context<? extends HasMetadata> context, R resource) {
-    return resourcePatch(context, resource, r -> context.getClient().resource(r).patchStatus());
+  public <R extends HasMetadata> R jsonMergePatchStatus(R resource) {
+    return resourcePatch(resource, r -> context.getClient().resource(r).patchStatus());
   }
 
   /**
    * Applies a JSON Merge Patch to the primary resource. Caches the response using the controller's
    * event source.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource primary resource to patch reconciliation
    * @return updated resource
-   * @param <R> resource type
    */
-  public static <R extends HasMetadata> R jsonMergePatchPrimary(
-      Context<? extends HasMetadata> context, R resource) {
+  public P jsonMergePatchPrimary(P resource) {
     return resourcePatch(
         resource,
         r -> context.getClient().resource(r).patch(),
@@ -330,35 +398,40 @@ public class ReconcileUtils {
   }
 
   /**
-   * Applies a JSON Merge Patch to the primary resource status subresource and filters out the
-   * resulting event. This is a convenience method that calls {@link
-   * #jsonMergePatchPrimaryStatus(Context, HasMetadata)} with filterEvent set to true.
+   * Applies a JSON Merge Patch to the primary resource.
    *
-   * @param context of reconciler
+   * <p>Updates the resource and caches the response if needed, thus making sure that next
+   * reconciliation will see to updated resource - or more recent one if additional update happened
+   * after this update; In addition to that it filters out the event from this update, so
+   * reconciliation is not triggered by own update.
+   *
+   * <p>You are free to control the optimistic locking by setting the resource version in resource
+   * metadata.
+   *
    * @param resource primary resource to patch
    * @return updated resource
-   * @param <R> resource type
-   * @see #jsonMergePatchPrimaryStatus(Context, HasMetadata)
+   * @see #jsonMergePatchPrimaryStatus(HasMetadata)
    */
-  public static <R extends HasMetadata> R jsonMergePatchPrimaryStatus(
-      Context<? extends HasMetadata> context, R resource) {
-    return jsonMergePatchPrimaryStatus(context, resource);
+  public P jsonMergePatchPrimaryStatus(P resource) {
+    return resourcePatch(
+        resource,
+        r -> context.getClient().resource(r).patchStatus(),
+        context.eventSourceRetriever().getControllerEventSource());
   }
 
   /**
-   * Internal utility method to patch a resource and cache the result. Automatically discovers the
-   * event source for the resource type and delegates to {@link #resourcePatch(HasMetadata,
-   * UnaryOperator, ManagedInformerEventSource)}.
+   * Utility method to patch a resource and cache the result. Automatically discovers the event
+   * source for the resource type and delegates to {@link #resourcePatch(HasMetadata, UnaryOperator,
+   * ManagedInformerEventSource)}.
    *
-   * @param context of reconciler
    * @param resource resource to patch
    * @param updateOperation operation to perform (update, patch, edit, etc.)
    * @return updated resource
    * @param <R> resource type
    * @throws IllegalStateException if no event source or multiple event sources are found
    */
-  public static <R extends HasMetadata> R resourcePatch(
-      Context<?> context, R resource, UnaryOperator<R> updateOperation) {
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public <R extends HasMetadata> R resourcePatch(R resource, UnaryOperator<R> updateOperation) {
 
     var esList = context.eventSourceRetriever().getEventSourcesFor(resource.getClass());
     if (esList.isEmpty()) {
@@ -372,7 +445,7 @@ public class ReconcileUtils {
     }
     var es = esList.get(0);
     if (es instanceof ManagedInformerEventSource mes) {
-      return resourcePatch(resource, updateOperation, mes);
+      return resourcePatch(resource, updateOperation, (ManagedInformerEventSource<R, P, ?>) mes);
     } else {
       throw new IllegalStateException(
           "Target event source must be a subclass off "
@@ -381,9 +454,9 @@ public class ReconcileUtils {
   }
 
   /**
-   * Internal utility method to patch a resource and cache the result using the specified event
-   * source. This method either filters out the resulting event or allows it to trigger
-   * reconciliation based on the filterEvent parameter.
+   * Utility method to patch a resource and cache the result using the specified event source. This
+   * method either filters out the resulting event or allows it to trigger reconciliation based on
+   * the filterEvent parameter.
    *
    * @param resource resource to patch
    * @param updateOperation operation to perform (update, patch, edit, etc.)
@@ -391,41 +464,38 @@ public class ReconcileUtils {
    * @return updated resource
    * @param <R> resource type
    */
-  @SuppressWarnings("unchecked")
-  public static <R extends HasMetadata> R resourcePatch(
-      R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource ies) {
-    return (R) ies.eventFilteringUpdateAndCacheResource(resource, updateOperation);
+  public <R extends HasMetadata> R resourcePatch(
+      R resource, UnaryOperator<R> updateOperation, ManagedInformerEventSource<R, P, ?> ies) {
+    return ies.eventFilteringUpdateAndCacheResource(resource, updateOperation);
   }
 
   /**
    * Adds the default finalizer (from controller configuration) to the primary resource. This is a
-   * convenience method that calls {@link #addFinalizer(Context, String)} with the configured
-   * finalizer name.
+   * convenience method that calls {@link #addFinalizer(String)} with the configured finalizer name.
+   * Note that explicitly adding/removing finalizer is required only if "Trigger reconciliation on
+   * all event" mode is on.
    *
-   * @param context of reconciler
    * @return updated resource from the server response
-   * @param <P> primary resource type
-   * @see #addFinalizer(Context, String)
+   * @see #addFinalizer(String)
    */
-  public static <P extends HasMetadata> P addFinalizer(Context<P> context) {
-    return addFinalizer(context, context.getControllerConfiguration().getFinalizerName());
+  public P addFinalizer() {
+    return addFinalizer(context.getControllerConfiguration().getFinalizerName());
   }
 
   /**
    * Adds finalizer to the resource using JSON Patch. Retries conflicts and unprocessable content
-   * (HTTP 422), see {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient,
-   * HasMetadata, UnaryOperator, Predicate)} for details on retry. It does not try to add finalizer
-   * if there is already a finalizer or resource is marked for deletion.
+   * (HTTP 422). It does not try to add finalizer if there is already a finalizer or resource is
+   * marked for deletion. Note that explicitly adding/removing finalizer is required only if
+   * "Trigger reconciliation on all event" mode is on.
    *
    * @return updated resource from the server response
    */
-  public static <P extends HasMetadata> P addFinalizer(Context<P> context, String finalizerName) {
+  public P addFinalizer(String finalizerName) {
     var resource = context.getPrimaryResource();
     if (resource.isMarkedForDeletion() || resource.hasFinalizer(finalizerName)) {
       return resource;
     }
-    return conflictRetryingPatch(
-        context,
+    return conflictRetryingPatchPrimary(
         r -> {
           r.addFinalizer(finalizerName);
           return r;
@@ -435,34 +505,31 @@ public class ReconcileUtils {
 
   /**
    * Removes the default finalizer (from controller configuration) from the primary resource. This
-   * is a convenience method that calls {@link #removeFinalizer(Context, String)} with the
-   * configured finalizer name.
+   * is a convenience method that calls {@link #removeFinalizer(String)} with the configured
+   * finalizer name. Note that explicitly adding/removing finalizer is required only if "Trigger
+   * reconciliation on all event" mode is on.
    *
-   * @param context of reconciler
    * @return updated resource from the server response
-   * @param <P> primary resource type
-   * @see #removeFinalizer(Context, String)
+   * @see #removeFinalizer(String)
    */
-  public static <P extends HasMetadata> P removeFinalizer(Context<P> context) {
-    return removeFinalizer(context, context.getControllerConfiguration().getFinalizerName());
+  public P removeFinalizer() {
+    return removeFinalizer(context.getControllerConfiguration().getFinalizerName());
   }
 
   /**
-   * Removes the target finalizer from target resource. Uses JSON Patch and handles retries, see
-   * {@link PrimaryUpdateAndCacheUtils#conflictRetryingPatch(KubernetesClient, HasMetadata,
-   * UnaryOperator, Predicate)} for details. It does not try to remove finalizer if finalizer is not
-   * present on the resource.
+   * Removes the target finalizer from the primary resource. Uses JSON Patch and handles retries. It
+   * does not try to remove finalizer if finalizer is not present on the resource. Note that
+   * explicitly adding/removing finalizer is required only if "Trigger reconciliation on all event"
+   * mode is on.
    *
    * @return updated resource from the server response
    */
-  public static <P extends HasMetadata> P removeFinalizer(
-      Context<P> context, String finalizerName) {
+  public P removeFinalizer(String finalizerName) {
     var resource = context.getPrimaryResource();
     if (!resource.hasFinalizer(finalizerName)) {
       return resource;
     }
-    return conflictRetryingPatch(
-        context,
+    return conflictRetryingPatchPrimary(
         r -> {
           r.removeFinalizer(finalizerName);
           return r;
@@ -479,18 +546,16 @@ public class ReconcileUtils {
   /**
    * Patches the resource using JSON Patch. In case the server responds with conflict (HTTP 409) or
    * unprocessable content (HTTP 422) it retries the operation up to the maximum number defined in
-   * {@link ReconcileUtils#DEFAULT_MAX_RETRY}.
+   * {@link ResourceOperations#DEFAULT_MAX_RETRY}.
    *
-   * @param context reconciliation context
    * @param resourceChangesOperator changes to be done on the resource before update
    * @param preCondition condition to check if the patch operation still needs to be performed or
    *     not.
    * @return updated resource from the server or unchanged if the precondition does not hold.
-   * @param <P> resource type
    */
   @SuppressWarnings("unchecked")
-  public static <P extends HasMetadata> P conflictRetryingPatch(
-      Context<P> context, UnaryOperator<P> resourceChangesOperator, Predicate<P> preCondition) {
+  public P conflictRetryingPatchPrimary(
+      UnaryOperator<P> resourceChangesOperator, Predicate<P> preCondition) {
     var resource = context.getPrimaryResource();
     var client = context.getClient();
     if (log.isDebugEnabled()) {
@@ -502,7 +567,7 @@ public class ReconcileUtils {
         if (!preCondition.test(resource)) {
           return resource;
         }
-        return jsonPatchPrimary(context, resource, resourceChangesOperator);
+        return jsonPatchPrimary(resource, resourceChangesOperator);
       } catch (KubernetesClientException e) {
         log.trace("Exception during patch for resource: {}", resource);
         retryIndex++;
@@ -544,30 +609,27 @@ public class ReconcileUtils {
 
   /**
    * Adds the default finalizer (from controller configuration) to the primary resource using
-   * Server-Side Apply. This is a convenience method that calls {@link #addFinalizerWithSSA(Context,
-   * String)} with the configured finalizer name.
+   * Server-Side Apply. This is a convenience method that calls {@link #addFinalizerWithSSA(
+   * String)} with the configured finalizer name. Note that explicitly adding finalizer is required
+   * only if "Trigger reconciliation on all event" mode is on.
    *
-   * @param context of reconciler
    * @return the patched resource from the server response
-   * @param <P> primary resource type
-   * @see #addFinalizerWithSSA(Context, String)
+   * @see #addFinalizerWithSSA(String)
    */
-  public static <P extends HasMetadata> P addFinalizerWithSSA(Context<P> context) {
-    return addFinalizerWithSSA(context, context.getControllerConfiguration().getFinalizerName());
+  public P addFinalizerWithSSA() {
+    return addFinalizerWithSSA(context.getControllerConfiguration().getFinalizerName());
   }
 
   /**
    * Adds finalizer using Server-Side Apply. In the background this method creates a fresh copy of
    * the target resource, setting only name, namespace and finalizer. Does not use optimistic
-   * locking for the patch.
+   * locking for the patch. Note that explicitly adding finalizer is required only if "Trigger
+   * reconciliation on all event" mode is on.
    *
-   * @param context of reconciler
    * @param finalizerName name of the finalizer to add
    * @return the patched resource from the server response
-   * @param <P> primary resource type
    */
-  public static <P extends HasMetadata> P addFinalizerWithSSA(
-      Context<P> context, String finalizerName) {
+  public P addFinalizerWithSSA(String finalizerName) {
     var originalResource = context.getPrimaryResource();
     if (log.isDebugEnabled()) {
       log.debug(
@@ -576,14 +638,12 @@ public class ReconcileUtils {
           getVersion(originalResource));
     }
     try {
+      @SuppressWarnings("unchecked")
       P resource = (P) originalResource.getClass().getConstructor().newInstance();
-      ObjectMeta objectMeta = new ObjectMeta();
-      objectMeta.setName(originalResource.getMetadata().getName());
-      objectMeta.setNamespace(originalResource.getMetadata().getNamespace());
-      resource.setMetadata(objectMeta);
+      resource.initNameAndNamespaceFrom(originalResource);
       resource.addFinalizer(finalizerName);
 
-      return serverSideApplyPrimary(context, resource);
+      return serverSideApplyPrimary(resource);
     } catch (InstantiationException
         | IllegalAccessException
         | InvocationTargetException

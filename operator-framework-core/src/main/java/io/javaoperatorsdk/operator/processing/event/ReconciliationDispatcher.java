@@ -31,7 +31,6 @@ import io.javaoperatorsdk.operator.api.reconciler.BaseControl;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DefaultContext;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ReconcileUtils;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -73,13 +72,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   public PostExecutionControl<P> handleExecution(ExecutionScope<P> executionScope) {
     validateExecutionScope(executionScope);
     try {
-      return handleDispatch(executionScope);
+      return handleDispatch(executionScope, null);
     } catch (Exception e) {
       return PostExecutionControl.exceptionDuringExecution(e);
     }
   }
 
-  private PostExecutionControl<P> handleDispatch(ExecutionScope<P> executionScope)
+  // visible for testing
+  PostExecutionControl<P> handleDispatch(ExecutionScope<P> executionScope, Context<P> context)
       throws Exception {
     P originalResource = executionScope.getResource();
     var resourceForExecution = cloneResource(originalResource);
@@ -98,13 +98,16 @@ class ReconciliationDispatcher<P extends HasMetadata> {
           originalResource.getMetadata().getFinalizers());
       return PostExecutionControl.defaultDispatch();
     }
-    Context<P> context =
-        new DefaultContext<>(
-            executionScope.getRetryInfo(),
-            controller,
-            resourceForExecution,
-            executionScope.isDeleteEvent(),
-            executionScope.isDeleteFinalStateUnknown());
+    // context can be provided only for testing purposes
+    context =
+        context == null
+            ? new DefaultContext<>(
+                executionScope.getRetryInfo(),
+                controller,
+                resourceForExecution,
+                executionScope.isDeleteEvent(),
+                executionScope.isDeleteFinalStateUnknown())
+            : context;
 
     // checking the cleaner for all-event-mode
     if (!triggerOnAllEvents() && markedForDeletion) {
@@ -137,9 +140,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
        */
       P updatedResource;
       if (useSSA) {
-        updatedResource = ReconcileUtils.addFinalizerWithSSA(context);
+        updatedResource = context.resourceOperations().addFinalizerWithSSA();
       } else {
-        updatedResource = ReconcileUtils.addFinalizer(context);
+        updatedResource = context.resourceOperations().addFinalizer();
       }
       return PostExecutionControl.onlyFinalizerAdded(updatedResource)
           .withReSchedule(BaseControl.INSTANT_RESCHEDULE);
@@ -321,7 +324,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       // cleanup is finished, nothing left to be done
       final var finalizerName = configuration().getFinalizerName();
       if (deleteControl.isRemoveFinalizer() && resourceForExecution.hasFinalizer(finalizerName)) {
-        P customResource = ReconcileUtils.removeFinalizer(context);
+        P customResource = context.resourceOperations().removeFinalizer();
         return PostExecutionControl.customResourceFinalizerRemoved(customResource);
       }
     }
@@ -387,9 +390,9 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             resource.getMetadata().getResourceVersion());
       }
       if (useSSA) {
-        return ReconcileUtils.serverSideApplyPrimary(context, resource);
+        return context.resourceOperations().serverSideApplyPrimary(resource);
       } else {
-        return ReconcileUtils.jsonPatchPrimary(context, originalResource, r -> resource);
+        return context.resourceOperations().jsonPatchPrimary(originalResource, r -> resource);
       }
     }
 
@@ -399,7 +402,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
         var managedFields = resource.getMetadata().getManagedFields();
         try {
           resource.getMetadata().setManagedFields(null);
-          return ReconcileUtils.serverSideApplyPrimaryStatus(context, resource);
+          return context.resourceOperations().serverSideApplyPrimaryStatus(resource);
         } finally {
           resource.getMetadata().setManagedFields(managedFields);
         }
@@ -416,13 +419,14 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       try {
         clonedOriginal.getMetadata().setResourceVersion(null);
         resource.getMetadata().setResourceVersion(null);
-        return ReconcileUtils.jsonPatchPrimaryStatus(
-            context,
-            clonedOriginal,
-            r -> {
-              ReconcilerUtilsInternal.setStatus(r, ReconcilerUtilsInternal.getStatus(resource));
-              return r;
-            });
+        return context
+            .resourceOperations()
+            .jsonPatchPrimaryStatus(
+                clonedOriginal,
+                r -> {
+                  ReconcilerUtilsInternal.setStatus(r, ReconcilerUtilsInternal.getStatus(resource));
+                  return r;
+                });
       } finally {
         // restore initial resource version
         clonedOriginal.getMetadata().setResourceVersion(resourceVersion);

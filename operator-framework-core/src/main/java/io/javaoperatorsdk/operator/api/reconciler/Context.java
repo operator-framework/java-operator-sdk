@@ -58,6 +58,8 @@ public interface Context<P extends HasMetadata> {
 
   KubernetesClient getClient();
 
+  ResourceOperations<P> resourceOperations();
+
   /** ExecutorService initialized by framework for workflows. Used for workflow standalone mode. */
   ExecutorService getWorkflowExecutorService();
 

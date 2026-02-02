@@ -36,10 +36,9 @@ import io.javaoperatorsdk.operator.sample.simple.TestCustomResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class ReconcileUtilsTest {
+class ResourceOperationsTest {
 
   private static final String FINALIZER_NAME = "test.javaoperatorsdk.io/finalizer";
 
@@ -49,6 +48,7 @@ class ReconcileUtilsTest {
   private Resource resourceOp;
   private ControllerEventSource<TestCustomResource> controllerEventSource;
   private ControllerConfiguration<TestCustomResource> controllerConfiguration;
+  private ResourceOperations<TestCustomResource> resourceOperations;
 
   @BeforeEach
   @SuppressWarnings("unchecked")
@@ -71,6 +71,8 @@ class ReconcileUtilsTest {
     when(client.resources(TestCustomResource.class)).thenReturn(mixedOperation);
     when(mixedOperation.inNamespace(any())).thenReturn(mixedOperation);
     when(mixedOperation.withName(any())).thenReturn(resourceOp);
+
+    resourceOperations = new ResourceOperations<>(context);
   }
 
   @Test
@@ -91,7 +93,7 @@ class ReconcileUtilsTest {
               return res;
             });
 
-    var result = ReconcileUtils.addFinalizer(context, FINALIZER_NAME);
+    var result = resourceOperations.addFinalizer(FINALIZER_NAME);
 
     assertThat(result).isNotNull();
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
@@ -118,7 +120,7 @@ class ReconcileUtilsTest {
               return res;
             });
 
-    var result = ReconcileUtils.addFinalizerWithSSA(context, FINALIZER_NAME);
+    var result = resourceOperations.addFinalizerWithSSA(FINALIZER_NAME);
 
     assertThat(result).isNotNull();
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
@@ -146,7 +148,7 @@ class ReconcileUtilsTest {
               return res;
             });
 
-    var result = ReconcileUtils.removeFinalizer(context, FINALIZER_NAME);
+    var result = resourceOperations.removeFinalizer(FINALIZER_NAME);
 
     assertThat(result).isNotNull();
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isFalse();
@@ -177,7 +179,7 @@ class ReconcileUtilsTest {
     // Return fresh resource on retry
     when(resourceOp.get()).thenReturn(resource);
 
-    var result = ReconcileUtils.addFinalizer(context, FINALIZER_NAME);
+    var result = resourceOperations.addFinalizer(FINALIZER_NAME);
 
     assertThat(result).isNotNull();
     assertThat(result.hasFinalizer(FINALIZER_NAME)).isTrue();
@@ -202,7 +204,7 @@ class ReconcileUtilsTest {
     // Return null on retry (resource was deleted)
     when(resourceOp.get()).thenReturn(null);
 
-    ReconcileUtils.removeFinalizer(context, FINALIZER_NAME);
+    resourceOperations.removeFinalizer(FINALIZER_NAME);
 
     verify(controllerEventSource, times(1))
         .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
@@ -235,7 +237,7 @@ class ReconcileUtilsTest {
     freshResource.addFinalizer(FINALIZER_NAME);
     when(resourceOp.get()).thenReturn(freshResource);
 
-    var result = ReconcileUtils.removeFinalizer(context, FINALIZER_NAME);
+    var result = resourceOperations.removeFinalizer(FINALIZER_NAME);
 
     assertThat(result).isNotNull();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("3");
@@ -262,7 +264,7 @@ class ReconcileUtilsTest {
     when(managedEventSource.eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class)))
         .thenReturn(updatedResource);
 
-    var result = ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity());
+    var result = resourceOperations.resourcePatch(resource, UnaryOperator.identity());
 
     assertThat(result).isNotNull();
     assertThat(result.getMetadata().getResourceVersion()).isEqualTo("2");
@@ -282,7 +284,7 @@ class ReconcileUtilsTest {
     var exception =
         assertThrows(
             IllegalStateException.class,
-            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+            () -> resourceOperations.resourcePatch(resource, UnaryOperator.identity()));
 
     assertThat(exception.getMessage()).contains("No event source found for type");
   }
@@ -301,7 +303,7 @@ class ReconcileUtilsTest {
     var exception =
         assertThrows(
             IllegalStateException.class,
-            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+            () -> resourceOperations.resourcePatch(resource, UnaryOperator.identity()));
 
     assertThat(exception.getMessage()).contains("Multiple event sources found for");
     assertThat(exception.getMessage()).contains("please provide the target event source");
@@ -320,7 +322,7 @@ class ReconcileUtilsTest {
     var exception =
         assertThrows(
             IllegalStateException.class,
-            () -> ReconcileUtils.resourcePatch(context, resource, UnaryOperator.identity()));
+            () -> resourceOperations.resourcePatch(resource, UnaryOperator.identity()));
 
     assertThat(exception.getMessage()).contains("Target event source must be a subclass off");
     assertThat(exception.getMessage()).contains("ManagedInformerEventSource");
