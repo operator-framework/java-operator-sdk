@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.baseapi.performance;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,7 @@ import io.vertx.core.impl.ConcurrentHashSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SimplePerformanceTestIT {
-
+  ObjectMapper objectMapper = new ObjectMapper();
   private static final Logger log = LoggerFactory.getLogger(SimplePerformanceTestIT.class);
   public static final String INITIAL_VALUE = "initialValue";
   public static final String RESOURCE_NAME_PREFIX = "resource";
@@ -89,18 +90,33 @@ public class SimplePerformanceTestIT {
   private void saveResults(long duration) {
     try {
       var result = new PerformanceTestResult();
+      getRunProperties().forEach((k,v)->result.addProperty(k,v));
       var summary = new PerformanceTestSummary();
       result.setSummaries(List.of(summary));
       summary.setName("Naive performance test");
       summary.setDuration(duration);
       summary.setNumberOfProcessors(Runtime.getRuntime().availableProcessors());
       summary.setMaxMemory(Runtime.getRuntime().maxMemory());
-      var objectMapper = new ObjectMapper();
+
       objectMapper.writeValue(new File("target/performance_test_result.json"), result);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
+
+    private Map<String, Object> getRunProperties() {
+        try {
+          File runProperties = new File("../run-properties.json");
+          if (runProperties.exists()) {
+            return objectMapper.readValue(runProperties, HashMap.class);
+          } else {
+            log.warn("No run properties file found");
+            return Map.of();
+          }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
   private void createResources(int startIndex, int number, String value) {
     try {

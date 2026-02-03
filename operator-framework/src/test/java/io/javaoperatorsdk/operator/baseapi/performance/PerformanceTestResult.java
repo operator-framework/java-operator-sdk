@@ -15,9 +15,26 @@
  */
 package io.javaoperatorsdk.operator.baseapi.performance;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PerformanceTestResult {
+
+  private final Map<String, Object> additionalProperties = new HashMap<>();
+
+  @JsonAnySetter
+  public void addProperty(String key, Object value) {
+    additionalProperties.put(key, value);
+  }
+
+  @JsonAnyGetter
+  public Map<String, Object> getProperties() {
+    return additionalProperties;
+  }
 
   private List<PerformanceTestSummary> summaries;
 

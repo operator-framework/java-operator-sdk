@@ -44,7 +44,6 @@ jobs:
           minikube version: 'v1.36.0'
           kubernetes version: '${{ inputs.kube-version }}'
           github token: ${{ github.token }}
-
       - name: "${{inputs.it-category}} integration tests (kube: ${{ inputs.kube-version }} / java: ${{ inputs.java-version }} / client: ${{ inputs.http-client }})"
         run: |
           if [ -z "${{inputs.it-category}}" ]; then
@@ -52,6 +51,7 @@ jobs:
           else
             it_profile="integration-tests-${{inputs.it-category}}"
           fi
+          echo "{ "kube-version":"${{inputs.kube-version}}", "java-version":"${{ inputs.java-version }}","http-client":"${{inputs.http-client}}"}" >> run-properties.json
           echo "Using profile: ${it_profile}"
           ./mvnw ${MAVEN_ARGS} -T1C -B install -DskipTests -Pno-apt --file pom.xml
           ./mvnw ${MAVEN_ARGS} -T1C -B package -P${it_profile} -Dfabric8-httpclient-impl.name=${{inputs.http-client}} --file pom.xml

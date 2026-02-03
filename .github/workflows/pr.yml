@@ -52,7 +52,7 @@ jobs:
       - name: Check for performance results
         id: check_results
         run: |
-          if [ -d "performance-results" ] && [ "$(ls -A performance-results/*.json 2>/dev/null)" ]; then
+          if [ -d "performance-results" ] && [ "$(ls -A performance-results/**/*.json 2>/dev/null)" ]; then
             echo "Has results"
             echo "has_results=true" >> $GITHUB_OUTPUT
           else
@@ -64,15 +64,7 @@ jobs:
         if: steps.check_results.outputs.has_results == 'true'
         id: convert
         run: |
-          echo "# Performance Test Results" > comment.md
-          echo "" >> comment.md
-          for file in performance-results/*.json; do
-            if [ -f "$file" ]; then
-              echo "Processing $file"
-              python3 .github/scripts/performance-to-markdown.py "$file" >> comment.md
-              echo "" >> comment.md
-            fi
-          done
+          python3 .github/scripts/performance-to-markdown.py performance-results/**/*.json > comment.md
 
       - name: Post PR comment
         if: steps.check_results.outputs.has_results == 'true' && github.event_name == 'pull_request'
