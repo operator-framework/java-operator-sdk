@@ -90,7 +90,7 @@ public class SimplePerformanceTestIT {
   private void saveResults(long duration) {
     try {
       var result = new PerformanceTestResult();
-      getRunProperties().forEach((k,v)->result.addProperty(k,v));
+      getRunProperties().forEach((k, v) -> result.addProperty(k, v));
       var summary = new PerformanceTestSummary();
       result.setSummaries(List.of(summary));
       summary.setName("Naive performance test");
@@ -104,19 +104,19 @@ public class SimplePerformanceTestIT {
     }
   }
 
-    private Map<String, Object> getRunProperties() {
-        try {
-          File runProperties = new File("../run-properties.json");
-          if (runProperties.exists()) {
-            return objectMapper.readValue(runProperties, HashMap.class);
-          } else {
-            log.warn("No run properties file found");
-            return Map.of();
-          }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+  private Map<String, Object> getRunProperties() {
+    try {
+      File runProperties = new File("../run-properties.json");
+      if (runProperties.exists()) {
+        return objectMapper.readValue(runProperties, HashMap.class);
+      } else {
+        log.warn("No run properties file found");
+        return Map.of();
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
 
   private void createResources(int startIndex, int number, String value) {
     try {
