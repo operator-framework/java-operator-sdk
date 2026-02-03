@@ -17,6 +17,7 @@ package io.javaoperatorsdk.operator.baseapi.performance;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -108,6 +109,7 @@ public class SimplePerformanceTestIT {
     try {
       File runProperties = new File("../run-properties.json");
       if (runProperties.exists()) {
+        log.debug("Run properties: {}", Files.readString(runProperties.toPath()));
         return objectMapper.readValue(runProperties, HashMap.class);
       } else {
         log.warn("No run properties file found");
