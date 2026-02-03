@@ -38,27 +38,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("unchecked")
 class ResourceOperationsTest {
 
   private static final String FINALIZER_NAME = "test.javaoperatorsdk.io/finalizer";
 
   private Context<TestCustomResource> context;
-  private KubernetesClient client;
-  private MixedOperation mixedOperation;
+
+  @SuppressWarnings("rawtypes")
   private Resource resourceOp;
+
   private ControllerEventSource<TestCustomResource> controllerEventSource;
-  private ControllerConfiguration<TestCustomResource> controllerConfiguration;
   private ResourceOperations<TestCustomResource> resourceOperations;
 
   @BeforeEach
-  @SuppressWarnings("unchecked")
   void setupMocks() {
     context = mock(Context.class);
-    client = mock(KubernetesClient.class);
-    mixedOperation = mock(MixedOperation.class);
+    final var client = mock(KubernetesClient.class);
+    final var mixedOperation = mock(MixedOperation.class);
     resourceOp = mock(Resource.class);
     controllerEventSource = mock(ControllerEventSource.class);
-    controllerConfiguration = mock(ControllerConfiguration.class);
+    final var controllerConfiguration = mock(ControllerConfiguration.class);
 
     var eventSourceRetriever = mock(EventSourceRetriever.class);
 
@@ -290,7 +290,7 @@ class ResourceOperationsTest {
   }
 
   @Test
-  void resourcePatchThrowsWhenMultipleEventSourcesFound() {
+  void resourcePatchUsesFirstEventSourceIfMultipleEventSourcesPresent() {
     var resource = TestUtils.testCustomResource1();
     var eventSourceRetriever = mock(EventSourceRetriever.class);
     var eventSource1 = mock(ManagedInformerEventSource.class);
@@ -300,13 +300,10 @@ class ResourceOperationsTest {
     when(eventSourceRetriever.getEventSourcesFor(TestCustomResource.class))
         .thenReturn(List.of(eventSource1, eventSource2));
 
-    var exception =
-        assertThrows(
-            IllegalStateException.class,
-            () -> resourceOperations.resourcePatch(resource, UnaryOperator.identity()));
+    resourceOperations.resourcePatch(resource, UnaryOperator.identity());
 
-    assertThat(exception.getMessage()).contains("Multiple event sources found for");
-    assertThat(exception.getMessage()).contains("please provide the target event source");
+    verify(eventSource1, times(1))
+        .eventFilteringUpdateAndCacheResource(any(), any(UnaryOperator.class));
   }
 
   @Test
