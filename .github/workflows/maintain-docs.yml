@@ -1,0 +1,161 @@
+name: Maintain Documentation Files
+
+on:
+  pull_request:
+    paths:
+      - 'pom.xml'
+      - '*/pom.xml'
+      - '.github/workflows/**'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pom.xml'
+      - '*/pom.xml'
+      - '.github/workflows/**'
+
+jobs:
+  check-documentation:
+    name: Check Documentation Consistency
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Check project structure consistency
+        id: check
+        run: |
+          python3 << 'EOF'
+          import xml.etree.ElementTree as ET
+          import sys
+          import os
+          
+          def extract_modules_from_pom():
+              """Extract module list from root pom.xml"""
+              try:
+                  tree = ET.parse('pom.xml')
+                  root = tree.getroot()
+                  
+                  # Handle XML namespace
+                  ns = {'mvn': 'http://maven.apache.org/POM/4.0.0'}
+                  modules = root.find('mvn:modules', ns)
+                  
+                  if modules is None:
+                      # Try without namespace
+                      modules = root.find('modules')
+                  
+                  if modules is None:
+                      return []
+                  
+                  module_list = []
+                  for module in modules:
+                      module_name = module.text.strip() if module.text else ""
+                      if module_name:
+                          module_list.append(module_name)
+                  
+                  return sorted(module_list)
+              except Exception as e:
+                  print(f"Error parsing pom.xml: {e}", file=sys.stderr)
+                  return []
+          
+          def check_agents_md():
+              """Check if AGENTS.md lists all modules"""
+              if not os.path.exists('AGENTS.md'):
+                  print("ERROR: AGENTS.md does not exist")
+                  return False
+              
+              with open('AGENTS.md', 'r') as f:
+                  content = f.read()
+              
+              modules = extract_modules_from_pom()
+              missing_modules = []
+              
+              for module in modules:
+                  if module not in content:
+                      missing_modules.append(module)
+              
+              if missing_modules:
+                  print(f"WARNING: The following modules are not mentioned in AGENTS.md:")
+                  for module in missing_modules:
+                      print(f"  - {module}")
+                  print("\nPlease update AGENTS.md to include these modules.")
+                  return False
+              
+              return True
+          
+          def check_workflows():
+              """List all workflows for documentation"""
+              workflow_dir = '.github/workflows'
+              if not os.path.exists(workflow_dir):
+                  return []
+              
+              workflows = []
+              for file in os.listdir(workflow_dir):
+                  if file.endswith(('.yml', '.yaml')):
+                      workflows.append(file)
+              
+              return sorted(workflows)
+          
+          def main():
+              print("Checking project structure consistency...")
+              print("")
+              
+              # Check modules
+              modules = extract_modules_from_pom()
+              print(f"Found {len(modules)} modules in pom.xml:")
+              for module in modules:
+                  print(f"  - {module}")
+              print("")
+              
+              # Check workflows
+              workflows = check_workflows()
+              print(f"Found {len(workflows)} workflows:")
+              for workflow in workflows:
+                  print(f"  - {workflow}")
+              print("")
+              
+              # Check AGENTS.md
+              agents_ok = check_agents_md()
+              
+              if not agents_ok:
+                  print("\n❌ Documentation needs updates")
+                  sys.exit(1)
+              else:
+                  print("\n✅ Documentation is consistent with project structure")
+                  sys.exit(0)
+          
+          if __name__ == '__main__':
+              main()
+          EOF
+      
+      - name: Comment on PR if changes needed
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `## 📝 Documentation Update Needed
+            
+            The project structure has changed, but the documentation files (AGENTS.md and/or CLAUDE.md) may not reflect these changes.
+            
+            Please review and update:
+            - **AGENTS.md** - Ensure all modules and workflows are documented
+            - **CLAUDE.md** - Update any relevant guidelines
+            
+            Run the workflow check locally to see specific issues.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
