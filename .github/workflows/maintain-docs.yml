@@ -21,6 +21,10 @@ jobs:
     name: Check Documentation Consistency
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+      pull-requests: write  # Needed to comment on PRs
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
