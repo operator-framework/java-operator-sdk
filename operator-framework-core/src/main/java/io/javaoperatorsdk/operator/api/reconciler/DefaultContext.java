@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +27,7 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
@@ -36,7 +38,6 @@ import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassExcepti
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
-
   private RetryInfo retryInfo;
   private final Controller<P> controller;
   private final P primaryResource;
@@ -71,15 +72,44 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
+  public <T> Set<T> getSecondaryResources(Class<T> expectedType, boolean deduplicate) {
+    if (deduplicate) {
+      final var deduplicatedMap = deduplicatedMap(getSecondaryResourcesAsStream(expectedType));
+      return new HashSet<>(deduplicatedMap.values());
+    }
     return getSecondaryResourcesAsStream(expectedType).collect(Collectors.toSet());
   }
 
-  @Override
-  public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
-        .map(es -> es.getSecondaryResources(primaryResource))
-        .flatMap(Set::stream);
+  public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType, boolean deduplicate) {
+    final var stream =
+        controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
+            .<R>mapMulti(
+                (es, consumer) -> es.getSecondaryResources(primaryResource).forEach(consumer));
+    if (deduplicate) {
+      if (!HasMetadata.class.isAssignableFrom(expectedType)) {
+        throw new IllegalArgumentException("Can only de-duplicate HasMetadata descendants");
+      }
+      return deduplicatedMap(stream).values().stream();
+    } else {
+      return stream;
+    }
+  }
+
+  private <R> Map<ResourceID, R> deduplicatedMap(Stream<R> stream) {
+    return stream.collect(
+        Collectors.toUnmodifiableMap(
+            DefaultContext::resourceID,
+            Function.identity(),
+            (existing, replacement) ->
+                compareResourceVersions(existing, replacement) >= 0 ? existing : replacement));
+  }
+
+  private static ResourceID resourceID(Object hasMetadata) {
+    return ResourceID.fromResource((HasMetadata) hasMetadata);
+  }
+
+  private static int compareResourceVersions(Object v1, Object v2) {
+    return ReconcilerUtilsInternal.compareResourceVersions((HasMetadata) v1, (HasMetadata) v2);
   }
 
   @Override

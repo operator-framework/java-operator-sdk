@@ -218,7 +218,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     }
     return secondaryIDs.stream()
         .map(this::get)
-        .flatMap(Optional::stream)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .collect(Collectors.toSet());
   }
 
