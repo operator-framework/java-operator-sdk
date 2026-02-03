@@ -57,8 +57,8 @@ jobs:
           ./mvnw ${MAVEN_ARGS} -T1C -B package -P${it_profile} -Dfabric8-httpclient-impl.name=${{inputs.http-client}} --file pom.xml
 
       - name: Upload performance test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: performance-results-java${{ inputs.java-version }}-k8s${{ inputs.kube-version }}-${{ inputs.http-client }}
+          name: performance-results-run-${{ github.run_id }}-java${{ inputs.java-version }}-k8s${{ inputs.kube-version }}-${{ inputs.http-client }}
           path: operator-framework/target/performance_test_result.json
           if-no-files-found: ignore
