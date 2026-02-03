@@ -35,6 +35,14 @@ Join us on [Discord](https://discord.gg/DacEhAy) or feel free to ask any questio
 
 See the [contribution](https://javaoperatorsdk.io/docs/contributing) guide on the website.
 
+## AI Agent Documentation
+
+For AI assistants and contributors using AI tools:
+- **[AGENTS.md](AGENTS.md)** - Comprehensive project structure and context for AI agents
+- **[CLAUDE.md](CLAUDE.md)** - Specific guidelines for Claude AI assistant
+
+These files are automatically maintained to reflect the current project structure. Run `python3 scripts/update-docs.py` to update AGENTS.md after making structural changes.
+
 ## What is Java Operator SDK
 
 Java Operator SDK is a higher level framework and related tooling to support writing Kubernetes Operators in Java.
