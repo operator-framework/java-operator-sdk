@@ -53,8 +53,10 @@ jobs:
         id: check_results
         run: |
           if [ -d "performance-results" ] && [ "$(ls -A performance-results/*.json 2>/dev/null)" ]; then
+            echo "Has results"
             echo "has_results=true" >> $GITHUB_OUTPUT
           else
+            echo "Has NO results"
             echo "has_results=false" >> $GITHUB_OUTPUT
           fi
 
