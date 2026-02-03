@@ -35,11 +35,82 @@ public interface Context<P extends HasMetadata> {
     return getSecondaryResource(expectedType, null);
   }
 
-  <R> Set<R> getSecondaryResources(Class<R> expectedType);
-
-  default <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return getSecondaryResources(expectedType).stream();
+  /**
+   * Retrieves a {@link Set} of the secondary resources of the specified type, which are associated
+   * with the primary resource being processed, possibly making sure that only the latest version of
+   * each resource is retrieved.
+   *
+   * <p>Note: While this method returns a {@link Set}, it is possible to get several copies of a
+   * given resource albeit all with different {@code resourceVersion}. If you want to avoid this
+   * situation, call {@link #getSecondaryResources(Class, boolean)} with the {@code deduplicate}
+   * parameter set to {@code true}.
+   *
+   * @param expectedType a class representing the type of secondary resources to retrieve
+   * @param <R> the type of secondary resources to retrieve
+   * @return a {@link Stream} of secondary resources of the specified type, possibly deduplicated
+   */
+  default <R> Set<R> getSecondaryResources(Class<R> expectedType) {
+    return getSecondaryResources(expectedType, false);
   }
+
+  /**
+   * Retrieves a {@link Set} of the secondary resources of the specified type, which are associated
+   * with the primary resource being processed, possibly making sure that only the latest version of
+   * each resource is retrieved.
+   *
+   * <p>Note: While this method returns a {@link Set}, it is possible to get several copies of a
+   * given resource albeit all with different {@code resourceVersion}. If you want to avoid this
+   * situation, ask for the deduplicated version by setting the {@code deduplicate} parameter to
+   * {@code true}.
+   *
+   * @param expectedType a class representing the type of secondary resources to retrieve
+   * @param deduplicate {@code true} if only the latest version of each resource should be kept,
+   *     {@code false} otherwise
+   * @param <R> the type of secondary resources to retrieve
+   * @return a {@link Set} of secondary resources of the specified type, possibly deduplicated
+   * @throws IllegalArgumentException if the secondary resource type cannot be deduplicated because
+   *     it's not extending {@link HasMetadata}, which is required to access the resource version
+   * @since 5.3.0
+   */
+  <R> Set<R> getSecondaryResources(Class<R> expectedType, boolean deduplicate);
+
+  /**
+   * Retrieves a {@link Stream} of the secondary resources of the specified type, which are
+   * associated with the primary resource being processed, possibly making sure that only the latest
+   * version of each resource is retrieved.
+   *
+   * <p>Note: It is possible to get several copies of a given resource albeit all with different
+   * {@code resourceVersion}. If you want to avoid this situation, call {@link
+   * #getSecondaryResourcesAsStream(Class, boolean)} with the {@code deduplicate} parameter set to
+   * {@code true}.
+   *
+   * @param expectedType a class representing the type of secondary resources to retrieve
+   * @param <R> the type of secondary resources to retrieve
+   * @return a {@link Stream} of secondary resources of the specified type, possibly deduplicated
+   */
+  default <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
+    return getSecondaryResourcesAsStream(expectedType, false);
+  }
+
+  /**
+   * Retrieves a {@link Stream} of the secondary resources of the specified type, which are
+   * associated with the primary resource being processed, possibly making sure that only the latest
+   * version of each resource is retrieved.
+   *
+   * <p>Note: It is possible to get several copies of a given resource albeit all with different
+   * {@code resourceVersion}. If you want to avoid this situation, ask for the deduplicated version
+   * by setting the {@code deduplicate} parameter to {@code true}.
+   *
+   * @param expectedType a class representing the type of secondary resources to retrieve
+   * @param deduplicate {@code true} if only the latest version of each resource should be kept,
+   *     {@code false} otherwise
+   * @param <R> the type of secondary resources to retrieve
+   * @return a {@link Stream} of secondary resources of the specified type, possibly deduplicated
+   * @throws IllegalArgumentException if the secondary resource type cannot be deduplicated because
+   *     it's not extending {@link HasMetadata}, which is required to access the resource version
+   * @since 5.3.0
+   */
+  <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType, boolean deduplicate);
 
   <R> Optional<R> getSecondaryResource(Class<R> expectedType, String eventSourceName);
 
