@@ -11,6 +11,7 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'adr/**'
+      - 'observability/**'
   workflow_dispatch:
 jobs:
   check_format_and_unit_tests:
