@@ -87,8 +87,16 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     var ed = activeUpdates.get(resourceID);
     if (ed.decreaseActiveUpdates()) {
       activeUpdates.remove(resourceID);
-      return ed.getLatestEventAfterLastUpdateEvent(updatedResourceVersion);
+      var res = ed.getLatestEventAfterLastUpdateEvent(updatedResourceVersion);
+      log.debug(
+          "Zero active updates for resource id: {}; event after update event: {}; updated resource"
+              + " version: {}",
+          resourceID,
+          res.isPresent(),
+          updatedResourceVersion);
+      return res;
     } else {
+      log.debug("Active updates {} for resource id: {}", ed.getActiveUpdates(), resourceID);
       return Optional.empty();
     }
   }

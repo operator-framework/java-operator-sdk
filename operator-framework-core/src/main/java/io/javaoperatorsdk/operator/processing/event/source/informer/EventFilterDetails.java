@@ -49,4 +49,8 @@ class EventFilterDetails {
     }
     return Optional.empty();
   }
+
+  public int getActiveUpdates() {
+    return activeUpdates;
+  }
 }
