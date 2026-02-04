@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
@@ -24,6 +26,7 @@ class EventFilterDetails {
 
   private int activeUpdates = 0;
   private ResourceEvent lastEvent;
+  private String lastOwnUpdatedResourceVersion;
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
@@ -38,12 +41,29 @@ class EventFilterDetails {
     lastEvent = event;
   }
 
-  public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent(String updatedResourceVersion) {
+  /**
+   * This is needed for case when multiple parallel updates happening inside the controller to
+   * prevent race condition and send event from {@link
+   * ManagedInformerEventSource#eventFilteringUpdateAndCacheResource(HasMetadata, UnaryOperator)}
+   */
+  public void handleLastOwnUpdatedResourceVersion(String resourceVersion) {
+    if (resourceVersion == null) {
+      return;
+    }
+    if (lastOwnUpdatedResourceVersion == null
+        || ReconcilerUtilsInternal.compareResourceVersions(
+                resourceVersion, lastOwnUpdatedResourceVersion)
+            > 0) {
+      lastOwnUpdatedResourceVersion = resourceVersion;
+    }
+  }
+
+  public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent() {
     if (lastEvent != null
-        && (updatedResourceVersion == null
+        && (lastOwnUpdatedResourceVersion == null
             || ReconcilerUtilsInternal.compareResourceVersions(
                     lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion(),
-                    updatedResourceVersion)
+                    lastOwnUpdatedResourceVersion)
                 > 0)) {
       return Optional.of(lastEvent);
     }
