@@ -50,6 +50,7 @@ echo -e "${GREEN}✓ observability namespace ready${NC}"
 
 # Install OpenTelemetry Operator
 echo -e "\n${YELLOW}Installing OpenTelemetry Operator...${NC}"
+
 if helm list -n observability | grep -q opentelemetry-operator; then
     echo -e "${YELLOW}OpenTelemetry Operator already installed, upgrading...${NC}"
     helm upgrade opentelemetry-operator open-telemetry/opentelemetry-operator \
