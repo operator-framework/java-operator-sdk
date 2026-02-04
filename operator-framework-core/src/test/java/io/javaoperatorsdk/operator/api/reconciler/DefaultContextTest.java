@@ -95,7 +95,7 @@ class DefaultContextTest {
     // Find pod1 in default namespace - should have version 200
     final var pod1InDefault =
         result.stream()
-            .filter(r -> ResourceID.fromResource(r).isSameResource("pod1", "default"))
+            .filter(r -> ResourceID.fromResource(r).equals(new ResourceID("pod1", "default")))
             .findFirst()
             .orElseThrow();
     assertThat(pod1InDefault.getMetadata().getResourceVersion()).isEqualTo("200");
@@ -103,7 +103,7 @@ class DefaultContextTest {
     // Find pod2 in default namespace - should exist
     HasMetadata pod2InDefault =
         result.stream()
-            .filter(r -> ResourceID.fromResource(r).isSameResource("pod2", "default"))
+            .filter(r -> ResourceID.fromResource(r).equals("pod2", "default"))
             .findFirst()
             .orElseThrow();
     assertThat(pod2InDefault.getMetadata().getResourceVersion()).isEqualTo("100");
@@ -111,7 +111,7 @@ class DefaultContextTest {
     // Find pod1 in other namespace - should exist
     HasMetadata pod1InOther =
         result.stream()
-            .filter(r -> ResourceID.fromResource(r).isSameResource("pod1", "other"))
+            .filter(r -> ResourceID.fromResource(r).equals("pod1", "other"))
             .findFirst()
             .orElseThrow();
     assertThat(pod1InOther.getMetadata().getResourceVersion()).isEqualTo("50");
