@@ -267,14 +267,65 @@ class InformerEventSourceTest {
     assertNoEventProduced();
   }
 
+  @Test
+  void multipleCachingFilteringUpdates() {
+    withRealTemporaryResourceCache();
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    CountDownLatch latch2 =
+        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    latch.countDown();
+    latch2.countDown();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+
+    assertNoEventProduced();
+  }
+
+  @Test
+  void multipleCachingFilteringUpdates_variation2() {
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    CountDownLatch latch2 =
+        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    latch.countDown();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    latch2.countDown();
+
+    assertNoEventProduced();
+  }
+
+  @Test
+  void multipleCachingFilteringUpdates_variation3() {
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    CountDownLatch latch2 =
+        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
+
+    latch.countDown();
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    latch2.countDown();
+
+    assertNoEventProduced();
+  }
+
   private void assertNoEventProduced() {
     await()
         .pollDelay(Duration.ofMillis(50))
         .timeout(Duration.ofMillis(51))
         .untilAsserted(
-            () -> {
-              verify(informerEventSource, never()).handleEvent(any(), any(), any(), any());
-            });
+            () -> verify(informerEventSource, never()).handleEvent(any(), any(), any(), any()));
   }
 
   private void expectHandleEvent(int newResourceVersion, int oldResourceVersion) {
