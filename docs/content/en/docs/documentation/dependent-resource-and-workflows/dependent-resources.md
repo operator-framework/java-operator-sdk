@@ -16,15 +16,26 @@ each secondary resource:
 
 ```mermaid
 flowchart TD
+    Start([Start Reconciliation]) --> Compute
+    Compute[Compute desired secondary<br/>resource based on<br/>primary state] --> Exists
+    Exists{Secondary<br/>resource<br/>exists?}
+    Exists -->|No| Create[Create Resource]
+    Exists -->|Yes| Match
+    Match{Matches<br/>desired<br/>state?}
+    Match -->|Yes| Done
+    Match -->|No| Update[Update Resource]
+    Create --> Done([Done])
+    Update --> Done
 
-compute[Compute desired secondary resource based on primary state] --> A
-A{Secondary resource exists?}
-A -- Yes --> match
-A -- No --> Create --> Done
+    classDef startEnd fill:#e1f5e1,stroke:#4caf50,stroke-width:2px
+    classDef compute fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    classDef action fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
 
-match{Matches desired state?}
-match -- Yes --> Done
-match -- No --> Update --> Done
+    class Start,Done startEnd
+    class Compute compute
+    class Exists,Match decision
+    class Create,Update action
 ```
 
 While these steps are not difficult in and of themselves, there are some subtleties that can lead to
