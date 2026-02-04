@@ -285,7 +285,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void multipleCachingFilteringUpdates_variation2() {
+  void multipleCachingFilteringUpdates_variant2() {
     withRealTemporaryResourceCache();
 
     CountDownLatch latch = sendForEventFilteringUpdate(2);
@@ -303,7 +303,7 @@ class InformerEventSourceTest {
   }
 
   @Test
-  void multipleCachingFilteringUpdates_variation3() {
+  void multipleCachingFilteringUpdates_variant3() {
     withRealTemporaryResourceCache();
 
     CountDownLatch latch = sendForEventFilteringUpdate(2);
@@ -315,6 +315,24 @@ class InformerEventSourceTest {
         deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
     informerEventSource.onUpdate(
         deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    latch2.countDown();
+
+    assertNoEventProduced();
+  }
+
+  @Test
+  void multipleCachingFilteringUpdates_variant4() {
+    withRealTemporaryResourceCache();
+
+    CountDownLatch latch = sendForEventFilteringUpdate(2);
+    CountDownLatch latch2 =
+        sendForEventFilteringUpdate(withResourceVersion(testDeployment(), 2), 3);
+
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(1), deploymentWithResourceVersion(2));
+    informerEventSource.onUpdate(
+        deploymentWithResourceVersion(2), deploymentWithResourceVersion(3));
+    latch.countDown();
     latch2.countDown();
 
     assertNoEventProduced();
