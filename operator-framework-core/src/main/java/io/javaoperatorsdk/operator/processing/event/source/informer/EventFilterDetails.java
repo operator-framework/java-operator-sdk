@@ -32,30 +32,26 @@ class EventFilterDetails {
     activeUpdates = activeUpdates + 1;
   }
 
-  public boolean decreaseActiveUpdates() {
+  /**
+   * resourceVersion is needed for case when multiple parallel updates happening inside the
+   * controller to prevent race condition and send event from {@link
+   * ManagedInformerEventSource#eventFilteringUpdateAndCacheResource(HasMetadata, UnaryOperator)}
+   */
+  public boolean decreaseActiveUpdates(String updatedResourceVersion) {
+    if (updatedResourceVersion != null
+        && (lastOwnUpdatedResourceVersion == null
+            || ReconcilerUtilsInternal.compareResourceVersions(
+                    updatedResourceVersion, lastOwnUpdatedResourceVersion)
+                > 0)) {
+      lastOwnUpdatedResourceVersion = updatedResourceVersion;
+    }
+
     activeUpdates = activeUpdates - 1;
     return activeUpdates == 0;
   }
 
   public void setLastEvent(ResourceEvent event) {
     lastEvent = event;
-  }
-
-  /**
-   * This is needed for case when multiple parallel updates happening inside the controller to
-   * prevent race condition and send event from {@link
-   * ManagedInformerEventSource#eventFilteringUpdateAndCacheResource(HasMetadata, UnaryOperator)}
-   */
-  public void handleLastOwnUpdatedResourceVersion(String resourceVersion) {
-    if (resourceVersion == null) {
-      return;
-    }
-    if (lastOwnUpdatedResourceVersion == null
-        || ReconcilerUtilsInternal.compareResourceVersions(
-                resourceVersion, lastOwnUpdatedResourceVersion)
-            > 0) {
-      lastOwnUpdatedResourceVersion = resourceVersion;
-    }
   }
 
   public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent() {
