@@ -23,8 +23,5 @@ public interface InformerHealthIndicator extends EventSourceHealthIndicator {
 
   boolean isRunning();
 
-  @Override
-  Status getStatus();
-
   String getTargetNamespace();
 }

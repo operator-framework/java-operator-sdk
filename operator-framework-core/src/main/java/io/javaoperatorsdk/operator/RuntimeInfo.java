@@ -63,9 +63,7 @@ public class RuntimeInfo {
   public boolean allEventSourcesAreHealthy() {
     checkIfStarted();
     return registeredControllers.stream()
-        .filter(rc -> !rc.getControllerHealthInfo().unhealthyEventSources().isEmpty())
-        .findFirst()
-        .isEmpty();
+        .noneMatch(rc -> rc.getControllerHealthInfo().hasUnhealthyEventSources());
   }
 
   /**
