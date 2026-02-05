@@ -1,0 +1,92 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VTIMEZONE
+TZID:America/New_York
+X-LIC-LOCATION:America/New_York
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:19700308T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:19701101T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTART;TZID=America/New_York:20241126T090000
+DTEND;TZID=America/New_York:20241126T100000
+RRULE:FREQ=WEEKLY;WKST=SU;INTERVAL=2;BYDAY=TU
+DTSTAMP:20260205T122901Z
+ORGANIZER:mailto:csviri@gmail.com
+UID:0slja1g4au8gb1lfkfe0ladnll_R20241126T140000@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE
+ ;X-NUM-GUESTS=0:mailto:csviri@gmail.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;RSVP=TRU
+ E;CN=jcechace@redhat.com;X-NUM-GUESTS=0:mailto:jcechace@redhat.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=
+ TRUE;CN=shawkins@redhat.com;X-NUM-GUESTS=0:mailto:shawkins@redhat.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE
+ ;CN=mnurisan@redhat.com;X-NUM-GUESTS=0:mailto:mnurisan@redhat.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE
+ ;CN=claprun@redhat.com;X-NUM-GUESTS=0:mailto:claprun@redhat.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=OPT-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE
+ ;CN=nathan@swirldslabs.com;X-NUM-GUESTS=0:mailto:nathan@swirldslabs.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=OPT-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=
+ TRUE;CN=bernhard.straehle@gmail.com;X-NUM-GUESTS=0:mailto:bernhard.straehle
+ @gmail.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=OPT-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=
+ TRUE;CN=matt.riben@swirldslabs.com;X-NUM-GUESTS=0:mailto:matt.riben@swirlds
+ labs.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=OPT-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=
+ TRUE;CN=rokumar@redhat.com;X-NUM-GUESTS=0:mailto:rokumar@redhat.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=OPT-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=
+ TRUE;CN=aperuffo@redhat.com;X-NUM-GUESTS=0:mailto:aperuffo@redhat.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=OPT-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE
+ ;CN=mstefank@redhat.com;X-NUM-GUESTS=0:mailto:mstefank@redhat.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=
+ TRUE;CN=xstefank122@gmail.com;X-NUM-GUESTS=0:mailto:xstefank122@gmail.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=
+ TRUE;CN=a_meszaros@apple.com;X-NUM-GUESTS=0:mailto:a_meszaros@apple.com
+X-MICROSOFT-CDO-OWNERAPPTID:1947686914
+CREATED:20231002T122647Z
+DESCRIPTION:CNCF Operator SDK is inviting you to a scheduled Zoom meeting.<
+ br>Join Zoom Meeting<br><br><a href="https://www.google.com/url?q=https://z
+ oom.us/j/8415370125&amp\;sa=D&amp\;source=calendar&amp\;usd=2&amp\;usg=AOvV
+ aw3ze31jQ18bmAoYPWFOKlLB" target="_blank"><u>https://zoom.us/j/8415370125</
+ u></a><br>Password: 77777<br>Meeting ID: 841 537 0125<br>One tap mobile<br>
+ +16699006833\,\,8415370125# US (San Jose)<br>+13462487799\,\,8415370125# US
+  (Houston)<br><br>Dial by your location<br>        +1 669 900 6833 US (San 
+ Jose)<br>        +1 346 248 7799 US (Houston)<br>        +1 253 215 8782 US
+  (Tacoma)<br>        +1 301 715 8592 US (Germantown)<br>        +1 312 626 
+ 6799 US (Chicago)<br>        +1 929 205 6099 US (New York)<br>        888 7
+ 88 0099 US Toll-free<br>        877 853 5247 US Toll-free<br>Meeting ID: 84
+ 1 537 0125<br>Find your local number: <a href="https://www.google.com/url?q
+ =https://zoom.us/u/adKXm5OTVd&amp\;sa=D&amp\;source=calendar&amp\;usd=2&amp
+ \;usg=AOvVaw1jSe3t_Siwy2pDpCHNGwdm" target="_blank"><u>https://zoom.us/u/ad
+ KXm5OTVd</u></a><br> <br>Agenda:  <a href="https://www.google.com/url?q=htt
+ ps://docs.google.com/document/d/1d_x7JHnjhKh8DgUO9F83kZ43Y3Ladl6sHWzst2ugV8
+ 4/edit&amp\;sa=D&amp\;source=calendar&amp\;usd=2&amp\;usg=AOvVaw1MVBrAv51Af
+ jAyI0UfRHIN" target="_blank"><u>https://docs.google.com/document/d/1d_x7JHn
+ jhKh8DgUO9F83kZ43Y3Ladl6sHWzst2ugV84/edit</u></a>
+LAST-MODIFIED:20260205T122857Z
+LOCATION:
+SEQUENCE:5
+STATUS:CONFIRMED
+SUMMARY:Java Operators Community Meeting
+TRANSP:OPAQUE
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:This is an event reminder
+TRIGGER:-P0DT0H10M0S
+END:VALARM
+END:VEVENT
+END:VCALENDAR
