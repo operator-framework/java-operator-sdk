@@ -16,7 +16,10 @@
 package io.javaoperatorsdk.operator.health;
 
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.javaoperatorsdk.operator.processing.event.EventSourceManager;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -25,6 +28,17 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.Controller
 @SuppressWarnings("rawtypes")
 public class ControllerHealthInfo {
 
+  private static final Predicate<EventSource> UNHEALTHY = e -> e.getStatus() == Status.UNHEALTHY;
+  private static final Predicate<EventSource> INFORMER =
+      e -> e instanceof InformerWrappingEventSourceHealthIndicator;
+  private static final Predicate<EventSource> UNHEALTHY_INFORMER =
+      e -> INFORMER.test(e) && e.getStatus() == Status.UNHEALTHY;
+  private static final Collector<EventSource, ?, Map<String, EventSourceHealthIndicator>>
+      NAME_TO_ES_MAP = Collectors.toMap(EventSource::name, e -> e);
+  private static final Collector<
+          EventSource, ?, Map<String, InformerWrappingEventSourceHealthIndicator>>
+      NAME_TO_ES_HEALTH_MAP =
+          Collectors.toMap(EventSource::name, e -> (InformerWrappingEventSourceHealthIndicator) e);
   private final EventSourceManager<?> eventSourceManager;
 
   public ControllerHealthInfo(EventSourceManager eventSourceManager) {
@@ -32,23 +46,31 @@ public class ControllerHealthInfo {
   }
 
   public Map<String, EventSourceHealthIndicator> eventSourceHealthIndicators() {
-    return eventSourceManager.allEventSources().stream()
-        .collect(Collectors.toMap(EventSource::name, e -> e));
+    return eventSourceManager.allEventSourcesStream().collect(NAME_TO_ES_MAP);
+  }
+
+  /**
+   * Whether the associated {@link io.javaoperatorsdk.operator.processing.Controller} has unhealthy
+   * event sources.
+   *
+   * @return {@code true} if any of the associated controller is unhealthy, {@code false} otherwise
+   * @since 5.3.0
+   */
+  public boolean hasUnhealthyEventSources() {
+    return filteredEventSources(UNHEALTHY).findAny().isPresent();
   }
 
   public Map<String, EventSourceHealthIndicator> unhealthyEventSources() {
-    return eventSourceManager.allEventSources().stream()
-        .filter(e -> e.getStatus() == Status.UNHEALTHY)
-        .collect(Collectors.toMap(EventSource::name, e -> e));
+    return filteredEventSources(UNHEALTHY).collect(NAME_TO_ES_MAP);
+  }
+
+  private Stream<EventSource> filteredEventSources(Predicate<EventSource> filter) {
+    return eventSourceManager.allEventSourcesStream().filter(filter);
   }
 
   public Map<String, InformerWrappingEventSourceHealthIndicator>
       informerEventSourceHealthIndicators() {
-    return eventSourceManager.allEventSources().stream()
-        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(
-            Collectors.toMap(
-                EventSource::name, e -> (InformerWrappingEventSourceHealthIndicator) e));
+    return filteredEventSources(INFORMER).collect(NAME_TO_ES_HEALTH_MAP);
   }
 
   /**
@@ -58,11 +80,6 @@ public class ControllerHealthInfo {
    */
   public Map<String, InformerWrappingEventSourceHealthIndicator>
       unhealthyInformerEventSourceHealthIndicators() {
-    return eventSourceManager.allEventSources().stream()
-        .filter(e -> e.getStatus() == Status.UNHEALTHY)
-        .filter(e -> e instanceof InformerWrappingEventSourceHealthIndicator)
-        .collect(
-            Collectors.toMap(
-                EventSource::name, e -> (InformerWrappingEventSourceHealthIndicator) e));
+    return filteredEventSources(UNHEALTHY_INFORMER).collect(NAME_TO_ES_HEALTH_MAP);
   }
 }

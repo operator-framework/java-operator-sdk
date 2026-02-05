@@ -217,7 +217,12 @@ public class EventSourceManager<P extends HasMetadata>
 
   @SuppressWarnings("rawtypes")
   public List<EventSource> allEventSources() {
-    return eventSources.allEventSources().toList();
+    return allEventSourcesStream().toList();
+  }
+
+  @SuppressWarnings("rawtypes")
+  public Stream<EventSource> allEventSourcesStream() {
+    return eventSources.allEventSources();
   }
 
   @SuppressWarnings("unused")
