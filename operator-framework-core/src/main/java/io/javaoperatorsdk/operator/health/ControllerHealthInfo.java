@@ -32,7 +32,7 @@ public class ControllerHealthInfo {
   private static final Predicate<EventSource> INFORMER =
       e -> e instanceof InformerWrappingEventSourceHealthIndicator;
   private static final Predicate<EventSource> UNHEALTHY_INFORMER =
-      e -> INFORMER.test(e) && e.getStatus() == Status.HEALTHY;
+      e -> INFORMER.test(e) && e.getStatus() == Status.UNHEALTHY;
   private static final Collector<EventSource, ?, Map<String, EventSourceHealthIndicator>>
       NAME_TO_ES_MAP = Collectors.toMap(EventSource::name, e -> e);
   private static final Collector<
