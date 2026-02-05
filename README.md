@@ -29,7 +29,7 @@ Join us on [Discord](https://discord.gg/DacEhAy) or feel free to ask any questio
 [Kubernetes Slack Operator Channel](https://kubernetes.slack.com/archives/CAW0GV7A5)
 
 **Meet us** every [other Tuesday 15:00 CEST](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MHNsamExZzRhdThnYjFsZmtmZTBsYWRubGxfMjAyNjAyMDNUMTQwMDAwWiBjc3ZpcmlAbQ&tmsrc=csviri%40gmail.com&scp=ALL) 
-at our **community meeting**, password is: 77777
+at our **community meeting**.
 
 ## How to Contribute
 
