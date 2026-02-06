@@ -16,7 +16,9 @@
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 
@@ -24,12 +26,26 @@ class EventFilterDetails {
 
   private int activeUpdates = 0;
   private ResourceEvent lastEvent;
+  private String lastOwnUpdatedResourceVersion;
 
   public void increaseActiveUpdates() {
     activeUpdates = activeUpdates + 1;
   }
 
-  public boolean decreaseActiveUpdates() {
+  /**
+   * resourceVersion is needed for case when multiple parallel updates happening inside the
+   * controller to prevent race condition and send event from {@link
+   * ManagedInformerEventSource#eventFilteringUpdateAndCacheResource(HasMetadata, UnaryOperator)}
+   */
+  public boolean decreaseActiveUpdates(String updatedResourceVersion) {
+    if (updatedResourceVersion != null
+        && (lastOwnUpdatedResourceVersion == null
+            || ReconcilerUtilsInternal.compareResourceVersions(
+                    updatedResourceVersion, lastOwnUpdatedResourceVersion)
+                > 0)) {
+      lastOwnUpdatedResourceVersion = updatedResourceVersion;
+    }
+
     activeUpdates = activeUpdates - 1;
     return activeUpdates == 0;
   }
@@ -38,15 +54,19 @@ class EventFilterDetails {
     lastEvent = event;
   }
 
-  public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent(String updatedResourceVersion) {
+  public Optional<ResourceEvent> getLatestEventAfterLastUpdateEvent() {
     if (lastEvent != null
-        && (updatedResourceVersion == null
+        && (lastOwnUpdatedResourceVersion == null
             || ReconcilerUtilsInternal.compareResourceVersions(
                     lastEvent.getResource().orElseThrow().getMetadata().getResourceVersion(),
-                    updatedResourceVersion)
+                    lastOwnUpdatedResourceVersion)
                 > 0)) {
       return Optional.of(lastEvent);
     }
     return Optional.empty();
+  }
+
+  public int getActiveUpdates() {
+    return activeUpdates;
   }
 }
