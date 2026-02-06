@@ -28,8 +28,8 @@ Documentation can be found on the  **[JOSDK WebSite](https://javaoperatorsdk.io/
 Join us on [Discord](https://discord.gg/DacEhAy) or feel free to ask any question on 
 [Kubernetes Slack Operator Channel](https://kubernetes.slack.com/archives/CAW0GV7A5)
 
-**Meet us** every other Tuesday 15:00 CEST (from 29.10.2024) at our **community meeting** on [Zoom](https://zoom.us/j/8415370125)
-(Password in the Discord channel, or just ask for it there!)
+**Meet us** every other Tuesday 15:00 CEST 
+at our **community meeting**. [Download ics](https://raw.githubusercontent.com/operator-framework/java-operator-sdk/refs/heads/main/invite.ics)
 
 ## How to Contribute
 
