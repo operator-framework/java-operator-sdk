@@ -85,12 +85,22 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       return Optional.empty();
     }
     var ed = activeUpdates.get(resourceID);
-    if (ed.decreaseActiveUpdates()) {
-      activeUpdates.remove(resourceID);
-      return ed.getLatestEventAfterLastUpdateEvent(updatedResourceVersion);
-    } else {
+    if (ed == null || !ed.decreaseActiveUpdates(updatedResourceVersion)) {
+      log.debug(
+          "Active updates {} for resource id: {}",
+          ed != null ? ed.getActiveUpdates() : 0,
+          resourceID);
       return Optional.empty();
     }
+    activeUpdates.remove(resourceID);
+    var res = ed.getLatestEventAfterLastUpdateEvent();
+    log.debug(
+        "Zero active updates for resource id: {}; event after update event: {}; updated resource"
+            + " version: {}",
+        resourceID,
+        res.isPresent(),
+        updatedResourceVersion);
+    return res;
   }
 
   public void onDeleteEvent(T resource, boolean unknownState) {
