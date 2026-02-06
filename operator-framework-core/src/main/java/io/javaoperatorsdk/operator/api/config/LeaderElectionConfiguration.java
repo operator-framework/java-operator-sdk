@@ -85,6 +85,7 @@ public class LeaderElectionConfiguration {
   /**
    * @deprecated Use {@link LeaderElectionConfigurationBuilder} instead
    */
+  @Deprecated // this will be made package-only
   public LeaderElectionConfiguration(
       String leaseName,
       String leaseNamespace,
