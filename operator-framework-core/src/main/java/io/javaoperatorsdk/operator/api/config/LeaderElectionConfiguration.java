@@ -37,6 +37,10 @@ public class LeaderElectionConfiguration {
   private final LeaderCallbacks leaderCallbacks;
   private final boolean exitOnStopLeading;
 
+  /**
+   * @deprecated Use {@link LeaderElectionConfigurationBuilder} instead
+   */
+  @Deprecated(forRemoval = true)
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace, String identity) {
     this(
         leaseName,
@@ -49,30 +53,26 @@ public class LeaderElectionConfiguration {
         true);
   }
 
+  /**
+   * @deprecated Use {@link LeaderElectionConfigurationBuilder} instead
+   */
+  @Deprecated(forRemoval = true)
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace) {
-    this(
-        leaseName,
-        leaseNamespace,
-        LEASE_DURATION_DEFAULT_VALUE,
-        RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE,
-        null,
-        null,
-        true);
+    this(leaseName, leaseNamespace, null);
   }
 
+  /**
+   * @deprecated Use {@link LeaderElectionConfigurationBuilder} instead
+   */
+  @Deprecated(forRemoval = true)
   public LeaderElectionConfiguration(String leaseName) {
-    this(
-        leaseName,
-        null,
-        LEASE_DURATION_DEFAULT_VALUE,
-        RENEW_DEADLINE_DEFAULT_VALUE,
-        RETRY_PERIOD_DEFAULT_VALUE,
-        null,
-        null,
-        true);
+    this(leaseName, null);
   }
 
+  /**
+   * @deprecated Use {@link LeaderElectionConfigurationBuilder} instead
+   */
+  @Deprecated(forRemoval = true)
   public LeaderElectionConfiguration(
       String leaseName,
       String leaseNamespace,
@@ -82,6 +82,10 @@ public class LeaderElectionConfiguration {
     this(leaseName, leaseNamespace, leaseDuration, renewDeadline, retryPeriod, null, null, true);
   }
 
+  /**
+   * @deprecated Use {@link LeaderElectionConfigurationBuilder} instead
+   */
+  @Deprecated // this will be made package-only
   public LeaderElectionConfiguration(
       String leaseName,
       String leaseNamespace,
