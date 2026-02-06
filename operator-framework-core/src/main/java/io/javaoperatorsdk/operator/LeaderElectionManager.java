@@ -126,6 +126,7 @@ public class LeaderElectionManager {
       // Note that some reconciliations might run for a very long time.
       System.exit(1);
     } else {
+      // just for testing purposes
       log.info("Stopped leading, configured not to exit");
     }
   }

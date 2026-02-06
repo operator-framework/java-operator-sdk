@@ -71,6 +71,7 @@ public final class LeaderElectionConfigurationBuilder {
     return this;
   }
 
+  /** Set to false only for testing purposes. */
   public LeaderElectionConfigurationBuilder withExitOnStopLeading(boolean exitOnStopLeading) {
     this.exitOnStopLeading = exitOnStopLeading;
     return this;

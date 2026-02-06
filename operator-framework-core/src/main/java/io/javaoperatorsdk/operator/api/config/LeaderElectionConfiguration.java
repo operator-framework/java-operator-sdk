@@ -35,6 +35,8 @@ public class LeaderElectionConfiguration {
   private final Duration retryPeriod;
 
   private final LeaderCallbacks leaderCallbacks;
+
+  /** Set to false only for testing purposes. */
   private final boolean exitOnStopLeading;
 
   public LeaderElectionConfiguration(String leaseName, String leaseNamespace, String identity) {
