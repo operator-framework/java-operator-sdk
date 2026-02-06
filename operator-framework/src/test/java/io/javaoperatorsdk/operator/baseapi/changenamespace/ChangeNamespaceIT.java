@@ -131,7 +131,7 @@ class ChangeNamespaceIT {
                 assertThat(
                         reconciler.numberOfResourceReconciliations(
                             resourceInAdditionalTestNamespace))
-                    .isEqualTo(2));
+                    .isEqualTo(1));
   }
 
   private static void assertNotReconciled(

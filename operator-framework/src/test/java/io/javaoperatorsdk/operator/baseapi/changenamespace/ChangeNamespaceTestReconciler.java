@@ -53,15 +53,7 @@ public class ChangeNamespaceTestReconciler
       ChangeNamespaceTestCustomResource primary,
       Context<ChangeNamespaceTestCustomResource> context) {
 
-    var actualConfigMap = context.getSecondaryResource(ConfigMap.class);
-    if (actualConfigMap.isEmpty()) {
-      context
-          .getClient()
-          .configMaps()
-          .inNamespace(primary.getMetadata().getNamespace())
-          .resource(configMap(primary))
-          .create();
-    }
+    context.resourceOperations().serverSideApply(configMap(primary));
 
     if (primary.getStatus() == null) {
       primary.setStatus(new ChangeNamespaceTestCustomResourceStatus());

@@ -15,15 +15,21 @@
  */
 package io.javaoperatorsdk.operator.api.reconciler;
 
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
@@ -32,7 +38,6 @@ import io.javaoperatorsdk.operator.processing.event.NoEventSourceForClassExcepti
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class DefaultContext<P extends HasMetadata> implements Context<P> {
-
   private RetryInfo retryInfo;
   private final Controller<P> controller;
   private final P primaryResource;
@@ -41,6 +46,8 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
       defaultManagedDependentResourceContext;
   private final boolean primaryResourceDeleted;
   private final boolean primaryResourceFinalStateUnknown;
+  private final Map<DependentResource<?, P>, Object> desiredStates = new ConcurrentHashMap<>();
+  private final ResourceOperations<P> resourceOperations;
 
   public DefaultContext(
       RetryInfo retryInfo,
@@ -56,6 +63,7 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
     this.primaryResourceFinalStateUnknown = primaryResourceFinalStateUnknown;
     this.defaultManagedDependentResourceContext =
         new DefaultManagedWorkflowAndDependentResourceContext<>(controller, primaryResource, this);
+    this.resourceOperations = new ResourceOperations<>(this);
   }
 
   @Override
@@ -64,15 +72,44 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
-  public <T> Set<T> getSecondaryResources(Class<T> expectedType) {
+  public <T> Set<T> getSecondaryResources(Class<T> expectedType, boolean deduplicate) {
+    if (deduplicate) {
+      final var deduplicatedMap = deduplicatedMap(getSecondaryResourcesAsStream(expectedType));
+      return new HashSet<>(deduplicatedMap.values());
+    }
     return getSecondaryResourcesAsStream(expectedType).collect(Collectors.toSet());
   }
 
-  @Override
-  public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType) {
-    return controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
-        .map(es -> es.getSecondaryResources(primaryResource))
-        .flatMap(Set::stream);
+  public <R> Stream<R> getSecondaryResourcesAsStream(Class<R> expectedType, boolean deduplicate) {
+    final var stream =
+        controller.getEventSourceManager().getEventSourcesFor(expectedType).stream()
+            .<R>mapMulti(
+                (es, consumer) -> es.getSecondaryResources(primaryResource).forEach(consumer));
+    if (deduplicate) {
+      if (!HasMetadata.class.isAssignableFrom(expectedType)) {
+        throw new IllegalArgumentException("Can only de-duplicate HasMetadata descendants");
+      }
+      return deduplicatedMap(stream).values().stream();
+    } else {
+      return stream;
+    }
+  }
+
+  private <R> Map<ResourceID, R> deduplicatedMap(Stream<R> stream) {
+    return stream.collect(
+        Collectors.toUnmodifiableMap(
+            DefaultContext::resourceID,
+            Function.identity(),
+            (existing, replacement) ->
+                compareResourceVersions(existing, replacement) >= 0 ? existing : replacement));
+  }
+
+  private static ResourceID resourceID(Object hasMetadata) {
+    return ResourceID.fromResource((HasMetadata) hasMetadata);
+  }
+
+  private static int compareResourceVersions(Object v1, Object v2) {
+    return ReconcilerUtilsInternal.compareResourceVersions((HasMetadata) v1, (HasMetadata) v2);
   }
 
   @Override
@@ -120,6 +157,11 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   }
 
   @Override
+  public ResourceOperations<P> resourceOperations() {
+    return resourceOperations;
+  }
+
+  @Override
   public ExecutorService getWorkflowExecutorService() {
     // note that this should be always received from executor service manager, so we are able to do
     // restarts.
@@ -156,5 +198,13 @@ public class DefaultContext<P extends HasMetadata> implements Context<P> {
   public DefaultContext<P> setRetryInfo(RetryInfo retryInfo) {
     this.retryInfo = retryInfo;
     return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <R> R getOrComputeDesiredStateFor(
+      DependentResource<R, P> dependentResource, Function<P, R> desiredStateComputer) {
+    return (R)
+        desiredStates.computeIfAbsent(
+            dependentResource, ignored -> desiredStateComputer.apply(getPrimaryResource()));
   }
 }

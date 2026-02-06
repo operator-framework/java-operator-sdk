@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -105,12 +105,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
           "Creating or updating ConfigMap {} in {}",
           desiredHtmlConfigMap.getMetadata().getName(),
           ns);
-      context
-          .getClient()
-          .configMaps()
-          .inNamespace(ns)
-          .resource(desiredHtmlConfigMap)
-          .serverSideApply();
+      context.resourceOperations().serverSideApply(desiredHtmlConfigMap);
     }
 
     var existingDeployment = context.getSecondaryResource(Deployment.class).orElse(null);
@@ -119,29 +114,21 @@ public class WebPageReconciler implements Reconciler<WebPage> {
           "Creating or updating Deployment {} in {}",
           desiredDeployment.getMetadata().getName(),
           ns);
-      context
-          .getClient()
-          .apps()
-          .deployments()
-          .inNamespace(ns)
-          .resource(desiredDeployment)
-          .serverSideApply();
+      context.resourceOperations().serverSideApply(desiredDeployment);
     }
 
     var existingService = context.getSecondaryResource(Service.class).orElse(null);
     if (!match(desiredService, existingService)) {
       log.info(
-          "Creating or updating Deployment {} in {}",
-          desiredDeployment.getMetadata().getName(),
-          ns);
-      context.getClient().services().inNamespace(ns).resource(desiredService).serverSideApply();
+          "Creating or updating Service {} in {}", desiredDeployment.getMetadata().getName(), ns);
+      context.resourceOperations().serverSideApply(desiredService);
     }
 
     var existingIngress = context.getSecondaryResource(Ingress.class);
     if (Boolean.TRUE.equals(webPage.getSpec().getExposed())) {
       var desiredIngress = makeDesiredIngress(webPage);
       if (existingIngress.isEmpty() || !match(desiredIngress, existingIngress.get())) {
-        context.getClient().resource(desiredIngress).inNamespace(ns).serverSideApply();
+        context.resourceOperations().serverSideApply(desiredDeployment);
       }
     } else existingIngress.ifPresent(ingress -> context.getClient().resource(ingress).delete());
 
@@ -219,7 +206,8 @@ public class WebPageReconciler implements Reconciler<WebPage> {
   }
 
   private Service makeDesiredService(WebPage webPage, String ns, Deployment desiredDeployment) {
-    Service desiredService = ReconcilerUtils.loadYaml(Service.class, getClass(), "service.yaml");
+    Service desiredService =
+        ReconcilerUtilsInternal.loadYaml(Service.class, getClass(), "service.yaml");
     desiredService.getMetadata().setName(serviceName(webPage));
     desiredService.getMetadata().setNamespace(ns);
     desiredService.getMetadata().setLabels(lowLevelLabel());
@@ -233,7 +221,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
   private Deployment makeDesiredDeployment(
       WebPage webPage, String deploymentName, String ns, String configMapName) {
     Deployment desiredDeployment =
-        ReconcilerUtils.loadYaml(Deployment.class, getClass(), "deployment.yaml");
+        ReconcilerUtilsInternal.loadYaml(Deployment.class, getClass(), "deployment.yaml");
     desiredDeployment.getMetadata().setName(deploymentName);
     desiredDeployment.getMetadata().setNamespace(ns);
     desiredDeployment.getMetadata().setLabels(lowLevelLabel());
