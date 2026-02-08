@@ -48,6 +48,20 @@
       <artifactId>operator-framework</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.javaoperatorsdk</groupId>
+      <artifactId>micrometer-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-otlp</artifactId>
+      <version>${micrometer-core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>2.3</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
     </dependency>
