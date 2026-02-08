@@ -16,14 +16,25 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
 import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.registry.otlp.OtlpConfig;
+import io.micrometer.registry.otlp.OtlpMeterRegistry;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -40,7 +51,10 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
-    Operator operator = new Operator(o -> o.withStopOnInformerErrorDuringStartup(false));
+    // Load configuration from config.yaml
+    Metrics metrics = initOTLPMetrics();
+    Operator operator =
+        new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler());
@@ -57,5 +71,38 @@ public class WebPageOperator {
     server.createContext("/healthz", new LivenessHandler(operator));
     server.setExecutor(null);
     server.start();
+  }
+
+  private static @NonNull Metrics initOTLPMetrics() {
+    Map<String, String> configProperties = loadConfigFromYaml();
+    OtlpConfig otlpConfig = configProperties::get;
+
+    MeterRegistry registry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
+    return MicrometerMetrics.withoutPerResourceMetrics(registry);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Map<String, String> loadConfigFromYaml() {
+    Map<String, String> configMap = new HashMap<>();
+    try (InputStream inputStream = WebPageOperator.class.getResourceAsStream("/otlp-config.yaml")) {
+      if (inputStream == null) {
+        log.warn("otlp-config.yaml not found in resources, using default OTLP configuration");
+        return configMap;
+      }
+
+      Yaml yaml = new Yaml();
+      Map<String, Object> yamlData = yaml.load(inputStream);
+
+      // Navigate to otlp section and map properties directly
+      Map<String, Object> otlp = (Map<String, Object>) yamlData.get("otlp");
+      if (otlp != null) {
+        otlp.forEach((key, value) -> configMap.put("otlp." + key, value.toString()));
+      }
+
+      log.info("Loaded OTLP configuration from otlp-config.yaml: {}", configMap);
+    } catch (IOException e) {
+      log.error("Error loading otlp-config.yaml", e);
+    }
+    return configMap;
   }
 }
