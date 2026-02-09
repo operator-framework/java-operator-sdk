@@ -181,7 +181,7 @@ spec:
     targetPort: 8889
     protocol: TCP
   selector:
-    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/name: otel-collector-collector
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -190,6 +190,7 @@ metadata:
   namespace: observability
   labels:
     app: otel-collector
+    release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:
