@@ -67,6 +67,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
   private final List<PortForwardSpec> portForwards;
   private final List<LocalPortForward> localPortForwards;
   private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
+  private final List<CustomResourceDefinition> additionalCustomResourceDefinitionInstances;
   private final Map<Reconciler, RegisteredController> registeredControllers;
   private final Map<String, String> crdMappings;
   private final Consumer<LocallyRunOperatorExtension> beforeStartHook;
@@ -76,6 +77,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       List<HasMetadata> infrastructure,
       List<PortForwardSpec> portForwards,
       List<Class<? extends CustomResource>> additionalCustomResourceDefinitions,
+      List<CustomResourceDefinition> additionalCustomResourceDefinitionInstances,
       Duration infrastructureTimeout,
       boolean preserveNamespaceOnError,
       boolean waitForNamespaceDeletion,
@@ -101,6 +103,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     this.portForwards = portForwards;
     this.localPortForwards = new ArrayList<>(portForwards.size());
     this.additionalCustomResourceDefinitions = additionalCustomResourceDefinitions;
+    this.additionalCustomResourceDefinitionInstances = additionalCustomResourceDefinitionInstances;
     this.beforeStartHook = beforeStartHook;
     configurationServiceOverrider =
         configurationServiceOverrider != null
@@ -172,7 +175,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       LOGGER.debug("Applying CRD: {}", crdString);
       final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
       crd.serverSideApply();
-      appliedCRDs.add(new AppliedCRD(crdString, path));
+      appliedCRDs.add(new AppliedCRD.FileCRD(crdString, path));
       Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
       LOGGER.debug("Applied CRD with path: {}", path);
     } catch (InterruptedException ex) {
@@ -195,6 +198,33 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     applyCrd(ReconcilerUtils.getResourceTypeName(crClass));
   }
 
+  public void applyCrd(CustomResourceDefinition customResourceDefinition) {
+    try {
+      String resourceTypeName = customResourceDefinition.getMetadata().getName();
+      final var pathAsString = crdMappings.get(resourceTypeName);
+      if (pathAsString != null) {
+        applyCrdFromMappings(pathAsString, resourceTypeName);
+      } else {
+        var resource = getKubernetesClient().resource(customResourceDefinition);
+        resource.serverSideApply();
+        Thread.sleep(CRD_READY_WAIT); // readiness is not applicable for CRD, just wait a little
+        appliedCRDs.add(new AppliedCRD.InstanceCRD(customResourceDefinition));
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void applyCrdFromMappings(String pathAsString, String resourceTypeName) {
+    final var path = Path.of(pathAsString);
+    try {
+      applyCrd(Files.readString(path), pathAsString, getKubernetesClient());
+    } catch (IOException e) {
+      throw new IllegalStateException("Cannot open CRD file at " + path.toAbsolutePath(), e);
+    }
+    crdMappings.remove(resourceTypeName);
+  }
+
   /**
    * Applies the CRD associated with the specified resource type name, first checking if a CRD has
    * been manually specified using {@link Builder#withAdditionalCRD}, otherwise assuming that its
@@ -209,13 +239,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     // first attempt to use a manually defined CRD
     final var pathAsString = crdMappings.get(resourceTypeName);
     if (pathAsString != null) {
-      final var path = Path.of(pathAsString);
-      try {
-        applyCrd(Files.readString(path), pathAsString, getKubernetesClient());
-      } catch (IOException e) {
-        throw new IllegalStateException("Cannot open CRD file at " + path.toAbsolutePath(), e);
-      }
-      crdMappings.remove(resourceTypeName);
+      applyCrdFromMappings(pathAsString, resourceTypeName);
     } else {
       // if no manually defined CRD matches the resource type, apply the generated one
       applyCrd(resourceTypeName, getKubernetesClient());
@@ -280,6 +304,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
     }
 
     additionalCustomResourceDefinitions.forEach(this::applyCrd);
+    additionalCustomResourceDefinitionInstances.forEach(this::applyCrd);
     for (var ref : reconcilers) {
       final var config = operator.getConfigurationService().getConfigurationFor(ref.reconciler);
       final var oconfig = override(config);
@@ -361,24 +386,60 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       LOGGER.debug("Skipping deleting CRD because of configuration: {}", appliedCRD);
       return;
     }
-    try {
-      LOGGER.debug("Deleting CRD: {}", appliedCRD.crdString);
-      final var crd = client.load(new ByteArrayInputStream(appliedCRD.crdString.getBytes()));
-      crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
-      LOGGER.debug("Deleted CRD with path: {}", appliedCRD.path);
-    } catch (Exception ex) {
-      LOGGER.warn(
-          "Cannot delete CRD yaml: {}. You might need to delete it manually.", appliedCRD.path, ex);
-    }
+    appliedCRD.delete(client);
   }
 
-  private record AppliedCRD(String crdString, String path) {}
+  private sealed interface AppliedCRD permits AppliedCRD.FileCRD, AppliedCRD.InstanceCRD {
+    /**
+     * Delete this CRD from the cluster
+     *
+     * @param client client to use for deletion
+     */
+    void delete(KubernetesClient client);
+
+    record FileCRD(String crdString, String path) implements AppliedCRD {
+
+      @Override
+      public void delete(KubernetesClient client) {
+        try {
+          LOGGER.debug("Deleting CRD: {}", crdString);
+          final var crd = client.load(new ByteArrayInputStream(crdString.getBytes()));
+          crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
+          LOGGER.debug("Deleted CRD with path: {}", path);
+        } catch (Exception ex) {
+          LOGGER.warn(
+              "Cannot delete CRD yaml: {}. You might need to delete it manually.", path, ex);
+        }
+      }
+    }
+
+    record InstanceCRD(CustomResourceDefinition customResourceDefinition) implements AppliedCRD {
+
+      @Override
+      public void delete(KubernetesClient client) {
+        String type = customResourceDefinition.getMetadata().getName();
+        try {
+          LOGGER.debug("Deleting CustomResourceDefinition instance CRD: {}", type);
+          final var crd = client.resource(customResourceDefinition);
+          crd.withTimeoutInMillis(CRD_DELETE_TIMEOUT).delete();
+          LOGGER.debug("Deleted CustomResourceDefinition instance CRD: {}", type);
+        } catch (Exception ex) {
+          LOGGER.warn(
+              "Cannot delete CustomResourceDefinition instance CRD: {}. You might need to delete it"
+                  + " manually.",
+              type,
+              ex);
+        }
+      }
+    }
+  }
 
   @SuppressWarnings("rawtypes")
   public static class Builder extends AbstractBuilder<Builder> {
     private final List<ReconcilerSpec> reconcilers;
     private final List<PortForwardSpec> portForwards;
     private final List<Class<? extends CustomResource>> additionalCustomResourceDefinitions;
+    private final List<CustomResourceDefinition> additionalCustomResourceDefinitionInstances;
     private final List<String> additionalCRDs = new ArrayList<>();
     private Consumer<LocallyRunOperatorExtension> beforeStartHook;
     private KubernetesClient kubernetesClient;
@@ -389,6 +450,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       this.reconcilers = new ArrayList<>();
       this.portForwards = new ArrayList<>();
       this.additionalCustomResourceDefinitions = new ArrayList<>();
+      this.additionalCustomResourceDefinitionInstances = new ArrayList<>();
     }
 
     public Builder withReconciler(
@@ -449,6 +511,11 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
       return this;
     }
 
+    public Builder withAdditionalCustomResourceDefinition(CustomResourceDefinition definition) {
+      additionalCustomResourceDefinitionInstances.add(definition);
+      return this;
+    }
+
     public Builder withAdditionalCRD(String... paths) {
       if (paths != null) {
         additionalCRDs.addAll(List.of(paths));
@@ -471,6 +538,7 @@ public class LocallyRunOperatorExtension extends AbstractOperatorExtension {
           infrastructure,
           portForwards,
           additionalCustomResourceDefinitions,
+          additionalCustomResourceDefinitionInstances,
           infrastructureTimeout,
           preserveNamespaceOnError,
           waitForNamespaceDeletion,
