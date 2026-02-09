@@ -58,6 +58,7 @@ public class WebPageOperator {
     log.info("WebServer Operator starting!");
 
     // TODO remove otel prefix, add job and additional labels?!
+    // TODO add test for checking if there are metrics in prometheus
     // Load configuration from config.yaml
     Metrics metrics = initOTLPMetrics();
     Operator operator =
