@@ -143,7 +143,7 @@ spec:
     exporters:
       prometheus:
         endpoint: "0.0.0.0:8889"
-        namespace: "otel"
+        namespace: ""
         send_timestamps: true
         metric_expiration: 5m
       debug:
@@ -192,6 +192,7 @@ metadata:
     app: otel-collector
     release: kube-prometheus-stack
 spec:
+  jobLabel: app
   selector:
     matchLabels:
       app: otel-collector

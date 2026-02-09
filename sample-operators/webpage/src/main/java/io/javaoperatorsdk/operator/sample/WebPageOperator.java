@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -84,7 +85,22 @@ public class WebPageOperator {
 
   private static @NonNull Metrics initOTLPMetrics() {
     Map<String, String> configProperties = loadConfigFromYaml();
-    OtlpConfig otlpConfig = key -> configProperties.get(key);
+    OtlpConfig otlpConfig = new OtlpConfig() {
+      @Override
+      public String prefix() {
+        return "";
+      }
+
+      @Override
+      public @Nullable String get(String key) {
+        return configProperties.get(key);
+      }
+
+      @Override
+      public Map<String, String> resourceAttributes() {
+        return Map.of("service.name","josdk","operator","webpage");
+      }
+    };
 
     MeterRegistry registry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
 
