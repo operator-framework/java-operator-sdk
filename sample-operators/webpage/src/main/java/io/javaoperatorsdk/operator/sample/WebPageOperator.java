@@ -58,7 +58,10 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
-    // TODO remove otel prefix, add job and additional labels?!
+    // TODO // todo change:
+    //  operator_sdk_reconciliations_queue_size_webpagestandalonedependentsreconciler
+    //  operator_sdk_reconciliations_executions_webpagestandalonedependentsreconciler
+    //  => controller name as label
     // TODO add test for checking if there are metrics in prometheus
     // Load configuration from config.yaml
     Metrics metrics = initOTLPMetrics();
@@ -85,22 +88,24 @@ public class WebPageOperator {
 
   private static @NonNull Metrics initOTLPMetrics() {
     Map<String, String> configProperties = loadConfigFromYaml();
-    OtlpConfig otlpConfig = new OtlpConfig() {
-      @Override
-      public String prefix() {
-        return "";
-      }
+    var otlpConfig =
+        new OtlpConfig() {
+          @Override
+          public String prefix() {
+            return "";
+          }
 
-      @Override
-      public @Nullable String get(String key) {
-        return configProperties.get(key);
-      }
+          @Override
+          public @Nullable String get(String key) {
+            return configProperties.get(key);
+          }
 
-      @Override
-      public Map<String, String> resourceAttributes() {
-        return Map.of("service.name","josdk","operator","webpage");
-      }
-    };
+          // these should come from env variables
+          @Override
+          public Map<String, String> resourceAttributes() {
+            return Map.of("service.name", "josdk", "operator", "webpage");
+          }
+        };
 
     MeterRegistry registry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
 
