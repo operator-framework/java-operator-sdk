@@ -61,6 +61,7 @@ public class WebPageOperator {
     Metrics metrics = initOTLPMetrics();
     Operator operator =
         new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
+
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler());
@@ -81,7 +82,7 @@ public class WebPageOperator {
 
   private static @NonNull Metrics initOTLPMetrics() {
     Map<String, String> configProperties = loadConfigFromYaml();
-    OtlpConfig otlpConfig = configProperties::get;
+    OtlpConfig otlpConfig = key -> configProperties.get(key);
 
     MeterRegistry registry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
 
@@ -93,7 +94,6 @@ public class WebPageOperator {
     new ClassLoaderMetrics().bindTo(registry);
     new ProcessorMetrics().bindTo(registry);
     new UptimeMetrics().bindTo(registry);
-    log.info("JVM and system metrics registered");
 
     return MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
         .collectingMetricsPerResource()
