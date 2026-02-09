@@ -22,6 +22,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jspecify.annotations.NonNull;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -37,8 +39,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NAME;
-
 public class MicrometerMetrics implements Metrics {
 
   private static final String PREFIX = "operator.sdk.";
@@ -48,8 +48,8 @@ public class MicrometerMetrics implements Metrics {
   private static final String RECONCILIATIONS_RETRIES_LAST = RECONCILIATIONS + "retries.last";
   private static final String RECONCILIATIONS_RETRIES_NUMBER = RECONCILIATIONS + "retries.number";
   private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started";
-  private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
-  private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
+  private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions";
+  private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size";
   private static final String NAME = "name";
   private static final String NAMESPACE = "namespace";
   private static final String GROUP = "group";
@@ -59,6 +59,7 @@ public class MicrometerMetrics implements Metrics {
   private static final String METADATA_PREFIX = "resource.";
   private static final String CONTROLLERS_EXECUTION = "controllers.execution.";
   private static final String CONTROLLER = "controller";
+  private static final String CONTROLLER_NAME = CONTROLLER + ".name";
   private static final String SUCCESS_SUFFIX = ".success";
   private static final String FAILURE_SUFFIX = ".failure";
   private static final String TYPE = "type";
@@ -130,18 +131,27 @@ public class MicrometerMetrics implements Metrics {
   public void controllerRegistered(Controller<? extends HasMetadata> controller) {
     final var configuration = controller.getConfiguration();
     final var name = configuration.getName();
-    final var executingThreadsName = RECONCILIATIONS_EXECUTIONS + name;
+    final var executingThreadsRefName = reconciliationExecutionGaugeRefName(name);
     final var resourceClass = configuration.getResourceClass();
-    final var tags = new ArrayList<Tag>(3);
+    final var tags = new ArrayList<Tag>();
+    tags.add(Tag.of(CONTROLLER_NAME, name));
     addGVKTags(GroupVersionKind.gvkFor(resourceClass), tags, false);
     AtomicInteger executingThreads =
-        registry.gauge(executingThreadsName, tags, new AtomicInteger(0));
-    gauges.put(executingThreadsName, executingThreads);
+        registry.gauge(RECONCILIATIONS_EXECUTIONS, tags, new AtomicInteger(0));
+    gauges.put(executingThreadsRefName, executingThreads);
 
-    final var controllerQueueName = RECONCILIATIONS_QUEUE_SIZE + name;
+    final var controllerQueueRefName = controllerQueueSizeGaugeRefName(name);
     AtomicInteger controllerQueueSize =
-        registry.gauge(controllerQueueName, tags, new AtomicInteger(0));
-    gauges.put(controllerQueueName, controllerQueueSize);
+        registry.gauge(RECONCILIATIONS_QUEUE_SIZE, tags, new AtomicInteger(0));
+    gauges.put(controllerQueueRefName, controllerQueueSize);
+  }
+
+  private static @NonNull String reconciliationExecutionGaugeRefName(String controllerName) {
+    return RECONCILIATIONS_EXECUTIONS + "." + controllerName;
+  }
+
+  private static @NonNull String controllerQueueSizeGaugeRefName(String controllerName) {
+    return RECONCILIATIONS_QUEUE_SIZE + "." + controllerName;
   }
 
   @Override
@@ -223,7 +233,7 @@ public class MicrometerMetrics implements Metrics {
             String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true))));
 
     var controllerQueueSize =
-        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+        gauges.get(controllerQueueSizeGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     controllerQueueSize.incrementAndGet();
   }
 
@@ -235,18 +245,18 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
     var reconcilerExecutions =
-        gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
+        gauges.get(reconciliationExecutionGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     reconcilerExecutions.incrementAndGet();
   }
 
   @Override
   public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
     var reconcilerExecutions =
-        gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
+        gauges.get(reconciliationExecutionGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     reconcilerExecutions.decrementAndGet();
 
     var controllerQueueSize =
-        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+        gauges.get(controllerQueueSizeGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     controllerQueueSize.decrementAndGet();
   }
 
