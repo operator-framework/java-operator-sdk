@@ -199,6 +199,36 @@ echo -e "\n${YELLOW}Waiting for all pods to be ready...${NC}"
 kubectl wait --for=condition=ready pod --all -n observability --timeout=300s
 echo -e "${GREEN}✓ All pods are ready${NC}"
 
+# Import Grafana dashboards
+echo -e "\n${YELLOW}Importing Grafana dashboards...${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$SCRIPT_DIR/jvm-metrics-dashboard.json" ]; then
+    kubectl create configmap jvm-metrics-dashboard \
+        --from-file="$SCRIPT_DIR/jvm-metrics-dashboard.json" \
+        -n observability \
+        --dry-run=client -o yaml | \
+    kubectl label --dry-run=client --local -f - grafana_dashboard=1 -o yaml | \
+    kubectl apply -f -
+    echo -e "${GREEN}✓ JVM Metrics dashboard imported${NC}"
+else
+    echo -e "${YELLOW}⚠ JVM Metrics dashboard not found at $SCRIPT_DIR/jvm-metrics-dashboard.json${NC}"
+fi
+
+if [ -f "$SCRIPT_DIR/josdk-operator-metrics-dashboard.json" ]; then
+    kubectl create configmap josdk-operator-metrics-dashboard \
+        --from-file="$SCRIPT_DIR/josdk-operator-metrics-dashboard.json" \
+        -n observability \
+        --dry-run=client -o yaml | \
+    kubectl label --dry-run=client --local -f - grafana_dashboard=1 -o yaml | \
+    kubectl apply -f -
+    echo -e "${GREEN}✓ JOSDK Operator Metrics dashboard imported${NC}"
+else
+    echo -e "${YELLOW}⚠ JOSDK Operator Metrics dashboard not found at $SCRIPT_DIR/josdk-operator-metrics-dashboard.json${NC}"
+fi
+
+echo -e "${GREEN}✓ Dashboards will be available in Grafana shortly${NC}"
+
 # Get pod statuses
 echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}Installation Complete!${NC}"
@@ -237,16 +267,17 @@ echo -e "    ${GREEN}OTEL_TRACES_EXPORTER=otlp${NC}"
 echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}Grafana Dashboards${NC}"
 echo -e "${GREEN}========================================${NC}"
-echo -e "\nPre-installed dashboards in Grafana:"
+echo -e "\nAutomatically imported dashboards:"
+echo -e "  - ${GREEN}JOSDK - JVM Metrics${NC} - Java Virtual Machine health and performance"
+echo -e "  - ${GREEN}JOSDK - Operator Metrics${NC} - Kubernetes operator performance and reconciliation"
+echo -e "\nPre-installed Kubernetes dashboards:"
 echo -e "  - Kubernetes / Compute Resources / Cluster"
 echo -e "  - Kubernetes / Compute Resources / Namespace (Pods)"
 echo -e "  - Node Exporter / Nodes"
-echo -e "\nFor JOSDK metrics, create a custom dashboard with queries like:"
-echo -e "  ${GREEN}sum(rate(operator_sdk_reconciliations_started_total[5m]))${NC}"
-echo -e "  ${GREEN}sum(rate(operator_sdk_reconciliations_success_total[5m]))${NC}"
-echo -e "  ${GREEN}sum(rate(operator_sdk_reconciliations_failed_total[5m]))${NC}"
+echo -e "\n${YELLOW}Note:${NC} Dashboards may take 30-60 seconds to appear in Grafana after installation."
 
 echo -e "\n${YELLOW}To uninstall:${NC}"
+echo -e "  kubectl delete configmap -n observability jvm-metrics-dashboard josdk-operator-metrics-dashboard"
 echo -e "  kubectl delete -n observability OpenTelemetryCollector otel-collector"
 echo -e "  helm uninstall -n observability kube-prometheus-stack"
 echo -e "  helm uninstall -n observability opentelemetry-operator"
