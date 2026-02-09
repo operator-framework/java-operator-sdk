@@ -33,6 +33,12 @@ import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.core.instrument.binder.system.UptimeMetrics;
 import io.micrometer.registry.otlp.OtlpConfig;
 import io.micrometer.registry.otlp.OtlpMeterRegistry;
 
@@ -78,7 +84,20 @@ public class WebPageOperator {
     OtlpConfig otlpConfig = configProperties::get;
 
     MeterRegistry registry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
-    return MicrometerMetrics.withoutPerResourceMetrics(registry);
+
+    // Register JVM and system metrics
+    log.info("Registering JVM and system metrics...");
+    new JvmMemoryMetrics().bindTo(registry);
+    new JvmGcMetrics().bindTo(registry);
+    new JvmThreadMetrics().bindTo(registry);
+    new ClassLoaderMetrics().bindTo(registry);
+    new ProcessorMetrics().bindTo(registry);
+    new UptimeMetrics().bindTo(registry);
+    log.info("JVM and system metrics registered");
+
+    return MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
+        .collectingMetricsPerResource()
+        .build();
   }
 
   @SuppressWarnings("unchecked")
