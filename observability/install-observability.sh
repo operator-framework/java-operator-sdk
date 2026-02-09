@@ -45,6 +45,17 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 echo -e "${GREEN}✓ Helm repositories added${NC}"
 
+echo -e "\n${GREEN}========================================${NC}"
+echo -e "${GREEN}Installing Components (Parallel)${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo -e "The following will be installed:"
+echo -e "  • cert-manager"
+echo -e "  • OpenTelemetry Operator"
+echo -e "  • Prometheus & Grafana"
+echo -e "  • OpenTelemetry Collector"
+echo -e "  • Service Monitors"
+echo -e "\n${YELLOW}All resources will be applied first, then we'll wait for them to become ready.${NC}\n"
+
 # Install cert-manager (required for OpenTelemetry Operator)
 echo -e "\n${YELLOW}Installing cert-manager...${NC}"
 if kubectl get namespace cert-manager > /dev/null 2>&1; then
@@ -53,9 +64,8 @@ else
     kubectl create namespace cert-manager
     helm install cert-manager jetstack/cert-manager \
         --namespace cert-manager \
-        --set crds.enabled=true \
-        --wait
-    echo -e "${GREEN}✓ cert-manager installed${NC}"
+        --set crds.enabled=true
+    echo -e "${GREEN}✓ cert-manager installation started${NC}"
 fi
 
 # Create observability namespace
@@ -70,15 +80,13 @@ if helm list -n observability | grep -q opentelemetry-operator; then
     echo -e "${YELLOW}OpenTelemetry Operator already installed, upgrading...${NC}"
     helm upgrade opentelemetry-operator open-telemetry/opentelemetry-operator \
         --namespace observability \
-        --set "manager.collectorImage.repository=otel/opentelemetry-collector-contrib" \
-        --wait
+        --set "manager.collectorImage.repository=otel/opentelemetry-collector-contrib"
 else
     helm install opentelemetry-operator open-telemetry/opentelemetry-operator \
         --namespace observability \
-        --set "manager.collectorImage.repository=otel/opentelemetry-collector-contrib" \
-        --wait
+        --set "manager.collectorImage.repository=otel/opentelemetry-collector-contrib"
 fi
-echo -e "${GREEN}✓ OpenTelemetry Operator installed${NC}"
+echo -e "${GREEN}✓ OpenTelemetry Operator installation started${NC}"
 
 # Install kube-prometheus-stack (includes Prometheus + Grafana)
 echo -e "\n${YELLOW}Installing Prometheus and Grafana stack...${NC}"
@@ -88,17 +96,15 @@ if helm list -n observability | grep -q kube-prometheus-stack; then
         --namespace observability \
         --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
         --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
-        --set grafana.adminPassword=admin \
-        --wait
+        --set grafana.adminPassword=admin
 else
     helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
         --namespace observability \
         --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
         --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
-        --set grafana.adminPassword=admin \
-        --wait
+        --set grafana.adminPassword=admin
 fi
-echo -e "${GREEN}✓ Prometheus and Grafana installed${NC}"
+echo -e "${GREEN}✓ Prometheus and Grafana installation started${NC}"
 
 # Create OpenTelemetry Collector instance
 echo -e "\n${YELLOW}Creating OpenTelemetry Collector...${NC}"
@@ -195,8 +201,19 @@ EOF
 echo -e "${GREEN}✓ ServiceMonitor created${NC}"
 
 # Wait for all pods to be ready
-echo -e "\n${YELLOW}Waiting for all pods to be ready...${NC}"
+echo -e "\n${GREEN}========================================${NC}"
+echo -e "${GREEN}All resources have been applied!${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo -e "\n${YELLOW}Waiting for all pods to become ready (this may take 2-3 minutes)...${NC}"
+
+# Wait for cert-manager pods
+echo -e "${YELLOW}Checking cert-manager pods...${NC}"
+kubectl wait --for=condition=ready pod --all -n cert-manager --timeout=300s 2>/dev/null || echo -e "${YELLOW}cert-manager already running or skipped${NC}"
+
+# Wait for observability pods
+echo -e "${YELLOW}Checking observability pods...${NC}"
 kubectl wait --for=condition=ready pod --all -n observability --timeout=300s
+
 echo -e "${GREEN}✓ All pods are ready${NC}"
 
 # Import Grafana dashboards
