@@ -106,7 +106,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_jvm_memory_used_bytes{job=\"webpage-operator\"}",
+          "expr": "jvm_memory_used_bytes{service_name=\"josdk\"}",
           "legendFormat": "{{area}} - {{id}}",
           "range": true,
           "refId": "A"
@@ -195,7 +195,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_jvm_threads_live_threads{job=\"webpage-operator\"}",
+          "expr": "jvm_threads_live{service_name=\"josdk\"}",
           "legendFormat": "Live Threads",
           "range": true,
           "refId": "A"
@@ -206,7 +206,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_jvm_threads_daemon_threads{job=\"webpage-operator\"}",
+          "expr": "jvm_threads_daemon_threads{service_name=\"josdk\"}",
           "legendFormat": "Daemon Threads",
           "range": true,
           "refId": "B"
@@ -217,7 +217,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_jvm_threads_peak_threads{job=\"webpage-operator\"}",
+          "expr": "jvm_threads_peak_threads{service_name=\"josdk\"}",
           "legendFormat": "Peak Threads",
           "range": true,
           "refId": "C"
@@ -306,7 +306,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(otel_jvm_gc_pause_seconds_sum{job=\"webpage-operator\"}[5m])",
+          "expr": "rate(jvm_gc_pause_milliseconds_sum{service_name=\"josdk\"}[5m])",
           "legendFormat": "{{action}} - {{cause}}",
           "range": true,
           "refId": "A"
@@ -395,7 +395,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(otel_jvm_gc_pause_seconds_count{job=\"webpage-operator\"}[5m])",
+          "expr": "rate(jvm_gc_pause_milliseconds_count{service_name=\"josdk\"}[5m])",
           "legendFormat": "{{action}} - {{cause}}",
           "range": true,
           "refId": "A"
@@ -453,7 +453,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_system_cpu_usage{job=\"webpage-operator\"}",
+          "expr": "system_cpu_usage{service_name=\"josdk\"}",
           "legendFormat": "CPU Usage",
           "range": true,
           "refId": "A"
@@ -511,7 +511,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_jvm_classes_loaded_classes{job=\"webpage-operator\"}",
+          "expr": "jvm_classes_loaded{service_name=\"josdk\"}",
           "legendFormat": "Classes Loaded",
           "range": true,
           "refId": "A"
@@ -540,7 +540,7 @@
               }
             ]
           },
-          "unit": "s"
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -569,7 +569,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_process_uptime_seconds{job=\"webpage-operator\"}",
+          "expr": "process_uptime_milliseconds{service_name=\"josdk\"}",
           "legendFormat": "Uptime",
           "range": true,
           "refId": "A"
@@ -627,7 +627,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_system_cpu_count{job=\"webpage-operator\"}",
+          "expr": "system_cpu_count{service_name=\"josdk\"}",
           "legendFormat": "CPU Count",
           "range": true,
           "refId": "A"
@@ -716,7 +716,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(otel_jvm_gc_memory_allocated_bytes_total{job=\"webpage-operator\"}[5m])",
+          "expr": "rate(jvm_gc_memory_allocated_bytes_total{service_name=\"josdk\"}[5m])",
           "legendFormat": "Allocated",
           "range": true,
           "refId": "A"
@@ -727,7 +727,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(otel_jvm_gc_memory_promoted_bytes_total{job=\"webpage-operator\"}[5m])",
+          "expr": "rate(jvm_gc_memory_promoted_bytes_total{service_name=\"josdk\"}[5m])",
           "legendFormat": "Promoted",
           "range": true,
           "refId": "B"
@@ -816,7 +816,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_jvm_memory_max_bytes{job=\"webpage-operator\", area=\"heap\"}",
+          "expr": "jvm_memory_max_bytes{service_name=\"josdk\", area=\"heap\"}",
           "legendFormat": "Max Heap",
           "range": true,
           "refId": "A"
@@ -827,7 +827,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "otel_jvm_memory_committed_bytes{job=\"webpage-operator\", area=\"heap\"}",
+          "expr": "jvm_memory_committed_bytes{service_name=\"josdk\", area=\"heap\"}",
           "legendFormat": "Committed Heap",
           "range": true,
           "refId": "B"

@@ -61,6 +61,9 @@ Monitors Java Virtual Machine health and performance:
 - `system.cpu.usage`, `system.cpu.count`
 - `process.uptime`
 
+**Filtering:**
+All panels filter by `service_name="josdk"` to show metrics only from your operator.
+
 ### 2. Java Operator SDK Metrics Dashboard (`josdk-operator-metrics-dashboard.json`)
 
 Monitors Kubernetes operator performance and health:
@@ -86,6 +89,9 @@ Monitors Kubernetes operator performance and health:
 - `operator.sdk.controllers.execution.reconcile` - Execution timing histograms
 - `operator.sdk.events.received`, `.delete` - Event reception
 - Retry metrics and failure breakdowns
+
+**Filtering:**
+All panels filter by `service_name="josdk"` to show metrics only from your operator.
 
 ## Importing Dashboards into Grafana
 
@@ -180,8 +186,8 @@ Open http://localhost:9090/targets and verify the OTLP collector target is UP.
 
 ### Verify Metrics in Prometheus
 Open Prometheus UI and search for metrics:
-- JVM metrics: `otel_jvm_*`
-- Operator metrics: `otel_operator_sdk_*`
+- JVM metrics: `jvm_*`
+- Operator metrics: `operator_sdk_*`
 
 ### Check Grafana Data Source
 1. Navigate to **Configuration** → **Data Sources**
@@ -217,25 +223,25 @@ After making changes, re-import the dashboard using one of the methods above.
 ### JVM Metrics
 ```promql
 # Heap memory usage percentage
-(otel_jvm_memory_used_bytes{area="heap"} / otel_jvm_memory_max_bytes{area="heap"}) * 100
+(jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100
 
 # GC throughput (percentage of time NOT in GC)
-100 - (rate(otel_jvm_gc_pause_seconds_sum[5m]) * 100)
+100 - (rate(jvm_gc_pause_seconds_sum[5m]) * 100)
 
 # Thread count trend
-otel_jvm_threads_live_threads
+jvm_threads_live_threads
 ```
 
 ### Operator Metrics
 ```promql
 # Reconciliation success rate
-rate(otel_operator_sdk_reconciliations_success_total[5m]) / rate(otel_operator_sdk_reconciliations_started_total[5m])
+rate(operator_sdk_reconciliations_success_total[5m]) / rate(operator_sdk_reconciliations_started_total[5m])
 
 # Average reconciliation time
-rate(otel_operator_sdk_controllers_execution_reconcile_seconds_sum[5m]) / rate(otel_operator_sdk_controllers_execution_reconcile_seconds_count[5m])
+rate(operator_sdk_controllers_execution_reconcile_seconds_sum[5m]) / rate(operator_sdk_controllers_execution_reconcile_seconds_count[5m])
 
 # Queue saturation
-otel_operator_sdk_reconciliations_queue_size / on() group_left() max(otel_operator_sdk_reconciliations_queue_size)
+operator_sdk_reconciliations_queue_size / on() group_left() max(operator_sdk_reconciliations_queue_size)
 ```
 
 ## References
