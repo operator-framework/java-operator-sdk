@@ -146,6 +146,8 @@ spec:
         namespace: ""
         send_timestamps: true
         metric_expiration: 5m
+        resource_to_telemetry_conversion:
+          enabled: true
       debug:
         verbosity: detailed
         sampling_initial: 5

@@ -103,7 +103,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_reconciliations_started_total{job=\"webpage-operator\"}[5m])) by (kind, version)",
+          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\"}[5m])) by (kind, version)",
           "legendFormat": "{{kind}} ({{version}})",
           "range": true,
           "refId": "A"
@@ -224,7 +224,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_reconciliations_success_total{job=\"webpage-operator\"}[5m]))",
+          "expr": "sum(rate(operator_sdk_reconciliations_success_total{service_name=\"josdk\"}[5m]))",
           "legendFormat": "Success",
           "range": true,
           "refId": "A"
@@ -235,7 +235,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_reconciliations_failed_total{job=\"webpage-operator\"}[5m]))",
+          "expr": "sum(rate(operator_sdk_reconciliations_failed_total{service_name=\"josdk\"}[5m]))",
           "legendFormat": "Failure",
           "range": true,
           "refId": "B"
@@ -302,7 +302,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(otel_operator_sdk_reconciliations_executions{job=\"webpage-operator\"})",
+          "expr": "sum(operator_sdk_reconciliations_executions{service_name=\"josdk\"})",
           "legendFormat": "Executing",
           "range": true,
           "refId": "A"
@@ -369,7 +369,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(otel_operator_sdk_reconciliations_queue_size{job=\"webpage-operator\"})",
+          "expr": "sum(operator_sdk_reconciliations_queue_size{service_name=\"josdk\"})",
           "legendFormat": "Queue Size",
           "range": true,
           "refId": "A"
@@ -430,7 +430,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(otel_operator_sdk_reconciliations_started_total{job=\"webpage-operator\"})",
+          "expr": "sum(operator_sdk_reconciliations_started_total{service_name=\"josdk\"})",
           "legendFormat": "Total",
           "range": true,
           "refId": "A"
@@ -495,7 +495,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_reconciliations_failed_total{job=\"webpage-operator\"}[5m]))",
+          "expr": "sum(rate(operator_sdk_reconciliations_failed_total{service_name=\"josdk\"}[5m]))",
           "legendFormat": "Error Rate",
           "range": true,
           "refId": "A"
@@ -585,7 +585,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(otel_operator_sdk_controllers_execution_reconcile_seconds_bucket{job=\"webpage-operator\"}[5m])) by (le, controller))",
+          "expr": "histogram_quantile(0.50, sum(rate(operator_sdk_controllers_execution_reconcile_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
           "legendFormat": "p50 - {{controller}}",
           "range": true,
           "refId": "A"
@@ -596,7 +596,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(otel_operator_sdk_controllers_execution_reconcile_seconds_bucket{job=\"webpage-operator\"}[5m])) by (le, controller))",
+          "expr": "histogram_quantile(0.95, sum(rate(operator_sdk_controllers_execution_reconcile_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
           "legendFormat": "p95 - {{controller}}",
           "range": true,
           "refId": "B"
@@ -607,7 +607,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(otel_operator_sdk_controllers_execution_reconcile_seconds_bucket{job=\"webpage-operator\"}[5m])) by (le, controller))",
+          "expr": "histogram_quantile(0.99, sum(rate(operator_sdk_controllers_execution_reconcile_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
           "legendFormat": "p99 - {{controller}}",
           "range": true,
           "refId": "C"
@@ -697,7 +697,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_events_received_total{job=\"webpage-operator\"}[5m])) by (event, action)",
+          "expr": "sum(rate(operator_sdk_events_received_total{service_name=\"josdk\"}[5m])) by (event, action)",
           "legendFormat": "{{event}} - {{action}}",
           "range": true,
           "refId": "A"
@@ -787,7 +787,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_reconciliations_failed_total{job=\"webpage-operator\"}[5m])) by (exception)",
+          "expr": "sum(rate(operator_sdk_reconciliations_failed_total{service_name=\"josdk\"}[5m])) by (exception)",
           "legendFormat": "{{exception}}",
           "range": true,
           "refId": "A"
@@ -877,7 +877,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_controllers_execution_reconcile_success_total{job=\"webpage-operator\"}[5m])) by (type)",
+          "expr": "sum(rate(operator_sdk_controllers_execution_reconcile_success_total{service_name=\"josdk\"}[5m])) by (type)",
           "legendFormat": "Success - {{type}}",
           "range": true,
           "refId": "A"
@@ -888,7 +888,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_controllers_execution_reconcile_failure_total{job=\"webpage-operator\"}[5m])) by (exception)",
+          "expr": "sum(rate(operator_sdk_controllers_execution_reconcile_failure_total{service_name=\"josdk\"}[5m])) by (exception)",
           "legendFormat": "Failure - {{exception}}",
           "range": true,
           "refId": "B"
@@ -978,7 +978,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_events_delete_total{job=\"webpage-operator\"}[5m])) by (kind, version)",
+          "expr": "sum(rate(operator_sdk_events_delete_total{service_name=\"josdk\"}[5m])) by (kind, version)",
           "legendFormat": "{{kind}} ({{version}})",
           "range": true,
           "refId": "A"
@@ -1068,7 +1068,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_reconciliations_started_total{job=\"webpage-operator\", operator_sdk_reconciliations_retries_last=\"true\"}[5m]))",
+          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\", operator_sdk_reconciliations_retries_last=\"true\"}[5m]))",
           "legendFormat": "Last Retry Attempts",
           "range": true,
           "refId": "A"
@@ -1079,7 +1079,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(otel_operator_sdk_reconciliations_started_total{job=\"webpage-operator\", operator_sdk_reconciliations_retries_last=\"false\"}[5m]))",
+          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\", operator_sdk_reconciliations_retries_last=\"false\"}[5m]))",
           "legendFormat": "Retries (Not Last)",
           "range": true,
           "refId": "B"
