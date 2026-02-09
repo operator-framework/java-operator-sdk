@@ -57,6 +57,7 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
+    // TODO remove otel prefix, add job and additional labels?!
     // Load configuration from config.yaml
     Metrics metrics = initOTLPMetrics();
     Operator operator =
