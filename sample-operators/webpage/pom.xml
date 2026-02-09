@@ -39,6 +39,13 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+        <dependency>
+          <groupId>io.micrometer</groupId>
+          <artifactId>micrometer-bom</artifactId>
+          <version>${micrometer-core.version}</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
     </dependencies>
   </dependencyManagement>
 
