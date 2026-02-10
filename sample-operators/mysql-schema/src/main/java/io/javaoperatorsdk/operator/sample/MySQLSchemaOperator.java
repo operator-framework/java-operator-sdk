@@ -42,7 +42,8 @@ public class MySQLSchemaOperator {
         new Operator(
             overrider ->
                 overrider.withMetrics(
-                    MicrometerMetricsV2.withoutPerResourceMetrics(new LoggingMeterRegistry())));
+                    new MicrometerMetricsV2.MicrometerMetricsV2Builder(new LoggingMeterRegistry())
+                        .build()));
 
     MySQLSchemaReconciler schemaReconciler = new MySQLSchemaReconciler();
 
