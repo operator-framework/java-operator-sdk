@@ -70,12 +70,7 @@ public class Controller<P extends HasMetadata>
 
   private static final Logger log = LoggerFactory.getLogger(Controller.class);
   private static final String CLEANUP = "cleanup";
-  private static final String DELETE = "delete";
-  private static final String FINALIZER_NOT_REMOVED = "finalizerNotRemoved";
   private static final String RECONCILE = "reconcile";
-  private static final String RESOURCE = "resource";
-  private static final String STATUS = "status";
-  private static final String BOTH = "both";
   public static final String CLEANER_NOT_SUPPORTED_ON_ALL_EVENT_ERROR_MESSAGE =
       "Cleaner is not supported when triggerReconcilerOnAllEvents enabled.";
   public static final String
@@ -156,18 +151,6 @@ public class Controller<P extends HasMetadata>
           }
 
           @Override
-          public String successTypeName(UpdateControl<P> result) {
-            String successType = RESOURCE;
-            if (result.isPatchStatus()) {
-              successType = STATUS;
-            }
-            if (result.isPatchResourceAndStatus()) {
-              successType = BOTH;
-            }
-            return successType;
-          }
-
-          @Override
           public ResourceID resourceID() {
             return ResourceID.fromResource(resource);
           }
@@ -206,11 +189,6 @@ public class Controller<P extends HasMetadata>
             @Override
             public String controllerName() {
               return configuration.getName();
-            }
-
-            @Override
-            public String successTypeName(DeleteControl deleteControl) {
-              return deleteControl.isRemoveFinalizer() ? DELETE : FINALIZER_NOT_REMOVED;
             }
 
             @Override

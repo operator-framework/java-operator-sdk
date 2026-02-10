@@ -18,6 +18,7 @@ package io.javaoperatorsdk.operator.sample;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,12 +35,9 @@ import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
-import io.micrometer.core.instrument.binder.system.UptimeMetrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
+import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
 import io.micrometer.registry.otlp.OtlpConfig;
 import io.micrometer.registry.otlp.OtlpMeterRegistry;
 
@@ -87,6 +85,9 @@ public class WebPageOperator {
   }
 
   private static @NonNull Metrics initOTLPMetrics() {
+    CompositeMeterRegistry compositeRegistry = new CompositeMeterRegistry();
+
+    // Add OTLP registry
     Map<String, String> configProperties = loadConfigFromYaml();
     var otlpConfig =
         new OtlpConfig() {
@@ -107,18 +108,43 @@ public class WebPageOperator {
           }
         };
 
-    MeterRegistry registry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
+    MeterRegistry otlpRegistry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
+    compositeRegistry.add(otlpRegistry);
+
+    // Add console logging registry if enabled (for development)
+    //    String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
+    // todo remove
+    String enableConsoleLogging = "true";
+    if ("true".equalsIgnoreCase(enableConsoleLogging)) {
+      log.info("Console metrics logging enabled");
+      LoggingMeterRegistry loggingRegistry =
+          new LoggingMeterRegistry(
+              new LoggingRegistryConfig() {
+                @Override
+                public String get(String key) {
+                  return null;
+                }
+
+                @Override
+                public Duration step() {
+                  return Duration.ofSeconds(10); // Log metrics every 30 seconds
+                }
+              },
+              Clock.SYSTEM);
+      compositeRegistry.add(loggingRegistry);
+    }
 
     // Register JVM and system metrics
     log.info("Registering JVM and system metrics...");
-    new JvmMemoryMetrics().bindTo(registry);
-    new JvmGcMetrics().bindTo(registry);
-    new JvmThreadMetrics().bindTo(registry);
-    new ClassLoaderMetrics().bindTo(registry);
-    new ProcessorMetrics().bindTo(registry);
-    new UptimeMetrics().bindTo(registry);
+    // todo add back
+    //    new JvmMemoryMetrics().bindTo(compositeRegistry);
+    //    new JvmGcMetrics().bindTo(compositeRegistry);
+    //    new JvmThreadMetrics().bindTo(compositeRegistry);
+    //    new ClassLoaderMetrics().bindTo(compositeRegistry);
+    //    new ProcessorMetrics().bindTo(compositeRegistry);
+    //    new UptimeMetrics().bindTo(compositeRegistry);
 
-    return MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
+    return MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(compositeRegistry)
         .collectingMetricsPerResource()
         .build();
   }
