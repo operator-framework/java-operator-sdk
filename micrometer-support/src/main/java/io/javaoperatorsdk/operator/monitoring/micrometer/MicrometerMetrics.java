@@ -221,16 +221,18 @@ public class MicrometerMetrics implements Metrics {
   public void reconcileCustomResource(
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-    incrementCounter(
-        ResourceID.fromResource(resource),
-        RECONCILIATIONS_STARTED,
-        metadata,
-        Tag.of(
-            RECONCILIATIONS_RETRIES_NUMBER,
-            String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0))),
-        Tag.of(
-            RECONCILIATIONS_RETRIES_LAST,
-            String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true))));
+    ResourceID resourceID = ResourceID.fromResource(resource);
+
+    // Record the counter without retry tags
+    incrementCounter(resourceID, RECONCILIATIONS_STARTED, metadata);
+
+    // Update retry number gauge
+    int retryNumber = retryInfo.map(RetryInfo::getAttemptCount).orElse(0);
+    updateGauge(resourceID, metadata, RECONCILIATIONS_RETRIES_NUMBER, retryNumber);
+
+    // Update retry last attempt gauge (1 for true, 0 for false)
+    int isLastAttempt = retryInfo.map(RetryInfo::isLastAttempt).orElse(true) ? 1 : 0;
+    updateGauge(resourceID, metadata, RECONCILIATIONS_RETRIES_LAST, isLastAttempt);
 
     var controllerQueueSize =
         gauges.get(controllerQueueSizeGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
@@ -238,8 +240,14 @@ public class MicrometerMetrics implements Metrics {
   }
 
   @Override
-  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_SUCCESS, metadata);
+  public void successfullyFinishedReconciliation(
+      HasMetadata resource, Map<String, Object> metadata) {
+    ResourceID resourceID = ResourceID.fromResource(resource);
+    incrementCounter(resourceID, RECONCILIATIONS_SUCCESS, metadata);
+
+    // Reset retry gauges on successful reconciliation
+    updateGauge(resourceID, metadata, RECONCILIATIONS_RETRIES_NUMBER, 0);
+    updateGauge(resourceID, metadata, RECONCILIATIONS_RETRIES_LAST, 0);
   }
 
   @Override
@@ -333,6 +341,32 @@ public class MicrometerMetrics implements Metrics {
     final var counter = registry.counter(PREFIX + counterName, tags);
     cleaner.recordAssociation(id, counter);
     counter.increment();
+  }
+
+  private void updateGauge(
+      ResourceID id, Map<String, Object> metadata, String gaugeName, int value) {
+    final var tags = new ArrayList<Tag>(6);
+    addMetadataTags(id, metadata, tags, false);
+
+    final var gaugeRefName = buildGaugeRefName(id, gaugeName);
+    AtomicInteger gauge =
+        gauges.computeIfAbsent(
+            gaugeRefName,
+            key -> {
+              AtomicInteger newGauge =
+                  registry.gauge(PREFIX + gaugeName, tags, new AtomicInteger(0));
+              // Find the meter in the registry and record it for cleanup
+              var meter = registry.find(PREFIX + gaugeName).tags(tags).gauge();
+              if (meter != null) {
+                cleaner.recordAssociation(id, meter);
+              }
+              return newGauge;
+            });
+    gauge.set(value);
+  }
+
+  private String buildGaugeRefName(ResourceID id, String gaugeName) {
+    return gaugeName + "." + id.getName() + "." + id.getNamespace().orElse(CLUSTER);
   }
 
   protected Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
