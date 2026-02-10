@@ -15,7 +15,7 @@
  */
 package io.javaoperatorsdk.operator.monitoring.micrometer;
 
-import java.util.Collections;
+import java.time.Duration;
 import java.util.Set;
 
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
@@ -23,24 +23,24 @@ import io.micrometer.core.instrument.Meter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DefaultBehaviorIT extends AbstractMicrometerMetricsTestFixture {
+public class DelayedMetricsCleaningOnDeleteIT extends AbstractMicrometerMetricsTestFixture {
+
+  private static final int testDelay = 1;
+
   @Override
   protected MicrometerMetrics getMetrics() {
-    return MicrometerMetrics.newMicrometerMetricsBuilder(registry).build();
+    return MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry)
+        .withCleanUpDelayInSeconds(testDelay)
+        .withCleaningThreadNumber(2)
+        .build();
   }
 
   @Override
-  protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
-    // no meter should be recorded because we're not tracking anything to be deleted later
-    assertThat(metrics.recordedMeterIdsFor(resourceID)).isEmpty();
-    // metrics are collected per resource by default for now, this will change in a future release
-    assertThat(registry.getMetersAsString()).contains(resourceID.getName());
-    return Collections.emptySet();
-  }
-
-  @Override
-  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters) {
-    // meters should be neither recorded, nor removed by default
-    assertThat(registry.getRemoved()).isEmpty();
+  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
+      throws Exception {
+    // check that the meters are properly removed after the specified delay
+    Thread.sleep(Duration.ofSeconds(testDelay).toMillis());
+    assertThat(registry.getRemoved()).isEqualTo(recordedMeters);
+    assertThat(metrics.recordedMeterIdsFor(resourceID)).isNull();
   }
 }

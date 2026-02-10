@@ -85,6 +85,16 @@ public interface Metrics {
   default void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {}
 
   /**
+   * @deprecated use {@link Metrics#successfullyFinishedReconciliation(HasMetadata, Map)}
+   * @param resource the {@link ResourceID} associated with the resource being processed
+   * @param metadata metadata associated with the resource being processed
+   */
+  @Deprecated(forRemoval = true)
+  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
+    successfullyFinishedReconciliation(resource, metadata);
+  }
+
+  /**
    * Called when the {@link
    * io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)} method
    * of the Reconciler associated with the resource associated with the specified {@link ResourceID}
@@ -124,6 +134,17 @@ public interface Metrics {
      * @return the associated controller name
      */
     String controllerName();
+
+    /**
+     * Retrieves the name of the successful result when the reconciliation ended positively.
+     * Possible values comes from the different outcomes provided by {@link
+     * io.javaoperatorsdk.operator.api.reconciler.UpdateControl} or {@link
+     * io.javaoperatorsdk.operator.api.reconciler.DeleteControl}.
+     *
+     * @param result the reconciliation result
+     * @return a name associated with the specified outcome
+     */
+    String successTypeName(T result);
 
     /**
      * Retrieves the {@link ResourceID} of the resource associated with the controller execution
