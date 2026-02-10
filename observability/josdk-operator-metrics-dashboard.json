@@ -992,7 +992,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Reconciliation retry information",
+      "description": "Current retry attempt number for resources being retried",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1018,7 +1018,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1035,10 +1035,18 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
               }
             ]
           },
-          "unit": "ops"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1051,7 +1059,7 @@
       "id": 12,
       "options": {
         "legend": {
-          "calcs": ["last", "mean"],
+          "calcs": ["last", "max"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1068,24 +1076,119 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\", operator_sdk_reconciliations_retries_last=\"true\"}[5m]))",
-          "legendFormat": "Last Retry Attempts",
+          "expr": "operator_sdk_reconciliations_retries_number{service_name=\"josdk\"}",
+          "legendFormat": "{{kind}}/{{name}} ({{namespace}})",
           "range": true,
           "refId": "A"
+        }
+      ],
+      "title": "Reconciliation Retry Attempts",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Resources currently on their last retry attempt (1 = last attempt, 0 = not last or no retry)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "No"
+                },
+                "1": {
+                  "text": "Yes"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
         },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": ["last"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\", operator_sdk_reconciliations_retries_last=\"false\"}[5m]))",
-          "legendFormat": "Retries (Not Last)",
+          "expr": "operator_sdk_reconciliations_retries_last{service_name=\"josdk\"}",
+          "legendFormat": "{{kind}}/{{name}} ({{namespace}})",
           "range": true,
-          "refId": "B"
+          "refId": "A"
         }
       ],
-      "title": "Reconciliation Retry Rate",
+      "title": "Resources on Last Retry Attempt",
       "type": "timeseries"
     }
   ],
