@@ -114,6 +114,7 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
+  @Deprecated(forRemoval = true)
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     metricsList.forEach(metrics -> metrics.monitorSizeOf(map, name));
     return map;
