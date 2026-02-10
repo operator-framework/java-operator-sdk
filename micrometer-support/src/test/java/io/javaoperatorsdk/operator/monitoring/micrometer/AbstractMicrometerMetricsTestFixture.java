@@ -30,7 +30,6 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -66,27 +65,11 @@ public abstract class AbstractMicrometerMetricsTestFixture {
                     .isEmpty());
 
     final var resourceID = ResourceID.fromResource(created);
-    final var meters = preDeleteChecks(resourceID);
 
     // delete the resource and wait for it to be deleted
     operator.delete(testResource);
     await().until(() -> operator.get(ConfigMap.class, testResourceName) == null);
-
-    postDeleteChecks(resourceID, meters);
   }
-
-  protected Set<Meter.Id> preDeleteChecks(ResourceID resourceID) {
-    // check that we properly recorded meters associated with the resource
-    final var meters = metrics.recordedMeterIdsFor(resourceID);
-    // metrics are collected per resource
-    assertThat(registry.getMetersAsString()).contains(resourceID.getName());
-    assertThat(meters).isNotNull();
-    assertThat(meters).isNotEmpty();
-    return meters;
-  }
-
-  protected void postDeleteChecks(ResourceID resourceID, Set<Meter.Id> recordedMeters)
-      throws Exception {}
 
   @ControllerConfiguration
   private static class MetricsCleaningTestReconciler

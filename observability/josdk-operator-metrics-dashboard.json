@@ -369,13 +369,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(operator_sdk_reconciliations_queue_size{service_name=\"josdk\"})",
-          "legendFormat": "Queue Size",
+          "expr": "sum(operator_sdk_reconciliations_active{service_name=\"josdk\"})",
+          "legendFormat": "Active",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Reconciliation Queue Size",
+      "title": "Active Reconciliations",
       "type": "gauge"
     },
     {
@@ -585,7 +585,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(operator_sdk_controllers_execution_reconcile_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
+          "expr": "histogram_quantile(0.50, sum(rate(operator_sdk_reconciliations_execution_duration_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
           "legendFormat": "p50 - {{controller}}",
           "range": true,
           "refId": "A"
@@ -596,7 +596,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(operator_sdk_controllers_execution_reconcile_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
+          "expr": "histogram_quantile(0.95, sum(rate(operator_sdk_reconciliations_execution_duration_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
           "legendFormat": "p95 - {{controller}}",
           "range": true,
           "refId": "B"
@@ -607,7 +607,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(operator_sdk_controllers_execution_reconcile_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
+          "expr": "histogram_quantile(0.99, sum(rate(operator_sdk_reconciliations_execution_duration_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
           "legendFormat": "p99 - {{controller}}",
           "range": true,
           "refId": "C"
@@ -877,8 +877,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_controllers_execution_reconcile_success_total{service_name=\"josdk\"}[5m])) by (type)",
-          "legendFormat": "Success - {{type}}",
+          "expr": "sum(rate(operator_sdk_controllers_success_total{service_name=\"josdk\"}[5m])) by (controller)",
+          "legendFormat": "Success - {{controller}}",
           "range": true,
           "refId": "A"
         },
@@ -888,8 +888,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_controllers_execution_reconcile_failure_total{service_name=\"josdk\"}[5m])) by (exception)",
-          "legendFormat": "Failure - {{exception}}",
+          "expr": "sum(rate(operator_sdk_controllers_failure_total{service_name=\"josdk\"}[5m])) by (controller)",
+          "legendFormat": "Failure - {{controller}}",
           "range": true,
           "refId": "B"
         }
@@ -1083,112 +1083,6 @@
         }
       ],
       "title": "Reconciliation Retry Attempts",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "description": "Resources currently on their last retry attempt (1 = last attempt, 0 = not last or no retry)",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "lineInterpolation": "stepAfter",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "text": "No"
-                },
-                "1": {
-                  "text": "Yes"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 40
-      },
-      "id": 13,
-      "options": {
-        "legend": {
-          "calcs": ["last"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "operator_sdk_reconciliations_retries_last{service_name=\"josdk\"}",
-          "legendFormat": "{{kind}}/{{name}} ({{namespace}})",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Resources on Last Retry Attempt",
       "type": "timeseries"
     }
   ],
