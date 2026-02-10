@@ -50,14 +50,29 @@ public interface Metrics {
   default void receivedEvent(Event event, Map<String, Object> metadata) {}
 
   /**
-   * Called right before a resource is dispatched to the ExecutorService for reconciliation.
+   * @deprecated use {@link Metrics#submittedForReconciliation(HasMetadata, RetryInfo, Map)} Called
+   *     right before a resource is dispatched to the ExecutorService for reconciliation.
+   * @param resource the associated with the resource
+   * @param retryInfo the current retry state information for the reconciliation request
+   * @param metadata metadata associated with the resource being processed
+   */
+  @Deprecated(forRemoval = true)
+  default void reconcileCustomResource(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
+    submittedForReconciliation(resource, retryInfo, metadata);
+  }
+
+  /**
+   * Called right before a resource is submitted to the ExecutorService for reconciliation.
    *
    * @param resource the associated with the resource
    * @param retryInfo the current retry state information for the reconciliation request
    * @param metadata metadata associated with the resource being processed
    */
-  default void reconcileCustomResource(
+  default void submittedForReconciliation(
       HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
+
+  default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Called when a precedent reconciliation for the resource associated with the specified {@link
@@ -70,8 +85,24 @@ public interface Metrics {
   default void failedReconciliation(
       HasMetadata resource, Exception exception, Map<String, Object> metadata) {}
 
-  default void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {}
+  /**
+   * Called when the {@link
+   * io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)} method
+   * of the Reconciler associated with the resource associated with the specified {@link ResourceID}
+   * has successfully finished.
+   *
+   * @param resource the {@link ResourceID} associated with the resource being processed
+   * @param metadata metadata associated with the resource being processed
+   */
+  default void successfullyFinishedReconciliation(
+      HasMetadata resource, Map<String, Object> metadata) {}
 
+  /**
+   * Always called not only if successfully finished.
+   *
+   * @param resource the {@link ResourceID} associated with the resource being processed
+   * @param metadata metadata associated with the resource being processed
+   */
   default void reconciliationExecutionFinished(
       HasMetadata resource, Map<String, Object> metadata) {}
 
@@ -93,18 +124,6 @@ public interface Metrics {
   default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
     successfullyFinishedReconciliation(resource, metadata);
   }
-
-  /**
-   * Called when the {@link
-   * io.javaoperatorsdk.operator.api.reconciler.Reconciler#reconcile(HasMetadata, Context)} method
-   * of the Reconciler associated with the resource associated with the specified {@link ResourceID}
-   * has sucessfully finished.
-   *
-   * @param resource the {@link ResourceID} associated with the resource being processed
-   * @param metadata metadata associated with the resource being processed
-   */
-  default void successfullyFinishedReconciliation(
-      HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Encapsulates the information about a controller execution i.e. a call to either {@link
@@ -196,6 +215,7 @@ public interface Metrics {
    * @param <T> the type of the Map being monitored
    */
   @SuppressWarnings("unused")
+  @Deprecated(forRemoval = true)
   default <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     return map;
   }

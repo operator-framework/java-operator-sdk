@@ -56,10 +56,6 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
-    // TODO // todo change:
-    //  operator_sdk_reconciliations_queue_size_webpagestandalonedependentsreconciler
-    //  operator_sdk_reconciliations_executions_webpagestandalonedependentsreconciler
-    //  => controller name as label
     // TODO add test for checking if there are metrics in prometheus
     // Load configuration from config.yaml
     Metrics metrics = initOTLPMetrics();
@@ -145,7 +141,6 @@ public class WebPageOperator {
     //    new UptimeMetrics().bindTo(compositeRegistry);
 
     return MicrometerMetricsV2.newPerResourceCollectingMicrometerMetricsBuilder(compositeRegistry)
-        .collectingMetricsPerResource()
         .build();
   }
 
