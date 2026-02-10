@@ -286,7 +286,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
       return;
     }
     cleanupOnSuccessfulExecution(executionScope);
-    metrics.finishedReconciliation(executionScope.getResource(), metricsMetadata);
+    metrics.successfullyFinishedReconciliation(executionScope.getResource(), metricsMetadata);
     if ((triggerOnAllEvents() && executionScope.isDeleteEvent())
         || (!triggerOnAllEvents() && state.deleteEventPresent())) {
       cleanupForDeletedEvent(executionScope.getResourceID());
