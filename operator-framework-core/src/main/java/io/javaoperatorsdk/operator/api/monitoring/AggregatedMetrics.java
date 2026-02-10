@@ -103,8 +103,9 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.finishedReconciliation(resource, metadata));
+  public void successfullyFinishedReconciliation(
+      HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.successfullyFinishedReconciliation(resource, metadata));
   }
 
   @Override

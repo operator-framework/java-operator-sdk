@@ -93,7 +93,8 @@ public interface Metrics {
    * @param resource the {@link ResourceID} associated with the resource being processed
    * @param metadata metadata associated with the resource being processed
    */
-  default void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {}
+  default void successfullyFinishedReconciliation(
+      HasMetadata resource, Map<String, Object> metadata) {}
 
   /**
    * Encapsulates the information about a controller execution i.e. a call to either {@link
