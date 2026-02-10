@@ -103,8 +103,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\"}[5m])) by (kind, version)",
-          "legendFormat": "{{kind}} ({{version}})",
+          "expr": "sum(rate(operator_sdk_reconciliations_started_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
         }
@@ -224,8 +224,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_success_total{service_name=\"josdk\"}[5m]))",
-          "legendFormat": "Success",
+          "expr": "sum(rate(operator_sdk_reconciliations_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "Success - {{controller_name}}",
           "range": true,
           "refId": "A"
         },
@@ -235,8 +235,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_failed_total{service_name=\"josdk\"}[5m]))",
-          "legendFormat": "Failure",
+          "expr": "sum(rate(operator_sdk_reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "Failure - {{controller_name}}",
           "range": true,
           "refId": "B"
         }
@@ -495,7 +495,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_failed_total{service_name=\"josdk\"}[5m]))",
+          "expr": "sum(rate(operator_sdk_reconciliations_failure_total{service_name=\"josdk\"}[5m]))",
           "legendFormat": "Error Rate",
           "range": true,
           "refId": "A"
@@ -585,8 +585,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(operator_sdk_reconciliations_execution_duration_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
-          "legendFormat": "p50 - {{controller}}",
+          "expr": "histogram_quantile(0.50, sum(rate(operator_sdk_reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "legendFormat": "p50 - {{controller_name}}",
           "range": true,
           "refId": "A"
         },
@@ -596,8 +596,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(operator_sdk_reconciliations_execution_duration_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
-          "legendFormat": "p95 - {{controller}}",
+          "expr": "histogram_quantile(0.95, sum(rate(operator_sdk_reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "legendFormat": "p95 - {{controller_name}}",
           "range": true,
           "refId": "B"
         },
@@ -607,8 +607,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(operator_sdk_reconciliations_execution_duration_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller))",
-          "legendFormat": "p99 - {{controller}}",
+          "expr": "histogram_quantile(0.99, sum(rate(operator_sdk_reconciliations_execution_seconds_bucket{service_name=\"josdk\"}[5m])) by (le, controller_name))",
+          "legendFormat": "p99 - {{controller_name}}",
           "range": true,
           "refId": "C"
         }
@@ -711,7 +711,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Failures by exception type",
+      "description": "Failures by controller",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -787,13 +787,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_reconciliations_failed_total{service_name=\"josdk\"}[5m])) by (exception)",
-          "legendFormat": "{{exception}}",
+          "expr": "sum(rate(operator_sdk_reconciliations_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Failures by Exception Type",
+      "title": "Failures by Controller",
       "type": "timeseries"
     },
     {
@@ -877,8 +877,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_controllers_success_total{service_name=\"josdk\"}[5m])) by (controller)",
-          "legendFormat": "Success - {{controller}}",
+          "expr": "sum(rate(operator_sdk_controllers_success_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "Success - {{controller_name}}",
           "range": true,
           "refId": "A"
         },
@@ -888,8 +888,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_controllers_failure_total{service_name=\"josdk\"}[5m])) by (controller)",
-          "legendFormat": "Failure - {{controller}}",
+          "expr": "sum(rate(operator_sdk_controllers_failure_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "Failure - {{controller_name}}",
           "range": true,
           "refId": "B"
         }
@@ -978,8 +978,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(operator_sdk_events_delete_total{service_name=\"josdk\"}[5m])) by (kind, version)",
-          "legendFormat": "{{kind}} ({{version}})",
+          "expr": "sum(rate(operator_sdk_events_delete_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "{{controller_name}}",
           "range": true,
           "refId": "A"
         }
@@ -992,7 +992,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Current retry attempt number for resources being retried",
+      "description": "Rate of retry attempts",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1076,13 +1076,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "operator_sdk_reconciliations_retries_number{service_name=\"josdk\"}",
-          "legendFormat": "{{kind}}/{{name}} ({{namespace}})",
+          "expr": "sum(rate(operator_sdk_reconciliations_retries_total{service_name=\"josdk\"}[5m])) by (controller_name)",
+          "legendFormat": "Retries - {{controller_name}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Reconciliation Retry Attempts",
+      "title": "Reconciliation Retry Rate",
       "type": "timeseries"
     }
   ],
