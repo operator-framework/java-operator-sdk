@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.jspecify.annotations.NonNull;
 
@@ -75,6 +76,7 @@ public class MicrometerMetrics implements Metrics {
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
   private final Cleaner cleaner;
+  private final Consumer<Timer.Builder> timerConfig;
 
   /**
    * Creates a MicrometerMetrics instance configured to not collect per-resource metrics, just
@@ -84,7 +86,7 @@ public class MicrometerMetrics implements Metrics {
    * @return a MicrometerMetrics instance configured to not collect per-resource metrics
    */
   public static MicrometerMetrics withoutPerResourceMetrics(MeterRegistry registry) {
-    return new MicrometerMetrics(registry, Cleaner.NOOP, false);
+    return new MicrometerMetrics(registry, Cleaner.NOOP, false, null);
   }
 
   /**
@@ -108,7 +110,7 @@ public class MicrometerMetrics implements Metrics {
    */
   public static PerResourceCollectingMicrometerMetricsBuilder
       newPerResourceCollectingMicrometerMetricsBuilder(MeterRegistry registry) {
-    return new PerResourceCollectingMicrometerMetricsBuilder(registry);
+    return new PerResourceCollectingMicrometerMetricsBuilder(registry, null);
   }
 
   /**
@@ -119,12 +121,21 @@ public class MicrometerMetrics implements Metrics {
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
    * @param cleaner the {@link Cleaner} to use
    * @param collectingPerResourceMetrics whether to collect per resource metrics
+   * @param timerConfig optional configuration for timers, defaults to publishing percentiles 0.5,
+   *     0.95, 0.99 and histogram
    */
   private MicrometerMetrics(
-      MeterRegistry registry, Cleaner cleaner, boolean collectingPerResourceMetrics) {
+      MeterRegistry registry,
+      Cleaner cleaner,
+      boolean collectingPerResourceMetrics,
+      Consumer<Timer.Builder> timerConfig) {
     this.registry = registry;
     this.cleaner = cleaner;
     this.collectPerResourceMetrics = collectingPerResourceMetrics;
+    this.timerConfig =
+        timerConfig != null
+            ? timerConfig
+            : builder -> builder.publishPercentiles(0.5, 0.95, 0.99).publishPercentileHistogram();
   }
 
   @Override
@@ -163,12 +174,9 @@ public class MicrometerMetrics implements Metrics {
     final var tags = new ArrayList<Tag>(16);
     tags.add(Tag.of(CONTROLLER, name));
     addMetadataTags(resourceID, metadata, tags, true);
-    final var timer =
-        Timer.builder(execName)
-            .tags(tags)
-            .publishPercentiles(0.3, 0.5, 0.95)
-            .publishPercentileHistogram()
-            .register(registry);
+    final var timerBuilder = Timer.builder(execName).tags(tags);
+    timerConfig.accept(timerBuilder);
+    final var timer = timerBuilder.register(registry);
     try {
       final var result =
           timer.record(
@@ -379,8 +387,27 @@ public class MicrometerMetrics implements Metrics {
     private int cleaningThreadsNumber;
     private int cleanUpDelayInSeconds;
 
-    private PerResourceCollectingMicrometerMetricsBuilder(MeterRegistry registry) {
+    private PerResourceCollectingMicrometerMetricsBuilder(
+        MeterRegistry registry, Consumer<Timer.Builder> timerConfig) {
       super(registry);
+      this.executionTimerConfig = timerConfig;
+    }
+
+    /**
+     * Configures the Timer used for timing controller executions. By default, timers are configured
+     * to publish percentiles 0.5, 0.95, 0.99 and a percentile histogram. You can set: {@code
+     * .minimumExpectedValue(Duration.ofMillis(...)).maximumExpectedValue(Duration.ofSeconds(...)) }
+     * so micrometer can create the buckets for you.
+     *
+     * @param executionTimerConfig a consumer that will configure the Timer.Builder. The builder
+     *     will already have the metric name and tags set.
+     * @return this builder for method chaining
+     */
+    @Override
+    public PerResourceCollectingMicrometerMetricsBuilder withExecutionTimerConfig(
+        Consumer<Timer.Builder> executionTimerConfig) {
+      this.executionTimerConfig = executionTimerConfig;
+      return this;
     }
 
     /**
@@ -412,23 +439,38 @@ public class MicrometerMetrics implements Metrics {
     public MicrometerMetrics build() {
       final var cleaner =
           new DelayedCleaner(registry, cleanUpDelayInSeconds, cleaningThreadsNumber);
-      return new MicrometerMetrics(registry, cleaner, true);
+      return new MicrometerMetrics(registry, cleaner, true, executionTimerConfig);
     }
   }
 
   public static class MicrometerMetricsBuilder {
     protected final MeterRegistry registry;
     private boolean collectingPerResourceMetrics = true;
+    protected Consumer<Timer.Builder> executionTimerConfig = null;
 
     private MicrometerMetricsBuilder(MeterRegistry registry) {
       this.registry = registry;
+    }
+
+    /**
+     * Configures the Timer used for timing controller executions. By default, timers are configured
+     * to publish percentiles 0.5, 0.95, 0.99 and a percentile histogram.
+     *
+     * @param executionTimerConfig a consumer that will configure the Timer.Builder. The builder
+     *     will already have the metric name and tags set.
+     * @return this builder for method chaining
+     */
+    public MicrometerMetricsBuilder withExecutionTimerConfig(
+        Consumer<Timer.Builder> executionTimerConfig) {
+      this.executionTimerConfig = executionTimerConfig;
+      return this;
     }
 
     /** Configures the instance to collect metrics on a per-resource basis. */
     @SuppressWarnings("unused")
     public PerResourceCollectingMicrometerMetricsBuilder collectingMetricsPerResource() {
       collectingPerResourceMetrics = true;
-      return new PerResourceCollectingMicrometerMetricsBuilder(registry);
+      return new PerResourceCollectingMicrometerMetricsBuilder(registry, executionTimerConfig);
     }
 
     /**
@@ -442,7 +484,8 @@ public class MicrometerMetrics implements Metrics {
     }
 
     public MicrometerMetrics build() {
-      return new MicrometerMetrics(registry, Cleaner.NOOP, collectingPerResourceMetrics);
+      return new MicrometerMetrics(
+          registry, Cleaner.NOOP, collectingPerResourceMetrics, executionTimerConfig);
     }
   }
 
