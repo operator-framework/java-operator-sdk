@@ -17,10 +17,10 @@ package io.javaoperatorsdk.operator.monitoring.micrometer;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.OperatorException;
@@ -32,25 +32,23 @@ import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.CONTROLLER_NAME;
+public class MicrometerMetricsV2 implements Metrics {
 
-@Deprecated(forRemoval = true)
-public class MicrometerMetrics implements Metrics {
-
+  private static final String SUCCESS_SUFFIX = "success";
+  private static final String FAILURE_SUFFIX = "failure";
   private static final String PREFIX = "operator.sdk.";
   private static final String RECONCILIATIONS = "reconciliations.";
-  private static final String RECONCILIATIONS_FAILED = RECONCILIATIONS + "failed";
-  private static final String RECONCILIATIONS_SUCCESS = RECONCILIATIONS + "success";
-  private static final String RECONCILIATIONS_RETRIES_LAST = RECONCILIATIONS + "retries.last";
-  private static final String RECONCILIATIONS_RETRIES_NUMBER = RECONCILIATIONS + "retries.number";
-  private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started";
-  private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions.";
-  private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "queue.size.";
+  private static final String RECONCILIATIONS_FAILED = PREFIX + RECONCILIATIONS + FAILURE_SUFFIX;
+  private static final String RECONCILIATIONS_SUCCESS = PREFIX + RECONCILIATIONS + SUCCESS_SUFFIX;
+  private static final String RECONCILIATIONS_RETRIES_NUMBER =
+      PREFIX + RECONCILIATIONS + "retries.number";
+  private static final String RECONCILIATIONS_STARTED = PREFIX + RECONCILIATIONS + "started";
+  private static final String RECONCILIATIONS_EXECUTIONS = PREFIX + RECONCILIATIONS + "executions";
+  private static final String RECONCILIATIONS_QUEUE_SIZE = PREFIX + RECONCILIATIONS + "active";
   private static final String NAME = "name";
   private static final String NAMESPACE = "namespace";
   private static final String GROUP = "group";
@@ -58,40 +56,42 @@ public class MicrometerMetrics implements Metrics {
   private static final String KIND = "kind";
   private static final String SCOPE = "scope";
   private static final String METADATA_PREFIX = "resource.";
-  private static final String CONTROLLERS_EXECUTION = "controllers.execution.";
+  private static final String CONTROLLERS = "controllers.";
+  private static final String RECONCILIATION_EXECUTION_TIME =
+      PREFIX + RECONCILIATIONS + "execution" + ".duration";
+  private static final String CONTROLLERS_SUCCESSFUL_EXECUTION =
+      PREFIX + CONTROLLERS + SUCCESS_SUFFIX;
+  private static final String CONTROLLERS_FAILED_EXECUTION = PREFIX + CONTROLLERS + FAILURE_SUFFIX;
   private static final String CONTROLLER = "controller";
-  private static final String SUCCESS_SUFFIX = ".success";
-  private static final String FAILURE_SUFFIX = ".failure";
-  private static final String TYPE = "type";
-  private static final String EXCEPTION = "exception";
+  private static final String CONTROLLER_NAME = CONTROLLER + ".name";
   private static final String EVENT = "event";
   private static final String ACTION = "action";
-  private static final String EVENTS_RECEIVED = "events.received";
-  private static final String EVENTS_DELETE = "events.delete";
+  private static final String EVENTS_RECEIVED = PREFIX + "events.received";
+  private static final String EVENTS_DELETE = PREFIX + "events.delete";
   private static final String CLUSTER = "cluster";
   private static final String SIZE_SUFFIX = ".size";
   private static final String UNKNOWN_ACTION = "UNKNOWN";
   private final boolean collectPerResourceMetrics;
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
-  private final Cleaner cleaner;
+  private final Consumer<Timer.Builder> timerConfig;
 
   /**
-   * Creates a MicrometerMetrics instance configured to not collect per-resource metrics, just
+   * Creates a MicrometerMetricsV2 instance configured to not collect per-resource metrics, just
    * aggregates per resource **type**
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
-   * @return a MicrometerMetrics instance configured to not collect per-resource metrics
+   * @return a MicrometerMetricsV2 instance configured to not collect per-resource metrics
    */
-  public static MicrometerMetrics withoutPerResourceMetrics(MeterRegistry registry) {
-    return new MicrometerMetrics(registry, Cleaner.NOOP, false);
+  public static MicrometerMetricsV2 withoutPerResourceMetrics(MeterRegistry registry) {
+    return new MicrometerMetricsV2(registry, false, null);
   }
 
   /**
-   * Creates a new builder to configure how the eventual MicrometerMetrics instance will behave.
+   * Creates a new builder to configure how the eventual MicrometerMetricsV2 instance will behave.
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
-   * @return a MicrometerMetrics instance configured to not collect per-resource metrics
+   * @return a MicrometerMetricsV2 instance configured to not collect per-resource metrics
    * @see MicrometerMetricsBuilder
    */
   public static MicrometerMetricsBuilder newMicrometerMetricsBuilder(MeterRegistry registry) {
@@ -99,67 +99,77 @@ public class MicrometerMetrics implements Metrics {
   }
 
   /**
-   * Creates a new builder to configure how the eventual MicrometerMetrics instance will behave,
+   * Creates a new builder to configure how the eventual MicrometerMetricsV2 instance will behave,
    * pre-configuring it to collect metrics per resource.
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
-   * @return a MicrometerMetrics instance configured to not collect per-resource metrics
+   * @return a MicrometerMetricsV2 instance configured to not collect per-resource metrics
    * @see PerResourceCollectingMicrometerMetricsBuilder
    */
   public static PerResourceCollectingMicrometerMetricsBuilder
       newPerResourceCollectingMicrometerMetricsBuilder(MeterRegistry registry) {
-    return new PerResourceCollectingMicrometerMetricsBuilder(registry);
+    return new PerResourceCollectingMicrometerMetricsBuilder(registry, null);
   }
-
+  
   /**
-   * Creates a micrometer-based Metrics implementation that cleans up {@link Meter}s associated with
-   * deleted resources as specified by the (possibly {@code null}) provided {@link Cleaner}
-   * instance.
+   * Creates a micrometer-based Metrics implementation.
    *
    * @param registry the {@link MeterRegistry} instance to use for metrics recording
-   * @param cleaner the {@link Cleaner} to use
    * @param collectingPerResourceMetrics whether to collect per resource metrics
+   * @param timerConfig optional configuration for timers, defaults to publishing percentiles 0.5,
+   *     0.95, 0.99 and histogram
    */
-  private MicrometerMetrics(
-      MeterRegistry registry, Cleaner cleaner, boolean collectingPerResourceMetrics) {
+  private MicrometerMetricsV2(
+      MeterRegistry registry,
+      boolean collectingPerResourceMetrics,
+      Consumer<Timer.Builder> timerConfig) {
     this.registry = registry;
-    this.cleaner = cleaner;
     this.collectPerResourceMetrics = collectingPerResourceMetrics;
+    this.timerConfig =
+        timerConfig != null
+            ? timerConfig
+            : builder -> builder.publishPercentiles(0.5, 0.95, 0.99).publishPercentileHistogram();
   }
 
   @Override
   public void controllerRegistered(Controller<? extends HasMetadata> controller) {
     final var configuration = controller.getConfiguration();
     final var name = configuration.getName();
-    final var executingThreadsName = RECONCILIATIONS_EXECUTIONS + name;
+    final var executingThreadsRefName = reconciliationExecutionGaugeRefName(name);
     final var resourceClass = configuration.getResourceClass();
-    final var tags = new ArrayList<Tag>(3);
+    final var tags = new ArrayList<Tag>();
+    tags.add(Tag.of(CONTROLLER_NAME, name));
     addGVKTags(GroupVersionKind.gvkFor(resourceClass), tags, false);
     AtomicInteger executingThreads =
-        registry.gauge(executingThreadsName, tags, new AtomicInteger(0));
-    gauges.put(executingThreadsName, executingThreads);
+        registry.gauge(RECONCILIATIONS_EXECUTIONS, tags, new AtomicInteger(0));
+    gauges.put(executingThreadsRefName, executingThreads);
 
-    final var controllerQueueName = RECONCILIATIONS_QUEUE_SIZE + name;
+    final var controllerQueueRefName = controllerQueueSizeGaugeRefName(name);
     AtomicInteger controllerQueueSize =
-        registry.gauge(controllerQueueName, tags, new AtomicInteger(0));
-    gauges.put(controllerQueueName, controllerQueueSize);
+        registry.gauge(RECONCILIATIONS_QUEUE_SIZE, tags, new AtomicInteger(0));
+    gauges.put(controllerQueueRefName, controllerQueueSize);
   }
 
+  private static @NonNull String reconciliationExecutionGaugeRefName(String controllerName) {
+    return RECONCILIATIONS_EXECUTIONS + "." + controllerName;
+  }
+
+  private static @NonNull String controllerQueueSizeGaugeRefName(String controllerName) {
+    return RECONCILIATIONS_QUEUE_SIZE + "." + controllerName;
+  }
+
+  // todo does it make sense to have both controller and reconciler execution counters?
   @Override
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
-    final var execName = PREFIX + CONTROLLERS_EXECUTION + execution.name();
     final var resourceID = execution.resourceID();
     final var metadata = execution.metadata();
     final var tags = new ArrayList<Tag>(16);
     tags.add(Tag.of(CONTROLLER, name));
     addMetadataTags(resourceID, metadata, tags, true);
-    final var timer =
-        Timer.builder(execName)
-            .tags(tags)
-            .publishPercentiles(0.3, 0.5, 0.95)
-            .publishPercentileHistogram()
-            .register(registry);
+    final var timerBuilder = Timer.builder(RECONCILIATION_EXECUTION_TIME).tags(tags);
+    timerConfig.accept(timerBuilder);
+    final var timer = timerBuilder.register(registry);
     try {
       final var result =
           timer.record(
@@ -170,27 +180,23 @@ public class MicrometerMetrics implements Metrics {
                   throw new OperatorException(e);
                 }
               });
-      final var successType = execution.successTypeName(result);
-      registry.counter(execName + SUCCESS_SUFFIX, CONTROLLER, name, TYPE, successType).increment();
+      registry.counter(CONTROLLERS_SUCCESSFUL_EXECUTION, CONTROLLER, name).increment();
       return result;
     } catch (Exception e) {
-      final var exception = e.getClass().getSimpleName();
-      registry
-          .counter(execName + FAILURE_SUFFIX, CONTROLLER, name, EXCEPTION, exception)
-          .increment();
+      registry.counter(CONTROLLERS_FAILED_EXECUTION, CONTROLLER, name).increment();
       throw e;
     }
   }
 
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
-    if (event instanceof ResourceEvent) {
+    if (event instanceof ResourceEvent resourceEvent) {
       incrementCounter(
           event.getRelatedCustomResourceID(),
           EVENTS_RECEIVED,
           metadata,
           Tag.of(EVENT, event.getClass().getSimpleName()),
-          Tag.of(ACTION, ((ResourceEvent) event).getAction().toString()));
+          Tag.of(ACTION, resourceEvent.getAction().toString()));
     } else {
       incrementCounter(
           event.getRelatedCustomResourceID(),
@@ -204,68 +210,59 @@ public class MicrometerMetrics implements Metrics {
   @Override
   public void cleanupDoneFor(ResourceID resourceID, Map<String, Object> metadata) {
     incrementCounter(resourceID, EVENTS_DELETE, metadata);
-
-    cleaner.removeMetersFor(resourceID);
   }
 
   @Override
   public void reconcileCustomResource(
       HasMetadata resource, RetryInfo retryInfoNullable, Map<String, Object> metadata) {
     Optional<RetryInfo> retryInfo = Optional.ofNullable(retryInfoNullable);
-    incrementCounter(
-        ResourceID.fromResource(resource),
-        RECONCILIATIONS_STARTED,
-        metadata,
-        Tag.of(
-            RECONCILIATIONS_RETRIES_NUMBER,
-            String.valueOf(retryInfo.map(RetryInfo::getAttemptCount).orElse(0))),
-        Tag.of(
-            RECONCILIATIONS_RETRIES_LAST,
-            String.valueOf(retryInfo.map(RetryInfo::isLastAttempt).orElse(true))));
+    ResourceID resourceID = ResourceID.fromResource(resource);
+
+    // Record the counter without retry tags
+    incrementCounter(resourceID, RECONCILIATIONS_STARTED, metadata);
+
+    // todo add metric with for resources in exhaisted retry
+    // Update retry number gauge
+    int retryNumber = retryInfo.map(RetryInfo::getAttemptCount).orElse(0);
+    updateGauge(resourceID, metadata, RECONCILIATIONS_RETRIES_NUMBER, retryNumber);
 
     var controllerQueueSize =
-        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+        gauges.get(controllerQueueSizeGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     controllerQueueSize.incrementAndGet();
   }
 
   @Override
   public void successfullyFinishedReconciliation(
       HasMetadata resource, Map<String, Object> metadata) {
-    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_SUCCESS, metadata);
+    ResourceID resourceID = ResourceID.fromResource(resource);
+    incrementCounter(resourceID, RECONCILIATIONS_SUCCESS, metadata);
+
+    // Reset retry gauges on successful reconciliation
+    updateGauge(resourceID, metadata, RECONCILIATIONS_RETRIES_NUMBER, 0);
   }
 
   @Override
   public void reconciliationExecutionStarted(HasMetadata resource, Map<String, Object> metadata) {
     var reconcilerExecutions =
-        gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
+        gauges.get(reconciliationExecutionGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     reconcilerExecutions.incrementAndGet();
   }
 
   @Override
   public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
     var reconcilerExecutions =
-        gauges.get(RECONCILIATIONS_EXECUTIONS + metadata.get(CONTROLLER_NAME));
+        gauges.get(reconciliationExecutionGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     reconcilerExecutions.decrementAndGet();
 
     var controllerQueueSize =
-        gauges.get(RECONCILIATIONS_QUEUE_SIZE + metadata.get(CONTROLLER_NAME));
+        gauges.get(controllerQueueSizeGaugeRefName(metadata.get(CONTROLLER_NAME).toString()));
     controllerQueueSize.decrementAndGet();
   }
 
   @Override
   public void failedReconciliation(
       HasMetadata resource, Exception exception, Map<String, Object> metadata) {
-    var cause = exception.getCause();
-    if (cause == null) {
-      cause = exception;
-    } else if (cause instanceof RuntimeException) {
-      cause = cause.getCause() != null ? cause.getCause() : cause;
-    }
-    incrementCounter(
-        ResourceID.fromResource(resource),
-        RECONCILIATIONS_FAILED,
-        metadata,
-        Tag.of(EXCEPTION, cause.getClass().getSimpleName()));
+    incrementCounter(ResourceID.fromResource(resource), RECONCILIATIONS_FAILED, metadata);
   }
 
   @Override
@@ -322,71 +319,81 @@ public class MicrometerMetrics implements Metrics {
       tags.addAll(List.of(additionalTags));
     }
 
-    final var counter = registry.counter(PREFIX + counterName, tags);
-    cleaner.recordAssociation(id, counter);
+    final var counter = registry.counter(counterName, tags);
     counter.increment();
   }
 
-  protected Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
-    return cleaner.recordedMeterIdsFor(resourceID);
+  private void updateGauge(
+      ResourceID id, Map<String, Object> metadata, String gaugeName, int value) {
+    final var tags = new ArrayList<Tag>(6);
+    addMetadataTags(id, metadata, tags, false);
+
+    AtomicInteger gauge =
+        gauges.computeIfAbsent(
+            gaugeName, key -> registry.gauge(gaugeName, tags, new AtomicInteger(0)));
+    gauge.set(value);
   }
 
   public static class PerResourceCollectingMicrometerMetricsBuilder
       extends MicrometerMetricsBuilder {
 
-    private int cleaningThreadsNumber;
-    private int cleanUpDelayInSeconds;
-
-    private PerResourceCollectingMicrometerMetricsBuilder(MeterRegistry registry) {
+    private PerResourceCollectingMicrometerMetricsBuilder(
+        MeterRegistry registry, Consumer<Timer.Builder> timerConfig) {
       super(registry);
+      this.executionTimerConfig = timerConfig;
     }
 
     /**
-     * @param cleaningThreadsNumber the maximal number of threads that can be assigned to the
-     *     removal of {@link Meter}s associated with deleted resources, defaults to 1 if not
-     *     specified or if the provided number is lesser or equal to 0
+     * Configures the Timer used for timing controller executions. By default, timers are configured
+     * to publish percentiles 0.5, 0.95, 0.99 and a percentile histogram. You can set: {@code
+     * .minimumExpectedValue(Duration.ofMillis(...)).maximumExpectedValue(Duration.ofSeconds(...)) }
+     * so micrometer can create the buckets for you.
+     *
+     * @param executionTimerConfig a consumer that will configure the Timer.Builder. The builder
+     *     will already have the metric name and tags set.
+     * @return this builder for method chaining
      */
-    public PerResourceCollectingMicrometerMetricsBuilder withCleaningThreadNumber(
-        int cleaningThreadsNumber) {
-      this.cleaningThreadsNumber = cleaningThreadsNumber <= 0 ? 1 : cleaningThreadsNumber;
-      return this;
-    }
-
-    /**
-     * @param cleanUpDelayInSeconds the number of seconds to wait before {@link Meter}s are removed
-     *     for deleted resources, defaults to 1 (meaning meters will be removed one second after the
-     *     associated resource is deleted) if not specified or if the provided number is lesser than
-     *     0. Threading and the general interaction model of interacting with the API server means
-     *     that it's not possible to ensure that meters are immediately deleted in all cases so a
-     *     minimal delay of one second is always enforced
-     */
-    public PerResourceCollectingMicrometerMetricsBuilder withCleanUpDelayInSeconds(
-        int cleanUpDelayInSeconds) {
-      this.cleanUpDelayInSeconds = Math.max(cleanUpDelayInSeconds, 1);
+    @Override
+    public PerResourceCollectingMicrometerMetricsBuilder withExecutionTimerConfig(
+        Consumer<Timer.Builder> executionTimerConfig) {
+      this.executionTimerConfig = executionTimerConfig;
       return this;
     }
 
     @Override
-    public MicrometerMetrics build() {
-      final var cleaner =
-          new DelayedCleaner(registry, cleanUpDelayInSeconds, cleaningThreadsNumber);
-      return new MicrometerMetrics(registry, cleaner, true);
+    public MicrometerMetricsV2 build() {
+      return new MicrometerMetricsV2(registry, true, executionTimerConfig);
     }
   }
 
   public static class MicrometerMetricsBuilder {
     protected final MeterRegistry registry;
     private boolean collectingPerResourceMetrics = true;
+    protected Consumer<Timer.Builder> executionTimerConfig = null;
 
     private MicrometerMetricsBuilder(MeterRegistry registry) {
       this.registry = registry;
+    }
+
+    /**
+     * Configures the Timer used for timing controller executions. By default, timers are configured
+     * to publish percentiles 0.5, 0.95, 0.99 and a percentile histogram.
+     *
+     * @param executionTimerConfig a consumer that will configure the Timer.Builder. The builder
+     *     will already have the metric name and tags set.
+     * @return this builder for method chaining
+     */
+    public MicrometerMetricsBuilder withExecutionTimerConfig(
+        Consumer<Timer.Builder> executionTimerConfig) {
+      this.executionTimerConfig = executionTimerConfig;
+      return this;
     }
 
     /** Configures the instance to collect metrics on a per-resource basis. */
     @SuppressWarnings("unused")
     public PerResourceCollectingMicrometerMetricsBuilder collectingMetricsPerResource() {
       collectingPerResourceMetrics = true;
-      return new PerResourceCollectingMicrometerMetricsBuilder(registry);
+      return new PerResourceCollectingMicrometerMetricsBuilder(registry, executionTimerConfig);
     }
 
     /**
@@ -399,69 +406,8 @@ public class MicrometerMetrics implements Metrics {
       return this;
     }
 
-    public MicrometerMetrics build() {
-      return new MicrometerMetrics(registry, Cleaner.NOOP, collectingPerResourceMetrics);
-    }
-  }
-
-  interface Cleaner {
-    Cleaner NOOP = new Cleaner() {};
-
-    default void removeMetersFor(ResourceID resourceID) {}
-
-    default void recordAssociation(ResourceID resourceID, Meter meter) {}
-
-    default Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
-      return Collections.emptySet();
-    }
-  }
-
-  static class DefaultCleaner implements Cleaner {
-    private final Map<ResourceID, Set<Meter.Id>> metersPerResource = new ConcurrentHashMap<>();
-    private final MeterRegistry registry;
-
-    private DefaultCleaner(MeterRegistry registry) {
-      this.registry = registry;
-    }
-
-    @Override
-    public void removeMetersFor(ResourceID resourceID) {
-      // remove each meter
-      final var toClean = metersPerResource.get(resourceID);
-      if (toClean != null) {
-        toClean.forEach(registry::remove);
-      }
-      // then clean-up local recording of associations
-      metersPerResource.remove(resourceID);
-    }
-
-    @Override
-    public void recordAssociation(ResourceID resourceID, Meter meter) {
-      metersPerResource.computeIfAbsent(resourceID, id -> new HashSet<>()).add(meter.getId());
-    }
-
-    @Override
-    public Set<Meter.Id> recordedMeterIdsFor(ResourceID resourceID) {
-      return metersPerResource.get(resourceID);
-    }
-  }
-
-  static class DelayedCleaner extends MicrometerMetrics.DefaultCleaner {
-    private final ScheduledExecutorService metersCleaner;
-    private final int cleanUpDelayInSeconds;
-
-    private DelayedCleaner(
-        MeterRegistry registry, int cleanUpDelayInSeconds, int cleaningThreadsNumber) {
-      super(registry);
-      this.cleanUpDelayInSeconds = cleanUpDelayInSeconds;
-      this.metersCleaner = Executors.newScheduledThreadPool(cleaningThreadsNumber);
-    }
-
-    @Override
-    public void removeMetersFor(ResourceID resourceID) {
-      // schedule deletion of meters associated with ResourceID
-      metersCleaner.schedule(
-          () -> super.removeMetersFor(resourceID), cleanUpDelayInSeconds, TimeUnit.SECONDS);
+    public MicrometerMetricsV2 build() {
+      return new MicrometerMetricsV2(registry, collectingPerResourceMetrics, executionTimerConfig);
     }
   }
 }
