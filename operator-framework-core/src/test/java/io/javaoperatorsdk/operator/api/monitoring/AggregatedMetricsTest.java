@@ -141,13 +141,13 @@ class AggregatedMetricsTest {
   }
 
   @Test
-  void finishedReconciliation_shouldDelegateToAllMetricsInOrder() {
-    aggregatedMetrics.finishedReconciliation(resource, metadata);
+  void successfullyFinishedReconciliation_shouldDelegateToAllMetricsInOrder() {
+    aggregatedMetrics.successfullyFinishedReconciliation(resource, metadata);
 
     final var inOrder = inOrder(metrics1, metrics2, metrics3);
-    inOrder.verify(metrics1).finishedReconciliation(resource, metadata);
-    inOrder.verify(metrics2).finishedReconciliation(resource, metadata);
-    inOrder.verify(metrics3).finishedReconciliation(resource, metadata);
+    inOrder.verify(metrics1).successfullyFinishedReconciliation(resource, metadata);
+    inOrder.verify(metrics2).successfullyFinishedReconciliation(resource, metadata);
+    inOrder.verify(metrics3).successfullyFinishedReconciliation(resource, metadata);
     verifyNoMoreInteractions(metrics1, metrics2, metrics3);
   }
 
