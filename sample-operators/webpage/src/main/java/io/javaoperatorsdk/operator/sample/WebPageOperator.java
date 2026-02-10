@@ -30,7 +30,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetricsV2;
 import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
 import io.micrometer.core.instrument.Clock;
@@ -144,7 +144,7 @@ public class WebPageOperator {
     //    new ProcessorMetrics().bindTo(compositeRegistry);
     //    new UptimeMetrics().bindTo(compositeRegistry);
 
-    return MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(compositeRegistry)
+    return MicrometerMetricsV2.newPerResourceCollectingMicrometerMetricsBuilder(compositeRegistry)
         .collectingMetricsPerResource()
         .build();
   }
