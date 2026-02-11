@@ -47,6 +47,7 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
 public class MetricsHandlingSampleOperator {
 
   private static final Logger log = LoggerFactory.getLogger(MetricsHandlingSampleOperator.class);
+  public static final String OPERATOR_SDK_METRICS_PREFIX = "operator.sdk";
 
   /**
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
@@ -73,7 +74,7 @@ public class MetricsHandlingSampleOperator {
         new OtlpConfig() {
           @Override
           public String prefix() {
-            return "";
+            return OPERATOR_SDK_METRICS_PREFIX;
           }
 
           @Override
@@ -98,6 +99,11 @@ public class MetricsHandlingSampleOperator {
       LoggingMeterRegistry loggingRegistry =
           new LoggingMeterRegistry(
               new LoggingRegistryConfig() {
+                @Override
+                public String prefix() {
+                  return OPERATOR_SDK_METRICS_PREFIX;
+                }
+
                 @Override
                 public String get(String key) {
                   return null;
