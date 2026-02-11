@@ -23,6 +23,7 @@ import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.retry.RetryExecution;
 
 /**
  * An interface that metrics providers can implement and that the SDK will call at different times
@@ -79,11 +80,15 @@ public interface Metrics {
    * ResourceID} resulted in the provided exception, resulting in a retry of the reconciliation.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
+   * @param retryInfo the state of retry before {@link RetryExecution#nextDelay()} is called
    * @param exception the exception that caused the failed reconciliation resulting in a retry
    * @param metadata metadata associated with the resource being processed
    */
   default void failedReconciliation(
-      HasMetadata resource, Exception exception, Map<String, Object> metadata) {}
+      HasMetadata resource,
+      RetryInfo retryInfo,
+      Exception exception,
+      Map<String, Object> metadata) {}
 
   /**
    * Called when the {@link
@@ -101,10 +106,12 @@ public interface Metrics {
    * Always called not only if successfully finished.
    *
    * @param resource the {@link ResourceID} associated with the resource being processed
+   * @param retryInfo not that this retry info in state after {@link RetryExecution#nextDelay()} is
+   *     called in case of exception.
    * @param metadata metadata associated with the resource being processed
    */
   default void reconciliationExecutionFinished(
-      HasMetadata resource, Map<String, Object> metadata) {}
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {}
 
   /**
    * Called when the resource associated with the specified {@link ResourceID} has been successfully

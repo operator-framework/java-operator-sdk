@@ -15,30 +15,15 @@
  */
 package io.javaoperatorsdk.operator.sample.metrics.customresource;
 
-public class WebPageSpec {
+public class MetricsHandlingStatus {
 
-  private String html;
-  private Boolean exposed = false;
+  private int observedNumber;
 
-  public String getHtml() {
-    return html;
+  public int getObservedNumber() {
+    return observedNumber;
   }
 
-  public void setHtml(String html) {
-    this.html = html;
-  }
-
-  public Boolean getExposed() {
-    return exposed;
-  }
-
-  public WebPageSpec setExposed(Boolean exposed) {
-    this.exposed = exposed;
-    return this;
-  }
-
-  @Override
-  public String toString() {
-    return "WebPageSpec{" + "html='" + html + '\'' + '}';
+  public void setObservedNumber(int observedNumber) {
+    this.observedNumber = observedNumber;
   }
 }
