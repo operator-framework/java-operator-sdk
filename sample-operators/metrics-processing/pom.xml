@@ -22,13 +22,13 @@
   <parent>
     <groupId>io.javaoperatorsdk</groupId>
     <artifactId>sample-operators</artifactId>
-    <version>999-SNAPSHOT</version>
+    <version>5.3.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>sample-webpage-operator</artifactId>
+  <artifactId>sample-metrics-proricessing</artifactId>
   <packaging>jar</packaging>
-  <name>Operator SDK - Samples - WebPage</name>
-  <description>Provisions an nginx Webserver based on a CRD with give html</description>
+  <name>Operator SDK - Samples - Metrics processing</name>
+  <description>Showcases to handle metrics setup and deploys related tooling and dashboards</description>
 
   <dependencyManagement>
     <dependencies>
@@ -39,6 +39,13 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-bom</artifactId>
+        <version>${micrometer-core.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -46,6 +53,20 @@
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.javaoperatorsdk</groupId>
+      <artifactId>micrometer-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-otlp</artifactId>
+      <version>${micrometer-core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>2.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
