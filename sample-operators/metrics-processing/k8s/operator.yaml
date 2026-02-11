@@ -17,82 +17,53 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: webpage-operator
+  name: metrics-processing-operator
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webpage-operator
+  name: metrics-processing-operator
 spec:
   selector:
     matchLabels:
-      app: webpage-operator
+      app: metrics-processing-operator
   replicas: 1
   template:
     metadata:
       labels:
-        app: webpage-operator
+        app: metrics-processing-operator
     spec:
-      serviceAccountName: webpage-operator
+      serviceAccountName: metrics-processing-operator
       containers:
       - name: operator
-        image: webpage-operator
+        image: metrics-processing-operator
         imagePullPolicy: Never
-        ports:
-        - containerPort: 80
-        startupProbe:
-          httpGet:
-            path: /startup
-            port: 8080
-          initialDelaySeconds: 1
-          periodSeconds: 2
-          timeoutSeconds: 1
-          failureThreshold: 10
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-          initialDelaySeconds: 5
-          timeoutSeconds: 1
-          periodSeconds: 2
-          failureThreshold: 3
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: operator-admin
+  name: metrics-processing-operator-admin
 subjects:
 - kind: ServiceAccount
-  name: webpage-operator
+  name: metrics-processing-operator
   namespace: default
 roleRef:
   kind: ClusterRole
-  name: webpage-operator
-  apiGroup: ""
+  name: metrics-processing-operator
+  apiGroup: rbac.authorization.k8s.io
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: webpage-operator
+  name: metrics-processing-operator
 rules:
 - apiGroups:
   - ""
   resources:
-  - deployments
-  - services
-  - configmaps
   - pods
-  verbs:
-  - '*'
-- apiGroups:
-  - "apps"
-  resources:
-  - deployments
-  - services
-  - configmaps
   verbs:
   - '*'
 - apiGroups:
@@ -104,14 +75,10 @@ rules:
 - apiGroups:
   - "sample.javaoperatorsdk"
   resources:
-  - webpages
-  - webpages/status
+  - metricshandlingcustomresource1s
+  - metricshandlingcustomresource1s/status
+  - metricshandlingcustomresource2s
+  - metricshandlingcustomresource2s/status
   verbs:
   - '*'
-- apiGroups:
-    - "networking.k8s.io"
-  resources:
-    - ingresses
-  verbs:
-    - '*'
 
