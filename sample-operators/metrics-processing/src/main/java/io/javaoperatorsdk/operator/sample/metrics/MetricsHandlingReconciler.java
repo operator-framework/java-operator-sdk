@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.javaoperatorsdk.operator.sample;
+package io.javaoperatorsdk.operator.sample.metrics;
 
 import java.util.List;
 
@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.api.model.*;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.sample.customresource.WebPage;
+import io.javaoperatorsdk.operator.sample.metrics.customresource.WebPage;
 
 @ControllerConfiguration
 public class MetricsHandlingReconciler implements Reconciler<WebPage> {
