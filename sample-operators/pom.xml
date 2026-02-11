@@ -35,5 +35,6 @@
     <module>mysql-schema</module>
     <module>leader-election</module>
     <module>controller-namespace-deletion</module>
+    <module>metrics-processing</module>
   </modules>
 </project>

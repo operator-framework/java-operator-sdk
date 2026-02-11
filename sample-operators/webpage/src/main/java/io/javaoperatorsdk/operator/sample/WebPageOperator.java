@@ -16,30 +16,14 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetricsV2;
 import io.javaoperatorsdk.operator.sample.probes.LivenessHandler;
 import io.javaoperatorsdk.operator.sample.probes.StartupHandler;
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
-import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
-import io.micrometer.registry.otlp.OtlpConfig;
-import io.micrometer.registry.otlp.OtlpMeterRegistry;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -56,12 +40,7 @@ public class WebPageOperator {
   public static void main(String[] args) throws IOException {
     log.info("WebServer Operator starting!");
 
-    // TODO add test for checking if there are metrics in prometheus
-    // Load configuration from config.yaml
-    Metrics metrics = initOTLPMetrics();
-    Operator operator =
-        new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
-
+    Operator operator = new Operator(o -> o.withStopOnInformerErrorDuringStartup(false));
     String reconcilerEnvVar = System.getenv(WEBPAGE_RECONCILER_ENV);
     if (WEBPAGE_CLASSIC_RECONCILER_ENV_VALUE.equals(reconcilerEnvVar)) {
       operator.register(new WebPageReconciler());
@@ -78,94 +57,5 @@ public class WebPageOperator {
     server.createContext("/healthz", new LivenessHandler(operator));
     server.setExecutor(null);
     server.start();
-  }
-
-  private static @NonNull Metrics initOTLPMetrics() {
-    CompositeMeterRegistry compositeRegistry = new CompositeMeterRegistry();
-
-    // Add OTLP registry
-    Map<String, String> configProperties = loadConfigFromYaml();
-    var otlpConfig =
-        new OtlpConfig() {
-          @Override
-          public String prefix() {
-            return "";
-          }
-
-          @Override
-          public @Nullable String get(String key) {
-            return configProperties.get(key);
-          }
-
-          // these should come from env variables
-          @Override
-          public Map<String, String> resourceAttributes() {
-            return Map.of("service.name", "josdk", "operator", "webpage");
-          }
-        };
-
-    MeterRegistry otlpRegistry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
-    compositeRegistry.add(otlpRegistry);
-
-    // Add console logging registry if enabled (for development)
-    //    String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
-    // todo remove
-    String enableConsoleLogging = "true";
-    if ("true".equalsIgnoreCase(enableConsoleLogging)) {
-      log.info("Console metrics logging enabled");
-      LoggingMeterRegistry loggingRegistry =
-          new LoggingMeterRegistry(
-              new LoggingRegistryConfig() {
-                @Override
-                public String get(String key) {
-                  return null;
-                }
-
-                @Override
-                public Duration step() {
-                  return Duration.ofSeconds(10); // Log metrics every 30 seconds
-                }
-              },
-              Clock.SYSTEM);
-      compositeRegistry.add(loggingRegistry);
-    }
-
-    // Register JVM and system metrics
-    log.info("Registering JVM and system metrics...");
-    // todo add back
-    //    new JvmMemoryMetrics().bindTo(compositeRegistry);
-    //    new JvmGcMetrics().bindTo(compositeRegistry);
-    //    new JvmThreadMetrics().bindTo(compositeRegistry);
-    //    new ClassLoaderMetrics().bindTo(compositeRegistry);
-    //    new ProcessorMetrics().bindTo(compositeRegistry);
-    //    new UptimeMetrics().bindTo(compositeRegistry);
-
-    return MicrometerMetricsV2.newPerResourceCollectingMicrometerMetricsBuilder(compositeRegistry)
-        .build();
-  }
-
-  @SuppressWarnings("unchecked")
-  private static Map<String, String> loadConfigFromYaml() {
-    Map<String, String> configMap = new HashMap<>();
-    try (InputStream inputStream = WebPageOperator.class.getResourceAsStream("/otlp-config.yaml")) {
-      if (inputStream == null) {
-        log.warn("otlp-config.yaml not found in resources, using default OTLP configuration");
-        return configMap;
-      }
-
-      Yaml yaml = new Yaml();
-      Map<String, Object> yamlData = yaml.load(inputStream);
-
-      // Navigate to otlp section and map properties directly
-      Map<String, Object> otlp = (Map<String, Object>) yamlData.get("otlp");
-      if (otlp != null) {
-        otlp.forEach((key, value) -> configMap.put("otlp." + key, value.toString()));
-      }
-
-      log.info("Loaded OTLP configuration from otlp-config.yaml: {}", configMap);
-    } catch (IOException e) {
-      log.error("Error loading otlp-config.yaml", e);
-    }
-    return configMap;
   }
 }
