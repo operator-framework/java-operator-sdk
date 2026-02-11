@@ -372,7 +372,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             || (triggerOnAllEvents() && state.isAdditionalEventPresentAfterDeleteEvent());
     state.markEventReceived(triggerOnAllEvents());
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
-    metrics.failedReconciliation(executionScope.getResource(), exception, metricsMetadata);
+    metrics.failedReconciliation(
+        executionScope.getResource(), state.getRetry(), exception, metricsMetadata);
     if (eventPresent) {
       log.debug("New events exists for for resource id: {}", resourceID);
       submitReconciliationExecution(state);
@@ -547,7 +548,8 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
             reconciliationDispatcher.handleExecution(executionScope);
         eventProcessingFinished(executionScope, postExecutionControl);
       } finally {
-        metrics.reconciliationExecutionFinished(executionScope.getResource(), metricsMetadata);
+        metrics.reconciliationExecutionFinished(
+            executionScope.getResource(), executionScope.getRetryInfo(), metricsMetadata);
         // restore original name
         thread.setName(name);
         MDCUtils.removeResourceInfo();

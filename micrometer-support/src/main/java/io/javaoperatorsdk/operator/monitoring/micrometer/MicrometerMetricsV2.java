@@ -56,8 +56,6 @@ public class MicrometerMetricsV2 implements Metrics {
       PREFIX + RECONCILIATIONS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
   private static final String RECONCILIATIONS_RETRIES_NUMBER =
       PREFIX + RECONCILIATIONS + "retries" + TOTAL_SUFFIX;
-  private static final String RECONCILIATIONS_RETRIES_LAST_ATTEMPT =
-      PREFIX + RECONCILIATIONS + "retries.lastattempt" + TOTAL_SUFFIX;
   private static final String RECONCILIATIONS_STARTED =
       PREFIX + RECONCILIATIONS + "started" + TOTAL_SUFFIX;
 
@@ -192,14 +190,6 @@ public class MicrometerMetricsV2 implements Metrics {
       incrementCounter(RECONCILIATIONS_RETRIES_NUMBER, metadata);
     }
 
-    // todo having a gauge for the number of exhausted retries?
-    retryInfo.ifPresent(
-        i -> {
-          if (retryInfoNullable.isLastAttempt()) {
-            incrementCounter(RECONCILIATIONS_RETRIES_LAST_ATTEMPT, metadata);
-          }
-        });
-
     var controllerQueueSize =
         gauges.get(controllerQueueSizeGaugeRefKey(getControllerName(metadata)));
     controllerQueueSize.incrementAndGet();
@@ -219,7 +209,8 @@ public class MicrometerMetricsV2 implements Metrics {
   }
 
   @Override
-  public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
+  public void reconciliationExecutionFinished(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
     var reconcilerExecutions =
         gauges.get(reconciliationExecutionGaugeRefKey(metadata.get(CONTROLLER_NAME).toString()));
     reconcilerExecutions.decrementAndGet();
@@ -231,7 +222,7 @@ public class MicrometerMetricsV2 implements Metrics {
 
   @Override
   public void failedReconciliation(
-      HasMetadata resource, Exception exception, Map<String, Object> metadata) {
+      HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
     incrementCounter(RECONCILIATIONS_FAILED, metadata);
   }
 
