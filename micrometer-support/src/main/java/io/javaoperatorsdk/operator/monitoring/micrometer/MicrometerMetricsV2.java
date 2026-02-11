@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.Event;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEvent;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -37,12 +38,11 @@ import io.micrometer.core.instrument.Timer;
 
 public class MicrometerMetricsV2 implements Metrics {
 
-  private static final String PREFIX = "operator.sdk.";
   private static final String CONTROLLER_NAME = "controller.name";
   private static final String EVENT = "event";
   private static final String ACTION = "action";
-  private static final String EVENTS_RECEIVED = PREFIX + "events.received";
-  private static final String EVENTS_DELETE = PREFIX + "events.delete";
+  private static final String EVENTS_RECEIVED = "events.received";
+  private static final String EVENTS_DELETE = "events.delete";
   private static final String UNKNOWN_ACTION = "UNKNOWN";
   public static final String TOTAL_SUFFIX = ".total";
   private static final String SUCCESS_SUFFIX = "success";
@@ -51,28 +51,26 @@ public class MicrometerMetricsV2 implements Metrics {
   private static final String RECONCILIATIONS = "reconciliations.";
 
   private static final String RECONCILIATIONS_FAILED =
-      PREFIX + RECONCILIATIONS + FAILURE_SUFFIX + TOTAL_SUFFIX;
+      RECONCILIATIONS + FAILURE_SUFFIX + TOTAL_SUFFIX;
   private static final String RECONCILIATIONS_SUCCESS =
-      PREFIX + RECONCILIATIONS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
+      RECONCILIATIONS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
   private static final String RECONCILIATIONS_RETRIES_NUMBER =
-      PREFIX + RECONCILIATIONS + "retries" + TOTAL_SUFFIX;
-  private static final String RECONCILIATIONS_STARTED =
-      PREFIX + RECONCILIATIONS + "started" + TOTAL_SUFFIX;
+      RECONCILIATIONS + "retries" + TOTAL_SUFFIX;
+  private static final String RECONCILIATIONS_STARTED = RECONCILIATIONS + "started" + TOTAL_SUFFIX;
 
   private static final String CONTROLLERS = "controllers.";
 
   private static final String CONTROLLERS_SUCCESSFUL_EXECUTION =
-      PREFIX + CONTROLLERS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
+      CONTROLLERS + SUCCESS_SUFFIX + TOTAL_SUFFIX;
   private static final String CONTROLLERS_FAILED_EXECUTION =
-      PREFIX + CONTROLLERS + FAILURE_SUFFIX + TOTAL_SUFFIX;
+      CONTROLLERS + FAILURE_SUFFIX + TOTAL_SUFFIX;
 
-  private static final String RECONCILIATIONS_EXECUTIONS_GAUGE =
-      PREFIX + RECONCILIATIONS + "executions";
-  private static final String RECONCILIATIONS_QUEUE_SIZE_GAUGE =
-      PREFIX + RECONCILIATIONS + "active";
+  private static final String RECONCILIATIONS_EXECUTIONS_GAUGE = RECONCILIATIONS + "executions";
+  private static final String RECONCILIATIONS_QUEUE_SIZE_GAUGE = RECONCILIATIONS + "active";
+  private static final String NUMBER_OF_RESOURCE_GAUGE = "custom_resources";
 
   private static final String RECONCILIATION_EXECUTION_DURATION =
-      PREFIX + RECONCILIATIONS + "execution.seconds";
+      RECONCILIATIONS + "execution.seconds";
 
   private final MeterRegistry registry;
   private final Map<String, AtomicInteger> gauges = new ConcurrentHashMap<>();
@@ -113,7 +111,7 @@ public class MicrometerMetricsV2 implements Metrics {
     final var name = configuration.getName();
     final var executingThreadsRefName = reconciliationExecutionGaugeRefKey(name);
     final var tags = new ArrayList<Tag>();
-    addControllerName(name, tags);
+    addControllerNameTag(name, tags);
     AtomicInteger executingThreads =
         registry.gauge(RECONCILIATIONS_EXECUTIONS_GAUGE, tags, new AtomicInteger(0));
     gauges.put(executingThreadsRefName, executingThreads);
@@ -123,10 +121,17 @@ public class MicrometerMetricsV2 implements Metrics {
         registry.gauge(RECONCILIATIONS_QUEUE_SIZE_GAUGE, tags, new AtomicInteger(0));
     gauges.put(controllerQueueRefName, controllerQueueSize);
 
+    var numberOfResources = registry.gauge(NUMBER_OF_RESOURCE_GAUGE, tags, new AtomicInteger(0));
+    gauges.put(numberOfResourcesRefName(name), numberOfResources);
+
     final var timerBuilder = Timer.builder(RECONCILIATION_EXECUTION_DURATION).tags(tags);
     timerConfig.accept(timerBuilder);
     var timer = timerBuilder.register(registry);
     executionTimers.put(name, timer);
+  }
+
+  private String numberOfResourcesRefName(String name) {
+    return NUMBER_OF_RESOURCE_GAUGE + name;
   }
 
   // todo does it make sense to have both controller and reconciler execution counters?
@@ -134,7 +139,7 @@ public class MicrometerMetricsV2 implements Metrics {
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
     final var tags = new ArrayList<Tag>(1);
-    addControllerName(name, tags);
+    addControllerNameTag(name, tags);
 
     final var timer = executionTimers.get(name);
     try {
@@ -158,6 +163,12 @@ public class MicrometerMetricsV2 implements Metrics {
   @Override
   public void receivedEvent(Event event, Map<String, Object> metadata) {
     if (event instanceof ResourceEvent resourceEvent) {
+      if (resourceEvent.getAction() == ResourceAction.ADDED) {
+        gauges.get(numberOfResourcesRefName(getControllerName(metadata))).incrementAndGet();
+      }
+      if (resourceEvent.getAction() == ResourceAction.DELETED) {
+        gauges.get(numberOfResourcesRefName(getControllerName(metadata))).decrementAndGet();
+      }
       incrementCounter(
           EVENTS_RECEIVED,
           metadata,
@@ -230,11 +241,11 @@ public class MicrometerMetricsV2 implements Metrics {
     tags.add(Tag.of(name, value));
   }
 
-  private static void addControllerName(Map<String, Object> metadata, List<Tag> tags) {
+  private static void addControllerNameTag(Map<String, Object> metadata, List<Tag> tags) {
     addTag(CONTROLLER_NAME, getControllerName(metadata), tags);
   }
 
-  private static void addControllerName(String name, List<Tag> tags) {
+  private static void addControllerNameTag(String name, List<Tag> tags) {
     addTag(CONTROLLER_NAME, name, tags);
   }
 
@@ -242,7 +253,7 @@ public class MicrometerMetricsV2 implements Metrics {
       String counterName, Map<String, Object> metadata, Tag... additionalTags) {
 
     final var tags = new ArrayList<Tag>(1 + additionalTags.length);
-    addControllerName(metadata, tags);
+    addControllerNameTag(metadata, tags);
     if (additionalTags.length > 0) {
       tags.addAll(List.of(additionalTags));
     }
