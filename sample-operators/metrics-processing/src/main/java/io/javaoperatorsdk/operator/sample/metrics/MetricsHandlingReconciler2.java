@@ -20,28 +20,34 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.fabric8.kubernetes.api.model.*;
-import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.WebPage;
+import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource1;
 
 @ControllerConfiguration
-public class MetricsHandlingReconciler implements Reconciler<WebPage> {
+public class MetricsHandlingReconciler2 implements Reconciler<MetricsHandlingCustomResource1> {
 
   public static final String INDEX_HTML = "index.html";
 
-  private static final Logger log = LoggerFactory.getLogger(MetricsHandlingReconciler.class);
+  private static final Logger log = LoggerFactory.getLogger(MetricsHandlingReconciler2.class);
 
-  public MetricsHandlingReconciler() {}
+  public MetricsHandlingReconciler2() {}
 
   @Override
-  public List<EventSource<?, WebPage>> prepareEventSources(EventSourceContext<WebPage> context) {
+  public List<EventSource<?, MetricsHandlingCustomResource1>> prepareEventSources(
+      EventSourceContext<MetricsHandlingCustomResource1> context) {
+
     return List.of();
   }
 
   @Override
-  public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
+  public UpdateControl<MetricsHandlingCustomResource1> reconcile(
+      MetricsHandlingCustomResource1 metricsHandlingCustomResource1,
+      Context<MetricsHandlingCustomResource1> context) {
 
     return UpdateControl.noUpdate();
   }
