@@ -54,13 +54,15 @@ public class MetricsHandlingSampleOperator {
    * can be implemented using the low level and higher level APIs.
    */
   public static void main(String[] args) throws IOException {
-    log.info("WebServer Operator starting!");
+    log.info("Metrics Handling Sample Operator starting!");
 
-    // TODO add test for checking if there are metrics in prometheus
     // Load configuration from config.yaml
     Metrics metrics = initOTLPMetrics();
     Operator operator =
         new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
+
+    operator.register(new MetricsHandlingReconciler1());
+    operator.register(new MetricsHandlingReconciler2());
 
     operator.start();
   }

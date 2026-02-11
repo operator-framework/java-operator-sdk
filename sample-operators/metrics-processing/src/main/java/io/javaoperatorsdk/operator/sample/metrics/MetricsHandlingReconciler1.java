@@ -24,11 +24,10 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource1;
+import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingStatus;
 
 @ControllerConfiguration
 public class MetricsHandlingReconciler1 implements Reconciler<MetricsHandlingCustomResource1> {
-
-  public static final String INDEX_HTML = "index.html";
 
   private static final Logger log = LoggerFactory.getLogger(MetricsHandlingReconciler1.class);
 
@@ -37,15 +36,43 @@ public class MetricsHandlingReconciler1 implements Reconciler<MetricsHandlingCus
   @Override
   public List<EventSource<?, MetricsHandlingCustomResource1>> prepareEventSources(
       EventSourceContext<MetricsHandlingCustomResource1> context) {
-
     return List.of();
   }
 
   @Override
   public UpdateControl<MetricsHandlingCustomResource1> reconcile(
-      MetricsHandlingCustomResource1 metricsHandlingCustomResource1,
-      Context<MetricsHandlingCustomResource1> context) {
+      MetricsHandlingCustomResource1 resource, Context<MetricsHandlingCustomResource1> context) {
 
-    return UpdateControl.noUpdate();
+    String name = resource.getMetadata().getName();
+    log.info("Reconciling resource: {}", name);
+
+    // Simulate some work
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted during reconciliation", e);
+    }
+
+    // Throw exception for resources with names containing "fail" or "error"
+    if (name.toLowerCase().contains("fail") || name.toLowerCase().contains("error")) {
+      log.error("Simulating failure for resource: {}", name);
+      throw new IllegalStateException("Simulated reconciliation failure for resource: " + name);
+    }
+
+    // Update status
+    var status = resource.getStatus();
+    if (status == null) {
+      status = new MetricsHandlingStatus();
+      resource.setStatus(status);
+    }
+
+    var spec = resource.getSpec();
+    if (spec != null) {
+      status.setObservedNumber(spec.getObservedNumber());
+    }
+
+    log.info("Successfully reconciled resource: {}", name);
+    return UpdateControl.patchStatus(resource);
   }
 }

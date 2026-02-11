@@ -15,40 +15,57 @@
  */
 package io.javaoperatorsdk.operator.sample.metrics;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource1;
+import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingCustomResource2;
+import io.javaoperatorsdk.operator.sample.metrics.customresource.MetricsHandlingStatus;
 
 @ControllerConfiguration
-public class MetricsHandlingReconciler2 implements Reconciler<MetricsHandlingCustomResource1> {
-
-  public static final String INDEX_HTML = "index.html";
+public class MetricsHandlingReconciler2 implements Reconciler<MetricsHandlingCustomResource2> {
 
   private static final Logger log = LoggerFactory.getLogger(MetricsHandlingReconciler2.class);
 
   public MetricsHandlingReconciler2() {}
 
   @Override
-  public List<EventSource<?, MetricsHandlingCustomResource1>> prepareEventSources(
-      EventSourceContext<MetricsHandlingCustomResource1> context) {
+  public UpdateControl<MetricsHandlingCustomResource2> reconcile(
+      MetricsHandlingCustomResource2 resource, Context<MetricsHandlingCustomResource2> context) {
 
-    return List.of();
-  }
+    String name = resource.getMetadata().getName();
+    log.info("Reconciling resource: {}", name);
 
-  @Override
-  public UpdateControl<MetricsHandlingCustomResource1> reconcile(
-      MetricsHandlingCustomResource1 metricsHandlingCustomResource1,
-      Context<MetricsHandlingCustomResource1> context) {
+    // Simulate some work (slightly different timing than reconciler1)
+    try {
+      Thread.sleep(150);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted during reconciliation", e);
+    }
 
-    return UpdateControl.noUpdate();
+    // Throw exception for resources with names containing "fail" or "error"
+    if (name.toLowerCase().contains("fail") || name.toLowerCase().contains("error")) {
+      log.error("Simulating failure for resource: {}", name);
+      throw new IllegalStateException("Simulated reconciliation failure for resource: " + name);
+    }
+
+    // Update status
+    var status = resource.getStatus();
+    if (status == null) {
+      status = new MetricsHandlingStatus();
+      resource.setStatus(status);
+    }
+
+    var spec = resource.getSpec();
+    if (spec != null) {
+      status.setObservedNumber(spec.getObservedNumber());
+    }
+
+    log.info("Successfully reconciled resource: {}", name);
+    return UpdateControl.patchStatus(resource);
   }
 }
