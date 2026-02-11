@@ -25,6 +25,7 @@ jobs:
           - "sample-operators/tomcat-operator"
           - "sample-operators/webpage"
           - "sample-operators/leader-election"
+          - "sample-operators/metrics-processing"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

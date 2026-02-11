@@ -191,6 +191,8 @@ public class MicrometerMetricsV2 implements Metrics {
     if (retryNumber > 0) {
       incrementCounter(RECONCILIATIONS_RETRIES_NUMBER, metadata);
     }
+
+    // todo having a gauge for the number of exhausted retries?
     retryInfo.ifPresent(
         i -> {
           if (retryInfoNullable.isLastAttempt()) {
