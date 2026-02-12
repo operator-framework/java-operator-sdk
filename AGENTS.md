@@ -11,10 +11,10 @@ Java Operator SDK is a production-ready framework for building Kubernetes Operat
 - Integration with Fabric8 Kubernetes Client
 
 **Key Technologies:**
-- Java 17+ (currently Java 25)
+- Java 17 (compilation target), validated in CI against Java 17, 21, and 25
 - Maven for build management
 - Fabric8 Kubernetes Client for K8s API access
-- JUnit 5 for testing
+- JUnit 6 (via `org.junit:junit-bom`) for testing
 - GitHub Actions for CI/CD
 
 ## Project Structure
