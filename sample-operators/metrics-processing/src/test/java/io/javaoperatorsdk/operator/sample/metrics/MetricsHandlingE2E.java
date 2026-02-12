@@ -74,46 +74,62 @@ class MetricsHandlingE2E {
 
   @BeforeAll
   void setupObservability() {
-    if (!isLocal()) {
       log.info("Setting up observability stack...");
       try {
-        // Run the install-observability.sh script
-        ProcessBuilder processBuilder =
-            new ProcessBuilder("bash", "../../observability/install-observability.sh");
-        processBuilder.directory(new File("sample-operators/metrics-processing"));
-        processBuilder.redirectErrorStream(true);
-
-        Process process = processBuilder.start();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line;
-        while ((line = reader.readLine()) != null) {
-          log.info("Observability setup: {}", line);
-        }
-
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-          log.warn("Observability setup script returned exit code: {}", exitCode);
-        }
+//        // Find the observability script relative to project root
+//        File projectRoot = new File(".").getCanonicalFile();
+//        while (projectRoot != null && !new File(projectRoot, "observability").exists()) {
+//          projectRoot = projectRoot.getParentFile();
+//        }
+//
+//        if (projectRoot == null) {
+//          throw new IllegalStateException("Could not find observability directory");
+//        }
+//
+//        File scriptFile = new File(projectRoot, "observability/install-observability.sh");
+//        if (!scriptFile.exists()) {
+//          throw new IllegalStateException("Observability script not found at: " + scriptFile.getAbsolutePath());
+//        }
+//
+//        log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
+//
+//        // Run the install-observability.sh script
+//        ProcessBuilder processBuilder =
+//                new ProcessBuilder("/bin/sh", scriptFile.getAbsolutePath());
+//        processBuilder.redirectErrorStream(true);
+//
+//        processBuilder.environment().putAll(System.getenv());
+//        Process process = processBuilder.start();
+//        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//        String line;
+//        while ((line = reader.readLine()) != null) {
+//          log.info("Observability setup: {}", line);
+//        }
+//
+//        int exitCode = process.waitFor();
+//        if (exitCode != 0) {
+//          log.warn("Observability setup script returned exit code: {}", exitCode);
+//        }
 
         // Wait for Prometheus to be ready
         await()
-            .atMost(Duration.ofMinutes(3))
-            .pollInterval(Duration.ofSeconds(5))
-            .untilAsserted(
-                () -> {
-                  var prometheusPod =
-                      operator
-                          .getKubernetesClient()
-                          .pods()
-                          .inNamespace(OBSERVABILITY_NAMESPACE)
-                          .withLabel("app", "prometheus")
-                          .list()
-                          .getItems()
-                          .stream()
-                          .findFirst();
-                  assertThat(prometheusPod).isPresent();
-                  assertThat(prometheusPod.get().getStatus().getPhase()).isEqualTo("Running");
-                });
+                .atMost(Duration.ofMinutes(3))
+                .pollInterval(Duration.ofSeconds(5))
+                .untilAsserted(
+                        () -> {
+                          var prometheusPod =
+                                  operator
+                                          .getKubernetesClient()
+                                          .pods()
+                                          .inNamespace(OBSERVABILITY_NAMESPACE)
+                                          .withLabel("app.kubernetes.io/name", "prometheus")
+                                          .list()
+                                          .getItems()
+                                          .stream()
+                                          .findFirst();
+                          assertThat(prometheusPod).isPresent();
+                          assertThat(prometheusPod.get().getStatus().getPhase()).isEqualTo("Running");
+                        });
 
         log.info("Observability stack is ready");
 
@@ -124,9 +140,9 @@ class MetricsHandlingE2E {
         log.error("Failed to setup observability stack", e);
         throw new RuntimeException(e);
       }
-    }
-  }
 
+
+  }
   private void setupPrometheusPortForward() {
     try {
       Pod prometheusPod =
@@ -134,7 +150,7 @@ class MetricsHandlingE2E {
               .getKubernetesClient()
               .pods()
               .inNamespace(OBSERVABILITY_NAMESPACE)
-              .withLabel("app", "prometheus")
+              .withLabel("app.kubernetes.io/name", "prometheus")
               .list()
               .getItems()
               .stream()
