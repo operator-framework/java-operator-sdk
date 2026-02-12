@@ -91,11 +91,10 @@ java-operator-sdk/
 - Line Length: 100 characters maximum
 - Indentation: 2 spaces (no tabs)
 - Prefer `var` to avoid type declarations, except for very short type names like `int`, `long` , `String` etc.
-- Always use imports for classes instead of full class references. Import classes at the top of the file and use simple class names throughout the code.
+- Always use proper imports for classes instead of fully qualified class references. Import classes at the top of the file and use simple class names throughout the code, only using fully qualified names when absolutely necessary to avoid naming collisions.
 - Add unit and/or integration tests for new functionality whenever reasonably possible
 - Avoid excessive logging, only add logs to critical parts. Avoid both logging errors and throwing exceptions at the same time. Throwing the error is enough it is logged already somewhere else.
 - Do not add comments to the code, except in case of very long or complex logic.
-- Always use proper imports instead of fully qualified class names in code. Only use fully qualified names when absolutely necessary to avoid naming collisions.
 
 ### Naming Conventions
 
