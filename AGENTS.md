@@ -90,7 +90,7 @@ java-operator-sdk/
 - License Headers: All source files must have Apache 2.0 license headers
 - Line Length: 100 characters maximum
 - Indentation: 2 spaces (no tabs)
-- Prefer `var` to avoid type declarations, except for very short type names like `int`, `long` , `String` etc.
+- Prefer `var` to avoid type declarations, except for very short type names like `int`, `long`, `String` etc.
 - Always use proper imports for classes instead of fully qualified class references. Import classes at the top of the file and use simple class names throughout the code, only using fully qualified names when absolutely necessary to avoid naming collisions.
 - Add unit and/or integration tests for new functionality whenever reasonably possible
 - Avoid excessive logging, only add logs to critical parts. Avoid both logging errors and throwing exceptions at the same time. Throwing the error is enough it is logged already somewhere else.
