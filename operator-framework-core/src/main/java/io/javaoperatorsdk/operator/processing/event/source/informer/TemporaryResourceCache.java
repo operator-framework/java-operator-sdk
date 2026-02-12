@@ -133,6 +133,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
           resource.getMetadata().getResourceVersion());
     }
     if (!unknownState) {
+      log.debug("Setting latest resource version to: {}", latestResourceVersion);
       latestResourceVersion = resource.getMetadata().getResourceVersion();
     }
     var cached = cache.get(resourceId);
@@ -140,6 +141,11 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     if (cached != null) {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
+        log.debug(
+            "Removing resource from temp cache. id: {} comparison: {} unknown state: {}",
+            resourceId,
+            comp,
+            unknownState);
         cache.remove(resourceId);
         // we propagate event only for our update or newer other can be discarded since we know we
         // will receive
@@ -151,6 +157,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     }
     var ed = activeUpdates.get(resourceId);
     if (ed != null && result != EventHandling.OBSOLETE) {
+      log.debug("Setting last event for id: {} delete: {}", resourceId, delete);
       ed.setLastEvent(
           delete
               ? new ResourceDeleteEvent(ResourceAction.DELETED, resourceId, resource, unknownState)
