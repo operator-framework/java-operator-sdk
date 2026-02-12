@@ -16,8 +16,8 @@
 
 otlp:
   # OTLP Collector endpoint - see observability/install-observability.sh for setup
-  url: "http://localhost:4318/v1/metrics"
-#  url: "http://otel-collector-collector.observability.svc.cluster.local:4318/v1/metrics"
+#  url: "http://localhost:4318/v1/metrics"
+  url: "http://otel-collector-collector.observability.svc.cluster.local:4318/v1/metrics"
   step: 15s
   batchSize: 15000
   aggregationTemporality: "cumulative"
