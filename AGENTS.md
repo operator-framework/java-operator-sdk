@@ -53,9 +53,6 @@ java-operator-sdk/
 # Build without tests
 ./mvnw clean install -DskipTests
 
-# Build without annotation processing (faster for development)
-./mvnw clean install -Pno-apt
-
 # Parallel build (uses 1 thread per CPU core)
 ./mvnw -T1C clean install
 
