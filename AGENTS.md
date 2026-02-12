@@ -42,7 +42,7 @@ java-operator-sdk/
 - `io.javaoperatorsdk.operator.api.config` - Configuration interfaces
 - `io.javaoperatorsdk.operator.junit` - Testing support classes
 
-## Building and Testing
+## Working Effectively
 
 ### Build Commands
 
@@ -85,30 +85,26 @@ java-operator-sdk/
 ./mvnw test -Dtest=ClassName#methodName
 ```
 
-### Performance Tests
-
-Performance tests are located in `operator-framework/src/test/java/io/javaoperatorsdk/operator/baseapi/performance/`
-
-Results are saved to `target/performance_test_result.json` and include:
-- Test duration in milliseconds
-- Number of processors
-- Maximum memory allocation
-- Dynamic test parameters
-
 ## Code Conventions
 
 ### Code Style
 
-- **Formatting:** The project uses Spotless with Google Java Format
-- **License Headers:** All source files must have Apache 2.0 license headers
-- **Line Length:** 100 characters maximum
-- **Indentation:** 2 spaces (no tabs)
+- Formatting: The project uses Spotless with Google Java Format
+- License Headers: All source files must have Apache 2.0 license headers
+- Line Length: 100 characters maximum
+- Indentation: 2 spaces (no tabs)
+- Prefer `var` to avoid type declarations, except for very short type names like `int`, `long` , `String` etc.
+- Always use imports for classes instead of full class references. Import classes at the top of the file and use simple class names throughout the code.
+- Add unit and/or integration tests for new functionality whenever reasonably possible
+- Avoid excessive logging, only add logs to critical parts. Avoid both logging errors and throwing exceptions at the same time. Throwing the error is enough it is logged already somewhere else.
+- Do not add comments to the code, except in case of very long or complex logic.
+- Always use proper imports instead of fully qualified class names in code. Only use fully qualified names when absolutely necessary to avoid naming collisions.
 
 ### Naming Conventions
 
 - **Reconcilers:** End with `Reconciler` (e.g., `MyResourceReconciler`)
 - **Dependent Resources:** End with `DependentResource` (e.g., `ConfigMapDependentResource`)
-- **Test Classes:** End with `Test` for unit tests, `IT` for integration tests
+- **Test Classes:** End with `Test` for unit tests, `IT` for integration tests, `E2E` for end-to-end testing.
 - **Custom Resources:** Typically structured as `{Name}Spec`, `{Name}Status`, `{Name}` (the CR class)
 
 ### API Design
@@ -122,23 +118,21 @@ Results are saved to `target/performance_test_result.json` and include:
 
 ### Unit Tests
 
-- Use JUnit 5
-- Mock Kubernetes API interactions using Fabric8's mock server or Mockito
+- Use JUnit 6
+- Mock Kubernetes API interactions using Fabric8's mock server or Mockito; or service layer directly
 - Test reconciliation logic in isolation
 - Place in `src/test/java`
 
 ### Integration Tests
 
 - Use `LocallyRunOperatorExtension` or `OperatorExtension` from `operator-framework-junit5`
-- Test against real Kubernetes API (typically via test cluster or mock server)
+- Test against real Kubernetes API (typically via test cluster like minikube or kind)
 - Suffix with `IT` (e.g., `MyReconcilerIT`)
-- Located in `src/test/java` or `src/it/java`
+- Located in `src/test/java`
 
 ### Test Resources
 
-- Kubernetes manifests in `src/test/resources` or `src/it/resources`
-- Use `@KubernetesResourceYaml` annotation to load test resources
-- Custom resources should extend `CustomResource<Spec, Status>`
+- Kubernetes manifests in `src/test/resources`
 
 ## Common Patterns
 
@@ -194,7 +188,7 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 ### PR Guidelines
 
 - Keep changes focused and atomic
-- Write clear commit messages (imperative mood: "Add feature" not "Added feature")
+- We use conventional commits 
 - Reference issues in commit messages when applicable
 - Ensure CI checks pass (format, license, tests)
 
@@ -202,7 +196,6 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 
 ### Build Issues
 
-- **Annotation processing errors:** Try building with `-Pno-apt` first
 - **Test failures:** Check if Kubernetes context is needed for ITs
 - **Formatting failures:** Run `./mvnw spotless:apply` before committing
 
@@ -220,13 +213,6 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 - **Discord:** https://discord.gg/DacEhAy
 - **Fabric8 Client:** https://github.com/fabric8io/kubernetes-client
 
-## Performance Considerations
-
-- Use caching appropriately (see `caffeine-bounded-cache-support`)
-- Implement proper resource watches and informers
-- Consider rate limiting for external API calls
-- Use parallel processing where appropriate (`-T1C` for Maven builds)
-- Monitor memory usage in performance tests
 
 ## Additional Notes for AI Agents
 
