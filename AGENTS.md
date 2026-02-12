@@ -73,7 +73,7 @@ java-operator-sdk/
 ./mvnw test
 
 # Run integration tests
-./mvnw verify -Pit
+./mvnw verify -Pintegration-tests
 
 # Run specific test class
 ./mvnw test -Dtest=ClassName
