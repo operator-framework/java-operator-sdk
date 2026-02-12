@@ -83,8 +83,9 @@ public final class AggregatedMetrics implements Metrics {
 
   @Override
   public void failedReconciliation(
-      HasMetadata resource, Exception exception, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.failedReconciliation(resource, exception, metadata));
+      HasMetadata resource, RetryInfo retry, Exception exception, Map<String, Object> metadata) {
+    metricsList.forEach(
+        metrics -> metrics.failedReconciliation(resource, retry, exception, metadata));
   }
 
   @Override
@@ -93,8 +94,10 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public void reconciliationExecutionFinished(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.reconciliationExecutionFinished(resource, metadata));
+  public void reconciliationExecutionFinished(
+      HasMetadata resource, RetryInfo retryInfo, Map<String, Object> metadata) {
+    metricsList.forEach(
+        metrics -> metrics.reconciliationExecutionFinished(resource, retryInfo, metadata));
   }
 
   @Override
@@ -103,8 +106,9 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
-  public void finishedReconciliation(HasMetadata resource, Map<String, Object> metadata) {
-    metricsList.forEach(metrics -> metrics.finishedReconciliation(resource, metadata));
+  public void successfullyFinishedReconciliation(
+      HasMetadata resource, Map<String, Object> metadata) {
+    metricsList.forEach(metrics -> metrics.successfullyFinishedReconciliation(resource, metadata));
   }
 
   @Override
@@ -113,6 +117,7 @@ public final class AggregatedMetrics implements Metrics {
   }
 
   @Override
+  @Deprecated(forRemoval = true)
   public <T extends Map<?, ?>> T monitorSizeOf(T map, String name) {
     metricsList.forEach(metrics -> metrics.monitorSizeOf(map, name));
     return map;
