@@ -212,7 +212,7 @@ public class ConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMa
 
 ## Additional Notes for AI Agents
 
-- The codebase uses extensive use of Java generics for type safety
+- The codebase makes extensive use of Java generics for type safety
 - Context objects provide access to client, informers, and event sources
 - The framework handles K8s API retries and conflict resolution automatically
 - Prefer using `ResourceOperations` from context over direct client calls
