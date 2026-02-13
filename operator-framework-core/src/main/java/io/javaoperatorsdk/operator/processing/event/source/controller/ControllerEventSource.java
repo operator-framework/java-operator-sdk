@@ -136,12 +136,18 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public synchronized void onAdd(T resource) {
-    handleOnAddOrUpdate(ResourceAction.ADDED, null, resource);
+    withMDC(
+        resource,
+        ResourceAction.ADDED,
+        () -> handleOnAddOrUpdate(ResourceAction.ADDED, null, resource));
   }
 
   @Override
   public synchronized void onUpdate(T oldCustomResource, T newCustomResource) {
-    handleOnAddOrUpdate(ResourceAction.UPDATED, oldCustomResource, newCustomResource);
+    withMDC(
+        newCustomResource,
+        ResourceAction.UPDATED,
+        () -> handleOnAddOrUpdate(ResourceAction.UPDATED, oldCustomResource, newCustomResource));
   }
 
   private void handleOnAddOrUpdate(
@@ -161,10 +167,16 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public synchronized void onDelete(T resource, boolean deletedFinalStateUnknown) {
-    temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
-    // delete event is quite special here, that requires special care, since we clean up caches on
-    // delete event.
-    handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
+    withMDC(
+        resource,
+        ResourceAction.DELETED,
+        () -> {
+          temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
+          // delete event is quite special here, that requires special care, since we clean up
+          // caches on
+          // delete event.
+          handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
+        });
   }
 
   @Override
