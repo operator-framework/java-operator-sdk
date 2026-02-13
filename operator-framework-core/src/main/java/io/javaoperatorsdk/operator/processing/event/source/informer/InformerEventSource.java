@@ -100,42 +100,58 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
   @Override
   public void onAdd(R newResource) {
-    if (log.isDebugEnabled()) {
-      log.debug(
-          "On add event received for resource id: {} type: {} version: {}",
-          ResourceID.fromResource(newResource),
-          resourceType().getSimpleName(),
-          newResource.getMetadata().getResourceVersion());
-    }
-    onAddOrUpdate(ResourceAction.ADDED, newResource, null);
+    withMDC(
+        newResource,
+        ResourceAction.ADDED,
+        () -> {
+          if (log.isDebugEnabled()) {
+            log.debug(
+                "On add event received for resource id: {} type: {} version: {}",
+                ResourceID.fromResource(newResource),
+                resourceType().getSimpleName(),
+                newResource.getMetadata().getResourceVersion());
+          }
+          onAddOrUpdate(ResourceAction.ADDED, newResource, null);
+        });
   }
 
   @Override
   public void onUpdate(R oldObject, R newObject) {
-    if (log.isDebugEnabled()) {
-      log.debug(
-          "On update event received for resource id: {} type: {} version: {} old version: {} ",
-          ResourceID.fromResource(newObject),
-          resourceType().getSimpleName(),
-          newObject.getMetadata().getResourceVersion(),
-          oldObject.getMetadata().getResourceVersion());
-    }
-    onAddOrUpdate(ResourceAction.UPDATED, newObject, oldObject);
+    withMDC(
+        newObject,
+        ResourceAction.UPDATED,
+        () -> {
+          if (log.isDebugEnabled()) {
+            log.debug(
+                "On update event received for resource id: {} type: {} version: {} old version: {}"
+                    + " ",
+                ResourceID.fromResource(newObject),
+                resourceType().getSimpleName(),
+                newObject.getMetadata().getResourceVersion(),
+                oldObject.getMetadata().getResourceVersion());
+          }
+          onAddOrUpdate(ResourceAction.UPDATED, newObject, oldObject);
+        });
   }
 
   @Override
   public synchronized void onDelete(R resource, boolean b) {
-    if (log.isDebugEnabled()) {
-      log.debug(
-          "On delete event received for resource id: {} type: {}",
-          ResourceID.fromResource(resource),
-          resourceType().getSimpleName());
-    }
-    primaryToSecondaryIndex.onDelete(resource);
-    temporaryResourceCache.onDeleteEvent(resource, b);
-    if (acceptedByDeleteFilters(resource, b)) {
-      propagateEvent(resource);
-    }
+    withMDC(
+        resource,
+        ResourceAction.DELETED,
+        () -> {
+          if (log.isDebugEnabled()) {
+            log.debug(
+                "On delete event received for resource id: {} type: {}",
+                ResourceID.fromResource(resource),
+                resourceType().getSimpleName());
+          }
+          primaryToSecondaryIndex.onDelete(resource);
+          temporaryResourceCache.onDeleteEvent(resource, b);
+          if (acceptedByDeleteFilters(resource, b)) {
+            propagateEvent(resource);
+          }
+        });
   }
 
   @Override

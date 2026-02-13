@@ -40,6 +40,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCache
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
+import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
@@ -265,5 +266,14 @@ public abstract class ManagedInformerEventSource<
 
   public void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
     this.controllerConfiguration = controllerConfiguration;
+  }
+
+  protected void withMDC(R resource, ResourceAction action, Runnable runnable) {
+    try {
+      MDCUtils.addInformerEventInfo(resource, action, name());
+      runnable.run();
+    } finally {
+      MDCUtils.removeInformerEventInfo();
+    }
   }
 }
