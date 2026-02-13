@@ -19,7 +19,7 @@
 <Configuration name="TestConfig" status="WARN">
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d %threadId %-30c{1.} [%-5level] %msg%n%throwable"/>
+      <PatternLayout pattern="%d %threadId %-30c{1.} [%-5level] %msg [%X{resource.namespace}/%X{resource.name} %X{resource.kind}][%X{informer.name}:%X{informer.event.action}:%X{informer.event.resource.name}::%X{informer.event.resource.resourceVersion}] %n%throwable "/>
     </Console>
   </Appenders>
   <Loggers>

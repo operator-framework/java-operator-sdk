@@ -19,7 +19,7 @@ import java.util.Objects;
 
 public class Event {
 
-  private final ResourceID relatedCustomResource;
+  protected final ResourceID relatedCustomResource;
 
   public Event(ResourceID targetCustomResource) {
     this.relatedCustomResource = targetCustomResource;
