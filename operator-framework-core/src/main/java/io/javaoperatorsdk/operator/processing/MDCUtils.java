@@ -20,6 +20,7 @@ import org.slf4j.MDC;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 public class MDCUtils {
 
@@ -33,6 +34,38 @@ public class MDCUtils {
   private static final String NO_NAMESPACE = "no namespace";
   private static final boolean enabled =
       Utils.getBooleanFromSystemPropsOrDefault(Utils.USE_MDC_ENV_KEY, true);
+
+  private static final String INFORMER_EVENT_RESOURCE_NAME = "informer.event.resource.name";
+  private static final String INFORMER_EVENT_RESOURCE_NAMESPACE =
+      "informer.event.resource.namespace";
+  private static final String INFORMER_EVENT_RESOURCE_KIND = "informer.event.resource.kind";
+  private static final String INFORMER_EVENT_RESOURCE_VERSION =
+      "informer.event.resource.resourceVersion";
+  private static final String INFORMER_EVENT_ACTION = "informer.event.action";
+  private static final String INFORMER_NAME = "informer.name";
+
+  public static void addInformerEventInfo(
+      HasMetadata resource, ResourceAction action, String eventSourceName) {
+    if (enabled) {
+      MDC.put(INFORMER_EVENT_RESOURCE_NAME, resource.getMetadata().getName());
+      MDC.put(INFORMER_EVENT_RESOURCE_NAMESPACE, resource.getMetadata().getNamespace());
+      MDC.put(INFORMER_EVENT_RESOURCE_KIND, HasMetadata.getKind(resource.getClass()));
+      MDC.put(INFORMER_EVENT_RESOURCE_VERSION, resource.getMetadata().getNamespace());
+      MDC.put(INFORMER_EVENT_ACTION, action.name());
+      MDC.put(INFORMER_NAME, eventSourceName);
+    }
+  }
+
+  public static void removeInformerEventInfo() {
+    if (enabled) {
+      MDC.remove(INFORMER_EVENT_RESOURCE_NAME);
+      MDC.remove(INFORMER_EVENT_RESOURCE_NAMESPACE);
+      MDC.remove(INFORMER_EVENT_RESOURCE_KIND);
+      MDC.remove(INFORMER_EVENT_RESOURCE_VERSION);
+      MDC.remove(INFORMER_EVENT_ACTION);
+      MDC.remove(INFORMER_NAME);
+    }
+  }
 
   public static void addResourceIDInfo(ResourceID resourceID) {
     if (enabled) {
