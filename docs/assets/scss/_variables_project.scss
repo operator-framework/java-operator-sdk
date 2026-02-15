@@ -25,15 +25,16 @@ $info: #c0e0de;
 $light: rgb(13, 110, 253);
 $dark: #403f4c;
 $link-color: rgb(13, 110, 253);
+$link-hover-color: darken($link-color, 15%);
 
 
 // Override link colors only in document content
 .td-content {
   a {
-    color: rgb(13, 110, 253) !important;
+    color: $link-color !important;
 
     &:hover {
-      color: rgb(10, 88, 202) !important;
+      color: $link-hover-color !important;
     }
   }
 }
