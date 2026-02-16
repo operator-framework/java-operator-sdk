@@ -19,7 +19,52 @@ Add styles or override variables from the theme here.
 
 */
 
-//$primary: #fc9c62;;
 $primary: #da5504;
-$secondary: #fc9c62
-//$secondary: white;
+$secondary: #fc9c62;
+$info: #c0e0de;
+$light: rgb(13, 110, 253);
+$dark: #403f4c;
+$link-color: rgb(13, 110, 253);
+$link-hover-color: darken($link-color, 15%);
+
+
+// Override link colors only in document content
+.td-content {
+  a {
+    color: $link-color !important;
+
+    &:hover {
+      color: $link-hover-color !important;
+    }
+  }
+}
+
+// Navbar styling - this is the correct way for Docsy 0.14.2
+.td-navbar {
+   background-color: $primary !important;
+   border-color: $primary !important;
+  .navbar-brand {
+    color: #fff;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+  .nav-link {
+    color: rgba(255, 255, 255, 0.75) !important;
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.90) !important;
+    }
+  }
+}
+
+// RSS button styling
+.td-rss-button {
+  color: rgba(85, 85, 85, 0.9) !important;
+  background-color: $info !important;
+  border-color: $info !important;
+  &:hover {
+    color: darken(rgba(85, 85, 85, 0.9), 100%) !important;
+  }
+}

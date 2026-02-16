@@ -193,7 +193,7 @@ desc = "Chat with others on our dedicated Discord server"
   # workspace = "docsy.work"
   [module.hugoVersion]
     extended = true
-    min = "0.110.0"
+    min = "0.139.0"
   [[module.imports]]
     path = "github.com/google/docsy"
     disable = false
