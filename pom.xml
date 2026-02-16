@@ -70,7 +70,7 @@
     <sonar.organization>java-operator-sdk</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <fabric8-httpclient-impl.name>jdk</fabric8-httpclient-impl.name>
-    <junit.version>6.0.2</junit.version>
+    <junit.version>6.0.3</junit.version>
     <fabric8-client.version>7.5.2</fabric8-client.version>
     <slf4j.version>2.0.17</slf4j.version>
     <log4j.version>2.25.3</log4j.version>
