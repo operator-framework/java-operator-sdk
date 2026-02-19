@@ -25,8 +25,8 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 public class ResourceEvent extends Event {
 
-  protected final ResourceAction action;
-  protected final HasMetadata resource;
+  private final ResourceAction action;
+  private final HasMetadata resource;
 
   public ResourceEvent(ResourceAction action, ResourceID resourceID, HasMetadata resource) {
     super(resourceID);

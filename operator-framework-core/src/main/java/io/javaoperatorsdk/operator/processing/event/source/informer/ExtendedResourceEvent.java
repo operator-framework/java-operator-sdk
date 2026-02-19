@@ -44,12 +44,10 @@ public class ExtendedResourceEvent extends ResourceEvent {
   @Override
   public String toString() {
     return "ExtendedResourceEvent{"
-        + "previousResourceVersion="
-        + previousResource.getMetadata().getResourceVersion()
+        + getPreviousResource().map(r -> "previousResourceVersion=" + r.getMetadata().getResourceVersion()).orElse("")
         + ", action="
-        + action
-        + ", resourceVersion="
-        + resource.getMetadata().getResourceVersion()
+        + getAction()
+        + getResource().map(r -> ", resourceVersion=" + r.getMetadata().getResourceVersion()).orElse("")
         + ", relatedCustomResourceName="
         + relatedCustomResource.getName()
         + '}';
