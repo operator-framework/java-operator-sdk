@@ -366,7 +366,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
     retryAwareErrorLogging(state.getRetry(), eventPresent, exception, executionScope);
     if (eventPresent) {
-      log.debug("New events exists for for resource id");
+      log.debug("New events exist for resource id");
       submitReconciliationExecution(state);
       return;
     }
