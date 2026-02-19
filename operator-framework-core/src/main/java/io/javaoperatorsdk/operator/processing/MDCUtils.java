@@ -69,14 +69,14 @@ public class MDCUtils {
   }
 
   public static void withMDCForEvent(
-      HasMetadata resource, Runnable runnable, String nameSourceName) {
-    withMDCForEvent(resource, null, runnable, nameSourceName);
+      HasMetadata resource, Runnable runnable, String eventSourceName) {
+    withMDCForEvent(resource, null, runnable, eventSourceName);
   }
 
   public static void withMDCForEvent(
-      HasMetadata resource, ResourceAction action, Runnable runnable, String nameSourceName) {
+      HasMetadata resource, ResourceAction action, Runnable runnable, String eventSourceName) {
     try {
-      MDCUtils.addInformerEventInfo(resource, action, nameSourceName);
+      MDCUtils.addInformerEventInfo(resource, action, eventSourceName);
       runnable.run();
     } finally {
       MDCUtils.removeInformerEventInfo();
