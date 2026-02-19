@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
@@ -133,13 +133,13 @@ class BaseConfigurationServiceTest {
     final var reconciler = new MissingAnnotationReconciler();
     var config = configFor(reconciler);
 
-    assertThat(config.getName()).isEqualTo(ReconcilerUtils.getNameFor(reconciler));
+    assertThat(config.getName()).isEqualTo(ReconcilerUtilsInternal.getNameFor(reconciler));
     assertThat(config.getRetry()).isInstanceOf(GenericRetry.class);
     assertThat(config.getRateLimiter()).isInstanceOf(LinearRateLimiter.class);
     assertThat(config.maxReconciliationInterval()).hasValue(Duration.ofHours(DEFAULT_INTERVAL));
     assertThat(config.fieldManager()).isEqualTo(config.getName());
     assertThat(config.getFinalizerName())
-        .isEqualTo(ReconcilerUtils.getDefaultFinalizerName(config.getResourceClass()));
+        .isEqualTo(ReconcilerUtilsInternal.getDefaultFinalizerName(config.getResourceClass()));
 
     final var informerConfig = config.getInformerConfig();
     assertThat(informerConfig.getLabelSelector()).isNull();

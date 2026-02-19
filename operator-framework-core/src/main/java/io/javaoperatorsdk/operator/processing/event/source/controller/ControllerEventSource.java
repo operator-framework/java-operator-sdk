@@ -28,11 +28,13 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
-import static io.javaoperatorsdk.operator.ReconcilerUtils.handleKubernetesClientException;
+import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
 import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
@@ -47,7 +49,11 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerEventSource(Controller<T> controller) {
-    super(NAME, controller.getCRClient(), controller.getConfiguration(), false);
+    super(
+        NAME,
+        controller.getCRClient(),
+        controller.getConfiguration(),
+        controller.getConfiguration().getInformerConfig().isComparableResourceVersions());
     this.controller = controller;
 
     final var config = controller.getConfiguration();
@@ -77,7 +83,8 @@ public class ControllerEventSource<T extends HasMetadata>
     }
   }
 
-  public void eventReceived(
+  @Override
+  protected synchronized void handleEvent(
       ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
@@ -127,21 +134,36 @@ public class ControllerEventSource<T extends HasMetadata>
   }
 
   @Override
-  public void onAdd(T resource) {
-    super.onAdd(resource);
-    eventReceived(ResourceAction.ADDED, resource, null, null);
+  public synchronized void onAdd(T resource) {
+    handleOnAddOrUpdate(ResourceAction.ADDED, null, resource);
   }
 
   @Override
-  public void onUpdate(T oldCustomResource, T newCustomResource) {
-    super.onUpdate(oldCustomResource, newCustomResource);
-    eventReceived(ResourceAction.UPDATED, newCustomResource, oldCustomResource, null);
+  public synchronized void onUpdate(T oldCustomResource, T newCustomResource) {
+    handleOnAddOrUpdate(ResourceAction.UPDATED, oldCustomResource, newCustomResource);
+  }
+
+  private void handleOnAddOrUpdate(
+      ResourceAction action, T oldCustomResource, T newCustomResource) {
+    var handling =
+        temporaryResourceCache.onAddOrUpdateEvent(action, newCustomResource, oldCustomResource);
+    if (handling == EventHandling.NEW) {
+      handleEvent(action, newCustomResource, oldCustomResource, null);
+    } else if (log.isDebugEnabled()) {
+      log.debug(
+          "{} event propagation for action: {} resource id: {} ",
+          handling,
+          action,
+          ResourceID.fromResource(newCustomResource));
+    }
   }
 
   @Override
-  public void onDelete(T resource, boolean deletedFinalStateUnknown) {
-    super.onDelete(resource, deletedFinalStateUnknown);
-    eventReceived(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
+  public synchronized void onDelete(T resource, boolean deletedFinalStateUnknown) {
+    temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
+    // delete event is quite special here, that requires special care, since we clean up caches on
+    // delete event.
+    handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
   }
 
   @Override

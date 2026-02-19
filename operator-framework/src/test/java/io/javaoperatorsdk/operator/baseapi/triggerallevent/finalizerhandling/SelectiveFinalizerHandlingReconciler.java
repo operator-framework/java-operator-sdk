@@ -17,7 +17,6 @@ package io.javaoperatorsdk.operator.baseapi.triggerallevent.finalizerhandling;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.PrimaryUpdateAndCacheUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
@@ -37,11 +36,11 @@ public class SelectiveFinalizerHandlingReconciler
     }
 
     if (resource.getSpec().getUseFinalizer()) {
-      PrimaryUpdateAndCacheUtils.addFinalizer(context, FINALIZER);
+      context.resourceOperations().addFinalizer(FINALIZER);
     }
 
     if (resource.isMarkedForDeletion()) {
-      PrimaryUpdateAndCacheUtils.removeFinalizer(context, FINALIZER);
+      context.resourceOperations().removeFinalizer(FINALIZER);
     }
 
     return UpdateControl.noUpdate();

@@ -19,6 +19,7 @@ import java.util.Objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 /**
  * Extends ResourceEvent for informer Delete events, it holds also information if the final state is

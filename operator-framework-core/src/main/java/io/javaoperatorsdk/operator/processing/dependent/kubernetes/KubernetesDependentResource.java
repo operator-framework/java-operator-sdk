@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -55,7 +54,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   private final boolean garbageCollected = this instanceof GarbageCollected;
   private KubernetesDependentResourceConfig<R> kubernetesDependentResourceConfig;
   private volatile Boolean useSSA;
-  private volatile Boolean usePreviousAnnotationForEventFiltering;
 
   public KubernetesDependentResource() {}
 
@@ -74,7 +72,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @SuppressWarnings("unused")
   public R create(R desired, P primary, Context<P> context) {
-    if (useSSA(context)) {
+    var ssa = useSSA(context);
+    if (ssa) {
       // setting resource version for SSA so only created if it doesn't exist already
       var createIfNotExisting =
           kubernetesDependentResourceConfig == null
@@ -86,35 +85,40 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       }
     }
     addMetadata(false, null, desired, primary, context);
-    final var resource = prepare(context, desired, primary, "Creating");
-    return useSSA(context)
-        ? resource
-            .fieldManager(context.getControllerConfiguration().fieldManager())
-            .forceConflicts()
-            .serverSideApply()
-        : resource.create();
+    log.debug(
+        "Creating target resource with type: {}, with id: {} use ssa: {}",
+        desired.getClass(),
+        ResourceID.fromResource(desired),
+        ssa);
+
+    return ssa
+        ? context.resourceOperations().serverSideApply(desired, eventSource().orElse(null))
+        : context.resourceOperations().create(desired, eventSource().orElse(null));
   }
 
   public R update(R actual, R desired, P primary, Context<P> context) {
-    boolean useSSA = useSSA(context);
+    boolean ssa = useSSA(context);
     if (log.isDebugEnabled()) {
       log.debug(
           "Updating actual resource: {} version: {}; SSA: {}",
           ResourceID.fromResource(actual),
           actual.getMetadata().getResourceVersion(),
-          useSSA);
+          ssa);
     }
     R updatedResource;
     addMetadata(false, actual, desired, primary, context);
-    if (useSSA) {
+    log.debug(
+        "Updating target resource with type: {}, with id: {} use ssa: {}",
+        desired.getClass(),
+        ResourceID.fromResource(desired),
+        ssa);
+    if (ssa) {
       updatedResource =
-          prepare(context, desired, primary, "Updating")
-              .fieldManager(context.getControllerConfiguration().fieldManager())
-              .forceConflicts()
-              .serverSideApply();
+          context.resourceOperations().serverSideApply(desired, eventSource().orElse(null));
     } else {
       var updatedActual = GenericResourceUpdater.updateResource(actual, desired, context);
-      updatedResource = prepare(context, updatedActual, primary, "Updating").update();
+      updatedResource =
+          context.resourceOperations().update(updatedActual, eventSource().orElse(null));
     }
     log.debug(
         "Resource version after update: {}", updatedResource.getMetadata().getResourceVersion());
@@ -123,7 +127,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
 
   @Override
   public Result<R> match(R actualResource, P primary, Context<P> context) {
-    final var desired = desired(primary, context);
+    final var desired = getOrComputeDesired(context);
     return match(actualResource, desired, primary, context);
   }
 
@@ -158,14 +162,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
       } else {
         annotations.remove(InformerEventSource.PREVIOUS_ANNOTATION_KEY);
       }
-    } else if (usePreviousAnnotation(context)) { // set a new one
-      eventSource()
-          .orElseThrow()
-          .addPreviousAnnotation(
-              Optional.ofNullable(actualResource)
-                  .map(r -> r.getMetadata().getResourceVersion())
-                  .orElse(null),
-              target);
     }
     addReferenceHandlingMetadata(target, primary);
   }
@@ -181,22 +177,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
     return useSSA;
   }
 
-  private boolean usePreviousAnnotation(Context<P> context) {
-    if (usePreviousAnnotationForEventFiltering == null) {
-      usePreviousAnnotationForEventFiltering =
-          context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .previousAnnotationForDependentResourcesEventFiltering()
-              && !context
-                  .getControllerConfiguration()
-                  .getConfigurationService()
-                  .withPreviousAnnotationForDependentResourcesBlocklist()
-                  .contains(this.resourceType());
-    }
-    return usePreviousAnnotationForEventFiltering;
-  }
-
   @Override
   protected void handleDelete(P primary, R secondary, Context<P> context) {
     if (secondary != null) {
@@ -207,17 +187,6 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   @SuppressWarnings("unused")
   public void deleteTargetResource(P primary, R resource, ResourceID key, Context<P> context) {
     context.getClient().resource(resource).delete();
-  }
-
-  @SuppressWarnings("unused")
-  protected Resource<R> prepare(Context<P> context, R desired, P primary, String actionName) {
-    log.debug(
-        "{} target resource with type: {}, with id: {}",
-        actionName,
-        desired.getClass(),
-        ResourceID.fromResource(desired));
-
-    return context.getClient().resource(desired);
   }
 
   protected void addReferenceHandlingMetadata(R desired, P primary) {
@@ -301,7 +270,7 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
    * @return id of the target managed resource
    */
   protected ResourceID targetSecondaryResourceID(P primary, Context<P> context) {
-    return ResourceID.fromResource(desired(primary, context));
+    return ResourceID.fromResource(getOrComputeDesired(context));
   }
 
   protected boolean addOwnerReference() {
@@ -309,8 +278,8 @@ public abstract class KubernetesDependentResource<R extends HasMetadata, P exten
   }
 
   @Override
-  protected R desired(P primary, Context<P> context) {
-    return super.desired(primary, context);
+  protected R getOrComputeDesired(Context<P> context) {
+    return super.getOrComputeDesired(context);
   }
 
   @Override

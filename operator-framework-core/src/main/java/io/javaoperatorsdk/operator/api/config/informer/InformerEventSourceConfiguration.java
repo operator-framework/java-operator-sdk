@@ -33,6 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_COMPARABLE_RESOURCE_VERSION;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.SAME_AS_CONTROLLER_NAMESPACES_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACE_SET;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
@@ -96,18 +97,21 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private final GroupVersionKind groupVersionKind;
     private final InformerConfiguration<R> informerConfig;
     private final KubernetesClient kubernetesClient;
+    private final boolean comparableResourceVersion;
 
     protected DefaultInformerEventSourceConfiguration(
         GroupVersionKind groupVersionKind,
         PrimaryToSecondaryMapper<?> primaryToSecondaryMapper,
         SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper,
         InformerConfiguration<R> informerConfig,
-        KubernetesClient kubernetesClient) {
+        KubernetesClient kubernetesClient,
+        boolean comparableResourceVersion) {
       this.informerConfig = Objects.requireNonNull(informerConfig);
       this.groupVersionKind = groupVersionKind;
       this.primaryToSecondaryMapper = primaryToSecondaryMapper;
       this.secondaryToPrimaryMapper = secondaryToPrimaryMapper;
       this.kubernetesClient = kubernetesClient;
+      this.comparableResourceVersion = comparableResourceVersion;
     }
 
     @Override
@@ -135,6 +139,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     public Optional<KubernetesClient> getKubernetesClient() {
       return Optional.ofNullable(kubernetesClient);
     }
+
+    @Override
+    public boolean comparableResourceVersion() {
+      return this.comparableResourceVersion;
+    }
   }
 
   @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -148,6 +157,7 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
     private PrimaryToSecondaryMapper<?> primaryToSecondaryMapper;
     private SecondaryToPrimaryMapper<R> secondaryToPrimaryMapper;
     private KubernetesClient kubernetesClient;
+    private boolean comparableResourceVersion = DEFAULT_COMPARABLE_RESOURCE_VERSION;
 
     private Builder(Class<R> resourceClass, Class<? extends HasMetadata> primaryResourceClass) {
       this(resourceClass, primaryResourceClass, null);
@@ -285,6 +295,11 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
       return this;
     }
 
+    public Builder<R> withComparableResourceVersion(boolean comparableResourceVersion) {
+      this.comparableResourceVersion = comparableResourceVersion;
+      return this;
+    }
+
     public void updateFrom(InformerConfiguration<R> informerConfig) {
       if (informerConfig != null) {
         final var informerConfigName = informerConfig.getName();
@@ -324,7 +339,10 @@ public interface InformerEventSourceConfiguration<R extends HasMetadata> extends
                   HasMetadata.getKind(primaryResourceClass),
                   false)),
           config.build(),
-          kubernetesClient);
+          kubernetesClient,
+          comparableResourceVersion);
     }
   }
+
+  boolean comparableResourceVersion();
 }
