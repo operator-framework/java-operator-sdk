@@ -50,8 +50,8 @@ public class ExtendedResourceEvent extends ResourceEvent {
         + action
         + ", resourceVersion="
         + resource.getMetadata().getResourceVersion()
-        + ", relatedCustomResource="
-        + relatedCustomResource
+        + ", relatedCustomResourceName="
+        + relatedCustomResource.getName()
         + '}';
   }
 
