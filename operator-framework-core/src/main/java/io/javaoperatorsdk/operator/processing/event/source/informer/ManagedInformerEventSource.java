@@ -269,6 +269,6 @@ public abstract class ManagedInformerEventSource<
   }
 
   protected void withMDC(R resource, ResourceAction action, Runnable runnable) {
-    MDCUtils.withMDCForEvent(resource,action,runnable, name());
+    MDCUtils.withMDCForEvent(resource, action, runnable, name());
   }
 }
