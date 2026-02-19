@@ -94,12 +94,12 @@ public abstract class ManagedInformerEventSource<
   @SuppressWarnings("unchecked")
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    log.debug("Starting event filter and cache update for: {}", id);
+    log.debug("Starting event filter and cache update");
     R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
-      log.debug("Resource update successful: {}", id);
+      log.debug("Resource update successful");
       handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
       return updatedResource;
     } finally {
@@ -142,7 +142,7 @@ public abstract class ManagedInformerEventSource<
                     ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
                     : null);
           },
-          () -> log.debug("No new event present after the filtering update; id: {}", id));
+          () -> log.debug("No new event present after the filtering update"));
     }
   }
 
@@ -269,11 +269,6 @@ public abstract class ManagedInformerEventSource<
   }
 
   protected void withMDC(R resource, ResourceAction action, Runnable runnable) {
-    try {
-      MDCUtils.addInformerEventInfo(resource, action, name());
-      runnable.run();
-    } finally {
-      MDCUtils.removeInformerEventInfo();
-    }
+    MDCUtils.withMDCForEvent(resource,action,runnable, name());
   }
 }

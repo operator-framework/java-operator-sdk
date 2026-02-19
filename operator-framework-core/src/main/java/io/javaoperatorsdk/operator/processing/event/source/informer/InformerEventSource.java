@@ -105,11 +105,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         ResourceAction.ADDED,
         () -> {
           if (log.isDebugEnabled()) {
-            log.debug(
-                "On add event received for resource id: {} type: {} version: {}",
-                ResourceID.fromResource(newResource),
-                resourceType().getSimpleName(),
-                newResource.getMetadata().getResourceVersion());
+            log.debug("On add event received");
           }
           onAddOrUpdate(ResourceAction.ADDED, newResource, null);
         });
@@ -123,11 +119,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         () -> {
           if (log.isDebugEnabled()) {
             log.debug(
-                "On update event received for resource id: {} type: {} version: {} old version: {}"
-                    + " ",
-                ResourceID.fromResource(newObject),
-                resourceType().getSimpleName(),
-                newObject.getMetadata().getResourceVersion(),
+                "On update event received. Old version: {}",
                 oldObject.getMetadata().getResourceVersion());
           }
           onAddOrUpdate(ResourceAction.UPDATED, newObject, oldObject);
@@ -135,20 +127,19 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
   }
 
   @Override
-  public synchronized void onDelete(R resource, boolean b) {
+  public synchronized void onDelete(R resource, boolean deletedFinalStateUnknown) {
     withMDC(
         resource,
         ResourceAction.DELETED,
         () -> {
           if (log.isDebugEnabled()) {
             log.debug(
-                "On delete event received for resource id: {} type: {}",
-                ResourceID.fromResource(resource),
-                resourceType().getSimpleName());
+                "On delete event received for resource id. deletedFinalStateUnknown: {}",
+                deletedFinalStateUnknown);
           }
           primaryToSecondaryIndex.onDelete(resource);
-          temporaryResourceCache.onDeleteEvent(resource, b);
-          if (acceptedByDeleteFilters(resource, b)) {
+          temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
+          if (acceptedByDeleteFilters(resource, deletedFinalStateUnknown)) {
             propagateEvent(resource);
           }
         });
@@ -176,16 +167,11 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
 
     if (eventHandling != EventHandling.NEW) {
       log.debug(
-          "{} event propagation for {}. Resource ID: {}",
-          eventHandling == EventHandling.DEFER ? "Deferring" : "Skipping",
-          action,
-          ResourceID.fromResource(newObject));
+          "{} event propagation", eventHandling == EventHandling.DEFER ? "Deferring" : "Skipping");
     } else if (eventAcceptedByFilter(action, newObject, oldObject)) {
       log.debug(
-          "Propagating event for {}, resource with same version not result of a reconciliation."
-              + " Resource ID: {}",
-          action,
-          resourceID);
+          "Propagating event for {}, resource with same version not result of a reconciliation.",
+          action);
       propagateEvent(newObject);
     } else {
       log.debug("Event filtered out for operation: {}, resourceID: {}", action, resourceID);
@@ -227,9 +213,8 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
     } else {
       secondaryIDs = primaryToSecondaryMapper.toSecondaryResourceIDs(primary);
       log.debug(
-          "Using PrimaryToSecondaryMapper to find secondary resources for primary: {}. Found"
+          "Using PrimaryToSecondaryMapper to find secondary resources for primary. Found"
               + " secondary ids: {} ",
-          primary,
           secondaryIDs);
     }
     return secondaryIDs.stream()
