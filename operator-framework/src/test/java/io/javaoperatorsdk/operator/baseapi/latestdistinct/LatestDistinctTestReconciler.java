@@ -56,7 +56,7 @@ public class LatestDistinctTestReconciler implements Reconciler<LatestDistinctTe
       // wait until both informers see the config map
       return UpdateControl.noUpdate();
     }
-    // makes sure that distinc config maps returned
+    // makes sure that distinct config maps returned
     var distinctConfigMaps = context.getSecondaryResourcesAsStream(ConfigMap.class, true).toList();
     if (distinctConfigMaps.size() != 1) {
       errorOccurred = true;
