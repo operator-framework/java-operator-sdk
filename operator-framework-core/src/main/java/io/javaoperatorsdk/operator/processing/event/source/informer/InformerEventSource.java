@@ -134,7 +134,7 @@ public class InformerEventSource<R extends HasMetadata, P extends HasMetadata>
         () -> {
           if (log.isDebugEnabled()) {
             log.debug(
-                "On delete event received for resource id. deletedFinalStateUnknown: {}",
+                "On delete event received for resource. deletedFinalStateUnknown: {}",
                 deletedFinalStateUnknown);
           }
           primaryToSecondaryIndex.onDelete(resource);
