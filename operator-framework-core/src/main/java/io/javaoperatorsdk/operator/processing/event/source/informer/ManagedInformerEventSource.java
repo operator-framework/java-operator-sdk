@@ -40,6 +40,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.RecentOperationCache
 import io.javaoperatorsdk.operator.health.InformerHealthIndicator;
 import io.javaoperatorsdk.operator.health.InformerWrappingEventSourceHealthIndicator;
 import io.javaoperatorsdk.operator.health.Status;
+import io.javaoperatorsdk.operator.processing.MDCUtils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.*;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
@@ -93,11 +94,12 @@ public abstract class ManagedInformerEventSource<
   @SuppressWarnings("unchecked")
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    log.debug("Update and cache: {}", id);
+    log.debug("Starting event filter and cache update");
     R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
       updatedResource = updateMethod.apply(resourceToUpdate);
+      log.debug("Resource update successful");
       handleRecentResourceUpdate(id, updatedResource, resourceToUpdate);
       return updatedResource;
     } finally {
@@ -124,6 +126,14 @@ public abstract class ManagedInformerEventSource<
                     : null;
             R prevVersionOfResource =
                 updatedForLambda != null ? updatedForLambda : extendedResourcePrevVersion;
+            if (log.isDebugEnabled()) {
+              log.debug(
+                  "Extended previous resource version: {} resource from update present: {}"
+                      + " extendedPrevResource present: {}",
+                  prevVersionOfResource.getMetadata().getResourceVersion(),
+                  updatedForLambda != null,
+                  extendedResourcePrevVersion != null);
+            }
             handleEvent(
                 r.getAction(),
                 latestResource,
@@ -132,7 +142,7 @@ public abstract class ManagedInformerEventSource<
                     ? ((ResourceDeleteEvent) r).isDeletedFinalStateUnknown()
                     : null);
           },
-          () -> log.debug("No new event present after the filtering update; id: {}", id));
+          () -> log.debug("No new event present after the filtering update"));
     }
   }
 
@@ -256,5 +266,9 @@ public abstract class ManagedInformerEventSource<
 
   public void setControllerConfiguration(ControllerConfiguration<R> controllerConfiguration) {
     this.controllerConfiguration = controllerConfiguration;
+  }
+
+  protected void withMDC(R resource, ResourceAction action, Runnable runnable) {
+    MDCUtils.withMDCForEvent(resource, action, runnable, name());
   }
 }

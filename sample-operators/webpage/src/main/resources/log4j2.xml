@@ -19,7 +19,7 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%style{%d}{yellow} %tn %style{%-30c{1.}}{cyan} %highlight{[%-5level] %msg%n%throwable}{INFO=black}"/>
+            <PatternLayout pattern="%d %threadId %-30c{1.} [%-5level] %msg p:[%X{resource.name}:%X{resource.namespace}:%X{resource.resourceVersion}] e:[%X{eventsource.name}:%X{eventsource.event.action}:%X{eventsource.event.resource.name}:%X{eventsource.event.resource.namespace}:%X{eventsource.event.resource.resourceVersion}] %n%throwable"/>
         </Console>
     </Appenders>
     <Loggers>
