@@ -37,11 +37,9 @@ public class MDCUtils {
 
   private static final String EVENT_RESOURCE_NAME = "eventsource.event.resource.name";
   private static final String EVENT_RESOURCE_UID = "eventsource.event.resource.uid";
-  private static final String EVENT_RESOURCE_NAMESPACE =
-      "eventsource.event.resource.namespace";
+  private static final String EVENT_RESOURCE_NAMESPACE = "eventsource.event.resource.namespace";
   private static final String EVENT_RESOURCE_KIND = "eventsource.event.resource.kind";
-  private static final String EVENT_RESOURCE_VERSION =
-      "eventsource.event.resource.resourceVersion";
+  private static final String EVENT_RESOURCE_VERSION = "eventsource.event.resource.resourceVersion";
   private static final String EVENT_ACTION = "eventsource.event.action";
   private static final String EVENT_SOURCE_NAME = "eventsource.name";
 
@@ -70,11 +68,13 @@ public class MDCUtils {
     }
   }
 
-  public static void withMDCForEvent(HasMetadata resource, Runnable runnable, String nameSourceName) {
-     withMDCForEvent(resource,null,runnable,nameSourceName);
+  public static void withMDCForEvent(
+      HasMetadata resource, Runnable runnable, String nameSourceName) {
+    withMDCForEvent(resource, null, runnable, nameSourceName);
   }
 
-  public static void withMDCForEvent(HasMetadata resource, ResourceAction action, Runnable runnable, String nameSourceName) {
+  public static void withMDCForEvent(
+      HasMetadata resource, ResourceAction action, Runnable runnable, String nameSourceName) {
     try {
       MDCUtils.addInformerEventInfo(resource, action, nameSourceName);
       runnable.run();
@@ -83,7 +83,7 @@ public class MDCUtils {
     }
   }
 
-  public static void withMDCForResourceID(ResourceID resourceID,Runnable runnable) {
+  public static void withMDCForResourceID(ResourceID resourceID, Runnable runnable) {
     try {
       MDCUtils.addResourceIDInfo(resourceID);
       runnable.run();
@@ -92,7 +92,7 @@ public class MDCUtils {
     }
   }
 
-  public static void withMDCForPrimary(HasMetadata primary,Runnable runnable) {
+  public static void withMDCForPrimary(HasMetadata primary, Runnable runnable) {
     try {
       MDCUtils.addResourceInfo(primary);
       runnable.run();
@@ -100,7 +100,6 @@ public class MDCUtils {
       MDCUtils.removeResourceInfo();
     }
   }
-
 
   public static void addResourceIDInfo(ResourceID resourceID) {
     if (enabled) {
