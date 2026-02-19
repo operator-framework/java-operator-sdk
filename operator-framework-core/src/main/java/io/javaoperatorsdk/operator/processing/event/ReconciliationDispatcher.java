@@ -236,7 +236,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             exceptionLevel = Level.DEBUG;
             failedMessage = " due to conflict";
             log.info(
-                "ErrorStatusUpdateControl patchStatus failed due to a conflict, but the next"
+                "ErrorStatusUpdateControl.patchStatus failed due to a conflict, but the next"
                     + " reconciliation is imminent");
           } else {
             exceptionLevel = Level.WARN;
