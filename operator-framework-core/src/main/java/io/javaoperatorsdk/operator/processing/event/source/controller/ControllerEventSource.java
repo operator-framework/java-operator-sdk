@@ -87,7 +87,7 @@ public class ControllerEventSource<T extends HasMetadata>
       ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
-        log.debug("Event received for with action: {}", action);
+        log.debug("Event received with action: {}", action);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
