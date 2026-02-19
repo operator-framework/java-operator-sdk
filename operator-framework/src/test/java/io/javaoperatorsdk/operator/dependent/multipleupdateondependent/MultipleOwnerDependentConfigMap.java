@@ -23,14 +23,14 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.BooleanWithUndefined;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 @KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
 public class MultipleOwnerDependentConfigMap
-    extends CRUDKubernetesDependentResource<ConfigMap, MultipleOwnerDependentCustomResource> {
+    extends CRUDNoGCKubernetesDependentResource<ConfigMap, MultipleOwnerDependentCustomResource> {
 
   public static final String RESOURCE_NAME = "test1";
 
@@ -63,5 +63,20 @@ public class MultipleOwnerDependentConfigMap
         (InformerEventSource<ConfigMap, MultipleOwnerDependentCustomResource>)
             context.eventSourceRetriever().getEventSourceFor(ConfigMap.class);
     return ies.get(new ResourceID(RESOURCE_NAME, primary.getMetadata().getNamespace()));
+  }
+
+  // todo custom owner labels
+
+  @Override
+  protected void handleDelete(
+      MultipleOwnerDependentCustomResource primary,
+      ConfigMap secondary,
+      Context<MultipleOwnerDependentCustomResource> context) {
+    if (primary.getMetadata().getOwnerReferences().size() > 1) {
+      secondary.getData().remove(primary.getSpec().getValue());
+      context.getClient().resource(secondary).serverSideApply();
+    } else {
+      super.handleDelete(primary, secondary, context);
+    }
   }
 }
