@@ -42,14 +42,14 @@ public class ControllerEventSource<T extends HasMetadata>
     implements ResourceEventHandler<T> {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerEventSource.class);
-  public static final String CONTROLLER_RESOURCE_EVENT_SOURCE = "ControllerResourceEventSource";
+  public static final String NAME = "ControllerResourceEventSource";
 
   private final Controller<T> controller;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerEventSource(Controller<T> controller) {
     super(
-        CONTROLLER_RESOURCE_EVENT_SOURCE,
+            NAME,
         controller.getCRClient(),
         controller.getConfiguration(),
         controller.getConfiguration().getInformerConfig().isComparableResourceVersions());
@@ -186,6 +186,6 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public String name() {
-    return CONTROLLER_RESOURCE_EVENT_SOURCE;
+    return NAME;
   }
 }
