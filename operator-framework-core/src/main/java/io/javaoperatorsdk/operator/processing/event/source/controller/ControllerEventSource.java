@@ -49,7 +49,7 @@ public class ControllerEventSource<T extends HasMetadata>
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerEventSource(Controller<T> controller) {
     super(
-            NAME,
+        NAME,
         controller.getCRClient(),
         controller.getConfiguration(),
         controller.getConfiguration().getInformerConfig().isComparableResourceVersions());
