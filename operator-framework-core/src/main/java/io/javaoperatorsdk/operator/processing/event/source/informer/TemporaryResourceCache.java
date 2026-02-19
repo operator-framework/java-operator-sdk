@@ -127,10 +127,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
 
     var resourceId = ResourceID.fromResource(resource);
     if (log.isDebugEnabled()) {
-      log.debug(
-          "Processing event for resource id: {} version: {} ",
-          resourceId,
-          resource.getMetadata().getResourceVersion());
+      log.debug("Processing event for resource");
     }
     if (!unknownState) {
       log.debug("Setting latest resource version to: {}", latestResourceVersion);
@@ -142,8 +139,7 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       int comp = ReconcilerUtilsInternal.compareResourceVersions(resource, cached);
       if (comp >= 0 || unknownState) {
         log.debug(
-            "Removing resource from temp cache. id: {} comparison: {} unknown state: {}",
-            resourceId,
+            "Removing resource from temp cache. comparison: {} unknown state: {}",
             comp,
             unknownState);
         cache.remove(resourceId);

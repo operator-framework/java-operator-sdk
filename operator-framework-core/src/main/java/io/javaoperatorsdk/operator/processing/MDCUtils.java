@@ -35,37 +35,72 @@ public class MDCUtils {
   private static final boolean enabled =
       Utils.getBooleanFromSystemPropsOrDefault(Utils.USE_MDC_ENV_KEY, true);
 
-  private static final String INFORMER_EVENT_RESOURCE_NAME = "informer.event.resource.name";
-  private static final String INFORMER_EVENT_RESOURCE_NAMESPACE =
-      "informer.event.resource.namespace";
-  private static final String INFORMER_EVENT_RESOURCE_KIND = "informer.event.resource.kind";
-  private static final String INFORMER_EVENT_RESOURCE_VERSION =
-      "informer.event.resource.resourceVersion";
-  private static final String INFORMER_EVENT_ACTION = "informer.event.action";
-  private static final String INFORMER_NAME = "informer.name";
+  private static final String EVENT_RESOURCE_NAME = "eventsource.event.resource.name";
+  private static final String EVENT_RESOURCE_UID = "eventsource.event.resource.uid";
+  private static final String EVENT_RESOURCE_NAMESPACE =
+      "eventsource.event.resource.namespace";
+  private static final String EVENT_RESOURCE_KIND = "eventsource.event.resource.kind";
+  private static final String EVENT_RESOURCE_VERSION =
+      "eventsource.event.resource.resourceVersion";
+  private static final String EVENT_ACTION = "eventsource.event.action";
+  private static final String EVENT_SOURCE_NAME = "eventsource.name";
 
   public static void addInformerEventInfo(
       HasMetadata resource, ResourceAction action, String eventSourceName) {
     if (enabled) {
-      MDC.put(INFORMER_EVENT_RESOURCE_NAME, resource.getMetadata().getName());
-      MDC.put(INFORMER_EVENT_RESOURCE_NAMESPACE, resource.getMetadata().getNamespace());
-      MDC.put(INFORMER_EVENT_RESOURCE_KIND, HasMetadata.getKind(resource.getClass()));
-      MDC.put(INFORMER_EVENT_RESOURCE_VERSION, resource.getMetadata().getNamespace());
-      MDC.put(INFORMER_EVENT_ACTION, action.name());
-      MDC.put(INFORMER_NAME, eventSourceName);
+      MDC.put(EVENT_RESOURCE_NAME, resource.getMetadata().getName());
+      MDC.put(EVENT_RESOURCE_NAMESPACE, resource.getMetadata().getNamespace());
+      MDC.put(EVENT_RESOURCE_KIND, HasMetadata.getKind(resource.getClass()));
+      MDC.put(EVENT_RESOURCE_VERSION, resource.getMetadata().getResourceVersion());
+      MDC.put(EVENT_RESOURCE_UID, resource.getMetadata().getUid());
+      MDC.put(EVENT_ACTION, action == null ? null : action.name());
+      MDC.put(EVENT_SOURCE_NAME, eventSourceName);
     }
   }
 
   public static void removeInformerEventInfo() {
     if (enabled) {
-      MDC.remove(INFORMER_EVENT_RESOURCE_NAME);
-      MDC.remove(INFORMER_EVENT_RESOURCE_NAMESPACE);
-      MDC.remove(INFORMER_EVENT_RESOURCE_KIND);
-      MDC.remove(INFORMER_EVENT_RESOURCE_VERSION);
-      MDC.remove(INFORMER_EVENT_ACTION);
-      MDC.remove(INFORMER_NAME);
+      MDC.remove(EVENT_RESOURCE_NAME);
+      MDC.remove(EVENT_RESOURCE_NAMESPACE);
+      MDC.remove(EVENT_RESOURCE_KIND);
+      MDC.remove(EVENT_RESOURCE_VERSION);
+      MDC.remove(EVENT_RESOURCE_UID);
+      MDC.remove(EVENT_ACTION);
+      MDC.remove(EVENT_SOURCE_NAME);
     }
   }
+
+  public static void withMDCForEvent(HasMetadata resource, Runnable runnable, String nameSourceName) {
+     withMDCForEvent(resource,null,runnable,nameSourceName);
+  }
+
+  public static void withMDCForEvent(HasMetadata resource, ResourceAction action, Runnable runnable, String nameSourceName) {
+    try {
+      MDCUtils.addInformerEventInfo(resource, action, nameSourceName);
+      runnable.run();
+    } finally {
+      MDCUtils.removeInformerEventInfo();
+    }
+  }
+
+  public static void withMDCForResourceID(ResourceID resourceID,Runnable runnable) {
+    try {
+      MDCUtils.addResourceIDInfo(resourceID);
+      runnable.run();
+    } finally {
+      MDCUtils.removeResourceIDInfo();
+    }
+  }
+
+  public static void withMDCForPrimary(HasMetadata primary,Runnable runnable) {
+    try {
+      MDCUtils.addResourceInfo(primary);
+      runnable.run();
+    } finally {
+      MDCUtils.removeResourceInfo();
+    }
+  }
+
 
   public static void addResourceIDInfo(ResourceID resourceID) {
     if (enabled) {

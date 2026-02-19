@@ -35,7 +35,6 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInfor
 import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
 public class ControllerEventSource<T extends HasMetadata>
@@ -43,14 +42,14 @@ public class ControllerEventSource<T extends HasMetadata>
     implements ResourceEventHandler<T> {
 
   private static final Logger log = LoggerFactory.getLogger(ControllerEventSource.class);
-  public static final String NAME = "ControllerResourceEventSource";
+  public static final String ControllerResourceEventSource = "ControllerResourceEventSource";
 
   private final Controller<T> controller;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public ControllerEventSource(Controller<T> controller) {
     super(
-        NAME,
+            ControllerResourceEventSource,
         controller.getCRClient(),
         controller.getConfiguration(),
         controller.getConfiguration().getInformerConfig().isComparableResourceVersions());
@@ -88,12 +87,7 @@ public class ControllerEventSource<T extends HasMetadata>
       ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
-        log.debug(
-            "Event received for resource: {} version: {} uuid: {} action: {}",
-            ResourceID.fromResource(resource),
-            getVersion(resource),
-            resource.getMetadata().getUid(),
-            action);
+        log.debug("Event received for with action: {}", action);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
@@ -112,7 +106,7 @@ public class ControllerEventSource<T extends HasMetadata>
               .handleEvent(new ResourceEvent(action, ResourceID.fromResource(resource), resource));
         }
       } else {
-        log.debug("Skipping event handling resource {}", ResourceID.fromResource(resource));
+        log.debug("Skipping event handling for resource");
       }
     } finally {
       MDCUtils.removeResourceInfo();
@@ -156,11 +150,7 @@ public class ControllerEventSource<T extends HasMetadata>
     if (handling == EventHandling.NEW) {
       handleEvent(action, newCustomResource, oldCustomResource, null);
     } else if (log.isDebugEnabled()) {
-      log.debug(
-          "{} event propagation for action: {} resource id: {} ",
-          handling,
-          action,
-          ResourceID.fromResource(newCustomResource));
+      log.debug("{} event propagation for action: {}", handling, action);
     }
   }
 
@@ -196,6 +186,6 @@ public class ControllerEventSource<T extends HasMetadata>
 
   @Override
   public String name() {
-    return NAME;
+    return ControllerResourceEventSource;
   }
 }
