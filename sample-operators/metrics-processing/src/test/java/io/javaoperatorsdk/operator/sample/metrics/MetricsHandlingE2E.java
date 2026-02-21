@@ -43,10 +43,15 @@ import static org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MetricsHandlingE2E {
+
   static final Logger log = LoggerFactory.getLogger(MetricsHandlingE2E.class);
   static final String OBSERVABILITY_NAMESPACE = "observability";
   static final int PROMETHEUS_PORT = 9090;
+  static final int GRAFANA_PORT = 3000;
+  static final int OTEL_COLLECTOR_PORT = 4318;
   private LocalPortForward prometheusPortForward;
+  private LocalPortForward grafanaPortForward;
+  private LocalPortForward otelCollectorPortForward;
 
   MetricsHandlingE2E() throws FileNotFoundException {}
 
@@ -63,6 +68,8 @@ class MetricsHandlingE2E {
           ? LocallyRunOperatorExtension.builder()
               .withReconciler(new MetricsHandlingReconciler1())
               .withReconciler(new MetricsHandlingReconciler2())
+              .withConfigurationService(
+                  c -> c.withMetrics(MetricsHandlingSampleOperator.initOTLPMetrics(true)))
               .build()
           : ClusterDeployedOperatorExtension.builder()
               .withOperatorDeployment(
@@ -74,120 +81,30 @@ class MetricsHandlingE2E {
 
   @BeforeAll
   void setupObservability() {
-      log.info("Setting up observability stack...");
-      try {
-//        // Find the observability script relative to project root
-//        File projectRoot = new File(".").getCanonicalFile();
-//        while (projectRoot != null && !new File(projectRoot, "observability").exists()) {
-//          projectRoot = projectRoot.getParentFile();
-//        }
-//
-//        if (projectRoot == null) {
-//          throw new IllegalStateException("Could not find observability directory");
-//        }
-//
-//        File scriptFile = new File(projectRoot, "observability/install-observability.sh");
-//        if (!scriptFile.exists()) {
-//          throw new IllegalStateException("Observability script not found at: " + scriptFile.getAbsolutePath());
-//        }
-//
-//        log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
-//
-//        // Run the install-observability.sh script
-//        ProcessBuilder processBuilder =
-//                new ProcessBuilder("/bin/sh", scriptFile.getAbsolutePath());
-//        processBuilder.redirectErrorStream(true);
-//
-//        processBuilder.environment().putAll(System.getenv());
-//        Process process = processBuilder.start();
-//        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//        String line;
-//        while ((line = reader.readLine()) != null) {
-//          log.info("Observability setup: {}", line);
-//        }
-//
-//        int exitCode = process.waitFor();
-//        if (exitCode != 0) {
-//          log.warn("Observability setup script returned exit code: {}", exitCode);
-//        }
-
-        // Wait for Prometheus to be ready
-        await()
-                .atMost(Duration.ofMinutes(3))
-                .pollInterval(Duration.ofSeconds(5))
-                .untilAsserted(
-                        () -> {
-                          var prometheusPod =
-                                  operator
-                                          .getKubernetesClient()
-                                          .pods()
-                                          .inNamespace(OBSERVABILITY_NAMESPACE)
-                                          .withLabel("app.kubernetes.io/name", "prometheus")
-                                          .list()
-                                          .getItems()
-                                          .stream()
-                                          .findFirst();
-                          assertThat(prometheusPod).isPresent();
-                          assertThat(prometheusPod.get().getStatus().getPhase()).isEqualTo("Running");
-                        });
-
-        log.info("Observability stack is ready");
-
-        // Setup port forwarding to Prometheus
-        setupPrometheusPortForward();
-
-      } catch (Exception e) {
-        log.error("Failed to setup observability stack", e);
-        throw new RuntimeException(e);
-      }
-
-
-  }
-  private void setupPrometheusPortForward() {
-    try {
-      Pod prometheusPod =
-          operator
-              .getKubernetesClient()
-              .pods()
-              .inNamespace(OBSERVABILITY_NAMESPACE)
-              .withLabel("app.kubernetes.io/name", "prometheus")
-              .list()
-              .getItems()
-              .stream()
-              .findFirst()
-              .orElseThrow(() -> new IllegalStateException("Prometheus pod not found"));
-
-      log.info(
-          "Setting up port forward to Prometheus pod: {}", prometheusPod.getMetadata().getName());
-      prometheusPortForward =
-          operator
-              .getKubernetesClient()
-              .pods()
-              .inNamespace(OBSERVABILITY_NAMESPACE)
-              .withName(prometheusPod.getMetadata().getName())
-              .portForward(PROMETHEUS_PORT);
-
-      log.info(
-          "Prometheus port forward established on local port: {}",
-          prometheusPortForward.getLocalPort());
-
-      // Wait a bit for port forward to be ready
-      Thread.sleep(2000);
-
-    } catch (Exception e) {
-      log.error("Failed to setup Prometheus port forward", e);
-      throw new RuntimeException(e);
+    log.info("Setting up observability stack...");
+    installObservabilityServices();
+    // Setup port forwarding to Prometheus
+    setupPrometheusPortForward();
+    if (isLocal()) {
+      setupPortForwardForOtelCollector();
+      setupPortForwardForGrafana();
     }
   }
 
   @AfterAll
   void cleanup() {
-    if (prometheusPortForward != null) {
+    closePortForward(prometheusPortForward, "Prometheus");
+    closePortForward(grafanaPortForward, "Grafana");
+    closePortForward(otelCollectorPortForward, "OTel Collector");
+  }
+
+  private void closePortForward(LocalPortForward portForward, String name) {
+    if (portForward != null) {
       try {
-        prometheusPortForward.close();
-        log.info("Closed Prometheus port forward");
+        portForward.close();
+        log.info("Closed {} port forward", name);
       } catch (IOException e) {
-        log.warn("Failed to close Prometheus port forward", e);
+        log.warn("Failed to close {} port forward", name, e);
       }
     }
   }
@@ -213,25 +130,7 @@ class MetricsHandlingE2E {
     // Wait for reconciliations to happen multiple times
     log.info("Waiting for reconciliations to occur...");
     Thread.sleep(10000);
-
-    if (!isLocal()) {
-      // Query Prometheus to verify metrics
-      verifyPrometheusMetrics();
-    } else {
-      log.info("Skipping Prometheus verification for local test");
-      // For local tests, just verify that resources exist
-      await()
-          .atMost(Duration.ofSeconds(30))
-          .untilAsserted(
-              () -> {
-                var resource = operator.get(MetricsHandlingCustomResource1.class, "test-success-1");
-                assertThat(resource).isNotNull();
-                assertThat(resource.getStatus()).isNotNull();
-                assertThat(resource.getStatus().getObservedNumber()).isEqualTo(42);
-              });
-    }
-
-    log.info("Metrics propagation test completed");
+    verifyPrometheusMetrics();
   }
 
   private void verifyPrometheusMetrics() throws Exception {
@@ -347,6 +246,114 @@ class MetricsHandlingE2E {
     resource.setSpec(spec);
 
     return resource;
+  }
+
+  private void installObservabilityServices() {
+    try {
+      // Find the observability script relative to project root
+      File projectRoot = new File(".").getCanonicalFile();
+      while (projectRoot != null && !new File(projectRoot, "observability").exists()) {
+        projectRoot = projectRoot.getParentFile();
+      }
+
+      if (projectRoot == null) {
+        throw new IllegalStateException("Could not find observability directory");
+      }
+
+      File scriptFile = new File(projectRoot, "observability/install-observability.sh");
+      if (!scriptFile.exists()) {
+        throw new IllegalStateException(
+            "Observability script not found at: " + scriptFile.getAbsolutePath());
+      }
+
+      log.info("Running observability setup script: {}", scriptFile.getAbsolutePath());
+
+      // Run the install-observability.sh script
+      ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", scriptFile.getAbsolutePath());
+      processBuilder.redirectErrorStream(true);
+
+      processBuilder.environment().putAll(System.getenv());
+      Process process = processBuilder.start();
+      BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+      String line;
+      while ((line = reader.readLine()) != null) {
+        log.info("Observability setup: {}", line);
+      }
+
+      int exitCode = process.waitFor();
+      if (exitCode != 0) {
+        log.warn("Observability setup script returned exit code: {}", exitCode);
+      }
+
+      // Wait for Prometheus to be ready
+      await()
+          .atMost(Duration.ofMinutes(3))
+          .pollInterval(Duration.ofSeconds(5))
+          .untilAsserted(
+              () -> {
+                var prometheusPod =
+                    operator
+                        .getKubernetesClient()
+                        .pods()
+                        .inNamespace(OBSERVABILITY_NAMESPACE)
+                        .withLabel("app.kubernetes.io/name", "prometheus")
+                        .list()
+                        .getItems()
+                        .stream()
+                        .findFirst();
+                assertThat(prometheusPod).isPresent();
+                assertThat(prometheusPod.get().getStatus().getPhase()).isEqualTo("Running");
+              });
+
+      log.info("Observability stack is ready");
+    } catch (Exception e) {
+      log.error("Failed to setup observability stack", e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void setupPortForwardForGrafana() {
+    grafanaPortForward = setupPortForward("grafana", GRAFANA_PORT);
+  }
+
+  private void setupPortForwardForOtelCollector() {
+    otelCollectorPortForward = setupPortForward("otel-collector-collector", OTEL_COLLECTOR_PORT);
+  }
+
+  private void setupPrometheusPortForward() {
+    prometheusPortForward = setupPortForward("prometheus", PROMETHEUS_PORT);
+  }
+
+  private LocalPortForward setupPortForward(String appName, int port) {
+    try {
+      Pod pod =
+          operator
+              .getKubernetesClient()
+              .pods()
+              .inNamespace(OBSERVABILITY_NAMESPACE)
+              .withLabel("app.kubernetes.io/name", appName)
+              .list()
+              .getItems()
+              .stream()
+              .findFirst()
+              .orElseThrow(() -> new IllegalStateException(appName + " pod not found"));
+
+      log.info("Setting up port forward to {} pod: {}", appName, pod.getMetadata().getName());
+      var portForward =
+          operator
+              .getKubernetesClient()
+              .pods()
+              .inNamespace(OBSERVABILITY_NAMESPACE)
+              .withName(pod.getMetadata().getName())
+              .portForward(port);
+
+      log.info(
+          "{} port forward established on local port: {}", appName, portForward.getLocalPort());
+      return portForward;
+    } catch (Exception e) {
+      log.error("Failed to setup {} port forward", appName, e);
+      throw new RuntimeException(e);
+    }
   }
 
   AbstractOperatorExtension operator() {

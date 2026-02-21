@@ -134,12 +134,11 @@ public class MicrometerMetricsV2 implements Metrics {
     return NUMBER_OF_RESOURCE_GAUGE + name;
   }
 
+  // todo make the implementation more extensible, like easily add tags for namespace into metrics
   // todo does it make sense to have both controller and reconciler execution counters?
   @Override
   public <T> T timeControllerExecution(ControllerExecution<T> execution) {
     final var name = execution.controllerName();
-    final var tags = new ArrayList<Tag>(1);
-    addControllerNameTag(name, tags);
 
     final var timer = executionTimers.get(name);
     try {

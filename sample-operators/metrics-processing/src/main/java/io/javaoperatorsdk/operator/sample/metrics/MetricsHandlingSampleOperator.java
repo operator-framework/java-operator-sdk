@@ -53,11 +53,11 @@ public class MetricsHandlingSampleOperator {
    * Based on env variables a different flavor of Reconciler is used, showcasing how the same logic
    * can be implemented using the low level and higher level APIs.
    */
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
     log.info("Metrics Handling Sample Operator starting!");
 
     // Load configuration from config.yaml
-    Metrics metrics = initOTLPMetrics();
+    Metrics metrics = initOTLPMetrics(false);
     Operator operator =
         new Operator(o -> o.withStopOnInformerErrorDuringStartup(false).withMetrics(metrics));
 
@@ -67,11 +67,14 @@ public class MetricsHandlingSampleOperator {
     operator.start();
   }
 
-  private static @NonNull Metrics initOTLPMetrics() {
+  public static @NonNull Metrics initOTLPMetrics(boolean localRun) {
     CompositeMeterRegistry compositeRegistry = new CompositeMeterRegistry();
 
     // Add OTLP registry
     Map<String, String> configProperties = loadConfigFromYaml();
+    if (localRun) {
+      configProperties.put("otlp.url", "http://localhost:4318/v1/metrics");
+    }
     var otlpConfig =
         new OtlpConfig() {
           @Override
@@ -94,8 +97,7 @@ public class MetricsHandlingSampleOperator {
     MeterRegistry otlpRegistry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
     compositeRegistry.add(otlpRegistry);
 
-    //    String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
-    String enableConsoleLogging = "true";
+    String enableConsoleLogging = System.getenv("METRICS_CONSOLE_LOGGING");
     if ("true".equalsIgnoreCase(enableConsoleLogging)) {
       log.info("Console metrics logging enabled");
       LoggingMeterRegistry loggingRegistry =
