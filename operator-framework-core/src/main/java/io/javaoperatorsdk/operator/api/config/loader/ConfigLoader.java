@@ -8,7 +8,18 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 
 public class ConfigLoader {
 
+  private ConfigProvider configProvider;
+
+  public ConfigLoader() {
+    this(new DefatulConfigProvider());
+  }
+
+  public ConfigLoader(ConfigProvider configProvider) {
+    this.configProvider = configProvider;
+  }
+
   Consumer<ConfigurationServiceOverrider> operatorConfigs() {
+
     return null;
   }
 
