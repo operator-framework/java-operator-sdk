@@ -18,13 +18,12 @@ public class ConfigLoader {
     this.configProvider = configProvider;
   }
 
-  Consumer<ConfigurationServiceOverrider> operatorConfigs() {
-
+  public Consumer<ConfigurationServiceOverrider> applyConfigs() {
     return null;
   }
 
-  <R extends HasMetadata> Consumer<ControllerConfigurationOverrider<R>> controllerConfigs(
-      String controllerName) {
+  public <R extends HasMetadata>
+      Consumer<ControllerConfigurationOverrider<R>> applyControllerConfigs(String controllerName) {
     return null;
   }
 }
