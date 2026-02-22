@@ -58,6 +58,7 @@ public abstract class AbstractOperatorExtension
   protected Duration infrastructureTimeout;
   protected final boolean oneNamespacePerClass;
   protected final boolean preserveNamespaceOnError;
+  protected final boolean skipNamespaceDeletion;
   protected final boolean waitForNamespaceDeletion;
   protected final int namespaceDeleteTimeout = DEFAULT_NAMESPACE_DELETE_TIMEOUT;
   protected final Function<ExtensionContext, String> namespaceNameSupplier;
@@ -70,6 +71,7 @@ public abstract class AbstractOperatorExtension
       Duration infrastructureTimeout,
       boolean oneNamespacePerClass,
       boolean preserveNamespaceOnError,
+      boolean skipNamespaceDeletion,
       boolean waitForNamespaceDeletion,
       KubernetesClient kubernetesClient,
       KubernetesClient infrastructureKubernetesClient,
@@ -85,6 +87,7 @@ public abstract class AbstractOperatorExtension
     this.infrastructureTimeout = infrastructureTimeout;
     this.oneNamespacePerClass = oneNamespacePerClass;
     this.preserveNamespaceOnError = preserveNamespaceOnError;
+    this.skipNamespaceDeletion = skipNamespaceDeletion;
     this.waitForNamespaceDeletion = waitForNamespaceDeletion;
     this.namespaceNameSupplier = namespaceNameSupplier;
     this.perClassNamespaceNameSupplier = perClassNamespaceNameSupplier;
@@ -201,6 +204,9 @@ public abstract class AbstractOperatorExtension
     if (namespace != null) {
       if (preserveNamespaceOnError && context.getExecutionException().isPresent()) {
         LOGGER.info("Preserving namespace {}", namespace);
+      } else if (skipNamespaceDeletion) {
+        LOGGER.info("Skipping namespace deletion for {}", namespace);
+        deleteOperator();
       } else {
         infrastructureKubernetesClient.resourceList(infrastructure).delete();
         deleteOperator();
@@ -229,6 +235,7 @@ public abstract class AbstractOperatorExtension
     protected final List<HasMetadata> infrastructure;
     protected Duration infrastructureTimeout;
     protected boolean preserveNamespaceOnError;
+    protected boolean skipNamespaceDeletion;
     protected boolean waitForNamespaceDeletion;
     protected boolean oneNamespacePerClass;
     protected int namespaceDeleteTimeout;
@@ -245,6 +252,9 @@ public abstract class AbstractOperatorExtension
       this.preserveNamespaceOnError =
           Utils.getSystemPropertyOrEnvVar("josdk.it.preserveNamespaceOnError", false);
 
+      this.skipNamespaceDeletion =
+          Utils.getSystemPropertyOrEnvVar("josdk.it.skipNamespaceDeletion", false);
+
       this.waitForNamespaceDeletion =
           Utils.getSystemPropertyOrEnvVar("josdk.it.waitForNamespaceDeletion", true);
 
@@ -258,6 +268,11 @@ public abstract class AbstractOperatorExtension
 
     public T preserveNamespaceOnError(boolean value) {
       this.preserveNamespaceOnError = value;
+      return (T) this;
+    }
+
+    public T skipNamespaceDeletion(boolean value) {
+      this.skipNamespaceDeletion = value;
       return (T) this;
     }
 
