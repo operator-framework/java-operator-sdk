@@ -4,5 +4,5 @@ import java.util.Optional;
 
 public interface ConfigProvider {
 
-  <T> Optional<T> getConfig(String key, Class<T> type);
+  <T> Optional<T> getValue(String key, Class<T> type);
 }
