@@ -38,8 +38,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 @ControllerConfiguration(name = TomcatReconciler.TOMCAT_CONTROLLER_NAME)
 public class TomcatReconciler implements Reconciler<Tomcat> {
 
-    public static final String TOMCAT_CONTROLLER_NAME = "tomcat";
-    private final Logger log = LoggerFactory.getLogger(getClass());
+  public static final String TOMCAT_CONTROLLER_NAME = "tomcat";
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
   @Override
   public UpdateControl<Tomcat> reconcile(Tomcat tomcat, Context<Tomcat> context) {
