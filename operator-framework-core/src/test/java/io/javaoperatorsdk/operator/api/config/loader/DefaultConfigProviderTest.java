@@ -26,11 +26,47 @@ class DefaultConfigProviderTest {
 
   private final DefaultConfigProvider provider = new DefaultConfigProvider();
 
-  // -- system property tests --------------------------------------------------
-
   @Test
   void returnsEmptyWhenNeitherEnvNorPropertyIsSet() {
     assertThat(provider.getValue("josdk.no.such.key", String.class)).isEmpty();
+  }
+
+  // -- env variable tests -----------------------------------------------------
+
+  @Test
+  void readsStringFromEnvVariable() {
+    var envProvider = new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_STRING") ? "from-env" : null);
+    assertThat(envProvider.getValue("josdk.test.string", String.class)).hasValue("from-env");
+  }
+
+  @Test
+  void envVariableKeyUsesUppercaseWithUnderscores() {
+    // dots and hyphens both become underscores, key is uppercased
+    var envProvider = new DefaultConfigProvider(k -> k.equals("JOSDK_CACHE_SYNC_TIMEOUT") ? "PT10S" : null);
+    assertThat(envProvider.getValue("josdk.cache-sync.timeout", Duration.class))
+        .hasValue(Duration.ofSeconds(10));
+  }
+
+  @Test
+  void envVariableTakesPrecedenceOverSystemProperty() {
+    System.setProperty("josdk.test.precedence", "from-sysprop");
+    try {
+      var envProvider = new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_PRECEDENCE") ? "from-env" : null);
+      assertThat(envProvider.getValue("josdk.test.precedence", String.class)).hasValue("from-env");
+    } finally {
+      System.clearProperty("josdk.test.precedence");
+    }
+  }
+
+  @Test
+  void fallsBackToSystemPropertyWhenEnvVariableAbsent() {
+    System.setProperty("josdk.test.fallback", "from-sysprop");
+    try {
+      var envProvider = new DefaultConfigProvider(k -> null);
+      assertThat(envProvider.getValue("josdk.test.fallback", String.class)).hasValue("from-sysprop");
+    } finally {
+      System.clearProperty("josdk.test.fallback");
+    }
   }
 
   @Test

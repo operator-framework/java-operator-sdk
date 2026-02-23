@@ -27,17 +27,16 @@ public class ConfigLoader {
 
   public static final ConfigLoader DEFAULT = new ConfigLoader();
 
-  /**
-   * Key prefix for operator-level (ConfigurationService) properties, e.g. {@code
-   * josdk.concurrent.reconciliation.threads}.
-   */
-  public static final String OPERATOR_KEY_PREFIX = "josdk.";
+  public static final String DEFAULT_OPERATOR_KEY_PREFIX = "josdk.";
+  public static final String DEFAULT_CONTROLLER_KEY_PREFIX = "josdk.controller.";
 
   /**
    * Key prefix for controller-level properties. The controller name is inserted between this prefix
    * and the property name, e.g. {@code josdk.controller.my-controller.finalizer}.
    */
-  public static final String CONTROLLER_KEY_PREFIX = "josdk.controller.";
+  private final String controllerKeyPrefix;
+
+  private final String operatorKeyPrefix;
 
   // ---------------------------------------------------------------------------
   // Operator-level (ConfigurationServiceOverrider) bindings
@@ -48,43 +47,43 @@ public class ConfigLoader {
   private static final List<ConfigBinding<ConfigurationServiceOverrider, ?>> OPERATOR_BINDINGS =
       List.of(
           new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "check.crd.and.validate.local.model",
+              "check-crd",
               Boolean.class,
               ConfigurationServiceOverrider::checkingCRDAndValidateLocalModel),
           new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "concurrent.reconciliation.threads",
-              Integer.class,
-              ConfigurationServiceOverrider::withConcurrentReconciliationThreads),
-          new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "concurrent.workflow.executor.threads",
-              Integer.class,
-              ConfigurationServiceOverrider::withConcurrentWorkflowExecutorThreads),
-          new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "close.client.on.stop",
-              Boolean.class,
-              ConfigurationServiceOverrider::withCloseClientOnStop),
-          new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "stop.on.informer.error.during.startup",
-              Boolean.class,
-              ConfigurationServiceOverrider::withStopOnInformerErrorDuringStartup),
-          new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "cache.sync.timeout",
-              Duration.class,
-              ConfigurationServiceOverrider::withCacheSyncTimeout),
-          new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "reconciliation.termination.timeout",
+              "reconciliation.termination-timeout",
               Duration.class,
               ConfigurationServiceOverrider::withReconciliationTerminationTimeout),
           new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "ssa.based.create.update.match.for.dependent.resources",
+              "reconciliation.concurrent-threads",
+              Integer.class,
+              ConfigurationServiceOverrider::withConcurrentReconciliationThreads),
+          new ConfigBinding<>(
+              "workflow.executor-threads",
+              Integer.class,
+              ConfigurationServiceOverrider::withConcurrentWorkflowExecutorThreads),
+          new ConfigBinding<>(
+              "close-client-on-stop",
+              Boolean.class,
+              ConfigurationServiceOverrider::withCloseClientOnStop),
+          new ConfigBinding<>(
+              "informer.stop-on-error-during-startup",
+              Boolean.class,
+              ConfigurationServiceOverrider::withStopOnInformerErrorDuringStartup),
+          new ConfigBinding<>(
+              "informer.cache-sync-timeout",
+              Duration.class,
+              ConfigurationServiceOverrider::withCacheSyncTimeout),
+          new ConfigBinding<>(
+              "dependent-resources.ssa-based-create-update-match",
               Boolean.class,
               ConfigurationServiceOverrider::withSSABasedCreateUpdateMatchForDependentResources),
           new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "use.ssa.to.patch.primary.resource",
+              "use-ssa-to-patch-primary-resource",
               Boolean.class,
               ConfigurationServiceOverrider::withUseSSAToPatchPrimaryResource),
           new ConfigBinding<>(
-              OPERATOR_KEY_PREFIX + "clone.secondary.resources.when.getting.from.cache",
+              "clone-secondary-resources-when-getting-from-cache",
               Boolean.class,
               ConfigurationServiceOverrider::withCloneSecondaryResourcesWhenGettingFromCache));
 
@@ -99,47 +98,54 @@ public class ConfigLoader {
               new ConfigBinding<>(
                   "finalizer", String.class, ControllerConfigurationOverrider::withFinalizer),
               new ConfigBinding<>(
-                  "generation.aware",
+                  "generation-aware",
                   Boolean.class,
                   ControllerConfigurationOverrider::withGenerationAware),
               new ConfigBinding<>(
-                  "label.selector",
+                  "label-selector",
                   String.class,
                   ControllerConfigurationOverrider::withLabelSelector),
               new ConfigBinding<>(
-                  "reconciliation.max.interval",
+                  "max-reconciliation-interval",
                   Duration.class,
                   ControllerConfigurationOverrider::withReconciliationMaxInterval),
               new ConfigBinding<>(
-                  "field.manager",
+                  "field-manager",
                   String.class,
                   ControllerConfigurationOverrider::withFieldManager),
               new ConfigBinding<>(
-                  "trigger.reconciler.on.all.events",
+                  "trigger-reconciler-on-all-events",
                   Boolean.class,
                   ControllerConfigurationOverrider::withTriggerReconcilerOnAllEvents),
               new ConfigBinding<>(
-                  "informer.list.limit",
+                  "informer-list-limit",
                   Long.class,
                   ControllerConfigurationOverrider::withInformerListLimit));
 
   private final ConfigProvider configProvider;
 
   public ConfigLoader() {
-    this(new DefaultConfigProvider());
+    this(new DefaultConfigProvider(), DEFAULT_CONTROLLER_KEY_PREFIX, DEFAULT_OPERATOR_KEY_PREFIX);
   }
 
   public ConfigLoader(ConfigProvider configProvider) {
+    this(configProvider, DEFAULT_CONTROLLER_KEY_PREFIX, DEFAULT_OPERATOR_KEY_PREFIX);
+  }
+
+  public ConfigLoader(
+      ConfigProvider configProvider, String controllerKeyPrefix, String operatorKeyPrefix) {
     this.configProvider = configProvider;
+    this.controllerKeyPrefix = controllerKeyPrefix;
+    this.operatorKeyPrefix = operatorKeyPrefix;
   }
 
   /**
    * Returns a {@link Consumer} that applies every operator-level property found in the {@link
    * ConfigProvider} to the given {@link ConfigurationServiceOverrider}. Returns {@code null} when
-   * no binding has a matching value, preserving the previous behaviour.
+   * no binding has a matching value, preserving the previous behavior.
    */
   public Consumer<ConfigurationServiceOverrider> applyConfigs() {
-    return buildConsumer(OPERATOR_BINDINGS, null);
+    return buildConsumer(OPERATOR_BINDINGS, operatorKeyPrefix);
   }
 
   /**
@@ -151,7 +157,7 @@ public class ConfigLoader {
   @SuppressWarnings("unchecked")
   public <R extends HasMetadata>
       Consumer<ControllerConfigurationOverrider<R>> applyControllerConfigs(String controllerName) {
-    String prefix = CONTROLLER_KEY_PREFIX + controllerName + ".";
+    String prefix = controllerKeyPrefix + controllerName + ".";
     // Cast is safe: the setter BiConsumer<ControllerConfigurationOverrider<?>, T> is covariant in
     // its first parameter for our usage – we only ever call it with
     // ControllerConfigurationOverrider<R>.

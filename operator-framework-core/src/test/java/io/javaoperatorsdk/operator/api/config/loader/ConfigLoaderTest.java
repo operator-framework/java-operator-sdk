@@ -52,7 +52,7 @@ class ConfigLoaderTest {
   @Test
   void applyConfigsAppliesConcurrentReconciliationThreads() {
     var loader =
-        new ConfigLoader(mapProvider(Map.of("josdk.concurrent.reconciliation.threads", 7)));
+        new ConfigLoader(mapProvider(Map.of("josdk.reconciliation.concurrent-threads", 7)));
 
     var base = new BaseConfigurationService(null);
     var result =
@@ -63,8 +63,7 @@ class ConfigLoaderTest {
 
   @Test
   void applyConfigsAppliesConcurrentWorkflowExecutorThreads() {
-    var loader =
-        new ConfigLoader(mapProvider(Map.of("josdk.concurrent.workflow.executor.threads", 3)));
+    var loader = new ConfigLoader(mapProvider(Map.of("josdk.workflow.executor-threads", 3)));
 
     var base = new BaseConfigurationService(null);
     var result =
@@ -76,12 +75,12 @@ class ConfigLoaderTest {
   @Test
   void applyConfigsAppliesBooleanFlags() {
     var values = new HashMap<String, Object>();
-    values.put("josdk.check.crd.and.validate.local.model", true);
-    values.put("josdk.close.client.on.stop", false);
-    values.put("josdk.stop.on.informer.error.during.startup", false);
-    values.put("josdk.ssa.based.create.update.match.for.dependent.resources", false);
-    values.put("josdk.use.ssa.to.patch.primary.resource", false);
-    values.put("josdk.clone.secondary.resources.when.getting.from.cache", true);
+    values.put("josdk.check-crd", true);
+    values.put("josdk.close-client-on-stop", false);
+    values.put("josdk.informer.stop-on-error-during-startup", false);
+    values.put("josdk.dependent-resources.ssa-based-create-update-match", false);
+    values.put("josdk.use-ssa-to-patch-primary-resource", false);
+    values.put("josdk.clone-secondary-resources-when-getting-from-cache", true);
     var loader = new ConfigLoader(mapProvider(values));
 
     var base = new BaseConfigurationService(null);
@@ -99,8 +98,8 @@ class ConfigLoaderTest {
   @Test
   void applyConfigsAppliesDurations() {
     var values = new HashMap<String, Object>();
-    values.put("josdk.cache.sync.timeout", Duration.ofSeconds(10));
-    values.put("josdk.reconciliation.termination.timeout", Duration.ofSeconds(5));
+    values.put("josdk.informer.cache-sync-timeout", Duration.ofSeconds(10));
+    values.put("josdk.reconciliation.termination-timeout", Duration.ofSeconds(5));
     var loader = new ConfigLoader(mapProvider(values));
 
     var base = new BaseConfigurationService(null);
@@ -115,7 +114,7 @@ class ConfigLoaderTest {
   void applyConfigsOnlyAppliesPresentKeys() {
     // Only one key present — other defaults must be unchanged.
     var loader =
-        new ConfigLoader(mapProvider(Map.of("josdk.concurrent.reconciliation.threads", 12)));
+        new ConfigLoader(mapProvider(Map.of("josdk.reconciliation.concurrent-threads", 12)));
 
     var base = new BaseConfigurationService(null);
     var result =
@@ -185,23 +184,23 @@ class ConfigLoaderTest {
     assertThat(queriedKeys)
         .contains(
             "josdk.controller.ctrl.finalizer",
-            "josdk.controller.ctrl.generation.aware",
-            "josdk.controller.ctrl.label.selector",
-            "josdk.controller.ctrl.reconciliation.max.interval",
-            "josdk.controller.ctrl.field.manager",
-            "josdk.controller.ctrl.trigger.reconciler.on.all.events",
-            "josdk.controller.ctrl.informer.list.limit");
+            "josdk.controller.ctrl.generation-aware",
+            "josdk.controller.ctrl.label-selector",
+            "josdk.controller.ctrl.max-reconciliation-interval",
+            "josdk.controller.ctrl.field-manager",
+            "josdk.controller.ctrl.trigger-reconciler-on-all-events",
+            "josdk.controller.ctrl.informer-list-limit");
   }
 
   // -- key prefix constants ---------------------------------------------------
 
   @Test
   void operatorKeyPrefixIsJosdkDot() {
-    assertThat(ConfigLoader.OPERATOR_KEY_PREFIX).isEqualTo("josdk.");
+    assertThat(ConfigLoader.DEFAULT_OPERATOR_KEY_PREFIX).isEqualTo("josdk.");
   }
 
   @Test
   void controllerKeyPrefixIsJosdkControllerDot() {
-    assertThat(ConfigLoader.CONTROLLER_KEY_PREFIX).isEqualTo("josdk.controller.");
+    assertThat(ConfigLoader.DEFAULT_CONTROLLER_KEY_PREFIX).isEqualTo("josdk.controller.");
   }
 }
