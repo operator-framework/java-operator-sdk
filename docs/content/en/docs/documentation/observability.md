@@ -50,6 +50,11 @@ For `InformerEventSource` and `ControllerEventSource` the following information 
 | `eventsource.event.action`                     | action name (e.g. `ADDED`, `UPDATED`, `DELETED`) |
 | `eventsource.name`                             | name of the event source                         |
 
+### Disabling MDC support
+
+MDC support is enabled by default. If you want to disable it, you can set the `JAVA_OPERATOR_SDK_USE_MDC` environment
+variable to `false` when you start your operator.
+
 ## Metrics
 
 JOSDK provides built-in support for metrics reporting on what is happening with your reconcilers in the form of
