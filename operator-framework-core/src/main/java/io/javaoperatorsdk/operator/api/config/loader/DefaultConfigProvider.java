@@ -19,6 +19,25 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * A {@link ConfigProvider} that resolves configuration values from environment variables and Java
+ * system properties.
+ *
+ * <p>For a given key, lookup proceeds as follows:
+ *
+ * <ol>
+ *   <li>The key is converted to an environment variable name by replacing dots and hyphens with
+ *       underscores and converting to upper case (e.g. {@code josdk.cache-sync.timeout} → {@code
+ *       JOSDK_CACHE_SYNC_TIMEOUT}). If an environment variable with that name is set, its value is
+ *       used.
+ *   <li>If no matching environment variable is found, the key is looked up as a Java system
+ *       property (via {@link System#getProperty(String)}) using the original key name.
+ * </ol>
+ *
+ * <p>Environment variables take precedence over system properties when both are set. Supported
+ * value types are: {@link String}, {@link Boolean}, {@link Integer}, {@link Long}, {@link Double},
+ * and {@link java.time.Duration} (ISO-8601 format, e.g. {@code PT30S}).
+ */
 public class DefaultConfigProvider implements ConfigProvider {
 
   private final Function<String, String> envLookup;

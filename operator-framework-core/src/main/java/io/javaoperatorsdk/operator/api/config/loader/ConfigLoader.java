@@ -150,7 +150,7 @@ public class ConfigLoader {
 
   /**
    * Returns a {@link Consumer} that applies every operator-level property found in the {@link
-   * ConfigProvider} to the given {@link ConfigurationServiceOverrider}. Returns {@code null} when
+   * ConfigProvider} to the given {@link ConfigurationServiceOverrider}. Returns no-op consumer when
    * no binding has a matching value, preserving the previous behavior.
    */
   public Consumer<ConfigurationServiceOverrider> applyConfigs() {
