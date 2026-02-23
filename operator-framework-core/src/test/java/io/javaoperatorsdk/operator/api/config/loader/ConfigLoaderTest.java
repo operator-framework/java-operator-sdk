@@ -46,8 +46,6 @@ class ConfigLoaderTest {
     };
   }
 
-  // -- applyConfigs -----------------------------------------------------------
-
   @Test
   void applyConfigsReturnsNoOpWhenNothingConfigured() {
     var loader = new ConfigLoader(mapProvider(Map.of()));
@@ -205,6 +203,16 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.informer-list-limit");
   }
 
+  @Test
+  void operatorKeyPrefixIsJosdkDot() {
+    assertThat(ConfigLoader.DEFAULT_OPERATOR_KEY_PREFIX).isEqualTo("josdk.");
+  }
+
+  @Test
+  void controllerKeyPrefixIsJosdkControllerDot() {
+    assertThat(ConfigLoader.DEFAULT_CONTROLLER_KEY_PREFIX).isEqualTo("josdk.controller.");
+  }
+
   // -- binding coverage -------------------------------------------------------
 
   /**
@@ -292,15 +300,5 @@ class ConfigLoaderTest {
     if (methodParam == double.class && bindingType == Double.class) return true;
     if (methodParam == Double.class && bindingType == double.class) return true;
     return false;
-  }
-
-  @Test
-  void operatorKeyPrefixIsJosdkDot() {
-    assertThat(ConfigLoader.DEFAULT_OPERATOR_KEY_PREFIX).isEqualTo("josdk.");
-  }
-
-  @Test
-  void controllerKeyPrefixIsJosdkControllerDot() {
-    assertThat(ConfigLoader.DEFAULT_CONTROLLER_KEY_PREFIX).isEqualTo("josdk.controller.");
   }
 }
