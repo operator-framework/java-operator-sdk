@@ -17,8 +17,19 @@ package io.javaoperatorsdk.operator.api.config.loader;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class DefaultConfigProvider implements ConfigProvider {
+
+  private final Function<String, String> envLookup;
+
+  public DefaultConfigProvider() {
+    this(System::getenv);
+  }
+
+  DefaultConfigProvider(Function<String, String> envLookup) {
+    this.envLookup = envLookup;
+  }
 
   /**
    * Looks up {@code key} first as an environment variable (dots and hyphens replaced by
@@ -38,7 +49,7 @@ public class DefaultConfigProvider implements ConfigProvider {
 
   private String resolveRaw(String key) {
     String envKey = key.replace('.', '_').replace('-', '_').toUpperCase();
-    String envValue = System.getenv(envKey);
+    String envValue = envLookup.apply(envKey);
     if (envValue != null) {
       return envValue;
     }
