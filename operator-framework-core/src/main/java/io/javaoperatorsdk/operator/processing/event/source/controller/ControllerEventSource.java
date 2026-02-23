@@ -162,8 +162,7 @@ public class ControllerEventSource<T extends HasMetadata>
         () -> {
           temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
           // delete event is quite special here, that requires special care, since we clean up
-          // caches on
-          // delete event.
+          // caches on delete event.
           handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
         });
   }
