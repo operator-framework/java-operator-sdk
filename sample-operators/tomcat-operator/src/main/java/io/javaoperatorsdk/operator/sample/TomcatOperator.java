@@ -31,11 +31,10 @@ public class TomcatOperator {
     var configLoader = ConfigLoader.getDefault();
     Operator operator = new Operator(configLoader.applyConfigs());
     operator.register(
-        new TomcatReconciler(),
-        configLoader.applyControllerConfigs(TomcatReconciler.TOMCAT_CONTROLLER_NAME));
+        new TomcatReconciler(), configLoader.applyControllerConfigs(TomcatReconciler.NAME));
     operator.register(
         new WebappReconciler(operator.getKubernetesClient()),
-        configLoader.applyControllerConfigs(WebappReconciler.WEBAPP_CONTROLLER_NAME));
+        configLoader.applyControllerConfigs(WebappReconciler.NAME));
     operator.start();
 
     new FtBasic(new TkFork(new FkRegex("/health", "ALL GOOD.")), 8080).start(Exit.NEVER);
