@@ -107,9 +107,6 @@ public class TemporaryResourceCache<T extends HasMetadata> {
     onEvent(ResourceAction.DELETED, resource, null, unknownState, true);
   }
 
-  /**
-   * @return true if the resourceVersion was obsolete
-   */
   public EventHandling onAddOrUpdateEvent(
       ResourceAction action, T resource, T prevResourceVersion) {
     return onEvent(action, resource, prevResourceVersion, false, false);
