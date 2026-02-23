@@ -222,7 +222,7 @@ public class ConfigLoader {
    * @param bindings the predefined bindings to check
    * @param keyPrefix when non-null the key stored in the binding is treated as a suffix and this
    *     prefix is prepended before the lookup
-   * @return a consumer that applies all found values, or {@code null} if none were found
+   * @return a consumer that applies all found values, or a no-op consumer if none were found
    */
   private <O> Consumer<O> buildConsumer(List<ConfigBinding<O, ?>> bindings, String keyPrefix) {
     Consumer<O> consumer = null;
