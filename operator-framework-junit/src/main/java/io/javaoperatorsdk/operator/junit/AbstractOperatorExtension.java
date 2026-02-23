@@ -204,23 +204,22 @@ public abstract class AbstractOperatorExtension
     if (namespace != null) {
       if (preserveNamespaceOnError && context.getExecutionException().isPresent()) {
         LOGGER.info("Preserving namespace {}", namespace);
-      } else if (skipNamespaceDeletion) {
-        LOGGER.info("Skipping namespace deletion for {}", namespace);
-        deleteOperator();
       } else {
         infrastructureKubernetesClient.resourceList(infrastructure).delete();
         deleteOperator();
-        LOGGER.info("Deleting namespace {} and stopping operator", namespace);
-        infrastructureKubernetesClient.namespaces().withName(namespace).delete();
-        if (waitForNamespaceDeletion) {
-          LOGGER.info("Waiting for namespace {} to be deleted", namespace);
-          Awaitility.await("namespace deleted")
-              .pollInterval(50, TimeUnit.MILLISECONDS)
-              .atMost(namespaceDeleteTimeout, TimeUnit.SECONDS)
-              .until(
-                  () ->
-                      infrastructureKubernetesClient.namespaces().withName(namespace).get()
-                          == null);
+        if (skipNamespaceDeletion) {
+          LOGGER.info("Deleting namespace {} and stopping operator", namespace);
+          infrastructureKubernetesClient.namespaces().withName(namespace).delete();
+          if (waitForNamespaceDeletion) {
+            LOGGER.info("Waiting for namespace {} to be deleted", namespace);
+            Awaitility.await("namespace deleted")
+                .pollInterval(50, TimeUnit.MILLISECONDS)
+                .atMost(namespaceDeleteTimeout, TimeUnit.SECONDS)
+                .until(
+                    () ->
+                        infrastructureKubernetesClient.namespaces().withName(namespace).get()
+                            == null);
+          }
         }
       }
     }
