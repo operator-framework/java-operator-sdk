@@ -33,6 +33,28 @@ parts of reconciliation logic and during the execution of the controller:
 
 For more information about MDC see this [link](https://www.baeldung.com/mdc-in-log4j-2-logback).
 
+### MDC entries during event handling
+
+Although, usually users might not require it in their day-to-day workflow, it is worth mentioning that 
+there are additional MDC entries managed for event handling. Typically, you might be interested in it
+in your `SecondaryToPrimaryMapper` related logs.
+For `InformerEventSource` and `ControllerEventSource` the following information is present:
+
+| MDC Key                                        | Value from Resource from the Event               |
+|:-----------------------------------------------|:-------------------------------------------------|
+| `eventsource.event.resource.name`              | `.metadata.name`                                 |
+| `eventsource.event.resource.uid`               | `.metadata.uid`                                  |
+| `eventsource.event.resource.namespace`         | `.metadata.namespace`                            |
+| `eventsource.event.resource.kind`              | resource kind                                    |
+| `eventsource.event.resource.resourceVersion`   | `.metadata.resourceVersion`                      |
+| `eventsource.event.action`                     | action name (e.g. `ADDED`, `UPDATED`, `DELETED`) |
+| `eventsource.name`                             | name of the event source                         |
+
+### Disabling MDC support
+
+MDC support is enabled by default. If you want to disable it, you can set the `JAVA_OPERATOR_SDK_USE_MDC` environment
+variable to `false` when you start your operator.
+
 ## Metrics
 
 JOSDK provides built-in support for metrics reporting on what is happening with your reconcilers in the form of
