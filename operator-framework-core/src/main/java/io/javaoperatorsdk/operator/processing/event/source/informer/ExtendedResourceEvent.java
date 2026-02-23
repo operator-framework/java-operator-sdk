@@ -15,6 +15,7 @@
  */
 package io.javaoperatorsdk.operator.processing.event.source.informer;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -25,7 +26,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 /** Used only for resource event filtering. */
 public class ExtendedResourceEvent extends ResourceEvent {
 
-  private HasMetadata previousResource;
+  private final HasMetadata previousResource;
 
   public ExtendedResourceEvent(
       ResourceAction action,
@@ -38,5 +39,34 @@ public class ExtendedResourceEvent extends ResourceEvent {
 
   public Optional<HasMetadata> getPreviousResource() {
     return Optional.ofNullable(previousResource);
+  }
+
+  @Override
+  public String toString() {
+    return "ExtendedResourceEvent{"
+        + getPreviousResource()
+            .map(r -> "previousResourceVersion=" + r.getMetadata().getResourceVersion())
+            .orElse("")
+        + ", action="
+        + getAction()
+        + getResource()
+            .map(r -> ", resourceVersion=" + r.getMetadata().getResourceVersion())
+            .orElse("")
+        + ", relatedCustomResourceName="
+        + getRelatedCustomResourceID().getName()
+        + '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+    ExtendedResourceEvent that = (ExtendedResourceEvent) o;
+    return Objects.equals(previousResource, that.previousResource);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), previousResource);
   }
 }

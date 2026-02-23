@@ -83,19 +83,13 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       throws Exception {
     P originalResource = executionScope.getResource();
     var resourceForExecution = cloneResource(originalResource);
-    log.debug(
-        "Handling dispatch for resource name: {} namespace: {}",
-        getName(originalResource),
-        originalResource.getMetadata().getNamespace());
+    log.debug("Handling dispatch");
 
     final var markedForDeletion = originalResource.isMarkedForDeletion();
     if (!triggerOnAllEvents()
         && markedForDeletion
         && shouldNotDispatchToCleanupWhenMarkedForDeletion(originalResource)) {
-      log.debug(
-          "Skipping cleanup of resource {} because finalizer(s) {} don't allow processing yet",
-          getName(originalResource),
-          originalResource.getMetadata().getFinalizers());
+      log.debug("Skipping cleanup because finalizer(s) don't allow processing yet");
       return PostExecutionControl.defaultDispatch();
     }
     // context can be provided only for testing purposes
@@ -165,11 +159,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       P originalResource,
       Context<P> context)
       throws Exception {
-    log.debug(
-        "Reconciling resource {} with version: {} with execution scope: {}",
-        getName(resourceForExecution),
-        getVersion(resourceForExecution),
-        executionScope);
+    log.debug("Reconciling resource execution scope: {}", executionScope);
 
     UpdateControl<P> updateControl = controller.reconcile(resourceForExecution, context);
 
@@ -246,9 +236,8 @@ class ReconciliationDispatcher<P extends HasMetadata> {
             exceptionLevel = Level.DEBUG;
             failedMessage = " due to conflict";
             log.info(
-                "ErrorStatusUpdateControl.patchStatus of {} failed due to a conflict, but the next"
-                    + " reconciliation is imminent.",
-                ResourceID.fromResource(originalResource));
+                "ErrorStatusUpdateControl.patchStatus failed due to a conflict, but the next"
+                    + " reconciliation is imminent");
           } else {
             exceptionLevel = Level.WARN;
             failedMessage = ", but will be retried soon,";
@@ -312,10 +301,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
   private PostExecutionControl<P> handleCleanup(
       P resourceForExecution, Context<P> context, ExecutionScope<P> executionScope) {
     if (log.isDebugEnabled()) {
-      log.debug(
-          "Executing delete for resource: {} with version: {}",
-          ResourceID.fromResource(resourceForExecution),
-          getVersion(resourceForExecution));
+      log.debug("Executing delete for resource");
     }
     DeleteControl deleteControl = controller.cleanup(resourceForExecution, context);
     final var useFinalizer = controller.useFinalizer();
@@ -329,10 +315,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
     log.debug(
-        "Skipping finalizer remove for resource: {} with version: {}. delete control: {}, uses"
-            + " finalizer: {}",
-        getUID(resourceForExecution),
-        getVersion(resourceForExecution),
+        "Skipping finalizer remove for resource. Delete control: {}, uses finalizer: {}",
         deleteControl,
         useFinalizer);
     PostExecutionControl<P> postExecutionControl = PostExecutionControl.defaultDispatch();
@@ -342,11 +325,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   private P patchResource(Context<P> context, P resource, P originalResource) {
     if (log.isDebugEnabled()) {
-      log.debug(
-          "Updating resource: {} with version: {}; SSA: {}",
-          resource.getMetadata().getName(),
-          getVersion(resource),
-          useSSA);
+      log.debug("Updating resource; with SSA: {}", useSSA);
     }
     log.trace("Resource before update: {}", resource);
 
@@ -384,10 +363,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
     public R patchResource(Context<R> context, R resource, R originalResource) {
       if (log.isDebugEnabled()) {
-        log.debug(
-            "Trying to replace resource {}, version: {}",
-            ResourceID.fromResource(resource),
-            resource.getMetadata().getResourceVersion());
+        log.debug("Trying to replace resource");
       }
       if (useSSA) {
         return context.resourceOperations().serverSideApplyPrimary(resource);

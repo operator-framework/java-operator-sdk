@@ -20,6 +20,7 @@ import org.slf4j.MDC;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.ResourceAction;
 
 public class MDCUtils {
 
@@ -33,6 +34,72 @@ public class MDCUtils {
   private static final String NO_NAMESPACE = "no namespace";
   private static final boolean enabled =
       Utils.getBooleanFromSystemPropsOrDefault(Utils.USE_MDC_ENV_KEY, true);
+
+  private static final String EVENT_RESOURCE_NAME = "eventsource.event.resource.name";
+  private static final String EVENT_RESOURCE_UID = "eventsource.event.resource.uid";
+  private static final String EVENT_RESOURCE_NAMESPACE = "eventsource.event.resource.namespace";
+  private static final String EVENT_RESOURCE_KIND = "eventsource.event.resource.kind";
+  private static final String EVENT_RESOURCE_VERSION = "eventsource.event.resource.resourceVersion";
+  private static final String EVENT_ACTION = "eventsource.event.action";
+  private static final String EVENT_SOURCE_NAME = "eventsource.name";
+
+  public static void addInformerEventInfo(
+      HasMetadata resource, ResourceAction action, String eventSourceName) {
+    if (enabled) {
+      MDC.put(EVENT_RESOURCE_NAME, resource.getMetadata().getName());
+      MDC.put(EVENT_RESOURCE_NAMESPACE, resource.getMetadata().getNamespace());
+      MDC.put(EVENT_RESOURCE_KIND, HasMetadata.getKind(resource.getClass()));
+      MDC.put(EVENT_RESOURCE_VERSION, resource.getMetadata().getResourceVersion());
+      MDC.put(EVENT_RESOURCE_UID, resource.getMetadata().getUid());
+      MDC.put(EVENT_ACTION, action == null ? null : action.name());
+      MDC.put(EVENT_SOURCE_NAME, eventSourceName);
+    }
+  }
+
+  public static void removeInformerEventInfo() {
+    if (enabled) {
+      MDC.remove(EVENT_RESOURCE_NAME);
+      MDC.remove(EVENT_RESOURCE_NAMESPACE);
+      MDC.remove(EVENT_RESOURCE_KIND);
+      MDC.remove(EVENT_RESOURCE_VERSION);
+      MDC.remove(EVENT_RESOURCE_UID);
+      MDC.remove(EVENT_ACTION);
+      MDC.remove(EVENT_SOURCE_NAME);
+    }
+  }
+
+  public static void withMDCForEvent(
+      HasMetadata resource, Runnable runnable, String eventSourceName) {
+    withMDCForEvent(resource, null, runnable, eventSourceName);
+  }
+
+  public static void withMDCForEvent(
+      HasMetadata resource, ResourceAction action, Runnable runnable, String eventSourceName) {
+    try {
+      MDCUtils.addInformerEventInfo(resource, action, eventSourceName);
+      runnable.run();
+    } finally {
+      MDCUtils.removeInformerEventInfo();
+    }
+  }
+
+  public static void withMDCForResourceID(ResourceID resourceID, Runnable runnable) {
+    try {
+      MDCUtils.addResourceIDInfo(resourceID);
+      runnable.run();
+    } finally {
+      MDCUtils.removeResourceIDInfo();
+    }
+  }
+
+  public static void withMDCForPrimary(HasMetadata primary, Runnable runnable) {
+    try {
+      MDCUtils.addResourceInfo(primary);
+      runnable.run();
+    } finally {
+      MDCUtils.removeResourceInfo();
+    }
+  }
 
   public static void addResourceIDInfo(ResourceID resourceID) {
     if (enabled) {
