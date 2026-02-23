@@ -38,17 +38,19 @@ public class DefaultConfigProvider implements ConfigProvider {
    * variable takes precedence when both are set.
    */
   @Override
-  @SuppressWarnings("unchecked")
   public <T> Optional<T> getValue(String key, Class<T> type) {
     String raw = resolveRaw(key);
     if (raw == null) {
       return Optional.empty();
     }
-    return Optional.of(type.cast(convert(raw, type)));
+    return Optional.of(convert(raw, type));
   }
 
   private String resolveRaw(String key) {
-    String envKey = key.replace('.', '_').replace('-', '_').toUpperCase();
+    if (key == null) {
+      return null;
+    }
+    String envKey = toEnvKey(key);
     String envValue = envLookup.apply(envKey);
     if (envValue != null) {
       return envValue;
@@ -56,20 +58,27 @@ public class DefaultConfigProvider implements ConfigProvider {
     return System.getProperty(key);
   }
 
-  private Object convert(String raw, Class<?> type) {
+  private static String toEnvKey(String key) {
+    return key.trim().replace('.', '_').replace('-', '_').toUpperCase();
+  }
+
+  private static <T> T convert(String raw, Class<T> type) {
+    final Object converted;
     if (type == String.class) {
-      return raw;
+      converted = raw;
     } else if (type == Boolean.class) {
-      return Boolean.parseBoolean(raw);
+      converted = Boolean.parseBoolean(raw);
     } else if (type == Integer.class) {
-      return Integer.parseInt(raw);
+      converted = Integer.parseInt(raw);
     } else if (type == Long.class) {
-      return Long.parseLong(raw);
+      converted = Long.parseLong(raw);
     } else if (type == Double.class) {
-      return Double.parseDouble(raw);
+      converted = Double.parseDouble(raw);
     } else if (type == Duration.class) {
-      return Duration.parse(raw);
+      converted = Duration.parse(raw);
+    } else {
+      throw new IllegalArgumentException("Unsupported config type: " + type.getName());
     }
-    throw new IllegalArgumentException("Unsupported config type: " + type.getName());
+    return type.cast(converted);
   }
 }
