@@ -207,7 +207,7 @@ public abstract class AbstractOperatorExtension
       } else {
         infrastructureKubernetesClient.resourceList(infrastructure).delete();
         deleteOperator();
-        if (skipNamespaceDeletion) {
+        if (!skipNamespaceDeletion) {
           LOGGER.info("Deleting namespace {} and stopping operator", namespace);
           infrastructureKubernetesClient.namespaces().withName(namespace).delete();
           if (waitForNamespaceDeletion) {
