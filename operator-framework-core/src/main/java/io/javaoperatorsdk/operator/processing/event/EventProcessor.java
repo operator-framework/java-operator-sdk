@@ -255,7 +255,7 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
 
   private void handleRateLimitedSubmission(ResourceID resourceID, Duration minimalDuration) {
     var minimalDurationMillis = minimalDuration.toMillis();
-    log.debug("Rate limited resource. rescheduled in {} millis", minimalDurationMillis);
+    log.debug("Rate limited resource; rescheduled in {} millis", minimalDurationMillis);
     retryEventSource()
         .scheduleOnce(
             resourceID, Math.max(minimalDurationMillis, MINIMAL_RATE_LIMIT_RESCHEDULE_DURATION));
