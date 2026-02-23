@@ -35,7 +35,6 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.ManagedInfor
 import io.javaoperatorsdk.operator.processing.event.source.informer.TemporaryResourceCache.EventHandling;
 
 import static io.javaoperatorsdk.operator.ReconcilerUtilsInternal.handleKubernetesClientException;
-import static io.javaoperatorsdk.operator.processing.KubernetesResourceUtils.getVersion;
 import static io.javaoperatorsdk.operator.processing.event.source.controller.InternalEventFilters.*;
 
 public class ControllerEventSource<T extends HasMetadata>
@@ -88,12 +87,7 @@ public class ControllerEventSource<T extends HasMetadata>
       ResourceAction action, T resource, T oldResource, Boolean deletedFinalStateUnknown) {
     try {
       if (log.isDebugEnabled()) {
-        log.debug(
-            "Event received for resource: {} version: {} uuid: {} action: {}",
-            ResourceID.fromResource(resource),
-            getVersion(resource),
-            resource.getMetadata().getUid(),
-            action);
+        log.debug("Event received with action: {}", action);
         log.trace("Event Old resource: {},\n new resource: {}", oldResource, resource);
       }
       MDCUtils.addResourceInfo(resource);
@@ -112,7 +106,7 @@ public class ControllerEventSource<T extends HasMetadata>
               .handleEvent(new ResourceEvent(action, ResourceID.fromResource(resource), resource));
         }
       } else {
-        log.debug("Skipping event handling resource {}", ResourceID.fromResource(resource));
+        log.debug("Skipping event handling for resource");
       }
     } finally {
       MDCUtils.removeResourceInfo();
@@ -124,23 +118,27 @@ public class ControllerEventSource<T extends HasMetadata>
     if (genericFilter != null && !genericFilter.accept(resource)) {
       return false;
     }
-    switch (action) {
-      case ADDED:
-        return onAddFilter == null || onAddFilter.accept(resource);
-      case UPDATED:
-        return onUpdateFilter.accept(resource, oldResource);
-    }
-    return true;
+    return switch (action) {
+      case ADDED -> onAddFilter == null || onAddFilter.accept(resource);
+      case UPDATED -> onUpdateFilter.accept(resource, oldResource);
+      default -> true;
+    };
   }
 
   @Override
   public synchronized void onAdd(T resource) {
-    handleOnAddOrUpdate(ResourceAction.ADDED, null, resource);
+    withMDC(
+        resource,
+        ResourceAction.ADDED,
+        () -> handleOnAddOrUpdate(ResourceAction.ADDED, null, resource));
   }
 
   @Override
   public synchronized void onUpdate(T oldCustomResource, T newCustomResource) {
-    handleOnAddOrUpdate(ResourceAction.UPDATED, oldCustomResource, newCustomResource);
+    withMDC(
+        newCustomResource,
+        ResourceAction.UPDATED,
+        () -> handleOnAddOrUpdate(ResourceAction.UPDATED, oldCustomResource, newCustomResource));
   }
 
   private void handleOnAddOrUpdate(
@@ -150,20 +148,21 @@ public class ControllerEventSource<T extends HasMetadata>
     if (handling == EventHandling.NEW) {
       handleEvent(action, newCustomResource, oldCustomResource, null);
     } else if (log.isDebugEnabled()) {
-      log.debug(
-          "{} event propagation for action: {} resource id: {} ",
-          handling,
-          action,
-          ResourceID.fromResource(newCustomResource));
+      log.debug("{} event propagation for action: {}", handling, action);
     }
   }
 
   @Override
   public synchronized void onDelete(T resource, boolean deletedFinalStateUnknown) {
-    temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
-    // delete event is quite special here, that requires special care, since we clean up caches on
-    // delete event.
-    handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
+    withMDC(
+        resource,
+        ResourceAction.DELETED,
+        () -> {
+          temporaryResourceCache.onDeleteEvent(resource, deletedFinalStateUnknown);
+          // delete event is quite special here, that requires special care, since we clean up
+          // caches on delete event.
+          handleEvent(ResourceAction.DELETED, resource, null, deletedFinalStateUnknown);
+        });
   }
 
   @Override
