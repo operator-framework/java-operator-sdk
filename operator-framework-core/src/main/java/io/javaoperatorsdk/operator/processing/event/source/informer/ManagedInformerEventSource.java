@@ -115,11 +115,9 @@ public abstract class ManagedInformerEventSource<
             // as previous resource version we use the one from successful update, since
             // we process new event here only if that is more recent then the event from our update.
             // Note that this is equivalent with the scenario when an informer watch connection
-            // would
-            // reconnect and loose some events in between.
+            // would reconnect and loose some events in between.
             // If that update was not successful we still record the previous version from the
-            // actual
-            // event in the ExtendedResourceEvent.
+            // actual event in the ExtendedResourceEvent.
             R extendedResourcePrevVersion =
                 (r instanceof ExtendedResourceEvent)
                     ? (R) ((ExtendedResourceEvent) r).getPreviousResource().orElse(null)
