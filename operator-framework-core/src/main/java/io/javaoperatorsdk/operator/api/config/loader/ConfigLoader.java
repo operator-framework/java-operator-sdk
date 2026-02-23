@@ -17,11 +17,13 @@ package io.javaoperatorsdk.operator.api.config.loader;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 public class ConfigLoader {
 
@@ -86,6 +88,14 @@ public class ConfigLoader {
               "clone-secondary-resources-when-getting-from-cache",
               Boolean.class,
               ConfigurationServiceOverrider::withCloneSecondaryResourcesWhenGettingFromCache));
+
+  // ---------------------------------------------------------------------------
+  // Controller-level retry property suffixes
+  // ---------------------------------------------------------------------------
+  static final String RETRY_MAX_ATTEMPTS_SUFFIX = "retry.max-attempts";
+  static final String RETRY_INITIAL_INTERVAL_SUFFIX = "retry.initial-interval";
+  static final String RETRY_INTERVAL_MULTIPLIER_SUFFIX = "retry.interval-multiplier";
+  static final String RETRY_MAX_INTERVAL_SUFFIX = "retry.max-interval";
 
   // ---------------------------------------------------------------------------
   // Controller-level (ControllerConfigurationOverrider) bindings
@@ -163,7 +173,47 @@ public class ConfigLoader {
     // ControllerConfigurationOverrider<R>.
     List<ConfigBinding<ControllerConfigurationOverrider<R>, ?>> bindings =
         (List<ConfigBinding<ControllerConfigurationOverrider<R>, ?>>) (List<?>) CONTROLLER_BINDINGS;
-    return buildConsumer(bindings, prefix);
+    Consumer<ControllerConfigurationOverrider<R>> consumer = buildConsumer(bindings, prefix);
+
+    Consumer<ControllerConfigurationOverrider<R>> retryStep = buildRetryConsumer(prefix);
+    if (retryStep != null) {
+      consumer = consumer == null ? retryStep : consumer.andThen(retryStep);
+    }
+
+    return consumer;
+  }
+
+  /**
+   * If at least one retry property is present for the given prefix, returns a {@link Consumer} that
+   * builds a {@link GenericRetry} starting from {@link GenericRetry#defaultLimitedExponentialRetry}
+   * and overrides only the properties that are explicitly set.
+   */
+  private <R extends HasMetadata> Consumer<ControllerConfigurationOverrider<R>> buildRetryConsumer(
+      String prefix) {
+    Optional<Integer> maxAttempts =
+        configProvider.getValue(prefix + RETRY_MAX_ATTEMPTS_SUFFIX, Integer.class);
+    Optional<Long> initialInterval =
+        configProvider.getValue(prefix + RETRY_INITIAL_INTERVAL_SUFFIX, Long.class);
+    Optional<Double> intervalMultiplier =
+        configProvider.getValue(prefix + RETRY_INTERVAL_MULTIPLIER_SUFFIX, Double.class);
+    Optional<Long> maxInterval =
+        configProvider.getValue(prefix + RETRY_MAX_INTERVAL_SUFFIX, Long.class);
+
+    if (maxAttempts.isEmpty()
+        && initialInterval.isEmpty()
+        && intervalMultiplier.isEmpty()
+        && maxInterval.isEmpty()) {
+      return null;
+    }
+
+    return overrider -> {
+      GenericRetry retry = GenericRetry.defaultLimitedExponentialRetry();
+      maxAttempts.ifPresent(retry::setMaxAttempts);
+      initialInterval.ifPresent(retry::setInitialInterval);
+      intervalMultiplier.ifPresent(retry::setIntervalMultiplier);
+      maxInterval.ifPresent(retry::setMaxInterval);
+      overrider.withRetry(retry);
+    };
   }
 
   /**

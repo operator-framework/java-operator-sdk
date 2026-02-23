@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.api.config.loader;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,14 +36,16 @@ class DefaultConfigProviderTest {
 
   @Test
   void readsStringFromEnvVariable() {
-    var envProvider = new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_STRING") ? "from-env" : null);
+    var envProvider =
+        new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_STRING") ? "from-env" : null);
     assertThat(envProvider.getValue("josdk.test.string", String.class)).hasValue("from-env");
   }
 
   @Test
   void envVariableKeyUsesUppercaseWithUnderscores() {
     // dots and hyphens both become underscores, key is uppercased
-    var envProvider = new DefaultConfigProvider(k -> k.equals("JOSDK_CACHE_SYNC_TIMEOUT") ? "PT10S" : null);
+    var envProvider =
+        new DefaultConfigProvider(k -> k.equals("JOSDK_CACHE_SYNC_TIMEOUT") ? "PT10S" : null);
     assertThat(envProvider.getValue("josdk.cache-sync.timeout", Duration.class))
         .hasValue(Duration.ofSeconds(10));
   }
@@ -51,7 +54,8 @@ class DefaultConfigProviderTest {
   void envVariableTakesPrecedenceOverSystemProperty() {
     System.setProperty("josdk.test.precedence", "from-sysprop");
     try {
-      var envProvider = new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_PRECEDENCE") ? "from-env" : null);
+      var envProvider =
+          new DefaultConfigProvider(k -> k.equals("JOSDK_TEST_PRECEDENCE") ? "from-env" : null);
       assertThat(envProvider.getValue("josdk.test.precedence", String.class)).hasValue("from-env");
     } finally {
       System.clearProperty("josdk.test.precedence");
@@ -63,7 +67,8 @@ class DefaultConfigProviderTest {
     System.setProperty("josdk.test.fallback", "from-sysprop");
     try {
       var envProvider = new DefaultConfigProvider(k -> null);
-      assertThat(envProvider.getValue("josdk.test.fallback", String.class)).hasValue("from-sysprop");
+      assertThat(envProvider.getValue("josdk.test.fallback", String.class))
+          .hasValue("from-sysprop");
     } finally {
       System.clearProperty("josdk.test.fallback");
     }
@@ -125,7 +130,7 @@ class DefaultConfigProviderTest {
     System.setProperty("josdk.test.unsupported", "value");
     try {
       assertThatIllegalArgumentException()
-          .isThrownBy(() -> provider.getValue("josdk.test.unsupported", Double.class))
+          .isThrownBy(() -> provider.getValue("josdk.test.unsupported", AtomicInteger.class))
           .withMessageContaining("Unsupported config type");
     } finally {
       System.clearProperty("josdk.test.unsupported");

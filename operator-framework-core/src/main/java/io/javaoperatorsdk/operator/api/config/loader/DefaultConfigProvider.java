@@ -65,6 +65,8 @@ public class DefaultConfigProvider implements ConfigProvider {
       return Integer.parseInt(raw);
     } else if (type == Long.class) {
       return Long.parseLong(raw);
+    } else if (type == Double.class) {
+      return Double.parseDouble(raw);
     } else if (type == Duration.class) {
       return Duration.parse(raw);
     }
