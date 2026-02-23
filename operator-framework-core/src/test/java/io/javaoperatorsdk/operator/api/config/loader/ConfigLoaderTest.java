@@ -17,14 +17,19 @@ package io.javaoperatorsdk.operator.api.config.loader;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
+import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -200,7 +205,94 @@ class ConfigLoaderTest {
             "josdk.controller.ctrl.informer-list-limit");
   }
 
-  // -- key prefix constants ---------------------------------------------------
+  // -- binding coverage -------------------------------------------------------
+
+  /**
+   * Supported scalar types that DefaultConfigProvider can parse from a string. Every binding's type
+   * must be one of these.
+   */
+  private static final Set<Class<?>> SUPPORTED_TYPES =
+      Set.of(
+          Boolean.class,
+          boolean.class,
+          Integer.class,
+          int.class,
+          Long.class,
+          long.class,
+          Double.class,
+          double.class,
+          Duration.class,
+          String.class);
+
+  @Test
+  void operatorBindingsCoverAllSingleScalarSettersOnConfigurationServiceOverrider() {
+    Set<String> expectedSetters =
+        Arrays.stream(ConfigurationServiceOverrider.class.getMethods())
+            .filter(m -> m.getParameterCount() == 1)
+            .filter(m -> SUPPORTED_TYPES.contains(m.getParameterTypes()[0]))
+            .filter(m -> m.getReturnType() == ConfigurationServiceOverrider.class)
+            .map(java.lang.reflect.Method::getName)
+            .collect(Collectors.toSet());
+
+    Set<String> boundMethodNames =
+        ConfigLoader.OPERATOR_BINDINGS.stream()
+            .flatMap(
+                b ->
+                    Arrays.stream(ConfigurationServiceOverrider.class.getMethods())
+                        .filter(m -> m.getParameterCount() == 1)
+                        .filter(m -> isTypeCompatible(m.getParameterTypes()[0], b.type()))
+                        .filter(m -> m.getReturnType() == ConfigurationServiceOverrider.class)
+                        .map(java.lang.reflect.Method::getName))
+            .collect(Collectors.toSet());
+
+    assertThat(boundMethodNames)
+        .as("Every scalar setter on ConfigurationServiceOverrider must be covered by a binding")
+        .containsExactlyInAnyOrderElementsOf(expectedSetters);
+  }
+
+  @Test
+  void controllerBindingsCoverAllSingleScalarSettersOnControllerConfigurationOverrider() {
+    Set<String> expectedSetters =
+        Arrays.stream(ControllerConfigurationOverrider.class.getMethods())
+            .filter(m -> m.getParameterCount() == 1)
+            .filter(m -> SUPPORTED_TYPES.contains(m.getParameterTypes()[0]))
+            .filter(m -> m.getReturnType() == ControllerConfigurationOverrider.class)
+            .filter(m -> m.getAnnotation(Deprecated.class) == null)
+            .map(java.lang.reflect.Method::getName)
+            .collect(Collectors.toSet());
+
+    Set<String> boundMethodNames =
+        ConfigLoader.CONTROLLER_BINDINGS.stream()
+            .flatMap(
+                b ->
+                    Arrays.stream(ControllerConfigurationOverrider.class.getMethods())
+                        .filter(m -> m.getParameterCount() == 1)
+                        .filter(m -> isTypeCompatible(m.getParameterTypes()[0], b.type()))
+                        .filter(m -> m.getReturnType() == ControllerConfigurationOverrider.class)
+                        .filter(m -> m.getAnnotation(Deprecated.class) == null)
+                        .map(java.lang.reflect.Method::getName))
+            .collect(Collectors.toSet());
+
+    assertThat(boundMethodNames)
+        .as(
+            "Every scalar setter on ControllerConfigurationOverrider should be covered by a"
+                + " binding")
+        .containsExactlyInAnyOrderElementsOf(expectedSetters);
+  }
+
+  /** Returns true when the two types are the same or one is the boxed/unboxed form of the other. */
+  private static boolean isTypeCompatible(Class<?> methodParam, Class<?> bindingType) {
+    if (methodParam == bindingType) return true;
+    if (methodParam == boolean.class && bindingType == Boolean.class) return true;
+    if (methodParam == Boolean.class && bindingType == boolean.class) return true;
+    if (methodParam == int.class && bindingType == Integer.class) return true;
+    if (methodParam == Integer.class && bindingType == int.class) return true;
+    if (methodParam == long.class && bindingType == Long.class) return true;
+    if (methodParam == Long.class && bindingType == long.class) return true;
+    if (methodParam == double.class && bindingType == Double.class) return true;
+    if (methodParam == Double.class && bindingType == double.class) return true;
+    return false;
+  }
 
   @Test
   void operatorKeyPrefixIsJosdkDot() {

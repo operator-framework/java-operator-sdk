@@ -50,7 +50,7 @@ public class ConfigLoader {
   // included. Complex objects (KubernetesClient, ExecutorService, …) must be
   // configured programmatically and are intentionally omitted.
   // ---------------------------------------------------------------------------
-  private static final List<ConfigBinding<ConfigurationServiceOverrider, ?>> OPERATOR_BINDINGS =
+  static final List<ConfigBinding<ConfigurationServiceOverrider, ?>> OPERATOR_BINDINGS =
       List.of(
           new ConfigBinding<>(
               "check-crd",
@@ -106,35 +106,30 @@ public class ConfigLoader {
   // The key used at runtime is built as:
   //   CONTROLLER_KEY_PREFIX + controllerName + "." + <suffix>
   // ---------------------------------------------------------------------------
-  private static final List<ConfigBinding<ControllerConfigurationOverrider<?>, ?>>
-      CONTROLLER_BINDINGS =
-          List.of(
-              new ConfigBinding<>(
-                  "finalizer", String.class, ControllerConfigurationOverrider::withFinalizer),
-              new ConfigBinding<>(
-                  "generation-aware",
-                  Boolean.class,
-                  ControllerConfigurationOverrider::withGenerationAware),
-              new ConfigBinding<>(
-                  "label-selector",
-                  String.class,
-                  ControllerConfigurationOverrider::withLabelSelector),
-              new ConfigBinding<>(
-                  "max-reconciliation-interval",
-                  Duration.class,
-                  ControllerConfigurationOverrider::withReconciliationMaxInterval),
-              new ConfigBinding<>(
-                  "field-manager",
-                  String.class,
-                  ControllerConfigurationOverrider::withFieldManager),
-              new ConfigBinding<>(
-                  "trigger-reconciler-on-all-events",
-                  Boolean.class,
-                  ControllerConfigurationOverrider::withTriggerReconcilerOnAllEvents),
-              new ConfigBinding<>(
-                  "informer-list-limit",
-                  Long.class,
-                  ControllerConfigurationOverrider::withInformerListLimit));
+  static final List<ConfigBinding<ControllerConfigurationOverrider<?>, ?>> CONTROLLER_BINDINGS =
+      List.of(
+          new ConfigBinding<>(
+              "finalizer", String.class, ControllerConfigurationOverrider::withFinalizer),
+          new ConfigBinding<>(
+              "generation-aware",
+              Boolean.class,
+              ControllerConfigurationOverrider::withGenerationAware),
+          new ConfigBinding<>(
+              "label-selector", String.class, ControllerConfigurationOverrider::withLabelSelector),
+          new ConfigBinding<>(
+              "max-reconciliation-interval",
+              Duration.class,
+              ControllerConfigurationOverrider::withReconciliationMaxInterval),
+          new ConfigBinding<>(
+              "field-manager", String.class, ControllerConfigurationOverrider::withFieldManager),
+          new ConfigBinding<>(
+              "trigger-reconciler-on-all-events",
+              Boolean.class,
+              ControllerConfigurationOverrider::withTriggerReconcilerOnAllEvents),
+          new ConfigBinding<>(
+              "informer-list-limit",
+              Long.class,
+              ControllerConfigurationOverrider::withInformerListLimit));
 
   private final ConfigProvider configProvider;
 
