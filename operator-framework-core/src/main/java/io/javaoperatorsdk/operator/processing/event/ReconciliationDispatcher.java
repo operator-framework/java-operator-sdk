@@ -325,7 +325,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
 
   private P patchResource(Context<P> context, P resource, P originalResource) {
     if (log.isDebugEnabled()) {
-      log.debug("Updating resource; SSA: {}", useSSA);
+      log.debug("Updating resource; with SSA: {}", useSSA);
     }
     log.trace("Resource before update: {}", resource);
 
