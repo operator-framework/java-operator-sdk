@@ -118,13 +118,11 @@ public class ControllerEventSource<T extends HasMetadata>
     if (genericFilter != null && !genericFilter.accept(resource)) {
       return false;
     }
-    switch (action) {
-      case ADDED:
-        return onAddFilter == null || onAddFilter.accept(resource);
-      case UPDATED:
-        return onUpdateFilter.accept(resource, oldResource);
-    }
-    return true;
+    return switch (action) {
+      case ADDED -> onAddFilter == null || onAddFilter.accept(resource);
+      case UPDATED -> onUpdateFilter.accept(resource, oldResource);
+      default -> true;
+    };
   }
 
   @Override
