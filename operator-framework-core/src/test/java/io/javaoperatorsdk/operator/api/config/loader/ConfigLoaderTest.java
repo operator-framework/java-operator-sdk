@@ -44,9 +44,17 @@ class ConfigLoaderTest {
   // -- applyConfigs -----------------------------------------------------------
 
   @Test
-  void applyConfigsReturnsNullWhenNothingConfigured() {
+  void applyConfigsReturnsNoOpWhenNothingConfigured() {
     var loader = new ConfigLoader(mapProvider(Map.of()));
-    assertThat(loader.applyConfigs()).isNull();
+    var base = new BaseConfigurationService(null);
+    // consumer must be non-null and must leave all defaults unchanged
+    var consumer = loader.applyConfigs();
+    assertThat(consumer).isNotNull();
+    var result = ConfigurationService.newOverriddenConfigurationService(base, consumer);
+    assertThat(result.concurrentReconciliationThreads())
+        .isEqualTo(base.concurrentReconciliationThreads());
+    assertThat(result.concurrentWorkflowExecutorThreads())
+        .isEqualTo(base.concurrentWorkflowExecutorThreads());
   }
 
   @Test
@@ -129,9 +137,9 @@ class ConfigLoaderTest {
   // -- applyControllerConfigs -------------------------------------------------
 
   @Test
-  void applyControllerConfigsReturnsNullWhenNothingConfigured() {
+  void applyControllerConfigsReturnsNoOpWhenNothingConfigured() {
     var loader = new ConfigLoader(mapProvider(Map.of()));
-    assertThat(loader.applyControllerConfigs("my-controller")).isNull();
+    assertThat(loader.applyControllerConfigs("my-controller")).isNotNull();
   }
 
   @Test
@@ -163,8 +171,8 @@ class ConfigLoaderTest {
     // alpha gets a consumer (key found), beta gets a consumer (key found)
     assertThat(loader.applyControllerConfigs("alpha")).isNotNull();
     assertThat(loader.applyControllerConfigs("beta")).isNotNull();
-    // a controller with no configured keys gets null
-    assertThat(loader.applyControllerConfigs("gamma")).isNull();
+    // a controller with no configured keys still gets a non-null no-op consumer
+    assertThat(loader.applyControllerConfigs("gamma")).isNotNull();
   }
 
   @Test
