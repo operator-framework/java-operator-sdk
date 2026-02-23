@@ -94,7 +94,7 @@ public abstract class ManagedInformerEventSource<
   @SuppressWarnings("unchecked")
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    log.debug("Starting event filter and cache update");
+    log.debug("Starting event filtering and cacheing update");
     R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
@@ -128,7 +128,7 @@ public abstract class ManagedInformerEventSource<
                 updatedForLambda != null ? updatedForLambda : extendedResourcePrevVersion;
             if (log.isDebugEnabled()) {
               log.debug(
-                  "Extended previous resource version: {} resource from update present: {}"
+                  "Previous resource version: {} resource from update present: {}"
                       + " extendedPrevResource present: {}",
                   prevVersionOfResource.getMetadata().getResourceVersion(),
                   updatedForLambda != null,

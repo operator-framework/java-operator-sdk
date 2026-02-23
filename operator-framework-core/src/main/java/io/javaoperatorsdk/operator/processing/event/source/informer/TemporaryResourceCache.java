@@ -130,8 +130,8 @@ public class TemporaryResourceCache<T extends HasMetadata> {
       log.debug("Processing event for resource");
     }
     if (!unknownState) {
-      log.debug("Setting latest resource version to: {}", latestResourceVersion);
       latestResourceVersion = resource.getMetadata().getResourceVersion();
+      log.debug("Setting latest resource version to: {}", latestResourceVersion);
     }
     var cached = cache.get(resourceId);
     EventHandling result = EventHandling.NEW;

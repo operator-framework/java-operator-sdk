@@ -315,7 +315,7 @@ class ReconciliationDispatcher<P extends HasMetadata> {
       }
     }
     log.debug(
-        "Skipping finalizer remove for resource. Delete control: {}, uses  finalizer: {}",
+        "Skipping finalizer remove for resource. Delete control: {}, uses finalizer: {}",
         deleteControl,
         useFinalizer);
     PostExecutionControl<P> postExecutionControl = PostExecutionControl.defaultDispatch();
