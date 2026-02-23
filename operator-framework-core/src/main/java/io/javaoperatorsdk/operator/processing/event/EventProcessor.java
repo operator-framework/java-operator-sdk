@@ -215,10 +215,9 @@ public class EventProcessor<P extends HasMetadata> implements EventHandler, Life
   }
 
   private void handleEventMarking(Event event, ResourceState state) {
-    final var relatedCustomResourceID = event.getRelatedCustomResourceID();
-    if (event instanceof ResourceEvent resourceEvent) {
+      if (event instanceof ResourceEvent resourceEvent) {
       if (resourceEvent.getAction() == ResourceAction.DELETED) {
-        log.debug("Marking delete event received.");
+        log.debug("Marking delete event received");
         state.markDeleteEventReceived(
             resourceEvent.getResource().orElseThrow(),
             ((ResourceDeleteEvent) resourceEvent).isDeletedFinalStateUnknown());
