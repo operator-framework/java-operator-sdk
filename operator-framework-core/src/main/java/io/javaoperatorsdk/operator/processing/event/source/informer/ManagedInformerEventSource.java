@@ -94,7 +94,7 @@ public abstract class ManagedInformerEventSource<
   @SuppressWarnings("unchecked")
   public R eventFilteringUpdateAndCacheResource(R resourceToUpdate, UnaryOperator<R> updateMethod) {
     ResourceID id = ResourceID.fromResource(resourceToUpdate);
-    log.debug("Starting event filtering and cacheing update");
+    log.debug("Starting event filtering and caching update");
     R updatedResource = null;
     try {
       temporaryResourceCache.startEventFilteringModify(id);
