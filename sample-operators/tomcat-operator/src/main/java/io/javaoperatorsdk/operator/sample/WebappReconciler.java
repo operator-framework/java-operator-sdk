@@ -47,11 +47,11 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(name = WebappReconciler.WEBAPP_CONTROLLER_NAME)
+@ControllerConfiguration(name = WebappReconciler.NAME)
 public class WebappReconciler implements Reconciler<Webapp>, Cleaner<Webapp> {
 
   private static final Logger log = LoggerFactory.getLogger(WebappReconciler.class);
-  public static final String WEBAPP_CONTROLLER_NAME = "webapp";
+  public static final String NAME = "webapp";
 
   private final KubernetesClient kubernetesClient;
 
