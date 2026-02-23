@@ -35,7 +35,7 @@ For more information about MDC see this [link](https://www.baeldung.com/mdc-in-l
 
 ### MDC entries during event handling
 
-Although, usually users might not require it in their day-to-day workflow, it is worth to mention that 
+Although, usually users might not require it in their day-to-day workflow, it is worth mentioning that 
 there are additional MDC entries managed for event handling. Typically, you might be interested in it
 in your `SecondaryToPrimaryMapper` related logs.
 For `InformerEventSource` and `ControllerEventSource` the following information is present:
