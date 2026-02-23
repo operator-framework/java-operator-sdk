@@ -27,7 +27,11 @@ import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 public class ConfigLoader {
 
-  public static final ConfigLoader DEFAULT = new ConfigLoader();
+  private static final ConfigLoader DEFAULT = new ConfigLoader();
+
+  public static ConfigLoader getDefault() {
+    return DEFAULT;
+  }
 
   public static final String DEFAULT_OPERATOR_KEY_PREFIX = "josdk.";
   public static final String DEFAULT_CONTROLLER_KEY_PREFIX = "josdk.controller.";
@@ -179,7 +183,6 @@ public class ConfigLoader {
     if (retryStep != null) {
       consumer = consumer == null ? retryStep : consumer.andThen(retryStep);
     }
-
     return consumer;
   }
 
@@ -235,7 +238,7 @@ public class ConfigLoader {
         consumer = consumer == null ? step : consumer.andThen(step);
       }
     }
-    return consumer;
+    return consumer == null ? o -> {} : consumer;
   }
 
   /**
