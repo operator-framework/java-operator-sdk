@@ -23,7 +23,7 @@ import org.takes.http.Exit;
 import org.takes.http.FtBasic;
 
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.loader.ConfigLoader;
+import io.javaoperatorsdk.operator.config.loader.ConfigLoader;
 
 public class TomcatOperator {
 
