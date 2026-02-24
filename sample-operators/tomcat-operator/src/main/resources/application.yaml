@@ -1,0 +1,62 @@
+#
+# Copyright Java Operator SDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# JOSDK operator-level configuration (josdk.<property>)
+josdk:
+  check-crd: true
+  close-client-on-stop: true
+  use-ssa-to-patch-primary-resource: false
+  clone-secondary-resources-when-getting-from-cache: false
+  reconciliation:
+    termination-timeout: PT30S
+    concurrent-threads: 10
+  workflow:
+    executor-threads: 10
+  informer:
+    stop-on-error-during-startup: true
+    cache-sync-timeout: PT2M
+  dependent-resources:
+    ssa-based-create-update-match: true
+
+  # Controller-level configuration (josdk.controller.<name>.<property>)
+  controller:
+    tomcat:
+      finalizer: tomcat.sample.javaoperatorsdk.io/finalizer
+      generation-aware: true
+      label-selector: ""
+      max-reconciliation-interval: PT10M
+      field-manager: tomcat-controller
+      trigger-reconciler-on-all-events: false
+      informer-list-limit: 500
+      retry:
+        max-attempts: 10
+        initial-interval: 2000
+        interval-multiplier: 1.5
+        max-interval: 60000
+
+    webapp:
+      finalizer: webapp.sample.javaoperatorsdk.io/finalizer
+      generation-aware: true
+      label-selector: ""
+      max-reconciliation-interval: PT10M
+      field-manager: webapp-controller
+      trigger-reconciler-on-all-events: false
+      informer-list-limit: 500
+      retry:
+        max-attempts: 10
+        initial-interval: 2000
+        interval-multiplier: 1.5
+        max-interval: 60000

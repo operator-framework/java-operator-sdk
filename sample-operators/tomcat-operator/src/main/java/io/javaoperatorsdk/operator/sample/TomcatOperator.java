@@ -16,6 +16,7 @@
 package io.javaoperatorsdk.operator.sample;
 
 import java.io.IOException;
+import java.net.URL;
 
 import org.takes.facets.fork.FkRegex;
 import org.takes.facets.fork.TkFork;
@@ -24,11 +25,23 @@ import org.takes.http.FtBasic;
 
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.config.loader.ConfigLoader;
+import io.javaoperatorsdk.operator.sample.smallryeconfig.SmallryeConfigProvider;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.source.yaml.YamlConfigSource;
 
 public class TomcatOperator {
 
   public static void main(String[] args) throws IOException {
-    var configLoader = ConfigLoader.getDefault();
+
+    URL configUrl = TomcatOperator.class.getResource("/application.yaml");
+    if (configUrl == null) {
+      throw new IllegalStateException("application.yaml not found on classpath");
+    }
+    var configLoader =
+        new ConfigLoader(
+            new SmallryeConfigProvider(
+                new SmallRyeConfigBuilder().withSources(new YamlConfigSource(configUrl)).build()));
+
     Operator operator = new Operator(configLoader.applyConfigs());
     operator.register(
         new TomcatReconciler(), configLoader.applyControllerConfigs(TomcatReconciler.NAME));

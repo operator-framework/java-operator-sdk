@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceOverrider;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
@@ -29,6 +32,8 @@ import io.javaoperatorsdk.operator.config.loader.provider.SystemPropertyConfigPr
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 
 public class ConfigLoader {
+
+  private static final Logger log = LoggerFactory.getLogger(ConfigLoader.class);
 
   private static final ConfigLoader DEFAULT = new ConfigLoader();
 
@@ -251,7 +256,13 @@ public class ConfigLoader {
   private <O, T> Consumer<O> resolveStep(ConfigBinding<O, T> binding, String key) {
     return configProvider
         .getValue(key, binding.type())
-        .map(value -> (Consumer<O>) overrider -> binding.setter().accept(overrider, value))
+        .map(
+            value ->
+                (Consumer<O>)
+                    overrider -> {
+                      log.debug("Found config property: {} = {}", key, value);
+                      binding.setter().accept(overrider, value);
+                    })
         .orElse(null);
   }
 }
